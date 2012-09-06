@@ -85,9 +85,12 @@ static void StoreExternalFile(const char *name, const char *store)
     byte *data;
     int len;
 
+    data = NULL;
+
     len = Com_ReadBinaryFile(va("%s/content/%s", Com_GetExePath(), name), &data);
     if(!len)
     {
+        Com_Error("Couldn't find file: %s\n", name);
         return;
     }
 

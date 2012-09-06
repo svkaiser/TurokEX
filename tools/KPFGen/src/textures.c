@@ -332,7 +332,7 @@ static void ProcessBigFonts(void)
         if(x >= 256)
         {
             x = 0;
-            y -= 32;
+            y -= 36;
         }
 
         for(i = 0; i < 32; i++)
@@ -350,8 +350,8 @@ static void ProcessBigFonts(void)
 
                 if(t2 == 0)
                 {
-                    Com_WriteMem8(dst, 255);
-                    Com_WriteMem8(dst, 255);
+                    Com_WriteMem8(dst, 0);
+                    Com_WriteMem8(dst, 0);
                     Com_WriteMem8(dst, 0);
                     Com_WriteMem8(dst, 0);
                 }
@@ -365,8 +365,8 @@ static void ProcessBigFonts(void)
                 
                 if(t1 == 0)
                 {
-                    Com_WriteMem8(dst, 255);
-                    Com_WriteMem8(dst, 255);
+                    Com_WriteMem8(dst, 0);
+                    Com_WriteMem8(dst, 0);
                     Com_WriteMem8(dst, 0);
                     Com_WriteMem8(dst, 0);
                 }
