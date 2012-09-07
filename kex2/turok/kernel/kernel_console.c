@@ -421,6 +421,7 @@ kbool Con_Responder(event_t* ev)
                 console_enabled = true;
                 console_inputlength = 1;
                 CONCLEARINPUT();
+                Key_ClearControls();
             }
             return false;
         }

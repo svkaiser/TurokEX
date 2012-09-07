@@ -295,7 +295,7 @@ static void FCmd_List(void)
 
     for(cmd = cmd_functions; cmd; cmd = cmd->next, i++)
     {
-        Com_CPrintf(COLOR_AQUA, "%s\n", cmd->name);
+        Com_CPrintf(COLOR_CYAN, "%s\n", cmd->name);
     }
     
     Com_CPrintf(COLOR_GREEN, "%i commands\n", i);

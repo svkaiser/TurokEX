@@ -23,6 +23,8 @@
 #ifndef _KERNEL_H_
 #define _KERNEL_H_
 
+#include "SDL.h"
+
 #include "type.h"
 #include "client.h"
 
@@ -46,8 +48,46 @@ int KF_ReadTextFile(const char *name, byte **buffer);
 //
 // KEYS
 //
-#define MAX_KEYS 256
+#define MAX_KEYS SDLK_LAST
+
+#define CKF_NEXTWEAPON	0x1
+#define CKF_PREVWEAPON	0x2
+#define CKF_GAMEPAD     0x4
+#define CKF_UP          0x4000
+#define CKF_COUNTMASK   0x00ff
+
+typedef enum
+{
+    KEY_ATTACK,
+    KEY_FORWARD,
+    KEY_BACK,
+    KEY_LEFT,
+    KEY_RIGHT,
+    KEY_STRAFELEFT,
+    KEY_STRAFERIGHT,
+    KEY_RUN,
+    KEY_JUMP,
+    KEY_LOOKUP,
+    KEY_LOOKDOWN,
+    KEY_CENTER,
+    NUM_CTRLKEYS
+} ctrlkey_t;
+
+typedef struct
+{
+    int         mousex;
+    int         mousey;
+    int         joyx;
+    int         joyy;
+    ctrlkey_t   key[NUM_CTRLKEYS];
+    int         flags;
+} control_t;
+
+extern control_t control;
 extern char keycode[2][MAX_KEYS];
+void Key_ExecCmd(char key, kbool keyup);
+void Key_WriteBindings(FILE *file);
+void Key_ClearControls(void);
 void Key_Init(void);
 
 //
@@ -56,6 +96,7 @@ void Key_Init(void);
 void IN_PollInput(void);
 void IN_UpdateGrab(void);
 void IN_Init(void);
+void IN_MouseMove(int x, int y);
 void IN_CenterMouse(void);
 kbool IN_Shiftdown(int c);
 kbool IN_Ctrldown(int c);

@@ -20,56 +20,14 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION: Event Handling From Inputs
+// DESCRIPTION: Main game code
 //
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "kernel.h"
 #include "client.h"
-#include "menu.h"
+#include "server.h"
+#include "kernel.h"
+#include "player.h"
 
-event_t events[MAXEVENTS];
-int     eventhead = 0;
-int     eventtail = 0;
-
-
-//
-// CL_PostEvent
-// Called by the I/O functions when input is detected
-//
-
-void CL_PostEvent(event_t *ev)
-{
-    events[eventhead] = *ev;
-    eventhead = (++eventhead)&(MAXEVENTS-1);
-}
-
-//
-// CL_ProcessEvents
-// Send all the events of the given timestamp down the responder chain
-//
-
-void CL_ProcessEvents(void)
-{
-    event_t *ev;
-    
-    for(; eventtail != eventhead; eventtail = (++eventtail)&(MAXEVENTS-1))
-    {
-        ev = &events[eventtail];
-
-        if(Con_Responder(ev))
-        {
-            continue;
-        }
-
-        if(Menu_Responder(ev))
-        {
-            continue;
-        }
-
-        CL_Responder(ev);
-    }
-}
-
-
+player_t players[MAXPLAYERS];

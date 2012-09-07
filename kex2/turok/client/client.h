@@ -62,6 +62,7 @@ extern int      eventtail;
 
 void CL_PostEvent(event_t *ev);
 void CL_ProcessEvents(void);
+kbool CL_Responder(event_t *ev);
 int CL_Random(void);
 void CL_Connect(const char *address);
 void CL_Run(int msec);

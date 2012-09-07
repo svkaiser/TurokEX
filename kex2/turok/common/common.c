@@ -204,6 +204,7 @@ void Com_WriteConfigFile(void)
     f = fopen(kva("%s\\config.cfg", kf_basepath.string), "w");
     if(f)
     {
+        Key_WriteBindings(f);
         Cvar_WriteToFile(f);
         fclose(f);
     }

@@ -42,7 +42,7 @@ static void FCmd_ListVars(void)
 
     for(var = cvarcap; var; var = var->next)
     {
-        Com_CPrintf(COLOR_AQUA, "%s\n", var->name);
+        Com_CPrintf(COLOR_CYAN, "%s\n", var->name);
     }
 }
 

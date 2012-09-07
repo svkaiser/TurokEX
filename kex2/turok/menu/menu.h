@@ -20,8 +20,8 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef _MENU_H
-#define _MENU_H
+#ifndef _MENU_H_
+#define _MENU_H_
 
 #include "type.h"
 #include "client.h"

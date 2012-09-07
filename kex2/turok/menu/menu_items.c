@@ -358,6 +358,11 @@ static void Menu_SetupCheatCode(void)
 static void Menu_CheatCodeDrawer(menu_t *menu)
 {
     float opacity;
+    int i;
+    int j;
+    char c[2];
+    float x;
+    float y;
 
     opacity = (menu->opacity * 180.0f) / 255.0f;
 
@@ -366,6 +371,51 @@ static void Menu_CheatCodeDrawer(menu_t *menu)
     Draw_ShadowedText(160, 42, (byte)(255.0f * menu->opacity), true, 0.35f, "enter cheat code");
 
     Draw_SetBigTextColor(200, 200, 138, 86, 71, 47);
+
+    y = 83;
+
+    for(j = 0; j < 4; j++)
+    {
+        x = 124;
+        
+        for(i = 0; i < 4; i++)
+        {
+            int item = (i + (4 * j));
+
+            if(menu_itemOn == item && menu == menu_current)
+            {
+                Menu_DrawCursor(x - 12, y - 18, 24, 18);
+            }
+
+            c[0] = cheatchars[item];
+            c[1] = 0;
+            Draw_ShadowedText(x, y, (byte)(255.0f * menu->opacity),
+                true, 0.5f, c);
+
+            x += 24.0f;
+        }
+
+        y += 18.0f;
+    }
+
+    if(menu_itemOn >= 16 && menu == menu_current)
+    {
+        switch(menu_itemOn)
+        {
+        case 16:
+            Menu_DrawCursor(56, 150, 208, 18);
+            break;
+        case 17:
+            Menu_DrawCursor(56, 170, 208, 18);
+            break;
+        case 18:
+            Menu_DrawCursor(56, 190, 208, 18);
+            break;
+        default:
+            break;
+        }
+    }
+
     Draw_ShadowedText(160, 166, (byte)(255.0f * menu->opacity),
         true, 0.5f, mitem_cheatcode[16].name);
     Draw_ShadowedText(160, 186, (byte)(255.0f * menu->opacity),

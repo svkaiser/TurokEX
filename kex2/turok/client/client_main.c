@@ -62,6 +62,8 @@ typedef enum
     CL_STATE_DISCONNECTED
 } client_state_e;
 
+#define CL_BACKUP_CMDS  128
+
 typedef struct
 {
     ENetHost        *host;
@@ -72,6 +74,8 @@ typedef struct
     float           runtime;
     kbool           local;
     int             tics;
+    ticcmd_t        cmd;
+    ticcmd_t        netcmds[CL_BACKUP_CMDS];
 } kex_client_t;
 
 kex_client_t kex_client;
@@ -127,6 +131,30 @@ void CL_Connect(const char *address)
     {
         kex_client.state = CL_STATE_CONNECTING;
     }
+}
+
+//
+// CL_Responder
+//
+
+kbool CL_Responder(event_t *ev)
+{
+    switch(ev->type)
+    {
+    case ev_mouse:
+        IN_MouseMove(ev->data1, ev->data2);
+        return true;
+
+    case ev_keydown:
+        Key_ExecCmd(ev->data1, false);
+        return true;
+
+    case ev_keyup:
+        Key_ExecCmd(ev->data1, true);
+        return true;
+    }
+
+    return false;
 }
 
 //
@@ -189,9 +217,13 @@ static void CL_DrawDebug(void)
 static void CL_Drawer(void)
 {
     R_DrawFrame();
+
     CL_DrawDebug();
+
     Menu_Drawer();
+
     Con_Draw();
+
     R_FinishFrame();
 }
 

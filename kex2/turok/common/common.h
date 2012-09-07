@@ -37,7 +37,7 @@
 #define COLOR_RED       0xFF0000FF
 #define COLOR_GREEN     0xFF00FF00
 #define COLOR_YELLOW    0xFF00FFFF
-#define COLOR_AQUA      0xFFFFFF00
+#define COLOR_CYAN      0xFFFFFF00
 
 //
 // ENDIAN SWAPS

@@ -37,6 +37,8 @@ static float mouse_accelfactor;
 static int mouse_x = 0;
 static int mouse_y = 0;
 
+CVAR_EXTERNAL(cl_msensitivityx);
+CVAR_EXTERNAL(cl_msensitivityy);
 CVAR_EXTERNAL(cl_macceleration);
 
 static void IN_ReadMouse(void);
@@ -216,6 +218,20 @@ int IN_MouseAccel(int val)
         return -IN_MouseAccel(-val);
     
     return (int)(pow((double)val, (double)mouse_accelfactor));
+}
+
+//
+// IN_MouseMove
+//
+
+void IN_MouseMove(int x, int y)
+{
+    control_t *ctrl;
+    
+    ctrl = &control;
+
+    ctrl->mousex += ((IN_MouseAccel(x) * (int)cl_msensitivityx.value) / 128);
+    ctrl->mousey += ((IN_MouseAccel(y) * (int)cl_msensitivityy.value) / 128);
 }
 
 //
