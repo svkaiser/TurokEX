@@ -167,9 +167,11 @@ void Cmd_Init(void);
 //
 #define CLIENT_PACKET_PING  1
 #define CLIENT_PACKET_SAY   2
+#define CLIENT_PACKET_CMD   3
 
 //
 // SERVER PACKET TYPES
 //
+#define SERVER_PACKET_PING  1
 
 #endif

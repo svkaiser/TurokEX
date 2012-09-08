@@ -26,6 +26,7 @@
 
 #include "enet/enet.h"
 #include "common.h"
+#include "client.h"
 #include "packet.h"
 
 CVAR(sv_address, localhost);
@@ -127,6 +128,63 @@ void SV_CreateHost(void)
 }
 
 //
+// SV_ReadTiccmd
+//
+
+static void SV_ReadTiccmd(ENetPacket *packet, ticcmd_t *cmd)
+{
+    int bits = 0;
+    int tmp = 0;
+
+    memset(cmd, 0, sizeof(ticcmd_t));
+
+#define READ_TICCMD8(name, bit)             \
+    if(bits & bit)                          \
+    {                                       \
+        Packet_Read8(packet, &tmp);         \
+        cmd->name = tmp;                    \
+    }
+
+#define READ_TICCMD16(name, bit)            \
+    if(bits & bit)                          \
+    {                                       \
+        Packet_Read16(packet, &tmp);        \
+        cmd->name = tmp;                    \
+    }
+
+    Packet_Read8(packet, &bits);
+
+    READ_TICCMD8(forwardmove, CL_TICDIFF_FORWARD);
+    READ_TICCMD8(sidemove, CL_TICDIFF_SIDE);
+    READ_TICCMD16(angleturn, CL_TICDIFF_TURN);
+    READ_TICCMD16(pitch, CL_TICDIFF_PITCH);
+    READ_TICCMD8(buttons, CL_TICDIFF_BUTTONS);
+
+    Packet_Read8(packet, &tmp);
+    cmd->msec = tmp;
+
+#undef READ_TICCMD16
+#undef READ_TICCMD8
+}
+
+//
+// SV_SendAcknowledgement
+//
+
+static void SV_SendAcknowledgement(ENetEvent *sev)
+{
+    ENetPacket *packet;
+
+    if(!(packet = Packet_New()))
+    {
+        return;
+    }
+
+    Packet_Write8(packet, SERVER_PACKET_PING);
+    Packet_Send(packet, sev->peer);
+}
+
+//
 // SV_ProcessClientPackets
 //
 
@@ -135,15 +193,27 @@ void SV_ProcessClientPackets(ENetPacket *packet, ENetEvent *sev)
     int type = 0;
 
     Packet_Read8(packet, &type);
+
     switch(type)
     {
     case CLIENT_PACKET_PING:
         Com_Printf("Recieved ping from %s (channel %i)\n",
             SV_GetPeerAddress(sev), sev->channelID);
+        SV_SendAcknowledgement(sev);
         break;
+
     case CLIENT_PACKET_SAY:
         Com_Printf("%s: %s\n", SV_GetPeerAddress(sev), Packet_ReadString(packet));
         break;
+
+    case CLIENT_PACKET_CMD:
+        {
+            ticcmd_t cmd;
+
+            SV_ReadTiccmd(packet, &cmd);
+        }
+        break;
+
     default:
         Com_Warning("Recieved unknown packet type: %i\n", type);
         break;

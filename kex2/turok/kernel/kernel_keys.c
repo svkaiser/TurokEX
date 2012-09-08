@@ -208,7 +208,7 @@ void Key_WriteBindings(FILE *file)
             Key_GetName(buff, i);
             strlwr(buff);
 
-            fprintf(file, "bind %s %s\n", buff, cmd->command);
+            fprintf(file, "bind %s \"%s\"\n", buff, cmd->command);
         }
     }
 }

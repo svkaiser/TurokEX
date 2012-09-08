@@ -195,7 +195,7 @@ void Cvar_WriteToFile(FILE *file)
 
     for(cvar = cvarcap; cvar; cvar = cvar->next)
     {
-        fprintf(file, "seta %s %s\n", cvar->name, cvar->string);
+        fprintf(file, "seta %s \"%s\"\n", cvar->name, cvar->string);
     }
 }
 

@@ -69,6 +69,15 @@ kbool Cmd_RunCommand(void)
 }
 
 //
+// Cmd_ClearArgv
+//
+
+static Cmd_ClearArgv(void)
+{
+    memset(cmd_argv, 0, CMD_MAX_ARGV * CMD_BUFFER_LEN);
+}
+
+//
 // Cmd_GetArgc
 //
 
@@ -97,12 +106,15 @@ void Cmd_ExecuteCommand(char *buffer)
     char *b_rover;
     char *a_rover;
     kbool havetoken;
+    kbool inquotes;
 
     j = 0;
     cmd_argc = 0;
+    Cmd_ClearArgv();
     len = strlen(buffer);
     b_rover = buffer;
     havetoken = false;
+    inquotes = false;
 
     while(1)
     {
@@ -126,11 +138,33 @@ void Cmd_ExecuteCommand(char *buffer)
         havetoken = false;
 
         // search for a token
-        while(*b_rover != ' ')
+        while(*b_rover != ' ' || inquotes == true)
         {
+            if(*b_rover == '"')
+            {
+                if(inquotes)
+                {
+                    inquotes = false;
+                }
+                else
+                {
+                    inquotes = true;
+                }
+
+                b_rover++;
+
+                continue;
+            }
+
             // execute commands after a newline or semicolon
             if(*b_rover == '\n' || *b_rover == ';' || *b_rover == 0 && havetoken)
             {
+                if(inquotes)
+                {
+                    Com_Warning("Command contains incomplete quote\n");
+                    return;
+                }
+
                 if(!Cmd_RunCommand())
                 {
                     cvar_t *cvar;

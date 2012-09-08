@@ -45,6 +45,21 @@ typedef struct
     int         data4;  // misc data
 } event_t;
 
+typedef enum
+{
+    BT_ATTACK   = 1,
+    BT_JUMP     = 2,
+    BT_NEXTWEAP = 4,
+    BT_PREVWEAP = 8,
+    BT_CENTER   = 16
+} buttoncode2_t;
+
+#define CL_TICDIFF_FORWARD      (1 << 0)
+#define CL_TICDIFF_SIDE         (1 << 1)
+#define CL_TICDIFF_TURN         (1 << 2)
+#define CL_TICDIFF_BUTTONS      (1 << 3)
+#define CL_TICDIFF_PITCH		(1 << 4)
+
 typedef struct
 {
     char    forwardmove;    // *2048 for move
@@ -52,6 +67,7 @@ typedef struct
     short   angleturn;      // <<16 for angle delta
 	short   pitch;
     byte    buttons;
+    byte    msec;
 } ticcmd_t;
 
 #define MAXEVENTS 64

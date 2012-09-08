@@ -75,7 +75,6 @@ typedef struct
     kbool           local;
     int             tics;
     ticcmd_t        cmd;
-    ticcmd_t        netcmds[CL_BACKUP_CMDS];
 } kex_client_t;
 
 kex_client_t kex_client;
@@ -158,6 +157,119 @@ kbool CL_Responder(event_t *ev)
 }
 
 //
+// CL_WriteTiccmd
+//
+
+static void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd)
+{
+    byte bits = 0;
+
+#define DIFF_TICCMDS(name, bit)         \
+    if(cmd->name != 0)                  \
+    bits |= bit
+
+#define WRITE_TICCMD8(name, bit)        \
+    if(bits & bit)                      \
+    Packet_Write8(packet, cmd->name)
+
+#define WRITE_TICCMD16(name, bit)       \
+    if(bits & bit)                      \
+    Packet_Write16(packet, cmd->name)
+
+    DIFF_TICCMDS(forwardmove, CL_TICDIFF_FORWARD);
+    DIFF_TICCMDS(sidemove, CL_TICDIFF_SIDE);
+    DIFF_TICCMDS(angleturn, CL_TICDIFF_TURN);
+    DIFF_TICCMDS(pitch, CL_TICDIFF_PITCH);
+    DIFF_TICCMDS(buttons, CL_TICDIFF_BUTTONS);
+
+    Packet_Write8(packet, bits);
+
+    WRITE_TICCMD8(forwardmove, CL_TICDIFF_FORWARD);
+    WRITE_TICCMD8(sidemove, CL_TICDIFF_SIDE);
+    WRITE_TICCMD16(angleturn, CL_TICDIFF_TURN);
+    WRITE_TICCMD16(pitch, CL_TICDIFF_PITCH);
+    WRITE_TICCMD8(buttons, CL_TICDIFF_BUTTONS);
+
+    Packet_Write8(packet, cmd->msec);
+
+#undef WRITE_TICCMD16
+#undef WRITE_TICCMD8
+#undef DIFF_TICCMDS
+}
+
+//
+// CL_BuildTiccmd
+//
+
+static void CL_BuildTiccmd(void)
+{
+    ticcmd_t cmd;
+    control_t *ctrl;
+    int msec;
+    ENetPacket *packet;
+
+    memset(&cmd, 0, sizeof(ticcmd_t));
+    ctrl = &control;
+
+    if(ctrl->key[KEY_ATTACK])
+    {
+        cmd.buttons |= BT_ATTACK;
+    }
+
+    if(ctrl->key[KEY_JUMP])
+    {
+        cmd.buttons |= BT_JUMP;
+    }
+
+    if(ctrl->key[KEY_CENTER])
+    {
+        cmd.buttons |= BT_CENTER;
+    }
+
+    msec = (int)(kex_client.runtime * 1000);
+    if(msec > 250)
+    {
+        msec = 100;
+    }
+
+    cmd.msec = msec;
+
+    if(!(packet = Packet_New()))
+    {
+        return;
+    }
+
+    Packet_Write8(packet, CLIENT_PACKET_CMD);
+
+    CL_WriteTiccmd(packet, &cmd);
+    kex_client.cmd = cmd;
+    Packet_Send(packet, kex_client.peer);
+}
+
+//
+// CL_ProcessServerPackets
+//
+
+void CL_ProcessServerPackets(ENetPacket *packet, ENetEvent *cev)
+{
+    int type = 0;
+
+    Packet_Read8(packet, &type);
+
+    switch(type)
+    {
+    case SERVER_PACKET_PING:
+        Com_Printf("Recieved acknowledgement from server\n");
+        break;
+    default:
+        Com_Warning("Recieved unknown packet type: %i\n", type);
+        break;
+    }
+
+    enet_packet_destroy(cev->packet);
+}
+
+//
 // CL_CheckHost
 //
 
@@ -173,9 +285,14 @@ static void CL_CheckHost(void)
             Com_Printf("connected to host\n");
             kex_client.state = CL_STATE_CONNECTED;
             break;
+
         case ENET_EVENT_TYPE_DISCONNECT:
             Com_Printf("disconnected from host\n");
             kex_client.state = CL_STATE_DISCONNECTED;
+            break;
+
+        case ENET_EVENT_TYPE_RECEIVE:
+            CL_ProcessServerPackets(cev.packet, &cev);
             break;
         }
     }
@@ -247,11 +364,16 @@ void CL_Run(int msec)
 
     curtime = 0;
 
+    CL_CheckHost();
+
     IN_PollInput();
 
     CL_ProcessEvents();
-    CL_CheckHost();
+
+    CL_BuildTiccmd();
+
     CL_Drawer();
+
     CL_Ticker();
 }
 
