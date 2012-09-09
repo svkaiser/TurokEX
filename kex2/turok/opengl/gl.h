@@ -76,7 +76,6 @@ d_inline void dglSetVertexColor(vtx_t *v, rcolor c, word count)
 //
 // TEXTURES
 //
-#define MAX_TEXTURE_HASH_LIST  2048
 
 typedef struct texture_s
 {
@@ -90,6 +89,7 @@ typedef struct texture_s
     struct texture_s *next;
 } texture_t;
 
+void Tex_Shutdown(void);
 texture_t *Tex_Alloc(const char *name, byte *data,
                      int width, int height, int clampmode);
 texture_t *Tex_Find(const char *name);
@@ -121,6 +121,7 @@ float Draw_BigText(float x, float y, byte alpha, kbool centered,
                    float scale, const char* string);
 void Draw_ShadowedText(float x, float y, byte alpha, kbool centered,
                        float scale, const char* string);
+void Draw_Pic(const char *pic, float x, float y, byte alpha, float scale);
 float Draw_Text(float x, float y, rcolor color,
                 float scale, const char* string, ...);
 

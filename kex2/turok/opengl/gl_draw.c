@@ -722,6 +722,65 @@ void Draw_ShadowedText(float x, float y, byte alpha, kbool centered,
 }
 
 //
+// Draw_Pic
+//
+
+void Draw_Pic(const char *pic, float x, float y, byte alpha, float scale)
+{
+    float ratiox;
+    float ratioy;
+    float rx;
+    float ry;
+    float rw;
+    float rh;
+    texture_t *tex;
+    vtx_t vtx[4];
+
+    tex = Tex_CacheTextureFile(pic, DGL_CLAMP, true);
+
+    if(tex == NULL)
+    {
+        return;
+    }
+
+    ratiox = (float)FIXED_WIDTH / video_width;
+    ratioy = (float)FIXED_HEIGHT / video_height;
+    rx = x / ratiox;
+    rw = (float)tex->width / ratiox;
+    ry = y / ratioy;
+    rh = (float)tex->height / ratioy;
+
+    dglEnable(GL_ALPHA_TEST);
+    GL_BindTexture(tex);
+    GL_SetVertexPointer(vtx);
+    GL_SetState(GLSTATE_BLEND, 1);
+    dglAlphaFunc(GL_GEQUAL, 0.8f * (alpha / 255.0f));
+
+    vtx[0].x = vtx[2].x = x;
+    vtx[1].x = vtx[3].x = x + rw;
+    vtx[0].y = vtx[1].y = y;
+    vtx[2].y = vtx[3].y = y + rh;
+    vtx[0].z = vtx[1].z = 0;
+    vtx[2].z = vtx[3].z = 0;
+    vtx[0].tu = vtx[2].tu = 0;
+    vtx[1].tu = vtx[3].tu = 1;
+    vtx[0].tv = vtx[1].tv = 0;
+    vtx[2].tv = vtx[3].tv = 1;
+
+    *(rcolor*)&vtx[0].r = COLOR_WHITE_A(alpha);
+    *(rcolor*)&vtx[1].r = COLOR_WHITE_A(alpha);
+    *(rcolor*)&vtx[2].r = COLOR_WHITE_A(alpha);
+    *(rcolor*)&vtx[3].r = COLOR_WHITE_A(alpha);
+
+    GL_Triangle(0, 1, 2);
+    GL_Triangle(2, 1, 3);
+    GL_DrawElements(4, vtx);
+    GL_SetState(GLSTATE_BLEND, 0);
+    dglAlphaFunc(GL_GEQUAL, 0.01f);
+    dglDisable(GL_ALPHA_TEST);
+}
+
+//
 // SetupFontTexture
 //
 

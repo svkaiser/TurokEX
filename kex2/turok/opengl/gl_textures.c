@@ -29,25 +29,7 @@
 #include "zone.h"
 #include "kernel.h"
 
-texture_t *tex_hashlist[MAX_TEXTURE_HASH_LIST];
-
-//
-// Tex_HashFileName
-//
-
-static unsigned int Tex_HashFileName(const char *name)
-{
-    unsigned int hash   = 1315423911;
-    unsigned int i      = 0;
-    char *str           = (char*)name;
-
-    for(i = 0; i < strlen(name)-1 && *str != '\0'; str++, i++)
-    {
-        hash ^= ((hash << 5) + toupper((int)*str) + (hash >> 2));
-    }
-
-    return hash & (MAX_TEXTURE_HASH_LIST-1);
-}
+static texture_t *tex_hashlist[MAX_HASH];
 
 //
 // Tex_PadDims
@@ -68,6 +50,15 @@ int Tex_PadDims(int n)
         mask <<= 1;
     }
     return n;
+}
+
+//
+// Tex_Shutdown
+//
+
+void Tex_Shutdown(void)
+{
+    Z_FreeTags(PU_TEXTURE, PU_TEXTURE);
 }
 
 //
@@ -115,7 +106,7 @@ texture_t *Tex_Alloc(const char *name, byte *data, int width, int height, int cl
 
     dglBindTexture(GL_TEXTURE_2D, 0);
 
-    hash = Tex_HashFileName(name);
+    hash = Com_HashFileName(name);
     texture->next = tex_hashlist[hash];
     tex_hashlist[hash] = texture;
 
@@ -131,7 +122,7 @@ texture_t *Tex_Find(const char *name)
     texture_t *texture;
     unsigned int hash;
 
-    hash = Tex_HashFileName(name);
+    hash = Com_HashFileName(name);
 
     for(texture = tex_hashlist[hash]; texture; texture = texture->next)
     {
@@ -173,3 +164,4 @@ texture_t *Tex_CacheTextureFile(const char *name, int clampmode, kbool masked)
 
     return texture;
 }
+

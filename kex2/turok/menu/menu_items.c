@@ -32,24 +32,16 @@
 #include "menu.h"
 
 //
-// Menu_DefaultDrawer
+// Menu_DrawCenteredItems
 //
 
-static void Menu_DefaultDrawer(menu_t *menu)
+static void Menu_DrawCenteredItems(menu_t *menu, float y,
+                                   float opacity, float spacing)
 {
-    float y;
-    float row;
-    float height;
-    float opacity;
     int i;
+    float row;
 
-    height = (float)(15 * Menu_GetActiveItems(menu) + 8);
-    row = 178.0f - height / 2;
-    y = row;
-    opacity = (menu->opacity * 150.0f) / 255.0f;
-
-    Menu_DrawFillBox(70, y, 250, y + height, 2, 0, 0, 0, 0, (byte)(255.0f * opacity));
-    y = y + 16.0f;
+    row = y;
 
     for(i = 0; i < menu->numitems; i++)
     {
@@ -60,17 +52,37 @@ static void Menu_DefaultDrawer(menu_t *menu)
 
         if(menu_itemOn == i && menu == menu_current)
         {
-            Menu_DrawCursor(78, y - 15 + 2, 164, 15);
+            Menu_DrawCursor(78, row - spacing + 2, 164, 15);
         }
 
         opacity = (menu->opacity * 255.0f) / 255.0f;
 
         Draw_SetBigTextColor(180, 180, 124, 77, 63, 42);
-        Draw_ShadowedText(160, y, (byte)(255.0f * opacity),
+        Draw_ShadowedText(160, row, (byte)(255.0f * opacity),
             true, 0.35f, menu->menuitems[i].name);
 
-        y += 15.0f;
+        row += spacing;
     }
+}
+
+//
+// Menu_DefaultDrawer
+//
+
+static void Menu_DefaultDrawer(menu_t *menu)
+{
+    float y;
+    float row;
+    float height;
+    float opacity;
+
+    height = (float)(15 * Menu_GetActiveItems(menu) + 8);
+    row = 178.0f - height / 2;
+    y = row;
+    opacity = (menu->opacity * 150.0f) / 255.0f;
+
+    Menu_DrawFillBox(70, y, 250, y + height, 2, 0, 0, 0, 0, (byte)(255.0f * opacity));
+    Menu_DrawCenteredItems(menu, y + 16.0f, opacity, 15.0f);
 }
 
 //
@@ -207,7 +219,7 @@ static void Menu_MainChoice(int choice)
 //
 //------------------------------------------------------------------------
 
-static void Menu_DrawOptions(void);
+static void Menu_DrawOptions(menu_t *menu);
 static void Menu_OptionChoice(int choice);
 
 enum
@@ -239,7 +251,7 @@ menu_t menu_options =
     item_optionend,         // numitems
     &menu_main,             // previous menu
     mitem_options,          // menu item
-    Menu_DefaultDrawer,     // drawer
+    Menu_DrawOptions,       // drawer
     0,                      // last item
     NULL,                   // default items
     -1,                     // numpageitems
@@ -274,6 +286,28 @@ static void Menu_OptionChoice(int choice)
         Menu_Set(menu_current->prevMenu);
         break;
     }
+}
+
+//
+// Menu_DrawOptions
+//
+
+static void Menu_DrawOptions(menu_t *menu)
+{
+    float y;
+    float row;
+    float height;
+    float opacity;
+
+    height = (float)(15 * Menu_GetActiveItems(menu) + 8);
+    row = 144.0f - height / 2;
+    y = row;
+    opacity = (menu->opacity * 150.0f) / 255.0f;
+
+    Menu_DrawFillBox(56, 26, 264, 208, 1, 0, 0, 0, 0, (byte)(255.0f * opacity));
+    Menu_DrawCenteredItems(menu, y + 16.0f, opacity, 15.0f);
+
+    Draw_Pic("hud/h_options.tga", 266, 112, (byte)(255.0f * opacity), 1.0f);
 }
 
 //------------------------------------------------------------------------
@@ -423,3 +457,4 @@ static void Menu_CheatCodeDrawer(menu_t *menu)
     Draw_ShadowedText(160, 206, (byte)(255.0f * menu->opacity),
         true, 0.5f, mitem_cheatcode[18].name);
 }
+

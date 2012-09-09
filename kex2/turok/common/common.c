@@ -211,6 +211,24 @@ void Com_WriteConfigFile(void)
 }
 
 //
+// Com_HashFileName
+//
+
+unsigned int Com_HashFileName(const char *name)
+{
+    unsigned int hash   = 1315423911;
+    unsigned int i      = 0;
+    char *str           = (char*)name;
+
+    for(i = 0; i < strlen(name)-1 && *str != '\0'; str++, i++)
+    {
+        hash ^= ((hash << 5) + toupper((int)*str) + (hash >> 2));
+    }
+
+    return hash & (MAX_HASH-1);
+}
+
+//
 // fcmp
 //
 

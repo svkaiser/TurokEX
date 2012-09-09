@@ -507,7 +507,7 @@ static void ProcessGeometry(byte *data)
     header = (geomheader_t*)Com_GetCartData(data, CHUNK_SECTION_HEADER, &headersize);
     indices = Com_GetCartData(data, CHUNK_SECTION_INDICES, &indicesize);
     vertices = Com_GetCartData(data, CHUNK_SECTION_VERTEX, &vertexsize);
-    vertexcount = Com_GetCartOffset(data, CHUNK_VERTEX_COUNT, 0);
+    vertexcount = Com_GetCartOffset(vertices, CHUNK_VERTEX_COUNT, 0);
 
     PrintFlags(header->flags);
     if(header->texture != -1)
@@ -515,9 +515,9 @@ static void ProcessGeometry(byte *data)
         Com_Strcat("                            texture = \"textures/tex%04d_00.tga\"\n",
             header->texture);
     }
-    Com_Strcat("                            rgba1 = %i %i %i %i\n",
+    Com_Strcat("                            rgba = %i %i %i %i\n",
         header->rgba1[0], header->rgba1[1], header->rgba1[2], header->rgba1[3]);
-    Com_Strcat("                            rgba2 = %i %i %i %i\n",
+    Com_Strcat("                            // rgba = %i %i %i %i\n",
         header->rgba2[0], header->rgba2[1], header->rgba2[2], header->rgba2[3]);
 
     Com_Strcat("\n                        numtriangles = %i\n",
@@ -649,13 +649,13 @@ static void ProcessRoot(byte *data, int index)
 
     limbcount = Com_GetCartOffset(data, CHUNK_LIMBINDEX_COUNT, 0);
 
-    Com_Strcat("    numobjects = %i\n\n", limbcount);
+    Com_Strcat("    numnodes = %i\n\n", limbcount);
 
-    Com_Strcat("    objects\n");
+    Com_Strcat("    nodes\n");
     Com_Strcat("    {\n");
     for(i = 0; i < limbcount; i++)
     {
-        Com_Strcat("        { // object %02d\n", i);
+        Com_Strcat("        { // node %02d\n", i);
         ProcessLimbData(Com_GetCartData(data, CHUNK_LIMBINDEX_OFFSET(i), 0));
         Com_Strcat("        }\n");
     }

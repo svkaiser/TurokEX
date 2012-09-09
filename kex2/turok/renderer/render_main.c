@@ -57,4 +57,5 @@ void R_FinishFrame(void)
 
 void R_Init(void)
 {
+    Mdl_Init();
 }

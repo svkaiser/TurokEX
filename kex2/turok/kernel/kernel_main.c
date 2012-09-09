@@ -34,6 +34,7 @@
 #include "render.h"
 #include "gl.h"
 #include "menu.h"
+#include "script.h"
 
 CVAR(developer, 0);
 CVAR(fixedtime, 0);
@@ -55,6 +56,7 @@ void Sys_Shutdown(void)
 {
     Com_WriteConfigFile();
 
+    Tex_Shutdown();
     KF_Shutdown();
     SV_Shutdown();
     Com_Shutdown();
@@ -182,6 +184,8 @@ void Kernel_Main(int argc, char **argv)
     Com_Printf("Command System Initialized\n");
     Cvar_Init();
     Com_Printf("Cvar System Initialized\n");
+    SC_Init();
+    Com_Printf("Lexer System Initialized\n");
     Key_Init();
     Com_Printf("Key System Initialized\n");
     KF_Init();

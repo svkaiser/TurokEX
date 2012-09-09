@@ -251,7 +251,6 @@ void TX_StoreTextures(void)
     textures = Com_GetCartData(cartfile, CHUNK_DIRECTORY_TEXTURE, 0);
     numtextures = Com_GetCartOffset(textures, CHUNK_TEX_COUNT, 0);
 
-    PK_AddFolder("textures/");
     /*PK_AddFolder("textures/actors/");
     PK_AddFolder("textures/caves/");
     PK_AddFolder("textures/hud/");

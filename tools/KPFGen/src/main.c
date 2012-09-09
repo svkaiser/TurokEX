@@ -137,13 +137,14 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
     hwndWait = CreateDialogA(hAppInst, MAKEINTRESOURCEA(IDD_DIALOG1), NULL, (DLGPROC)LoadingDlgProc);
 
     PK_AddFolder("fonts/");
-
     StoreExternalFile("confont.tga", "fonts/confont.tga");
     TX_StoreFonts();
     SND_StoreSounds();
     Com_GetCartFile(
         "PC Turok Cart File (.dat) \0*.dat\0All Files (*.*)\0*.*\0",
         "Locate CARTFILE.DAT");
+    PK_AddFolder("textures/");
+    StoreExternalFile("default.tga", "textures/default.tga");
     TX_StoreTextures();
     MDL_StoreModels();
     LV_StoreLevels();

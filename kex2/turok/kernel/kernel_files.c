@@ -256,7 +256,7 @@ int KF_OpenFileCache(const char *filename, byte **data, int tag)
 
                     if(developer.value)
                     {
-                        Com_DPrintf("\n%s - shared hashes: %i\nloadtime: %fms\n\n",
+                        Com_DPrintf("\n%s - shared hashes: %i\nloadtime: %f seconds\n\n",
                             filename, pack->hashcount[hash],
                             (float)(Sys_GetMilliseconds() - time) / 1000.0f);
                     }

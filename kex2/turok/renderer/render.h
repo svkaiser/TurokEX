@@ -23,6 +23,78 @@
 #ifndef _RENDER_H_
 #define _RENDER_H_
 
+typedef struct
+{
+    vec3_t min;
+    vec3_t max;
+} bbox_t;
+
+//
+// MODELS
+//
+#define MDF_UNKNOWN1                1
+#define MDF_FULLBRIGHT              2
+#define MDF_NOCULLFACES             4
+#define MDF_RENDERSPECULAR          8
+#define MDF_SHINYSURFACE            16
+#define MDF_UNKNOWN32               32
+#define MDF_SOLID                   64
+#define MDF_MASKED                  128
+#define MDF_TRANSPARENT1            256
+#define MDF_TRANSPARENT2            512
+#define MDF_COLORIZE                1024
+#define MDF_METALSURFACE            2048
+#define MDF_UNKNOWN4096             4096
+#define MDF_UNKNOWN8192             8192
+#define MDF_UNKNOWN16384            16384
+#define MDF_UNKNOWN32768            32768
+#define MDF_UNKNOWN65536            65536
+
+typedef struct
+{
+    unsigned int    flags;
+    unsigned int    numverts;
+    unsigned int    numtris;
+    vec3_t          *xyz;
+    double          *coords;
+    vec3_t          *normals;
+    word            *tris;
+    char            texpath[MAX_FILEPATH];
+    rcolor          color1;
+    rcolor          color2;
+} mdlsection_t;
+
+typedef struct
+{
+    unsigned int    numsections;
+    mdlsection_t    *sections;
+} mdlmesh_t;
+
+typedef struct
+{
+    unsigned int    numvariants;
+    word            *variants;
+    unsigned int    nummeshes;
+    mdlmesh_t       *meshes;
+    unsigned int    numchildren;
+    word            *children;
+} mdlnode_t;
+
+typedef struct kmodel_s
+{
+    char            mdlpath[MAX_FILEPATH];
+    bbox_t          bbox;
+    unsigned int    numbehaviors;
+    unsigned int    numnodes;
+    mdlnode_t       *nodes;
+    struct kmodel_s *next;
+} kmodel_t;
+
+void Mdl_Init(void);
+
+//
+// MAIN
+//
 void R_DrawFrame(void);
 void R_FinishFrame(void);
 void R_Init(void);

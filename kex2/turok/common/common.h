@@ -33,11 +33,12 @@
 
 #define RGBA(r,g,b,a) ((rcolor)((((a)&0xff)<<24)|(((b)&0xff)<<16)|(((g)&0xff)<<8)|((r)&0xff)))
 
-#define COLOR_WHITE     0xFFFFFFFF
-#define COLOR_RED       0xFF0000FF
-#define COLOR_GREEN     0xFF00FF00
-#define COLOR_YELLOW    0xFF00FFFF
-#define COLOR_CYAN      0xFFFFFF00
+#define COLOR_WHITE         RGBA(0xFF, 0xFF, 0xFF, 0xFF)
+#define COLOR_WHITE_A(a)    RGBA(0xFF, 0xFF, 0xFF, a)
+#define COLOR_RED           RGBA(0xFF, 0, 0, 0xFF)
+#define COLOR_GREEN         RGBA(0, 0xFF, 0, 0xFF)
+#define COLOR_YELLOW        RGBA(0xFF, 0xFF, 0, 0xFF)
+#define COLOR_CYAN          RGBA(0, 0xFF, 0xFF, 0xFF)
 
 //
 // ENDIAN SWAPS
@@ -70,6 +71,9 @@ void Sys_Error(const char *string);
 //
 // COMMON
 //
+
+#define MAX_HASH    2048
+
 extern  int	myargc;
 extern  char** myargv;
 
@@ -84,6 +88,7 @@ int Com_CheckParam(char *check);
 void Com_Shutdown(void);
 void Com_WriteConfigFile(void);
 void Com_ReadConfigFile(const char *file);
+unsigned int Com_HashFileName(const char *name);
 
 //
 // CVARS
