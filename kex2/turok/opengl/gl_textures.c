@@ -30,6 +30,7 @@
 #include "kernel.h"
 
 static texture_t *tex_hashlist[MAX_HASH];
+static texture_t *tex_default;
 
 //
 // Tex_PadDims
@@ -155,7 +156,7 @@ texture_t *Tex_CacheTextureFile(const char *name, int clampmode, kbool masked)
 
         if(data == NULL)
         {
-            return NULL;
+            return tex_default;
         }
 
         texture = Tex_Alloc(name, data, width, height, clampmode);
@@ -163,5 +164,14 @@ texture_t *Tex_CacheTextureFile(const char *name, int clampmode, kbool masked)
     }
 
     return texture;
+}
+
+//
+// Tex_Init
+//
+
+void Tex_Init(void)
+{
+    tex_default = Tex_CacheTextureFile("textures/default.tga", DGL_CLAMP, false);
 }
 

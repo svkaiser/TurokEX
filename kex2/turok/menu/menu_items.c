@@ -304,7 +304,7 @@ static void Menu_DrawOptions(menu_t *menu)
     y = row;
     opacity = (menu->opacity * 150.0f) / 255.0f;
 
-    Menu_DrawFillBox(56, 26, 264, 208, 1, 0, 0, 0, 0, (byte)(255.0f * opacity));
+    Menu_DrawFillBox(56, 26, 264, 208, 2, 0, 0, 0, 0, (byte)(255.0f * opacity));
     Menu_DrawCenteredItems(menu, y + 16.0f, opacity, 15.0f);
 
     Draw_Pic("hud/h_options.tga", 266, 112, (byte)(255.0f * opacity), 1.0f);

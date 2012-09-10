@@ -212,6 +212,21 @@ typedef struct
 
 typedef struct
 {
+    short u1;
+    short u2;
+    short model;
+    short u3;
+    float scale;
+    short y;
+    short flags;
+    byte x;
+    byte z;
+    byte bbox[6];
+    short unknown[24];
+} mapinsttype1_t;
+
+typedef struct
+{
     float xyz[3];
     float scale[3];
     short bbox[6];
@@ -566,6 +581,7 @@ static void ProcessStaticInstances1(byte *data)
 
     for(i = 0; i < count; i++)
     {
+        mapinsttype1_t *mapinst = (mapinsttype1_t*)(data + 8 + (i * size));
     }
 }
 

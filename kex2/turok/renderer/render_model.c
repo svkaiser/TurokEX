@@ -204,7 +204,7 @@ static void Mdl_ParseSectionBlock(mdlmesh_t *mesh, scparser_t *parser)
                     SCMDL_XYZ, parser, true, PU_MODEL);
                 SC_AssignArray(mdltokens, AT_FLOAT, &section->coords, section->numverts * 2,
                     SCMDL_COORDS, parser, true, PU_MODEL);
-                SC_AssignArray(mdltokens, AT_VECTOR, (void*)&section->normals, section->numverts,
+                SC_AssignArray(mdltokens, AT_FLOAT, (void*)&section->normals, section->numverts * 3,
                     SCMDL_NORMALS, parser, true, PU_MODEL);
                 SC_ExpectNextToken(TK_RBRACK);
                 break;
@@ -257,11 +257,6 @@ static void Mdl_ParseMeshBlock(mdlnode_t *node, scparser_t *parser)
         SC_AssignInteger(mdltokens, &mesh->numsections,
             SCMDL_NUMSECTIONS, parser, true);
 
-        if(mesh->numsections <= 0)
-        {
-            SC_Error("Section count for mesh %i should be at least 1 or more", i);
-        }
-
         // read into section block
         Mdl_ParseSectionBlock(mesh, parser);
 
@@ -292,8 +287,13 @@ static void Mdl_ParseNodeBlock(kmodel_t *model, scparser_t *parser)
 
         SC_AssignInteger(mdltokens, &node->numchildren,
             SCMDL_NUMCHILDREN, parser, true);
-        SC_AssignArray(mdltokens, AT_SHORT, &node->children, node->numchildren,
-            SCMDL_CHILDREN, parser, true, PU_MODEL);
+
+        if(node->numchildren > 0)
+        {
+            SC_AssignArray(mdltokens, AT_SHORT, &node->children, node->numchildren,
+                SCMDL_CHILDREN, parser, true, PU_MODEL);
+        }
+
         SC_AssignInteger(mdltokens, &node->numvariants,
             SCMDL_NUMVARIANTS, parser, true);
 
@@ -468,7 +468,7 @@ static void FCmd_LoadTestModel(void)
     model = Mdl_Load(Cmd_GetArgv(1));
     if(model == NULL)
     {
-        Com_Warning("Couldn't open %s\n", Cmd_GetArgv(2));
+        return;
     }
 
     Com_DPrintf("\nloadtime: %f seconds\n\n",

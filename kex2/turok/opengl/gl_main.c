@@ -352,6 +352,28 @@ void GL_BindTexture(texture_t *texture)
 }
 
 //
+// GL_BindTextureName
+// Texture must already be allocated and loaded
+//
+
+void GL_BindTextureName(const char *name)
+{
+    texture_t *texture;
+
+    if(!(texture = Tex_Find(name)))
+    {
+        return;
+    }
+
+    if(texture->texid == prev_texture)
+    {
+        return;
+    }
+
+    dglBindTexture(GL_TEXTURE_2D, texture->texid);
+}
+
+//
 // GL_SetTextureUnit
 //
 
@@ -395,18 +417,10 @@ void GL_ClearView(rcolor clearcolor)
 
 void GL_SetVertexPointer(vtx_t *vtx)
 {
-    static vtx_t *dgl_prevptr = NULL;
-
-    // 20120623 villsa - avoid redundant calls by checking for
-    // the previous pointer that was set
-    if(dgl_prevptr == vtx)
-        return;
-
     dglTexCoordPointer(2, GL_FLOAT, sizeof(vtx_t), &vtx->tu);
     dglVertexPointer(3, GL_FLOAT, sizeof(vtx_t), vtx);
     dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vtx_t), &vtx->r);
-
-    dgl_prevptr = vtx;
+    dglNormalPointer(GL_FLOAT, sizeof(vtx_t), &vtx->nx);
 }
 
 //
@@ -531,6 +545,7 @@ void GL_Init(void)
     dglEnableClientState(GL_VERTEX_ARRAY);
     dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
     dglEnableClientState(GL_COLOR_ARRAY);
+    dglEnableClientState(GL_NORMAL_ARRAY);
 
     DGL_CLAMP = (GetVersionInt(gl_version) >= OPENGL_VERSION_1_2 ? GL_CLAMP_TO_EDGE : GL_CLAMP);
 
@@ -538,5 +553,6 @@ void GL_Init(void)
         dglGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max_anisotropic);
 
     Draw_Init();
+    Tex_Init();
 }
 

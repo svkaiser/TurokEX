@@ -29,6 +29,140 @@
 #include "kernel.h"
 #include "render.h"
 #include "common.h"
+#include "mathlib.h"
+
+CVAR_EXTERNAL(cl_fov);
+
+//
+// R_DrawTestCube
+//
+
+static void R_DrawTestCube(void)
+{
+    GL_SetState(GLSTATE_CULL, false);
+    GL_BindTextureName("textures/default.tga");
+    dglEnable(GL_DEPTH_TEST);
+
+    dglColor4ub(255, 255, 255, 255);
+    dglBegin(GL_POLYGON);
+    dglTexCoord2f(0, 0);
+    dglVertex3f(-32, 32, 32);
+    dglTexCoord2f(1, 0);
+    dglVertex3f(32, 32, 32);
+    dglTexCoord2f(1, 1);
+    dglVertex3f(32, -32, 32);
+    dglTexCoord2f(0, 1);
+    dglVertex3f(-32, -32, 32);
+    dglEnd();
+    dglBegin(GL_POLYGON);
+    dglTexCoord2f(0, 0);
+    dglVertex3f(32, 32, 32);
+    dglTexCoord2f(1, 0);
+    dglVertex3f(32, 32, -32);
+    dglTexCoord2f(1, 1);
+    dglVertex3f(32, -32, -32);
+    dglTexCoord2f(0, 1);
+    dglVertex3f(32, -32, 32);
+    dglEnd();
+    dglBegin(GL_POLYGON);
+    dglTexCoord2f(0, 0);
+    dglVertex3f(32, 32, -32);
+    dglTexCoord2f(1, 0);
+    dglVertex3f(-32, 32, -32);
+    dglTexCoord2f(1, 1);
+    dglVertex3f(-32, -32, -32);
+    dglTexCoord2f(0, 1);
+    dglVertex3f(32, -32, -32);
+    dglEnd();
+    dglBegin(GL_POLYGON);
+    dglTexCoord2f(0, 0);
+    dglVertex3f(-32, 32, -32);
+    dglTexCoord2f(1, 0);
+    dglVertex3f(-32, 32, 32);
+    dglTexCoord2f(1, 1);
+    dglVertex3f(-32, -32, 32);
+    dglTexCoord2f(0, 1);
+    dglVertex3f(-32, -32, -32);
+    dglEnd();
+    dglBegin(GL_POLYGON);
+    dglTexCoord2f(0, 0);
+    dglVertex3f(-32, 32, -32);
+    dglTexCoord2f(1, 0);
+    dglVertex3f(32, 32, -32);
+    dglTexCoord2f(1, 1);
+    dglVertex3f(32, 32, 32);
+    dglTexCoord2f(0, 1);
+    dglVertex3f(-32, 32, 32);
+    dglEnd();
+    dglBegin(GL_POLYGON);
+    dglTexCoord2f(0, 0);
+    dglVertex3f(-32, -32, 32);
+    dglTexCoord2f(1, 0);
+    dglVertex3f(32, -32, 32);
+    dglTexCoord2f(1, 1);
+    dglVertex3f(32, -32, -32);
+    dglTexCoord2f(0, 1);
+    dglVertex3f(-32, -32, -32);
+    dglEnd();
+
+    GL_SetState(GLSTATE_CULL, true);
+    dglDisable(GL_DEPTH_TEST);
+}
+
+//
+// R_DrawTestModel
+//
+
+static void R_DrawTestModel(const char *file)
+{
+    kmodel_t *model;
+    float *coords;
+    vec3_t *vtx;
+    float *normals;
+    word *tris;
+    int count;
+    unsigned int i;
+
+    if(!(model = Mdl_Load(file)))
+    {
+        return;
+    }
+
+    dglCullFace(GL_BACK);
+    dglEnable(GL_DEPTH_TEST);
+    dglColor4ub(255, 255, 255, 255);
+
+    dglDisableClientState(GL_COLOR_ARRAY);
+
+    for(i = 0; i < model->nodes[0].meshes[0].numsections; i++)
+    {
+        coords  = model->nodes[0].meshes[0].sections[i].coords;
+        vtx     = model->nodes[0].meshes[0].sections[i].xyz;
+        normals = model->nodes[0].meshes[0].sections[i].normals;
+        tris    = model->nodes[0].meshes[0].sections[i].tris;
+
+        dglTexCoordPointer(2, GL_FLOAT, 0, coords);
+        dglVertexPointer(3, GL_FLOAT, sizeof(vec3_t), vtx);
+        dglNormalPointer(GL_FLOAT, 0, normals);
+
+        GL_BindTexture(Tex_CacheTextureFile(
+            model->nodes[0].meshes[0].sections[i].texpath, GL_REPEAT, false));
+
+        count = model->nodes[0].meshes[0].sections[i].numtris;
+
+        if(has_GL_EXT_compiled_vertex_array)
+            dglLockArraysEXT(0, (count / 3) * 2);
+
+        dglDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_SHORT, tris);
+
+        if(has_GL_EXT_compiled_vertex_array)
+            dglUnlockArraysEXT();
+    }
+
+    dglEnableClientState(GL_COLOR_ARRAY);
+    dglDisable(GL_DEPTH_TEST);
+    dglCullFace(GL_FRONT);
+}
 
 //
 // R_DrawFrame
@@ -36,7 +170,20 @@
 
 void R_DrawFrame(void)
 {
+    mtx_t mtx;
+
     GL_ClearView(0xFF3f3f3f);
+    dglMatrixMode(GL_PROJECTION);
+    dglLoadIdentity();
+    Mtx_ViewFrustum(video_width, video_height, cl_fov.value, 0.1f);
+    dglMatrixMode(GL_MODELVIEW);
+    dglLoadIdentity();
+    Mtx_Identity(mtx);
+    Mtx_SetTranslation(mtx, 0, -1024, -1500);
+    dglMultMatrixf(mtx);
+
+    R_DrawTestCube();
+    R_DrawTestModel("models/mdl320/mdl320.kmesh");
 
     GL_SetOrtho();
 }

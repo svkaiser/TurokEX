@@ -1063,6 +1063,9 @@ void SC_AssignArray(const sctokens_t *tokenlist, arraytype_t type,
             len = sizeof(int);
             break;
         case AT_FLOAT:
+            len = sizeof(float);
+            break;
+        case AT_DOUBLE:
             len = sizeof(double);
             break;
         case AT_VECTOR:
@@ -1098,11 +1101,21 @@ void SC_AssignArray(const sctokens_t *tokenlist, arraytype_t type,
             break;
         case AT_FLOAT:
             {
-                double *fbuf = (double*)buf;
+                float *fbuf = (float*)buf;
 
                 for(i = 0; i < count; i++)
                 {
-                    fbuf[i] = SC_GetFloat();
+                    fbuf[i] = (float)SC_GetFloat();
+                }
+            }
+            break;
+        case AT_DOUBLE:
+            {
+                double *dbuf = (double*)buf;
+
+                for(i = 0; i < count; i++)
+                {
+                    dbuf[i] = SC_GetFloat();
                 }
             }
             break;
@@ -1112,9 +1125,9 @@ void SC_AssignArray(const sctokens_t *tokenlist, arraytype_t type,
 
                 for(i = 0; i < count; i++)
                 {
-                    vbuf[i][0] = SC_GetFloat();
-                    vbuf[i][1] = SC_GetFloat();
-                    vbuf[i][2] = SC_GetFloat();
+                    vbuf[i][0] = (float)SC_GetFloat();
+                    vbuf[i][1] = (float)SC_GetFloat();
+                    vbuf[i][2] = (float)SC_GetFloat();
                 }
             }
             break;

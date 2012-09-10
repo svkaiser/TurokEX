@@ -152,9 +152,9 @@ void Img_LoadTGA(const char *name, byte **output, int *width, int *height, kbool
                     data_r = data + r * tga.width * 4;
                     for(c = 0; c < tga.width; c++)
                     {
-                        *data_r++ = Img_GetRGBGamma(p[*rover].r);
-                        *data_r++ = Img_GetRGBGamma(p[*rover].g);
                         *data_r++ = Img_GetRGBGamma(p[*rover].b);
+                        *data_r++ = Img_GetRGBGamma(p[*rover].g);
+                        *data_r++ = Img_GetRGBGamma(p[*rover].r);
                         *data_r++ = masked ? (*rover == 0 ? 0 : 0xff) : 0xff;
                         rover++;
                     }
@@ -187,16 +187,18 @@ void Img_LoadTGA(const char *name, byte **output, int *width, int *height, kbool
                     switch(tga.pixel_bits)
                     {
                     case 24:
-                        *data_r++ = Img_GetRGBGamma(*rover++);
-                        *data_r++ = Img_GetRGBGamma(*rover++);
-                        *data_r++ = Img_GetRGBGamma(*rover++);
+                        *data_r++ = Img_GetRGBGamma(rover[2]);
+                        *data_r++ = Img_GetRGBGamma(rover[1]);
+                        *data_r++ = Img_GetRGBGamma(rover[0]);
                         *data_r++ = 0xff;
+                        rover += 3;
                         break;
                     case 32:
-                        *data_r++ = Img_GetRGBGamma(*rover++);
-                        *data_r++ = Img_GetRGBGamma(*rover++);
-                        *data_r++ = Img_GetRGBGamma(*rover++);
-                        *data_r++ = *rover++;
+                        *data_r++ = Img_GetRGBGamma(rover[2]);
+                        *data_r++ = Img_GetRGBGamma(rover[1]);
+                        *data_r++ = Img_GetRGBGamma(rover[0]);
+                        *data_r++ = rover[3];
+                        rover += 4;
                         break;
                     default:
                         Com_Error("unknown pixel bit for %s", name);

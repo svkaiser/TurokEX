@@ -56,8 +56,8 @@ typedef struct
     unsigned int    numverts;
     unsigned int    numtris;
     vec3_t          *xyz;
-    double          *coords;
-    vec3_t          *normals;
+    float           *coords;
+    float           *normals;
     word            *tris;
     char            texpath[MAX_FILEPATH];
     rcolor          color1;
@@ -90,6 +90,8 @@ typedef struct kmodel_s
     struct kmodel_s *next;
 } kmodel_t;
 
+kmodel_t *Mdl_Find(const char *name);
+kmodel_t *Mdl_Load(const char *file);
 void Mdl_Init(void);
 
 //

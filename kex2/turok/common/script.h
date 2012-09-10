@@ -55,6 +55,7 @@ typedef enum
     AT_SHORT,
     AT_INTEGER,
     AT_FLOAT,
+    AT_DOUBLE,
     AT_VECTOR
 } arraytype_t;
 

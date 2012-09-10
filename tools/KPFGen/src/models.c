@@ -515,9 +515,9 @@ static void ProcessGeometry(byte *data)
         Com_Strcat("                            texture = \"textures/tex%04d_00.tga\"\n",
             header->texture);
     }
-    Com_Strcat("                            rgba = %i %i %i %i\n",
-        header->rgba1[0], header->rgba1[1], header->rgba1[2], header->rgba1[3]);
     Com_Strcat("                            // rgba = %i %i %i %i\n",
+        header->rgba1[0], header->rgba1[1], header->rgba1[2], header->rgba1[3]);
+    Com_Strcat("                            rgba = %i %i %i %i\n",
         header->rgba2[0], header->rgba2[1], header->rgba2[2], header->rgba2[3]);
 
     Com_Strcat("\n                        numtriangles = %i\n",
@@ -591,21 +591,19 @@ static void ProcessLimbData(byte *data)
     children = Com_GetCartOffset(matrix, CHUNK_MATRIX_COUNT, 0);
 
     Com_Strcat("            numchildren = %i\n", children);
-    Com_Strcat("            children = { ");
 
-    if(children <= 0)
+    if(children > 0)
     {
-        Com_Strcat("-1 ");
-    }
-    else
-    {
+        Com_Strcat("            children = { ");
+
         for(i = 0; i < children; i++)
         {
             Com_Strcat("%i ",
                 Com_GetCartOffset(matrix, CHUNK_MATRIX_OFFSET(i), 0));
         }
+
+        Com_Strcat("}\n");
     }
-    Com_Strcat("}\n");
 
     variantcount = Com_GetCartOffset(variants, CHUNK_VARIATIONS_COUNT, 0);
     Com_Strcat("\n            numvariants = %i\n", variantcount);

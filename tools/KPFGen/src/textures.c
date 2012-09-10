@@ -163,7 +163,7 @@ static void AddTexture(byte *data, int size)
             tga.cmap_bits = 0;
             tga.has_cmap = 0;
             tga.cmap_len = 0;
-            tga.pixel_bits = 32;
+            tga.pixel_bits = 24;
             tga.flags = 8;
         }
         else

@@ -40,6 +40,9 @@ typedef struct
     byte    g;
     byte    b;
     byte    a;
+    float   nx;
+    float   ny;
+    float   nz;
 } vtx_t;
 
 //
@@ -89,6 +92,7 @@ typedef struct texture_s
     struct texture_s *next;
 } texture_t;
 
+void Tex_Init(void);
 void Tex_Shutdown(void);
 texture_t *Tex_Alloc(const char *name, byte *data,
                      int width, int height, int clampmode);
@@ -104,6 +108,7 @@ void GL_SwapBuffers(void);
 void GL_SetState(int bit, kbool enable);
 void GL_SetTextureFilter(void);
 void GL_BindTexture(texture_t *texture);
+void GL_BindTextureName(const char *name);
 void GL_SetTextureUnit(int unit, kbool enable);
 void GL_SetVertexPointer(vtx_t *vtx);
 void GL_Triangle(int v0, int v1, int v2);
