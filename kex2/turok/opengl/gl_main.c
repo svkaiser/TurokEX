@@ -417,10 +417,10 @@ void GL_ClearView(rcolor clearcolor)
 
 void GL_SetVertexPointer(vtx_t *vtx)
 {
+    dglNormalPointer(GL_FLOAT, sizeof(vtx_t), &vtx->nx);
     dglTexCoordPointer(2, GL_FLOAT, sizeof(vtx_t), &vtx->tu);
     dglVertexPointer(3, GL_FLOAT, sizeof(vtx_t), vtx);
     dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vtx_t), &vtx->r);
-    dglNormalPointer(GL_FLOAT, sizeof(vtx_t), &vtx->nx);
 }
 
 //

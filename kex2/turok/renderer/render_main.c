@@ -110,17 +110,62 @@ static void R_DrawTestCube(void)
 }
 
 //
+// R_DrawSection
+//
+
+void R_DrawSection(mdlsection_t *section)
+{
+    if(section->flags & MDF_NOCULLFACES)
+    {
+        GL_SetState(GLSTATE_CULL, false);
+    }
+
+    if(section->flags & MDF_MASKED)
+    {
+        GL_SetState(GLSTATE_BLEND, 1);
+        dglEnable(GL_ALPHA_TEST);
+    }
+
+    dglColor4ubv((byte*)&section->color1);
+
+    dglNormalPointer(GL_FLOAT, sizeof(float), section->normals);
+    dglTexCoordPointer(2, GL_FLOAT, 0, section->coords);
+    dglVertexPointer(3, GL_FLOAT, sizeof(vec3_t), section->xyz);
+
+    GL_BindTexture(Tex_CacheTextureFile(
+        section->texpath, GL_REPEAT, section->flags & MDF_MASKED));
+
+    if(has_GL_EXT_compiled_vertex_array)
+    {
+        dglLockArraysEXT(0, (section->numtris / 3) * 2);
+    }
+
+    dglDrawElements(GL_TRIANGLES, section->numtris, GL_UNSIGNED_SHORT, section->tris);
+
+    if(has_GL_EXT_compiled_vertex_array)
+    {
+        dglUnlockArraysEXT();
+    }
+
+    if(section->flags & MDF_MASKED)
+    {
+        GL_SetState(GLSTATE_BLEND, 0);
+        dglDisable(GL_ALPHA_TEST);
+    }
+
+    if(section->flags & MDF_NOCULLFACES)
+    {
+        GL_SetState(GLSTATE_CULL, true);
+    }
+}
+
+//
 // R_DrawTestModel
 //
 
 static void R_DrawTestModel(const char *file)
 {
     kmodel_t *model;
-    float *coords;
-    vec3_t *vtx;
-    float *normals;
-    word *tris;
-    int count;
     unsigned int i;
 
     if(!(model = Mdl_Load(file)))
@@ -130,33 +175,12 @@ static void R_DrawTestModel(const char *file)
 
     dglCullFace(GL_BACK);
     dglEnable(GL_DEPTH_TEST);
-    dglColor4ub(255, 255, 255, 255);
 
     dglDisableClientState(GL_COLOR_ARRAY);
 
     for(i = 0; i < model->nodes[0].meshes[0].numsections; i++)
     {
-        coords  = model->nodes[0].meshes[0].sections[i].coords;
-        vtx     = model->nodes[0].meshes[0].sections[i].xyz;
-        normals = model->nodes[0].meshes[0].sections[i].normals;
-        tris    = model->nodes[0].meshes[0].sections[i].tris;
-
-        dglTexCoordPointer(2, GL_FLOAT, 0, coords);
-        dglVertexPointer(3, GL_FLOAT, sizeof(vec3_t), vtx);
-        dglNormalPointer(GL_FLOAT, 0, normals);
-
-        GL_BindTexture(Tex_CacheTextureFile(
-            model->nodes[0].meshes[0].sections[i].texpath, GL_REPEAT, false));
-
-        count = model->nodes[0].meshes[0].sections[i].numtris;
-
-        if(has_GL_EXT_compiled_vertex_array)
-            dglLockArraysEXT(0, (count / 3) * 2);
-
-        dglDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_SHORT, tris);
-
-        if(has_GL_EXT_compiled_vertex_array)
-            dglUnlockArraysEXT();
+        R_DrawSection(&model->nodes[0].meshes[0].sections[i]);
     }
 
     dglEnableClientState(GL_COLOR_ARRAY);

@@ -119,7 +119,8 @@ static void AddTexture(byte *data, int size)
     int texcount;
     int palcount;
     int i;
-    int j;
+    int row;
+    int col;
     byte *buffer;
     byte *rover;
 
@@ -197,43 +198,77 @@ static void AddTexture(byte *data, int size)
 
         if(palcount && tga.has_cmap)
         {
-            for(j = 0; j < 256; j++)
+            if(tex->flags & 0x1)
             {
-                Com_WriteMem8(rover, pal[j].r);
-                Com_WriteMem8(rover, pal[j].g);
-                Com_WriteMem8(rover, pal[j].b);
-            }
-        }
-
-        for(j = 0; j < texsize; j++)
-        {
-            if(tex->flags & 0x4 && !palcount)
-            {
-                short val;
-                short *tmp;
-                int r, g, b;
-
-                tmp = (short*)texdata;
-                val = tmp[j];
-                r = (Com_Swap16(val) & 0x003E) << 2;
-                g = (Com_Swap16(val) & 0x07C0) >> 3;
-                b = (Com_Swap16(val) & 0xF800) >> 8;
-
-                Com_WriteMem8(rover, r);
-                Com_WriteMem8(rover, g);
-                Com_WriteMem8(rover, b);
-            }
-            else if(tex->flags & 0x1)
-            {
-                byte t1 = (texdata[j] & 0xf);
-                byte t2 = (texdata[j] >> 4);
-
-                Com_WriteMem8(rover, t2);
-                Com_WriteMem8(rover, t1);
+                for(row = (16-1); row >= 0; row--)
+                {
+                    for(col = 0; col < 16; col++)
+                    {
+                        Com_WriteMem8(rover, pal[row * 16 + col].r);
+                        Com_WriteMem8(rover, pal[row * 16 + col].g);
+                        Com_WriteMem8(rover, pal[row * 16 + col].b);
+                    }
+                }
             }
             else
             {
-                Com_WriteMem8(rover, texdata[j]);
+                for(col = 255; col >= 0; col--)
+                {
+                    Com_WriteMem8(rover, pal[col].r);
+                    Com_WriteMem8(rover, pal[col].g);
+                    Com_WriteMem8(rover, pal[col].b);
+                }
+            }
+        }
+
+        if(tex->flags & 0x1 && palcount)
+        {
+            for(row = (tga.height - 1); row >= 0; row--)
+            {
+                for(col = 0; col < (tga.width >> 1); col++)
+                {
+                    byte t1;
+                    byte t2;
+
+                    t1 = (texdata[row * (tga.width >> 1) + col] & 0xf);
+                    t2 = (texdata[row * (tga.width >> 1) + col] >> 4);
+
+                    Com_WriteMem8(rover, 0xff - (0xf - t2));
+                    Com_WriteMem8(rover, 0xff - (0xf - t1));
+                }
+            }
+        }
+        else
+        {
+            for(row = tga.height - 1; row >= 0; row--)
+            {
+                for(col = 0; col < tga.width; col++)
+                {
+                    byte *data_rover;
+
+                    if(tex->flags & 0x4 && !palcount)
+                    {
+                        short val;
+                        short *tmp;
+                        int r, g, b;
+
+                        data_rover = texdata + row * tga.width * 2;
+
+                        tmp = (short*)data_rover;
+                        val = tmp[col];
+                        r = (Com_Swap16(val) & 0x003E) << 2;
+                        g = (Com_Swap16(val) & 0x07C0) >> 3;
+                        b = (Com_Swap16(val) & 0xF800) >> 8;
+
+                        Com_WriteMem8(rover, r);
+                        Com_WriteMem8(rover, g);
+                        Com_WriteMem8(rover, b);
+                    }
+                    else
+                    {
+                        Com_WriteMem8(rover, 0xff - texdata[row * tga.width + col]);
+                    }
+                }
             }
         }
 
