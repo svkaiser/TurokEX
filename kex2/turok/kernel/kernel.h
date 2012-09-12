@@ -26,7 +26,6 @@
 #include "SDL.h"
 
 #include "type.h"
-#include "client.h"
 
 //
 // SYSTEM
@@ -75,10 +74,10 @@ typedef enum
 
 typedef struct
 {
-    int         mousex;
-    int         mousey;
-    int         joyx;
-    int         joyy;
+    float       mousex;
+    float       mousey;
+    float       joyx;
+    float       joyy;
     ctrlkey_t   key[NUM_CTRLKEYS];
     int         flags;
 } control_t;
@@ -93,6 +92,29 @@ void Key_Init(void);
 //
 // INPUT
 //
+
+// Input event types.
+typedef enum
+{
+    ev_keydown,
+    ev_keyup,
+    ev_mouse,
+    ev_mousedown,
+    ev_mouseup,
+    ev_mousewheel,
+    ev_gamepad
+} evtype_t;
+
+// Event structure.
+typedef struct
+{
+    evtype_t    type;
+    int         data1;  // keys / mouse/joystick buttons
+    int         data2;  // mouse/joystick x move
+    int         data3;  // mouse/joystick y move
+    int         data4;  // misc data
+} event_t;
+
 void IN_PollInput(void);
 void IN_UpdateGrab(void);
 void IN_Init(void);

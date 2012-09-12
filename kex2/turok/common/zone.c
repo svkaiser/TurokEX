@@ -137,6 +137,7 @@ static void FCmd_ZoneStats(void)
     Com_CPrintf(COLOR_GREEN, "Auto: %ikb\n", Z_TagUsage(PU_AUTO) >> 10);
     Com_CPrintf(COLOR_GREEN, "File: %ikb\n", Z_TagUsage(PU_FILE) >> 10);
     Com_CPrintf(COLOR_GREEN, "Texture: %ikb\n", Z_TagUsage(PU_TEXTURE) >> 10);
+    Com_CPrintf(COLOR_GREEN, "Model: %ikb\n", Z_TagUsage(PU_MODEL) >> 10);
     Com_CPrintf(COLOR_GREEN, "Cache: %ikb\n", Z_TagUsage(PU_CACHE) >> 10);
     Com_Printf("\n");
 }

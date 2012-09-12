@@ -126,6 +126,12 @@ void R_DrawSection(mdlsection_t *section)
         dglEnable(GL_ALPHA_TEST);
     }
 
+    if(section->flags & MDF_SHINYSURFACE)
+    {
+        dglEnable(GL_TEXTURE_GEN_S);
+        dglEnable(GL_TEXTURE_GEN_T);
+    }
+
     dglColor4ubv((byte*)&section->color1);
 
     dglNormalPointer(GL_FLOAT, sizeof(float), section->normals);
@@ -151,6 +157,12 @@ void R_DrawSection(mdlsection_t *section)
     {
         GL_SetState(GLSTATE_BLEND, 0);
         dglDisable(GL_ALPHA_TEST);
+    }
+
+    if(section->flags & MDF_SHINYSURFACE)
+    {
+        dglDisable(GL_TEXTURE_GEN_S);
+        dglDisable(GL_TEXTURE_GEN_T);
     }
 
     if(section->flags & MDF_NOCULLFACES)
@@ -201,10 +213,9 @@ void R_DrawFrame(void)
     dglLoadIdentity();
     Mtx_ViewFrustum(video_width, video_height, cl_fov.value, 0.1f);
     dglMatrixMode(GL_MODELVIEW);
-    dglLoadIdentity();
     Mtx_Identity(mtx);
     Mtx_SetTranslation(mtx, 0, -1024, -1500);
-    dglMultMatrixf(mtx);
+    dglLoadMatrixf(mtx);
 
     R_DrawTestCube();
     R_DrawTestModel("models/mdl320/mdl320.kmesh");

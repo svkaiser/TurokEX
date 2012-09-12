@@ -23,6 +23,46 @@
 #ifndef _SERVER_H_
 #define _SERVER_H_
 
+#include "enet/enet.h"
+#include "client.h"
+#include "player.h"
+
+#define MAXCLIENTS MAXPLAYERS
+
+typedef enum
+{
+    SV_STATE_UNAVAILABLE,
+    SV_STATE_BUSY,
+    SV_STATE_ACTIVE
+} server_state_e;
+
+typedef enum
+{
+    SVC_STATE_INACTIVE,
+    SVC_STATE_ACTIVE
+} svclient_state_e;
+
+typedef struct
+{
+    player_t            *player;
+    ENetPeer            *peer;
+    unsigned int        client_id;
+    svclient_state_e    state;
+} svclient_t;
+
+typedef struct
+{
+    ENetHost        *host;
+    kbool           local;
+    server_state_e  state;
+    uint32          maxclients;
+    int             time;
+    float           runtime;
+} server_t;
+
+extern svclient_t svclients[MAXCLIENTS];
+extern server_t server;
+
 void SV_Shutdown(void);
 void SV_CreateHost(void);
 void SV_Run(int msec);

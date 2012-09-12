@@ -209,15 +209,15 @@ void IN_MouseAccelChange(void)
 // IN_MouseAccel
 //
 
-int IN_MouseAccel(int val)
+static float IN_MouseAccel(int val)
 {
     if(!cl_macceleration.value)
-        return val;
+        return (float)val;
     
     if(val < 0)
         return -IN_MouseAccel(-val);
     
-    return (int)(pow((double)val, (double)mouse_accelfactor));
+    return (float)(pow((double)val, (double)mouse_accelfactor));
 }
 
 //
@@ -230,8 +230,8 @@ void IN_MouseMove(int x, int y)
     
     ctrl = &control;
 
-    ctrl->mousex += ((IN_MouseAccel(x) * (int)cl_msensitivityx.value) / 128);
-    ctrl->mousey += ((IN_MouseAccel(y) * (int)cl_msensitivityy.value) / 128);
+    ctrl->mousex += ((IN_MouseAccel(x) * cl_msensitivityx.value) / 128.0f);
+    ctrl->mousey += ((IN_MouseAccel(y) * cl_msensitivityy.value) / 128.0f);
 }
 
 //

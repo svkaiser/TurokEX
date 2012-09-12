@@ -170,13 +170,20 @@ void Cmd_Init(void);
 //
 // CLIENT PACKET TYPES
 //
-#define CLIENT_PACKET_PING  1
-#define CLIENT_PACKET_SAY   2
-#define CLIENT_PACKET_CMD   3
+#define CLIENT_PACKET_PING          1
+#define CLIENT_PACKET_SAY           2
+#define CLIENT_PACKET_CMD           3
 
 //
 // SERVER PACKET TYPES
 //
-#define SERVER_PACKET_PING  1
+#define SERVER_PACKET_PING          1
+#define SERVER_PACKET_CLIENTINFO    2
+#define SERVER_PACKET_MSG           3
+
+//
+// SERVER MESSAGES
+//
+#define SERVER_MSG_FULL             1
 
 #endif

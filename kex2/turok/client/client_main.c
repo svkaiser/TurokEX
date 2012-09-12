@@ -33,6 +33,8 @@
 #include "menu.h"
 #include "gl.h"
 
+client_t client;
+
 static kbool bDebugTime;
 
 CVAR(cl_name, player);
@@ -54,47 +56,23 @@ CVAR_CMD(cl_maxfps, 60)
     }
 }
 
-typedef enum
-{
-    CL_STATE_UNINITIALIZED,
-    CL_STATE_CONNECTING,
-    CL_STATE_CONNECTED,
-    CL_STATE_DISCONNECTED
-} client_state_e;
-
-#define CL_BACKUP_CMDS  128
-
-typedef struct
-{
-    ENetHost        *host;
-    client_state_e  state;
-    ENetPeer        *peer;
-    int             client_id;
-    int             time;
-    float           runtime;
-    kbool           local;
-    int             tics;
-    ticcmd_t        cmd;
-} kex_client_t;
-
-kex_client_t kex_client;
-
 //
 // CL_DestroyClient
 //
 
 void CL_DestroyClient(void)
 {
-    if(kex_client.host)
+    if(client.host)
     {
-        if(kex_client.state == CL_STATE_CONNECTED &&
-            kex_client.peer != NULL)
+        if(client.peer != NULL)
         {
-            enet_peer_disconnect(kex_client.peer, 0);
+            enet_peer_disconnect(client.peer, 0);
+            enet_peer_reset(client.peer);
         }
 
-        enet_host_destroy(kex_client.host);
-        kex_client.host = NULL;
+        enet_host_destroy(client.host);
+        client.host = NULL;
+        client.state = CL_STATE_DISCONNECTED;
     }
 }
 
@@ -118,132 +96,34 @@ void CL_Connect(const char *address)
 
     enet_address_set_host(&addr, address);
     addr.port = (int)cl_port.value;
-    kex_client.peer = enet_host_connect(kex_client.host, &addr, 2, 0);
+    client.peer = enet_host_connect(client.host, &addr, 2, 0);
     enet_address_get_host_ip(&addr, ip, 32);
     Com_Printf("Connecting to %s:%u...\n", ip, addr.port);
 
-    if(kex_client.peer == NULL)
+    if(client.peer == NULL)
     {
         Com_Warning("No available peers for initiating an ENet connection.\n");
     }
     else
     {
-        kex_client.state = CL_STATE_CONNECTING;
+        client.state = CL_STATE_CONNECTING;
     }
 }
 
 //
-// CL_Responder
+// CL_ReadClientInfo
 //
 
-kbool CL_Responder(event_t *ev)
+static void CL_ReadClientInfo(ENetPacket *packet)
 {
-    switch(ev->type)
-    {
-    case ev_mouse:
-        IN_MouseMove(ev->data1, ev->data2);
-        return true;
+    int tmp;
 
-    case ev_keydown:
-        Key_ExecCmd(ev->data1, false);
-        return true;
+    Packet_Read8(packet, &client.client_id);
+    Packet_Read8(packet, &tmp);
+    client.state = CL_STATE_READY;
+    client.localplayer = &players[tmp];
 
-    case ev_keyup:
-        Key_ExecCmd(ev->data1, true);
-        return true;
-    }
-
-    return false;
-}
-
-//
-// CL_WriteTiccmd
-//
-
-static void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd)
-{
-    byte bits = 0;
-
-#define DIFF_TICCMDS(name, bit)         \
-    if(cmd->name != 0)                  \
-    bits |= bit
-
-#define WRITE_TICCMD8(name, bit)        \
-    if(bits & bit)                      \
-    Packet_Write8(packet, cmd->name)
-
-#define WRITE_TICCMD16(name, bit)       \
-    if(bits & bit)                      \
-    Packet_Write16(packet, cmd->name)
-
-    DIFF_TICCMDS(forwardmove, CL_TICDIFF_FORWARD);
-    DIFF_TICCMDS(sidemove, CL_TICDIFF_SIDE);
-    DIFF_TICCMDS(angleturn, CL_TICDIFF_TURN);
-    DIFF_TICCMDS(pitch, CL_TICDIFF_PITCH);
-    DIFF_TICCMDS(buttons, CL_TICDIFF_BUTTONS);
-
-    Packet_Write8(packet, bits);
-
-    WRITE_TICCMD8(forwardmove, CL_TICDIFF_FORWARD);
-    WRITE_TICCMD8(sidemove, CL_TICDIFF_SIDE);
-    WRITE_TICCMD16(angleturn, CL_TICDIFF_TURN);
-    WRITE_TICCMD16(pitch, CL_TICDIFF_PITCH);
-    WRITE_TICCMD8(buttons, CL_TICDIFF_BUTTONS);
-
-    Packet_Write8(packet, cmd->msec);
-
-#undef WRITE_TICCMD16
-#undef WRITE_TICCMD8
-#undef DIFF_TICCMDS
-}
-
-//
-// CL_BuildTiccmd
-//
-
-static void CL_BuildTiccmd(void)
-{
-    ticcmd_t cmd;
-    control_t *ctrl;
-    int msec;
-    ENetPacket *packet;
-
-    memset(&cmd, 0, sizeof(ticcmd_t));
-    ctrl = &control;
-
-    if(ctrl->key[KEY_ATTACK])
-    {
-        cmd.buttons |= BT_ATTACK;
-    }
-
-    if(ctrl->key[KEY_JUMP])
-    {
-        cmd.buttons |= BT_JUMP;
-    }
-
-    if(ctrl->key[KEY_CENTER])
-    {
-        cmd.buttons |= BT_CENTER;
-    }
-
-    msec = (int)(kex_client.runtime * 1000);
-    if(msec > 250)
-    {
-        msec = 100;
-    }
-
-    cmd.msec = msec;
-
-    if(!(packet = Packet_New()))
-    {
-        return;
-    }
-
-    Packet_Write8(packet, CLIENT_PACKET_CMD);
-
-    CL_WriteTiccmd(packet, &cmd);
-    kex_client.cmd = cmd;
-    Packet_Send(packet, kex_client.peer);
+    Com_DPrintf("CL_ReadClientInfo: ID is %i\n", client.client_id);
 }
 
 //
@@ -261,6 +141,11 @@ void CL_ProcessServerPackets(ENetPacket *packet, ENetEvent *cev)
     case SERVER_PACKET_PING:
         Com_Printf("Recieved acknowledgement from server\n");
         break;
+
+    case SERVER_PACKET_CLIENTINFO:
+        CL_ReadClientInfo(packet);
+        break;
+
     default:
         Com_Warning("Recieved unknown packet type: %i\n", type);
         break;
@@ -270,25 +155,25 @@ void CL_ProcessServerPackets(ENetPacket *packet, ENetEvent *cev)
 }
 
 //
-// CL_CheckHost
+// CL_CheckHostMsg
 //
 
-static void CL_CheckHost(void)
+static void CL_CheckHostMsg(void)
 {
     ENetEvent cev;
 
-    while(enet_host_service(kex_client.host, &cev, 0) > 0)
+    while(enet_host_service(client.host, &cev, 0) > 0)
     {
         switch(cev.type)
         {
         case ENET_EVENT_TYPE_CONNECT:
             Com_Printf("connected to host\n");
-            kex_client.state = CL_STATE_CONNECTED;
+            client.state = CL_STATE_CONNECTED;
             break;
 
         case ENET_EVENT_TYPE_DISCONNECT:
             Com_Printf("disconnected from host\n");
-            kex_client.state = CL_STATE_DISCONNECTED;
+            client.state = CL_STATE_DISCONNECTED;
             break;
 
         case ENET_EVENT_TYPE_RECEIVE:
@@ -296,17 +181,6 @@ static void CL_CheckHost(void)
             break;
         }
     }
-}
-
-//
-// CL_Ticker
-//
-
-static void CL_Ticker(void)
-{
-    Menu_Ticker();
-    Con_Ticker();
-    kex_client.tics++;
 }
 
 //
@@ -320,11 +194,24 @@ static void CL_DrawDebug(void)
         Draw_Text(0, 16,  COLOR_GREEN, 1, "-------------------");
         Draw_Text(0, 32,  COLOR_GREEN, 1, "   client debug");
         Draw_Text(0, 48,  COLOR_GREEN, 1, "-------------------");
-        Draw_Text(0, 64,  COLOR_GREEN, 1, "runtime: %f", kex_client.runtime);
-        Draw_Text(0, 80,  COLOR_GREEN, 1, "time: %i", kex_client.time);
-        Draw_Text(0, 96,  COLOR_GREEN, 1, "tics: %i", kex_client.tics);
+        Draw_Text(0, 64,  COLOR_GREEN, 1, "runtime: %f", client.runtime);
+        Draw_Text(0, 80,  COLOR_GREEN, 1, "time: %i", client.time);
+        Draw_Text(0, 96,  COLOR_GREEN, 1, "tics: %i", client.tics);
         Draw_Text(0, 112, COLOR_GREEN, 1, "max msecs: %f", (1000.0f / cl_maxfps.value));
     }
+}
+
+//
+// CL_Ticker
+//
+
+static void CL_Ticker(void)
+{
+    Menu_Ticker();
+
+    Con_Ticker();
+
+    client.tics++;
 }
 
 //
@@ -348,10 +235,10 @@ static void CL_Drawer(void)
 // CL_Run
 //
 
-static int curtime = 0;
-
 void CL_Run(int msec)
 {
+    static int curtime = 0;
+
     curtime += msec;
 
     if(curtime < (1000 / (int)cl_maxfps.value))
@@ -359,12 +246,12 @@ void CL_Run(int msec)
         return;
     }
 
-    kex_client.runtime = (float)curtime / 1000.0f;
-    kex_client.time += curtime;
+    client.runtime = (float)curtime / 1000.0f;
+    client.time += curtime;
 
     curtime = 0;
 
-    CL_CheckHost();
+    CL_CheckHostMsg();
 
     IN_PollInput();
 
@@ -409,7 +296,7 @@ static void FCmd_Ping(void)
     }
 
     Packet_Write8(packet, CLIENT_PACKET_PING);
-    Packet_Send(packet, kex_client.peer);
+    Packet_Send(packet, client.peer);
 }
 
 //
@@ -432,7 +319,7 @@ static void FCmd_Say(void)
 
     Packet_Write8(packet, CLIENT_PACKET_SAY);
     Packet_WriteString(packet, Cmd_GetArgv(1));
-    Packet_Send(packet, kex_client.peer);
+    Packet_Send(packet, client.peer);
 }
 
 //
@@ -443,9 +330,9 @@ void CL_Init(void)
 {
     CL_DestroyClient();
 
-    kex_client.host = enet_host_create(NULL, 1, 2, 0, 0);
+    client.host = enet_host_create(NULL, 1, 2, 0, 0);
 
-    if(!kex_client.host)
+    if(!client.host)
     {
         Com_Error("CL_Init: failed to create client");
         return;
@@ -453,12 +340,12 @@ void CL_Init(void)
 
     bDebugTime = false;
 
-    kex_client.client_id = 0;
-    kex_client.time = 0;
-    kex_client.tics = 0;
-    kex_client.peer = NULL;
-    kex_client.state = CL_STATE_UNINITIALIZED;
-    kex_client.local = (Com_CheckParam("-client") == 0);
+    client.client_id = -1;
+    client.time = 0;
+    client.tics = 0;
+    client.peer = NULL;
+    client.state = CL_STATE_UNINITIALIZED;
+    client.local = (Com_CheckParam("-client") == 0);
 
     Cvar_Register(&cl_name);
     Cvar_Register(&cl_fov);

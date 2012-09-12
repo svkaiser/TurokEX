@@ -28,6 +28,7 @@
 #include "common.h"
 #include "client.h"
 #include "packet.h"
+#include "server.h"
 
 CVAR(sv_address, localhost);
 CVAR(sv_port, 58304);
@@ -36,24 +37,8 @@ CVAR(sv_hostname, defaulthost);
 CVAR(sv_inwidth, 0);
 CVAR(sv_outwidth, 0);
 
-typedef enum
-{
-    SV_STATE_UNAVAILABLE,
-    SV_STATE_BUSY,
-    SV_STATE_ACTIVE
-} server_state_e;
-
-typedef struct
-{
-    ENetHost        *host;
-    kbool           local;
-    server_state_e  state;
-    uint32          maxclients;
-    int             time;
-    float           runtime;
-} kex_server_t;
-
-kex_server_t kex_server;
+svclient_t svclients[MAXCLIENTS];
+server_t server;
 
 //
 // SV_DestroyHost
@@ -61,11 +46,11 @@ kex_server_t kex_server;
 
 void SV_DestroyHost(void)
 {
-    if(kex_server.host)
+    if(server.host)
     {
-        enet_host_destroy(kex_server.host);
-        kex_server.host = NULL;
-        kex_server.state = SV_STATE_UNAVAILABLE;
+        enet_host_destroy(server.host);
+        server.host = NULL;
+        server.state = SV_STATE_UNAVAILABLE;
     }
 }
 
@@ -94,6 +79,104 @@ static char *SV_GetPeerAddress(ENetEvent *sev)
 }
 
 //
+// SV_ResetAllClients
+//
+
+static void SV_ResetAllClients(void)
+{
+    memset(svclients, 0, sizeof(svclient_t));
+}
+
+//
+// SV_SendMsg
+//
+
+static void SV_SendMsg(ENetEvent *sev, int type)
+{
+    ENetPacket *packet;
+
+    if(!(packet = Packet_New()))
+    {
+        return;
+    }
+
+    Packet_Write8(packet, SERVER_PACKET_MSG);
+    Packet_Write8(packet, type);
+    Packet_Send(packet, sev->peer);
+}
+
+//
+// SV_UpdateClientInfo
+//
+
+static void SV_UpdateClientInfo(ENetEvent *sev, svclient_t *svc, int id)
+{
+    ENetPacket *packet;
+
+    if(!(packet = Packet_New()))
+    {
+        return;
+    }
+
+    Com_Printf("%s connected...\n",
+        SV_GetPeerAddress(sev));
+
+    Packet_Write8(packet, SERVER_PACKET_CLIENTINFO);
+    Packet_Write8(packet, svc->client_id);
+    Packet_Write8(packet, id);
+    Packet_Send(packet, svc->peer);
+}
+
+//
+// SV_GetPlayerID
+//
+
+unsigned int SV_GetPlayerID(ENetPeer *peer)
+{
+    unsigned int i;
+    
+    for(i = 0; i < MAXCLIENTS; i++)
+    {
+        if(svclients[i].state != SVC_STATE_ACTIVE)
+        {
+            continue;
+        }
+
+        if(peer->connectID == svclients[i].client_id)
+        {
+            return i;
+        }
+    }
+
+   return 0;
+}
+
+//
+// SV_AddClient
+//
+
+static void SV_AddClient(ENetEvent *sev)
+{
+    int i;
+
+    for(i = 0; i < MAXCLIENTS; i++)
+    {
+        if(svclients[i].state == SVC_STATE_INACTIVE)
+        {
+            svclients[i].state = SVC_STATE_ACTIVE;
+            svclients[i].peer = sev->peer;
+            svclients[i].client_id = sev->peer->connectID;
+            svclients[i].player = &players[i];
+
+            SV_UpdateClientInfo(sev, &svclients[i], i);
+            return;
+        }
+    }
+
+    SV_SendMsg(sev, SERVER_MSG_FULL);
+}
+
+//
 // SV_CreateHost
 //
 
@@ -111,57 +194,59 @@ void SV_CreateHost(void)
     enet_address_set_host(&address, sv_address.string);
     address.port = (uint16)sv_port.value;
 
-    kex_server.host =  enet_host_create(&address,
+    server.host =  enet_host_create(&address,
         (int)sv_maxpeers.value, 2,
         (uint32)sv_inwidth.value,
         (uint32)sv_outwidth.value
         );
 
-    if(!kex_server.host)
+    if(!server.host)
     {
         Com_Error("SV_CreateHost: Failed");
         return;
     }
 
-    kex_server.state = SV_STATE_ACTIVE;
-    kex_server.maxclients = (int)sv_maxpeers.value;
+    server.state = SV_STATE_ACTIVE;
+    server.maxclients = (int)sv_maxpeers.value;
 }
 
 //
 // SV_ReadTiccmd
 //
 
-static void SV_ReadTiccmd(ENetPacket *packet, ticcmd_t *cmd)
+static void SV_ReadTiccmd(ENetEvent *sev, ENetPacket *packet)
 {
     int bits = 0;
     int tmp = 0;
+    ticcmd_t cmd;
 
-    memset(cmd, 0, sizeof(ticcmd_t));
+    memset(&cmd, 0, sizeof(ticcmd_t));
 
 #define READ_TICCMD8(name, bit)             \
     if(bits & bit)                          \
     {                                       \
         Packet_Read8(packet, &tmp);         \
-        cmd->name = tmp;                    \
+        cmd.name = tmp;                     \
     }
 
 #define READ_TICCMD16(name, bit)            \
     if(bits & bit)                          \
     {                                       \
         Packet_Read16(packet, &tmp);        \
-        cmd->name = tmp;                    \
+        cmd.name = tmp;                     \
     }
 
     Packet_Read8(packet, &bits);
 
-    READ_TICCMD8(forwardmove, CL_TICDIFF_FORWARD);
-    READ_TICCMD8(sidemove, CL_TICDIFF_SIDE);
-    READ_TICCMD16(angleturn, CL_TICDIFF_TURN);
-    READ_TICCMD16(pitch, CL_TICDIFF_PITCH);
-    READ_TICCMD8(buttons, CL_TICDIFF_BUTTONS);
+    READ_TICCMD16(angle[0], CL_TICDIFF_TURN1);
+    READ_TICCMD16(angle[1], CL_TICDIFF_TURN2);
+    READ_TICCMD16(buttons, CL_TICDIFF_BUTTONS);
 
     Packet_Read8(packet, &tmp);
-    cmd->msec = tmp;
+    cmd.msec = tmp;
+
+    memcpy(&svclients[SV_GetPlayerID(sev->peer)].player->cmd,
+        &cmd, sizeof(ticcmd_t));
 
 #undef READ_TICCMD16
 #undef READ_TICCMD8
@@ -207,11 +292,7 @@ void SV_ProcessClientPackets(ENetPacket *packet, ENetEvent *sev)
         break;
 
     case CLIENT_PACKET_CMD:
-        {
-            ticcmd_t cmd;
-
-            SV_ReadTiccmd(packet, &cmd);
-        }
+        SV_ReadTiccmd(sev, packet);
         break;
 
     default:
@@ -230,20 +311,17 @@ void SV_Run(int msec)
 {
     ENetEvent sev;
 
-    if(kex_server.state != SV_STATE_ACTIVE)
+    if(server.state != SV_STATE_ACTIVE)
     {
         return;
     }
 
-    while(enet_host_service(kex_server.host, &sev, 0) > 0)
+    while(enet_host_service(server.host, &sev, 0) > 0)
     {
         switch(sev.type)
         {
             case ENET_EVENT_TYPE_CONNECT:
-                {
-                    Com_Printf("%s connected...\n",
-                        SV_GetPeerAddress(&sev));
-                }
+                SV_AddClient(&sev);
                 break;
             case ENET_EVENT_TYPE_DISCONNECT:
                 {
@@ -270,11 +348,13 @@ void SV_Init(void)
         return;
     }
 
-    kex_server.host = NULL;
-    kex_server.local = (Com_CheckParam("-server") == 0);
-    kex_server.maxclients = 0;
-    kex_server.time = 0;
-    kex_server.state = SV_STATE_UNAVAILABLE;
+    server.host = NULL;
+    server.local = (Com_CheckParam("-server") == 0);
+    server.maxclients = 0;
+    server.time = 0;
+    server.state = SV_STATE_UNAVAILABLE;
+
+    SV_ResetAllClients();
 
     Cvar_Register(&sv_address);
     Cvar_Register(&sv_port);
