@@ -32,7 +32,21 @@
 
 CVAR(sv_address, localhost);
 CVAR(sv_port, 58304);
-CVAR(sv_maxpeers, 1);
+
+CVAR_CMD(sv_maxpeers, 1)
+{
+    cvar->value = (float)(int)cvar->value;
+
+    if(cvar->value <= 0)
+    {
+        cvar->value = 1;
+    }
+    else if(cvar->value > MAXCLIENTS)
+    {
+        cvar->value = (float)MAXCLIENTS;
+    }
+}
+
 CVAR(sv_hostname, defaulthost);
 CVAR(sv_inwidth, 0);
 CVAR(sv_outwidth, 0);
@@ -135,7 +149,7 @@ unsigned int SV_GetPlayerID(ENetPeer *peer)
 {
     unsigned int i;
     
-    for(i = 0; i < MAXCLIENTS; i++)
+    for(i = 0; i < server.maxclients; i++)
     {
         if(svclients[i].state != SVC_STATE_ACTIVE)
         {
@@ -157,9 +171,9 @@ unsigned int SV_GetPlayerID(ENetPeer *peer)
 
 static void SV_AddClient(ENetEvent *sev)
 {
-    int i;
+    unsigned int i;
 
-    for(i = 0; i < MAXCLIENTS; i++)
+    for(i = 0; i < server.maxclients; i++)
     {
         if(svclients[i].state == SVC_STATE_INACTIVE)
         {
@@ -304,6 +318,14 @@ void SV_ProcessClientPackets(ENetPacket *packet, ENetEvent *sev)
 }
 
 //
+// SV_Ticker
+//
+
+static void SV_Ticker(void)
+{
+}
+
+//
 // SV_Run
 //
 
@@ -315,6 +337,8 @@ void SV_Run(int msec)
     {
         return;
     }
+
+    server.runtime += msec;
 
     while(enet_host_service(server.host, &sev, 0) > 0)
     {
@@ -334,6 +358,20 @@ void SV_Run(int msec)
                 break;
         }
     }
+
+    if(server.runtime < server.time)
+    {
+        if(server.time - server.runtime > 100)
+        {
+            server.runtime = server.time - 100;
+            return;
+        }
+    }
+
+    server.tics++;
+    server.time = server.tics * 100;
+
+    SV_Ticker();
 }
 
 //
@@ -352,6 +390,7 @@ void SV_Init(void)
     server.local = (Com_CheckParam("-server") == 0);
     server.maxclients = 0;
     server.time = 0;
+    server.runtime = 0;
     server.state = SV_STATE_UNAVAILABLE;
 
     SV_ResetAllClients();

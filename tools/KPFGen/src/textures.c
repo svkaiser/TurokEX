@@ -286,6 +286,9 @@ void TX_StoreTextures(void)
     textures = Com_GetCartData(cartfile, CHUNK_DIRECTORY_TEXTURE, 0);
     numtextures = Com_GetCartOffset(textures, CHUNK_TEX_COUNT, 0);
 
+    PK_AddFolder("textures/");
+    StoreExternalFile("default.tga", "textures/default.tga");
+
     /*PK_AddFolder("textures/actors/");
     PK_AddFolder("textures/caves/");
     PK_AddFolder("textures/hud/");
@@ -676,6 +679,9 @@ static const hudlist_t hudlist[HUDGFX_COUNT] =
 void TX_StoreFonts(void)
 {
     int i;
+
+    PK_AddFolder("fonts/");
+    StoreExternalFile("confont.tga", "fonts/confont.tga");
 
     Com_GetCartFile(
         "PC Turok Executable File (Turok.exe) \0*Turok.exe\0All Files (*.*)\0*.*\0",

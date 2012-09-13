@@ -55,9 +55,10 @@ typedef struct
     ENetHost        *host;
     kbool           local;
     server_state_e  state;
-    uint32          maxclients;
+    unsigned int    maxclients;
     int             time;
-    float           runtime;
+    int             runtime;
+    int             tics;
 } server_t;
 
 extern svclient_t svclients[MAXCLIENTS];

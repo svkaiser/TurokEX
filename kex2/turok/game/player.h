@@ -31,10 +31,12 @@
 
 typedef struct player_s
 {
-    actor_t     *actor;
+    actor_t     actor;
     ticcmd_t    cmd;
 } player_t;
 
 extern player_t players[MAXPLAYERS];
+
+void Player_Think(player_t* player);
 
 #endif

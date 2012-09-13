@@ -50,9 +50,6 @@ typedef struct
     byte    msec;
 } ticcmd_t;
 
-#define ANGLETOSHORT(x) ((short)((x * 65536.0f) * 0.000030517578125f))
-#define SHORTTOANGLE(x) ((float)((x / 65536.0f) / 0.000030517578125f))
-
 #define MAXEVENTS 64
 
 extern event_t  events[MAXEVENTS];

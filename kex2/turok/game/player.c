@@ -20,7 +20,7 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION: Main game code
+// DESCRIPTION: Main player code
 //
 //-----------------------------------------------------------------------------
 
@@ -29,4 +29,17 @@
 #include "server.h"
 #include "kernel.h"
 #include "player.h"
+
+player_t players[MAXPLAYERS];
+
+//
+// Player_Think
+//
+
+void Player_Think(player_t* player)
+{
+    ticcmd_t* cmd;
+
+    cmd = &player->cmd;
+}
 

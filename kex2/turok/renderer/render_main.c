@@ -34,82 +34,6 @@
 CVAR_EXTERNAL(cl_fov);
 
 //
-// R_DrawTestCube
-//
-
-static void R_DrawTestCube(void)
-{
-    GL_SetState(GLSTATE_CULL, false);
-    GL_BindTextureName("textures/default.tga");
-    dglEnable(GL_DEPTH_TEST);
-
-    dglColor4ub(255, 255, 255, 255);
-    dglBegin(GL_POLYGON);
-    dglTexCoord2f(0, 0);
-    dglVertex3f(-32, 32, 32);
-    dglTexCoord2f(1, 0);
-    dglVertex3f(32, 32, 32);
-    dglTexCoord2f(1, 1);
-    dglVertex3f(32, -32, 32);
-    dglTexCoord2f(0, 1);
-    dglVertex3f(-32, -32, 32);
-    dglEnd();
-    dglBegin(GL_POLYGON);
-    dglTexCoord2f(0, 0);
-    dglVertex3f(32, 32, 32);
-    dglTexCoord2f(1, 0);
-    dglVertex3f(32, 32, -32);
-    dglTexCoord2f(1, 1);
-    dglVertex3f(32, -32, -32);
-    dglTexCoord2f(0, 1);
-    dglVertex3f(32, -32, 32);
-    dglEnd();
-    dglBegin(GL_POLYGON);
-    dglTexCoord2f(0, 0);
-    dglVertex3f(32, 32, -32);
-    dglTexCoord2f(1, 0);
-    dglVertex3f(-32, 32, -32);
-    dglTexCoord2f(1, 1);
-    dglVertex3f(-32, -32, -32);
-    dglTexCoord2f(0, 1);
-    dglVertex3f(32, -32, -32);
-    dglEnd();
-    dglBegin(GL_POLYGON);
-    dglTexCoord2f(0, 0);
-    dglVertex3f(-32, 32, -32);
-    dglTexCoord2f(1, 0);
-    dglVertex3f(-32, 32, 32);
-    dglTexCoord2f(1, 1);
-    dglVertex3f(-32, -32, 32);
-    dglTexCoord2f(0, 1);
-    dglVertex3f(-32, -32, -32);
-    dglEnd();
-    dglBegin(GL_POLYGON);
-    dglTexCoord2f(0, 0);
-    dglVertex3f(-32, 32, -32);
-    dglTexCoord2f(1, 0);
-    dglVertex3f(32, 32, -32);
-    dglTexCoord2f(1, 1);
-    dglVertex3f(32, 32, 32);
-    dglTexCoord2f(0, 1);
-    dglVertex3f(-32, 32, 32);
-    dglEnd();
-    dglBegin(GL_POLYGON);
-    dglTexCoord2f(0, 0);
-    dglVertex3f(-32, -32, 32);
-    dglTexCoord2f(1, 0);
-    dglVertex3f(32, -32, 32);
-    dglTexCoord2f(1, 1);
-    dglVertex3f(32, -32, -32);
-    dglTexCoord2f(0, 1);
-    dglVertex3f(-32, -32, -32);
-    dglEnd();
-
-    GL_SetState(GLSTATE_CULL, true);
-    dglDisable(GL_DEPTH_TEST);
-}
-
-//
 // R_DrawSection
 //
 
@@ -217,7 +141,6 @@ void R_DrawFrame(void)
     Mtx_SetTranslation(mtx, 0, -1024, -1500);
     dglLoadMatrixf(mtx);
 
-    R_DrawTestCube();
     R_DrawTestModel("models/mdl320/mdl320.kmesh");
 
     GL_SetOrtho();

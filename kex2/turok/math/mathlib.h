@@ -23,11 +23,37 @@
 #ifndef __MATHLIB_H__
 #define __MATHLIB_H__
 
+#include <math.h>
 #include "type.h"
 
 #define M_PI    3.1415926535897932384626433832795f
 #define M_RAD   (M_PI / 180.0f)
 #define M_DEG   (180.0f / M_PI)
+
+#define ANGLETOSHORT(x) ((short)((x * 65536.0f) * 0.000030517578125f))
+#define SHORTTOANGLE(x) ((float)((x / 65536.0f) / 0.000030517578125f))
+
+//
+// VECTOR OPERATIONS
+//
+void  Vec_Set3(vec3_t vec, float x, float y, float z);
+void  Vec_Set4(vec4_t vec, float x, float y, float z, float w);
+void  Vec_Cross(vec3_t out, vec3_t vec1, vec3_t vec2);
+float Vec_Dot(vec3_t vec1, vec3_t vec2);
+void  Vec_Add(vec3_t out, vec3_t vec1, vec3_t vec2);
+void  Vec_Sub(vec3_t out, vec3_t vec1, vec3_t vec2);
+void  Vec_Mult(vec3_t out, vec3_t vec1, vec3_t vec2);
+void  Vec_MultValue(vec3_t out, vec3_t vec1, float val);
+float Vec_Length3(vec3_t v1, vec3_t v2);
+void  Vec_Normalize3(vec3_t out);
+void  Vec_Normalize4(vec4_t out);
+void  Vec_Lerp3(vec3_t out, float movement, vec3_t curr, vec3_t next);
+void  Vec_Slerp(vec4_t out, float movement, vec4_t vec1, vec4_t vec2);
+void  Vec_SetQuaternion(vec4_t vec, float angle, float x, float y, float z);
+void  Vec_QuaternionToAxis(float *angle, vec3_t vec3, vec4_t vec4);
+void  Vec_MultQuaternion(vec4_t out, vec4_t q1, vec4_t q2);
+void  Vec_PointToAxis(vec3_t out, vec3_t p1, vec3_t p2);
+void  Vec_PointToAngle(vec4_t out, vec3_t p1, vec3_t p2);
 
 //
 // MATRIX OPERATIONS
@@ -54,6 +80,15 @@ void Mtx_Copy(mtx_t dest, mtx_t src);
 void Mtx_RotateX(mtx_t m, float angle);
 void Mtx_RotateY(mtx_t m, float angle);
 void Mtx_RotateZ(mtx_t m, float angle);
+
+//
+// ANGLE OPERATIONS
+//
+float Ang_AlignPitchToVector(vec3_t vec);
+float Ang_AlignYawToVector(float angle, vec3_t v1, vec3_t v2);
+float Ang_VectorToAngle(vec3_t vec);
+float Ang_Invert(float angle);
+float Ang_InvertSums(float angle1, float angle2);
 
 #endif
 

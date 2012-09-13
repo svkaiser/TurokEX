@@ -1074,6 +1074,7 @@ void MDL_StoreModels(void)
     nummodels = Com_GetCartOffset(modeldata, CHUNK_MODEL_COUNT, 0);
 
     PK_AddFolder("models/");
+    StoreExternalFile("default.kmesh", "models/default.kmesh");
     /*PK_AddFolder("models/actors/");
     PK_AddFolder("models/arenas/");
     PK_AddFolder("models/caves/");

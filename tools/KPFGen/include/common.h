@@ -23,6 +23,8 @@
 #ifndef __KPF_COMMON__
 #define __KPF_COMMON__
 
+void StoreExternalFile(const char *name, const char *store);
+
 extern byte *cartfile;
 
 void Com_Printf(char* s, ...);

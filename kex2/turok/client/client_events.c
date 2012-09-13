@@ -29,6 +29,7 @@
 #include "client.h"
 #include "packet.h"
 #include "menu.h"
+#include "mathlib.h"
 
 event_t events[MAXEVENTS];
 int     eventhead = 0;
@@ -133,6 +134,8 @@ void CL_BuildTiccmd(void)
     SET_KEYFLAG(KEY_STRAFELEFT, BT_STRAFELEFT);
     SET_KEYFLAG(KEY_STRAFERIGHT, BT_STRAFERIGHT);
 
+#undef SET_KEYFLAG
+
     if(ctrl->flags & CKF_NEXTWEAPON)
     {
         cmd.buttons |= BT_NEXTWEAP;
@@ -148,8 +151,6 @@ void CL_BuildTiccmd(void)
 
     ctrl->mousex = 0;
     ctrl->mousey = 0;
-
-#undef SET_KEYFLAG
 
     msec = (int)(client.runtime * 1000);
     if(msec > 250)
