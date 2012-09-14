@@ -30,6 +30,7 @@
 #include "render.h"
 #include "common.h"
 #include "mathlib.h"
+#include "client.h"
 
 CVAR_EXTERNAL(cl_fov);
 
@@ -56,7 +57,14 @@ void R_DrawSection(mdlsection_t *section)
         dglEnable(GL_TEXTURE_GEN_T);
     }
 
-    dglColor4ubv((byte*)&section->color1);
+    if(section->flags & MDF_COLORIZE)
+    {
+        dglColor4ubv((byte*)&section->color1);
+    }
+    else
+    {
+        dglColor4ub(255, 255, 255, 255);
+    }
 
     dglNormalPointer(GL_FLOAT, sizeof(float), section->normals);
     dglTexCoordPointer(2, GL_FLOAT, 0, section->coords);
@@ -139,6 +147,8 @@ void R_DrawFrame(void)
     dglMatrixMode(GL_MODELVIEW);
     Mtx_Identity(mtx);
     Mtx_SetTranslation(mtx, 0, -1024, -1500);
+    Mtx_RotateX(mtx, 0);
+    Mtx_RotateZ(mtx, 0);
     dglLoadMatrixf(mtx);
 
     R_DrawTestModel("models/mdl320/mdl320.kmesh");

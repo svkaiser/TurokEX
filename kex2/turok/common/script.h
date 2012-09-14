@@ -41,6 +41,8 @@ typedef enum
     TK_RBRACK,
     TK_LPAREN,
     TK_RPAREN,
+    TK_LSQBRACK,
+    TK_RSQBRACK,
     TK_COMMA,
     TK_IDENIFIER,
     TK_DEFINE,

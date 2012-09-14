@@ -78,7 +78,7 @@ typedef struct
     kbool           local;
     int             tics;
     ticcmd_t        cmd;
-    player_t        *localplayer;
+    player_t        localplayer;
 } client_t;
 
 extern client_t client;

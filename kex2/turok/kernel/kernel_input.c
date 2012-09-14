@@ -30,10 +30,10 @@
 #include "common.h"
 #include "kernel.h"
 #include "client.h"
+#include "menu.h"
 
 static SDL_Cursor* cursors[2] = { NULL, NULL };
 static kbool window_focused;
-static float mouse_accelfactor;
 static int mouse_x = 0;
 static int mouse_y = 0;
 
@@ -188,21 +188,17 @@ static kbool IN_MouseShouldBeGrabbed(void)
         return false;
     }
 
+    if(!menuactive)
+    {
+        return true;
+    }
+
     if(!video_windowed)
     {
         return true;
     }
 
     return false;
-}
-
-//
-// IN_MouseAccelChange
-//
-
-void IN_MouseAccelChange(void)
-{
-    mouse_accelfactor = cl_macceleration.value / 200.0f + 1.0f;
 }
 
 //
@@ -217,7 +213,7 @@ static float IN_MouseAccel(int val)
     if(val < 0)
         return -IN_MouseAccel(-val);
     
-    return (float)(pow((double)val, (double)mouse_accelfactor));
+    return (float)(pow((double)val, (double)(cl_macceleration.value / 200.0f + 1.0f)));
 }
 
 //
@@ -242,7 +238,7 @@ static void IN_ActivateMouse(void)
 {
     SDL_SetCursor(cursors[1]);
     SDL_WM_GrabInput(SDL_GRAB_ON);
-    SDL_ShowCursor(1);
+    SDL_ShowCursor(0);
 }
 
 //
@@ -253,7 +249,7 @@ static void IN_DeactivateMouse(void)
 {
     SDL_SetCursor(cursors[0]);
     SDL_WM_GrabInput(SDL_GRAB_OFF);
-    SDL_ShowCursor(0);
+    SDL_ShowCursor(1);
 }
 
 //

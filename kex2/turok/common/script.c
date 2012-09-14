@@ -412,6 +412,12 @@ void SC_MustMatchToken(int type)
         case TK_RBRACK:
             string = "}";
             break;
+        case TK_LSQBRACK:
+            string = "[";
+            break;
+        case TK_RSQBRACK:
+            string = "]";
+            break;
         case TK_LPAREN:
             string = "(";
             break;
@@ -569,6 +575,14 @@ static void SC_GetSymbolToken(char c)
         break;
     case ')':
         sc_parser->tokentype = TK_RPAREN;
+        sc_parser->token[0] = c;
+        break;
+    case '[':
+        sc_parser->tokentype = TK_LSQBRACK;
+        sc_parser->token[0] = c;
+        break;
+    case ']':
+        sc_parser->tokentype = TK_RSQBRACK;
         sc_parser->token[0] = c;
         break;
     case ',':

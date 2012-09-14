@@ -33,6 +33,8 @@ typedef struct player_s
 {
     actor_t     actor;
     ticcmd_t    cmd;
+    float       yaw;
+    float       pitch;
 } player_t;
 
 extern player_t players[MAXPLAYERS];

@@ -121,7 +121,6 @@ static void CL_ReadClientInfo(ENetPacket *packet)
     Packet_Read8(packet, &client.client_id);
     Packet_Read8(packet, &tmp);
     client.state = CL_STATE_READY;
-    client.localplayer = &players[tmp];
 
     Com_DPrintf("CL_ReadClientInfo: ID is %i\n", client.client_id);
 }
@@ -328,6 +327,8 @@ static void FCmd_Say(void)
 
 void CL_Init(void)
 {
+    memset(&client, 0, sizeof(client_t));
+
     CL_DestroyClient();
 
     client.host = enet_host_create(NULL, 1, 2, 0, 0);

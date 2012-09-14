@@ -52,6 +52,7 @@ void  Vec_Slerp(vec4_t out, float movement, vec4_t vec1, vec4_t vec2);
 void  Vec_SetQuaternion(vec4_t vec, float angle, float x, float y, float z);
 void  Vec_QuaternionToAxis(float *angle, vec3_t vec3, vec4_t vec4);
 void  Vec_MultQuaternion(vec4_t out, vec4_t q1, vec4_t q2);
+void  Vec_AdjustQuaternion(vec4_t out, vec4_t rot, float angle);
 void  Vec_PointToAxis(vec3_t out, vec3_t p1, vec3_t p2);
 void  Vec_PointToAngle(vec4_t out, vec3_t p1, vec3_t p2);
 
@@ -89,6 +90,30 @@ float Ang_AlignYawToVector(float angle, vec3_t v1, vec3_t v2);
 float Ang_VectorToAngle(vec3_t vec);
 float Ang_Invert(float angle);
 float Ang_InvertSums(float angle1, float angle2);
+void  Ang_Clamp(float *angle);
+
+//
+// PLANE OPERATIONS
+//
+typedef struct plane_s
+{
+    int             area;
+    unsigned int    flags;
+    vec3_t          *points;
+    struct plane_s  *link1;
+    struct plane_s  *link2;
+    struct plane_s  *link3;
+} plane_t;
+
+void Plane_SetTemp(plane_t *plane, vec3_t p1, vec3_t p2, vec3_t p3);
+void Plane_GetNormal(vec3_t normal, plane_t *plane);
+kbool Plane_IsFacing(plane_t *plane, float angle);
+float Plane_GetDistance(plane_t *plane, vec3_t pos);
+kbool Plane_CheckYSlope(plane_t *plane);
+float Plane_GetAngle(plane_t *p);
+void Plane_GetQuaternion(vec4_t vec, plane_t *p);
+void Plane_AdjustQuaternion(vec4_t out, plane_t *p);
+kbool Plane_PointInRange(plane_t *p, float x, float z);
 
 #endif
 

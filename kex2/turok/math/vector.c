@@ -199,7 +199,7 @@ void Vec_Slerp(vec4_t out, float movement, vec4_t vec1, vec4_t vec2)
         d1 = d2;
     }
 
-    if(d1 <= 0.7071067811865001)
+    if(d1 <= 0.7071067811865001f)
     {
         halfcos = (float)acos(d1);
         halfsin = (float)sin(halfcos);
@@ -292,6 +292,27 @@ void Vec_MultQuaternion(vec4_t out, vec4_t q1, vec4_t q2)
     out[1] = q1[0] * q2[2] + q1[1] * q2[3] - q2[0] * q1[2] + q1[3] * q2[1];
     out[2] = q2[0] * q1[1] + q1[3] * q2[2] + q1[2] * q2[3] - q1[0] * q2[1];
     out[3] = q1[3] * q2[3] - q2[1] * q1[1] + q1[2] * q2[2] + q2[0] * q1[0];
+}
+
+//
+// Vec_AdjustQuaternion
+//
+
+void Vec_AdjustQuaternion(vec4_t out, vec4_t rot, float angle)
+{
+    vec4_t vec;
+    float s;
+    float c;
+
+    s = (float)sin((angle - -M_PI) * 0.5f);
+    c = (float)cos((angle - -M_PI) * 0.5f);
+
+    vec[0] = 0;
+    vec[1] = s;
+    vec[2] = 0;
+    vec[3] = c;
+    
+    Vec_MultQuaternion(out, vec, rot);
 }
 
 //

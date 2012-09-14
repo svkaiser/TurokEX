@@ -135,3 +135,24 @@ float Ang_InvertSums(float angle1, float angle2)
     return Ang_Invert(Ang_Invert(angle2) + angle1);
 }
 
+//
+// Ang_Clamp
+//
+
+void Ang_Clamp(float *angle)
+{
+    float an = *angle;
+
+    if(*angle < -M_PI)
+    {
+        for(an = *angle; an < -M_PI; an = an - -(M_PI * 2));
+    }
+
+    if(*angle >= M_PI)
+    {
+        for(; an > M_PI; an = an - (M_PI * 2));
+    }
+
+    *angle = an;
+}
+
