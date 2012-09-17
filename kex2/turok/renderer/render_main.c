@@ -147,8 +147,8 @@ void R_DrawFrame(void)
     dglMatrixMode(GL_MODELVIEW);
     Mtx_Identity(mtx);
     Mtx_SetTranslation(mtx, 0, -1024, -1500);
-    Mtx_RotateX(mtx, 0);
-    Mtx_RotateZ(mtx, 0);
+    Mtx_RotateX(mtx, -client.localactor.yaw);
+    Mtx_RotateZ(mtx, client.localactor.pitch);
     dglLoadMatrixf(mtx);
 
     R_DrawTestModel("models/mdl320/mdl320.kmesh");

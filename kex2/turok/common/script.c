@@ -1031,6 +1031,44 @@ void SC_AssignInteger(const sctokens_t *tokenlist, unsigned int *var, int id,
 }
 
 //
+// SC_AssignFloat
+//
+
+void SC_AssignFloat(const sctokens_t *tokenlist, float *var, int id,
+                             scparser_t *parser, kbool expect)
+{
+    if(expect)
+    {
+        SC_ExpectTokenID(tokenlist, id, parser);
+    }
+
+    SC_ExpectNextToken(TK_EQUAL);
+    *var = (float)SC_GetFloat();
+}
+
+//
+// SC_AssignVector
+//
+
+void SC_AssignVector(const sctokens_t *tokenlist, vec3_t *var, int id,
+                             scparser_t *parser, kbool expect)
+{
+    if(expect)
+    {
+        SC_ExpectTokenID(tokenlist, id, parser);
+    }
+
+    SC_ExpectNextToken(TK_EQUAL);
+    SC_ExpectNextToken(TK_LBRACK);
+
+    *var[0] = (float)SC_GetFloat();
+    *var[1] = (float)SC_GetFloat();
+    *var[2] = (float)SC_GetFloat();
+
+    SC_ExpectNextToken(TK_RBRACK);
+}
+
+//
 // SC_AssignArray
 //
 

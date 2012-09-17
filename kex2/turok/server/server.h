@@ -25,9 +25,9 @@
 
 #include "enet/enet.h"
 #include "client.h"
-#include "player.h"
+#include "actor.h"
 
-#define MAXCLIENTS MAXPLAYERS
+#define MAXCLIENTS  8
 
 typedef enum
 {
@@ -44,10 +44,11 @@ typedef enum
 
 typedef struct
 {
-    player_t            *player;
     ENetPeer            *peer;
     unsigned int        client_id;
     svclient_state_e    state;
+    ticcmd_t            cmd;
+    actor_t             *clientactor;
 } svclient_t;
 
 typedef struct

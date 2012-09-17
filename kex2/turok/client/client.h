@@ -25,6 +25,7 @@
 
 #include "enet/enet.h"
 #include "kernel.h"
+#include "actor.h"
 
 typedef enum
 {
@@ -45,7 +46,7 @@ typedef enum
 
 typedef struct
 {
-    short   angle[2];
+    fint_t  angle[2];
     short   buttons;
     byte    msec;
 } ticcmd_t;
@@ -65,8 +66,6 @@ typedef enum
     CL_STATE_READY
 } client_state_e;
 
-#include "player.h"
-
 typedef struct
 {
     ENetHost        *host;
@@ -78,7 +77,7 @@ typedef struct
     kbool           local;
     int             tics;
     ticcmd_t        cmd;
-    player_t        localplayer;
+    actor_t         localactor;
 } client_t;
 
 extern client_t client;

@@ -30,9 +30,6 @@
 #define M_RAD   (M_PI / 180.0f)
 #define M_DEG   (180.0f / M_PI)
 
-#define ANGLETOSHORT(x) ((short)((x * 65536.0f) * 0.000030517578125f))
-#define SHORTTOANGLE(x) ((float)((x / 65536.0f) / 0.000030517578125f))
-
 //
 // VECTOR OPERATIONS
 //
@@ -111,8 +108,9 @@ kbool Plane_IsFacing(plane_t *plane, float angle);
 float Plane_GetDistance(plane_t *plane, vec3_t pos);
 kbool Plane_CheckYSlope(plane_t *plane);
 float Plane_GetAngle(plane_t *p);
-void Plane_GetQuaternion(vec4_t vec, plane_t *p);
-void Plane_AdjustQuaternion(vec4_t out, plane_t *p);
+float Plane_GetPitch(plane_t *plane, float x1, float z1, float x2, float z2);
+void Plane_GetRotation(vec4_t vec, plane_t *p);
+void Plane_AdjustRotation(vec4_t out, plane_t *p);
 kbool Plane_PointInRange(plane_t *p, float x, float z);
 
 #endif

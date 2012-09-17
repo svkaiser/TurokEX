@@ -49,6 +49,18 @@ typedef float           vec3_t[3];
 typedef float           vec4_t[3];
 typedef float           mtx_t[16];
 
+typedef struct
+{
+    vec3_t min;
+    vec3_t max;
+} bbox_t;
+
+typedef union
+{
+    int     i;
+    float   f;
+} fint_t;
+
 #ifndef _MSC_VER
 	typedef signed long long int64;
 	typedef unsigned long long uint64;

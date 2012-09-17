@@ -180,7 +180,7 @@ static void SV_AddClient(ENetEvent *sev)
             svclients[i].state = SVC_STATE_ACTIVE;
             svclients[i].peer = sev->peer;
             svclients[i].client_id = sev->peer->connectID;
-            svclients[i].player = &players[i];
+            memset(&svclients[i].cmd, 0, sizeof(ticcmd_t));
 
             SV_UpdateClientInfo(sev, &svclients[i], i);
             return;
@@ -250,16 +250,23 @@ static void SV_ReadTiccmd(ENetEvent *sev, ENetPacket *packet)
         cmd.name = tmp;                     \
     }
 
+#define READ_TICCMD32(name, bit)            \
+    if(bits & bit)                          \
+    {                                       \
+        Packet_Read32(packet, &tmp);        \
+        cmd.name = tmp;                     \
+    }
+
     Packet_Read8(packet, &bits);
 
-    READ_TICCMD16(angle[0], CL_TICDIFF_TURN1);
-    READ_TICCMD16(angle[1], CL_TICDIFF_TURN2);
+    READ_TICCMD32(angle[0].i, CL_TICDIFF_TURN1);
+    READ_TICCMD32(angle[1].i, CL_TICDIFF_TURN2);
     READ_TICCMD16(buttons, CL_TICDIFF_BUTTONS);
 
     Packet_Read8(packet, &tmp);
     cmd.msec = tmp;
 
-    memcpy(&svclients[SV_GetPlayerID(sev->peer)].player->cmd,
+    memcpy(&svclients[SV_GetPlayerID(sev->peer)].cmd,
         &cmd, sizeof(ticcmd_t));
 
 #undef READ_TICCMD16

@@ -722,10 +722,10 @@ static void ProcessLevel(byte *data, int index)
 
     inst = Com_GetCartData(data, CHUNK_LVROOT_INSTANCES, 0);
 
-    Com_Strcat("actors = %i\n", Com_GetCartOffset(actors, CHUNK_ACTORS_COUNT, 0));
-    Com_Strcat("gridbounds = %i\n", Com_GetCartOffset(
+    Com_Strcat("numactors = %i\n", Com_GetCartOffset(actors, CHUNK_ACTORS_COUNT, 0));
+    Com_Strcat("numgridbounds = %i\n", Com_GetCartOffset(
         Com_GetCartData(grid, CHUNK_LEVELGRID_BOUNDS, 0), CHUNK_GRIDBOUNDS_COUNT, 0));
-    Com_Strcat("instancegroups = %i\n", Com_GetCartOffset(inst, CHUNK_INSTGROUP_COUNT, 0));
+    Com_Strcat("numinstancegroups = %i\n", Com_GetCartOffset(inst, CHUNK_INSTGROUP_COUNT, 0));
 
     ProcessActors(actors);
     ProcessGridBounds(grid);

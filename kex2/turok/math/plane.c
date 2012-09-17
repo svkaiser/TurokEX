@@ -153,15 +153,12 @@ float Plane_GetAngle(plane_t *p)
     if(Plane_CheckYSlope(p))
     {
         vec3_t t1;
-        vec3_t t2;
         vec3_t n;
         float an;
 
         Plane_GetNormal(n, p);
         Vec_Set3(t1, 0, 1.0f, 0);
         Vec_Normalize3(n);
-        Vec_Cross(t2, t1, n);
-        Vec_Normalize3(t2);
 
         an = (float)acos(t1[0] * n[0] + t1[1] * n[1] + t1[2] * n[2]);
 
@@ -172,10 +169,50 @@ float Plane_GetAngle(plane_t *p)
 }
 
 //
-// Plane_GetQuaternion
+// Plane_GetPitch
 //
 
-void Plane_GetQuaternion(vec4_t vec, plane_t *p)
+float Plane_GetPitch(plane_t *plane, float x1, float z1, float x2, float z2)
+{
+    float dist1;
+    float dist2;
+    float d;
+    float xz;
+    vec3_t v1;
+    vec3_t v2;
+
+    Vec_Set3(v1, x1, 0, z1);
+    Vec_Set3(v2, x2, 0, z2);
+
+    dist1 = Plane_GetDistance(plane, v1);
+    dist2 = Plane_GetDistance(plane, v2);
+
+    xz = (x2 - x1) * (x2 - x1) + (z2 - z1) * (z2 - z1);
+    d = (dist2 - dist1) * (dist2 - dist1) + xz;
+
+    if(d != 0.0f)
+    {
+        float an = (float)sqrt(xz / d);
+
+        if(an >  1.0f) an =  1.0f;
+        if(an < -1.0f) an = -1.0f;
+
+        if(dist2 <= dist1)
+        {
+            return -(float)acos(an);
+        }
+
+        return (float)acos(an);
+    }
+
+    return 0.0f;
+}
+
+//
+// Plane_GetRotation
+//
+
+void Plane_GetRotation(vec4_t vec, plane_t *p)
 {
     vec3_t n1;
     vec3_t n2;
@@ -201,10 +238,10 @@ void Plane_GetQuaternion(vec4_t vec, plane_t *p)
 }
 
 //
-// Plane_AdjustQuaternion
+// Plane_AdjustRotation
 //
 
-void Plane_AdjustQuaternion(vec4_t out, plane_t *p)
+void Plane_AdjustRotation(vec4_t out, plane_t *p)
 {
     vec3_t n1;
     vec3_t n2;

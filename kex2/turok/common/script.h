@@ -145,6 +145,10 @@ void SC_AssignString(const sctokens_t *tokenlist, char *str, int id,
                      scparser_t *parser, kbool expect);
 void SC_AssignInteger(const sctokens_t *tokenlist, unsigned int *var, int id,
                       scparser_t *parser, kbool expect);
+void SC_AssignFloat(const sctokens_t *tokenlist, float *var, int id,
+                    scparser_t *parser, kbool expect);
+void SC_AssignVector(const sctokens_t *tokenlist, vec3_t *var, int id,
+                     scparser_t *parser, kbool expect);
 void SC_AssignArray(const sctokens_t *tokenlist, arraytype_t type,
                     void **data, int count, int id,
                     scparser_t *parser, kbool expect, int tag);

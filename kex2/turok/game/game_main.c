@@ -1,7 +1,7 @@
 // Emacs style mode select   -*- C++ -*- 
 //-----------------------------------------------------------------------------
 //
-// Copyright(C) 2007-2012 Samuel Villarreal
+// Copyright(C) 2012 Samuel Villarreal
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -19,26 +19,13 @@
 // 02111-1307, USA.
 //
 //-----------------------------------------------------------------------------
+//
+// DESCRIPTION: Main game code
+//
+//-----------------------------------------------------------------------------
 
-#ifndef _PLAYER_H_
-#define _PLAYER_H_
-
-#include "type.h"
+#include "common.h"
 #include "client.h"
-#include "actor.h"
+#include "server.h"
+#include "kernel.h"
 
-#define MAXPLAYERS  8
-
-typedef struct player_s
-{
-    actor_t     actor;
-    ticcmd_t    cmd;
-    float       yaw;
-    float       pitch;
-} player_t;
-
-extern player_t players[MAXPLAYERS];
-
-void Player_Think(player_t* player);
-
-#endif

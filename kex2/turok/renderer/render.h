@@ -23,12 +23,6 @@
 #ifndef _RENDER_H_
 #define _RENDER_H_
 
-typedef struct
-{
-    vec3_t min;
-    vec3_t max;
-} bbox_t;
-
 //
 // MODELS
 //

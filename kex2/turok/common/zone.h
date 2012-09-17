@@ -52,6 +52,8 @@ enum
    PU_FILE,
    PU_TEXTURE,
    PU_MODEL,
+   PU_LEVEL,
+   PU_ACTOR,
    PU_CACHE,   // block is cached (may be implicitly freed at any time!)
    PU_MAX      // Must always be last -- killough
 };

@@ -195,6 +195,7 @@ static void Menu_MainChoice(int choice)
     switch(menu_itemOn)
     {
     case item_start:
+        Menu_Set(&menu_skill);
         break;
     case item_load:
         break;
@@ -209,6 +210,70 @@ static void Menu_MainChoice(int choice)
     case item_cheatmenu:
         break;
     case item_exitgame:
+        break;
+    }
+}
+
+//------------------------------------------------------------------------
+//
+// SKILL MENU
+//
+//------------------------------------------------------------------------
+
+static void Menu_SkillChoice(int choice);
+
+enum
+{
+    item_easy = 0,
+    item_normal,
+    item_hard,
+    item_hardcore,
+    item_skillexit,
+    item_skillend
+} itemmain_e;
+
+menuitem_t mitem_skill[item_skillend] =
+{
+    { MIS_OK,       "easy skill",       Menu_SkillChoice },
+    { MIS_OK,       "normal skill",     Menu_SkillChoice },
+    { MIS_OK,       "hard skill",       Menu_SkillChoice },
+    { MIS_OK,       "hardcore skill",   Menu_SkillChoice },
+    { MIS_OK,       "exit",             Menu_SkillChoice }
+};
+
+menu_t menu_skill =
+{
+    Menu_DefaultResponder,  // responder
+    item_skillend,          // numitems
+    &menu_main,             // previous menu
+    mitem_skill,            // menu item
+    Menu_DefaultDrawer,     // drawer
+    item_normal,            // last item
+    NULL,                   // default items
+    -1,                     // numpageitems
+    0,                      // menupageoffset
+    NULL,                   // hints
+    NULL,                   // thermobars
+    0.0f,                   // opacity
+    MS_READY                // initial state
+};
+
+//
+// Menu_SkillChoice
+//
+
+static void Menu_SkillChoice(int choice)
+{
+    switch(menu_itemOn)
+    {
+    case item_easy:
+        break;
+    case item_normal:
+        break;
+    case item_hard:
+        break;
+    case item_skillexit:
+        Menu_Set(menu_current->prevMenu);
         break;
     }
 }

@@ -84,14 +84,18 @@ void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd)
     if(bits & bit)                      \
     Packet_Write16(packet, cmd->name)
 
-    DIFF_TICCMDS(angle[0], CL_TICDIFF_TURN1);
-    DIFF_TICCMDS(angle[1], CL_TICDIFF_TURN2);
+#define WRITE_TICCMD32(name, bit)       \
+    if(bits & bit)                      \
+    Packet_Write32(packet, cmd->name)
+
+    DIFF_TICCMDS(angle[0].i, CL_TICDIFF_TURN1);
+    DIFF_TICCMDS(angle[1].i, CL_TICDIFF_TURN2);
     DIFF_TICCMDS(buttons, CL_TICDIFF_BUTTONS);
 
     Packet_Write8(packet, bits);
 
-    WRITE_TICCMD16(angle[0], CL_TICDIFF_TURN1);
-    WRITE_TICCMD16(angle[1], CL_TICDIFF_TURN2);
+    WRITE_TICCMD32(angle[0].i, CL_TICDIFF_TURN1);
+    WRITE_TICCMD32(angle[1].i, CL_TICDIFF_TURN2);
     WRITE_TICCMD16(buttons, CL_TICDIFF_BUTTONS);
 
     Packet_Write8(packet, cmd->msec);
@@ -146,11 +150,15 @@ void CL_BuildTiccmd(void)
         cmd.buttons |= BT_PREVWEAP;
     }
 
-    cmd.angle[0] -= ANGLETOSHORT(ctrl->mousex);
-    cmd.angle[1] -= ANGLETOSHORT(ctrl->mousey);
+    cmd.angle[0].f -= (ctrl->mousex * M_RAD);
+    cmd.angle[1].f -= (ctrl->mousey * M_RAD);
+    Ang_Clamp(&cmd.angle[0].f);
+    Ang_Clamp(&cmd.angle[1].f);
 
-    ctrl->mousex = 0;
-    ctrl->mousey = 0;
+    client.localactor.yaw -= (ctrl->mousex * M_RAD);
+    client.localactor.pitch -= (ctrl->mousey * M_RAD);
+    Ang_Clamp(&client.localactor.yaw);
+    Ang_Clamp(&client.localactor.pitch);
 
     msec = (int)(client.runtime * 1000);
     if(msec > 250)
@@ -160,6 +168,11 @@ void CL_BuildTiccmd(void)
 
     cmd.msec = msec;
 
+    client.cmd = cmd;
+
+    ctrl->mousex = 0;
+    ctrl->mousey = 0;
+
     if(!(packet = Packet_New()))
     {
         return;
@@ -168,7 +181,6 @@ void CL_BuildTiccmd(void)
     Packet_Write8(packet, CLIENT_PACKET_CMD);
 
     CL_WriteTiccmd(packet, &cmd);
-    client.cmd = cmd;
     Packet_Send(packet, client.peer);
 }
 

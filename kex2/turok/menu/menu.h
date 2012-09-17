@@ -109,5 +109,6 @@ void Menu_Init(void);
 
 extern menu_t menu_main;
 extern menu_t menu_options;
+extern menu_t menu_skill;
 
 #endif

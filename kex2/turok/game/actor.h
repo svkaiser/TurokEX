@@ -24,14 +24,19 @@
 #define _ACTOR_H_
 
 #include "type.h"
-#include "player.h"
+#include "mathlib.h"
 
 typedef struct actor_s
 {
     vec3_t              origin;
-    vec4_t              angle;
+    vec4_t              rotation;
     vec3_t              velocity;
-    struct player_s     *player;
+    vec3_t              scale;
+    plane_t             *plane;
+    unsigned int        flags;
+    float               yaw;
+    float               pitch;
+    void                *svclient;
     struct actor_s      *prev;
     struct actor_s      *next;
 } actor_t;
