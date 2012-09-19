@@ -1031,6 +1031,22 @@ void SC_AssignInteger(const sctokens_t *tokenlist, unsigned int *var, int id,
 }
 
 //
+// SC_AssignWord
+//
+
+void SC_AssignWord(const sctokens_t *tokenlist, unsigned short *var, int id,
+                             scparser_t *parser, kbool expect)
+{
+    if(expect)
+    {
+        SC_ExpectTokenID(tokenlist, id, parser);
+    }
+
+    SC_ExpectNextToken(TK_EQUAL);
+    *var = SC_GetNumber();
+}
+
+//
 // SC_AssignFloat
 //
 

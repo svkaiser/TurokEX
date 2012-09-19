@@ -233,7 +233,7 @@ void Key_ExecCmd(char key, kbool keyup)
 
         Cmd_ExecuteCommand(cmd->command);
 
-        if(keyup)
+        if(keyup && cmd->command[0] == '-')
         {
             cmd->command[0] = '+';
         }

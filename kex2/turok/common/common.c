@@ -229,6 +229,38 @@ unsigned int Com_HashFileName(const char *name)
 }
 
 //
+// Com_NormalizeSlashes
+//
+// Remove trailing slashes, translate backslashes to slashes
+// The string to normalize is passed and returned in str
+//
+// killough 11/98: rewritten
+//
+
+void Com_NormalizeSlashes(char *str)
+{
+    char *p;
+   
+    // Convert all slashes/backslashes to DIR_SEPARATOR
+    for(p = str; *p; p++)
+    {
+        if((*p == '/' || *p == '\\') && *p != DIR_SEPARATOR)
+        {
+            *p = DIR_SEPARATOR;
+        }
+    }
+
+    // Collapse multiple slashes
+    for(p = str; (*str++ = *p); )
+    {
+        if(*p++ == DIR_SEPARATOR)
+        {
+            while(*p == DIR_SEPARATOR) p++;
+        }
+    }
+}
+
+//
 // fcmp
 //
 

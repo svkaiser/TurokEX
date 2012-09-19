@@ -31,8 +31,11 @@
 #include "common.h"
 #include "mathlib.h"
 #include "client.h"
+#include "level.h"
+#include "zone.h"
 
 CVAR_EXTERNAL(cl_fov);
+static kbool showcollision = false;
 
 //
 // R_DrawSection
@@ -133,6 +136,85 @@ static void R_DrawTestModel(const char *file)
 }
 
 //
+// R_DrawCollision
+//
+
+static void R_DrawCollision(void)
+{
+    unsigned int i;
+
+    if(g_currentmap == NULL)
+    {
+        return;
+    }
+
+    GL_SetState(GLSTATE_CULL, false);
+    GL_SetState(GLSTATE_TEXTURE0, false);
+    GL_SetState(GLSTATE_BLEND, true);
+
+    for(i = 0; i < g_currentmap->numplanes; i++)
+    {
+        plane_t *p = &g_currentmap->planes[i];
+
+        dglBegin(GL_TRIANGLES);
+
+        if(p->flags & CLF_UNKNOWN65536)
+            dglColor4ub(0, 0, 0, 192);
+        else if(p->flags & CLF_UNKNOWN32768)
+            dglColor4ub(224, 208, 128, 80);
+        else if(p->flags & CLF_ENDLESSPIT)
+            dglColor4ub(255, 255, 0, 80);
+        else if(p->flags & CLF_UNKNOWN8192)
+            dglColor4ub(255, 128, 0, 80);
+        else if(p->flags & CLF_DAMAGE_LAVA)
+            dglColor4ub(255, 0, 0, 80);
+        else if(p->flags & CLF_UNKNOWN2048)
+            dglColor4ub(0, 64, 96, 80);
+        else if(p->flags & CLF_UNKNOWN1024)
+            dglColor4ub(64, 0, 96, 80);
+        else if(p->flags & CLF_HIDDEN)
+            dglColor4ub(0, 255, 0, 80);
+        else if(p->flags & CLF_UNKNOWN256)
+            dglColor4ub(64, 128, 64, 80);
+        else if(p->flags & CLF_UNKNOWN128)
+            dglColor4ub(0, 64, 64, 80);
+        else if(p->flags & CLF_TELEPORT)
+            dglColor4ub(0, 0, 255, 80);
+        else if(p->flags & CLF_UNKNOWN32)
+            dglColor4ub(0, 255, 255, 80);
+        else if(p->flags & CLF_UNKNOWN16)
+            dglColor4ub(255, 0, 255, 80);
+        else if(p->flags & CLF_NOSOLIDWALL)
+            dglColor4ub(255, 255, 255, 80);
+        else if(p->flags & CLF_UNKNOWN4)
+            dglColor4ub(255, 96, 255, 80);
+        else if(p->flags & CLF_UNKNOWN2)
+            dglColor4ub(32, 8, 4, 80);
+        else if(p->flags & CLF_WATER)
+            dglColor4ub(128, 96, 255, 80);
+        else
+            dglColor4ub(255, 128, 128, 80);
+
+        dglVertex3fv(p->points[0]);
+        dglVertex3fv(p->points[1]);
+        dglVertex3fv(p->points[2]);
+        dglEnd();
+        dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        dglBegin(GL_TRIANGLES);
+        dglColor4ub(255, 255, 255, 255);
+        dglVertex3fv(p->points[0]);
+        dglVertex3fv(p->points[1]);
+        dglVertex3fv(p->points[2]);
+        dglEnd();
+        dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+
+    GL_SetState(GLSTATE_CULL, true);
+    GL_SetState(GLSTATE_TEXTURE0, true);
+    GL_SetState(GLSTATE_BLEND, false);
+}
+
+//
 // R_DrawFrame
 //
 
@@ -153,6 +235,11 @@ void R_DrawFrame(void)
 
     R_DrawTestModel("models/mdl320/mdl320.kmesh");
 
+    if(showcollision)
+    {
+        R_DrawCollision();
+    }
+
     GL_SetOrtho();
 }
 
@@ -167,10 +254,35 @@ void R_FinishFrame(void)
 }
 
 //
+// FCmd_ShowCollision
+//
+
+static void FCmd_ShowCollision(void)
+{
+    if(Cmd_GetArgc() < 2)
+    {
+        return;
+    }
+
+    showcollision = atoi(Cmd_GetArgv(1));
+}
+
+//
+// R_Shutdown
+//
+
+void R_Shutdown(void)
+{
+    Z_FreeTags(PU_MODEL, PU_MODEL);
+}
+
+//
 // R_Init
 //
 
 void R_Init(void)
 {
+    Cmd_AddCommand("showcollision", FCmd_ShowCollision);
+
     Mdl_Init();
 }

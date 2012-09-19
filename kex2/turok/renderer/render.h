@@ -93,6 +93,7 @@ void Mdl_Init(void);
 //
 void R_DrawFrame(void);
 void R_FinishFrame(void);
+void R_Shutdown(void);
 void R_Init(void);
 
 #endif

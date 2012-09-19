@@ -96,10 +96,8 @@ typedef struct plane_s
 {
     int             area;
     unsigned int    flags;
-    vec3_t          *points;
-    struct plane_s  *link1;
-    struct plane_s  *link2;
-    struct plane_s  *link3;
+    vec3_t          points[3];
+    struct plane_s  *link[3];
 } plane_t;
 
 void Plane_SetTemp(plane_t *plane, vec3_t p1, vec3_t p2, vec3_t p3);

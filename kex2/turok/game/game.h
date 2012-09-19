@@ -20,41 +20,13 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef _ACTOR_H_
-#define _ACTOR_H_
+#ifndef __GAME_H__
+#define __GAME_H__
 
 #include "type.h"
-#include "mathlib.h"
-#include "render.h"
 
-typedef enum
-{
-    AF_NOALIGNPITCH     = 0x1
-} actorflags_t;
-
-typedef struct actor_s
-{
-    vec3_t              origin;
-    vec4_t              rotation;
-    vec3_t              velocity;
-    vec3_t              scale;
-    plane_t             *plane;
-    actorflags_t        flags;
-    float               yaw;
-    float               pitch;
-    int                 svclient_id;
-    kmodel_t            *model;
-    short               type;
-    int                 health;
-    float               meleerange;
-    float               width;
-    float               height;
-    int                 mapactor_id;
-    struct actor_s      *target;
-    struct actor_s      *prev;
-    struct actor_s      *next;
-} actor_t;
-
-actor_t *G_SpawnActor(float x, float y, float z, float yaw, const char *model, short type);
+void G_Shutdown(void);
+void G_Init(void);
 
 #endif
+

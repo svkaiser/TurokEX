@@ -25,75 +25,108 @@
 
 #include "type.h"
 #include "actor.h"
+#include "mathlib.h"
+
+typedef enum
+{
+    CLF_WATER           = 0x1,
+    CLF_UNKNOWN2        = 0x2,
+    CLF_UNKNOWN4        = 0x4,
+    CLF_NOSOLIDWALL     = 0x8,
+    CLF_UNKNOWN16       = 0x10,
+    CLF_UNKNOWN32       = 0x20,
+    CLF_TELEPORT        = 0x40,
+    CLF_UNKNOWN128      = 0x80,
+    CLF_UNKNOWN256      = 0x100,
+    CLF_HIDDEN          = 0x200,
+    CLF_UNKNOWN1024     = 0x400,
+    CLF_UNKNOWN2048     = 0x800,
+    CLF_DAMAGE_LAVA     = 0x1000,
+    CLF_UNKNOWN8192     = 0x2000,
+    CLF_ENDLESSPIT      = 0x4000,
+    CLF_UNKNOWN32768    = 0x8000,
+    CLF_UNKNOWN65536    = 0x10000
+} collisionflags_t;
 
 typedef struct
 {
-    float minx;
-    float minz;
-    float maxx;
-    float maxz;
-} mapgrid_t;
-
-typedef struct
-{
-    char        mdlpath[MAX_FILEPATH];
-    int         textureindex;
-    int         skin;
-    int         tid;
-    int         target;
-    int         variant;
-    int         leafindex;
-    float       yaw;
-    vec3_t      origin;
-    vec3_t      scale;
-    float       width;
-    float       height;
+    char            mdlpath[MAX_FILEPATH];
+    short           textureindex;
+    short           skin;
+    short           tid;
+    short           target;
+    short           variant;
+    short           leafindex;
+    float           yaw;
+    vec3_t          origin;
+    vec3_t          scale;
+    float           width;
+    float           height;
+    float           meleerange;
+    short           health;
+    short           type;
 } mapactor_t;
 
 typedef struct
 {
-    vec3_t      origin;
-    vec3_t      scale;
-    bbox_t      box;
-    char        mdlpath[MAX_FILEPATH];
-    vec4_t      angle;
-    int         textureindex;
-} mapstaticinst_t;
+    float           minx;
+    float           minz;
+    float           maxx;
+    float           maxz;
+} mapgrid_t;
 
 typedef struct
 {
-    vec3_t      origin;
-    vec3_t      scale;
-    float       boundsize;
-    char        mdlpath[MAX_FILEPATH];
-    int         textureindex;
-    int         tid;
-    int         target;
+    vec3_t          origin;
+    vec3_t          scale;
+    bbox_t          box;
+    kmodel_t        *model;
+    vec4_t          rotation;
+    int             textureindex;
+    mapgrid_t       *grid;
 } mapinst_t;
 
 typedef struct
 {
-    unsigned int        numstaticinstances;
-    unsigned int        numinstances;
-    mapstaticinst_t     *staticinst;
-    mapinst_t           *inst;
+    unsigned int    numstatics;
+    unsigned int    numspecials;
+    mapinst_t       *statics;
+    mapinst_t       *specials;
 } mapinstgroup_t;
 
 typedef struct
 {
-    unsigned int    numactors;
+    rcolor          fog_color;
+    float           fog_far;
+    float           fog_near;
+    float           waterplane;
+    unsigned int    flags;
+    int             args[6];
+} area_t;
+
+typedef struct
+{
+    unsigned int    nummapactors;
     unsigned int    numinstancegroups;
     unsigned int    numgridbounds;
-    mapactor_t      *actors;
+    unsigned int    numareas;
+    unsigned int    numplanes;
+    unsigned int    numzonebounds;
+    mapactor_t      *mapactors;
     mapinstgroup_t  *instgroups;
     mapgrid_t       *gridbounds;
+    area_t          *areas;
+    plane_t         *planes;
+    mapgrid_t       *zones;
     actor_t         actorlist;
 } kmap_t;
 
 #define MAXMAPS     50
 
 extern kmap_t kmaps[MAXMAPS];
+extern kmap_t *g_currentmap;
 
+kmap_t *Map_Load(int map);
 void Map_Init(void);
 
 #endif

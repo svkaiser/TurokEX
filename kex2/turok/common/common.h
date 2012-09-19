@@ -89,6 +89,7 @@ void Com_Shutdown(void);
 void Com_WriteConfigFile(void);
 void Com_ReadConfigFile(const char *file);
 unsigned int Com_HashFileName(const char *name);
+void Com_NormalizeSlashes(char *str);
 
 //
 // CVARS

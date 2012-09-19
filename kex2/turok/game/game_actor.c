@@ -35,18 +35,18 @@
 
 #define SLOPE_THRESHOLD     25.0f
 
-actor_t *currentactor;
+static actor_t *g_currentactor;
 
 //
 // G_LinkActor
 //
 
-void G_LinkActor(kmap_t *map, actor_t *actor)
+void G_LinkActor(actor_t *actor)
 {
-    map->actorlist.prev->next = actor;
-    actor->next = &map->actorlist;
-    actor->prev = map->actorlist.prev;
-    map->actorlist.prev = actor;
+    g_currentmap->actorlist.prev->next = actor;
+    actor->next = &g_currentmap->actorlist;
+    actor->prev = g_currentmap->actorlist.prev;
+    g_currentmap->actorlist.prev = actor;
 }
 
 //
@@ -56,37 +56,67 @@ void G_LinkActor(kmap_t *map, actor_t *actor)
 void G_UnlinkActor(actor_t* actor)
 {
     /* Remove from main actor list */
-    actor_t* next = currentactor->next;
+    actor_t* next = g_currentactor->next;
 
-    /* Note that currentactor is guaranteed to point to us,
+    /* Note that g_currentactor is guaranteed to point to us,
     * and since we're freeing our memory, we had better change that. So
     * point it to actor->prev, so the iterator will correctly move on to
     * actor->prev->next = actor->next */
-    (next->prev = currentactor = actor->prev)->next = next;
+    (next->prev = g_currentactor = actor->prev)->next = next;
 }
 
 //
-// G_SpawnActorFromMap
+// G_SpawnActor
 //
 
-actor_t *G_SpawnActorFromMap(kmap_t *map, mapactor_t *mapactor)
+actor_t *G_SpawnActor(float x, float y, float z,
+                      float yaw, const char *model, short type)
 {
     actor_t *actor;
 
-    actor = (actor_t*)Z_Calloc(sizeof(*actor), PU_ACTOR, NULL);
-    actor->origin[0]    = mapactor->origin[0];
-    actor->origin[1]    = mapactor->origin[1];
-    actor->origin[2]    = mapactor->origin[2];
-    actor->scale[0]     = mapactor->scale[0];
-    actor->scale[1]     = mapactor->scale[1];
-    actor->scale[2]     = mapactor->scale[2];
-    actor->yaw          = mapactor->yaw;
-    actor->pitch        = 0;
+    if(g_currentmap == NULL)
+    {
+        return NULL;
+    }
 
-    Vec_SetQuaternion(actor->rotation, actor->yaw, 1, 0, 0);
-    G_LinkActor(map, actor);
+    actor = (actor_t*)Z_Calloc(sizeof(*actor), PU_ACTOR, NULL);
+
+    Vec_Set3(actor->origin, x, y, z);
+    Vec_Set3(actor->scale, 0.5f, 0.5f, 0.5f);
+    Vec_SetQuaternion(actor->rotation, yaw, 1, 0, 0);
+
+    actor->yaw          = yaw;
+    actor->pitch        = 0;
+    actor->type         = type;
+    actor->health       = 100;
+    actor->width        = 40.0f;
+    actor->height       = 40.0f;
+    actor->meleerange   = 0;
+    actor->target       = NULL;
+    actor->model        = Mdl_Load(model);
+    actor->mapactor_id  = -1;
+    actor->svclient_id  = -1;
+
+    G_LinkActor(actor);
 
     return actor;
+}
+
+//
+// G_GetActorMeleeRange
+//
+
+float G_GetActorMeleeRange(actor_t *actor, vec3_t targetpos)
+{
+    float x;
+    float y;
+    float z;
+
+    x = actor->origin[0] - targetpos[0];
+    y = actor->height + actor->origin[1] - targetpos[1];
+    z = actor->origin[2] - targetpos[2];
+
+    return x * x + y * y + z * z;
 }
 
 //
@@ -106,12 +136,12 @@ void G_RotateActorToPlane(vec4_t rot, actor_t *actor)
     float slope;
 
     if(actor->plane == NULL ||
-        (actor->flags & 1 || Plane_CheckYSlope(actor->plane)))
+        (actor->flags & AF_NOALIGNPITCH || Plane_CheckYSlope(actor->plane)))
     {
         Vec_Set4(rot, 0, 0, 0, 1);
         return;
     }
-    else if(actor->svclient == NULL)
+    else if(actor->svclient_id == -1)
     {
         Plane_GetRotation(rot, actor->plane);
         return;

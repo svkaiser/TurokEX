@@ -35,6 +35,7 @@
 #include "gl.h"
 #include "menu.h"
 #include "script.h"
+#include "game.h"
 
 CVAR(developer, 0);
 CVAR(fixedtime, 0);
@@ -57,6 +58,8 @@ void Sys_Shutdown(void)
     Com_WriteConfigFile();
 
     Tex_Shutdown();
+    R_Shutdown();
+    G_Shutdown();
     KF_Shutdown();
     SV_Shutdown();
     Com_Shutdown();
@@ -200,6 +203,8 @@ void Kernel_Main(int argc, char **argv)
     Com_Printf("Video Initialized\n");
     R_Init();
     Com_Printf("Renderer Initialized\n");
+    G_Init();
+    Com_Printf("Game Initialized\n");
 
     GL_Register();
 

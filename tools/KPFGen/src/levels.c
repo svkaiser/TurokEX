@@ -119,18 +119,18 @@ typedef struct
     float u4;
     float u5;
     float uf6;
-    float uf7;
-    float uf8;
-    float uf9;
+    float meleerange;
+    float width;
+    float height;
     float uf10;
     float u11;
     float u12;
     float u13;
     int u14;
-    short u15;
-    short u16;
+    byte u15[4];
     int u17;
-    int u18;
+    short u18;
+    short health;
     short tid;
     short target;
     short skin;
@@ -200,11 +200,11 @@ typedef struct
 typedef struct
 {
     short model;
-    short u1;
+    short type;
     short attribute;
     short leaf;
     short angle;
-    byte u2;
+    byte flags;
     byte u3;
     float xyz[3];
     float scale[3];
@@ -384,7 +384,7 @@ static void ProcessAreas(byte *data)
             area->fogrgba[0], area->fogrgba[1], area->fogrgba[2], area->fogrgba[3]);
         Com_Strcat("        waterheight = %f\n", area->waterheight);
         Com_Strcat("        flags = %i\n", area->flags);
-        Com_Strcat("        args = %i %i %i %i %i %i\n",
+        Com_Strcat("        args = { %i %i %i %i %i %i }\n",
             area->args1, area->args2, area->args3, area->args4, area->args5, area->args6);
         Com_Strcat("        fogz_far = %f\n", area->fogzfar);
         Com_Strcat("    }\n");
@@ -430,10 +430,10 @@ static void ProcessNavigation(byte *data, int index)
     DC_DecodeData(zones, decode_buffer, 0);
     memcpy(zones, decode_buffer, size);
 
-    Com_Strcat("areas = %i\n", Com_GetCartOffset(areas, CHUNK_AREAS_COUNT, 0));
-    Com_Strcat("points = %i\n", Com_GetCartOffset(points, CHUNK_POINTS_COUNT, 0));
-    Com_Strcat("leafs = %i\n", Com_GetCartOffset(leafs, CHUNK_LEAFS_COUNT, 0));
-    Com_Strcat("zonebounds = %i\n\n", Com_GetCartOffset(zones, CHUNK_ZONE_COUNT, 0));
+    Com_Strcat("numareas = %i\n", Com_GetCartOffset(areas, CHUNK_AREAS_COUNT, 0));
+    Com_Strcat("numpoints = %i\n", Com_GetCartOffset(points, CHUNK_POINTS_COUNT, 0));
+    Com_Strcat("numleafs = %i\n", Com_GetCartOffset(leafs, CHUNK_LEAFS_COUNT, 0));
+    Com_Strcat("numzonebounds = %i\n\n", Com_GetCartOffset(zones, CHUNK_ZONE_COUNT, 0));
 
     ProcessAreas(areas);
     ProcessPoints(points);
@@ -477,14 +477,15 @@ static void ProcessActors(byte *data)
              actor->xyz[0], actor->xyz[1], actor->xyz[2]);
          Com_Strcat("        scale = { %f %f %f }\n",
              actor->scale[0], actor->scale[1], actor->scale[2]);
-         Com_Strcat("        // u1 = %i\n", actor->u1);
-         Com_Strcat("        // u2 = %i\n", actor->u2);
+         Com_Strcat("        type = %i\n", actor->type);
+         Com_Strcat("        flags = %i\n", actor->flags);
+         Com_Strcat("        meleerange = %f\n", GetAttribute(actor->attribute)->meleerange);
+         Com_Strcat("        health = %i\n", GetAttribute(actor->attribute)->health);
+         Com_Strcat("        width = %f\n", GetAttribute(actor->attribute)->width);
+         Com_Strcat("        height = %f\n", GetAttribute(actor->attribute)->height);
          Com_Strcat("        // u3 = %i\n", actor->u3);
          Com_Strcat("        // attrib uf2 = %f\n", GetAttribute(actor->attribute)->uf2);
          Com_Strcat("        // attrib uf6 = %f\n", GetAttribute(actor->attribute)->uf6);
-         Com_Strcat("        // attrib uf7 = %f\n", GetAttribute(actor->attribute)->uf7);
-         Com_Strcat("        // attrib uf8 = %f\n", GetAttribute(actor->attribute)->uf8);
-         Com_Strcat("        // attrib uf9 = %f\n", GetAttribute(actor->attribute)->uf9);
          Com_Strcat("        // attrib uf10 = %f\n", GetAttribute(actor->attribute)->uf10);
          Com_Strcat("    }\n");
     }

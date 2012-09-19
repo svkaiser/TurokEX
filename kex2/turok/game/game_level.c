@@ -27,11 +27,11 @@
 #include "common.h"
 #include "actor.h"
 #include "level.h"
-#include "kernel.h"
 #include "zone.h"
 #include "script.h"
 
 kmap_t kmaps[MAXMAPS];
+kmap_t *g_currentmap = NULL;
 
 enum
 {
@@ -122,6 +122,80 @@ static const sctokens_t insttokens[scinst_end] =
     { scinst_numinstances,          "numinstances"          }
 };
 
+enum
+{
+    scnav_numareas = 0,
+    scnav_numpoints,
+    scnav_numleafs,
+    scnav_numzonebounds,
+    scnav_areas,
+    scnav_points,
+    scnav_leafs,
+    scnav_zonebounds,
+    scnav_end
+};
+
+static const sctokens_t navtokens[scnav_end] =
+{
+    { scnav_numareas,       "numareas"      },
+    { scnav_numpoints,      "numpoints"     },
+    { scnav_numleafs,       "numleafs"      },
+    { scnav_numzonebounds,  "numzonebounds" },
+    { scnav_areas,          "areas"         },
+    { scnav_points,         "points"        },
+    { scnav_leafs,          "leafs"         },
+    { scnav_zonebounds,     "zonebounds"    }
+};
+
+enum
+{
+    scarea_fogcolor = 0,
+    scarea_waterheight,
+    scarea_flags,
+    scarea_args,
+    scarea_fogz_far,
+    scarea_fogz_near,
+    scarea_end
+};
+
+static const sctokens_t areatokens[scarea_end] =
+{
+    { scarea_fogcolor,      "fogcolor"      },
+    { scarea_waterheight,   "waterheight"   },
+    { scarea_flags,         "flags"         },
+    { scarea_args,          "args"          },
+    { scarea_fogz_far,      "fogz_far"      },
+    { scarea_fogz_near,     "fogz_near"     }
+};
+
+//
+// Map_SpawnActor
+//
+
+static void Map_SpawnActor(mapactor_t *mapactor, int id)
+{
+    actor_t *actor;
+
+    actor = G_SpawnActor(
+        mapactor->origin[0],
+        mapactor->origin[1],
+        mapactor->origin[2],
+        mapactor->yaw,
+        mapactor->mdlpath,
+        mapactor->type);
+
+    Vec_Set3(actor->scale,
+        mapactor->scale[0],
+        mapactor->scale[1],
+        mapactor->scale[2]);
+
+    actor->health       = mapactor->health;
+    actor->meleerange   = mapactor->meleerange;
+    actor->width        = mapactor->width;
+    actor->height       = mapactor->height;
+    actor->mapactor_id  = id;
+}
+
 //
 // Map_ParseActorBlock
 //
@@ -130,16 +204,18 @@ static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
 {
     unsigned int i;
 
-    if(map->numactors <= 0)
+    if(map->nummapactors <= 0)
     {
         return;
     }
 
-    map->actors = (mapactor_t*)Z_Calloc(sizeof(mapactor_t) * map->numactors, PU_LEVEL, 0);
+    map->mapactors = (mapactor_t*)Z_Calloc(sizeof(mapactor_t) * map->nummapactors, PU_LEVEL, 0);
 
-    for(i = 0; i < map->numactors; i++)
+    for(i = 0; i < map->nummapactors; i++)
     {
-        mapactor_t *actor = &map->actors[i];
+        mapactor_t *mapactor;
+
+        mapactor = &map->mapactors[i];
 
         // read into nested actor block
         SC_ExpectNextToken(TK_LBRACK);
@@ -150,61 +226,68 @@ static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
             switch(SC_GetIDForToken(mapactortokens, parser->token))
             {
             case scactor_model:
-                SC_AssignString(mapactortokens, actor->mdlpath,
+                SC_AssignString(mapactortokens, mapactor->mdlpath,
                     scactor_model, parser, false);
                 break;
 
             case scactor_texturealt:
-                SC_AssignInteger(mapactortokens, &actor->textureindex,
+                SC_AssignWord(mapactortokens, &mapactor->textureindex,
                     scactor_texturealt, parser, false);
                 break;
 
             case scactor_skin:
-                SC_AssignInteger(mapactortokens, &actor->skin,
+                SC_AssignWord(mapactortokens, &mapactor->skin,
                     scactor_skin, parser, false);
                 break;
 
             case scactor_targetid:
-                SC_AssignInteger(mapactortokens, &actor->tid,
+                SC_AssignWord(mapactortokens, &mapactor->tid,
                     scactor_targetid, parser, false);
                 break;
 
             case scactor_target:
-                SC_AssignInteger(mapactortokens, &actor->target,
+                SC_AssignWord(mapactortokens, &mapactor->target,
                     scactor_target, parser, false);
                 break;
 
             case scactor_variant:
-                SC_AssignInteger(mapactortokens, &actor->variant,
+                SC_AssignWord(mapactortokens, &mapactor->variant,
                     scactor_variant, parser, false);
                 break;
 
             case scactor_leaf:
-                SC_AssignInteger(mapactortokens, &actor->leafindex,
+                SC_AssignWord(mapactortokens, &mapactor->leafindex,
                     scactor_leaf, parser, false);
                 break;
 
             case scactor_angle:
-                SC_AssignFloat(mapactortokens, &actor->yaw,
+                SC_AssignFloat(mapactortokens, &mapactor->yaw,
                     scactor_angle, parser, false);
                 break;
 
             case scactor_position:
-                SC_AssignVector(mapactortokens, &actor->origin,
+                SC_AssignVector(mapactortokens, &mapactor->origin,
                     scactor_position, parser, false);
                 break;
 
             case scactor_scale:
-                SC_AssignVector(mapactortokens, &actor->scale,
+                SC_AssignVector(mapactortokens, &mapactor->scale,
                     scactor_scale, parser, false);
                 break;
 
             default:
+                if(parser->tokentype == TK_IDENIFIER)
+                {
+                    Com_DPrintf("Map_ParseActorBlock: Unknown token: %s\n",
+                        parser->token);
+                }
                 break;
             }
 
             SC_Find();
         }
+
+        Map_SpawnActor(mapactor, i);
     }
 }
 
@@ -235,10 +318,10 @@ static void Map_ParseGridSectionBlock(kmap_t *map, scparser_t *parser)
 }
 
 //
-// Map_ParseScript
+// Map_ParseLevelScript
 //
 
-static void Map_ParseScript(kmap_t *map, scparser_t *parser)
+static void Map_ParseLevelScript(kmap_t *map, scparser_t *parser)
 {
     while(SC_CheckScriptState())
     {
@@ -256,7 +339,7 @@ static void Map_ParseScript(kmap_t *map, scparser_t *parser)
                 switch(SC_GetIDForToken(maptokens, parser->token))
                 {
                 case scmap_numactors:
-                    SC_AssignInteger(maptokens, &map->numactors,
+                    SC_AssignInteger(maptokens, &map->nummapactors,
                         scmap_numactors, parser, false);
                     break;
 
@@ -292,6 +375,11 @@ static void Map_ParseScript(kmap_t *map, scparser_t *parser)
                     break;
 
                 default:
+                    if(parser->tokentype == TK_IDENIFIER)
+                    {
+                        Com_DPrintf("Map_ParseLevelScript: Unknown token: %s\n",
+                            parser->token);
+                    }
                     break;
                 }
             }
@@ -299,6 +387,268 @@ static void Map_ParseScript(kmap_t *map, scparser_t *parser)
         default:
             break;
         }
+    }
+}
+
+//
+// Map_ParseAreaBlock
+//
+
+static void Map_ParseAreaBlock(kmap_t *map, scparser_t *parser)
+{
+    unsigned int i;
+
+    if(map->numareas <= 0)
+    {
+        SC_Error("numareas is 0 or hasn't been set yet");
+        return;
+    }
+
+    map->areas = (area_t*)Z_Calloc(sizeof(area_t) *
+        map->numareas, PU_LEVEL, 0);
+
+    SC_ExpectNextToken(TK_EQUAL);
+    SC_ExpectNextToken(TK_LBRACK);
+
+    for(i = 0; i < map->numareas; i++)
+    {
+        // read into nested area block
+        SC_ExpectNextToken(TK_LBRACK);
+        SC_Find();
+
+        while(parser->tokentype != TK_RBRACK)
+        {
+            switch(SC_GetIDForToken(areatokens, parser->token))
+            {
+            case scarea_fogcolor:
+                {
+                    byte r, g, b, a;
+
+                    SC_ExpectNextToken(TK_EQUAL);
+                    r = SC_GetNumber();
+                    g = SC_GetNumber();
+                    b = SC_GetNumber();
+                    a = SC_GetNumber();
+
+                    map->areas[i].fog_color = RGBA(r, g, b, a);
+                }
+                break;
+
+            case scarea_waterheight:
+                SC_AssignFloat(areatokens, &map->areas[i].waterplane,
+                    scarea_waterheight, parser, false);
+                break;
+
+            case scarea_flags:
+                SC_AssignInteger(areatokens, &map->areas[i].flags,
+                    scarea_flags, parser, false);
+                break;
+
+            case scarea_args:
+                SC_ExpectNextToken(TK_EQUAL);
+                SC_ExpectNextToken(TK_LBRACK);
+
+                map->areas[i].args[0] = SC_GetNumber();
+                map->areas[i].args[1] = SC_GetNumber();
+                map->areas[i].args[2] = SC_GetNumber();
+                map->areas[i].args[3] = SC_GetNumber();
+                map->areas[i].args[4] = SC_GetNumber();
+                map->areas[i].args[5] = SC_GetNumber();
+
+                SC_ExpectNextToken(TK_RBRACK);
+                break;
+                
+            case scarea_fogz_far:
+                SC_AssignFloat(areatokens, &map->areas[i].fog_far,
+                    scarea_fogz_far, parser, false);
+                break;
+
+            case scarea_fogz_near:
+                SC_AssignFloat(areatokens, &map->areas[i].fog_near,
+                    scarea_fogz_near, parser, false);
+                break;
+
+            default:
+                if(parser->tokentype == TK_IDENIFIER)
+                {
+                    Com_DPrintf("Map_ParseAreaBlock: Unknown token: %s\n",
+                        parser->token);
+                }
+                break;
+            }
+
+            SC_Find();
+        }
+    }
+
+    SC_ExpectNextToken(TK_RBRACK);
+}
+
+//
+// Map_ParseCollisionPlanes
+//
+
+static void Map_ParseCollisionPlanes(kmap_t *map, scparser_t *parser,
+                                     unsigned int numpoints, float *points)
+{
+    unsigned int i;
+
+    if(map->numplanes <= 0)
+    {
+        SC_Error("numplanes is 0 or hasn't been set yet");
+        return;
+    }
+
+    if(numpoints <= 0)
+    {
+        SC_Error("numpoints is 0 or hasn't been set yet");
+        return;
+    }
+
+    if(points == NULL)
+    {
+        SC_Error("points hasn't been allocated yet");
+        return;
+    }
+
+    map->planes = (plane_t*)Z_Calloc(sizeof(plane_t) *
+        map->numplanes, PU_LEVEL, 0);
+
+    SC_ExpectNextToken(TK_EQUAL);
+    SC_ExpectNextToken(TK_LBRACK);
+
+    for(i = 0; i < map->numplanes; i++)
+    {
+        int p;
+
+        map->planes[i].area = SC_GetNumber();
+        map->planes[i].flags = SC_GetNumber();
+
+        for(p = 0; p < 3; p++)
+        {
+            int index = SC_GetNumber();
+
+            map->planes[i].points[p][0] = points[index * 4 + 0];
+            map->planes[i].points[p][1] = points[index * 4 + 1];
+            map->planes[i].points[p][2] = points[index * 4 + 2];
+        }
+
+        for(p = 0; p < 3; p++)
+        {
+            int link = SC_GetNumber();
+            map->planes[i].link[p] = link == -1 ? NULL : &map->planes[link];
+        }
+    }
+
+    SC_ExpectNextToken(TK_RBRACK);
+}
+
+//
+// Map_ParseNavScript
+//
+
+static void Map_ParseNavScript(kmap_t *map, scparser_t *parser)
+{
+    unsigned int i;
+    unsigned int numpoints = 0;
+    float *points = NULL;
+
+    while(SC_CheckScriptState())
+    {
+        SC_Find();
+
+        switch(parser->tokentype)
+        {
+        case TK_NONE:
+            break;
+        case TK_EOF:
+            return;
+        case TK_IDENIFIER:
+            {
+                // there are three main blocks for a kmesh file
+                switch(SC_GetIDForToken(navtokens, parser->token))
+                {
+                case scnav_numareas:
+                    SC_AssignInteger(navtokens, &map->numareas,
+                        scnav_numareas, parser, false);
+                    break;
+
+                case scnav_numpoints:
+                    SC_AssignInteger(navtokens, &numpoints,
+                        scnav_numpoints, parser, false);
+                    break;
+
+                case scnav_numleafs:
+                    SC_AssignInteger(navtokens, &map->numplanes,
+                        scnav_numleafs, parser, false);
+                    break;
+
+                case scnav_numzonebounds:
+                    SC_AssignInteger(navtokens, &map->numzonebounds,
+                        scnav_numzonebounds, parser, false);
+                    break;
+
+                case scnav_areas:
+                    Map_ParseAreaBlock(map, parser);
+                    break;
+
+                case scnav_points:
+                    SC_AssignArray(navtokens, AT_FLOAT, &points, numpoints * 4,
+                        scnav_points, parser, false, PU_LEVEL);
+                    break;
+
+                case scnav_leafs:
+                    Map_ParseCollisionPlanes(map, parser, numpoints, points);
+                    break;
+
+                case scnav_zonebounds:
+
+                    if(map->numzonebounds <= 0)
+                    {
+                        SC_Error("numzonebounds is 0 or hasn't been set yet");
+                        return;
+                    }
+
+                    map->zones = (mapgrid_t*)Z_Calloc(sizeof(mapgrid_t) *
+                        map->numzonebounds, PU_LEVEL, 0);
+
+                    SC_ExpectNextToken(TK_EQUAL);
+                    SC_ExpectNextToken(TK_LBRACK);
+
+                    for(i = 0; i < map->numzonebounds; i++)
+                    {
+                        map->zones[i].minx = (float)SC_GetFloat();
+                        map->zones[i].minz = (float)SC_GetFloat();
+                        map->zones[i].maxx = (float)SC_GetFloat();
+                        map->zones[i].maxz = (float)SC_GetFloat();
+                        
+                        SC_GetNumber();
+                        SC_GetNumber();
+                        SC_GetNumber();
+                    }
+
+                    SC_ExpectNextToken(TK_RBRACK);
+                    break;
+
+                default:
+                    if(parser->tokentype == TK_IDENIFIER)
+                    {
+                        Com_DPrintf("Map_ParseNavScript: Unknown token: %s\n",
+                            parser->token);
+                    }
+                    break;
+                }
+            }
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    if(points != NULL)
+    {
+        Z_Free(points);
     }
 }
 
@@ -316,20 +666,57 @@ kmap_t *Map_Load(int map)
         return NULL;
     }
 
+    kmap = &kmaps[map];
+    g_currentmap = kmap;
+
     if(!(parser = SC_Open(kva("maps/map%02d/map%02d.kmap", map, map))))
     {
         return NULL;
     }
 
-    kmap = &kmaps[map];
-    kmap->actorlist.next = kmap->actorlist.prev = &kmap->actorlist;
-
-    Map_ParseScript(kmap, parser);
-
+    Map_ParseLevelScript(kmap, parser);
     // we're done with the file
     SC_Close();
 
+    if(parser = SC_Open(kva("maps/map%02d/map%02d.knav", map, map)))
+    {
+        Map_ParseNavScript(kmap, parser);
+        // we're done with the file
+        SC_Close();
+    }
+
     return kmap;
+}
+
+//
+// FCmd_LoadTestNav
+//
+
+static void FCmd_LoadTestNav(void)
+{
+     scparser_t *parser;
+     kmap_t *kmap;
+     int map;
+
+    if(Cmd_GetArgc() < 2)
+    {
+        return;
+    }
+
+    map = atoi(Cmd_GetArgv(1));
+
+    kmap = &kmaps[map];
+    g_currentmap = kmap;
+
+    if(parser = SC_Open(kva("maps/map%02d/map%02d.knav", map, map)))
+    {
+        Map_ParseNavScript(kmap, parser);
+        // we're done with the file
+        SC_Close();
+    }
+
+    Com_DPrintf("\nplanes: %i\nareas: %i\n\n",
+        kmap->numplanes, kmap->numareas);
 }
 
 //
@@ -338,5 +725,16 @@ kmap_t *Map_Load(int map)
 
 void Map_Init(void)
 {
+    int i;
+
     memset(kmaps, 0, sizeof(kmap_t) * MAXMAPS);
+
+    for(i = 0; i < MAXMAPS; i++)
+    {
+        kmap_t *kmap = &kmaps[i];
+        kmap->actorlist.next = kmap->actorlist.prev = &kmap->actorlist;
+    }
+
+    Cmd_AddCommand("loadknav", FCmd_LoadTestNav);
 }
+

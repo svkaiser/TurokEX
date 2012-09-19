@@ -35,13 +35,11 @@
 
 void Plane_SetTemp(plane_t *plane, vec3_t p1, vec3_t p2, vec3_t p3)
 {
-    plane->points = Z_Alloca(sizeof(vec3_t) * 3);
-
     memcpy(&plane->points[0], p1, sizeof(vec3_t));
     memcpy(&plane->points[1], p2, sizeof(vec3_t));
     memcpy(&plane->points[2], p3, sizeof(vec3_t));
 
-    plane->link1 = plane->link2 = plane->link3 = NULL;
+    plane->link[0] = plane->link[1]= plane->link[2] = NULL;
     plane->area = -1;
     plane->flags = 0;
 }
@@ -56,18 +54,9 @@ void Plane_GetNormal(vec3_t normal, plane_t *plane)
     vec3_t vp2;
     vec3_t vn;
 
-    if(plane->points)
-    {
-        Vec_Sub(vp1, plane->points[1], plane->points[0]);
-        Vec_Sub(vp2, plane->points[2], plane->points[1]);
-        Vec_Cross(vn, vp1, vp2);
-    }
-    else
-    {
-        vn[0] = 0;
-        vn[1] = 1.0f;
-        vn[2] = 0;
-    }
+    Vec_Sub(vp1, plane->points[1], plane->points[0]);
+    Vec_Sub(vp2, plane->points[2], plane->points[1]);
+    Vec_Cross(vn, vp1, vp2);
 
     normal[0] = vn[0];
     normal[1] = vn[1];

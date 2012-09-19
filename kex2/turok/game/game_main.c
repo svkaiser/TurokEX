@@ -28,4 +28,25 @@
 #include "client.h"
 #include "server.h"
 #include "kernel.h"
+#include "level.h"
+#include "zone.h"
+
+//
+// G_Shutdown
+//
+
+void G_Shutdown(void)
+{
+    Z_FreeTags(PU_LEVEL, PU_LEVEL);
+    Z_FreeTags(PU_ACTOR, PU_ACTOR);
+}
+
+//
+// G_Init
+//
+
+void G_Init(void)
+{
+    Map_Init();
+}
 
