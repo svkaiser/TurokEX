@@ -42,6 +42,19 @@ void G_Shutdown(void)
 }
 
 //
+// G_Ticker
+//
+
+void G_Ticker(void)
+{
+    if(g_currentmap != NULL)
+    {
+        g_currentmap->tics++;
+        g_currentmap->time = (float)g_currentmap->tics * 0.1f;
+    }
+}
+
+//
 // G_Init
 //
 

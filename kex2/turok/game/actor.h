@@ -55,6 +55,10 @@ typedef struct actor_s
     struct actor_s      *next;
 } actor_t;
 
+void G_LinkActor(actor_t *actor);
+void G_UnlinkActor(actor_t* actor);
 actor_t *G_SpawnActor(float x, float y, float z, float yaw, const char *model, short type);
+float G_GetActorMeleeRange(actor_t *actor, vec3_t targetpos);
+void G_RotateActorToPlane(vec4_t rot, actor_t *actor);
 
 #endif

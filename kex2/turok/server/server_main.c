@@ -29,6 +29,7 @@
 #include "client.h"
 #include "packet.h"
 #include "server.h"
+#include "game.h"
 
 CVAR(sv_address, localhost);
 CVAR(sv_port, 58304);
@@ -330,6 +331,7 @@ void SV_ProcessClientPackets(ENetPacket *packet, ENetEvent *sev)
 
 static void SV_Ticker(void)
 {
+    G_Ticker();
 }
 
 //

@@ -89,11 +89,11 @@ float Plane_GetDistance(plane_t *plane, vec3_t pos)
 {
     vec3_t normal;
     float dist;
-
-    Plane_GetNormal(normal, plane);
     
-    if(plane->points)
+    if(plane)
     {
+        Plane_GetNormal(normal, plane);
+
         if(normal[1] == 0.0f)
         {
             dist = (

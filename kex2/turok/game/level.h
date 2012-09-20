@@ -80,7 +80,7 @@ typedef struct
     vec3_t          origin;
     vec3_t          scale;
     bbox_t          box;
-    kmodel_t        *model;
+    char            mdlpath[MAX_FILEPATH];
     vec4_t          rotation;
     int             textureindex;
     mapgrid_t       *grid;
@@ -119,6 +119,8 @@ typedef struct
     plane_t         *planes;
     mapgrid_t       *zones;
     actor_t         actorlist;
+    int             tics;
+    float           time;
 } kmap_t;
 
 #define MAXMAPS     50

@@ -149,7 +149,7 @@ void SC_AssignWord(const sctokens_t *tokenlist, unsigned short *var, int id,
                    scparser_t *parser, kbool expect);
 void SC_AssignFloat(const sctokens_t *tokenlist, float *var, int id,
                     scparser_t *parser, kbool expect);
-void SC_AssignVector(const sctokens_t *tokenlist, vec3_t *var, int id,
+void SC_AssignVector(const sctokens_t *tokenlist, vec3_t var, int id,
                      scparser_t *parser, kbool expect);
 void SC_AssignArray(const sctokens_t *tokenlist, arraytype_t type,
                     void **data, int count, int id,

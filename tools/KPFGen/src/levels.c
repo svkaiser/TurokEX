@@ -212,13 +212,14 @@ typedef struct
 
 typedef struct
 {
-    short u1;
-    short u2;
-    short model;
-    short u3;
     float scale;
+    short model;
+    short plane;
+    short attribute;
+    short unknown1;
     short y;
-    short flags;
+    byte drawflags;
+    byte flags;
     byte x;
     byte z;
     byte bbox[6];
@@ -231,9 +232,10 @@ typedef struct
     float scale[3];
     short bbox[6];
     short model;
-    short u1;
+    short plane;
     short attribute;
-    short u3;
+    byte u1;
+    byte flags;
     char angle[4];
     short unknown[24];
 } mapinsttype2_t;
@@ -243,11 +245,14 @@ typedef struct
     float xyz[3];
     float bboxsize;
     short model;
-    short u1;
+    short plane;
     short attribute;
     short u2;
-    short u3;
-    short u4;
+    byte u3;
+    byte u4;
+    byte u5;
+    byte flags;
+    byte u6;
 } mapinsttype3_t;
 
 //
@@ -548,15 +553,11 @@ static void ProcessInstances(byte *data)
         Com_Strcat("                boundsize = %f\n", mapinst->bboxsize);
         Com_Strcat("                model = \"models/mdl%03d/mdl%03d.kmesh\"\n",
             mapinst->model, mapinst->model);
-        Com_Strcat("                texture_alt = %i\n", GetAttribute(mapinst->attribute)->texture);
-        Com_Strcat("                skin = %i\n", GetAttribute(mapinst->attribute)->skin);
-        Com_Strcat("                target_id = %i\n", GetAttribute(mapinst->attribute)->tid);
-        Com_Strcat("                target = %i\n", GetAttribute(mapinst->attribute)->target);
-        Com_Strcat("                variant = %i\n", GetAttribute(mapinst->attribute)->variant1);
-        Com_Strcat("                // u1 = %i\n", mapinst->u1);
+        Com_Strcat("                // flags = %i\n", mapinst->flags);
         Com_Strcat("                // u2 = %i\n", mapinst->u2);
         Com_Strcat("                // u3 = %i\n", mapinst->u3);
         Com_Strcat("                // u4 = %i\n", mapinst->u4);
+        Com_Strcat("                // u5 = %i\n", mapinst->u5);
         Com_Strcat("            }\n");
     }
 }
@@ -633,12 +634,7 @@ static void ProcessStaticInstances2(byte *data)
         Com_Strcat("                angle = { %f %f %f %f }\n",
             rotvec[0], rotvec[1], rotvec[2], rotvec[3]);
         Com_Strcat("                texture_alt = %i\n", GetAttribute(mapinst->attribute)->texture);
-        Com_Strcat("                skin = %i\n", GetAttribute(mapinst->attribute)->skin);
-        Com_Strcat("                target_id = %i\n", GetAttribute(mapinst->attribute)->tid);
-        Com_Strcat("                target = %i\n", GetAttribute(mapinst->attribute)->target);
-        Com_Strcat("                variant = %i\n", GetAttribute(mapinst->attribute)->variant1);
         Com_Strcat("                // u1 = %i\n", mapinst->u1);
-        Com_Strcat("                // u3 = %i\n", mapinst->u3);
         Com_Strcat("            }\n");
     }
 }
@@ -669,12 +665,12 @@ static void ProcessInstanceGroups(byte *data)
         Com_Strcat("        {\n");
 
         Com_Strcat("            numstaticinstances = %i\n\n",
-            Com_GetCartOffset(Com_GetCartData(group, CHUNK_STATICINST_GROUP1, 0),
-            CHUNK_INSTANCE_COUNT, 0) +
+            /*Com_GetCartOffset(Com_GetCartData(group, CHUNK_STATICINST_GROUP1, 0),
+            CHUNK_INSTANCE_COUNT, 0) +*/
             Com_GetCartOffset(Com_GetCartData(group, CHUNK_STATICINST_GROUP2, 0),
             CHUNK_INSTANCE_COUNT, 0));
 
-        ProcessStaticInstances1(Com_GetCartData(group, CHUNK_STATICINST_GROUP1, 0));
+        //ProcessStaticInstances1(Com_GetCartData(group, CHUNK_STATICINST_GROUP1, 0));
         ProcessStaticInstances2(Com_GetCartData(group, CHUNK_STATICINST_GROUP2, 0));
 
         Com_Strcat("        }\n\n");

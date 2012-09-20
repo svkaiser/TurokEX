@@ -711,6 +711,9 @@ int SC_Find(void)
 
         if(c == '\n')
         {
+            sc_parser->linepos++;
+            sc_parser->rowpos = 1;
+
             if(comment == COMMENT_SINGLELINE)
             {
                 comment = COMMENT_NONE;
@@ -736,12 +739,7 @@ char SC_GetChar(void)
     sc_parser->rowpos++;
     c = sc_parser->buffer[sc_parser->buffpos++];
 
-    if(c == '\n')
-    {
-        sc_parser->linepos++;
-        sc_parser->rowpos = 1;
-    }
-    else if(c == 127)
+    if(c == 127)
     {
         c = 0;
     }
@@ -974,7 +972,7 @@ int SC_GetIDForToken(const sctokens_t *tokenlist, const char *token)
         }
     }
 
-    return 0;
+    return i;
 }
 
 //
@@ -1066,7 +1064,7 @@ void SC_AssignFloat(const sctokens_t *tokenlist, float *var, int id,
 // SC_AssignVector
 //
 
-void SC_AssignVector(const sctokens_t *tokenlist, vec3_t *var, int id,
+void SC_AssignVector(const sctokens_t *tokenlist, vec3_t var, int id,
                              scparser_t *parser, kbool expect)
 {
     if(expect)
@@ -1077,9 +1075,9 @@ void SC_AssignVector(const sctokens_t *tokenlist, vec3_t *var, int id,
     SC_ExpectNextToken(TK_EQUAL);
     SC_ExpectNextToken(TK_LBRACK);
 
-    *var[0] = (float)SC_GetFloat();
-    *var[1] = (float)SC_GetFloat();
-    *var[2] = (float)SC_GetFloat();
+    var[0] = (float)SC_GetFloat();
+    var[1] = (float)SC_GetFloat();
+    var[2] = (float)SC_GetFloat();
 
     SC_ExpectNextToken(TK_RBRACK);
 }

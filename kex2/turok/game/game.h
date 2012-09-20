@@ -26,6 +26,7 @@
 #include "type.h"
 
 void G_Shutdown(void);
+void G_Ticker(void);
 void G_Init(void);
 
 #endif

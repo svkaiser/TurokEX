@@ -103,6 +103,30 @@ actor_t *G_SpawnActor(float x, float y, float z,
 }
 
 //
+// G_ActorOnPlane
+//
+
+kbool G_ActorOnPlane(actor_t *actor)
+{
+    if(actor->plane == NULL)
+    {
+        return false;
+    }
+
+    return actor->origin[1] -
+        Plane_GetDistance(actor->plane, actor->origin) <= 15.36f;
+}
+
+
+//
+// G_ActorZMovement
+//
+
+void G_ActorZMovement(actor_t *actor)
+{
+}
+
+//
 // G_GetActorMeleeRange
 //
 
@@ -116,7 +140,7 @@ float G_GetActorMeleeRange(actor_t *actor, vec3_t targetpos)
     y = actor->height + actor->origin[1] - targetpos[1];
     z = actor->origin[2] - targetpos[2];
 
-    return x * x + y * y + z * z;
+    return (float)sqrt(x * x + y * y + z * z);
 }
 
 //
