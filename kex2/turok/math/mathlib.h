@@ -33,6 +33,8 @@
 //
 // VECTOR OPERATIONS
 //
+void  Vec_Copy3(vec3_t out, vec3_t vec);
+void  Vec_Copy4(vec3_t out, vec3_t vec);
 void  Vec_Set3(vec3_t vec, float x, float y, float z);
 void  Vec_Set4(vec4_t vec, float x, float y, float z, float w);
 void  Vec_Cross(vec3_t out, vec3_t vec1, vec3_t vec2);
@@ -40,8 +42,9 @@ float Vec_Dot(vec3_t vec1, vec3_t vec2);
 void  Vec_Add(vec3_t out, vec3_t vec1, vec3_t vec2);
 void  Vec_Sub(vec3_t out, vec3_t vec1, vec3_t vec2);
 void  Vec_Mult(vec3_t out, vec3_t vec1, vec3_t vec2);
-void  Vec_MultValue(vec3_t out, vec3_t vec1, float val);
+void  Vec_Scale(vec3_t out, vec3_t vec1, float val);
 float Vec_Length3(vec3_t v1, vec3_t v2);
+float Vec_Unit3(vec3_t vec);
 void  Vec_Normalize3(vec3_t out);
 void  Vec_Normalize4(vec4_t out);
 void  Vec_Lerp3(vec3_t out, float movement, vec3_t curr, vec3_t next);
@@ -88,6 +91,7 @@ float Ang_VectorToAngle(vec3_t vec);
 float Ang_Invert(float angle);
 float Ang_InvertSums(float angle1, float angle2);
 void  Ang_Clamp(float *angle);
+float Ang_Diff(float angle1, float angle2);
 
 //
 // PLANE OPERATIONS
@@ -97,16 +101,21 @@ typedef struct plane_s
     int             area;
     unsigned int    flags;
     vec3_t          points[3];
+    float           height[3];
     struct plane_s  *link[3];
+    vec3_t          normal;
+    float           dist;
 } plane_t;
 
 void Plane_SetTemp(plane_t *plane, vec3_t p1, vec3_t p2, vec3_t p3);
 void Plane_GetNormal(vec3_t normal, plane_t *plane);
 kbool Plane_IsFacing(plane_t *plane, float angle);
 float Plane_GetDistance(plane_t *plane, vec3_t pos);
-kbool Plane_CheckYSlope(plane_t *plane);
-float Plane_GetAngle(plane_t *p);
-float Plane_GetPitch(plane_t *plane, float x1, float z1, float x2, float z2);
+float Plane_GetHeight(plane_t *plane, vec3_t pos);
+kbool Plane_IsAWall(plane_t *plane);
+float Plane_GetYaw(plane_t *p, int point);
+float Plane_GetPitch(plane_t *p);
+float Plane_GetSlope(plane_t *plane, float x1, float z1, float x2, float z2);
 void Plane_GetRotation(vec4_t vec, plane_t *p);
 void Plane_AdjustRotation(vec4_t out, plane_t *p);
 kbool Plane_PointInRange(plane_t *p, float x, float z);

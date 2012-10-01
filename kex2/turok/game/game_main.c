@@ -55,6 +55,59 @@ void G_Ticker(void)
 }
 
 //
+// G_ClientThink
+//
+
+#define MOVE_VELOCITY   2.0f
+
+void G_ClientThink(actor_t *client, ticcmd_t *cmd)
+{
+    float sy;
+    float cy;
+
+    sy = (float)sin(client->yaw);
+    cy = (float)cos(client->yaw);
+
+    if(cmd->buttons & BT_FORWARD)
+    {
+        client->velocity[0] += MOVE_VELOCITY * sy;
+        client->velocity[2] += MOVE_VELOCITY * cy;
+    }
+
+    if(cmd->buttons & BT_BACKWARD)
+    {
+        client->velocity[0] -= MOVE_VELOCITY * sy;
+        client->velocity[2] -= MOVE_VELOCITY * cy;
+    }
+
+    sy = (float)sin(client->yaw + (90.0f * M_RAD));
+    cy = (float)cos(client->yaw + (90.0f * M_RAD));
+
+    if(cmd->buttons & BT_STRAFELEFT)
+    {
+        client->velocity[0] += MOVE_VELOCITY * sy;
+        client->velocity[2] += MOVE_VELOCITY * cy;
+    }
+
+    if(cmd->buttons & BT_STRAFERIGHT)
+    {
+        client->velocity[0] -= MOVE_VELOCITY * sy;
+        client->velocity[2] -= MOVE_VELOCITY * cy;
+    }
+
+    if(cmd->buttons & BT_JUMP)
+    {
+        if(G_ActorOnPlane(client))
+        {
+            client->velocity[1] = 10.0f;
+        }
+    }
+
+    // TEMP
+    G_ActorMovement(client);
+}
+
+//
 // G_Init
 //
 

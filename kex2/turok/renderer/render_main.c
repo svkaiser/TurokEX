@@ -35,7 +35,7 @@
 #include "zone.h"
 
 CVAR_EXTERNAL(cl_fov);
-static kbool showcollision = false;
+static kbool showcollision = /*false*/ true; // TEMP
 
 //
 // R_DrawSection
@@ -180,7 +180,7 @@ static void R_DrawCollision(void)
             dglColor4ub(0, 64, 64, 80);
         else if(p->flags & CLF_TELEPORT)
             dglColor4ub(0, 0, 255, 80);
-        else if(p->flags & CLF_UNKNOWN32)
+        else if(p->flags & CLF_ONESIDED)
             dglColor4ub(0, 255, 255, 80);
         else if(p->flags & CLF_UNKNOWN16)
             dglColor4ub(255, 0, 255, 80);
@@ -207,6 +207,8 @@ static void R_DrawCollision(void)
         dglVertex3fv(p->points[2]);
         dglEnd();
         dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        p->flags &= ~CLF_DAMAGE_LAVA;
     }
 
     GL_SetState(GLSTATE_CULL, true);
@@ -228,12 +230,15 @@ void R_DrawFrame(void)
     Mtx_ViewFrustum(video_width, video_height, cl_fov.value, 0.1f);
     dglMatrixMode(GL_MODELVIEW);
     Mtx_Identity(mtx);
-    Mtx_SetTranslation(mtx, 0, -1024, -1500);
-    Mtx_RotateX(mtx, -client.localactor.yaw);
+    Mtx_SetTranslation(mtx,
+        -client.localactor.origin[0],
+        -client.localactor.origin[1] - 30.72f,
+        -client.localactor.origin[2]);
+    Mtx_RotateX(mtx, -client.localactor.yaw + (180 * M_RAD));
     Mtx_RotateZ(mtx, client.localactor.pitch);
     dglLoadMatrixf(mtx);
 
-    R_DrawTestModel("models/mdl320/mdl320.kmesh");
+    //R_DrawTestModel("models/mdl320/mdl320.kmesh");
 
     if(showcollision)
     {

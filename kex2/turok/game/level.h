@@ -34,7 +34,7 @@ typedef enum
     CLF_UNKNOWN4        = 0x4,
     CLF_NOSOLIDWALL     = 0x8,
     CLF_UNKNOWN16       = 0x10,
-    CLF_UNKNOWN32       = 0x20,
+    CLF_ONESIDED        = 0x20,
     CLF_TELEPORT        = 0x40,
     CLF_UNKNOWN128      = 0x80,
     CLF_UNKNOWN256      = 0x100,

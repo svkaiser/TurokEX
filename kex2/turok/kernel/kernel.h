@@ -142,6 +142,7 @@ void V_SetupScreen(void);
 //
 kbool Con_Responder(event_t* ev);
 void Con_Printf(rcolor clr, const char *s, ...);
+char *Con_GetBufferHead(void);
 void Con_Ticker(void);
 void Con_Draw(void);
 void Con_Init(void);

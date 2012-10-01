@@ -25,10 +25,10 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "client.h"
 #include "server.h"
 #include "kernel.h"
 #include "mathlib.h"
+#include "game.h"
 #include "actor.h"
 #include "level.h"
 #include "zone.h"
@@ -89,13 +89,14 @@ actor_t *G_SpawnActor(float x, float y, float z,
     actor->pitch        = 0;
     actor->type         = type;
     actor->health       = 100;
-    actor->width        = 40.0f;
-    actor->height       = 40.0f;
+    actor->width        = 44.0f;
+    actor->height       = 44.0f;
     actor->meleerange   = 0;
     actor->target       = NULL;
     actor->model        = Mdl_Load(model);
     actor->mapactor_id  = -1;
     actor->svclient_id  = -1;
+    actor->hitplane     = NULL;
 
     G_LinkActor(actor);
 
@@ -113,17 +114,106 @@ kbool G_ActorOnPlane(actor_t *actor)
         return false;
     }
 
-    return actor->origin[1] -
-        Plane_GetDistance(actor->plane, actor->origin) <= 15.36f;
+    if(Plane_IsAWall(actor->plane))
+    {
+        return false;
+    }
+
+    if((actor->origin[1] + actor->velocity[1]) -
+        Plane_GetDistance(actor->plane, actor->origin) < 2.0f)
+    {
+        return true;
+    }
+
+    if(actor->velocity[1] < 0.0f && actor->velocity[1] > -16.0f)
+    {
+        return true;
+    }
+
+    return false;
 }
 
 
 //
-// G_ActorZMovement
+// G_ActorMovement
 //
 
-void G_ActorZMovement(actor_t *actor)
+void G_ActorMovement(actor_t *actor)
 {
+    vec3_t position;
+    float dist;
+
+    // TEMP
+    if(g_currentmap == NULL)
+    {
+        return;
+    }
+
+    G_TryMoveActor(actor);
+    Vec_Add(position, actor->origin, actor->velocity);
+
+    if(actor->plane)
+    {
+        plane_t *pl = actor->plane;
+
+        dist = Plane_GetHeight(pl, position) - 10.24f;
+
+        if(position[1] > dist)
+        {
+            position[1] = dist;
+            actor->velocity[1] = -actor->velocity[1];
+        }
+
+        dist = position[1] - Plane_GetDistance(pl, position);
+
+        if(!(pl->flags & CLF_ONESIDED))
+        {
+            if(!Plane_IsAWall(pl) && dist < 2)
+            {
+                if(dist < -1)
+                {
+                    vec3_t lerp;
+
+                    Vec_Set3(lerp, position[0], position[1] - dist, position[2]);
+                    Vec_Lerp3(position, 0.5f, position, lerp);
+                }
+                else
+                {
+                    position[1] = position[1] - dist;
+                }
+
+                actor->velocity[1] = 0;
+            }
+            else if(Plane_IsAWall(pl) && dist < -1)
+            {
+                actor->velocity[1] = 0;
+            }
+            else
+            {
+                actor->velocity[1] -= 0.5f;
+            }
+        }
+        else
+        {
+            if(dist < 0 && dist > -16)
+            {
+                position[1] = position[1] - dist;
+            }
+            else
+            {
+                actor->velocity[1] -= 0.5f;
+            }
+        }
+    }
+
+    actor->velocity[0] = actor->velocity[0] * 0.5f;
+    actor->velocity[2] = actor->velocity[2] * 0.5f;
+
+    G_ClampVelocity(actor->velocity);
+
+    actor->origin[0] = position[0];
+    actor->origin[1] = position[1];
+    actor->origin[2] = position[2];
 }
 
 //
@@ -160,7 +250,7 @@ void G_RotateActorToPlane(vec4_t rot, actor_t *actor)
     float slope;
 
     if(actor->plane == NULL ||
-        (actor->flags & AF_NOALIGNPITCH || Plane_CheckYSlope(actor->plane)))
+        (actor->flags & AF_NOALIGNPITCH || Plane_IsAWall(actor->plane)))
     {
         Vec_Set4(rot, 0, 0, 0, 1);
         return;
@@ -191,13 +281,13 @@ void G_RotateActorToPlane(vec4_t rot, actor_t *actor)
     dir[2] = cross[2] * s;
     dir[3] = c;
 
-    slope = Plane_GetPitch(actor->plane,
+    slope = Plane_GetSlope(actor->plane,
         actor->origin[0],
         actor->origin[2],
         actor->origin[0] - (float)sin(actor->yaw),
         actor->origin[2] - (float)cos(actor->yaw));
 
-    if(!Plane_CheckYSlope(actor->plane))
+    if(!Plane_IsAWall(actor->plane))
     {
         if(slope <= SLOPE_THRESHOLD)
         {

@@ -24,9 +24,16 @@
 #define __GAME_H__
 
 #include "type.h"
+#include "client.h"
+#include "actor.h"
+
+plane_t *G_FindClosestPlane(vec3_t coord);
+void G_ClampVelocity(vec3_t velocity);
+void G_TryMoveActor(actor_t *actor);
 
 void G_Shutdown(void);
 void G_Ticker(void);
+void G_ClientThink(actor_t *client, ticcmd_t *cmd);
 void G_Init(void);
 
 #endif

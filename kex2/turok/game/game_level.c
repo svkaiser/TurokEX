@@ -715,24 +715,30 @@ static void Map_ParseCollisionPlanes(kmap_t *map, scparser_t *parser,
     for(i = 0; i < map->numplanes; i++)
     {
         int p;
+        plane_t *pl = &map->planes[i];
 
-        map->planes[i].area = SC_GetNumber();
-        map->planes[i].flags = SC_GetNumber();
+        pl->area = SC_GetNumber();
+        pl->flags = SC_GetNumber();
 
         for(p = 0; p < 3; p++)
         {
             int index = SC_GetNumber();
 
-            map->planes[i].points[p][0] = points[index * 4 + 0];
-            map->planes[i].points[p][1] = points[index * 4 + 1];
-            map->planes[i].points[p][2] = points[index * 4 + 2];
+            pl->points[p][0] = points[index * 4 + 0];
+            pl->points[p][1] = points[index * 4 + 1];
+            pl->points[p][2] = points[index * 4 + 2];
+            pl->height[p]    = points[index * 4 + 3];
         }
 
         for(p = 0; p < 3; p++)
         {
             int link = SC_GetNumber();
-            map->planes[i].link[p] = link == -1 ? NULL : &map->planes[link];
+            pl->link[p] = link == -1 ? NULL : &map->planes[link];
         }
+
+        Plane_GetNormal(pl->normal, pl);
+        Vec_Normalize3(pl->normal);
+        pl->dist = Vec_Dot(pl->points[0], pl->normal);
     }
 
     SC_ExpectNextToken(TK_RBRACK);
@@ -870,7 +876,7 @@ kmap_t *Map_Load(int map)
         return NULL;
     }
 
-    Map_ParseLevelScript(kmap, parser);
+    //Map_ParseLevelScript(kmap, parser);
     // we're done with the file
     SC_Close();
 

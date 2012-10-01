@@ -156,3 +156,45 @@ void Ang_Clamp(float *angle)
     *angle = an;
 }
 
+//
+// Ang_Diff
+//
+
+float Ang_Diff(float angle1, float angle2)
+{
+    float an1;
+    float an2;
+
+    Ang_Clamp(&angle1);
+    Ang_Clamp(&angle2);
+
+    an2 = 0.0f;
+
+    if(angle1 <= angle2)
+    {
+        an1 = angle2 - -(M_PI * 2);
+        if(angle1 - angle2 > an1 - angle1)
+        {
+            an2 = angle1 - an1;
+        }
+        else
+        {
+            an2 = angle1 - angle2;
+        }
+    }
+    else
+    {
+        an1 = angle2 - (M_PI * 2);
+        if(angle2 - angle1 <= angle1 - an1)
+        {
+            an2 = angle1 - angle2;
+        }
+        else
+        {
+            an2 = angle1 - an1;
+        }
+    }
+
+    return an2;
+}
+

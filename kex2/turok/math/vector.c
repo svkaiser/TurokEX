@@ -28,6 +28,29 @@
 #include "mathlib.h"
 
 //
+// Vec_Copy3
+//
+
+void Vec_Copy3(vec3_t out, vec3_t vec)
+{
+    out[0] = vec[0];
+    out[1] = vec[1];
+    out[2] = vec[2];
+}
+
+//
+// Vec_Copy4
+//
+
+void Vec_Copy4(vec4_t out, vec4_t vec)
+{
+    out[0] = vec[0];
+    out[1] = vec[1];
+    out[2] = vec[2];
+    out[3] = vec[3];
+}
+
+//
 // Vec_Set3
 //
 
@@ -104,10 +127,10 @@ void Vec_Mult(vec3_t out, vec3_t vec1, vec3_t vec2)
 }
 
 //
-// Vec_MultValue
+// Vec_Scale
 //
 
-void Vec_MultValue(vec3_t out, vec3_t vec1, float val)
+void Vec_Scale(vec3_t out, vec3_t vec1, float val)
 {
     out[0] = vec1[0] * val;
     out[1] = vec1[1] * val;
@@ -129,6 +152,18 @@ float Vec_Length3(vec3_t v1, vec3_t v2)
     z = v1[2] - v2[2];
 
     return (float)sqrt(x * x + y * y + z * z);
+}
+
+//
+// Vec_Unit3
+//
+
+float Vec_Unit3(vec3_t vec)
+{
+    return (float)sqrt(
+        vec[0] * vec[0] +
+        vec[1] * vec[1] +
+        vec[2] * vec[2]);
 }
 
 //

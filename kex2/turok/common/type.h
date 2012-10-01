@@ -46,7 +46,7 @@ typedef uint32_t        uint32;
 typedef unsigned int    dtexture;
 typedef unsigned int    rcolor;
 typedef float           vec3_t[3];
-typedef float           vec4_t[3];
+typedef float           vec4_t[4];
 typedef float           mtx_t[16];
 
 typedef struct

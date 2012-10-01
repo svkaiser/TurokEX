@@ -100,7 +100,7 @@ void Con_AddLine(char *line, int len, rcolor color)
 
     if(recursed)
     {
-        //later call to Z_Malloc can fail and call I_Error/I_Printf...
+        //later call to Z_Calloc can fail and call I_Error/I_Printf...
         return;
     }
     
@@ -114,7 +114,7 @@ void Con_AddLine(char *line, int len, rcolor color)
         len = strlen(line);
     }
 
-    cline = (conline_t*)Z_Malloc(sizeof(conline_t)+len, PU_STATIC, NULL);
+    cline = (conline_t*)Z_Calloc(sizeof(conline_t)+len, PU_STATIC, NULL);
     cline->len = len;
 
     if(len)
@@ -138,6 +138,20 @@ void Con_AddLine(char *line, int len, rcolor color)
     }
     
     recursed = false;
+}
+
+//
+// Con_GetBufferHead
+//
+
+char *Con_GetBufferHead(void)
+{
+    if(console_head == 0)
+    {
+        return " ";
+    }
+
+    return console_buffer[console_head]->line;
 }
 
 //
@@ -534,7 +548,7 @@ void Con_Init(void)
 {
     int i;
     
-    console_buffer = (conline_t**)Z_Malloc(sizeof(conline_t *) * MAX_CONSOLE_LINES, PU_STATIC, NULL);
+    console_buffer = (conline_t**)Z_Calloc(sizeof(conline_t *) * MAX_CONSOLE_LINES, PU_STATIC, NULL);
     console_head = 0;
     console_minline = 0;
     console_lineoffset = 0;

@@ -39,6 +39,7 @@ typedef struct actor_s
     vec3_t              velocity;
     vec3_t              scale;
     plane_t             *plane;
+    plane_t             *hitplane;
     actorflags_t        flags;
     float               yaw;
     float               pitch;
@@ -57,6 +58,8 @@ typedef struct actor_s
 
 void G_LinkActor(actor_t *actor);
 void G_UnlinkActor(actor_t* actor);
+kbool G_ActorOnPlane(actor_t *actor);
+void G_ActorMovement(actor_t *actor);
 actor_t *G_SpawnActor(float x, float y, float z, float yaw, const char *model, short type);
 float G_GetActorMeleeRange(actor_t *actor, vec3_t targetpos);
 void G_RotateActorToPlane(vec4_t rot, actor_t *actor);

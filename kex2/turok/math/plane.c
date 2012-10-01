@@ -120,12 +120,55 @@ float Plane_GetDistance(plane_t *plane, vec3_t pos)
 }
 
 //
-// Plane_CheckYSlope
+// Plane_GetHeight
 //
 
-kbool Plane_CheckYSlope(plane_t *plane)
+float Plane_GetHeight(plane_t *plane, vec3_t pos)
 {
     vec3_t normal;
+    float dist;
+    
+    if(plane)
+    {
+        Plane_GetNormal(normal, plane);
+
+        if(normal[1] == 0.0f)
+        {
+            dist = (
+                plane->height[0] +
+                plane->height[1] +
+                plane->height[2]) * 0.3333333432674408f;
+        }
+        else
+        {
+            vec3_t vec;
+
+            Vec_Set3(vec,
+                plane->points[0][0] - pos[0],
+                plane->height[0],
+                plane->points[0][2] - pos[2]);
+
+            dist = Vec_Dot(vec, normal) / normal[1];
+        }
+        
+        return dist;
+    }
+
+    return 0.0f;
+}
+
+//
+// Plane_IsAWall
+//
+
+kbool Plane_IsAWall(plane_t *plane)
+{
+    vec3_t normal;
+
+    if(plane == NULL)
+    {
+        return false;
+    }
 
     Plane_GetNormal(normal, plane);
     Vec_Normalize3(normal);
@@ -134,12 +177,41 @@ kbool Plane_CheckYSlope(plane_t *plane)
 }
 
 //
-// Plane_GetAngle
+// Plane_GetYaw
 //
 
-float Plane_GetAngle(plane_t *p)
+float Plane_GetYaw(plane_t *p, int point)
 {
-    if(Plane_CheckYSlope(p))
+    float x;
+    float z;
+    float d;
+
+    x = p->points[(point + 1) % 3][0] - p->points[point][0];
+    z = p->points[(point + 1) % 3][2] - p->points[point][2];
+    d = (float)sqrt(x * x + z * z);
+
+    if(d != 0.0f)
+    {
+        float an = (float)acos(x / d);
+
+        if(z >= 0.0f)
+        {
+            an = -an;
+        }
+
+        return an;
+    }
+
+    return 0.0f;
+}
+
+//
+// Plane_GetPitch
+//
+
+float Plane_GetPitch(plane_t *p)
+{
+    if(Plane_IsAWall(p))
     {
         vec3_t t1;
         vec3_t n;
@@ -158,10 +230,10 @@ float Plane_GetAngle(plane_t *p)
 }
 
 //
-// Plane_GetPitch
+// Plane_GetSlope
 //
 
-float Plane_GetPitch(plane_t *plane, float x1, float z1, float x2, float z2)
+float Plane_GetSlope(plane_t *plane, float x1, float z1, float x2, float z2)
 {
     float dist1;
     float dist2;
@@ -254,7 +326,7 @@ void Plane_AdjustRotation(vec4_t out, plane_t *p)
         float s;
         float c;
 
-        Vec_MultValue(cp, cp, 1.0f / d);
+        Vec_Scale(cp, cp, 1.0f / d);
 
         an = (float)acos(n2[0] * n1[0] + n2[1] * n1[1] + n2[2] * n1[2]) * 0.5f;
         s = (float)sin(an);
@@ -273,21 +345,26 @@ void Plane_AdjustRotation(vec4_t out, plane_t *p)
 
 kbool Plane_PointInRange(plane_t *p, float x, float z)
 {
-    int i;
+    kbool s1;
+    kbool s2;
+    kbool s3;
 
-    if(p->points)
-    {
-        for(i = 0; i < 3; i++)
-        {
-            if((x - p->points[i][0]) * (p->points[i+1][2] -
-                p->points[i][2]) + (p->points[i][0] -
-                p->points[i+1][0]) * (z - p->points[i][2]) < 0.0f)
-            {
-                return false;
-            }
-        }
-    }
+#define M_POINTONSIDE(v1, v2, v3, x, z) \
+    ((x - v2[0])        *   \
+    (v3[2] - v2[2])     -   \
+    (v3[0] - v2[0])     *   \
+    (z - v2[2]))        *   \
+    ((v1[0] - v2[0])    *   \
+    (v3[2] - v2[2])     -   \
+    (v3[0] - v2[0])     *   \
+    (v1[2] - v2[2]))
 
-    return true;
+    s1 = M_POINTONSIDE(p->points[0], p->points[1], p->points[2], x, z) >= 0;
+    s2 = M_POINTONSIDE(p->points[1], p->points[0], p->points[2], x, z) >= 0;
+    s3 = M_POINTONSIDE(p->points[2], p->points[0], p->points[1], x, z) >= 0;
+
+#undef M_POINTONSIDE
+
+    return (s1 && s2 && s3);
 }
 
