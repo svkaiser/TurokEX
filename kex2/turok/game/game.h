@@ -28,7 +28,6 @@
 #include "actor.h"
 
 plane_t *G_FindClosestPlane(vec3_t coord);
-void G_ClampVelocity(vec3_t velocity);
 void G_TryMoveActor(actor_t *actor);
 
 void G_Shutdown(void);

@@ -35,6 +35,7 @@ typedef enum
 typedef struct actor_s
 {
     vec3_t              origin;
+    vec3_t              prevorigin;
     vec4_t              rotation;
     vec3_t              velocity;
     vec3_t              scale;

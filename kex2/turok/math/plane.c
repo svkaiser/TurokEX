@@ -132,7 +132,7 @@ float Plane_GetHeight(plane_t *plane, vec3_t pos)
     {
         Plane_GetNormal(normal, plane);
 
-        if(normal[1] == 0.0f)
+        if(Plane_IsAWall(plane))
         {
             dist = (
                 plane->height[0] +

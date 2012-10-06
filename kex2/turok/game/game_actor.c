@@ -82,6 +82,7 @@ actor_t *G_SpawnActor(float x, float y, float z,
     actor = (actor_t*)Z_Calloc(sizeof(*actor), PU_ACTOR, NULL);
 
     Vec_Set3(actor->origin, x, y, z);
+    Vec_Set3(actor->prevorigin, x, y, z);
     Vec_Set3(actor->scale, 0.5f, 0.5f, 0.5f);
     Vec_SetQuaternion(actor->rotation, yaw, 1, 0, 0);
 
@@ -137,6 +138,8 @@ kbool G_ActorOnPlane(actor_t *actor)
 //
 // G_ActorMovement
 //
+// Actor velocity is updated here
+//
 
 void G_ActorMovement(actor_t *actor)
 {
@@ -149,27 +152,38 @@ void G_ActorMovement(actor_t *actor)
         return;
     }
 
+    // clip velocity before we update it
     G_TryMoveActor(actor);
+
+    // save previous origin first
+    Vec_Copy3(actor->prevorigin, actor->origin);
+
+    // set the next desired position
     Vec_Add(position, actor->origin, actor->velocity);
 
     if(actor->plane)
     {
         plane_t *pl = actor->plane;
 
-        dist = Plane_GetHeight(pl, position) - 10.24f;
-
-        if(position[1] > dist)
+        if(pl->flags & CLF_CHECKHEIGHT)
         {
-            position[1] = dist;
-            actor->velocity[1] = -actor->velocity[1];
+            dist = Plane_GetHeight(pl, position) - 10.24f;
+
+            if(position[1] > dist)
+            {
+                position[1] = dist;
+                actor->velocity[1] = -actor->velocity[1];
+            }
         }
 
+        // get floor distance
         dist = position[1] - Plane_GetDistance(pl, position);
 
         if(!(pl->flags & CLF_ONESIDED))
         {
             if(!Plane_IsAWall(pl) && dist < 2)
             {
+                // lerp player back to the surface
                 if(dist < -1)
                 {
                     vec3_t lerp;
@@ -179,41 +193,46 @@ void G_ActorMovement(actor_t *actor)
                 }
                 else
                 {
+                    // snap the position to the surface
                     position[1] = position[1] - dist;
                 }
 
+                // surface was hit, kill vertical velocity
                 actor->velocity[1] = 0;
             }
             else if(Plane_IsAWall(pl) && dist < -1)
             {
+                // freeze vertical velocity if under a steep slope
                 actor->velocity[1] = 0;
             }
             else
             {
+                // nothing was hit, continue freefall
                 actor->velocity[1] -= 0.5f;
             }
         }
         else
         {
+            // for one-sided surfaces only
+            // snap position to surface if within a certain range
             if(dist < 0 && dist > -16)
             {
                 position[1] = position[1] - dist;
             }
             else
             {
+                // freefall
                 actor->velocity[1] -= 0.5f;
             }
         }
     }
 
+    // de-accelerate velocity
     actor->velocity[0] = actor->velocity[0] * 0.5f;
     actor->velocity[2] = actor->velocity[2] * 0.5f;
 
-    G_ClampVelocity(actor->velocity);
-
-    actor->origin[0] = position[0];
-    actor->origin[1] = position[1];
-    actor->origin[2] = position[2];
+    // lerp actor to updated position
+    Vec_Lerp3(actor->origin, 1, actor->origin, position);
 }
 
 //

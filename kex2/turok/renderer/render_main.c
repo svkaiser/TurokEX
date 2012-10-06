@@ -148,8 +148,10 @@ static void R_DrawCollision(void)
         return;
     }
 
-    GL_SetState(GLSTATE_CULL, false);
+    dglEnable(GL_ALPHA_TEST);
+
     GL_SetState(GLSTATE_TEXTURE0, false);
+    GL_SetState(GLSTATE_CULL, false);
     GL_SetState(GLSTATE_BLEND, true);
 
     for(i = 0; i < g_currentmap->numplanes; i++)
@@ -178,7 +180,7 @@ static void R_DrawCollision(void)
             dglColor4ub(64, 128, 64, 80);
         else if(p->flags & CLF_UNKNOWN128)
             dglColor4ub(0, 64, 64, 80);
-        else if(p->flags & CLF_TELEPORT)
+        else if(p->flags & CLF_CHECKHEIGHT)
             dglColor4ub(0, 0, 255, 80);
         else if(p->flags & CLF_ONESIDED)
             dglColor4ub(0, 255, 255, 80);
@@ -195,25 +197,48 @@ static void R_DrawCollision(void)
         else
             dglColor4ub(255, 128, 128, 80);
 
-        dglVertex3fv(p->points[0]);
-        dglVertex3fv(p->points[1]);
         dglVertex3fv(p->points[2]);
+        dglVertex3fv(p->points[1]);
+        dglVertex3fv(p->points[0]);
         dglEnd();
+
+        if(p->flags & CLF_CHECKHEIGHT)
+        {
+            dglBegin(GL_TRIANGLES);
+            dglColor4ub(128, 128, 128, 192);
+            dglVertex3f(p->points[0][0], p->height[0], p->points[0][2]);
+            dglVertex3f(p->points[1][0], p->height[1], p->points[1][2]);
+            dglVertex3f(p->points[2][0], p->height[2], p->points[2][2]);
+            dglEnd();
+        }
+
         dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         dglBegin(GL_TRIANGLES);
         dglColor4ub(255, 255, 255, 255);
-        dglVertex3fv(p->points[0]);
-        dglVertex3fv(p->points[1]);
         dglVertex3fv(p->points[2]);
+        dglVertex3fv(p->points[1]);
+        dglVertex3fv(p->points[0]);
         dglEnd();
+
+        if(p->flags & CLF_CHECKHEIGHT)
+        {
+            dglBegin(GL_TRIANGLES);
+            dglVertex3f(p->points[0][0], p->height[0], p->points[0][2]);
+            dglVertex3f(p->points[1][0], p->height[1], p->points[1][2]);
+            dglVertex3f(p->points[2][0], p->height[2], p->points[2][2]);
+            dglEnd();
+        }
+
         dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         p->flags &= ~CLF_DAMAGE_LAVA;
     }
 
-    GL_SetState(GLSTATE_CULL, true);
     GL_SetState(GLSTATE_TEXTURE0, true);
+    GL_SetState(GLSTATE_CULL, true);
     GL_SetState(GLSTATE_BLEND, false);
+
+    dglDisable(GL_ALPHA_TEST);
 }
 
 //

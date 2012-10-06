@@ -38,14 +38,23 @@
 
 static plane_t g_fakeplane;
 
+typedef enum
+{
+    TRT_NOHIT       = 0,
+    TRT_SLOPE       = 1,
+    TRT_STEEPSLOPE  = 2,
+    TRT_OUTEREDGE   = 3,
+    TRT_ACTOR       = 4
+} tracetype_e;
+
 typedef struct
 {
-    vec3_t  start;
-    vec3_t  end;
-    plane_t *pl;
-    vec3_t  hit;
-    float   frac;
-    kbool   hitedge;
+    vec3_t      start;
+    vec3_t      end;
+    plane_t     *pl;
+    vec3_t      hit;
+    float       frac;
+    tracetype_e type;
 } trace_t;
 
 //
@@ -76,6 +85,11 @@ plane_t *G_FindClosestPlane(vec3_t coord)
         {
             dist = coord[1] - Plane_GetDistance(p, coord);
 
+            if(p->flags & CLF_ONESIDED && dist < -16)
+            {
+                continue;
+            }
+
             if(dist < 0)
             {
                 dist = -dist;
@@ -102,17 +116,6 @@ plane_t *G_FindClosestPlane(vec3_t coord)
 }
 
 //
-// G_ClampVelocity
-//
-
-void G_ClampVelocity(vec3_t velocity)
-{
-    if(fabs(velocity[0]) < EPSILON_MOVE) velocity[0] = 0;
-    if(fabs(velocity[1]) < EPSILON_MOVE) velocity[1] = 0;
-    if(fabs(velocity[2]) < EPSILON_MOVE) velocity[2] = 0;
-}
-
-//
 // G_ClipVelocity
 //
 
@@ -130,15 +133,13 @@ static void G_ClipVelocity(vec3_t out, vec3_t velocity, vec3_t normal, float fud
     {
         Vec_Scale(out, out, Vec_Unit3(velocity) / d);
     }
-
-    G_ClampVelocity(out);
 }
 
 //
-// G_CheckTrace
+// G_TracePlane
 //
 
-static kbool G_CheckTrace(trace_t *trace, plane_t *pl)
+static kbool G_TracePlane(trace_t *trace, plane_t *pl)
 {
     float d;
     float dstart;
@@ -164,11 +165,67 @@ static kbool G_CheckTrace(trace_t *trace, plane_t *pl)
         }
     }
 
+    if(dstart > 0 && dend >= dstart)
+    {
+        return false;
+    }
+
     if(dend <= 0 && dend < dstart)
     {
-        trace->frac = dstart / (dstart - dend);
+        trace->type = Plane_IsAWall(pl) ? TRT_STEEPSLOPE : TRT_SLOPE;
+        trace->frac = (dstart - 0.03125f) / (dstart - dend);
         trace->pl = pl;
         return true;
+    }
+
+    return false;
+}
+
+//
+// G_TraceActor
+//
+
+static kbool G_TraceActor(trace_t *trace, actor_t *actor)
+{
+    vec3_t dir;
+    float x;
+    float z;
+    float vd;
+    float d;
+
+    Vec_Sub(dir, trace->end, trace->start);
+    vd = Vec_Unit3(dir);
+    Vec_Normalize3(dir);
+
+    x = actor->origin[0] - trace->start[0];
+    z = actor->origin[2] - trace->start[2];
+    d = dir[0] * x + dir[2] * z;
+
+    if(d >= 0 && vd != 0)
+    {
+        float dx;
+        float dz;
+        float ld;
+        float len;
+
+        vd = 1.0f / vd;
+
+        dx = vd * dir[0];
+        dz = vd * dir[2];
+        ld = dx * x + dz * z;
+
+        x = x - ld * dx;
+        z = z - ld * dz;
+
+        len = actor->width * actor->width - (x * x + z * z);
+
+        if(len > 0)
+        {
+            trace->frac = ld - (float)sqrt(len) * vd;
+            trace->pl   = actor->plane;
+            trace->type = TRT_ACTOR;
+            return true;
+        }
     }
 
     return false;
@@ -221,24 +278,27 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
 
                 if(pl == NULL)
                 {
-                    vec3_t vn1;
-                    vec3_t vn2;
+                    vec3_t up;
                     vec3_t vp3;
+                    vec3_t vec;
                     vec3_t vn;
 
-                    trace->hitedge = true;
-
+                    Vec_Set3(up, 0, 1, 0);
                     Vec_Set3(vp3, vp2[0], vp2[1] + 1, vp2[2]);
-                    Vec_Sub(vn1, vp2, vp1);
-                    Vec_Sub(vn2, vp3, vp2);
-                    Vec_Cross(vn, vn2, vn1);
+                    Vec_Sub(vec, vp1, vp2);
+                    Vec_Cross(vn, vec, up);
                     Vec_Normalize3(vn);
 
                     Plane_SetTemp(&g_fakeplane, vp1, vp2, vp3);
                     Vec_Copy3(g_fakeplane.normal, vn);
 
                     trace->pl = &g_fakeplane;
-                    G_CheckTrace(trace, trace->pl);
+                    if(!G_TracePlane(trace, trace->pl))
+                    {
+                        continue;
+                    }
+
+                    trace->type = TRT_OUTEREDGE;
                     return;
                 }
 
@@ -251,11 +311,13 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
     {
         if(Plane_IsAWall(pl))
         {
-            if(G_CheckTrace(trace, pl))
+            if(G_TracePlane(trace, pl))
             {
                 return;
             }
         }
+
+        trace->type = TRT_NOHIT;
         
         G_PathTraverse(pl, trace);
     }
@@ -263,6 +325,7 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
 
 //
 // G_Trace
+//
 //
 
 trace_t G_Trace(vec3_t start, vec3_t end, plane_t *plane)
@@ -272,18 +335,16 @@ trace_t G_Trace(vec3_t start, vec3_t end, plane_t *plane)
     Vec_Copy3(trace.start, start);
     Vec_Copy3(trace.end, end);
 
-    trace.pl        = plane ? plane : G_FindClosestPlane(trace.start);
-    trace.frac      = 1;
-    trace.hitedge   = false;
+    trace.pl    = plane ? plane : G_FindClosestPlane(trace.start);
+    trace.frac  = 1;
+    trace.type  = TRT_NOHIT;
 
-    if(!G_CheckTrace(&trace, trace.pl))
+    if(!G_TracePlane(&trace, trace.pl))
     {
         G_PathTraverse(plane, &trace);
     }
 
-    trace.hit[0] = start[0] + trace.frac * (end[0] - start[0]);
-    trace.hit[1] = start[0] + trace.frac * (end[0] - start[0]);
-    trace.hit[2] = start[0] + trace.frac * (end[0] - start[0]);
+    Vec_Lerp3(trace.hit, trace.frac, start, end);
 
     return trace;
 }
@@ -291,9 +352,16 @@ trace_t G_Trace(vec3_t start, vec3_t end, plane_t *plane)
 //
 // G_TryMoveActor
 //
+// Trace against surrounding planes and slide
+// against it if needed, clipping velocity
+// along the way
+//
 
 void G_TryMoveActor(actor_t *actor)
 {
+    plane_t *prevplane;
+
+    prevplane = actor->plane;
     actor->plane = G_FindClosestPlane(actor->origin);
     actor->hitplane = NULL;
 
@@ -313,50 +381,39 @@ void G_TryMoveActor(actor_t *actor)
 
         for(i = 0; i < TRYMOVE_COUNT; i++)
         {
-            float d;
             float tmpy;
 
             Vec_Add(end, start, vel);
             trace = G_Trace(start, end, actor->plane);
 
-            if(trace.frac == 1 && !trace.hitedge)
+            if(trace.type == TRT_NOHIT)
             {
                 break;
             }
 
-            if(!trace.hitedge)
+            if(trace.type == TRT_STEEPSLOPE)
             {
-                if((float)(sqrt(
+                float height = (float)(sqrt(
                     trace.pl->points[0][1] * trace.pl->points[0][1] +
                     trace.pl->points[1][1] * trace.pl->points[1][1] +
-                    trace.pl->points[2][1] * trace.pl->points[2][1]) <= STEPHEIGHT))
+                    trace.pl->points[2][1] * trace.pl->points[2][1]));
+
+                if(height <= STEPHEIGHT || actor->origin[1] > height)
                 {
                     continue;
                 }
             }
 
+            actor->hitplane = trace.pl;
+            Vec_Copy3(start, trace.hit);
+
             tmpy = vel[1];
 
             G_ClipVelocity(vel, vel, trace.pl->normal, 1.01f);
 
-            if(!trace.hitedge)
-            {
-                actor->hitplane = trace.pl;
-            }
-
-            if(Plane_IsAWall(trace.pl) && vel[1] > tmpy)
+            if(trace.type == TRT_STEEPSLOPE && vel[1] > tmpy)
             {
                 vel[1] = tmpy;
-            }
-
-            d = Vec_Dot(vel, trace.pl->normal);
-
-            if(d < 0)
-            {
-                vec3_t r;
-
-                Vec_Scale(r, trace.pl->normal, d);
-                Vec_Sub(vel, vel, r);
             }
 
             if(Vec_Dot(vel, actor->velocity) <= 0)
@@ -369,11 +426,17 @@ void G_TryMoveActor(actor_t *actor)
             Vec_Copy3(actor->velocity, vel);
             trymoves++;
         }
+    }
+    else if(prevplane)
+    {
+        // actor has somehow ended up in the void. snap
+        // it back to the last good known position
+        Vec_Copy3(actor->origin, actor->prevorigin);
+        actor->plane = prevplane;
 
-        if(trymoves >= TRYMOVE_COUNT)
-        {
-            actor->velocity[0] = 0;
-            actor->velocity[2] = 0;
-        }
+        // we might not know the last known plane normal
+        // so just negate velocity instead
+        actor->velocity[0] = -actor->velocity[0];
+        actor->velocity[2] = -actor->velocity[2];
     }
 }
