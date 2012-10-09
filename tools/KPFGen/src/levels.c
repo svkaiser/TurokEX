@@ -127,7 +127,8 @@ typedef struct
     float u12;
     float u13;
     int u14;
-    byte u15[4];
+    byte blockflags;
+    byte u16[3];
     int u17;
     short u18;
     short health;
@@ -488,6 +489,7 @@ static void ProcessActors(byte *data)
          Com_Strcat("        health = %i\n", GetAttribute(actor->attribute)->health);
          Com_Strcat("        width = %f\n", GetAttribute(actor->attribute)->width);
          Com_Strcat("        height = %f\n", GetAttribute(actor->attribute)->height);
+         Com_Strcat("        blockflag = %i\n", GetAttribute(actor->attribute)->blockflags);
          Com_Strcat("        // u3 = %i\n", actor->u3);
          Com_Strcat("        // attrib uf2 = %f\n", GetAttribute(actor->attribute)->uf2);
          Com_Strcat("        // attrib uf6 = %f\n", GetAttribute(actor->attribute)->uf6);
@@ -538,7 +540,12 @@ static void ProcessInstances(byte *data)
     count = Com_GetCartOffset(data, CHUNK_INSTANCE_COUNT, 0);
 
     if(!size || !count)
+    {
+        Com_Strcat("            numinstances = 0\n");
         return;
+    }
+
+    Com_Strcat("            numinstances = %i\n\n", count);
 
     DC_DecodeData(data, decode_buffer, 0);
     memcpy(data, decode_buffer, (size * count) + 8);
@@ -553,6 +560,7 @@ static void ProcessInstances(byte *data)
         Com_Strcat("                boundsize = %f\n", mapinst->bboxsize);
         Com_Strcat("                model = \"models/mdl%03d/mdl%03d.kmesh\"\n",
             mapinst->model, mapinst->model);
+        Com_Strcat("                blockflag = %i\n", GetAttribute(mapinst->attribute)->blockflags);
         Com_Strcat("                // flags = %i\n", mapinst->flags);
         Com_Strcat("                // u2 = %i\n", mapinst->u2);
         Com_Strcat("                // u3 = %i\n", mapinst->u3);
@@ -601,7 +609,12 @@ static void ProcessStaticInstances2(byte *data)
     count = Com_GetCartOffset(data, CHUNK_INSTANCE_COUNT, 0);
 
     if(!size || !count)
+    {
+        Com_Strcat("            numstaticinstances = 0\n");
         return;
+    }
+
+    Com_Strcat("            numstaticinstances = %i\n\n", count);
 
     DC_DecodeData(data, decode_buffer, 0);
     memcpy(data, decode_buffer, (size * count) + 8);
@@ -634,6 +647,11 @@ static void ProcessStaticInstances2(byte *data)
         Com_Strcat("                angle = { %f %f %f %f }\n",
             rotvec[0], rotvec[1], rotvec[2], rotvec[3]);
         Com_Strcat("                texture_alt = %i\n", GetAttribute(mapinst->attribute)->texture);
+        Com_Strcat("                leaf = %i\n", mapinst->plane);
+        Com_Strcat("                flags = %i\n", mapinst->flags);
+        Com_Strcat("                radius = %f\n", GetAttribute(mapinst->attribute)->meleerange);
+        Com_Strcat("                height = %f\n", GetAttribute(mapinst->attribute)->height);
+        Com_Strcat("                blockflag = %i\n", GetAttribute(mapinst->attribute)->blockflags);
         Com_Strcat("                // u1 = %i\n", mapinst->u1);
         Com_Strcat("            }\n");
     }
@@ -664,12 +682,6 @@ static void ProcessInstanceGroups(byte *data)
         Com_Strcat("        staticinstances =\n");
         Com_Strcat("        {\n");
 
-        Com_Strcat("            numstaticinstances = %i\n\n",
-            /*Com_GetCartOffset(Com_GetCartData(group, CHUNK_STATICINST_GROUP1, 0),
-            CHUNK_INSTANCE_COUNT, 0) +*/
-            Com_GetCartOffset(Com_GetCartData(group, CHUNK_STATICINST_GROUP2, 0),
-            CHUNK_INSTANCE_COUNT, 0));
-
         //ProcessStaticInstances1(Com_GetCartData(group, CHUNK_STATICINST_GROUP1, 0));
         ProcessStaticInstances2(Com_GetCartData(group, CHUNK_STATICINST_GROUP2, 0));
 
@@ -677,10 +689,6 @@ static void ProcessInstanceGroups(byte *data)
 
         Com_Strcat("        instances =\n");
         Com_Strcat("        {\n");
-
-        Com_Strcat("            numinstances = %i\n\n",
-            Com_GetCartOffset(Com_GetCartData(group, CHUNK_STATICINST_GROUP3, 0),
-            CHUNK_INSTANCE_COUNT, 0));
 
         ProcessInstances(Com_GetCartData(group, CHUNK_STATICINST_GROUP3, 0));
 
