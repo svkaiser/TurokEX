@@ -417,7 +417,7 @@ void R_DrawFrame(void)
     Mtx_Identity(mtx);
     Mtx_SetTranslation(mtx,
         -client.localactor.origin[0],
-        -client.localactor.origin[1] - 30.72f,
+        -client.localactor.origin[1] - 56,
         -client.localactor.origin[2]);
     Mtx_RotateX(mtx, -client.localactor.yaw + (180 * M_RAD));
     Mtx_RotateZ(mtx, client.localactor.pitch);
