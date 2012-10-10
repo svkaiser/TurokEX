@@ -40,7 +40,6 @@ void Plane_SetTemp(plane_t *plane, vec3_t p1, vec3_t p2, vec3_t p3)
     memcpy(&plane->points[2], p3, sizeof(vec3_t));
 
     plane->link[0] = plane->link[1]= plane->link[2] = NULL;
-    plane->area = -1;
     plane->flags = 0;
 }
 

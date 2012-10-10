@@ -68,6 +68,7 @@ enum
     scactor_angle,
     scactor_position,
     scactor_scale,
+    scactor_blockflag,
     scactor_end
 };
 
@@ -83,6 +84,7 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_angle,        "angle"         },
     { scactor_position,     "position"      },
     { scactor_scale,        "scale"         },
+    { scactor_blockflag,    "blockflag"     },
     { -1,                   NULL            }
 };
 
@@ -99,6 +101,10 @@ enum
     scinst_target,
     scinst_variant,
     scinst_boundize,
+    scinst_radius,
+    scinst_flags,
+    scinst_plane,
+    scinst_blockflag,
     scinst_instances,
     scinst_numinstances,
     scinst_staticinstnaces,
@@ -119,6 +125,10 @@ static const sctokens_t insttokens[scinst_end+1] =
     { scinst_target,                "target"                },
     { scinst_variant,               "variant"               },
     { scinst_boundize,              "boundsize"             },
+    { scinst_radius,                "radius"                },
+    { scinst_flags,                 "flags"                 },
+    { scinst_plane,                 "leaf"                  },
+    { scinst_blockflag,             "blockflag"             },
     { scinst_staticinstnaces,       "staticinstances"       },
     { scinst_numstaticinstances,    "numstaticinstances"    },
     { scinst_instances,             "instances"             },
@@ -178,7 +188,7 @@ static const sctokens_t areatokens[scarea_end+1] =
 // Map_SpawnActor
 //
 
-static void Map_SpawnActor(mapactor_t *mapactor, int id)
+/*static void Map_SpawnActor(mapactor_t *mapactor, int id)
 {
     actor_t *actor;
 
@@ -217,7 +227,7 @@ static void Map_SpawnActor(mapactor_t *mapactor, int id)
     actor->width        = mapactor->width;
     actor->height       = mapactor->height;
     actor->mapactor_id  = id;
-}
+}*/
 
 //
 // Map_ParseActorBlock
@@ -225,7 +235,7 @@ static void Map_SpawnActor(mapactor_t *mapactor, int id)
 
 static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
 {
-    unsigned int i;
+    /*unsigned int i;
 
     if(map->nummapactors <= 0)
     {
@@ -311,7 +321,7 @@ static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
         }
 
         //Map_SpawnActor(mapactor, i);
-    }
+    }*/
 }
 
 //
@@ -341,51 +351,53 @@ static void Map_ParseGridSectionBlock(kmap_t *map, scparser_t *parser)
 }
 
 //
-// Map_ParseInstanceBlock
+// Map_ParseObjectBlock
 //
 
-static void Map_ParseInstanceBlock(mapinstgroup_t *instgroup, scparser_t *parser, kbool nonstatic)
+static void Map_ParseObjectBlock(instance_t *instances, scparser_t *parser, kbool nonstatic)
 {
     unsigned int i;
     unsigned int count;
 
     if(nonstatic)
     {
-        if(instgroup->numspecials <= 0)
+        if(instances->numspecials <= 0)
         {
             return;
         }
 
-        instgroup->specials = (mapinst_t*)Z_Calloc(sizeof(mapinst_t) *
-            instgroup->numspecials, PU_LEVEL, 0);
+        instances->specials = (object_t*)Z_Calloc(sizeof(object_t) *
+            instances->numspecials, PU_LEVEL, 0);
 
-        count = instgroup->numspecials;
+        count = instances->numspecials;
     }
     else
     {
-        if(instgroup->numstatics <= 0)
+        if(instances->numstatics <= 0)
         {
             return;
         }
 
-        instgroup->statics = (mapinst_t*)Z_Calloc(sizeof(mapinst_t) *
-            instgroup->numstatics, PU_LEVEL, 0);
+        instances->statics = (object_t*)Z_Calloc(sizeof(object_t) *
+            instances->numstatics, PU_LEVEL, 0);
 
-        count = instgroup->numstatics;
+        count = instances->numstatics;
     }
 
     for(i = 0; i < count; i++)
     {
-        mapinst_t *inst;
+        object_t *obj;
 
         if(nonstatic)
         {
-            inst = &instgroup->specials[i];
+            obj = &instances->specials[i];
         }
         else
         {
-            inst = &instgroup->statics[i];
+            obj = &instances->statics[i];
         }
+
+        obj->next = NULL;
 
         // read into nested static instance block
         SC_ExpectNextToken(TK_LBRACK);
@@ -396,12 +408,12 @@ static void Map_ParseInstanceBlock(mapinstgroup_t *instgroup, scparser_t *parser
             switch(SC_GetIDForToken(insttokens, parser->token))
             {
             case scinst_position:
-                SC_AssignVector(insttokens, inst->origin,
+                SC_AssignVector(insttokens, obj->origin,
                     scinst_position, parser, false);
                 break;
 
             case scinst_scale:
-                SC_AssignVector(insttokens, inst->scale,
+                SC_AssignVector(insttokens, obj->scale,
                     scinst_scale, parser, false);
                 break;
 
@@ -409,18 +421,18 @@ static void Map_ParseInstanceBlock(mapinstgroup_t *instgroup, scparser_t *parser
                 SC_ExpectNextToken(TK_EQUAL);
                 SC_ExpectNextToken(TK_LBRACK);
 
-                inst->box.min[0] = (float)SC_GetFloat();
-                inst->box.min[1] = (float)SC_GetFloat();
-                inst->box.min[2] = (float)SC_GetFloat();
-                inst->box.max[0] = (float)SC_GetFloat();
-                inst->box.max[1] = (float)SC_GetFloat();
-                inst->box.max[2] = (float)SC_GetFloat();
+                obj->box.min[0] = (float)SC_GetFloat();
+                obj->box.min[1] = (float)SC_GetFloat();
+                obj->box.min[2] = (float)SC_GetFloat();
+                obj->box.max[0] = (float)SC_GetFloat();
+                obj->box.max[1] = (float)SC_GetFloat();
+                obj->box.max[2] = (float)SC_GetFloat();
 
                 SC_ExpectNextToken(TK_RBRACK);
                 break;
 
             case scinst_model:
-                SC_AssignString(insttokens, inst->mdlpath,
+                SC_AssignString(insttokens, obj->mdlpath,
                     scinst_model, parser, false);
                 break;
 
@@ -428,16 +440,18 @@ static void Map_ParseInstanceBlock(mapinstgroup_t *instgroup, scparser_t *parser
                 SC_ExpectNextToken(TK_EQUAL);
                 SC_ExpectNextToken(TK_LBRACK);
 
-                inst->rotation[0] = (float)SC_GetFloat();
-                inst->rotation[1] = (float)SC_GetFloat();
-                inst->rotation[2] = (float)SC_GetFloat();
-                inst->rotation[3] = (float)SC_GetFloat();
+                obj->rotation[0] = (float)SC_GetFloat();
+                obj->rotation[1] = (float)SC_GetFloat();
+                obj->rotation[2] = (float)SC_GetFloat();
+                obj->rotation[3] = (float)SC_GetFloat();
+
+                Vec_Normalize4(obj->rotation);
 
                 SC_ExpectNextToken(TK_RBRACK);
                 break;
 
             case scinst_texturealt:
-                SC_AssignInteger(insttokens, &inst->textureindex,
+                SC_AssignWord(insttokens, &obj->textureindex,
                     scinst_texturealt, parser, false);
                 break;
 
@@ -448,19 +462,39 @@ static void Map_ParseInstanceBlock(mapinstgroup_t *instgroup, scparser_t *parser
                     SC_AssignFloat(insttokens, &size,
                         scinst_boundize, parser, false);
 
-                    inst->box.min[0] = -size;
-                    inst->box.min[1] = -size;
-                    inst->box.min[2] = -size;
-                    inst->box.max[0] = size;
-                    inst->box.max[1] = size;
-                    inst->box.max[2] = size;
+                    obj->box.min[0] = -size;
+                    obj->box.min[1] = -size;
+                    obj->box.min[2] = -size;
+                    obj->box.max[0] = size;
+                    obj->box.max[1] = size;
+                    obj->box.max[2] = size;
                 }
+                break;
+
+            case scinst_radius:
+                SC_AssignFloat(insttokens, &obj->width,
+                    scinst_radius, parser, false);
+                break;
+
+            case scinst_flags:
+                SC_AssignInteger(insttokens, (int*)&obj->flags,
+                    scinst_flags, parser, false);
+                break;
+
+            case scinst_plane:
+                SC_AssignWord(insttokens, &obj->plane_id,
+                    scinst_plane, parser, false);
+                break;
+
+            case scinst_blockflag:
+                SC_AssignInteger(insttokens, (int*)&obj->blockflag,
+                    scinst_blockflag, parser, false);
                 break;
 
             default:
                 if(parser->tokentype == TK_IDENIFIER)
                 {
-                    Com_DPrintf("Map_ParseInstanceBlock: Unknown token: %s\n",
+                    Com_DPrintf("Map_ParseObjectBlock: Unknown token: %s\n",
                         parser->token);
                 }
                 break;
@@ -468,45 +502,56 @@ static void Map_ParseInstanceBlock(mapinstgroup_t *instgroup, scparser_t *parser
 
             SC_Find();
         }
+
+        obj->box.min[0] += obj->origin[0];
+        obj->box.min[1] += obj->origin[1];
+        obj->box.min[2] += obj->origin[2];
+        obj->box.max[0] += obj->origin[0];
+        obj->box.max[1] += obj->origin[1];
+        obj->box.max[2] += obj->origin[2];
+
+        Mtx_ApplyRotation(obj->rotation, obj->matrix);
+        Mtx_Scale(obj->matrix, obj->scale[0], obj->scale[1], obj->scale[2]);
+        Mtx_AddTranslation(obj->matrix, obj->origin[0], obj->origin[1], obj->origin[2]);
     }
 }
 
 //
-// Map_ParseInstanceGroupBlock
+// Map_ParseInstanceBlock
 //
 
-static void Map_ParseInstanceGroupBlock(kmap_t *map, scparser_t *parser)
+static void Map_ParseInstanceBlock(kmap_t *map, scparser_t *parser)
 {
     unsigned int i;
 
-    if(map->numinstancegroups <= 0)
+    if(map->numinstances <= 0)
     {
         return;
     }
 
-    map->instgroups = (mapinstgroup_t*)Z_Calloc(sizeof(mapinstgroup_t) *
-        map->numinstancegroups, PU_LEVEL, 0);
+    map->instances = (instance_t*)Z_Calloc(sizeof(instance_t) *
+        map->numinstances, PU_LEVEL, 0);
 
-    for(i = 0; i < map->numinstancegroups; i++)
+    for(i = 0; i < map->numinstances; i++)
     {
-        mapinstgroup_t *instgroup = &map->instgroups[i];
+        instance_t *instances = &map->instances[i];
 
         SC_ExpectNextToken(TK_LBRACK);
 
         SC_ExpectTokenID(insttokens, scinst_staticinstnaces, parser);
         SC_ExpectNextToken(TK_EQUAL);
         SC_ExpectNextToken(TK_LBRACK);
-        SC_AssignInteger(insttokens, &instgroup->numstatics,
+        SC_AssignInteger(insttokens, &instances->numstatics,
             scinst_numstaticinstances, parser, true);
-        Map_ParseInstanceBlock(instgroup, parser, false);
+        Map_ParseObjectBlock(instances, parser, false);
         SC_ExpectNextToken(TK_RBRACK);
 
         SC_ExpectTokenID(insttokens, scinst_instances, parser);
         SC_ExpectNextToken(TK_EQUAL);
         SC_ExpectNextToken(TK_LBRACK);
-        SC_AssignInteger(insttokens, &instgroup->numspecials,
+        SC_AssignInteger(insttokens, &instances->numspecials,
             scinst_numinstances, parser, true);
-        Map_ParseInstanceBlock(instgroup, parser, true);
+        Map_ParseObjectBlock(instances, parser, true);
         SC_ExpectNextToken(TK_RBRACK);
 
         SC_ExpectNextToken(TK_RBRACK);
@@ -544,28 +589,28 @@ static void Map_ParseLevelScript(kmap_t *map, scparser_t *parser)
                     break;
 
                 case scmap_numinstancegroups:
-                    SC_AssignInteger(maptokens, &map->numinstancegroups,
+                    SC_AssignInteger(maptokens, &map->numinstances,
                         scmap_numinstancegroups, parser, false);
                     break;
 
-                case scmap_actors:
+                /*case scmap_actors:
                     SC_ExpectNextToken(TK_EQUAL);
                     SC_ExpectNextToken(TK_LBRACK);
                     Map_ParseActorBlock(map, parser);
                     SC_ExpectNextToken(TK_RBRACK);
-                    break;
+                    break;*/
 
-                case scmap_gridbounds:
+                /*case scmap_gridbounds:
                     SC_ExpectNextToken(TK_EQUAL);
                     SC_ExpectNextToken(TK_LBRACK);
                     Map_ParseGridSectionBlock(map, parser);
                     SC_ExpectNextToken(TK_RBRACK);
-                    break;
+                    break;*/
 
                 case scmap_instancegroups:
                     SC_ExpectNextToken(TK_EQUAL);
                     SC_ExpectNextToken(TK_LBRACK);
-                    Map_ParseInstanceGroupBlock(map, parser);
+                    Map_ParseInstanceBlock(map, parser);
                     SC_ExpectNextToken(TK_RBRACK);
                     break;
 
@@ -680,6 +725,24 @@ static void Map_ParseAreaBlock(kmap_t *map, scparser_t *parser)
 }
 
 //
+// Map_InitSectors
+//
+
+static void Map_InitSectors(kmap_t *map)
+{
+    unsigned int i;
+
+    map->sectors = (sector_t*)Z_Calloc(sizeof(sector_t) *
+        map->numplanes, PU_LEVEL, 0);
+
+    for(i = 0; i < map->numplanes; i++)
+    {
+        map->sectors[i].blocklist.next =
+        map->sectors[i].blocklist.prev = &map->sectors[i].blocklist;
+    }
+}
+
+//
 // Map_ParseCollisionPlanes
 //
 
@@ -709,6 +772,8 @@ static void Map_ParseCollisionPlanes(kmap_t *map, scparser_t *parser,
     map->planes = (plane_t*)Z_Calloc(sizeof(plane_t) *
         map->numplanes, PU_LEVEL, 0);
 
+    Map_InitSectors(map);
+
     SC_ExpectNextToken(TK_EQUAL);
     SC_ExpectNextToken(TK_LBRACK);
 
@@ -717,7 +782,7 @@ static void Map_ParseCollisionPlanes(kmap_t *map, scparser_t *parser,
         int p;
         plane_t *pl = &map->planes[i];
 
-        pl->area = SC_GetNumber();
+        map->sectors[i].area_id = SC_GetNumber();
         pl->flags = SC_GetNumber();
 
         for(p = 0; p < 3; p++)
@@ -853,6 +918,45 @@ static void Map_ParseNavScript(kmap_t *map, scparser_t *parser)
 }
 
 //
+// Map_LinkObjToBlocklist
+//
+
+void Map_LinkObjToBlocklist(object_t *obj, sector_t *sector)
+{
+    sector->blocklist.prev->next    = obj;
+    obj->next                       = &sector->blocklist;
+    obj->prev                       = sector->blocklist.prev;
+    sector->blocklist.prev          = obj;
+}
+
+//
+// Map_InitBlocklist
+//
+
+void Map_InitBlocklist(kmap_t *map)
+{
+    unsigned int i;
+    unsigned int j;
+
+    for(i = 0; i < map->numinstances; i++)
+    {
+        instance_t *instances = &map->instances[i];
+
+        for(j = 0; j < instances->numstatics; j++)
+        {
+            object_t *obj = &instances->statics[j];
+
+            if(obj->plane_id != -1 && obj->blockflag & 1)
+            {
+                sector_t *sector = &map->sectors[obj->plane_id];
+
+                Map_LinkObjToBlocklist(obj, sector);
+            }
+        }
+    }
+}
+
+//
 // Map_Load
 //
 
@@ -868,6 +972,12 @@ kmap_t *Map_Load(int map)
 
     kmap = &kmaps[map];
     g_currentmap = kmap;
+
+    if(g_currentmap->tics > 0 || g_currentmap->time > 0)
+    {
+        return kmap;
+    }
+
     g_currentmap->tics = 0;
     g_currentmap->time = 0;
 
@@ -876,7 +986,7 @@ kmap_t *Map_Load(int map)
         return NULL;
     }
 
-    //Map_ParseLevelScript(kmap, parser);
+    Map_ParseLevelScript(kmap, parser);
     // we're done with the file
     SC_Close();
 
@@ -886,6 +996,8 @@ kmap_t *Map_Load(int map)
         // we're done with the file
         SC_Close();
     }
+
+    Map_InitBlocklist(kmap);
 
     return kmap;
 }
@@ -925,8 +1037,8 @@ void Map_Init(void)
 
     for(i = 0; i < MAXMAPS; i++)
     {
-        kmap_t *kmap = &kmaps[i];
-        kmap->actorlist.next = kmap->actorlist.prev = &kmap->actorlist;
+        //kmap_t *kmap = &kmaps[i];
+        //kmap->actorlist.next = kmap->actorlist.prev = &kmap->actorlist;
     }
 
     Cmd_AddCommand("loadmap", FCmd_LoadTestMap);

@@ -151,7 +151,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(OutDir)\SDL\include\&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\turok\common\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\client\&quot;;&quot;$(OutDir)\turok\server\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\menu\&quot;"
+				AdditionalIncludeDirectories="&quot;$(OutDir)\SDL\include\&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\turok\common\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\client\&quot;;&quot;$(OutDir)\turok\server\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\menu\&quot;;&quot;$(OutDir)\turok\game\&quot;;&quot;$(OutDir)\turok\math\&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -249,6 +249,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\common\psnprntf.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\common\script.c"
 					>
 				</File>
 				<File
@@ -355,6 +359,10 @@
 					RelativePath="..\turok\renderer\render_main.c"
 					>
 				</File>
+				<File
+					RelativePath="..\turok\renderer\render_model.c"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="menu"
@@ -365,6 +373,46 @@
 				</File>
 				<File
 					RelativePath="..\turok\menu\menu_main.c"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="game"
+				>
+				<File
+					RelativePath="..\turok\game\game_actor.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\game_level.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\game_main.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\game_phys.c"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="math"
+				>
+				<File
+					RelativePath="..\turok\math\angle.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\math\matrix.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\math\plane.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\math\vector.c"
 					>
 				</File>
 			</Filter>
@@ -390,6 +438,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\common\psnprntf.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\common\script.h"
 					>
 				</File>
 				<File
@@ -462,6 +514,30 @@
 				>
 				<File
 					RelativePath="..\turok\menu\menu.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="game"
+				>
+				<File
+					RelativePath="..\turok\game\actor.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\game.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\level.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="math"
+				>
+				<File
+					RelativePath="..\turok\math\mathlib.h"
 					>
 				</File>
 			</Filter>

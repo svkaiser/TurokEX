@@ -26,6 +26,7 @@
 #include "type.h"
 #include "mathlib.h"
 #include "render.h"
+#include "level.h"
 
 typedef enum
 {
@@ -36,22 +37,16 @@ typedef struct actor_s
 {
     vec3_t              origin;
     vec3_t              prevorigin;
-    vec4_t              rotation;
     vec3_t              velocity;
-    vec3_t              scale;
-    plane_t             *plane;
-    plane_t             *hitplane;
     actorflags_t        flags;
     float               yaw;
     float               pitch;
     int                 svclient_id;
-    kmodel_t            *model;
-    short               type;
     int                 health;
+    short               skin;
     float               meleerange;
-    float               width;
-    float               height;
-    int                 mapactor_id;
+    object_t            object;
+    plane_t             *plane;
     struct actor_s      *target;
     struct actor_s      *prev;
     struct actor_s      *next;

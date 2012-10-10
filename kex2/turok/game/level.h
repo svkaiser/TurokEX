@@ -50,77 +50,74 @@ typedef enum
 
 typedef struct
 {
-    char            mdlpath[MAX_FILEPATH];
-    short           textureindex;
-    short           skin;
-    short           tid;
-    short           target;
-    short           variant;
-    short           leafindex;
-    float           yaw;
-    vec3_t          origin;
-    vec3_t          scale;
-    float           width;
-    float           height;
-    float           meleerange;
-    short           health;
-    short           type;
-} mapactor_t;
-
-typedef struct
-{
-    float           minx;
-    float           minz;
-    float           maxx;
-    float           maxz;
+    float               minx;
+    float               minz;
+    float               maxx;
+    float               maxz;
 } mapgrid_t;
 
-typedef struct
+typedef struct object_s
 {
-    vec3_t          origin;
-    vec3_t          scale;
-    bbox_t          box;
-    char            mdlpath[MAX_FILEPATH];
-    vec4_t          rotation;
-    int             textureindex;
-    mapgrid_t       *grid;
-} mapinst_t;
+    vec3_t              origin;
+    vec3_t              scale;
+    bbox_t              box;
+    char                mdlpath[MAX_FILEPATH];
+    vec4_t              rotation;
+    short               textureindex;
+    short               tid;
+    short               target;
+    short               variant;
+    short               type;
+    float               width;
+    float               height;
+    short               plane_id;
+    byte                flags;
+    byte                blockflag;
+    mtx_t               matrix;
+    struct object_s     *prev;
+    struct object_s     *next;
+} object_t;
 
 typedef struct
 {
-    unsigned int    numstatics;
-    unsigned int    numspecials;
-    mapinst_t       *statics;
-    mapinst_t       *specials;
-} mapinstgroup_t;
+    unsigned int        numstatics;
+    unsigned int        numspecials;
+    object_t            *statics;
+    object_t            *specials;
+} instance_t;
 
 typedef struct
 {
-    rcolor          fog_color;
-    float           fog_far;
-    float           fog_near;
-    float           waterplane;
-    unsigned int    flags;
-    int             args[6];
+    rcolor              fog_color;
+    float               fog_far;
+    float               fog_near;
+    float               waterplane;
+    unsigned int        flags;
+    int                 args[6];
 } area_t;
 
 typedef struct
 {
-    unsigned int    nummapactors;
-    unsigned int    numinstancegroups;
-    unsigned int    numgridbounds;
-    unsigned int    numareas;
-    unsigned int    numplanes;
-    unsigned int    numzonebounds;
-    mapactor_t      *mapactors;
-    mapinstgroup_t  *instgroups;
-    mapgrid_t       *gridbounds;
-    area_t          *areas;
-    plane_t         *planes;
-    mapgrid_t       *zones;
-    actor_t         actorlist;
-    int             tics;
-    float           time;
+    object_t            blocklist;
+    int                 area_id;
+} sector_t;
+
+typedef struct
+{
+    unsigned int        nummapactors;
+    unsigned int        numinstances;
+    unsigned int        numgridbounds;
+    unsigned int        numareas;
+    unsigned int        numplanes;
+    unsigned int        numzonebounds;
+    instance_t          *instances;
+    mapgrid_t           *gridbounds;
+    area_t              *areas;
+    plane_t             *planes;
+    sector_t            *sectors;
+    mapgrid_t           *zones;
+    int                 tics;
+    float               time;
 } kmap_t;
 
 #define MAXMAPS     50

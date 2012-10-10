@@ -603,3 +603,38 @@ void Mtx_RotateZ(mtx_t m, float angle)
     m[14] = c * m[14] + tm13 * s;
 }
 
+//
+// Mtx_ApplyRotation
+//
+
+void Mtx_ApplyRotation(vec4_t rot, mtx_t out)
+{
+    float xx = rot[0] * rot[0];
+    float yx = rot[1] * rot[0];
+    float zx = rot[2] * rot[0];
+    float wx = rot[3] * rot[0];
+    float yy = rot[1] * rot[1];
+    float zy = rot[2] * rot[1];
+    float wy = rot[3] * rot[1];
+    float zz = rot[2] * rot[2];
+    float wz = rot[3] * rot[2];
+    float ww = rot[3] * rot[3];
+
+    out[ 0] = ((ww + xx) - yy) - zz;
+    out[ 1] = (wz + wz) + (yx + yx);
+    out[ 2] = (zx + zx) - (wy + wy);
+    out[ 3] = 0;
+    out[ 4] = (yx + yx) - (wz + wz);
+    out[ 5] = (yy + (ww - xx)) - zz;
+    out[ 6] = (wx + wx) + (zy + zy);
+    out[ 7] = 0;
+    out[ 8] = (wy + wy + zx + zx);
+    out[ 9] = (zy + zy) - (wx + wx);
+    out[10] = ((ww - xx) - yy) + zz;
+    out[11] = 0;
+    out[12] = 0;
+    out[13] = 0;
+    out[14] = 0;
+    out[15] = 1;
+}
+

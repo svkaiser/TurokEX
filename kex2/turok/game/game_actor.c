@@ -43,10 +43,10 @@ static actor_t *g_currentactor;
 
 void G_LinkActor(actor_t *actor)
 {
-    g_currentmap->actorlist.prev->next = actor;
-    actor->next = &g_currentmap->actorlist;
-    actor->prev = g_currentmap->actorlist.prev;
-    g_currentmap->actorlist.prev = actor;
+    //g_currentmap->actorlist.prev->next = actor;
+    //actor->next = &g_currentmap->actorlist;
+    //actor->prev = g_currentmap->actorlist.prev;
+    //g_currentmap->actorlist.prev = actor;
 }
 
 //
@@ -56,13 +56,13 @@ void G_LinkActor(actor_t *actor)
 void G_UnlinkActor(actor_t* actor)
 {
     /* Remove from main actor list */
-    actor_t* next = g_currentactor->next;
+    //actor_t* next = g_currentactor->next;
 
     /* Note that g_currentactor is guaranteed to point to us,
     * and since we're freeing our memory, we had better change that. So
     * point it to actor->prev, so the iterator will correctly move on to
     * actor->prev->next = actor->next */
-    (next->prev = g_currentactor = actor->prev)->next = next;
+    //(next->prev = g_currentactor = actor->prev)->next = next;
 }
 
 //
@@ -81,7 +81,7 @@ actor_t *G_SpawnActor(float x, float y, float z,
 
     actor = (actor_t*)Z_Calloc(sizeof(*actor), PU_ACTOR, NULL);
 
-    Vec_Set3(actor->origin, x, y, z);
+    /*Vec_Set3(actor->origin, x, y, z);
     Vec_Set3(actor->prevorigin, x, y, z);
     Vec_Set3(actor->scale, 0.5f, 0.5f, 0.5f);
     Vec_SetQuaternion(actor->rotation, yaw, 1, 0, 0);
@@ -97,9 +97,8 @@ actor_t *G_SpawnActor(float x, float y, float z,
     actor->model        = Mdl_Load(model);
     actor->mapactor_id  = -1;
     actor->svclient_id  = -1;
-    actor->hitplane     = NULL;
 
-    G_LinkActor(actor);
+    G_LinkActor(actor);*/
 
     return actor;
 }
@@ -152,8 +151,8 @@ void G_ActorMovement(actor_t *actor)
         return;
     }
 
-    // clip velocity before we update it
-    G_TryMoveActor(actor);
+    // normal movement; clip velocity before we update it
+    G_ActorGroundMove(actor);
 
     // save previous origin first
     Vec_Copy3(actor->prevorigin, actor->origin);
@@ -167,12 +166,12 @@ void G_ActorMovement(actor_t *actor)
 
         if(pl->flags & CLF_CHECKHEIGHT)
         {
-            dist = Plane_GetHeight(pl, position) - 10.24f;
+            dist = Plane_GetHeight(pl, position) /*- actor->object.height*/ - 30.72f;
 
             if(position[1] > dist)
             {
                 position[1] = dist;
-                actor->velocity[1] = -actor->velocity[1];
+                actor->velocity[1] = 0;
             }
         }
 
@@ -181,15 +180,15 @@ void G_ActorMovement(actor_t *actor)
 
         if(!(pl->flags & CLF_ONESIDED))
         {
-            if(!Plane_IsAWall(pl) && dist < 2)
+            if(!Plane_IsAWall(pl) && dist < 1)
             {
                 // lerp player back to the surface
-                if(dist < -1)
+                if(dist < -0.1f)
                 {
                     vec3_t lerp;
 
                     Vec_Set3(lerp, position[0], position[1] - dist, position[2]);
-                    Vec_Lerp3(position, 0.5f, position, lerp);
+                    Vec_Lerp3(position, 0.125f, position, lerp);
                 }
                 else
                 {
@@ -246,7 +245,7 @@ float G_GetActorMeleeRange(actor_t *actor, vec3_t targetpos)
     float z;
 
     x = actor->origin[0] - targetpos[0];
-    y = actor->height + actor->origin[1] - targetpos[1];
+    y = actor->object.height + actor->origin[1] - targetpos[1];
     z = actor->origin[2] - targetpos[2];
 
     return (float)sqrt(x * x + y * y + z * z);
@@ -281,7 +280,7 @@ void G_RotateActorToPlane(vec4_t rot, actor_t *actor)
     }
 
     Plane_GetNormal(n, actor->plane);
-    Vec_Set3(up, 0, 1.0f, 0);
+    Vec_Set3(up, 0, 1, 0);
     Vec_Normalize3(n);
     Vec_Cross(cross, up, n);
     Vec_Normalize3(cross);

@@ -99,7 +99,7 @@ void G_ClientThink(actor_t *client, ticcmd_t *cmd)
     {
         if(G_ActorOnPlane(client))
         {
-            client->velocity[1] = 10.0f;
+            client->velocity[1] = 10.24f;
         }
     }
 

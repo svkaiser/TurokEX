@@ -81,6 +81,7 @@ void Mtx_Copy(mtx_t dest, mtx_t src);
 void Mtx_RotateX(mtx_t m, float angle);
 void Mtx_RotateY(mtx_t m, float angle);
 void Mtx_RotateZ(mtx_t m, float angle);
+void Mtx_ApplyRotation(vec4_t rot, mtx_t out);
 
 //
 // ANGLE OPERATIONS
@@ -98,7 +99,6 @@ float Ang_Diff(float angle1, float angle2);
 //
 typedef struct plane_s
 {
-    int             area;
     unsigned int    flags;
     vec3_t          points[3];
     float           height[3];

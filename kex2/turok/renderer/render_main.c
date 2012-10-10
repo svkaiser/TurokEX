@@ -35,7 +35,118 @@
 #include "zone.h"
 
 CVAR_EXTERNAL(cl_fov);
-static kbool showcollision = /*false*/ true; // TEMP
+static kbool showcollision = false;
+
+static double viewMatrix[16];
+static double projMatrix[16];
+static float frustum[6][4];
+
+#define CALCMATRIX(a, b, c, d, e, f, g, h)  \
+    (float)(viewMatrix[a] * projMatrix[b] + \
+    viewMatrix[c] * projMatrix[d] +         \
+    viewMatrix[e] * projMatrix[f] +         \
+    viewMatrix[g] * projMatrix[h])
+
+//
+// R_SetupClipFrustum
+//
+
+void R_SetupClipFrustum(void)
+{
+   mtx_t clip;
+
+   dglGetDoublev(GL_PROJECTION_MATRIX, projMatrix);
+   dglGetDoublev(GL_MODELVIEW_MATRIX, viewMatrix);
+
+   clip[0]  = CALCMATRIX(0, 0, 1, 4, 2, 8, 3, 12);
+   clip[1]  = CALCMATRIX(0, 1, 1, 5, 2, 9, 3, 13);
+   clip[2]  = CALCMATRIX(0, 2, 1, 6, 2, 10, 3, 14);
+   clip[3]  = CALCMATRIX(0, 3, 1, 7, 2, 11, 3, 15);
+
+   clip[4]  = CALCMATRIX(4, 0, 5, 4, 6, 8, 7, 12);
+   clip[5]  = CALCMATRIX(4, 1, 5, 5, 6, 9, 7, 13);
+   clip[6]  = CALCMATRIX(4, 2, 5, 6, 6, 10, 7, 14);
+   clip[7]  = CALCMATRIX(4, 3, 5, 7, 6, 11, 7, 15);
+
+   clip[8]  = CALCMATRIX(8, 0, 9, 4, 10, 8, 11, 12);
+   clip[9]  = CALCMATRIX(8, 1, 9, 5, 10, 9, 11, 13);
+   clip[10] = CALCMATRIX(8, 2, 9, 6, 10, 10, 11, 14);
+   clip[11] = CALCMATRIX(8, 3, 9, 7, 10, 11, 11, 15);
+
+   clip[12] = CALCMATRIX(12, 0, 13, 4, 14, 8, 15, 12);
+   clip[13] = CALCMATRIX(12, 1, 13, 5, 14, 9, 15, 13);
+   clip[14] = CALCMATRIX(12, 2, 13, 6, 14, 10, 15, 14);
+   clip[15] = CALCMATRIX(12, 3, 13, 7, 14, 11, 15, 15);
+
+   // Right plane
+   frustum[0][0] = clip[ 3] - clip[ 0];
+   frustum[0][1] = clip[ 7] - clip[ 4];
+   frustum[0][2] = clip[11] - clip[ 8];
+   frustum[0][3] = clip[15] - clip[12];
+
+   // Left plane
+   frustum[1][0] = clip[ 3] + clip[ 0];
+   frustum[1][1] = clip[ 7] + clip[ 4];
+   frustum[1][2] = clip[11] + clip[ 8];
+   frustum[1][3] = clip[15] + clip[12];
+
+   // Bottom plane
+   frustum[2][0] = clip[ 3] + clip[ 1];
+   frustum[2][1] = clip[ 7] + clip[ 5];
+   frustum[2][2] = clip[11] + clip[ 9];
+   frustum[2][3] = clip[15] + clip[13];
+
+   // Top plane
+   frustum[3][0] = clip[ 3] - clip[ 1];
+   frustum[3][1] = clip[ 7] - clip[ 5];
+   frustum[3][2] = clip[11] - clip[ 9];
+   frustum[3][3] = clip[15] - clip[13];
+
+   // Far plane
+   frustum[4][0] = clip[ 3] - clip[ 2];
+   frustum[4][1] = clip[ 7] - clip[ 6];
+   frustum[4][2] = clip[11] - clip[10];
+   frustum[4][3] = clip[15] - clip[14];
+
+   // Near plane
+   frustum[5][0] = clip[ 3] + clip[ 2];
+   frustum[5][1] = clip[ 7] + clip[ 6];
+   frustum[5][2] = clip[11] + clip[10];
+   frustum[5][3] = clip[15] + clip[14];
+}
+
+//
+// R_FrustrumTestBox
+//
+
+kbool R_FrustrumTestBox(bbox_t box)
+{
+   int p;
+
+   for(p = 0; p < 6; p++)
+   {
+       if(frustum[p][0] * box.min[0] + frustum[p][1] * box.min[1] + frustum[p][2] * box.min[2] + frustum[p][3] > 0)
+           continue;
+       if(frustum[p][0] * box.max[0] + frustum[p][1] * box.min[1] + frustum[p][2] * box.min[2] + frustum[p][3] > 0)
+           continue;
+       if(frustum[p][0] * box.min[0] + frustum[p][1] * box.max[1] + frustum[p][2] * box.min[2] + frustum[p][3] > 0)
+           continue;
+       if(frustum[p][0] * box.max[0] + frustum[p][1] * box.max[1] + frustum[p][2] * box.min[2] + frustum[p][3] > 0)
+           continue;
+       if(frustum[p][0] * box.min[0] + frustum[p][1] * box.min[1] + frustum[p][2] * box.max[2] + frustum[p][3] > 0)
+           continue;
+       if(frustum[p][0] * box.max[0] + frustum[p][1] * box.min[1] + frustum[p][2] * box.max[2] + frustum[p][3] > 0)
+           continue;
+       if(frustum[p][0] * box.min[0] + frustum[p][1] * box.max[1] + frustum[p][2] * box.max[2] + frustum[p][3] > 0)
+           continue;
+       if(frustum[p][0] * box.max[0] + frustum[p][1] * box.max[1] + frustum[p][2] * box.max[2] + frustum[p][3] > 0)
+           continue;
+
+      return false;
+   }
+
+   return true;
+}
 
 //
 // R_DrawSection
@@ -242,6 +353,55 @@ static void R_DrawCollision(void)
 }
 
 //
+// R_DrawBoundingBox
+//
+
+void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b)
+{
+    GL_SetState(GLSTATE_TEXTURE0, false);
+    GL_SetState(GLSTATE_CULL, false);
+    GL_SetState(GLSTATE_BLEND, true);
+
+    dglColor4ub(r, g, b, 255);
+
+    dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    dglBegin(GL_POLYGON);
+    dglVertex3d(bbox.min[0], bbox.min[1], bbox.min[2]);
+    dglVertex3d(bbox.max[0], bbox.min[1], bbox.min[2]);
+    dglVertex3d(bbox.max[0], bbox.min[1], bbox.max[2]);
+    dglVertex3d(bbox.min[0], bbox.min[1], bbox.max[2]);
+    dglEnd();
+
+    dglBegin(GL_POLYGON);
+    dglVertex3d(bbox.min[0], bbox.min[1], bbox.min[2]);
+    dglVertex3d(bbox.min[0], bbox.max[1], bbox.min[2]);
+    dglVertex3d(bbox.min[0], bbox.max[1], bbox.max[2]);
+    dglVertex3d(bbox.min[0], bbox.min[1], bbox.max[2]);
+    dglEnd();
+
+    dglBegin(GL_POLYGON);
+    dglVertex3d(bbox.min[0], bbox.max[1], bbox.min[2]);
+    dglVertex3d(bbox.max[0], bbox.max[1], bbox.min[2]);
+    dglVertex3d(bbox.max[0], bbox.max[1], bbox.max[2]);
+    dglVertex3d(bbox.min[0], bbox.max[1], bbox.max[2]);
+    dglEnd();
+
+    dglBegin(GL_POLYGON);
+    dglVertex3d(bbox.max[0], bbox.min[1], bbox.min[2]);
+    dglVertex3d(bbox.max[0], bbox.max[1], bbox.min[2]);
+    dglVertex3d(bbox.max[0], bbox.max[1], bbox.max[2]);
+    dglVertex3d(bbox.max[0], bbox.min[1], bbox.max[2]);
+    dglEnd();
+    
+    dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    GL_SetState(GLSTATE_TEXTURE0, true);
+    GL_SetState(GLSTATE_CULL, true);
+    GL_SetState(GLSTATE_BLEND, false);
+}
+
+//
 // R_DrawFrame
 //
 
@@ -263,7 +423,43 @@ void R_DrawFrame(void)
     Mtx_RotateZ(mtx, client.localactor.pitch);
     dglLoadMatrixf(mtx);
 
-    //R_DrawTestModel("models/mdl320/mdl320.kmesh");
+    R_SetupClipFrustum();
+
+    if(g_currentmap != NULL)
+    {
+        unsigned int i;
+        unsigned int j;
+
+        for(i = 0; i < g_currentmap->numinstances; i++)
+        {
+            instance_t *inst = &g_currentmap->instances[i];
+
+            if(inst == NULL)
+            {
+                continue;
+            }
+
+            for(j = 0; j < inst->numstatics; j++)
+            {
+                object_t *obj = &inst->statics[j];
+
+                if(obj == NULL)
+                {
+                    continue;
+                }
+
+                dglPushMatrix();
+                dglMultMatrixf(obj->matrix);
+
+                if(R_FrustrumTestBox(obj->box))
+                {
+                    R_DrawTestModel(obj->mdlpath);
+                }
+
+                dglPopMatrix();
+            }
+        }
+    }
 
     if(showcollision)
     {
@@ -289,12 +485,12 @@ void R_FinishFrame(void)
 
 static void FCmd_ShowCollision(void)
 {
-    if(Cmd_GetArgc() < 2)
+    if(Cmd_GetArgc() < 1)
     {
         return;
     }
 
-    showcollision = atoi(Cmd_GetArgv(1));
+    showcollision ^= 1;
 }
 
 //

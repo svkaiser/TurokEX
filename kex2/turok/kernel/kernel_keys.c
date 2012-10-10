@@ -226,16 +226,23 @@ void Key_ExecCmd(char key, kbool keyup)
 
     for(cmd = keycmd->cmds; cmd; cmd = cmd->next)
     {
-        if(keyup && cmd->command[0] == '+')
+        if(cmd->command[0] == '+' || cmd->command[0] == '-')
         {
-            cmd->command[0] = '-';
+            if(keyup && cmd->command[0] == '+')
+            {
+                cmd->command[0] = '-';
+            }
+
+            Cmd_ExecuteCommand(cmd->command);
+
+            if(keyup && cmd->command[0] == '-')
+            {
+                cmd->command[0] = '+';
+            }
         }
-
-        Cmd_ExecuteCommand(cmd->command);
-
-        if(keyup && cmd->command[0] == '-')
+        else if(!keyup)
         {
-            cmd->command[0] = '+';
+            Cmd_ExecuteCommand(cmd->command);
         }
     }
 }

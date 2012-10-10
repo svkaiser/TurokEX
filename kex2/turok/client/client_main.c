@@ -32,6 +32,7 @@
 #include "render.h"
 #include "menu.h"
 #include "gl.h"
+#include "game.h"
 
 client_t client;
 
@@ -198,6 +199,8 @@ static void CL_DrawDebug(void)
         Draw_Text(0, 96,  COLOR_GREEN, 1, "tics: %i", client.tics);
         Draw_Text(0, 112, COLOR_GREEN, 1, "max msecs: %f", (1000.0f / cl_maxfps.value));
     }
+
+    //Draw_Text(64, 64, COLOR_WHITE, 1, Con_GetBufferHead());
 }
 
 //
@@ -209,6 +212,9 @@ static void CL_Ticker(void)
     Menu_Ticker();
 
     Con_Ticker();
+
+    //TEMP
+    G_ClientThink(&client.localactor, &client.cmd);
 
     client.tics++;
 }
