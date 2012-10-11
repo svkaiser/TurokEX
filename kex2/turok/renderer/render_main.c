@@ -417,7 +417,7 @@ void R_DrawFrame(void)
     Mtx_Identity(mtx);
     Mtx_SetTranslation(mtx,
         -client.localactor.origin[0],
-        -client.localactor.origin[1] - 56,
+        -client.localactor.origin[1] - 51.2f,
         -client.localactor.origin[2]);
     Mtx_RotateX(mtx, -client.localactor.yaw + (180 * M_RAD));
     Mtx_RotateZ(mtx, client.localactor.pitch);
@@ -425,7 +425,7 @@ void R_DrawFrame(void)
 
     R_SetupClipFrustum();
 
-    if(g_currentmap != NULL)
+    if(g_currentmap != NULL && !showcollision)
     {
         unsigned int i;
         unsigned int j;

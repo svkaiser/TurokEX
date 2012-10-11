@@ -513,6 +513,8 @@ static void Map_ParseObjectBlock(instance_t *instances, scparser_t *parser, kboo
         Mtx_ApplyRotation(obj->rotation, obj->matrix);
         Mtx_Scale(obj->matrix, obj->scale[0], obj->scale[1], obj->scale[2]);
         Mtx_AddTranslation(obj->matrix, obj->origin[0], obj->origin[1], obj->origin[2]);
+
+        Mdl_Load(obj->mdlpath);
     }
 }
 

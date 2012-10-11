@@ -201,6 +201,12 @@ void G_ActorMovement(actor_t *actor)
             }
             else if(Plane_IsAWall(pl) && dist < -1)
             {
+                vec3_t push;
+
+                Vec_Scale(push, pl->normal, Vec_Unit3(actor->velocity));
+                Vec_Add(actor->velocity, actor->velocity, push);
+                Vec_Add(position, position, push);
+
                 // freeze vertical velocity if under a steep slope
                 actor->velocity[1] = 0;
             }

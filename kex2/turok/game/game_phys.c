@@ -213,6 +213,11 @@ static kbool G_CheckObjects(trace_t *trace, plane_t *plane)
     {
         if(G_TraceObject(trace, obj->origin, obj->width))
         {
+            /*if(trace->end[1] > obj->origin[1] + obj->height)
+            {
+                continue;
+            }*/
+
             trace->type = TRT_OBJECT;
             trace->pl = plane;
             return true;
