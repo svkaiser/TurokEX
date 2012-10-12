@@ -34,7 +34,7 @@
 #define ONESIDED_FLOOR_DISTMAX  1.024f
 #define EPSILON_FLOOR           0.975f
 #define EPSILON_MOVE            0.1f
-#define STEPHEIGHT              24
+#define STEPHEIGHT              32
 
 static plane_t g_fakeplane;
 
@@ -269,7 +269,6 @@ static kbool G_TracePlane(trace_t *trace, plane_t *pl)
         trace->pl = pl;
 
         Vec_Copy3(trace->normal, pl->normal);
-
         return true;
     }
 
@@ -280,7 +279,7 @@ static kbool G_TracePlane(trace_t *trace, plane_t *pl)
 // G_CheckEdgeSide
 //
 
-static kbool G_CheckEdgeSide(trace_t *trace, vec3_t dist, vec3_t vp1, vec3_t vp2)
+static kbool G_CheckEdgeSide(trace_t *trace, vec3_t vp1, vec3_t vp2)
 {
     float x;
     float z;
@@ -291,7 +290,8 @@ static kbool G_CheckEdgeSide(trace_t *trace, vec3_t dist, vec3_t vp1, vec3_t vp2
     x = vp1[0] - vp2[0];
     z = vp2[2] - vp1[2];
 
-    d = z * dist[0] + x * dist[2];
+    d = z * (trace->end[0] - trace->start[0]) +
+        x * (trace->end[2] - trace->start[2]);
 
     if(d < 0)
     {
@@ -308,6 +308,36 @@ static kbool G_CheckEdgeSide(trace_t *trace, vec3_t dist, vec3_t vp1, vec3_t vp2
 }
 
 //
+// G_TraceEdge
+//
+
+static kbool G_TraceEdge(trace_t *trace, vec3_t vp1, vec3_t vp2)
+{
+    vec3_t up;
+    vec3_t vp3;
+    vec3_t vec;
+    vec3_t vn;
+
+    Vec_Set3(up, 0, 1, 0);
+    Vec_Set3(vp3, vp2[0], vp2[1] + 1, vp2[2]);
+    Vec_Sub(vec, vp1, vp2);
+    Vec_Cross(vn, vec, up);
+    Vec_Normalize3(vn);
+
+    Plane_SetTemp(&g_fakeplane, vp1, vp2, vp3);
+    Vec_Copy3(g_fakeplane.normal, vn);
+
+    if(!G_TracePlane(trace, &g_fakeplane))
+    {
+        return false;
+    }
+
+    trace->pl = &g_fakeplane;
+    trace->type = TRT_OUTEREDGE;
+    return true;
+}
+
+//
 // G_PathTraverse
 //
 
@@ -315,7 +345,6 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
 {
     int i;
     plane_t *pl;
-    vec3_t distance;
 
     if(plane == NULL)
     {
@@ -328,7 +357,6 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
     }
 
     pl = NULL;
-    Vec_Sub(distance, trace->end, trace->start);
 
     for(i = 0; i < 3; i++)
     {
@@ -343,34 +371,36 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
         Vec_Copy3(vp1, plane->points[i]);
         Vec_Copy3(vp2, plane->points[(i + 1) % 3]);
 
-        if(G_CheckEdgeSide(trace, distance, vp1, vp2))
+        if(G_CheckEdgeSide(trace, vp1, vp2))
         {
+            float angle;
+            vec3_t dir;
+
             pl = plane->link[i];
 
             if(pl == NULL)
             {
-                vec3_t up;
-                vec3_t vp3;
-                vec3_t vec;
-                vec3_t vn;
-
-                Vec_Set3(up, 0, 1, 0);
-                Vec_Set3(vp3, vp2[0], vp2[1] + 1, vp2[2]);
-                Vec_Sub(vec, vp1, vp2);
-                Vec_Cross(vn, vec, up);
-                Vec_Normalize3(vn);
-
-                Plane_SetTemp(&g_fakeplane, vp1, vp2, vp3);
-                Vec_Copy3(g_fakeplane.normal, vn);
-
-                trace->pl = &g_fakeplane;
-                if(!G_TracePlane(trace, trace->pl))
+                if(G_TraceEdge(trace, vp1, vp2))
                 {
-                    continue;
+                    return;
                 }
 
-                trace->type = TRT_OUTEREDGE;
-                return;
+                continue;
+            }
+
+            Vec_Sub(dir, trace->end, trace->start);
+            angle = Ang_Diff(Plane_GetYaw(pl, i) + M_PI,
+                Ang_VectorToAngle(dir) + M_PI);
+            
+            if(angle < 0)
+            {
+                angle = -angle;
+            }
+
+            if(angle > (40.0f * M_RAD))
+            {
+                // direction of ray trace is behind this plane
+                continue;
             }
 
             break;
@@ -410,9 +440,36 @@ trace_t G_Trace(vec3_t start, vec3_t end, plane_t *plane)
     trace.frac  = 1;
     trace.type  = TRT_NOHIT;
 
+    // try to trace something as early as possible
     if(!G_TracePlane(&trace, trace.pl))
     {
-        G_PathTraverse(plane, &trace);
+        int i;
+
+        // look for edges in the initial plane that can be collided with
+        for(i = 0; i < 3; i++)
+        {
+            vec3_t vp1;
+            vec3_t vp2;
+
+            if(plane->link[i] != NULL)
+            {
+                continue;
+            }
+
+            Vec_Copy3(vp1, plane->points[i]);
+            Vec_Copy3(vp2, plane->points[(i + 1) % 3]);
+
+            if(G_TraceEdge(&trace, vp1, vp2))
+            {
+                break;
+            }
+        }
+
+        // start traversing into other planes if we couldn't trace anything
+        if(trace.type == TRT_NOHIT)
+        {
+            G_PathTraverse(plane, &trace);
+        }
     }
 
     Vec_Lerp3(trace.hit, trace.frac, start, end);
@@ -475,8 +532,8 @@ void G_ActorGroundMove(actor_t *actor)
 
                 if(height <= STEPHEIGHT || (actor->origin[1] - 1.024f) > height)
                 {
-                    // able to step, check for another move
-                    continue;
+                    // able to step
+                    break;
                 }
             }
 

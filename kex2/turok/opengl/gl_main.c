@@ -349,6 +349,7 @@ void GL_BindTexture(texture_t *texture)
     }
 
     dglBindTexture(GL_TEXTURE_2D, texture->texid);
+    prev_texture = texture->texid;
 }
 
 //
@@ -365,12 +366,7 @@ void GL_BindTextureName(const char *name)
         return;
     }
 
-    if(texture->texid == prev_texture)
-    {
-        return;
-    }
-
-    dglBindTexture(GL_TEXTURE_2D, texture->texid);
+    GL_BindTexture(texture);
 }
 
 //
