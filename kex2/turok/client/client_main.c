@@ -200,7 +200,7 @@ static void CL_DrawDebug(void)
         Draw_Text(0, 112, COLOR_GREEN, 1, "max msecs: %f", (1000.0f / cl_maxfps.value));
     }
 
-    //Draw_Text(64, 64, COLOR_WHITE, 1, Con_GetBufferHead());
+    Draw_Text(64, 64, COLOR_WHITE, 1, Con_GetBufferHead());
 }
 
 //

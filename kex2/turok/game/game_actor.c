@@ -152,7 +152,7 @@ void G_ActorMovement(actor_t *actor)
     }
 
     // normal movement; clip velocity before we update it
-    G_ActorGroundMove(actor);
+    G_GroundMove(actor);
 
     // save previous origin first
     Vec_Copy3(actor->prevorigin, actor->origin);
@@ -197,17 +197,6 @@ void G_ActorMovement(actor_t *actor)
                 }
 
                 // surface was hit, kill vertical velocity
-                actor->velocity[1] = 0;
-            }
-            else if(Plane_IsAWall(pl) && dist < -1)
-            {
-                vec3_t push;
-
-                Vec_Scale(push, pl->normal, Vec_Unit3(actor->velocity));
-                Vec_Add(actor->velocity, actor->velocity, push);
-                Vec_Add(position, position, push);
-
-                // freeze vertical velocity if under a steep slope
                 actor->velocity[1] = 0;
             }
             else

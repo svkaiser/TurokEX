@@ -28,7 +28,7 @@
 #include "actor.h"
 
 plane_t *G_FindClosestPlane(vec3_t coord);
-void G_ActorGroundMove(actor_t *actor);
+void G_GroundMove(actor_t *actor);
 
 void G_Shutdown(void);
 void G_Ticker(void);
