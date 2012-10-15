@@ -91,6 +91,9 @@ void Mdl_Init(void);
 //
 // MAIN
 //
+
+void R_DrawCollision(void);
+void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b);
 void R_DrawFrame(void);
 void R_FinishFrame(void);
 void R_Shutdown(void);

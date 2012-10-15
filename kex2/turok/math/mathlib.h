@@ -37,6 +37,7 @@ void  Vec_Copy3(vec3_t out, vec3_t vec);
 void  Vec_Copy4(vec3_t out, vec3_t vec);
 void  Vec_Set3(vec3_t vec, float x, float y, float z);
 void  Vec_Set4(vec4_t vec, float x, float y, float z, float w);
+kbool Vec_Compare3(vec3_t v1, vec3_t v2);
 void  Vec_Cross(vec3_t out, vec3_t vec1, vec3_t vec2);
 float Vec_Dot(vec3_t vec1, vec3_t vec2);
 void  Vec_Add(vec3_t out, vec3_t vec1, vec3_t vec2);

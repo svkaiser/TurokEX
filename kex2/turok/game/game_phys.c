@@ -30,11 +30,9 @@
 #include "actor.h"
 #include "level.h"
 
-#define TRYMOVE_COUNT           4
+#define TRYMOVE_COUNT           3
 #define ONESIDED_FLOOR_DISTMAX  1.024f
 #define EPSILON_FLOOR           0.975f
-#define EPSILON_MOVE            0.1f
-#define STEPHEIGHT              32
 
 typedef enum
 {
@@ -137,7 +135,22 @@ static void G_ClipVelocity(vec3_t out, vec3_t velocity, vec3_t normal, float fud
 }
 
 //
+// G_SlideOnCrease
+//
+
+static void G_SlideOnCrease(vec3_t out, vec3_t velocity, vec3_t v1, vec3_t v2)
+{
+    vec3_t dir;
+
+    Vec_Cross(dir, v1, v2);
+    Vec_Normalize3(dir);
+    Vec_Scale(out, dir, Vec_Dot(velocity, dir));
+}
+
+//
 // G_TraceObject
+//
+// Line-circle intersection test on an object
 //
 
 static kbool G_TraceObject(trace_t *trace, vec3_t objpos, float radius)
@@ -152,6 +165,7 @@ static kbool G_TraceObject(trace_t *trace, vec3_t objpos, float radius)
     vd = Vec_Unit3(dir);
     Vec_Normalize3(dir);
 
+    // validate position
     x = objpos[0] - trace->start[0];
     z = objpos[2] - trace->start[2];
     d = dir[0] * x + dir[2] * z;
@@ -174,19 +188,39 @@ static kbool G_TraceObject(trace_t *trace, vec3_t objpos, float radius)
 
         len = radius * radius - (x * x + z * z);
 
+        // is the ray inside the radius?
         if(len > 0)
         {
             vec3_t end;
             vec3_t lerp;
+            vec3_t n;
+            vec3_t vec;
+            float f;
 
-            trace->frac = ld - (float)sqrt(len) * vd;
+            f = ld - (float)sqrt(len) * vd;
 
+            // setup normal to clip the raytrace with
             Vec_Add(end, trace->start, dir);
-            Vec_Lerp3(lerp, trace->frac, trace->start, end);
-            Vec_Set3(trace->normal, lerp[0] - objpos[0], 0, lerp[2] - objpos[2]);
-            Vec_Normalize3(trace->normal);
+            Vec_Lerp3(lerp, f, trace->start, end);
+            Vec_Set3(n,
+                lerp[0] - objpos[0],
+                0,
+                lerp[2] - objpos[2]);
 
-            return true;
+            Vec_Sub(dir, trace->end, trace->start);
+            d = Vec_Dot(n, dir);
+
+            if(d != 0)
+            {
+                Vec_Sub(vec, lerp, trace->start);
+                d = Vec_Dot(n, vec) / d;
+
+                trace->frac = d;
+
+                Vec_Normalize3(n);
+                Vec_Copy3(trace->normal, n);
+                return true;
+            }
         }
     }
 
@@ -195,6 +229,9 @@ static kbool G_TraceObject(trace_t *trace, vec3_t objpos, float radius)
 
 //
 // G_CheckObjects
+//
+// Scans through planes for linked objects and test
+// collision against them
 //
 
 static kbool G_CheckObjects(trace_t *trace, plane_t *plane)
@@ -207,16 +244,21 @@ static kbool G_CheckObjects(trace_t *trace, plane_t *plane)
         return false;
     }
 
+    // TODO: this doesn't seem like the right way to do this...
     sector = &g_currentmap->sectors[plane - g_currentmap->planes];
 
+    // go through the list
     for(obj = sector->blocklist.next; obj != &sector->blocklist; obj = obj->next)
     {
         if(G_TraceObject(trace, obj->origin, obj->width))
         {
-            /*if(trace->end[1] > obj->origin[1] + obj->height)
+            // check object height
+            // TODO: the original game doesn't do height clipping but I'd like
+            // to do it for kex someday
+            if(trace->end[1] > obj->origin[1] + obj->height)
             {
                 continue;
-            }*/
+            }
 
             trace->type = TRT_OBJECT;
             return true;
@@ -229,17 +271,16 @@ static kbool G_CheckObjects(trace_t *trace, plane_t *plane)
 //
 // G_TracePlane
 //
+// Check if the ray intersected with plane
+//
 
 static kbool G_TracePlane(trace_t *trace, plane_t *pl)
 {
     float d;
     float dstart;
     float dend;
-    
-    d       = Vec_Dot(pl->points[0], pl->normal);
-    dstart  = Vec_Dot(trace->start, pl->normal) - d;
-    dend    = Vec_Dot(trace->end, pl->normal) - d;
 
+    // special cases for those annoying one-sided planes
     if(pl->flags & CLF_ONESIDED && !Plane_IsAWall(pl))
     {
         if(trace->start[1] -
@@ -250,19 +291,26 @@ static kbool G_TracePlane(trace_t *trace, plane_t *pl)
     }
     else if(!Plane_IsAWall(pl))
     {
+        // ignore if the plane isn't steep enough
         if(pl->normal[1] >= EPSILON_FLOOR)
         {
             return false;
         }
     }
 
+    d       = Vec_Dot(pl->points[0], pl->normal);
+    dstart  = Vec_Dot(trace->start, pl->normal) - d;
+    dend    = Vec_Dot(trace->end, pl->normal) - d;
+
     if(dstart > 0 && dend >= dstart)
     {
+        // in front of the plane
         return false;
     }
 
     if(dend <= 0 && dend < dstart)
     {
+        // intersected
         trace->type = Plane_IsAWall(pl) ? TRT_STEEPSLOPE : TRT_SLOPE;
         trace->frac = (dstart - 0.03125f) / (dstart - dend);
         trace->hitpl = pl;
@@ -276,6 +324,9 @@ static kbool G_TracePlane(trace_t *trace, plane_t *pl)
 
 //
 // G_CheckEdgeSide
+//
+// Simple line-line intersection test to see if
+// ray has crossed the plane's edge
 //
 
 static kbool G_CheckEdgeSide(trace_t *trace, vec3_t vp1, vec3_t vp2)
@@ -312,6 +363,9 @@ static kbool G_CheckEdgeSide(trace_t *trace, vec3_t vp1, vec3_t vp2)
 //
 // G_TraceEdge
 //
+// Sets up a normal vector for an edge that isn't linked
+// into another plane. Basically treat it as a solid wall
+//
 
 static void G_TraceEdge(trace_t *trace, vec3_t vp1, vec3_t vp2)
 {
@@ -342,29 +396,34 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
         return;
     }
 
+    // we've entered a new plane
+    trace->pl = plane;
+
     if(G_CheckObjects(trace, plane))
     {
+        // an object was hit
         return;
     }
-
-    trace->pl = plane;
 
     pl = NULL;
     point = 0;
     trace->sidedist = 0;
 
+    // check if ray crosses into an edge. if multiple edges
+    // have been crossed then get the one closest to the ray
     for(i = 0; i < 3; i++)
     {
         vec3_t vp1;
         vec3_t vp2;
 
-        if(G_CheckObjects(trace, plane->link[i]))
-        {
-            return;
-        }
-
         Vec_Copy3(vp1, plane->points[i]);
         Vec_Copy3(vp2, plane->points[(i + 1) % 3]);
+
+        if(G_CheckObjects(trace, plane->link[i]))
+        {
+            // an object was hit
+            return;
+        }
 
         if(G_CheckEdgeSide(trace, vp1, vp2))
         {
@@ -375,6 +434,8 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
 
             if(pl == NULL)
             {
+                // a null edge was crossed. treat it as
+                // a solid wall
                 G_TraceEdge(trace, vp1, vp2);
                 return;
             }
@@ -383,14 +444,17 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
 
     if(pl)
     {
+        // check to see if the ray can bump into it
         if(Plane_IsAWall(pl))
         {
             float y = trace->start[1] + 1.024f;
 
+            // must not be over it
             if( y <= pl->points[0][1]   ||
                 y <= pl->points[1][1]   ||
                 y <= pl->points[2][1])
             {
+                // trace it to see if its valid or not
                 if(G_TracePlane(trace, pl))
                 {
                     return;
@@ -400,6 +464,7 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
 
         trace->type = TRT_NOHIT;
 
+        // traverse into next plane
         G_PathTraverse(pl, trace);
     }
 }
@@ -442,6 +507,7 @@ trace_t G_Trace(vec3_t start, vec3_t end, plane_t *plane)
             Vec_Copy3(vp1, plane->points[i]);
             Vec_Copy3(vp2, plane->points[(i + 1) % 3]);
 
+            // check to see if an edge was crossed
             if(G_CheckEdgeSide(&trace, vp1, vp2))
             {
                 G_TraceEdge(&trace, vp1, vp2);
@@ -488,11 +554,14 @@ void G_GroundMove(actor_t *actor)
         vec3_t start;
         vec3_t end;
         vec3_t vel;
+        vec3_t normals[TRYMOVE_COUNT];
+        int moves;
         int i;
 
         // set start point
         Vec_Copy3(start, actor->origin);
         Vec_Copy3(vel, actor->velocity);
+        moves = 0;
 
         for(i = 0; i < TRYMOVE_COUNT; i++)
         {
@@ -510,6 +579,30 @@ void G_GroundMove(actor_t *actor)
             {
                 // went the entire distance
                 break;
+            }
+
+            // slide along the crease between an edge and a steep slope
+            if(trace.type == TRT_OUTEREDGE && Plane_IsAWall(actor->plane))
+            {
+                G_SlideOnCrease(actor->velocity, vel,
+                    trace.normal, actor->plane->normal);
+                break;
+            }
+            // slide along the crease between two normals
+            else if(i > 0)
+            {
+                if(Vec_Dot(trace.normal, normals[i-1]) > 0.99f)
+                {
+                    // fudge velocity if this plane was already collided with
+                    Vec_Add(vel, vel, trace.normal);
+                }
+                else if(Vec_Dot(trace.normal, vel) < 0)
+                {
+                    G_SlideOnCrease(actor->velocity, vel,
+                        trace.normal, normals[i-1]);
+
+                    break;
+                }
             }
 
             // slide against the hit surface. ignore Y-velocity if on a steep slope
@@ -542,8 +635,10 @@ void G_GroundMove(actor_t *actor)
             }
 
             // force a deadstop if clipped velocity is against
-            // the original velocity
-            if(Vec_Dot(vel, actor->velocity) <= 0)
+            // the original velocity or if exceeded max amount of
+            // attempted moves (don't count against objects hit)
+            if(Vec_Dot(vel, actor->velocity) <= 0 ||
+                (trace.type != TRT_OBJECT && i == (TRYMOVE_COUNT - 1)))
             {
                 actor->velocity[0] = 0;
                 actor->velocity[2] = 0;
@@ -552,6 +647,7 @@ void G_GroundMove(actor_t *actor)
 
             // update velocity and try another move
             Vec_Copy3(actor->velocity, vel);
+            Vec_Copy3(normals[moves++], trace.normal);
         }
     }
 }

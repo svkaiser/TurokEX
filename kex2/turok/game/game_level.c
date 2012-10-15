@@ -105,6 +105,7 @@ enum
     scinst_flags,
     scinst_plane,
     scinst_blockflag,
+    scinst_height,
     scinst_instances,
     scinst_numinstances,
     scinst_staticinstnaces,
@@ -129,6 +130,7 @@ static const sctokens_t insttokens[scinst_end+1] =
     { scinst_flags,                 "flags"                 },
     { scinst_plane,                 "leaf"                  },
     { scinst_blockflag,             "blockflag"             },
+    { scinst_height,                "height"                },
     { scinst_staticinstnaces,       "staticinstances"       },
     { scinst_numstaticinstances,    "numstaticinstances"    },
     { scinst_instances,             "instances"             },
@@ -476,6 +478,11 @@ static void Map_ParseObjectBlock(instance_t *instances, scparser_t *parser, kboo
                     scinst_radius, parser, false);
                 break;
 
+            case scinst_height:
+                SC_AssignFloat(insttokens, &obj->height,
+                    scinst_height, parser, false);
+                break;
+
             case scinst_flags:
                 SC_AssignInteger(insttokens, (int*)&obj->flags,
                     scinst_flags, parser, false);
@@ -514,7 +521,7 @@ static void Map_ParseObjectBlock(instance_t *instances, scparser_t *parser, kboo
         Mtx_Scale(obj->matrix, obj->scale[0], obj->scale[1], obj->scale[2]);
         Mtx_AddTranslation(obj->matrix, obj->origin[0], obj->origin[1], obj->origin[2]);
 
-        Mdl_Load(obj->mdlpath);
+        //Mdl_Load(obj->mdlpath);
     }
 }
 

@@ -149,6 +149,43 @@ kbool R_FrustrumTestBox(bbox_t box)
 }
 
 //
+// R_FrustrumTestPlane
+//
+
+kbool R_FrustrumTestPlane(plane_t *plane)
+{
+   int p;
+   int i;
+
+   for(p = 0; p < 6; p++)
+   {
+       for(i = 0; i < 3; i++)
+       {
+           if( frustum[p][0] * plane->points[i][0] + 
+               frustum[p][1] * plane->points[i][1] + 
+               frustum[p][2] * plane->points[i][2] +
+               frustum[p][3] > 0 ||
+               frustum[p][0] * plane->points[i][0] + 
+               frustum[p][1] * plane->height[i]    + 
+               frustum[p][2] * plane->points[i][2] +
+               frustum[p][3] > 0)
+           {
+               break;
+           }
+       }
+
+       if(i != 3)
+       {
+           continue;
+       }
+       
+       return false;
+   }
+
+   return true;
+}
+
+//
 // R_DrawSection
 //
 
@@ -187,17 +224,7 @@ void R_DrawSection(mdlsection_t *section)
     GL_BindTexture(Tex_CacheTextureFile(
         section->texpath, GL_REPEAT, section->flags & MDF_MASKED));
 
-    if(has_GL_EXT_compiled_vertex_array)
-    {
-        dglLockArraysEXT(0, (section->numtris / 3) * 2);
-    }
-
     dglDrawElements(GL_TRIANGLES, section->numtris, GL_UNSIGNED_SHORT, section->tris);
-
-    if(has_GL_EXT_compiled_vertex_array)
-    {
-        dglUnlockArraysEXT();
-    }
 
     if(section->flags & MDF_MASKED)
     {
@@ -231,6 +258,11 @@ static void R_DrawTestModel(const char *file)
         return;
     }
 
+    if(model->nodes[0].meshes[0].numsections <= 0)
+    {
+        return;
+    }
+
     dglCullFace(GL_BACK);
     dglEnable(GL_DEPTH_TEST);
 
@@ -244,161 +276,6 @@ static void R_DrawTestModel(const char *file)
     dglEnableClientState(GL_COLOR_ARRAY);
     dglDisable(GL_DEPTH_TEST);
     dglCullFace(GL_FRONT);
-}
-
-//
-// R_DrawCollision
-//
-
-static void R_DrawCollision(void)
-{
-    unsigned int i;
-
-    if(g_currentmap == NULL)
-    {
-        return;
-    }
-
-    dglEnable(GL_ALPHA_TEST);
-
-    GL_SetState(GLSTATE_TEXTURE0, false);
-    GL_SetState(GLSTATE_CULL, false);
-    GL_SetState(GLSTATE_BLEND, true);
-
-    for(i = 0; i < g_currentmap->numplanes; i++)
-    {
-        plane_t *p = &g_currentmap->planes[i];
-
-        dglBegin(GL_TRIANGLES);
-
-        if(p->flags & CLF_UNKNOWN65536)
-            dglColor4ub(0, 0, 0, 192);
-        else if(p->flags & CLF_UNKNOWN32768)
-            dglColor4ub(224, 208, 128, 80);
-        else if(p->flags & CLF_ENDLESSPIT)
-            dglColor4ub(255, 255, 0, 80);
-        else if(p->flags & CLF_UNKNOWN8192)
-            dglColor4ub(255, 128, 0, 80);
-        else if(p->flags & CLF_DAMAGE_LAVA)
-            dglColor4ub(255, 0, 0, 80);
-        else if(p->flags & CLF_UNKNOWN2048)
-            dglColor4ub(0, 64, 96, 80);
-        else if(p->flags & CLF_UNKNOWN1024)
-            dglColor4ub(64, 0, 96, 80);
-        else if(p->flags & CLF_HIDDEN)
-            dglColor4ub(0, 255, 0, 80);
-        else if(p->flags & CLF_UNKNOWN256)
-            dglColor4ub(64, 128, 64, 80);
-        else if(p->flags & CLF_UNKNOWN128)
-            dglColor4ub(0, 64, 64, 80);
-        else if(p->flags & CLF_CHECKHEIGHT)
-            dglColor4ub(0, 0, 255, 80);
-        else if(p->flags & CLF_ONESIDED)
-            dglColor4ub(0, 255, 255, 80);
-        else if(p->flags & CLF_UNKNOWN16)
-            dglColor4ub(255, 0, 255, 80);
-        else if(p->flags & CLF_NOSOLIDWALL)
-            dglColor4ub(255, 255, 255, 80);
-        else if(p->flags & CLF_UNKNOWN4)
-            dglColor4ub(255, 96, 255, 80);
-        else if(p->flags & CLF_UNKNOWN2)
-            dglColor4ub(32, 8, 4, 80);
-        else if(p->flags & CLF_WATER)
-            dglColor4ub(128, 96, 255, 80);
-        else
-            dglColor4ub(255, 128, 128, 80);
-
-        dglVertex3fv(p->points[2]);
-        dglVertex3fv(p->points[1]);
-        dglVertex3fv(p->points[0]);
-        dglEnd();
-
-        if(p->flags & CLF_CHECKHEIGHT)
-        {
-            dglBegin(GL_TRIANGLES);
-            dglColor4ub(128, 128, 128, 192);
-            dglVertex3f(p->points[0][0], p->height[0], p->points[0][2]);
-            dglVertex3f(p->points[1][0], p->height[1], p->points[1][2]);
-            dglVertex3f(p->points[2][0], p->height[2], p->points[2][2]);
-            dglEnd();
-        }
-
-        dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        dglBegin(GL_TRIANGLES);
-        dglColor4ub(255, 255, 255, 255);
-        dglVertex3fv(p->points[2]);
-        dglVertex3fv(p->points[1]);
-        dglVertex3fv(p->points[0]);
-        dglEnd();
-
-        if(p->flags & CLF_CHECKHEIGHT)
-        {
-            dglBegin(GL_TRIANGLES);
-            dglVertex3f(p->points[0][0], p->height[0], p->points[0][2]);
-            dglVertex3f(p->points[1][0], p->height[1], p->points[1][2]);
-            dglVertex3f(p->points[2][0], p->height[2], p->points[2][2]);
-            dglEnd();
-        }
-
-        dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-        p->flags &= ~CLF_DAMAGE_LAVA;
-    }
-
-    GL_SetState(GLSTATE_TEXTURE0, true);
-    GL_SetState(GLSTATE_CULL, true);
-    GL_SetState(GLSTATE_BLEND, false);
-
-    dglDisable(GL_ALPHA_TEST);
-}
-
-//
-// R_DrawBoundingBox
-//
-
-void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b)
-{
-    GL_SetState(GLSTATE_TEXTURE0, false);
-    GL_SetState(GLSTATE_CULL, false);
-    GL_SetState(GLSTATE_BLEND, true);
-
-    dglColor4ub(r, g, b, 255);
-
-    dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-    dglBegin(GL_POLYGON);
-    dglVertex3d(bbox.min[0], bbox.min[1], bbox.min[2]);
-    dglVertex3d(bbox.max[0], bbox.min[1], bbox.min[2]);
-    dglVertex3d(bbox.max[0], bbox.min[1], bbox.max[2]);
-    dglVertex3d(bbox.min[0], bbox.min[1], bbox.max[2]);
-    dglEnd();
-
-    dglBegin(GL_POLYGON);
-    dglVertex3d(bbox.min[0], bbox.min[1], bbox.min[2]);
-    dglVertex3d(bbox.min[0], bbox.max[1], bbox.min[2]);
-    dglVertex3d(bbox.min[0], bbox.max[1], bbox.max[2]);
-    dglVertex3d(bbox.min[0], bbox.min[1], bbox.max[2]);
-    dglEnd();
-
-    dglBegin(GL_POLYGON);
-    dglVertex3d(bbox.min[0], bbox.max[1], bbox.min[2]);
-    dglVertex3d(bbox.max[0], bbox.max[1], bbox.min[2]);
-    dglVertex3d(bbox.max[0], bbox.max[1], bbox.max[2]);
-    dglVertex3d(bbox.min[0], bbox.max[1], bbox.max[2]);
-    dglEnd();
-
-    dglBegin(GL_POLYGON);
-    dglVertex3d(bbox.max[0], bbox.min[1], bbox.min[2]);
-    dglVertex3d(bbox.max[0], bbox.max[1], bbox.min[2]);
-    dglVertex3d(bbox.max[0], bbox.max[1], bbox.max[2]);
-    dglVertex3d(bbox.max[0], bbox.min[1], bbox.max[2]);
-    dglEnd();
-    
-    dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    GL_SetState(GLSTATE_TEXTURE0, true);
-    GL_SetState(GLSTATE_CULL, true);
-    GL_SetState(GLSTATE_BLEND, false);
 }
 
 //

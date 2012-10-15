@@ -356,6 +356,10 @@
 				Name="renderer"
 				>
 				<File
+					RelativePath="..\turok\renderer\render_debug.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\render_main.c"
 					>
 				</File>
