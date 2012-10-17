@@ -279,27 +279,72 @@ static void R_DrawTestModel(const char *file)
 }
 
 //
+// R_SetupViewFrame
+//
+
+static void R_SetupViewFrame(actor_t *actor)
+{
+    mtx_t mtx;
+    vec4_t yaw;
+    vec4_t pitch;
+    vec4_t rot;
+    float bob_x;
+    float bob_y;
+    float d;
+    vec3_t org;
+    vec3_t pos;
+
+    bob_x = 0;
+    bob_y = 0;
+
+    if(G_ActorOnPlane(actor))
+    {
+        // calculate bobbing
+        d = (float)sqrt(
+            actor->velocity[0] * actor->velocity[0] +
+            actor->velocity[2] * actor->velocity[2]);
+
+        if(d > 0.005f)
+        {
+            bob_x = (float)sin(client.tics * 0.3250f) * d * 0.0025f;
+            bob_y = (float)sin(client.tics * 0.1625f) * d * 0.0025f;
+        }
+    }
+
+    // set view origin
+    Vec_Set3(org,
+        actor->origin[0],
+        actor->origin[1] + /*(actor->object.height + 30.72f)*/51.2f,
+        actor->origin[2]);
+
+    // setup projection matrix
+    dglMatrixMode(GL_PROJECTION);
+    dglLoadIdentity();
+    Mtx_ViewFrustum(video_width, video_height, cl_fov.value, 0.1f);
+
+    // setup modelview matrix
+    dglMatrixMode(GL_MODELVIEW);
+    Mtx_Identity(mtx);
+    Vec_SetQuaternion(yaw, -actor->yaw + M_PI - bob_y, 0, 1, 0);
+    Vec_SetQuaternion(pitch, actor->pitch + bob_x, 1, 0, 0);
+    Vec_MultQuaternion(rot, yaw, pitch);
+    Mtx_ApplyRotation(rot, mtx);
+    Mtx_ApplyToVector(mtx, org, pos);
+    Mtx_AddTranslation(mtx, -pos[0], -pos[1], -pos[2]);
+
+    // load view matrix
+    dglLoadMatrixf(mtx);
+}
+
+//
 // R_DrawFrame
 //
 
 void R_DrawFrame(void)
 {
-    mtx_t mtx;
-
     GL_ClearView(0xFF3f3f3f);
-    dglMatrixMode(GL_PROJECTION);
-    dglLoadIdentity();
-    Mtx_ViewFrustum(video_width, video_height, cl_fov.value, 0.1f);
-    dglMatrixMode(GL_MODELVIEW);
-    Mtx_Identity(mtx);
-    Mtx_SetTranslation(mtx,
-        -client.localactor.origin[0],
-        -client.localactor.origin[1] - 51.2f,
-        -client.localactor.origin[2]);
-    Mtx_RotateX(mtx, -client.localactor.yaw + (180 * M_RAD));
-    Mtx_RotateZ(mtx, client.localactor.pitch);
-    dglLoadMatrixf(mtx);
-
+    
+    R_SetupViewFrame(&client.localactor);
     R_SetupClipFrustum();
 
     if(g_currentmap != NULL && !showcollision)

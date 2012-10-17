@@ -291,8 +291,8 @@ void Vec_Slerp(vec4_t out, float movement, vec4_t vec1, vec4_t vec2)
 
 void Vec_SetQuaternion(vec4_t vec, float angle, float x, float y, float z)
 {
-    float sin_a = (float)sin(angle * 0.5);
-    float cos_a = (float)cos(angle * 0.5);
+    float sin_a = (float)sin(angle * 0.5f);
+    float cos_a = (float)cos(angle * 0.5f);
 
     vec[0]  = x * sin_a;
     vec[1]  = y * sin_a;

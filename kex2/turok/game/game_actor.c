@@ -133,6 +133,53 @@ kbool G_ActorOnPlane(actor_t *actor)
     return false;
 }
 
+//
+// G_CheckObjectStep
+//
+// Very basic check to see if an actor can stand on top
+// of an object
+//
+
+static void G_CheckObjectStep(actor_t *actor)
+{
+    object_t *obj;
+    sector_t *sector;
+
+    if(actor->plane == NULL)
+    {
+        return;
+    }
+
+    // TODO: this doesn't seem like the right way to do this...
+    sector = &g_currentmap->sectors[actor->plane - g_currentmap->planes];
+
+    // go through the list
+    for(obj = sector->blocklist.next; obj != &sector->blocklist; obj = obj->next)
+    {
+        float height; 
+        float len;
+        float x;
+        float z;
+
+        x = actor->origin[0] - obj->origin[0];
+        z = actor->origin[2] - obj->origin[2];
+        len = (float)sqrt(x * x + z * z);
+
+        height = obj->origin[1] + obj->height;
+
+        // allow upwards movement in case actor gets stuck inside object
+        if(len < obj->width && actor->velocity[1] <= 0)
+        {
+            if(actor->origin[1] >= height && actor->origin[1] + actor->velocity[1] < height)
+            {
+                actor->origin[1] = height;
+                actor->velocity[1] = 0;
+                return;
+            }
+        }
+    }
+}
+
 
 //
 // G_ActorMovement
@@ -227,6 +274,7 @@ void G_ActorMovement(actor_t *actor)
 
     // lerp actor to updated position
     Vec_Lerp3(actor->origin, 1, actor->origin, position);
+    G_CheckObjectStep(actor);
 }
 
 //
