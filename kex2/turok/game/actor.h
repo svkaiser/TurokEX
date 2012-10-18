@@ -41,6 +41,7 @@ typedef struct actor_s
     actorflags_t        flags;
     float               yaw;
     float               pitch;
+    float               roll;
     int                 svclient_id;
     int                 health;
     short               skin;

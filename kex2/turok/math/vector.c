@@ -147,6 +147,21 @@ void Vec_Scale(vec3_t out, vec3_t vec1, float val)
 }
 
 //
+// Vec_Length2
+//
+
+float Vec_Length2(vec3_t v1, vec3_t v2)
+{
+    float x;
+    float z;
+
+    x = v1[0] - v2[0];
+    z = v1[2] - v2[2];
+
+    return (float)sqrt(x * x + z * z);
+}
+
+//
 // Vec_Length3
 //
 
@@ -161,6 +176,17 @@ float Vec_Length3(vec3_t v1, vec3_t v2)
     z = v1[2] - v2[2];
 
     return (float)sqrt(x * x + y * y + z * z);
+}
+
+//
+// Vec_Unit2
+//
+
+float Vec_Unit2(vec3_t vec)
+{
+    return (float)sqrt(
+        vec[0] * vec[0] +
+        vec[2] * vec[2]);
 }
 
 //

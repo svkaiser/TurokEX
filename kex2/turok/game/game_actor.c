@@ -142,7 +142,7 @@ kbool G_ActorOnPlane(actor_t *actor)
 
 static void G_CheckObjectStep(actor_t *actor)
 {
-    object_t *obj;
+    blockobj_t *obj;
     sector_t *sector;
 
     if(actor->plane == NULL)
@@ -157,18 +157,12 @@ static void G_CheckObjectStep(actor_t *actor)
     for(obj = sector->blocklist.next; obj != &sector->blocklist; obj = obj->next)
     {
         float height; 
-        float len;
-        float x;
-        float z;
 
-        x = actor->origin[0] - obj->origin[0];
-        z = actor->origin[2] - obj->origin[2];
-        len = (float)sqrt(x * x + z * z);
-
-        height = obj->origin[1] + obj->height;
+        height = obj->object->origin[1] + obj->object->height;
 
         // allow upwards movement in case actor gets stuck inside object
-        if(len < obj->width && actor->velocity[1] <= 0)
+        if(Vec_Length2(actor->origin, obj->object->origin) < obj->object->width &&
+            actor->velocity[1] <= 0)
         {
             if(actor->origin[1] >= height && actor->origin[1] + actor->velocity[1] < height)
             {
@@ -271,6 +265,16 @@ void G_ActorMovement(actor_t *actor)
     // de-accelerate velocity
     actor->velocity[0] = actor->velocity[0] * 0.5f;
     actor->velocity[2] = actor->velocity[2] * 0.5f;
+
+    if(actor->velocity[0] < 0.0001f && actor->velocity[0] > -0.0001f)
+    {
+        actor->velocity[0] = 0;
+    }
+
+    if(actor->velocity[2] < 0.0001f && actor->velocity[2] > -0.0001f)
+    {
+        actor->velocity[2] = 0;
+    }
 
     // lerp actor to updated position
     Vec_Lerp3(actor->origin, 1, actor->origin, position);

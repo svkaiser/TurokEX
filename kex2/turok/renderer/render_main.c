@@ -36,6 +36,7 @@
 
 CVAR_EXTERNAL(cl_fov);
 static kbool showcollision = false;
+static kbool showbbox = false;
 
 static double viewMatrix[16];
 static double projMatrix[16];
@@ -287,12 +288,52 @@ static void R_SetupViewFrame(actor_t *actor)
     mtx_t mtx;
     vec4_t yaw;
     vec4_t pitch;
+    vec4_t roll;
+    vec4_t vroll;
     vec4_t rot;
     float bob_x;
     float bob_y;
     float d;
     vec3_t org;
     vec3_t pos;
+    vec3_t dir;
+    float angle;
+
+    // roll view camera if strafing left or right
+
+    // create the directional vector
+    Vec_Add(dir, actor->origin, actor->velocity);
+    Vec_Sub(dir, dir, actor->origin);
+
+    // get angle of direction
+    angle = Ang_Diff(actor->yaw + M_PI,
+        Ang_VectorToAngle(dir) + M_PI);
+
+    // get normalized direction vector
+    Vec_Copy3(dir, actor->velocity);
+    Vec_Normalize3(dir);
+
+    // clamp angle between -90 and 90
+    Ang_Clamp(&angle);
+
+    if(angle > (90 * M_RAD))
+    {
+        angle = M_PI - angle;
+    }
+
+    if(angle < -(90 * M_RAD))
+    {
+        angle = -M_PI - angle;
+    }
+
+    // interpolate view roll
+    actor->roll = (((angle / 16) * Vec_Unit2(dir)) - actor->roll) * 0.125f + actor->roll;
+
+    // clamp roll due to stupid floating point precision
+    if(actor->roll < 0.001f && actor->roll > -0.001f)
+    {
+        actor->roll = 0;
+    }
 
     bob_x = 0;
     bob_y = 0;
@@ -327,7 +368,9 @@ static void R_SetupViewFrame(actor_t *actor)
     Mtx_Identity(mtx);
     Vec_SetQuaternion(yaw, -actor->yaw + M_PI - bob_y, 0, 1, 0);
     Vec_SetQuaternion(pitch, actor->pitch + bob_x, 1, 0, 0);
-    Vec_MultQuaternion(rot, yaw, pitch);
+    Vec_SetQuaternion(roll, actor->roll, 0, 0, 1);
+    Vec_MultQuaternion(vroll, yaw, roll);
+    Vec_MultQuaternion(rot, vroll, pitch);
     Mtx_ApplyRotation(rot, mtx);
     Mtx_ApplyToVector(mtx, org, pos);
     Mtx_AddTranslation(mtx, -pos[0], -pos[1], -pos[2]);
@@ -379,6 +422,11 @@ void R_DrawFrame(void)
                 }
 
                 dglPopMatrix();
+
+                if(showbbox)
+                {
+                    R_DrawBoundingBox(obj->box, 255, 255, 0);
+                }
             }
         }
     }
@@ -416,6 +464,20 @@ static void FCmd_ShowCollision(void)
 }
 
 //
+// FCmd_ShowBoundingBox
+//
+
+static void FCmd_ShowBoundingBox(void)
+{
+    if(Cmd_GetArgc() < 1)
+    {
+        return;
+    }
+
+    showbbox ^= 1;
+}
+
+//
 // R_Shutdown
 //
 
@@ -431,6 +493,7 @@ void R_Shutdown(void)
 void R_Init(void)
 {
     Cmd_AddCommand("showcollision", FCmd_ShowCollision);
+    Cmd_AddCommand("showbbox", FCmd_ShowBoundingBox);
 
     Mdl_Init();
 }

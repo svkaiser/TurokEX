@@ -930,10 +930,72 @@ static void Map_ParseNavScript(kmap_t *map, scparser_t *parser)
 
 void Map_LinkObjToBlocklist(object_t *obj, sector_t *sector)
 {
-    sector->blocklist.prev->next    = obj;
-    obj->next                       = &sector->blocklist;
-    obj->prev                       = sector->blocklist.prev;
-    sector->blocklist.prev          = obj;
+    blockobj_t *blockobj = (blockobj_t*)Z_Calloc(sizeof(blockobj_t), PU_LEVEL, 0);
+
+    blockobj->object = obj;
+    sector->blocklist.prev->next = blockobj;
+    blockobj->next = &sector->blocklist;
+    blockobj->prev = sector->blocklist.prev;
+    sector->blocklist.prev = blockobj;
+}
+
+//
+// Map_ObjectInBlocklist
+//
+
+static kbool Map_ObjectInBlocklist(object_t *obj, sector_t *sector)
+{
+    blockobj_t *blockobj;
+
+    for(blockobj = sector->blocklist.next;
+        blockobj != &sector->blocklist; blockobj = blockobj->next)
+    {
+        if(blockobj->object == obj)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+//
+// Map_TraverseLinkObjects
+//
+
+static void Map_TraverseLinkObjects(object_t *obj, plane_t *plane, kmap_t *map)
+{
+    int i;
+    int j;
+    sector_t *sector;
+
+    sector = &map->sectors[plane - map->planes];
+
+    if(plane == NULL || Map_ObjectInBlocklist(obj, sector))
+    {
+        return;
+    }
+
+    Map_LinkObjToBlocklist(obj, sector);
+
+    for(i = 0; i < 3; i++)
+    {
+        plane_t *pl = plane->link[i];
+
+        if(pl == NULL)
+        {
+            continue;
+        }
+
+        for(j = 0; j < 3; j++)
+        {
+            if(Vec_Length2(obj->origin, pl->points[j]) <= obj->width * 2)
+            {
+                Map_TraverseLinkObjects(obj, pl, map);
+                break;
+            }
+        }
+    }
 }
 
 //
@@ -955,10 +1017,9 @@ void Map_InitBlocklist(kmap_t *map)
 
             if(obj->plane_id != -1 && obj->blockflag & 1)
             {
-                sector_t *sector = &map->sectors[obj->plane_id];
                 plane_t *plane = &map->planes[obj->plane_id];
 
-                Map_LinkObjToBlocklist(obj, sector);
+                Map_TraverseLinkObjects(obj, plane, map);
             }
         }
     }

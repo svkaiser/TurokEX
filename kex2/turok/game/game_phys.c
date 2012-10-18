@@ -236,7 +236,7 @@ static kbool G_TraceObject(trace_t *trace, vec3_t objpos, float radius)
 
 static kbool G_CheckObjects(trace_t *trace, plane_t *plane)
 {
-    object_t *obj;
+    blockobj_t *obj;
     sector_t *sector;
 
     if(plane == NULL)
@@ -250,12 +250,12 @@ static kbool G_CheckObjects(trace_t *trace, plane_t *plane)
     // go through the list
     for(obj = sector->blocklist.next; obj != &sector->blocklist; obj = obj->next)
     {
-        if(G_TraceObject(trace, obj->origin, obj->width))
+        if(G_TraceObject(trace, obj->object->origin, obj->object->width))
         {
             // check object height
             // TODO: the original game doesn't do height clipping but I'd like
             // to do it for kex someday
-            if(trace->end[1] > obj->origin[1] + obj->height)
+            if(trace->end[1] > obj->object->origin[1] + obj->object->height)
             {
                 continue;
             }

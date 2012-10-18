@@ -96,9 +96,16 @@ typedef struct
     int                 args[6];
 } area_t;
 
+typedef struct blockobj_s
+{
+    struct blockobj_s   *prev;
+    struct blockobj_s   *next;
+    object_t            *object;
+} blockobj_t;
+
 typedef struct
 {
-    object_t            blocklist;
+    blockobj_t          blocklist;
     int                 area_id;
 } sector_t;
 

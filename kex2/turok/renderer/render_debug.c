@@ -134,8 +134,6 @@ void R_DrawCollision(void)
         }
 
         dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-        p->flags &= ~CLF_DAMAGE_LAVA;
     }
 
     GL_SetState(GLSTATE_TEXTURE0, true);
@@ -156,6 +154,7 @@ void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b)
         return;
     }
 
+    dglEnable(GL_DEPTH_TEST);
     GL_SetState(GLSTATE_TEXTURE0, false);
     GL_SetState(GLSTATE_CULL, false);
     GL_SetState(GLSTATE_BLEND, true);
@@ -197,5 +196,7 @@ void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b)
     GL_SetState(GLSTATE_TEXTURE0, true);
     GL_SetState(GLSTATE_CULL, true);
     GL_SetState(GLSTATE_BLEND, false);
+
+    dglDisable(GL_DEPTH_TEST);
 }
 
