@@ -122,7 +122,7 @@ typedef struct
     float meleerange;
     float width;
     float height;
-    float uf10;
+    float viewheight;
     float u11;
     float u12;
     float u13;
@@ -489,11 +489,11 @@ static void ProcessActors(byte *data)
          Com_Strcat("        health = %i\n", GetAttribute(actor->attribute)->health);
          Com_Strcat("        width = %f\n", GetAttribute(actor->attribute)->width);
          Com_Strcat("        height = %f\n", GetAttribute(actor->attribute)->height);
+         Com_Strcat("        viewheight = %f\n", GetAttribute(actor->attribute)->viewheight);
          Com_Strcat("        blockflag = %i\n", GetAttribute(actor->attribute)->blockflags);
          Com_Strcat("        // u3 = %i\n", actor->u3);
          Com_Strcat("        // attrib uf2 = %f\n", GetAttribute(actor->attribute)->uf2);
          Com_Strcat("        // attrib uf6 = %f\n", GetAttribute(actor->attribute)->uf6);
-         Com_Strcat("        // attrib uf10 = %f\n", GetAttribute(actor->attribute)->uf10);
          Com_Strcat("    }\n");
     }
 
@@ -651,6 +651,7 @@ static void ProcessStaticInstances2(byte *data)
         Com_Strcat("                flags = %i\n", mapinst->flags);
         Com_Strcat("                radius = %f\n", GetAttribute(mapinst->attribute)->meleerange);
         Com_Strcat("                height = %f\n", GetAttribute(mapinst->attribute)->height);
+        Com_Strcat("                viewheight = %f\n", GetAttribute(mapinst->attribute)->viewheight);
         Com_Strcat("                blockflag = %i\n", GetAttribute(mapinst->attribute)->blockflags);
         Com_Strcat("                // u1 = %i\n", mapinst->u1);
         Com_Strcat("            }\n");

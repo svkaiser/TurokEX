@@ -241,6 +241,11 @@ float Plane_GetSlope(plane_t *plane, float x1, float z1, float x2, float z2)
     vec3_t v1;
     vec3_t v2;
 
+    if(plane == NULL)
+    {
+        return 0;
+    }
+
     Vec_Set3(v1, x1, 0, z1);
     Vec_Set3(v2, x2, 0, z2);
 
@@ -250,12 +255,12 @@ float Plane_GetSlope(plane_t *plane, float x1, float z1, float x2, float z2)
     xz = (x2 - x1) * (x2 - x1) + (z2 - z1) * (z2 - z1);
     d = (dist2 - dist1) * (dist2 - dist1) + xz;
 
-    if(d != 0.0f)
+    if(d != 0)
     {
         float an = (float)sqrt(xz / d);
 
-        if(an >  1.0f) an =  1.0f;
-        if(an < -1.0f) an = -1.0f;
+        if(an >  1) an =  1;
+        if(an < -1) an = -1;
 
         if(dist2 <= dist1)
         {
@@ -265,7 +270,7 @@ float Plane_GetSlope(plane_t *plane, float x1, float z1, float x2, float z2)
         return (float)acos(an);
     }
 
-    return 0.0f;
+    return 0;
 }
 
 //

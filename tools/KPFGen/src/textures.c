@@ -202,7 +202,7 @@ static void AddTexture(byte *data, int size)
             {
                 for(row = (16-1); row >= 0; row--)
                 {
-                    for(col = 0; col < 16; col++)
+                    for(col = (16-1); col >= 0; col--)
                     {
                         Com_WriteMem8(rover, pal[row * 16 + col].r);
                         Com_WriteMem8(rover, pal[row * 16 + col].g);
@@ -233,8 +233,8 @@ static void AddTexture(byte *data, int size)
                     t1 = (texdata[row * (tga.width >> 1) + col] & 0xf);
                     t2 = (texdata[row * (tga.width >> 1) + col] >> 4);
 
-                    Com_WriteMem8(rover, 0xff - (0xf - t2));
-                    Com_WriteMem8(rover, 0xff - (0xf - t1));
+                    Com_WriteMem8(rover, 0xff - t2);
+                    Com_WriteMem8(rover, 0xff - t1);
                 }
             }
         }

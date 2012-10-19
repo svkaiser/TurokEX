@@ -58,7 +58,7 @@ void G_Ticker(void)
 // G_ClientThink
 //
 
-#define MOVE_VELOCITY   2.404f
+#define MOVE_VELOCITY   2.5f
 
 void G_ClientThink(actor_t *client, ticcmd_t *cmd)
 {

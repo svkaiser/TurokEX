@@ -274,7 +274,7 @@ void Vec_Slerp(vec4_t out, float movement, vec4_t vec1, vec4_t vec2)
         halfcos = (float)acos(d1);
         halfsin = (float)sin(halfcos);
 
-        if(halfsin == 0.0)
+        if(halfsin == 0)
         {
             out[0] = vec1[0];
             out[1] = vec1[1];
@@ -292,7 +292,9 @@ void Vec_Slerp(vec4_t out, float movement, vec4_t vec1, vec4_t vec2)
             ms2 = (float)sin(halfcos * movement) * d;
 
             if(ms2)
+            {
                 vec2[0] = -vec2[0];
+            }
 
             out[0] = ms1 * vec1[0] + vec2[0] * ms2;
             out[1] = ms1 * vec1[1] + vec2[1] * ms2;

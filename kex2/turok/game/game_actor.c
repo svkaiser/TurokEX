@@ -35,6 +35,13 @@
 
 #define SLOPE_THRESHOLD     25.0f
 
+#define FRICTION_GROUND     0.5f
+#define FRICTION_LAVA       0.205f
+
+#define GRAVITY_NORMAL      0.5f
+
+#define VELOCITY_EPSILON    0.0001f
+
 static actor_t *g_currentactor;
 
 //
@@ -185,6 +192,7 @@ void G_ActorMovement(actor_t *actor)
 {
     vec3_t position;
     float dist;
+    float friction;
 
     // TEMP
     if(g_currentmap == NULL)
@@ -200,6 +208,7 @@ void G_ActorMovement(actor_t *actor)
 
     // set the next desired position
     Vec_Add(position, actor->origin, actor->velocity);
+    friction = FRICTION_GROUND;
 
     if(actor->plane)
     {
@@ -243,7 +252,7 @@ void G_ActorMovement(actor_t *actor)
             else
             {
                 // nothing was hit, continue freefall
-                actor->velocity[1] -= 0.5f;
+                actor->velocity[1] -= GRAVITY_NORMAL;
             }
         }
         else
@@ -257,21 +266,29 @@ void G_ActorMovement(actor_t *actor)
             else
             {
                 // freefall
-                actor->velocity[1] -= 0.5f;
+                actor->velocity[1] -= GRAVITY_NORMAL;
             }
+        }
+
+        if(actor->svclient_id != -1 &&
+            actor->plane->flags & CLF_DAMAGE_LAVA && dist <= 1)
+        {
+            friction = FRICTION_LAVA;
         }
     }
 
     // de-accelerate velocity
-    actor->velocity[0] = actor->velocity[0] * 0.5f;
-    actor->velocity[2] = actor->velocity[2] * 0.5f;
+    actor->velocity[0] = actor->velocity[0] * friction;
+    actor->velocity[2] = actor->velocity[2] * friction;
 
-    if(actor->velocity[0] < 0.0001f && actor->velocity[0] > -0.0001f)
+    if(actor->velocity[0] < VELOCITY_EPSILON &&
+        actor->velocity[0] > -VELOCITY_EPSILON)
     {
         actor->velocity[0] = 0;
     }
 
-    if(actor->velocity[2] < 0.0001f && actor->velocity[2] > -0.0001f)
+    if(actor->velocity[2] < VELOCITY_EPSILON &&
+        actor->velocity[2] > -VELOCITY_EPSILON)
     {
         actor->velocity[2] = 0;
     }

@@ -285,6 +285,7 @@ static void R_DrawTestModel(const char *file)
 
 static void R_SetupViewFrame(actor_t *actor)
 {
+    static float cam_roll;
     mtx_t mtx;
     vec4_t yaw;
     vec4_t pitch;
@@ -326,13 +327,16 @@ static void R_SetupViewFrame(actor_t *actor)
         angle = -M_PI - angle;
     }
 
+    d = (Vec_Unit2(actor->velocity) * 0.05f);
+    cam_roll *= 0.9f;
+
     // interpolate view roll
-    actor->roll = (((angle / 16) * Vec_Unit2(dir)) - actor->roll) * 0.125f + actor->roll;
+    cam_roll = (((angle * 0.0625f) * Vec_Unit2(dir)) - cam_roll) * d + cam_roll;
 
     // clamp roll due to stupid floating point precision
-    if(actor->roll < 0.001f && actor->roll > -0.001f)
+    if(cam_roll < 0.001f && cam_roll > -0.001f)
     {
-        actor->roll = 0;
+        cam_roll = 0;
     }
 
     bob_x = 0;
@@ -368,7 +372,7 @@ static void R_SetupViewFrame(actor_t *actor)
     Mtx_Identity(mtx);
     Vec_SetQuaternion(yaw, -actor->yaw + M_PI - bob_y, 0, 1, 0);
     Vec_SetQuaternion(pitch, actor->pitch + bob_x, 1, 0, 0);
-    Vec_SetQuaternion(roll, actor->roll, 0, 0, 1);
+    Vec_SetQuaternion(roll, cam_roll, 0, 0, 1);
     Vec_MultQuaternion(vroll, yaw, roll);
     Vec_MultQuaternion(rot, vroll, pitch);
     Mtx_ApplyRotation(rot, mtx);

@@ -255,7 +255,8 @@ static kbool G_CheckObjects(trace_t *trace, plane_t *plane)
             // check object height
             // TODO: the original game doesn't do height clipping but I'd like
             // to do it for kex someday
-            if(trace->end[1] > obj->object->origin[1] + obj->object->height)
+            if(trace->end[1] > obj->object->origin[1] + obj->object->height ||
+                trace->end[1] + 30.7f < obj->object->origin[1])
             {
                 continue;
             }
@@ -279,6 +280,18 @@ static kbool G_TracePlane(trace_t *trace, plane_t *pl)
     float d;
     float dstart;
     float dend;
+
+    if(Plane_IsAWall(pl))
+    {
+        float y = trace->end[1] + 1.024f;
+
+        if( y > pl->points[0][1] &&
+            y > pl->points[1][1] &&
+            y > pl->points[2][1])
+        {
+            return false;
+        }
+    }
 
     // special cases for those annoying one-sided planes
     if(pl->flags & CLF_ONESIDED && !Plane_IsAWall(pl))
@@ -447,18 +460,10 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
         // check to see if the ray can bump into it
         if(Plane_IsAWall(pl))
         {
-            float y = trace->start[1] + 1.024f;
-
-            // must not be over it
-            if( y <= pl->points[0][1]   ||
-                y <= pl->points[1][1]   ||
-                y <= pl->points[2][1])
+            // trace it to see if its valid or not
+            if(G_TracePlane(trace, pl))
             {
-                // trace it to see if its valid or not
-                if(G_TracePlane(trace, pl))
-                {
-                    return;
-                }
+                return;
             }
         }
 
