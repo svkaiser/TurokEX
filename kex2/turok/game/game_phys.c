@@ -610,6 +610,11 @@ void G_GroundMove(actor_t *actor)
                 }
             }
 
+            if(!Plane_IsAWall(actor->plane) && Plane_IsAWall(trace.hitpl))
+            {
+                trace.normal[1] = 0;
+            }
+
             // slide against the hit surface. ignore Y-velocity if on a steep slope
             tmpy = vel[1];
             G_ClipVelocity(vel, vel, trace.normal, 1.01f);

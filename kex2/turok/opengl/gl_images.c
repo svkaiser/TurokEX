@@ -57,6 +57,7 @@ typedef struct
     byte r;
     byte g;
     byte b;
+    byte a;
 } palette_t;
 
 enum tga_type
@@ -145,19 +146,44 @@ void Img_LoadTGA(const char *name, byte **output, int *width, int *height, kbool
                 data = (byte*)Z_Calloc(tga.width * tga.height * 4, PU_STATIC, 0);
                 *output = data;
                 p = (palette_t*)rover;
-                rover += (sizeof(palette_t) * tga.cmap_len);
 
-                for(r = tga.height - 1; r >= 0; r--)
+                switch(tga.cmap_bits)
                 {
-                    data_r = data + r * tga.width * 4;
-                    for(c = 0; c < tga.width; c++)
+                case 24:
+                    rover += (3 * tga.cmap_len);
+
+                    for(r = tga.height - 1; r >= 0; r--)
                     {
-                        *data_r++ = Img_GetRGBGamma(p[*rover].b);
-                        *data_r++ = Img_GetRGBGamma(p[*rover].g);
-                        *data_r++ = Img_GetRGBGamma(p[*rover].r);
-                        *data_r++ = masked ? (*rover == 0xff ? 0 : 0xff) : 0xff;
-                        rover++;
+                        data_r = data + r * tga.width * 4;
+                        for(c = 0; c < tga.width; c++)
+                        {
+                            *data_r++ = Img_GetRGBGamma(p[*rover].b);
+                            *data_r++ = Img_GetRGBGamma(p[*rover].g);
+                            *data_r++ = Img_GetRGBGamma(p[*rover].r);
+                            *data_r++ = 0xff;
+                            rover++;
+                        }
                     }
+                    break;
+                case 32:
+                    rover += (4 * tga.cmap_len);
+
+                    for(r = tga.height - 1; r >= 0; r--)
+                    {
+                        data_r = data + r * tga.width * 4;
+                        for(c = 0; c < tga.width; c++)
+                        {
+                            *data_r++ = Img_GetRGBGamma(p[*rover].b);
+                            *data_r++ = Img_GetRGBGamma(p[*rover].g);
+                            *data_r++ = Img_GetRGBGamma(p[*rover].r);
+                            *data_r++ = masked ? Img_GetRGBGamma(p[*rover].a) : 0xff;
+                            rover++;
+                        }
+                    }
+                    break;
+                default:
+                    Com_Error("%i-bit color map not supported for %s", tga.cmap_bits, name);
+                    break;
                 }
             }
             break;

@@ -343,6 +343,11 @@ void GL_SetState(int bit, kbool enable)
 
 void GL_BindTexture(texture_t *texture)
 {
+    if(texture == NULL)
+    {
+        return;
+    }
+
     if(texture->texid == prev_texture)
     {
         return;
@@ -521,6 +526,8 @@ void GL_Init(void)
     dglHint(GL_FOG_HINT, GL_NICEST);
     dglEnable(GL_SCISSOR_TEST);
     dglEnable(GL_DITHER);
+    dglTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
+	dglTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
     
     GL_SetState(GLSTATE_TEXTURE0, 1);
     GL_SetTextureFilter();

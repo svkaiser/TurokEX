@@ -327,7 +327,7 @@ static void R_SetupViewFrame(actor_t *actor)
         angle = -M_PI - angle;
     }
 
-    d = (Vec_Unit2(actor->velocity) * 0.05f);
+    d = Vec_Unit2(actor->velocity) * 0.05f;
     cam_roll *= 0.9f;
 
     // interpolate view roll
@@ -345,9 +345,7 @@ static void R_SetupViewFrame(actor_t *actor)
     if(G_ActorOnPlane(actor))
     {
         // calculate bobbing
-        d = (float)sqrt(
-            actor->velocity[0] * actor->velocity[0] +
-            actor->velocity[2] * actor->velocity[2]);
+        d = Vec_Unit2(actor->velocity);
 
         if(d > 0.005f)
         {
@@ -359,7 +357,7 @@ static void R_SetupViewFrame(actor_t *actor)
     // set view origin
     Vec_Set3(org,
         actor->origin[0],
-        actor->origin[1] + /*(actor->object.height + 30.72f)*/51.2f,
+        actor->origin[1] + (actor->meleerange + actor->object.viewheight),
         actor->origin[2]);
 
     // setup projection matrix

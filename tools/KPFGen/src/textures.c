@@ -88,6 +88,7 @@ typedef struct
     byte r;
     byte g;
     byte b;
+    byte a;
 } dPalette_t;
 
 static void ConvertPalette(dPalette_t* palette, word* data, int indexes)
@@ -107,6 +108,7 @@ static void ConvertPalette(dPalette_t* palette, word* data, int indexes)
         palette[i].r = (val & 0x003E) << 2;
         palette[i].g = (val & 0x07C0) >> 3;
         palette[i].b = (val & 0xF800) >> 8;
+        palette[i].a = (val & 0x0001) ? 0xff : 0;
     }
 }
 
@@ -128,7 +130,7 @@ static void AddTexture(byte *data, int size)
     tex = (turoktexture_t*)Com_GetCartData(data, CHUNK_TEXINFO, 0);
 
     tga.type = 1;
-    tga.cmap_bits = 24;
+    tga.cmap_bits = 32;
     tga.has_cmap = 1;
     tga.cmap_len = 256;
     tga.pixel_bits = 8;
@@ -164,7 +166,7 @@ static void AddTexture(byte *data, int size)
             tga.cmap_bits = 0;
             tga.has_cmap = 0;
             tga.cmap_len = 0;
-            tga.pixel_bits = 24;
+            tga.pixel_bits = 32;
             tga.flags = 8;
         }
         else
@@ -207,6 +209,7 @@ static void AddTexture(byte *data, int size)
                         Com_WriteMem8(rover, pal[row * 16 + col].r);
                         Com_WriteMem8(rover, pal[row * 16 + col].g);
                         Com_WriteMem8(rover, pal[row * 16 + col].b);
+                        Com_WriteMem8(rover, pal[row * 16 + col].a);
                     }
                 }
             }
@@ -217,6 +220,7 @@ static void AddTexture(byte *data, int size)
                     Com_WriteMem8(rover, pal[col].r);
                     Com_WriteMem8(rover, pal[col].g);
                     Com_WriteMem8(rover, pal[col].b);
+                    Com_WriteMem8(rover, pal[col].a);
                 }
             }
         }
@@ -250,7 +254,7 @@ static void AddTexture(byte *data, int size)
                     {
                         short val;
                         short *tmp;
-                        int r, g, b;
+                        int r, g, b, a;
 
                         data_rover = texdata + row * tga.width * 2;
 
@@ -259,10 +263,12 @@ static void AddTexture(byte *data, int size)
                         r = (Com_Swap16(val) & 0x003E) << 2;
                         g = (Com_Swap16(val) & 0x07C0) >> 3;
                         b = (Com_Swap16(val) & 0xF800) >> 8;
+                        a = (Com_Swap16(val) & 0x0001);
 
                         Com_WriteMem8(rover, r);
                         Com_WriteMem8(rover, g);
                         Com_WriteMem8(rover, b);
+                        Com_WriteMem8(rover, a);
                     }
                     else
                     {
@@ -582,27 +588,26 @@ void ProcessHudGfx(unsigned int address, const char *name)
         {
             short val;
             short *tmp;
-            int r, g, b;
+            int r, g, b, a;
 
             tmp = (short*)start;
             val = tmp[(hud->w1 * ((hud->h1-1) - h)) + w];
             r = (Com_Swap16(val) & 0x003E) << 2;
             g = (Com_Swap16(val) & 0x07C0) >> 3;
             b = (Com_Swap16(val) & 0xF800) >> 8;
+            a = (Com_Swap16(val) & 0x0001);
 
-            if(val == 0)
+            Com_WriteMem8(rover, r);
+            Com_WriteMem8(rover, g);
+            Com_WriteMem8(rover, b);
+
+            if(a != 0)
             {
-                Com_WriteMem8(rover, 255);
-                Com_WriteMem8(rover, 255);
-                Com_WriteMem8(rover, 0);
-                Com_WriteMem8(rover, 0);
+                Com_WriteMem8(rover, 0xff);
             }
             else
             {
-                Com_WriteMem8(rover, r);
-                Com_WriteMem8(rover, g);
-                Com_WriteMem8(rover, b);
-                Com_WriteMem8(rover, 0xff);
+                Com_WriteMem8(rover, 0);
             }
         }
     }

@@ -41,10 +41,10 @@ typedef enum
     CLF_HIDDEN          = 0x200,
     CLF_UNKNOWN1024     = 0x400,
     CLF_UNKNOWN2048     = 0x800,
-    CLF_DAMAGE_LAVA     = 0x1000,
+    CLF_UNKNOWN4096     = 0x1000,
     CLF_UNKNOWN8192     = 0x2000,
     CLF_ENDLESSPIT      = 0x4000,
-    CLF_UNKNOWN32768    = 0x8000,
+    CLF_DAMAGE_LAVA     = 0x8000,
     CLF_UNKNOWN65536    = 0x10000
 } collisionflags_t;
 
@@ -70,6 +70,7 @@ typedef struct object_s
     short               type;
     float               width;
     float               height;
+    float               viewheight;
     short               plane_id;
     byte                flags;
     byte                blockflag;

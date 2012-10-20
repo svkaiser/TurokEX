@@ -44,16 +44,19 @@
 
 static actor_t *g_currentactor;
 
+actor_t *g_actorlist;
+actor_t actorlist[MAXMAPS];
+
 //
 // G_LinkActor
 //
 
 void G_LinkActor(actor_t *actor)
 {
-    //g_currentmap->actorlist.prev->next = actor;
-    //actor->next = &g_currentmap->actorlist;
-    //actor->prev = g_currentmap->actorlist.prev;
-    //g_currentmap->actorlist.prev = actor;
+    g_actorlist->prev->next = actor;
+    actor->next = g_actorlist;
+    actor->prev = g_actorlist->prev;
+    g_actorlist->prev = actor;
 }
 
 //
@@ -63,21 +66,20 @@ void G_LinkActor(actor_t *actor)
 void G_UnlinkActor(actor_t* actor)
 {
     /* Remove from main actor list */
-    //actor_t* next = g_currentactor->next;
+    actor_t* next = g_currentactor->next;
 
     /* Note that g_currentactor is guaranteed to point to us,
     * and since we're freeing our memory, we had better change that. So
     * point it to actor->prev, so the iterator will correctly move on to
     * actor->prev->next = actor->next */
-    //(next->prev = g_currentactor = actor->prev)->next = next;
+    (next->prev = g_currentactor = actor->prev)->next = next;
 }
 
 //
 // G_SpawnActor
 //
 
-actor_t *G_SpawnActor(float x, float y, float z,
-                      float yaw, const char *model, short type)
+actor_t *G_SpawnActor(void)
 {
     actor_t *actor;
 
@@ -88,26 +90,20 @@ actor_t *G_SpawnActor(float x, float y, float z,
 
     actor = (actor_t*)Z_Calloc(sizeof(*actor), PU_ACTOR, NULL);
 
-    /*Vec_Set3(actor->origin, x, y, z);
-    Vec_Set3(actor->prevorigin, x, y, z);
-    Vec_Set3(actor->scale, 0.5f, 0.5f, 0.5f);
-    Vec_SetQuaternion(actor->rotation, yaw, 1, 0, 0);
-
-    actor->yaw          = yaw;
-    actor->pitch        = 0;
-    actor->type         = type;
-    actor->health       = 100;
-    actor->width        = 44.0f;
-    actor->height       = 44.0f;
-    actor->meleerange   = 0;
-    actor->target       = NULL;
-    actor->model        = Mdl_Load(model);
-    actor->mapactor_id  = -1;
     actor->svclient_id  = -1;
 
-    G_LinkActor(actor);*/
+    G_LinkActor(actor);
 
     return actor;
+}
+
+//
+// G_SetActorLinkList
+//
+
+void G_SetActorLinkList(int map)
+{
+    g_actorlist = &actorlist[map];
 }
 
 //
@@ -216,7 +212,8 @@ void G_ActorMovement(actor_t *actor)
 
         if(pl->flags & CLF_CHECKHEIGHT)
         {
-            dist = Plane_GetHeight(pl, position) /*- actor->object.height*/ - 30.72f;
+            dist = Plane_GetHeight(pl, position) -
+                (actor->meleerange + actor->object.viewheight);
 
             if(position[1] > dist)
             {
@@ -313,82 +310,5 @@ float G_GetActorMeleeRange(actor_t *actor, vec3_t targetpos)
     z = actor->origin[2] - targetpos[2];
 
     return (float)sqrt(x * x + y * y + z * z);
-}
-
-//
-// G_RotateActorToPlane
-//
-
-void G_RotateActorToPlane(vec4_t rot, actor_t *actor)
-{
-    vec3_t up;
-    vec3_t cross;
-    vec4_t lerp;
-    vec4_t dir;
-    vec3_t n;
-    float an;
-    float s;
-    float c;
-    float slope;
-
-    if(actor->plane == NULL ||
-        (actor->flags & AF_NOALIGNPITCH || Plane_IsAWall(actor->plane)))
-    {
-        Vec_Set4(rot, 0, 0, 0, 1);
-        return;
-    }
-    else if(actor->svclient_id == -1)
-    {
-        Plane_GetRotation(rot, actor->plane);
-        return;
-    }
-
-    Plane_GetNormal(n, actor->plane);
-    Vec_Set3(up, 0, 1, 0);
-    Vec_Normalize3(n);
-    Vec_Cross(cross, up, n);
-    Vec_Normalize3(cross);
-
-    an = (float)acos(up[0] * n[0] + up[1] * n[1] + up[2] * n[2]);
-    if(an > (SLOPE_THRESHOLD * M_RAD))
-    {
-        an = (SLOPE_THRESHOLD * M_RAD);
-    }
-
-    s = (float)sin(an * (1.0f - SLOPE_THRESHOLD) * 0.5f);
-    c = (float)cos(an * (1.0f - SLOPE_THRESHOLD) * 0.5f);
-
-    dir[0] = cross[0] * s;
-    dir[1] = cross[1] * s;
-    dir[2] = cross[2] * s;
-    dir[3] = c;
-
-    slope = Plane_GetSlope(actor->plane,
-        actor->origin[0],
-        actor->origin[2],
-        actor->origin[0] - (float)sin(actor->yaw),
-        actor->origin[2] - (float)cos(actor->yaw));
-
-    if(!Plane_IsAWall(actor->plane))
-    {
-        if(slope <= SLOPE_THRESHOLD)
-        {
-            slope = slope * (1.0f - SLOPE_THRESHOLD);
-        }
-        else
-        {
-            slope = SLOPE_THRESHOLD * (1.0f - SLOPE_THRESHOLD);
-        }
-    }
-
-    s = (float)sin(slope * 0.5f);
-    c = (float)cos(slope * 0.5f);
-
-    lerp[0] = (float)cos(actor->yaw) * s;
-    lerp[1] = 0;
-    lerp[2] = -(float)sin(actor->yaw) * s;
-    lerp[3] = c;
-
-    Vec_Slerp(rot, 0.5f, lerp, dir);
 }
 

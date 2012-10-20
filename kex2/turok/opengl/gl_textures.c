@@ -123,6 +123,11 @@ texture_t *Tex_Find(const char *name)
     texture_t *texture;
     unsigned int hash;
 
+    if(name[0] == 0)
+    {
+        return NULL;
+    }
+
     hash = Com_HashFileName(name);
 
     for(texture = tex_hashlist[hash]; texture; texture = texture->next)
@@ -143,6 +148,11 @@ texture_t *Tex_Find(const char *name)
 texture_t *Tex_CacheTextureFile(const char *name, int clampmode, kbool masked)
 {
     texture_t *texture;
+
+    if(name[0] == 0)
+    {
+        return tex_default;
+    }
 
     texture = Tex_Find(name);
 

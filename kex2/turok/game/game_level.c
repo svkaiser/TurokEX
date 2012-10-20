@@ -30,6 +30,7 @@
 #include "zone.h"
 #include "script.h"
 #include "mathlib.h"
+#include "client.h"
 
 kmap_t kmaps[MAXMAPS];
 kmap_t *g_currentmap = NULL;
@@ -68,6 +69,13 @@ enum
     scactor_angle,
     scactor_position,
     scactor_scale,
+    scactor_type,
+    scactor_flags,
+    scactor_meleerange,
+    scactor_health,
+    scactor_width,
+    scactor_height,
+    scactor_viewheight,
     scactor_blockflag,
     scactor_end
 };
@@ -84,6 +92,13 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_angle,        "angle"         },
     { scactor_position,     "position"      },
     { scactor_scale,        "scale"         },
+    { scactor_type,         "type"          },
+    { scactor_flags,        "flags"         },
+    { scactor_meleerange,   "meleerange"    },
+    { scactor_health,       "health"        },
+    { scactor_width,        "width"         },
+    { scactor_height,       "height"        },
+    { scactor_viewheight,   "viewheight"    },
     { scactor_blockflag,    "blockflag"     },
     { -1,                   NULL            }
 };
@@ -106,6 +121,7 @@ enum
     scinst_plane,
     scinst_blockflag,
     scinst_height,
+    scinst_viewheight,
     scinst_instances,
     scinst_numinstances,
     scinst_staticinstnaces,
@@ -131,6 +147,7 @@ static const sctokens_t insttokens[scinst_end+1] =
     { scinst_plane,                 "leaf"                  },
     { scinst_blockflag,             "blockflag"             },
     { scinst_height,                "height"                },
+    { scinst_viewheight,            "viewheight"            },
     { scinst_staticinstnaces,       "staticinstances"       },
     { scinst_numstaticinstances,    "numstaticinstances"    },
     { scinst_instances,             "instances"             },
@@ -187,70 +204,21 @@ static const sctokens_t areatokens[scarea_end+1] =
 };
 
 //
-// Map_SpawnActor
-//
-
-/*static void Map_SpawnActor(mapactor_t *mapactor, int id)
-{
-    actor_t *actor;
-
-    actor = G_SpawnActor(
-        mapactor->origin[0],
-        mapactor->origin[1],
-        mapactor->origin[2],
-        mapactor->yaw,
-        mapactor->mdlpath,
-        mapactor->type);
-
-    Vec_Set3(actor->scale,
-        mapactor->scale[0],
-        mapactor->scale[1],
-        mapactor->scale[2]);
-
-    if(mapactor->leafindex != -1)
-    {
-        actor->plane = &g_currentmap->planes[mapactor->leafindex];
-    }
-
-    if(!(actor->flags & AF_NOALIGNPITCH))
-    {
-        float dist;
-
-        dist = Plane_GetDistance(actor->plane, actor->origin);
-
-        if(actor->origin[1] - dist < 51.2f)
-        {
-            actor->origin[1] = dist;
-        }
-    }
-
-    actor->health       = mapactor->health;
-    actor->meleerange   = mapactor->meleerange;
-    actor->width        = mapactor->width;
-    actor->height       = mapactor->height;
-    actor->mapactor_id  = id;
-}*/
-
-//
 // Map_ParseActorBlock
 //
 
 static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
 {
-    /*unsigned int i;
+    unsigned int i;
 
     if(map->nummapactors <= 0)
     {
         return;
     }
 
-    map->mapactors = (mapactor_t*)Z_Calloc(sizeof(mapactor_t) * map->nummapactors, PU_LEVEL, 0);
-
     for(i = 0; i < map->nummapactors; i++)
     {
-        mapactor_t *mapactor;
-
-        mapactor = &map->mapactors[i];
+        actor_t *actor = G_SpawnActor(); // TODO handle test case if returned NULL
 
         // read into nested actor block
         SC_ExpectNextToken(TK_LBRACK);
@@ -261,53 +229,95 @@ static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
             switch(SC_GetIDForToken(mapactortokens, parser->token))
             {
             case scactor_model:
-                SC_AssignString(mapactortokens, mapactor->mdlpath,
+                SC_AssignString(mapactortokens, actor->object.mdlpath,
                     scactor_model, parser, false);
                 break;
 
             case scactor_texturealt:
-                SC_AssignWord(mapactortokens, &mapactor->textureindex,
+                SC_AssignWord(mapactortokens, &actor->object.textureindex,
                     scactor_texturealt, parser, false);
                 break;
 
             case scactor_skin:
-                SC_AssignWord(mapactortokens, &mapactor->skin,
+                SC_AssignWord(mapactortokens, &actor->skin,
                     scactor_skin, parser, false);
                 break;
 
             case scactor_targetid:
-                SC_AssignWord(mapactortokens, &mapactor->tid,
+                SC_AssignWord(mapactortokens, &actor->object.tid,
                     scactor_targetid, parser, false);
                 break;
 
             case scactor_target:
-                SC_AssignWord(mapactortokens, &mapactor->target,
+                SC_AssignWord(mapactortokens, &actor->object.target,
                     scactor_target, parser, false);
                 break;
 
             case scactor_variant:
-                SC_AssignWord(mapactortokens, &mapactor->variant,
+                SC_AssignWord(mapactortokens, &actor->object.variant,
                     scactor_variant, parser, false);
                 break;
 
             case scactor_leaf:
-                SC_AssignWord(mapactortokens, &mapactor->leafindex,
+                SC_AssignWord(mapactortokens, &actor->object.plane_id,
                     scactor_leaf, parser, false);
                 break;
 
             case scactor_angle:
-                SC_AssignFloat(mapactortokens, &mapactor->yaw,
+                SC_AssignFloat(mapactortokens, &actor->yaw,
                     scactor_angle, parser, false);
+
+                actor->yaw = actor->yaw * M_RAD;
                 break;
 
             case scactor_position:
-                SC_AssignVector(mapactortokens, mapactor->origin,
+                SC_AssignVector(mapactortokens, actor->origin,
                     scactor_position, parser, false);
                 break;
 
             case scactor_scale:
-                SC_AssignVector(mapactortokens, mapactor->scale,
+                SC_AssignVector(mapactortokens, actor->object.scale,
                     scactor_scale, parser, false);
+                break;
+
+            case scactor_type:
+                SC_AssignWord(mapactortokens, &actor->object.type,
+                    scactor_type, parser, false);
+                break;
+
+            case scactor_flags:
+                SC_AssignInteger(mapactortokens, (int*)&actor->object.flags,
+                    scactor_flags, parser, false);
+                break;
+
+            case scactor_meleerange:
+                SC_AssignFloat(mapactortokens, &actor->meleerange,
+                    scactor_meleerange, parser, false);
+                break;
+
+            case scactor_health:
+                SC_AssignInteger(mapactortokens, &actor->health,
+                    scactor_health, parser, false);
+                break;
+
+            case scactor_width:
+                SC_AssignFloat(mapactortokens, &actor->object.width,
+                    scactor_width, parser, false);
+                break;
+
+            case scactor_height:
+                SC_AssignFloat(mapactortokens, &actor->object.height,
+                    scactor_height, parser, false);
+                break;
+
+            case scactor_viewheight:
+                SC_AssignFloat(mapactortokens, &actor->object.viewheight,
+                    scactor_viewheight, parser, false);
+                break;
+
+            case scactor_blockflag:
+                SC_AssignInteger(insttokens, (int*)&actor->object.blockflag,
+                    scactor_blockflag, parser, false);
                 break;
 
             default:
@@ -322,8 +332,8 @@ static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
             SC_Find();
         }
 
-        //Map_SpawnActor(mapactor, i);
-    }*/
+        Vec_SetQuaternion(actor->object.rotation, actor->yaw, 1, 0, 0);
+    }
 }
 
 //
@@ -483,6 +493,11 @@ static void Map_ParseObjectBlock(instance_t *instances, scparser_t *parser, kboo
                     scinst_height, parser, false);
                 break;
 
+            case scinst_viewheight:
+                SC_AssignFloat(insttokens, &obj->viewheight,
+                    scinst_viewheight, parser, false);
+                break;
+
             case scinst_flags:
                 SC_AssignInteger(insttokens, (int*)&obj->flags,
                     scinst_flags, parser, false);
@@ -600,12 +615,12 @@ static void Map_ParseLevelScript(kmap_t *map, scparser_t *parser)
                         scmap_numinstancegroups, parser, false);
                     break;
 
-                /*case scmap_actors:
+                case scmap_actors:
                     SC_ExpectNextToken(TK_EQUAL);
                     SC_ExpectNextToken(TK_LBRACK);
                     Map_ParseActorBlock(map, parser);
                     SC_ExpectNextToken(TK_RBRACK);
-                    break;*/
+                    break;
 
                 /*case scmap_gridbounds:
                     SC_ExpectNextToken(TK_EQUAL);
@@ -1002,7 +1017,7 @@ static void Map_TraverseLinkObjects(object_t *obj, plane_t *plane, kmap_t *map)
 // Map_InitBlocklist
 //
 
-void Map_InitBlocklist(kmap_t *map)
+static void Map_InitBlocklist(kmap_t *map)
 {
     unsigned int i;
     unsigned int j;
@@ -1020,6 +1035,40 @@ void Map_InitBlocklist(kmap_t *map)
                 plane_t *plane = &map->planes[obj->plane_id];
 
                 Map_TraverseLinkObjects(obj, plane, map);
+            }
+        }
+    }
+}
+
+//
+// Map_SetupActors
+//
+
+static void Map_SetupActors(kmap_t *map)
+{
+    actor_t *actor;
+
+    for(actor = g_actorlist->next; actor != g_actorlist; actor = actor->next)
+    {
+        if(actor->object.type == 0)
+        {
+            memcpy(&client.localactor, actor, sizeof(actor_t));
+        }
+
+        if(actor->object.plane_id != -1)
+        {
+            actor->plane = &map->planes[actor->object.plane_id];
+
+            if(!(actor->flags & AF_NOALIGNPITCH))
+            {
+                float dist;
+
+                dist = Plane_GetDistance(actor->plane, actor->origin);
+
+                if(actor->origin[1] - dist < 51.2f)
+                {
+                    actor->origin[1] = dist;
+                }
             }
         }
     }
@@ -1050,6 +1099,8 @@ kmap_t *Map_Load(int map)
     g_currentmap->tics = 0;
     g_currentmap->time = 0;
 
+    G_SetActorLinkList(map);
+
     if(!(parser = SC_Open(kva("maps/map%02d/map%02d.kmap", map, map))))
     {
         return NULL;
@@ -1067,6 +1118,7 @@ kmap_t *Map_Load(int map)
     }
 
     Map_InitBlocklist(kmap);
+    Map_SetupActors(kmap);
 
     return kmap;
 }
@@ -1106,8 +1158,7 @@ void Map_Init(void)
 
     for(i = 0; i < MAXMAPS; i++)
     {
-        //kmap_t *kmap = &kmaps[i];
-        //kmap->actorlist.next = kmap->actorlist.prev = &kmap->actorlist;
+        actorlist[i].next = actorlist[i].prev = &actorlist[i];
     }
 
     Cmd_AddCommand("loadmap", FCmd_LoadTestMap);
