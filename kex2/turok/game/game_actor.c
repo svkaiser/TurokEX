@@ -175,7 +175,8 @@ kbool G_ActorOnWaterSurface(actor_t *actor)
     }
 
     return actor->origin[1] + actor->meleerange <
-        Map_GetArea(actor->plane)->waterplane;
+        Map_GetArea(actor->plane)->waterplane &&
+        actor->plane->flags & CLF_WATER;
 }
 
 //
@@ -190,7 +191,8 @@ kbool G_ActorInWaterArea(actor_t *actor)
     }
 
     return actor->origin[1] + actor->meleerange + WATERHEIGHT <
-        Map_GetArea(actor->plane)->waterplane;
+        Map_GetArea(actor->plane)->waterplane &&
+        actor->plane->flags & CLF_WATER;
 }
 
 //
