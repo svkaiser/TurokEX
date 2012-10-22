@@ -60,7 +60,6 @@ static const sctokens_t maptokens[scmap_end+1] =
 enum
 {
     scactor_model = 0,
-    scactor_texturealt,
     scactor_skin,
     scactor_targetid,
     scactor_target,
@@ -83,7 +82,6 @@ enum
 static const sctokens_t mapactortokens[scactor_end+1] =
 {
     { scactor_model,        "model"         },
-    { scactor_texturealt,   "texture_alt"   },
     { scactor_skin,         "skin"          },
     { scactor_targetid,     "target_id"     },
     { scactor_target,       "target"        },
@@ -110,7 +108,6 @@ enum
     scinst_bounds,
     scinst_model,
     scinst_angle,
-    scinst_texturealt,
     scinst_skin,
     scinst_targetid,
     scinst_target,
@@ -122,6 +119,8 @@ enum
     scinst_blockflag,
     scinst_height,
     scinst_viewheight,
+    scinst_type,
+    scinst_overrides,
     scinst_instances,
     scinst_numinstances,
     scinst_staticinstnaces,
@@ -136,7 +135,6 @@ static const sctokens_t insttokens[scinst_end+1] =
     { scinst_bounds,                "bounds"                },
     { scinst_model,                 "model"                 },
     { scinst_angle,                 "angle"                 },
-    { scinst_texturealt,            "texture_alt"           },
     { scinst_skin,                  "skin"                  },
     { scinst_targetid,              "target_id"             },
     { scinst_target,                "target"                },
@@ -148,6 +146,8 @@ static const sctokens_t insttokens[scinst_end+1] =
     { scinst_blockflag,             "blockflag"             },
     { scinst_height,                "height"                },
     { scinst_viewheight,            "viewheight"            },
+    { scinst_type,                  "type"                  },
+    { scinst_overrides,             "overrides"             },
     { scinst_staticinstnaces,       "staticinstances"       },
     { scinst_numstaticinstances,    "numstaticinstances"    },
     { scinst_instances,             "instances"             },
@@ -231,11 +231,6 @@ static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
             case scactor_model:
                 SC_AssignString(mapactortokens, actor->object.mdlpath,
                     scactor_model, parser, false);
-                break;
-
-            case scactor_texturealt:
-                SC_AssignWord(mapactortokens, &actor->object.textureindex,
-                    scactor_texturealt, parser, false);
                 break;
 
             case scactor_skin:
@@ -462,9 +457,36 @@ static void Map_ParseObjectBlock(instance_t *instances, scparser_t *parser, kboo
                 SC_ExpectNextToken(TK_RBRACK);
                 break;
 
-            case scinst_texturealt:
-                SC_AssignWord(insttokens, &obj->textureindex,
-                    scinst_texturealt, parser, false);
+            case scinst_overrides:
+                {
+                    int count = 0;
+
+                    SC_ExpectNextToken(TK_EQUAL);
+                    SC_ExpectNextToken(TK_LBRACK);
+
+                    while(1)
+                    {
+                        obj->textureswaps = (char**)Z_Realloc(obj->textureswaps,
+                            sizeof(char*) * (count+1), PU_LEVEL, 0);
+
+                        SC_ExpectNextToken(TK_LBRACK);
+                        SC_GetString();
+                        obj->textureswaps[count] = Z_Strdup(sc_stringbuffer, PU_LEVEL, 0);
+                        SC_ExpectNextToken(TK_RBRACK);
+
+                        SC_Find();
+
+                        if(sc_parser->tokentype != TK_COMMA)
+                        {
+                            SC_Rewind();
+                            break;
+                        }
+
+                        count++;
+                    }
+
+                    SC_ExpectNextToken(TK_RBRACK);
+                }
                 break;
 
             case scinst_boundize:
@@ -513,6 +535,11 @@ static void Map_ParseObjectBlock(instance_t *instances, scparser_t *parser, kboo
                     scinst_blockflag, parser, false);
                 break;
 
+            case scinst_type:
+                SC_AssignWord(insttokens, &obj->type,
+                    scinst_type, parser, false);
+                break;
+
             default:
                 if(parser->tokentype == TK_IDENIFIER)
                 {
@@ -531,6 +558,12 @@ static void Map_ParseObjectBlock(instance_t *instances, scparser_t *parser, kboo
         obj->box.max[0] += obj->origin[0];
         obj->box.max[1] += obj->origin[1];
         obj->box.max[2] += obj->origin[2];
+
+        if(nonstatic)
+        {
+            Vec_Set3(obj->scale, 0.35f, 0.35f, 0.35f);
+            Vec_Set4(obj->rotation, 0, 0, 0, 1);
+        }
 
         Mtx_ApplyRotation(obj->rotation, obj->matrix);
         Mtx_Scale(obj->matrix, obj->scale[0], obj->scale[1], obj->scale[2]);
@@ -975,13 +1008,58 @@ static kbool Map_ObjectInBlocklist(object_t *obj, sector_t *sector)
 }
 
 //
+// Map_CheckObjectPlaneRange
+//
+// Returns true if the object's radius crosses
+// within the plane's boundary
+//
+
+static kbool Map_CheckObjectPlaneRange(object_t *obj, plane_t *plane)
+{
+    int i;
+
+    for(i = 0; i < 3; i++)
+    {
+        vec3_t vp1;
+        vec3_t vp2;
+        vec3_t n;
+        vec3_t v;
+        float x;
+        float z;
+        float d;
+
+        // test against each edge
+        Vec_Copy3(vp1, plane->points[i]);
+        Vec_Copy3(vp2, plane->points[(i + 1) % 3]);
+
+        x = vp1[0] - vp2[0];
+        z = vp2[2] - vp1[2];
+
+        // setup normal
+        Vec_Set3(n, z, 0, x);
+        Vec_Normalize3(n);
+
+        // test distance
+        Vec_Sub(v, obj->origin, vp1);
+        d = Vec_Dot(n, v) + obj->width;
+
+        if(d < 0)
+        {
+            // completely behind it 
+            break;
+        }
+    }
+
+    return (i == 3);
+}
+
+//
 // Map_TraverseLinkObjects
 //
 
 static void Map_TraverseLinkObjects(object_t *obj, plane_t *plane, kmap_t *map)
 {
     int i;
-    int j;
     sector_t *sector;
 
     sector = &map->sectors[plane - map->planes];
@@ -1002,13 +1080,9 @@ static void Map_TraverseLinkObjects(object_t *obj, plane_t *plane, kmap_t *map)
             continue;
         }
 
-        for(j = 0; j < 3; j++)
+        if(Map_CheckObjectPlaneRange(obj, pl))
         {
-            if(Vec_Length2(obj->origin, pl->points[j]) <= obj->width * 2)
-            {
-                Map_TraverseLinkObjects(obj, pl, map);
-                break;
-            }
+            Map_TraverseLinkObjects(obj, pl, map);
         }
     }
 }
@@ -1030,12 +1104,32 @@ static void Map_InitBlocklist(kmap_t *map)
         {
             object_t *obj = &instances->statics[j];
 
-            if(obj->plane_id != -1 && obj->blockflag & 1)
+            if(obj == NULL)
+            {
+                continue;
+            }
+
+            if(obj->plane_id != -1 && obj->blockflag & BLF_SECTORLINK)
             {
                 plane_t *plane = &map->planes[obj->plane_id];
 
                 Map_TraverseLinkObjects(obj, plane, map);
             }
+        }
+
+        for(j = 0; j < instances->numspecials; j++)
+        {
+            object_t *obj = &instances->specials[j];
+            plane_t *plane;
+
+            if(obj == NULL)
+            {
+                continue;
+            }
+
+            plane = &map->planes[obj->plane_id];
+            
+            Map_TraverseLinkObjects(obj, plane, map);
         }
     }
 }
@@ -1050,11 +1144,6 @@ static void Map_SetupActors(kmap_t *map)
 
     for(actor = g_actorlist->next; actor != g_actorlist; actor = actor->next)
     {
-        if(actor->object.type == 0)
-        {
-            memcpy(&client.localactor, actor, sizeof(actor_t));
-        }
-
         if(actor->object.plane_id != -1)
         {
             actor->plane = &map->planes[actor->object.plane_id];
@@ -1065,13 +1154,29 @@ static void Map_SetupActors(kmap_t *map)
 
                 dist = Plane_GetDistance(actor->plane, actor->origin);
 
-                if(actor->origin[1] - dist < 51.2f)
+                if(actor->origin[1] - dist <
+                    (actor->meleerange + actor->object.viewheight))
                 {
                     actor->origin[1] = dist;
                 }
             }
         }
+
+        if(actor->object.type == 0)
+        {
+            memcpy(&client.localactor, actor, sizeof(actor_t));
+        }
     }
+}
+
+//
+// Map_GetArea
+//
+
+area_t *Map_GetArea(plane_t *plane)
+{
+    return &g_currentmap->areas[g_currentmap->sectors[plane -
+        g_currentmap->planes].area_id];
 }
 
 //

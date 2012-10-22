@@ -48,6 +48,12 @@ typedef enum
     CLF_UNKNOWN65536    = 0x10000
 } collisionflags_t;
 
+typedef enum
+{
+    BLF_SECTORLINK      = 0x1,
+    BLF_TOUCH           = 0x2
+} blockflags_t;
+
 typedef struct
 {
     float               minx;
@@ -63,7 +69,7 @@ typedef struct object_s
     bbox_t              box;
     char                mdlpath[MAX_FILEPATH];
     vec4_t              rotation;
-    short               textureindex;
+    char                **textureswaps;
     short               tid;
     short               target;
     short               variant;
@@ -73,7 +79,7 @@ typedef struct object_s
     float               viewheight;
     short               plane_id;
     byte                flags;
-    byte                blockflag;
+    blockflags_t        blockflag;
     mtx_t               matrix;
     struct object_s     *prev;
     struct object_s     *next;
@@ -133,6 +139,7 @@ typedef struct
 extern kmap_t kmaps[MAXMAPS];
 extern kmap_t *g_currentmap;
 
+area_t *Map_GetArea(plane_t *plane);
 kmap_t *Map_Load(int map);
 void Map_Init(void);
 

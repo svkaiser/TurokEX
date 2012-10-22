@@ -31,6 +31,7 @@
 enum 
 {
    PU_STATIC,  // block is static (remains until explicitly freed)
+   PU_KEEP,
    PU_CACHE,   // block is cached (may be implicitly freed at any time!)
    PU_MAX      // Must always be last -- killough
 };

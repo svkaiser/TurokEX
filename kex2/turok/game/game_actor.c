@@ -37,10 +37,17 @@
 
 #define FRICTION_GROUND     0.5f
 #define FRICTION_LAVA       0.205f
+#define FRICTION_WATERMASS  0.95f
+#define FRICTION_WTRIMPACT  0.905f
 
-#define GRAVITY_NORMAL      0.5f
+#define GRAVITY_NORMAL      0.62f
+#define GRAVITY_WATER       0.005f
+#define GRAVITY_FLOAT       0.45f
 
 #define VELOCITY_EPSILON    0.0001f
+#define ONPLANE_EPSILON     0.512f
+
+#define WATERHEIGHT         15.36f
 
 static actor_t *g_currentactor;
 
@@ -117,23 +124,73 @@ kbool G_ActorOnPlane(actor_t *actor)
         return false;
     }
 
-    if(Plane_IsAWall(actor->plane))
-    {
-        return false;
-    }
-
     if((actor->origin[1] + actor->velocity[1]) -
-        Plane_GetDistance(actor->plane, actor->origin) < 2.0f)
+        Plane_GetDistance(actor->plane, actor->origin) < ONPLANE_EPSILON)
     {
+        if(Plane_IsAWall(actor->plane))
+        {
+            return false;
+        }
+
         return true;
     }
 
-    if(actor->velocity[1] < 0.0f && actor->velocity[1] > -16.0f)
+    if(actor->velocity[1] < 0.0f && actor->velocity[1] > -17.42f)
     {
         return true;
     }
 
     return false;
+}
+
+//
+// G_ActorOnShallowWater
+//
+
+kbool G_ActorOnShallowWater(actor_t *actor)
+{
+    if(actor->plane == NULL)
+    {
+        return false;
+    }
+
+    if(Plane_GetDistance(actor->plane, actor->origin) -
+        actor->origin[1] <= WATERHEIGHT)
+    {
+        return (actor->plane->flags & CLF_WATER);
+    }
+
+    return false;
+}
+
+//
+// G_ActorOnWaterSurface
+//
+
+kbool G_ActorOnWaterSurface(actor_t *actor)
+{
+    if(actor->plane == NULL)
+    {
+        return false;
+    }
+
+    return actor->origin[1] + actor->meleerange <
+        Map_GetArea(actor->plane)->waterplane;
+}
+
+//
+// G_ActorInWaterArea
+//
+
+kbool G_ActorInWaterArea(actor_t *actor)
+{
+    if(actor->plane == NULL)
+    {
+        return false;
+    }
+
+    return actor->origin[1] + actor->meleerange + WATERHEIGHT <
+        Map_GetArea(actor->plane)->waterplane;
 }
 
 //
@@ -189,6 +246,7 @@ void G_ActorMovement(actor_t *actor)
     vec3_t position;
     float dist;
     float friction;
+    kbool nohit;
 
     // TEMP
     if(g_currentmap == NULL)
@@ -196,8 +254,8 @@ void G_ActorMovement(actor_t *actor)
         return;
     }
 
-    // normal movement; clip velocity before we update it
-    G_GroundMove(actor);
+    // clip velocity before we update it
+    G_ClipMovement(actor);
 
     // save previous origin first
     Vec_Copy3(actor->prevorigin, actor->origin);
@@ -205,6 +263,7 @@ void G_ActorMovement(actor_t *actor)
     // set the next desired position
     Vec_Add(position, actor->origin, actor->velocity);
     friction = FRICTION_GROUND;
+    nohit = false;
 
     if(actor->plane)
     {
@@ -227,7 +286,7 @@ void G_ActorMovement(actor_t *actor)
 
         if(!(pl->flags & CLF_ONESIDED))
         {
-            if(!Plane_IsAWall(pl) && dist < 1)
+            if(!Plane_IsAWall(pl) && dist < ONPLANE_EPSILON)
             {
                 // lerp player back to the surface
                 if(dist < -0.1f)
@@ -237,7 +296,7 @@ void G_ActorMovement(actor_t *actor)
                     Vec_Set3(lerp, position[0], position[1] - dist, position[2]);
                     Vec_Lerp3(position, 0.125f, position, lerp);
                 }
-                else
+                else if(!G_ActorOnWaterSurface(actor))
                 {
                     // snap the position to the surface
                     position[1] = position[1] - dist;
@@ -248,8 +307,7 @@ void G_ActorMovement(actor_t *actor)
             }
             else
             {
-                // nothing was hit, continue freefall
-                actor->velocity[1] -= GRAVITY_NORMAL;
+                nohit = true;
             }
         }
         else
@@ -262,13 +320,43 @@ void G_ActorMovement(actor_t *actor)
             }
             else
             {
-                // freefall
+                nohit = true;
+            }
+        }
+
+        if(nohit)
+        {
+            // nothing was hit, continue freefall
+            if(G_ActorOnWaterSurface(actor))
+            {
+                if(G_ActorInWaterArea(actor))
+                {
+                    if(actor->velocity[1] > 0.25f)
+                    {
+                        actor->velocity[1] *= FRICTION_WATERMASS;
+                    }
+                    else if(actor->velocity[1] < -1)
+                    {
+                        actor->velocity[1] *= FRICTION_WTRIMPACT;
+                    }
+                    else
+                    {
+                        actor->velocity[1] -= GRAVITY_WATER;
+                    }
+                }
+                else
+                {
+                    actor->velocity[1] *= GRAVITY_FLOAT;
+                }
+            }
+            else
+            {
                 actor->velocity[1] -= GRAVITY_NORMAL;
             }
         }
 
         if(actor->svclient_id != -1 &&
-            actor->plane->flags & CLF_DAMAGE_LAVA && dist <= 1)
+            actor->plane->flags & CLF_DAMAGE_LAVA && dist < ONPLANE_EPSILON)
         {
             friction = FRICTION_LAVA;
         }

@@ -53,6 +53,7 @@ typedef struct
     vec3_t      hit;
     float       frac;
     float       sidedist;
+    actor_t     *actor;
     tracetype_e type;
 } trace_t;
 
@@ -176,6 +177,7 @@ static kbool G_TraceObject(trace_t *trace, vec3_t objpos, float radius)
         float dz;
         float ld;
         float len;
+        float r;
 
         vd = 1.0f / vd;
 
@@ -186,7 +188,18 @@ static kbool G_TraceObject(trace_t *trace, vec3_t objpos, float radius)
         x = x - ld * dx;
         z = z - ld * dz;
 
-        len = radius * radius - (x * x + z * z);
+        if(trace->actor != NULL)
+        {
+            r = trace->actor->object.width *
+                trace->actor->object.width +
+                radius * radius;
+        }
+        else
+        {
+            r = radius * radius;
+        }
+
+        len = r - (x * x + z * z);
 
         // is the ray inside the radius?
         if(len > 0)
@@ -252,11 +265,22 @@ static kbool G_CheckObjects(trace_t *trace, plane_t *plane)
     {
         if(G_TraceObject(trace, obj->object->origin, obj->object->width))
         {
+            float offset;
+
+            if(trace->actor != NULL)
+            {
+                offset = trace->actor->meleerange;
+            }
+            else
+            {
+                offset = 30.7f;
+            }
+
             // check object height
             // TODO: the original game doesn't do height clipping but I'd like
             // to do it for kex someday
             if(trace->end[1] > obj->object->origin[1] + obj->object->height ||
-                trace->end[1] + 30.7f < obj->object->origin[1])
+                trace->end[1] + offset < obj->object->origin[1])
             {
                 continue;
             }
@@ -479,7 +503,7 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
 //
 //
 
-trace_t G_Trace(vec3_t start, vec3_t end, plane_t *plane)
+trace_t G_Trace(actor_t *actor, vec3_t start, vec3_t end, plane_t *plane)
 {
     trace_t trace;
 
@@ -492,31 +516,35 @@ trace_t G_Trace(vec3_t start, vec3_t end, plane_t *plane)
     trace.frac      = 1;
     trace.sidedist  = 0;
     trace.type      = TRT_NOHIT;
+    trace.actor     = actor;
 
     // try to trace something as early as possible
     if(!G_TracePlane(&trace, trace.pl))
     {
-        int i;
-
-        // look for edges in the initial plane that can be collided with
-        for(i = 0; i < 3; i++)
+        if(!G_CheckObjects(&trace, trace.pl))
         {
-            vec3_t vp1;
-            vec3_t vp2;
+            int i;
 
-            if(plane->link[i] != NULL)
+            // look for edges in the initial plane that can be collided with
+            for(i = 0; i < 3; i++)
             {
-                continue;
-            }
+                vec3_t vp1;
+                vec3_t vp2;
 
-            Vec_Copy3(vp1, plane->points[i]);
-            Vec_Copy3(vp2, plane->points[(i + 1) % 3]);
+                if(plane->link[i] != NULL)
+                {
+                    continue;
+                }
 
-            // check to see if an edge was crossed
-            if(G_CheckEdgeSide(&trace, vp1, vp2))
-            {
-                G_TraceEdge(&trace, vp1, vp2);
-                break;
+                Vec_Copy3(vp1, plane->points[i]);
+                Vec_Copy3(vp2, plane->points[(i + 1) % 3]);
+
+                // check to see if an edge was crossed
+                if(G_CheckEdgeSide(&trace, vp1, vp2))
+                {
+                    G_TraceEdge(&trace, vp1, vp2);
+                    break;
+                }
             }
         }
 
@@ -533,24 +561,19 @@ trace_t G_Trace(vec3_t start, vec3_t end, plane_t *plane)
 }
 
 //
-// G_GroundMove
+// G_ClipMovement
 //
 // Trace against surrounding planes and slide
 // against it if needed, clipping velocity
 // along the way
 //
 
-void G_GroundMove(actor_t *actor)
+void G_ClipMovement(actor_t *actor)
 {
-    if(actor->plane == NULL ||
-        (actor->plane &&
-        !Plane_PointInRange(actor->plane,
-        actor->origin[0], actor->origin[2])))
+    if(actor->plane == NULL)
     {
-        // if player is in the void or current plane isn't
-        // in range then scan through all planes and find
-        // the cloest one to the actor
         actor->plane = G_FindClosestPlane(actor->origin);
+        return;
     }
 
     if(actor->plane != NULL)
@@ -576,7 +599,7 @@ void G_GroundMove(actor_t *actor)
             Vec_Add(end, start, vel);
 
             // get trace results
-            trace = G_Trace(start, end, actor->plane);
+            trace = G_Trace(actor, start, end, actor->plane);
 
             actor->plane = trace.pl;
 
@@ -658,6 +681,17 @@ void G_GroundMove(actor_t *actor)
             // update velocity and try another move
             Vec_Copy3(actor->velocity, vel);
             Vec_Copy3(normals[moves++], trace.normal);
+        }
+
+        if(actor->plane)
+        {
+            Vec_Add(end, actor->origin, actor->velocity);
+
+            if(!Plane_PointInRange(actor->plane, end[0], end[2]))
+            {
+                actor->velocity[0] = 0;
+                actor->velocity[2] = 0;
+            }
         }
     }
 }

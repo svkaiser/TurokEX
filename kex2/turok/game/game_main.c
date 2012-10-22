@@ -58,26 +58,64 @@ void G_Ticker(void)
 // G_ClientThink
 //
 
-#define MOVE_VELOCITY   2.5f
+#define MOVE_VELOCITY   2.85f
+#define SWIM_VELOCITY   0.25f
+#define JUMP_VELOCITY   11.612f
 
 void G_ClientThink(actor_t *client, ticcmd_t *cmd)
 {
     float sy;
     float cy;
+    float vsy;
+    float vcy;
 
     sy = (float)sin(client->yaw);
     cy = (float)cos(client->yaw);
 
+    if(G_ActorOnWaterSurface(client))
+    {
+        vsy = (float)sin(client->pitch);
+        vcy = (float)cos(client->pitch);
+
+        if(!G_ActorInWaterArea(client))
+        {
+            float ang = client->pitch;
+
+            Ang_Clamp(&ang);
+            
+            if(ang < (45 * M_RAD) &&
+                ang > -(45 * M_RAD))
+            {
+                vsy = 0;
+            }
+            else
+            {
+                vsy *= MOVE_VELOCITY;
+            }
+        }
+        else
+        {
+            vsy *= SWIM_VELOCITY;
+        }
+    }
+    else
+    {
+        vsy = 0;
+        vcy = 1;
+    }
+
     if(cmd->buttons & BT_FORWARD)
     {
-        client->velocity[0] += MOVE_VELOCITY * sy;
-        client->velocity[2] += MOVE_VELOCITY * cy;
+        client->velocity[0] += (MOVE_VELOCITY * sy) * vcy;
+        client->velocity[1] -= vsy;
+        client->velocity[2] += (MOVE_VELOCITY * cy) * vcy;
     }
 
     if(cmd->buttons & BT_BACKWARD)
     {
-        client->velocity[0] -= MOVE_VELOCITY * sy;
-        client->velocity[2] -= MOVE_VELOCITY * cy;
+        client->velocity[0] -= (MOVE_VELOCITY * sy) * vcy;
+        client->velocity[1] += vsy;
+        client->velocity[2] -= (MOVE_VELOCITY * cy) * vcy;
     }
 
     sy = (float)sin(client->yaw + (90.0f * M_RAD));
@@ -97,9 +135,13 @@ void G_ClientThink(actor_t *client, ticcmd_t *cmd)
 
     if(cmd->buttons & BT_JUMP)
     {
-        if(G_ActorOnPlane(client))
+        if(G_ActorOnWaterSurface(client))
         {
-            client->velocity[1] = 10.24f;
+            client->velocity[1] += SWIM_VELOCITY;
+        }
+        else if(G_ActorOnPlane(client))
+        {
+            client->velocity[1] = JUMP_VELOCITY;
         }
     }
 

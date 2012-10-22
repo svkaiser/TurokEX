@@ -35,6 +35,7 @@
 #define ANGLE_INSTANCE              (ANGLE_LEVELOBJECT / 180.0f)
 
 #define CHUNK_DIRECTORY_ATTRIBUTES  8
+#define CHUNK_DIRECTORY_TYPES       12
 #define CHUNK_DIRECTORY_LEVEL       28
 
 #define CHUNK_ATTRIB_SIZE           0
@@ -107,9 +108,14 @@
 
 static byte *leveldata;
 static byte *attribdata;
+static short *typedata;
 static int numlevels;
 static int numattributes;
 static byte decode_buffer[0x40000];
+
+extern short section_count[800];
+extern short texindexes[2000];
+extern short section_textures[800][100];
 
 typedef struct
 {
@@ -280,6 +286,15 @@ static attribute_t *GetAttribute(int index)
 {
     return (attribute_t*)(attribdata + 8 +
         (index * Com_GetCartOffset(attribdata, CHUNK_ATTRIB_SIZE, 0)));
+}
+
+//
+// GetObjectType
+//
+
+static short GetObjectType(int index)
+{
+    return typedata[index + 4];
 }
 
 //
@@ -560,6 +575,7 @@ static void ProcessInstances(byte *data)
         Com_Strcat("                boundsize = %f\n", mapinst->bboxsize);
         Com_Strcat("                model = \"models/mdl%03d/mdl%03d.kmesh\"\n",
             mapinst->model, mapinst->model);
+        Com_Strcat("                type = %i\n", GetObjectType(mapinst->model));
         Com_Strcat("                blockflag = %i\n", GetAttribute(mapinst->attribute)->blockflags);
         Com_Strcat("                // flags = %i\n", mapinst->flags);
         Com_Strcat("                // u2 = %i\n", mapinst->u2);
@@ -593,6 +609,55 @@ static void ProcessStaticInstances1(byte *data)
     {
         mapinsttype1_t *mapinst = (mapinsttype1_t*)(data + 8 + (i * size));
     }
+}
+
+//
+// ProcessTextureOverrides
+//
+
+static void ProcessTextureOverrides(short model, int textureid)
+{
+    int scount;
+    int tcount;
+    int i;
+
+    if(textureid == -1 || textureid == 0)
+    {
+        return;
+    }
+
+    scount = section_count[model];
+
+    Com_Strcat("                overrides =\n");
+    Com_Strcat("                {\n");
+
+    for(i = 0; i < scount; i++)
+    {
+        Com_Strcat("                    { ");
+
+        tcount = texindexes[section_textures[model][i]];
+
+        if(textureid >= tcount)
+        {
+            Com_Strcat("\"-\"");
+        }
+        else
+        {
+            Com_Strcat("\"textures/tex%04d_%02d.tga\"",
+                section_textures[model][i], textureid);
+        }
+
+        Com_Strcat(" }");
+
+        if(i != (scount-1))
+        {
+            Com_Strcat(",");
+        }
+
+        Com_Strcat("\n");
+    }
+
+    Com_Strcat("                }\n");
 }
 
 //
@@ -644,9 +709,11 @@ static void ProcessStaticInstances2(byte *data)
             CoerceFloat(mapinst->bbox[5]));
         Com_Strcat("                model = \"models/mdl%03d/mdl%03d.kmesh\"\n",
             mapinst->model, mapinst->model);
+        Com_Strcat("                type = %i\n", GetObjectType(mapinst->model));
         Com_Strcat("                angle = { %f %f %f %f }\n",
             rotvec[0], rotvec[1], rotvec[2], rotvec[3]);
-        Com_Strcat("                texture_alt = %i\n", GetAttribute(mapinst->attribute)->texture);
+        Com_Strcat("                // texture_alt = %i\n", GetAttribute(mapinst->attribute)->texture);
+        ProcessTextureOverrides(mapinst->model, GetAttribute(mapinst->attribute)->texture);
         Com_Strcat("                leaf = %i\n", mapinst->plane);
         Com_Strcat("                flags = %i\n", mapinst->flags);
         Com_Strcat("                radius = %f\n", GetAttribute(mapinst->attribute)->meleerange);
@@ -785,6 +852,7 @@ void LV_StoreLevels(void)
     numlevels = Com_GetCartOffset(leveldata, CHUNK_LEVEL_COUNT, 0);
 
     InitAttribData();
+    typedata = (short*)Com_GetCartData(cartfile, CHUNK_DIRECTORY_TYPES, 0);
 
     PK_AddFolder("maps/");
 

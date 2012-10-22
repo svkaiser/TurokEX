@@ -151,7 +151,7 @@ texture_t *Tex_CacheTextureFile(const char *name, int clampmode, kbool masked)
 
     if(name[0] == 0)
     {
-        return tex_default;
+        return NULL;
     }
 
     texture = Tex_Find(name);

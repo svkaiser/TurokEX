@@ -172,6 +172,10 @@ static int totalverts;
 static int highidx;
 static int hightri;
 static byte action_buffer[0x4000];
+static short curmodel;
+
+short section_count[800];
+short section_textures[800][100];
 
 typedef struct
 {
@@ -494,6 +498,8 @@ static void ProcessVertices(byte *data)
 // ProcessGeometry
 //
 
+static int cursection = 0;
+
 static void ProcessGeometry(byte *data)
 {
     geomheader_t *header;
@@ -508,6 +514,8 @@ static void ProcessGeometry(byte *data)
     indices = Com_GetCartData(data, CHUNK_SECTION_INDICES, &indicesize);
     vertices = Com_GetCartData(data, CHUNK_SECTION_VERTEX, &vertexsize);
     vertexcount = Com_GetCartOffset(vertices, CHUNK_VERTEX_COUNT, 0);
+
+    section_textures[curmodel][cursection] = header->texture;
 
     PrintFlags(header->flags);
     if(header->texture != -1)
@@ -551,6 +559,8 @@ static void ProcessGroup(byte *data)
 
     sectioncount = Com_GetCartOffset(data, CHUNK_SECTIONLIST_COUNT, 0);
 
+    section_count[curmodel] = sectioncount;
+
     Com_Strcat("                    numsections = %i\n\n", sectioncount);
     Com_Strcat("                    sections\n");
     Com_Strcat("                    {\n");
@@ -559,6 +569,8 @@ static void ProcessGroup(byte *data)
         totalverts = 0;
         highidx = 0;
         hightri = 1;
+
+        cursection = i;
 
         Com_Strcat("                        { // section %02d\n", i);
         ProcessGeometry(Com_GetCartData(data, CHUNK_SECTIONLIST_OFFSET(i), 0));
@@ -1095,6 +1107,8 @@ void MDL_StoreModels(void)
 
         sprintf(name, "%smdl%03d/", GetModelNamespace(0), i);
         PK_AddFolder(name);
+
+        curmodel = i;
 
         AddModel(modeldata, i);
         AddAnimations(modeldata, i);

@@ -24,6 +24,7 @@
 #include "common.h"
 #include "pak.h"
 #include "rnc.h"
+#include "zone.h"
 
 #define CHUNK_DIRECTORY_TEXTURE     16
 
@@ -42,6 +43,8 @@
 static byte *textures;
 static int numtextures;
 static int curtexture = 0;
+
+short texindexes[2000];
 
 typedef struct
 {
@@ -143,8 +146,7 @@ static void AddTexture(byte *data, int size)
     texcount = Com_GetCartOffset(texheader, CHUNK_TEX_SUBCOUNT, 0);
     palcount = Com_GetCartOffset(palheader, CHUNK_PAL_SUBCOUNT, 0);
 
-    buffer = Com_Alloc(size * 16);
-    rover = buffer;
+    texindexes[curtexture] = texcount;
 
     for(i = 0; i < texcount; i++)
     {
@@ -154,6 +156,9 @@ static void AddTexture(byte *data, int size)
         int palsize;
         dPalette_t pal[256];
         char name[256];
+
+        buffer = Com_Alloc(size * 16);
+        rover = buffer;
 
         memset(&pal, 0, sizeof(dPalette_t) * 256);
         sprintf(name, "textures/tex%04d_%02d.tga", curtexture, i);
@@ -183,6 +188,18 @@ static void AddTexture(byte *data, int size)
             }
 
             ConvertPalette(pal, (word*)paldata, (palsize / 2));
+
+            if(tex->flags & 0x2)
+            {
+                int j;
+
+                for(j = 0; j < 16; j++)
+                {
+                    pal[j].r = (j * 0x10);
+                    pal[j].g = (j * 0x10);
+                    pal[j].b = (j * 0x10);
+                }
+            }
         }
 
         Com_WriteMem8(rover, tga.infolen);
@@ -279,9 +296,9 @@ static void AddTexture(byte *data, int size)
         }
 
         PK_AddFile(name, buffer, rover - buffer, true);
+        Com_Free(&buffer);
     }
 
-    Com_Free(&buffer);
     curtexture++;
 }
 
@@ -294,19 +311,6 @@ void TX_StoreTextures(void)
 
     PK_AddFolder("textures/");
     StoreExternalFile("default.tga", "textures/default.tga");
-
-    /*PK_AddFolder("textures/actors/");
-    PK_AddFolder("textures/caves/");
-    PK_AddFolder("textures/hud/");
-    PK_AddFolder("textures/items/");
-    PK_AddFolder("textures/jungle/");
-    PK_AddFolder("textures/misc/");
-    PK_AddFolder("textures/ruins/");
-    PK_AddFolder("textures/tech/");
-    PK_AddFolder("textures/temple/");
-    PK_AddFolder("textures/vfx/");
-    PK_AddFolder("textures/village/");
-    PK_AddFolder("textures/weapons/");*/
 
     for(i = 0; i < numtextures; i++)
     {

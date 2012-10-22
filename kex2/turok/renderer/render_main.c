@@ -190,8 +190,14 @@ kbool R_FrustrumTestPlane(plane_t *plane)
 // R_DrawSection
 //
 
-void R_DrawSection(mdlsection_t *section)
+void R_DrawSection(object_t *object, kmodel_t *model, int index)
 {
+    texture_t *texture;
+    mdlsection_t *section;
+    char *texturepath;
+
+    section = &model->nodes[0].meshes[0].sections[index];
+
     if(section->flags & MDF_NOCULLFACES)
     {
         GL_SetState(GLSTATE_CULL, false);
@@ -222,8 +228,28 @@ void R_DrawSection(mdlsection_t *section)
     dglTexCoordPointer(2, GL_FLOAT, 0, section->coords);
     dglVertexPointer(3, GL_FLOAT, sizeof(vec3_t), section->xyz);
 
-    GL_BindTexture(Tex_CacheTextureFile(
-        section->texpath, GL_REPEAT, section->flags & MDF_MASKED));
+    texturepath = section->texpath;
+
+    if(object->textureswaps != NULL)
+    {
+        if(object->textureswaps[index][0] != '-')
+        {
+            texturepath = object->textureswaps[index];
+        }
+    }
+
+    texture = Tex_CacheTextureFile(texturepath, GL_REPEAT,
+        section->flags & MDF_MASKED);
+
+    if(texture)
+    {
+        GL_BindTexture(texture);
+    }
+    else
+    {
+        GL_SetState(GLSTATE_TEXTURE0, false);
+        dglColor4ubv((byte*)&section->color1);
+    }
 
     dglDrawElements(GL_TRIANGLES, section->numtris, GL_UNSIGNED_SHORT, section->tris);
 
@@ -243,22 +269,25 @@ void R_DrawSection(mdlsection_t *section)
     {
         GL_SetState(GLSTATE_CULL, true);
     }
+
+    GL_SetState(GLSTATE_TEXTURE0, true);
 }
 
 //
 // R_DrawTestModel
 //
 
-static void R_DrawTestModel(const char *file)
+static void R_DrawTestModel(object_t *object)
 {
     kmodel_t *model;
     unsigned int i;
 
-    if(!(model = Mdl_Load(file)))
+    if(!(model = Mdl_Load(object->mdlpath)))
     {
         return;
     }
 
+    // TODO: TEMP
     if(model->nodes[0].meshes[0].numsections <= 0)
     {
         return;
@@ -269,9 +298,10 @@ static void R_DrawTestModel(const char *file)
 
     dglDisableClientState(GL_COLOR_ARRAY);
 
+    // TODO: TEMP
     for(i = 0; i < model->nodes[0].meshes[0].numsections; i++)
     {
-        R_DrawSection(&model->nodes[0].meshes[0].sections[i]);
+        R_DrawSection(object, model, i);
     }
 
     dglEnableClientState(GL_COLOR_ARRAY);
@@ -342,7 +372,8 @@ static void R_SetupViewFrame(actor_t *actor)
     bob_x = 0;
     bob_y = 0;
 
-    if(G_ActorOnPlane(actor))
+    if((actor->origin[1] + actor->velocity[1]) -
+        Plane_GetDistance(actor->plane, actor->origin) < 4)
     {
         // calculate bobbing
         d = Vec_Unit2(actor->velocity);
@@ -382,20 +413,16 @@ static void R_SetupViewFrame(actor_t *actor)
 }
 
 //
-// R_DrawFrame
+// R_DrawObjects
 //
 
-void R_DrawFrame(void)
+static void R_DrawObjects(kbool nonstatic)
 {
-    GL_ClearView(0xFF3f3f3f);
-    
-    R_SetupViewFrame(&client.localactor);
-    R_SetupClipFrustum();
-
     if(g_currentmap != NULL && !showcollision)
     {
         unsigned int i;
         unsigned int j;
+        unsigned int count;
 
         for(i = 0; i < g_currentmap->numinstances; i++)
         {
@@ -406,9 +433,39 @@ void R_DrawFrame(void)
                 continue;
             }
 
-            for(j = 0; j < inst->numstatics; j++)
+            count = nonstatic ? inst->numspecials : inst->numstatics;
+
+            if(nonstatic)
             {
-                object_t *obj = &inst->statics[j];
+                if(inst->specials == NULL)
+                {
+                    continue;
+                }
+            }
+            else
+            {
+                if(inst->statics == NULL)
+                {
+                    continue;
+                }
+            }
+
+            for(j = 0; j < count; j++)
+            {
+                object_t *obj;
+                kbool item = false;
+                
+                if(nonstatic)
+                {
+                    obj = &inst->specials[j];
+
+                    // TODO: TEMP
+                    item = (obj->type >= 400 && obj->type <= 457);
+                }
+                else
+                {
+                    obj = &inst->statics[j];
+                }
 
                 if(obj == NULL)
                 {
@@ -420,18 +477,54 @@ void R_DrawFrame(void)
 
                 if(R_FrustrumTestBox(obj->box))
                 {
-                    R_DrawTestModel(obj->mdlpath);
+                    if(item)
+                    {
+                        dglPushMatrix();
+                        dglRotatef((float)(client.tics % 360), 0, 1, 0);
+                    }
+
+                    R_DrawTestModel(obj);
+
+                    if(item)
+                    {
+                        dglPushMatrix();
+                    }
                 }
 
                 dglPopMatrix();
 
                 if(showbbox)
                 {
-                    R_DrawBoundingBox(obj->box, 255, 255, 0);
+                    byte r, g, b;
+
+                    if(!nonstatic)
+                    {
+                        r = 255; g = 255; b = 0;
+                    }
+                    else
+                    {
+                        r = 0; g = 255; b = 0;
+                    }
+
+                    R_DrawBoundingBox(obj->box, r, g, b);
                 }
             }
         }
     }
+}
+
+//
+// R_DrawFrame
+//
+
+void R_DrawFrame(void)
+{
+    GL_ClearView(0xFF3f3f3f);
+    
+    R_SetupViewFrame(&client.localactor);
+    R_SetupClipFrustum();
+    R_DrawObjects(0);
+    R_DrawObjects(1);
 
     if(showcollision)
     {

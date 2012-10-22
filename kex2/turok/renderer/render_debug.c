@@ -154,6 +154,11 @@ void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b)
         return;
     }
 
+    if(!R_FrustrumTestBox(bbox))
+    {
+        return;
+    }
+
     dglEnable(GL_DEPTH_TEST);
     GL_SetState(GLSTATE_TEXTURE0, false);
     GL_SetState(GLSTATE_CULL, false);
