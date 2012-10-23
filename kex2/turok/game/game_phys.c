@@ -69,8 +69,6 @@ plane_t *G_FindClosestPlane(vec3_t coord)
     plane_t *plane;
     kbool ok;
 
-    // VERY TEMP
-
     ok = false;
     curdist = 0;
     plane = NULL;
@@ -146,6 +144,34 @@ static void G_SlideOnCrease(vec3_t out, vec3_t velocity, vec3_t v1, vec3_t v2)
     Vec_Cross(dir, v1, v2);
     Vec_Normalize3(dir);
     Vec_Scale(out, dir, Vec_Dot(velocity, dir));
+}
+
+//
+// G_SlideOnSlope
+//
+
+static void G_SlideOnSlope(vec3_t out, vec3_t velocity, vec3_t normal)
+{
+    vec3_t dir;
+    vec3_t c;
+    vec3_t up;
+    float d;
+
+    Vec_Set3(up, 0, 1, 0);
+    Vec_Cross(c, up, normal);
+    Vec_Cross(dir, c, normal);
+    Vec_Normalize3(dir);
+
+    dir[1] = 0;
+
+    d = Vec_Unit3(velocity);
+
+    if(d != 0)
+    {
+        Vec_Scale(dir, dir, (float)sqrt(1 / d));
+    }
+
+    Vec_Add(out, velocity, dir);
 }
 
 //
@@ -317,16 +343,7 @@ static kbool G_TracePlane(trace_t *trace, plane_t *pl)
         }
     }
 
-    // special cases for those annoying one-sided planes
-    if(pl->flags & CLF_ONESIDED && !Plane_IsAWall(pl))
-    {
-        if(trace->start[1] -
-            Plane_GetDistance(pl, trace->start) < -ONESIDED_FLOOR_DISTMAX)
-        {
-            return false;
-        }
-    }
-    else if(!Plane_IsAWall(pl))
+    if(!Plane_IsAWall(pl))
     {
         // ignore if the plane isn't steep enough
         if(pl->normal[1] >= EPSILON_FLOOR)
@@ -626,10 +643,7 @@ void G_ClipMovement(actor_t *actor)
                 }
                 else if(Vec_Dot(trace.normal, vel) < 0)
                 {
-                    G_SlideOnCrease(actor->velocity, vel,
-                        trace.normal, normals[i-1]);
-
-                    break;
+                    G_SlideOnCrease(vel, vel, trace.normal, normals[i-1]);
                 }
             }
 
@@ -648,23 +662,10 @@ void G_ClipMovement(actor_t *actor)
 
             // handle vertical sliding if on a steep slope
             if(Plane_IsAWall(actor->plane) &&
-                (actor->origin[1] -
-                Plane_GetDistance(actor->plane, actor->origin)) <= 0)
+                actor->origin[1] -
+                Plane_GetDistance(actor->plane, actor->origin) <= 15.36f)
             {
-                vec3_t push;
-                vec3_t n;
-
-                Vec_Copy3(n, actor->plane->normal);
-
-                // negate y-normal so its facing downward
-                n[1] = -n[1];
-
-                // scale the normal by the magnitude of velocity and
-                // the steepness of the slope
-                Vec_Scale(push, n, Vec_Unit3(vel) * actor->plane->normal[1]);
-
-                // apply to velocity
-                Vec_Add(vel, vel, push);
+                G_SlideOnSlope(vel, vel, actor->plane->normal);
             }
 
             // force a deadstop if clipped velocity is against

@@ -68,14 +68,19 @@ void G_ClientThink(actor_t *client, ticcmd_t *cmd)
     float cy;
     float vsy;
     float vcy;
+    float velocity;
 
     sy = (float)sin(client->yaw);
     cy = (float)cos(client->yaw);
+
+    velocity = MOVE_VELOCITY;
 
     if(G_ActorOnWaterSurface(client))
     {
         vsy = (float)sin(client->pitch);
         vcy = (float)cos(client->pitch);
+
+        velocity = SWIM_VELOCITY;
 
         if(!G_ActorInWaterArea(client))
         {
@@ -106,16 +111,16 @@ void G_ClientThink(actor_t *client, ticcmd_t *cmd)
 
     if(cmd->buttons & BT_FORWARD)
     {
-        client->velocity[0] += (MOVE_VELOCITY * sy) * vcy;
+        client->velocity[0] += (velocity * sy) * vcy;
         client->velocity[1] -= vsy;
-        client->velocity[2] += (MOVE_VELOCITY * cy) * vcy;
+        client->velocity[2] += (velocity * cy) * vcy;
     }
 
     if(cmd->buttons & BT_BACKWARD)
     {
-        client->velocity[0] -= (MOVE_VELOCITY * sy) * vcy;
+        client->velocity[0] -= (velocity * sy) * vcy;
         client->velocity[1] += vsy;
-        client->velocity[2] -= (MOVE_VELOCITY * cy) * vcy;
+        client->velocity[2] -= (velocity * cy) * vcy;
     }
 
     sy = (float)sin(client->yaw + (90.0f * M_RAD));
@@ -123,14 +128,14 @@ void G_ClientThink(actor_t *client, ticcmd_t *cmd)
 
     if(cmd->buttons & BT_STRAFELEFT)
     {
-        client->velocity[0] += MOVE_VELOCITY * sy;
-        client->velocity[2] += MOVE_VELOCITY * cy;
+        client->velocity[0] += velocity * sy;
+        client->velocity[2] += velocity * cy;
     }
 
     if(cmd->buttons & BT_STRAFERIGHT)
     {
-        client->velocity[0] -= MOVE_VELOCITY * sy;
-        client->velocity[2] -= MOVE_VELOCITY * cy;
+        client->velocity[0] -= velocity * sy;
+        client->velocity[2] -= velocity * cy;
     }
 
     if(cmd->buttons & BT_JUMP)
