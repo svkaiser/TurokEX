@@ -33,6 +33,17 @@ typedef enum
     AF_NOALIGNPITCH     = 0x1
 } actorflags_t;
 
+typedef enum
+{
+    TT_NORMAL           = 0,
+    TT_WATER_SHALLOW    = 1,
+    TT_WATER_SURFACE    = 2,
+    TT_WATER_UNDER      = 3,
+    TT_LAVA             = 4,
+    TT_DEATHPIT         = 5,
+    TT_NOCLIP           = 6
+} terriantype_t;
+
 typedef struct actor_s
 {
     vec3_t              origin;
@@ -47,6 +58,7 @@ typedef struct actor_s
     float               meleerange;
     object_t            object;
     plane_t             *plane;
+    terriantype_t       terriantype;
     struct actor_s      *target;
     struct actor_s      *prev;
     struct actor_s      *next;
@@ -58,8 +70,6 @@ extern actor_t *g_actorlist;
 void G_LinkActor(actor_t *actor);
 void G_UnlinkActor(actor_t* actor);
 kbool G_ActorOnPlane(actor_t *actor);
-kbool G_ActorOnWaterSurface(actor_t *actor);
-kbool G_ActorInWaterArea(actor_t *actor);
 void G_ActorMovement(actor_t *actor);
 actor_t *G_SpawnActor(void);
 void G_SetActorLinkList(int map);

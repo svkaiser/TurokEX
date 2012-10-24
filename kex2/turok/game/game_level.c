@@ -1196,6 +1196,8 @@ kmap_t *Map_Load(int map)
     kmap = &kmaps[map];
     g_currentmap = kmap;
 
+    G_SetActorLinkList(map);
+
     if(g_currentmap->tics > 0 || g_currentmap->time > 0)
     {
         return kmap;
@@ -1203,8 +1205,6 @@ kmap_t *Map_Load(int map)
 
     g_currentmap->tics = 0;
     g_currentmap->time = 0;
-
-    G_SetActorLinkList(map);
 
     if(!(parser = SC_Open(kva("maps/map%02d/map%02d.kmap", map, map))))
     {

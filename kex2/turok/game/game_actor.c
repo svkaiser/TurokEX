@@ -48,6 +48,7 @@
 #define ONPLANE_EPSILON     0.512f
 
 #define WATERHEIGHT         15.36f
+#define SHALLOWHEIGHT       20.8f
 
 static actor_t *g_currentactor;
 
@@ -135,64 +136,12 @@ kbool G_ActorOnPlane(actor_t *actor)
         return true;
     }
 
-    if(actor->velocity[1] < 0.0f && actor->velocity[1] > -17.42f)
+    if(actor->velocity[1] < 0.0f && actor->velocity[1] > -16)
     {
         return true;
     }
 
     return false;
-}
-
-//
-// G_ActorOnShallowWater
-//
-
-kbool G_ActorOnShallowWater(actor_t *actor)
-{
-    if(actor->plane == NULL)
-    {
-        return false;
-    }
-
-    if(Plane_GetDistance(actor->plane, actor->origin) -
-        actor->origin[1] <= WATERHEIGHT)
-    {
-        return (actor->plane->flags & CLF_WATER);
-    }
-
-    return false;
-}
-
-//
-// G_ActorOnWaterSurface
-//
-
-kbool G_ActorOnWaterSurface(actor_t *actor)
-{
-    if(actor->plane == NULL)
-    {
-        return false;
-    }
-
-    return actor->origin[1] + actor->meleerange <
-        Map_GetArea(actor->plane)->waterplane &&
-        actor->plane->flags & CLF_WATER;
-}
-
-//
-// G_ActorInWaterArea
-//
-
-kbool G_ActorInWaterArea(actor_t *actor)
-{
-    if(actor->plane == NULL)
-    {
-        return false;
-    }
-
-    return actor->origin[1] + actor->meleerange + WATERHEIGHT <
-        Map_GetArea(actor->plane)->waterplane &&
-        actor->plane->flags & CLF_WATER;
 }
 
 //
@@ -236,6 +185,68 @@ static void G_CheckObjectStep(actor_t *actor)
     }
 }
 
+//
+// G_GetTerrianType
+//
+
+static void G_GetTerrianType(actor_t *actor)
+{
+    float dist;
+
+    if(actor->terriantype == TT_NOCLIP)
+    {
+        // ignore while in noclip mode
+        return;
+    }
+
+    if(!actor->plane)
+    {
+        actor->terriantype = TT_NORMAL;
+        return;
+    }
+
+    dist = Plane_GetDistance(actor->plane, actor->origin);
+
+    if(actor->plane->flags & CLF_WATER)
+    {
+        float waterheight = Map_GetArea(actor->plane)->waterplane;
+
+        // shallow water
+        if(dist - actor->origin[1] <= WATERHEIGHT &&
+            waterheight - dist <= SHALLOWHEIGHT)
+        {
+            actor->terriantype = TT_WATER_SHALLOW;
+            return;
+        }
+        
+        // underwater
+        if(actor->origin[1] + actor->meleerange +
+            WATERHEIGHT < waterheight)
+        {
+            actor->terriantype = TT_WATER_UNDER;
+            return;
+        }
+        // water surface
+        else if(actor->origin[1] +
+            actor->meleerange < waterheight)
+        {
+            actor->terriantype = TT_WATER_SURFACE;
+            return;
+        }
+    }
+    
+    // lava
+    if(actor->plane->flags & CLF_DAMAGE_LAVA &&
+        actor->svclient_id != -1 && dist < ONPLANE_EPSILON)
+    {
+        actor->terriantype = TT_LAVA;
+        return;
+    }
+
+    // normal ground
+    actor->terriantype = TT_NORMAL;
+}
+
 
 //
 // G_ActorMovement
@@ -266,7 +277,7 @@ void G_ActorMovement(actor_t *actor)
     friction = FRICTION_GROUND;
 
     // hit surface and update position/velocity
-    if(actor->plane)
+    if(actor->plane && actor->terriantype != TT_NOCLIP)
     {
         plane_t *pl = actor->plane;
 
@@ -301,55 +312,67 @@ void G_ActorMovement(actor_t *actor)
             actor->velocity[1] = 0;
         }
 
+        G_GetTerrianType(actor);
+
         //
         // update gravity
         //
-
-        if(G_ActorOnWaterSurface(actor))
+        switch(actor->terriantype)
         {
+        case TT_WATER_SHALLOW:
+            // normal gravity
+            actor->velocity[1] -= GRAVITY_NORMAL;
+            break;
+
+        case TT_WATER_SURFACE:
             friction = FRICTION_WATERMASS;
+            // stay afloat on the surface
+            actor->velocity[1] *= GRAVITY_FLOAT;
+            break;
 
-            // under water
-            if(G_ActorInWaterArea(actor))
+        case TT_WATER_UNDER:
+            friction = FRICTION_WATERMASS;
+            if(actor->velocity[1] > 0.25f)
             {
-                if(actor->velocity[1] > 0.25f)
-                {
-                    // water mass affects movement
-                    actor->velocity[1] *= FRICTION_WATERMASS;
-                }
-                else if(actor->velocity[1] < -1)
-                {
-                    // friction from impact
-                    actor->velocity[1] *= FRICTION_WTRIMPACT;
-                }
-                else
-                {
-                    // sink
-                    actor->velocity[1] -= GRAVITY_WATER;
-
-                    if(actor->velocity[1] <= -FRICTION_WATERMASS)
-                    {
-                        actor->velocity[1] = -FRICTION_WATERMASS;
-                    }
-                }
+                // water mass affects movement
+                actor->velocity[1] *= FRICTION_WATERMASS;
+            }
+            else if(actor->velocity[1] < -1)
+            {
+                // friction from impact
+                actor->velocity[1] *= FRICTION_WTRIMPACT;
             }
             else
             {
-                // stay afloat on the surface
-                actor->velocity[1] *= GRAVITY_FLOAT;
-            }
-        }
-        else
-        {
-            // normal gravity
-            actor->velocity[1] -= GRAVITY_NORMAL;
-        }
+                // sink
+                actor->velocity[1] -= GRAVITY_WATER;
 
-        if(actor->svclient_id != -1 &&
-            actor->plane->flags & CLF_DAMAGE_LAVA && dist < ONPLANE_EPSILON)
-        {
+                if(actor->velocity[1] <= -FRICTION_WATERMASS)
+                {
+                    actor->velocity[1] = -FRICTION_WATERMASS;
+                }
+            }
+            break;
+
+        case TT_LAVA:
             // slow movement in lava
             friction = FRICTION_LAVA;
+            break;
+
+        case TT_NOCLIP:
+            actor->velocity[1] = actor->velocity[1] * friction;
+
+            if(actor->velocity[1] < VELOCITY_EPSILON &&
+                actor->velocity[1] > -VELOCITY_EPSILON)
+            {
+                actor->velocity[1] = 0;
+            }
+            break;
+
+        default:
+            // normal gravity
+            actor->velocity[1] -= GRAVITY_NORMAL;
+            break;
         }
     }
 

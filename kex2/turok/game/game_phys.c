@@ -303,8 +303,6 @@ static kbool G_CheckObjects(trace_t *trace, plane_t *plane)
             }
 
             // check object height
-            // TODO: the original game doesn't do height clipping but I'd like
-            // to do it for kex someday
             if(trace->end[1] > obj->object->origin[1] + obj->object->height ||
                 trace->end[1] + offset < obj->object->origin[1])
             {
@@ -593,6 +591,11 @@ void G_ClipMovement(actor_t *actor)
         return;
     }
 
+    if(actor->terriantype == TT_NOCLIP)
+    {
+        return;
+    }
+
     if(actor->plane != NULL)
     {
         trace_t trace;
@@ -631,6 +634,13 @@ void G_ClipMovement(actor_t *actor)
             {
                 G_SlideOnCrease(actor->velocity, vel,
                     trace.normal, actor->plane->normal);
+
+                if(actor->origin[1] -
+                    Plane_GetDistance(actor->plane, actor->origin) <= 0.2f)
+                {
+                    actor->velocity[1] = 2;
+                }
+
                 break;
             }
             // slide along the crease between two normals

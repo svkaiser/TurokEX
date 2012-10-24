@@ -30,6 +30,12 @@
 #include "kernel.h"
 #include "level.h"
 #include "zone.h"
+#include "game.h"
+
+#define MOVE_VELOCITY   2.85f
+#define SWIM_VELOCITY   0.25f
+#define JUMP_VELOCITY   11.612f
+#define NOCLIPMOVE      (MOVE_VELOCITY * 6)
 
 //
 // G_Shutdown
@@ -55,72 +61,27 @@ void G_Ticker(void)
 }
 
 //
-// G_ClientThink
+// G_ClientWalk
 //
 
-#define MOVE_VELOCITY   2.85f
-#define SWIM_VELOCITY   0.25f
-#define JUMP_VELOCITY   11.612f
-
-void G_ClientThink(actor_t *client, ticcmd_t *cmd)
+static void G_ClientWalk(actor_t *client, ticcmd_t *cmd)
 {
     float sy;
     float cy;
-    float vsy;
-    float vcy;
-    float velocity;
 
     sy = (float)sin(client->yaw);
     cy = (float)cos(client->yaw);
 
-    velocity = MOVE_VELOCITY;
-
-    if(G_ActorOnWaterSurface(client))
-    {
-        vsy = (float)sin(client->pitch);
-        vcy = (float)cos(client->pitch);
-
-        velocity = SWIM_VELOCITY;
-
-        if(!G_ActorInWaterArea(client))
-        {
-            float ang = client->pitch;
-
-            Ang_Clamp(&ang);
-            
-            if(ang < (45 * M_RAD) &&
-                ang > -(45 * M_RAD))
-            {
-                vsy = 0;
-            }
-            else
-            {
-                vsy *= MOVE_VELOCITY;
-            }
-        }
-        else
-        {
-            vsy *= SWIM_VELOCITY;
-        }
-    }
-    else
-    {
-        vsy = 0;
-        vcy = 1;
-    }
-
     if(cmd->buttons & BT_FORWARD)
     {
-        client->velocity[0] += (velocity * sy) * vcy;
-        client->velocity[1] -= vsy;
-        client->velocity[2] += (velocity * cy) * vcy;
+        client->velocity[0] += MOVE_VELOCITY * sy;
+        client->velocity[2] += MOVE_VELOCITY * cy;
     }
 
     if(cmd->buttons & BT_BACKWARD)
     {
-        client->velocity[0] -= (velocity * sy) * vcy;
-        client->velocity[1] += vsy;
-        client->velocity[2] -= (velocity * cy) * vcy;
+        client->velocity[0] -= MOVE_VELOCITY * sy;
+        client->velocity[2] -= MOVE_VELOCITY * cy;
     }
 
     sy = (float)sin(client->yaw + (90.0f * M_RAD));
@@ -128,30 +89,261 @@ void G_ClientThink(actor_t *client, ticcmd_t *cmd)
 
     if(cmd->buttons & BT_STRAFELEFT)
     {
-        client->velocity[0] += velocity * sy;
-        client->velocity[2] += velocity * cy;
+        client->velocity[0] += MOVE_VELOCITY * sy;
+        client->velocity[2] += MOVE_VELOCITY * cy;
     }
 
     if(cmd->buttons & BT_STRAFERIGHT)
     {
-        client->velocity[0] -= velocity * sy;
-        client->velocity[2] -= velocity * cy;
+        client->velocity[0] -= MOVE_VELOCITY * sy;
+        client->velocity[2] -= MOVE_VELOCITY * cy;
     }
 
     if(cmd->buttons & BT_JUMP)
     {
-        if(G_ActorOnWaterSurface(client))
-        {
-            client->velocity[1] += SWIM_VELOCITY;
-        }
-        else if(G_ActorOnPlane(client))
+        if(G_ActorOnPlane(client))
         {
             client->velocity[1] = JUMP_VELOCITY;
         }
     }
+}
+
+//
+// G_ClientSwim
+//
+
+static void G_ClientSwim(actor_t *client, ticcmd_t *cmd)
+{
+    float sy;
+    float cy;
+    float vsy;
+    float vcy;
+
+    sy = (float)sin(client->yaw);
+    cy = (float)cos(client->yaw);
+    vsy = (float)sin(client->pitch) * SWIM_VELOCITY;
+    vcy = (float)cos(client->pitch);
+
+    if(cmd->buttons & BT_FORWARD)
+    {
+        client->velocity[0] += (SWIM_VELOCITY * sy) * vcy;
+        client->velocity[1] -= vsy;
+        client->velocity[2] += (SWIM_VELOCITY * cy) * vcy;
+    }
+
+    if(cmd->buttons & BT_BACKWARD)
+    {
+        client->velocity[0] -= (SWIM_VELOCITY * sy) * vcy;
+        client->velocity[1] += vsy;
+        client->velocity[2] -= (SWIM_VELOCITY * cy) * vcy;
+    }
+
+    sy = (float)sin(client->yaw + (90.0f * M_RAD));
+    cy = (float)cos(client->yaw + (90.0f * M_RAD));
+
+    if(cmd->buttons & BT_STRAFELEFT)
+    {
+        client->velocity[0] += SWIM_VELOCITY * sy;
+        client->velocity[2] += SWIM_VELOCITY * cy;
+    }
+
+    if(cmd->buttons & BT_STRAFERIGHT)
+    {
+        client->velocity[0] -= SWIM_VELOCITY * sy;
+        client->velocity[2] -= SWIM_VELOCITY * cy;
+    }
+
+    if(cmd->buttons & BT_JUMP)
+    {
+        client->velocity[1] += SWIM_VELOCITY;
+    }
+}
+
+//
+// G_ClientPaddle
+//
+
+static void G_ClientPaddle(actor_t *client, ticcmd_t *cmd)
+{
+    float sy;
+    float cy;
+    float vsy;
+    float vcy;
+    float ang;
+
+    sy = (float)sin(client->yaw);
+    cy = (float)cos(client->yaw);
+    vsy = (float)sin(client->pitch);
+    vcy = (float)cos(client->pitch);
+
+    ang = client->pitch;
+
+    Ang_Clamp(&ang);
+            
+    if(ang < (45 * M_RAD) &&
+        ang > -(45 * M_RAD))
+    {
+        vsy = 0;
+    }
+    else
+    {
+        vsy *= MOVE_VELOCITY;
+    }
+
+    if(cmd->buttons & BT_FORWARD)
+    {
+        client->velocity[0] += (SWIM_VELOCITY * sy) * vcy;
+        client->velocity[1] -= vsy;
+        client->velocity[2] += (SWIM_VELOCITY * cy) * vcy;
+    }
+
+    if(cmd->buttons & BT_BACKWARD)
+    {
+        client->velocity[0] -= (SWIM_VELOCITY * sy) * vcy;
+        client->velocity[1] += vsy;
+        client->velocity[2] -= (SWIM_VELOCITY * cy) * vcy;
+    }
+
+    sy = (float)sin(client->yaw + (90.0f * M_RAD));
+    cy = (float)cos(client->yaw + (90.0f * M_RAD));
+
+    if(cmd->buttons & BT_STRAFELEFT)
+    {
+        client->velocity[0] += SWIM_VELOCITY * sy;
+        client->velocity[2] += SWIM_VELOCITY * cy;
+    }
+
+    if(cmd->buttons & BT_STRAFERIGHT)
+    {
+        client->velocity[0] -= SWIM_VELOCITY * sy;
+        client->velocity[2] -= SWIM_VELOCITY * cy;
+    }
+
+    if(cmd->buttons & BT_JUMP)
+    {
+        client->velocity[1] += SWIM_VELOCITY;
+    }
+}
+
+//
+// G_ClientNoClipMove
+//
+
+static void G_ClientNoClipMove(actor_t *client, ticcmd_t *cmd)
+{
+    float sy;
+    float cy;
+    float vsy;
+    float vcy;
+    float x1;
+    float y1;
+    float z1;
+    float x2;
+    float y2;
+    float z2;
+
+    sy = (float)sin(client->yaw);
+    cy = (float)cos(client->yaw);
+    vsy = (float)sin(client->pitch);
+    vcy = (float)cos(client->pitch);
+
+    x1 = y1 = z1 = x2 = y2 = z2 = 0;
+
+    if(cmd->buttons & BT_FORWARD)
+    {
+        x1 = (NOCLIPMOVE * sy) * vcy;
+        y1 = NOCLIPMOVE * -vsy;
+        z1 = (NOCLIPMOVE * cy) * vcy;
+    }
+
+    if(cmd->buttons & BT_BACKWARD)
+    {
+        x1 = -(NOCLIPMOVE * sy) * vcy;
+        y1 = NOCLIPMOVE * vsy;
+        z1 = -(NOCLIPMOVE * cy) * vcy;
+    }
+
+    sy = (float)sin(client->yaw + (90.0f * M_RAD));
+    cy = (float)cos(client->yaw + (90.0f * M_RAD));
+
+    if(cmd->buttons & BT_STRAFELEFT)
+    {
+        x2 = NOCLIPMOVE * sy;
+        z2 = NOCLIPMOVE * cy;
+    }
+
+    if(cmd->buttons & BT_STRAFERIGHT)
+    {
+        x2 = -NOCLIPMOVE * sy;
+        z2 = -NOCLIPMOVE * cy;
+    }
+
+    if(cmd->buttons & BT_JUMP)
+    {
+        y2 = NOCLIPMOVE;
+    }
+
+    client->velocity[0] = x1 + x2;
+    client->velocity[1] = y1 + y2;
+    client->velocity[2] = z1 + z2;
+}
+
+//
+// G_ClientThink
+//
+
+void G_ClientThink(actor_t *client, ticcmd_t *cmd)
+{
+    switch(client->terriantype)
+    {
+    case TT_WATER_SHALLOW:
+        G_ClientWalk(client, cmd);
+        break;
+
+    case TT_WATER_SURFACE:
+        G_ClientPaddle(client, cmd);
+        break;
+
+    case TT_WATER_UNDER:
+        G_ClientSwim(client, cmd);
+        break;
+
+    case TT_LAVA:
+        G_ClientWalk(client, cmd);
+        break;
+
+    case TT_NOCLIP:
+        G_ClientNoClipMove(client, cmd);
+        break;
+
+    default:
+        G_ClientWalk(client, cmd);
+        break;
+    }
 
     // TEMP
     G_ActorMovement(client);
+}
+
+//
+// FCmd_NoClip
+//
+
+static void FCmd_NoClip(void)
+{
+    actor_t *actor;
+
+    // TODO: TEMP
+    actor = &client.localactor;
+    if(actor->terriantype == TT_NOCLIP)
+    {
+        actor->terriantype = TT_NORMAL;
+        actor->plane = G_FindClosestPlane(actor->origin);
+    }
+    else
+    {
+        actor->terriantype = TT_NOCLIP;
+    }
 }
 
 //
@@ -161,5 +353,8 @@ void G_ClientThink(actor_t *client, ticcmd_t *cmd)
 void G_Init(void)
 {
     Map_Init();
+
+    // TODO: TEMP
+    Cmd_AddCommand("noclip", FCmd_NoClip);
 }
 

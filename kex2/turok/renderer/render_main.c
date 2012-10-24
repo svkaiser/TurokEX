@@ -325,6 +325,7 @@ static void R_SetupViewFrame(actor_t *actor)
     float bob_x;
     float bob_y;
     float d;
+    float amt;
     vec3_t org;
     vec3_t pos;
     vec3_t dir;
@@ -358,10 +359,20 @@ static void R_SetupViewFrame(actor_t *actor)
     }
 
     d = Vec_Unit2(actor->velocity) * 0.05f;
-    cam_roll *= 0.9f;
+
+    if(actor->terriantype == TT_WATER_UNDER)
+    {
+        cam_roll *= 0.935f;
+        amt = 0.4f;
+    }
+    else
+    {
+        cam_roll *= 0.9f;
+        amt = 0.0625f;
+    }
 
     // interpolate view roll
-    cam_roll = (((angle * 0.0625f) * Vec_Unit2(dir)) - cam_roll) * d + cam_roll;
+    cam_roll = (((angle * amt) * Vec_Unit2(dir)) - cam_roll) * d + cam_roll;
 
     // clamp roll due to stupid floating point precision
     if(cam_roll < 0.001f && cam_roll > -0.001f)
@@ -372,7 +383,8 @@ static void R_SetupViewFrame(actor_t *actor)
     bob_x = 0;
     bob_y = 0;
 
-    if((actor->origin[1] + actor->velocity[1]) -
+    if(actor->terriantype != TT_WATER_UNDER && (actor->origin[1] +
+        actor->velocity[1]) -
         Plane_GetDistance(actor->plane, actor->origin) < 4)
     {
         // calculate bobbing
