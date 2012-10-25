@@ -48,7 +48,7 @@
 #define ONPLANE_EPSILON     0.512f
 
 #define WATERHEIGHT         15.36f
-#define SHALLOWHEIGHT       20.8f
+#define SHALLOWHEIGHT       51.2f
 
 static actor_t *g_currentactor;
 
@@ -136,7 +136,7 @@ kbool G_ActorOnPlane(actor_t *actor)
         return true;
     }
 
-    if(actor->velocity[1] < 0.0f && actor->velocity[1] > -16)
+    if(actor->velocity[1] < 0 && actor->velocity[1] > -16)
     {
         return true;
     }
@@ -154,18 +154,17 @@ kbool G_ActorOnPlane(actor_t *actor)
 static void G_CheckObjectStep(actor_t *actor)
 {
     blockobj_t *obj;
-    sector_t *sector;
+    plane_t *plane;
 
     if(actor->plane == NULL)
     {
         return;
     }
 
-    // TODO: this doesn't seem like the right way to do this...
-    sector = &g_currentmap->sectors[actor->plane - g_currentmap->planes];
+    plane = actor->plane;
 
     // go through the list
-    for(obj = sector->blocklist.next; obj != &sector->blocklist; obj = obj->next)
+    for(obj = plane->blocklist.next; obj != &plane->blocklist; obj = obj->next)
     {
         float height; 
 
@@ -183,6 +182,47 @@ static void G_CheckObjectStep(actor_t *actor)
             }
         }
     }
+}
+
+//
+// G_CheckWaterLevel
+//
+
+enum
+{
+    WL_INVALID  = 0,
+    WL_OVER     = 1,
+    WL_BETWEEN  = 2,
+    WL_UNDER    = 3
+};
+
+static int G_CheckWaterLevel(actor_t *actor)
+{
+    if(actor->plane != NULL)
+    {
+        if(actor->plane->flags & CLF_WATER)
+        {
+            area_t *area = Map_GetArea(actor->plane);
+
+            if(actor->origin[1] + actor->meleerange >= area->waterplane)
+            {
+                if(actor->origin[1] < area->waterplane)
+                {
+                    return WL_BETWEEN;
+                }
+                else
+                {
+                    return WL_OVER;
+                }
+            }
+            else
+            {
+                return WL_UNDER;
+            }
+        }
+    }
+
+    return WL_INVALID;
 }
 
 //
@@ -218,20 +258,19 @@ static void G_GetTerrianType(actor_t *actor)
             actor->terriantype = TT_WATER_SHALLOW;
             return;
         }
-        
-        // underwater
-        if(actor->origin[1] + actor->meleerange +
-            WATERHEIGHT < waterheight)
+
+        switch(G_CheckWaterLevel(actor))
         {
-            actor->terriantype = TT_WATER_UNDER;
-            return;
-        }
-        // water surface
-        else if(actor->origin[1] +
-            actor->meleerange < waterheight)
-        {
+        case WL_BETWEEN:
             actor->terriantype = TT_WATER_SURFACE;
             return;
+
+        case WL_UNDER:
+            actor->terriantype = TT_WATER_UNDER;
+            return;
+
+        default:
+            break;
         }
     }
     
@@ -326,16 +365,36 @@ void G_ActorMovement(actor_t *actor)
 
         case TT_WATER_SURFACE:
             friction = FRICTION_WATERMASS;
-            // stay afloat on the surface
-            actor->velocity[1] *= GRAVITY_FLOAT;
+
+            if(actor->velocity[1] > 0)
+            {
+                // stay afloat on the surface
+                actor->velocity[1] *= GRAVITY_FLOAT;
+            }
             break;
 
         case TT_WATER_UNDER:
             friction = FRICTION_WATERMASS;
             if(actor->velocity[1] > 0.25f)
             {
-                // water mass affects movement
-                actor->velocity[1] *= FRICTION_WATERMASS;
+                area_t *area = Map_GetArea(actor->plane);
+
+                // swimming back up to the surface?
+                if(position[1] - 2.048f + actor->meleerange >=
+                    area->waterplane -
+                    (actor->meleerange * 0.5f) - 20.48f)
+                {
+                    vec3_t lerp;
+
+                    // lerp to the surface
+                    Vec_Set3(lerp, position[0], area->waterplane + 2.048f, position[2]);
+                    Vec_Lerp3(position, 0.05f, position, lerp);
+                }
+                else
+                {
+                    // water mass affects movement
+                    actor->velocity[1] *= FRICTION_WATERMASS;
+                }
             }
             else if(actor->velocity[1] < -1)
             {

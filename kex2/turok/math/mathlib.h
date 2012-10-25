@@ -62,29 +62,29 @@ void  Vec_PointToAngle(vec4_t out, vec3_t p1, vec3_t p2);
 //
 // MATRIX OPERATIONS
 //
-void Mtx_ViewFrustum(int width, int height, float fovy, float znear);
-void Mtx_AddTranslation(mtx_t m, float x, float y, float z);
-void Mtx_SetTranslation(mtx_t m, float x, float y, float z);
-void Mtx_Scale(mtx_t m, float x, float y, float z);
-void Mtx_MultiplyByAxis(mtx_t m1, mtx_t m2, float x, float y, float z);
-void Mtx_Transpose(mtx_t m);
-void Mtx_TransposeDup(mtx_t m1, mtx_t m2);
-void Mtx_Identity(mtx_t m);
-void Mtx_IdentityAxis(mtx_t m, float x, float y, float z);
-void Mtx_IdentityX(mtx_t m, float angle);
-void Mtx_IdentityY(mtx_t m, float angle);
-void Mtx_IdentityZ(mtx_t m, float angle);
-void Mtx_Multiply(mtx_t out, mtx_t m1, mtx_t m2);
-void Mtx_MultiplyRotation(mtx_t out, mtx_t m1, mtx_t m2);
-void Mtx_ApplyToVector(mtx_t m, vec3_t vec, vec3_t out);
-void Mtx_ApplyVector(mtx_t m, vec3_t vec);
-void Mtx_ApplyCoordinates(mtx_t m, vec3_t src, vec3_t out);
-void Mtx_SetFromAxis(mtx_t m, float angle, float x, float y, float z);
-void Mtx_Copy(mtx_t dest, mtx_t src);
-void Mtx_RotateX(mtx_t m, float angle);
-void Mtx_RotateY(mtx_t m, float angle);
-void Mtx_RotateZ(mtx_t m, float angle);
-void Mtx_ApplyRotation(vec4_t rot, mtx_t out);
+void  Mtx_ViewFrustum(int width, int height, float fovy, float znear);
+void  Mtx_AddTranslation(mtx_t m, float x, float y, float z);
+void  Mtx_SetTranslation(mtx_t m, float x, float y, float z);
+void  Mtx_Scale(mtx_t m, float x, float y, float z);
+void  Mtx_MultiplyByAxis(mtx_t m1, mtx_t m2, float x, float y, float z);
+void  Mtx_Transpose(mtx_t m);
+void  Mtx_TransposeDup(mtx_t m1, mtx_t m2);
+void  Mtx_Identity(mtx_t m);
+void  Mtx_IdentityAxis(mtx_t m, float x, float y, float z);
+void  Mtx_IdentityX(mtx_t m, float angle);
+void  Mtx_IdentityY(mtx_t m, float angle);
+void  Mtx_IdentityZ(mtx_t m, float angle);
+void  Mtx_Multiply(mtx_t out, mtx_t m1, mtx_t m2);
+void  Mtx_MultiplyRotation(mtx_t out, mtx_t m1, mtx_t m2);
+void  Mtx_ApplyToVector(mtx_t m, vec3_t vec, vec3_t out);
+void  Mtx_ApplyVector(mtx_t m, vec3_t vec);
+void  Mtx_ApplyCoordinates(mtx_t m, vec3_t src, vec3_t out);
+void  Mtx_SetFromAxis(mtx_t m, float angle, float x, float y, float z);
+void  Mtx_Copy(mtx_t dest, mtx_t src);
+void  Mtx_RotateX(mtx_t m, float angle);
+void  Mtx_RotateY(mtx_t m, float angle);
+void  Mtx_RotateZ(mtx_t m, float angle);
+void  Mtx_ApplyRotation(vec4_t rot, mtx_t out);
 
 //
 // ANGLE OPERATIONS
@@ -100,18 +100,11 @@ float Ang_Diff(float angle1, float angle2);
 //
 // PLANE OPERATIONS
 //
-typedef struct plane_s
-{
-    unsigned int    flags;
-    vec3_t          points[3];
-    float           height[3];
-    struct plane_s  *link[3];
-    vec3_t          normal;
-    float           dist;
-} plane_t;
 
-void Plane_SetTemp(plane_t *plane, vec3_t p1, vec3_t p2, vec3_t p3);
-void Plane_GetNormal(vec3_t normal, plane_t *plane);
+#include "level.h"
+
+void  Plane_SetTemp(plane_t *plane, vec3_t p1, vec3_t p2, vec3_t p3);
+void  Plane_GetNormal(vec3_t normal, plane_t *plane);
 kbool Plane_IsFacing(plane_t *plane, float angle);
 float Plane_GetDistance(plane_t *plane, vec3_t pos);
 float Plane_GetHeight(plane_t *plane, vec3_t pos);
@@ -119,8 +112,8 @@ kbool Plane_IsAWall(plane_t *plane);
 float Plane_GetYaw(plane_t *p, int point);
 float Plane_GetPitch(plane_t *p);
 float Plane_GetSlope(plane_t *plane, float x1, float z1, float x2, float z2);
-void Plane_GetRotation(vec4_t vec, plane_t *p);
-void Plane_AdjustRotation(vec4_t out, plane_t *p);
+void  Plane_GetRotation(vec4_t vec, plane_t *p);
+void  Plane_AdjustRotation(vec4_t out, plane_t *p);
 kbool Plane_PointInRange(plane_t *p, float x, float z);
 
 #endif

@@ -24,7 +24,6 @@
 #define _ACTOR_H_
 
 #include "type.h"
-#include "mathlib.h"
 #include "render.h"
 #include "level.h"
 

@@ -276,18 +276,14 @@ static kbool G_TraceObject(trace_t *trace, vec3_t objpos, float radius)
 static kbool G_CheckObjects(trace_t *trace, plane_t *plane)
 {
     blockobj_t *obj;
-    sector_t *sector;
 
     if(plane == NULL)
     {
         return false;
     }
 
-    // TODO: this doesn't seem like the right way to do this...
-    sector = &g_currentmap->sectors[plane - g_currentmap->planes];
-
     // go through the list
-    for(obj = sector->blocklist.next; obj != &sector->blocklist; obj = obj->next)
+    for(obj = plane->blocklist.next; obj != &plane->blocklist; obj = obj->next)
     {
         if(G_TraceObject(trace, obj->object->origin, obj->object->width))
         {

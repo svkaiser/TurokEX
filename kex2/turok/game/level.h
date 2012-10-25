@@ -24,8 +24,6 @@
 #define _LEVEL_H_
 
 #include "type.h"
-#include "actor.h"
-#include "mathlib.h"
 
 typedef enum
 {
@@ -62,7 +60,22 @@ typedef struct
     float               maxz;
 } mapgrid_t;
 
-typedef struct object_s
+//
+// OBJECTS
+//
+// An object is usually a piece of geometry which can be
+// anything such as world geometry, items, or characters
+// and can also be used for particle emitters. These make up
+// the majority of a level.
+//
+// Static objects are objects that cannot be modified and can be
+// linked to planes for radial collision detection
+//
+// Dynamic objects can be touchable or shootable and is treated
+// differently for radial collision
+//
+
+typedef struct
 {
     vec3_t              origin;
     vec3_t              scale;
@@ -81,9 +94,14 @@ typedef struct object_s
     byte                flags;
     blockflags_t        blockflag;
     mtx_t               matrix;
-    struct object_s     *prev;
-    struct object_s     *next;
 } object_t;
+
+//
+// INSTANCES
+//
+// Instances contain groups of both static and dynamic objects
+// TODO: Finish description
+//
 
 typedef struct
 {
@@ -110,11 +128,16 @@ typedef struct blockobj_s
     object_t            *object;
 } blockobj_t;
 
-typedef struct
+typedef struct plane_s
 {
+    unsigned int        area_id;
+    unsigned int        flags;
+    vec3_t              points[3];
+    float               height[3];
+    vec3_t              normal;
     blockobj_t          blocklist;
-    int                 area_id;
-} sector_t;
+    struct plane_s      *link[3];
+} plane_t;
 
 typedef struct
 {
@@ -128,7 +151,6 @@ typedef struct
     mapgrid_t           *gridbounds;
     area_t              *areas;
     plane_t             *planes;
-    sector_t            *sectors;
     mapgrid_t           *zones;
     int                 tics;
     float               time;

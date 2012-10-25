@@ -404,8 +404,6 @@ static void Map_ParseObjectBlock(instance_t *instances, scparser_t *parser, kboo
             obj = &instances->statics[i];
         }
 
-        obj->next = NULL;
-
         // read into nested static instance block
         SC_ExpectNextToken(TK_LBRACK);
         SC_Find();
@@ -780,24 +778,6 @@ static void Map_ParseAreaBlock(kmap_t *map, scparser_t *parser)
 }
 
 //
-// Map_InitSectors
-//
-
-static void Map_InitSectors(kmap_t *map)
-{
-    unsigned int i;
-
-    map->sectors = (sector_t*)Z_Calloc(sizeof(sector_t) *
-        map->numplanes, PU_LEVEL, 0);
-
-    for(i = 0; i < map->numplanes; i++)
-    {
-        map->sectors[i].blocklist.next =
-        map->sectors[i].blocklist.prev = &map->sectors[i].blocklist;
-    }
-}
-
-//
 // Map_ParseCollisionPlanes
 //
 
@@ -827,8 +807,6 @@ static void Map_ParseCollisionPlanes(kmap_t *map, scparser_t *parser,
     map->planes = (plane_t*)Z_Calloc(sizeof(plane_t) *
         map->numplanes, PU_LEVEL, 0);
 
-    Map_InitSectors(map);
-
     SC_ExpectNextToken(TK_EQUAL);
     SC_ExpectNextToken(TK_LBRACK);
 
@@ -837,8 +815,11 @@ static void Map_ParseCollisionPlanes(kmap_t *map, scparser_t *parser,
         int p;
         plane_t *pl = &map->planes[i];
 
-        map->sectors[i].area_id = SC_GetNumber();
+        pl->area_id = SC_GetNumber();
         pl->flags = SC_GetNumber();
+
+        pl->blocklist.next =
+        pl->blocklist.prev = &pl->blocklist;
 
         for(p = 0; p < 3; p++)
         {
@@ -858,7 +839,6 @@ static void Map_ParseCollisionPlanes(kmap_t *map, scparser_t *parser,
 
         Plane_GetNormal(pl->normal, pl);
         Vec_Normalize3(pl->normal);
-        pl->dist = Vec_Dot(pl->points[0], pl->normal);
     }
 
     SC_ExpectNextToken(TK_RBRACK);
@@ -976,27 +956,27 @@ static void Map_ParseNavScript(kmap_t *map, scparser_t *parser)
 // Map_LinkObjToBlocklist
 //
 
-void Map_LinkObjToBlocklist(object_t *obj, sector_t *sector)
+void Map_LinkObjToBlocklist(object_t *obj, plane_t *plane)
 {
     blockobj_t *blockobj = (blockobj_t*)Z_Calloc(sizeof(blockobj_t), PU_LEVEL, 0);
 
     blockobj->object = obj;
-    sector->blocklist.prev->next = blockobj;
-    blockobj->next = &sector->blocklist;
-    blockobj->prev = sector->blocklist.prev;
-    sector->blocklist.prev = blockobj;
+    plane->blocklist.prev->next = blockobj;
+    blockobj->next = &plane->blocklist;
+    blockobj->prev = plane->blocklist.prev;
+    plane->blocklist.prev = blockobj;
 }
 
 //
 // Map_ObjectInBlocklist
 //
 
-static kbool Map_ObjectInBlocklist(object_t *obj, sector_t *sector)
+static kbool Map_ObjectInBlocklist(object_t *obj, plane_t *plane)
 {
     blockobj_t *blockobj;
 
-    for(blockobj = sector->blocklist.next;
-        blockobj != &sector->blocklist; blockobj = blockobj->next)
+    for(blockobj = plane->blocklist.next;
+        blockobj != &plane->blocklist; blockobj = blockobj->next)
     {
         if(blockobj->object == obj)
         {
@@ -1060,16 +1040,13 @@ static kbool Map_CheckObjectPlaneRange(object_t *obj, plane_t *plane)
 static void Map_TraverseLinkObjects(object_t *obj, plane_t *plane, kmap_t *map)
 {
     int i;
-    sector_t *sector;
 
-    sector = &map->sectors[plane - map->planes];
-
-    if(plane == NULL || Map_ObjectInBlocklist(obj, sector))
+    if(plane == NULL || Map_ObjectInBlocklist(obj, plane))
     {
         return;
     }
 
-    Map_LinkObjToBlocklist(obj, sector);
+    Map_LinkObjToBlocklist(obj, plane);
 
     for(i = 0; i < 3; i++)
     {
@@ -1175,8 +1152,7 @@ static void Map_SetupActors(kmap_t *map)
 
 area_t *Map_GetArea(plane_t *plane)
 {
-    return &g_currentmap->areas[g_currentmap->sectors[plane -
-        g_currentmap->planes].area_id];
+    return &g_currentmap->areas[plane->area_id];
 }
 
 //
