@@ -336,7 +336,7 @@ void G_ActorMovement(actor_t *actor)
         // get floor distance
         dist = position[1] - Plane_GetDistance(pl, position);
 
-        if(!Plane_IsAWall(pl) && dist < ONPLANE_EPSILON)
+        if(dist < ONPLANE_EPSILON)
         {
             // lerp player back to the surface
             if(dist < 0)
@@ -347,8 +347,12 @@ void G_ActorMovement(actor_t *actor)
                 Vec_Lerp3(position, 0.125f, position, lerp);
             }
 
-            // surface was hit, kill vertical velocity
-            actor->velocity[1] = 0;
+            // continue sliding if on a slope
+            if(!Plane_IsAWall(pl))
+            {
+                // surface was hit, kill vertical velocity
+                actor->velocity[1] = 0;
+            }
         }
 
         G_GetTerrianType(actor);
@@ -430,7 +434,10 @@ void G_ActorMovement(actor_t *actor)
 
         default:
             // normal gravity
-            actor->velocity[1] -= GRAVITY_NORMAL;
+            if(dist >= ONPLANE_EPSILON)
+            {
+                actor->velocity[1] -= GRAVITY_NORMAL;
+            }
             break;
         }
     }

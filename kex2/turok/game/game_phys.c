@@ -147,34 +147,6 @@ static void G_SlideOnCrease(vec3_t out, vec3_t velocity, vec3_t v1, vec3_t v2)
 }
 
 //
-// G_SlideOnSlope
-//
-
-static void G_SlideOnSlope(vec3_t out, vec3_t velocity, vec3_t normal)
-{
-    vec3_t dir;
-    vec3_t c;
-    vec3_t up;
-    float d;
-
-    Vec_Set3(up, 0, 1, 0);
-    Vec_Cross(c, up, normal);
-    Vec_Cross(dir, c, normal);
-    Vec_Normalize3(dir);
-
-    dir[1] = 0;
-
-    d = Vec_Unit3(velocity);
-
-    if(d != 0)
-    {
-        Vec_Scale(dir, dir, (float)sqrt(1 / d));
-    }
-
-    Vec_Add(out, velocity, dir);
-}
-
-//
 // G_TraceObject
 //
 // Line-circle intersection test on an object
@@ -314,6 +286,27 @@ static kbool G_CheckObjects(trace_t *trace, plane_t *plane)
 }
 
 //
+// G_CheckTraceHeight
+//
+
+static kbool G_CheckTraceHeight(trace_t *trace, plane_t *pl)
+{
+    if(Plane_IsAWall(pl))
+    {
+        float y = trace->end[1] + 1.024f;
+
+        if( y > pl->points[0][1] &&
+            y > pl->points[1][1] &&
+            y > pl->points[2][1])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+//
 // G_TracePlane
 //
 // Check if the ray intersected with plane
@@ -325,16 +318,9 @@ static kbool G_TracePlane(trace_t *trace, plane_t *pl)
     float dstart;
     float dend;
 
-    if(Plane_IsAWall(pl))
+    if(!G_CheckTraceHeight(trace, pl))
     {
-        float y = trace->end[1] + 1.024f;
-
-        if( y > pl->points[0][1] &&
-            y > pl->points[1][1] &&
-            y > pl->points[2][1])
-        {
-            return false;
-        }
+        return false;
     }
 
     if(!Plane_IsAWall(pl))
@@ -430,13 +416,77 @@ static void G_TraceEdge(trace_t *trace, vec3_t vp1, vec3_t vp2)
 }
 
 //
+// G_GetNextPlaneLink
+//
+// Fetches the next linked plane. If NULL then assume it is
+// a solid wall/edge
+//
+
+static plane_t *G_GetNextPlaneLink(trace_t *trace, plane_t *p, int point)
+{
+    vec3_t pos;
+    plane_t *link;
+
+    link = p->link[point];
+
+    if(!link)
+    {
+        // crossed into an edge
+        return NULL;
+    }
+
+    Vec_Lerp3(pos, trace->sidedist, trace->end, trace->start);
+
+    if(!(p->flags & CLF_CHECKHEIGHT) &&
+        link->flags & CLF_CHECKHEIGHT &&
+        Plane_GetHeight(link, pos) < pos[1])
+    {
+        // above ceiling height
+        return NULL;
+    }
+
+    if(!Plane_IsAWall(link))
+    {
+        // crossed into a floor plane
+        return link;
+    }
+    else
+    {
+        if(Plane_GetDistance(link, trace->end) <=
+            Plane_GetDistance(p, trace->start))
+        {
+            // able to step off into this plane
+            return link;
+        }
+
+        if(!Plane_IsAWall(p))
+        {
+            vec3_t dir;
+            Vec_Sub(dir, trace->end, trace->start);
+
+            // special case for planes flagged to block
+            // from the front side. these will be treated as
+            // solid walls. direction of ray must be facing
+            // towards the plane
+            if(link->flags & CLF_FRONTNOCLIP &&
+                G_CheckTraceHeight(trace, link) &&
+                Plane_IsFacing(link, Ang_VectorToAngle(dir)))
+            {
+                return NULL;
+            }
+        }
+    }
+
+    return link;
+}
+
+//
 // G_PathTraverse
 //
 
 void G_PathTraverse(plane_t *plane, trace_t *trace)
 {
     int i;
-    int point;
     plane_t *pl;
 
     if(plane == NULL)
@@ -454,7 +504,6 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
     }
 
     pl = NULL;
-    point = 0;
     trace->sidedist = 0;
 
     // check if ray crosses into an edge. if multiple edges
@@ -475,15 +524,13 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
 
         if(G_CheckEdgeSide(trace, vp1, vp2))
         {
-            pl = plane->link[i];
-            point = i;
+            pl = G_GetNextPlaneLink(trace, plane, i);
 
             trace->frac = trace->sidedist;
 
             if(pl == NULL)
             {
-                // a null edge was crossed. treat it as
-                // a solid wall
+                // treat it as a solid wall
                 G_TraceEdge(trace, vp1, vp2);
                 return;
             }
@@ -653,11 +700,6 @@ void G_ClipMovement(actor_t *actor)
                 }
             }
 
-            if(!Plane_IsAWall(actor->plane) && Plane_IsAWall(trace.hitpl))
-            {
-                trace.normal[1] = 0;
-            }
-
             // slide against the hit surface. ignore Y-velocity if on a steep slope
             tmpy = vel[1];
             G_ClipVelocity(vel, vel, trace.normal, 1.01f);
@@ -671,7 +713,11 @@ void G_ClipMovement(actor_t *actor)
                 actor->origin[1] -
                 Plane_GetDistance(actor->plane, actor->origin) <= 15.36f)
             {
-                G_SlideOnSlope(vel, vel, actor->plane->normal);
+                vec3_t push;
+
+                Vec_Scale(push, actor->plane->normal, Vec_Unit2(vel));
+                push[1] = 0;
+                Vec_Add(vel, vel, push);
             }
 
             // force a deadstop if clipped velocity is against

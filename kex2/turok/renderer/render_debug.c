@@ -80,21 +80,21 @@ void R_DrawCollision(void)
             dglColor4ub(64, 0, 96, 80);
         else if(p->flags & CLF_HIDDEN)
             dglColor4ub(0, 255, 0, 80);
-        else if(p->flags & CLF_UNKNOWN256)
+        else if(p->flags & CLF_ENTERCRAWL)
             dglColor4ub(64, 128, 64, 80);
-        else if(p->flags & CLF_UNKNOWN128)
+        else if(p->flags & CLF_CRAWL)
             dglColor4ub(0, 64, 64, 80);
+        else if(p->flags & CLF_FRONTNOCLIP)
+            dglColor4ub(255, 255, 255, 80);
         else if(p->flags & CLF_CHECKHEIGHT)
             dglColor4ub(0, 0, 255, 80);
         else if(p->flags & CLF_ONESIDED)
             dglColor4ub(0, 255, 255, 80);
-        else if(p->flags & CLF_UNKNOWN16)
+        else if(p->flags & CLF_CLIMB)
             dglColor4ub(255, 0, 255, 80);
-        else if(p->flags & CLF_NOSOLIDWALL)
-            dglColor4ub(255, 255, 255, 80);
-        else if(p->flags & CLF_UNKNOWN4)
+        else if(p->flags & CLF_TOGGLEON)
             dglColor4ub(255, 96, 255, 80);
-        else if(p->flags & CLF_UNKNOWN2)
+        else if(p->flags & CLF_TOGGLEOFF)
             dglColor4ub(32, 8, 4, 80);
         else if(p->flags & CLF_WATER)
             dglColor4ub(128, 96, 255, 80);
