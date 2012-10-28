@@ -49,6 +49,7 @@ typedef struct
     fint_t  angle[2];
     short   buttons;
     byte    msec;
+    byte    heldtime[2];
 } ticcmd_t;
 
 #define MAXEVENTS 64

@@ -162,17 +162,17 @@ float Plane_GetHeight(plane_t *plane, vec3_t pos)
 
 kbool Plane_IsAWall(plane_t *plane)
 {
-    vec3_t normal;
-
     if(plane == NULL)
     {
         return false;
     }
 
-    Plane_GetNormal(normal, plane);
-    Vec_Normalize3(normal);
+    if(!(plane->flags & CLF_SLOPETEST))
+    {
+        return (plane->flags & CLF_FRONTNOCLIP);
+    }
 
-    return (normal[1] <= 0.5f);
+    return (plane->normal[1] <= 0.5f);
 }
 
 //

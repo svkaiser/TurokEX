@@ -348,12 +348,12 @@ static void R_SetupViewFrame(actor_t *actor)
     // clamp angle between -90 and 90
     Ang_Clamp(&angle);
 
-    if(angle > (90 * M_RAD))
+    if(angle > DEG2RAD(90))
     {
         angle = M_PI - angle;
     }
 
-    if(angle < -(90 * M_RAD))
+    if(angle < -DEG2RAD(90))
     {
         angle = -M_PI - angle;
     }
@@ -396,11 +396,16 @@ static void R_SetupViewFrame(actor_t *actor)
             bob_y = (float)sin(client.tics * 0.1625f) * d * 0.0025f;
         }
     }
+    else if(actor->terriantype == TT_WATER_SURFACE)
+    {
+        bob_x = (float)sin(client.tics * 0.035f) * 0.0150f;
+        bob_y = (float)sin(client.tics * 0.025f) * 0.0107f;
+    }
 
     // set view origin
     Vec_Set3(org,
         actor->origin[0],
-        actor->origin[1] + (actor->meleerange + actor->object.viewheight),
+        actor->origin[1] + (actor->object.centerheight + actor->object.viewheight),
         actor->origin[2]);
 
     // setup projection matrix
@@ -472,7 +477,7 @@ static void R_DrawObjects(kbool nonstatic)
                     obj = &inst->specials[j];
 
                     // TODO: TEMP
-                    item = (obj->type >= 400 && obj->type <= 457);
+                    item = (Obj_GetClassType(obj) == OC_PICKUP);
                 }
                 else
                 {

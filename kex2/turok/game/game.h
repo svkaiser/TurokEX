@@ -27,6 +27,8 @@
 #include "client.h"
 #include "actor.h"
 
+#define ONPLANE_EPSILON     0.512f
+
 plane_t *G_FindClosestPlane(vec3_t coord);
 void G_ClipMovement(actor_t *actor);
 

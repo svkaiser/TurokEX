@@ -30,6 +30,9 @@
 #define M_RAD   (M_PI / 180.0f)
 #define M_DEG   (180.0f / M_PI)
 
+#define DEG2RAD(x) ((x) * M_RAD)
+#define RAD2DEG(x) ((x) * M_DEG)
+
 //
 // VECTOR OPERATIONS
 //

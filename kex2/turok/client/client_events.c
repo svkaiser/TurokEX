@@ -99,6 +99,8 @@ void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd)
     WRITE_TICCMD16(buttons, CL_TICDIFF_BUTTONS);
 
     Packet_Write8(packet, cmd->msec);
+    Packet_Write8(packet, cmd->heldtime[0]);
+    Packet_Write8(packet, cmd->heldtime[1]);
 
 #undef WRITE_TICCMD16
 #undef WRITE_TICCMD8
@@ -148,6 +150,34 @@ void CL_BuildTiccmd(void)
     if(ctrl->flags & CKF_PREVWEAPON)
     {
         cmd.buttons |= BT_PREVWEAP;
+    }
+
+    if(cmd.buttons & BT_FORWARD &&
+        client.cmd.buttons & BT_FORWARD)
+    {
+        if(client.cmd.heldtime[0] < 0xff)
+        {
+            cmd.heldtime[0] =
+                client.cmd.heldtime[0] + 1;
+        }
+        else
+        {
+            cmd.heldtime[0] = 0xff;
+        }
+    }
+
+    if(cmd.buttons & BT_JUMP &&
+        client.cmd.buttons & BT_JUMP)
+    {
+        if(client.cmd.heldtime[1] < 0xff)
+        {
+            cmd.heldtime[1] =
+                client.cmd.heldtime[1] + 1;
+        }
+        else
+        {
+            cmd.heldtime[1] = 0xff;
+        }
     }
 
     cmd.angle[0].f -= (ctrl->mousex * M_RAD);

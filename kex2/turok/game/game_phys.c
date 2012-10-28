@@ -263,7 +263,7 @@ static kbool G_CheckObjects(trace_t *trace, plane_t *plane)
 
             if(trace->actor != NULL)
             {
-                offset = trace->actor->meleerange;
+                offset = trace->actor->object.centerheight;
             }
             else
             {
@@ -445,12 +445,8 @@ static plane_t *G_GetNextPlaneLink(trace_t *trace, plane_t *p, int point)
         return NULL;
     }
 
-    if(!Plane_IsAWall(link))
-    {
-        // crossed into a floor plane
-        return link;
-    }
-    else
+
+    if(Plane_IsAWall(link))
     {
         if(Plane_GetDistance(link, trace->end) <=
             Plane_GetDistance(p, trace->start))
@@ -468,8 +464,7 @@ static plane_t *G_GetNextPlaneLink(trace_t *trace, plane_t *p, int point)
             // from the front side. these will be treated as
             // solid walls. direction of ray must be facing
             // towards the plane
-            if(link->flags & CLF_FRONTNOCLIP &&
-                G_CheckTraceHeight(trace, link) &&
+            if(G_CheckTraceHeight(trace, link) &&
                 Plane_IsFacing(link, Ang_VectorToAngle(dir)))
             {
                 return NULL;
@@ -477,6 +472,7 @@ static plane_t *G_GetNextPlaneLink(trace_t *trace, plane_t *p, int point)
         }
     }
 
+    // crossed into a floor plane
     return link;
 }
 
@@ -672,22 +668,8 @@ void G_ClipMovement(actor_t *actor)
                 break;
             }
 
-            // slide along the crease between an edge and a steep slope
-            if(trace.type == TRT_OUTEREDGE && Plane_IsAWall(actor->plane))
-            {
-                G_SlideOnCrease(actor->velocity, vel,
-                    trace.normal, actor->plane->normal);
-
-                if(actor->origin[1] -
-                    Plane_GetDistance(actor->plane, actor->origin) <= 0.2f)
-                {
-                    actor->velocity[1] = 2;
-                }
-
-                break;
-            }
             // slide along the crease between two normals
-            else if(i > 0)
+            if(i > 0)
             {
                 if(Vec_Dot(trace.normal, normals[i-1]) > 0.99f)
                 {

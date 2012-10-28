@@ -286,7 +286,7 @@ static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
                 break;
 
             case scactor_meleerange:
-                SC_AssignFloat(mapactortokens, &actor->meleerange,
+                SC_AssignFloat(mapactortokens, &actor->object.centerheight,
                     scactor_meleerange, parser, false);
                 break;
 
@@ -953,6 +953,52 @@ static void Map_ParseNavScript(kmap_t *map, scparser_t *parser)
 }
 
 //
+// Obj_GetClassType
+//
+
+int Obj_GetClassType(object_t *obj)
+{
+    if(obj->type >= OT_AI_RAPTOR &&
+        obj->type <= OT_AI_INSECT ||
+        obj->type == OT_AI_TURRET)
+    {
+        return OC_AI;
+    }
+
+    if(obj->type >= OT_AIBOSS_MANTIS &&
+        obj->type <= OT_AIBOSS_HUMMER)
+    {
+        return OC_AIBOSS;
+    }
+
+    if(obj->type >= OT_DYNAMIC_DOOR &&
+        obj->type <= OT_DYNAMIC_TECHDOOR)
+    {
+        return OC_DYNAMIC;
+    }
+
+    if(obj->type >= OT_GIB_ALIEN3 &&
+        obj->type <= OT_GIB_STALKER1)
+    {
+        return OC_GIB;
+    }
+
+    if(obj->type >= OT_WEAPON_KNIFE &&
+        obj->type <= OT_WEAPON_CHRONO)
+    {
+        return OC_WEAPON;
+    }
+
+    if(obj->type >= OT_PICKUP_SMALLHEALTH &&
+        obj->type <= OT_PICKUP_CHRONOPIECE8)
+    {
+        return OC_PICKUP;
+    }
+
+    return OC_GENERIC;
+}
+
+//
 // Map_LinkObjToBlocklist
 //
 
@@ -1132,7 +1178,7 @@ static void Map_SetupActors(kmap_t *map)
                 dist = Plane_GetDistance(actor->plane, actor->origin);
 
                 if(actor->origin[1] - dist <
-                    (actor->meleerange + actor->object.viewheight))
+                    (actor->object.centerheight + actor->object.viewheight))
                 {
                     actor->origin[1] = dist;
                 }

@@ -42,7 +42,7 @@ float Ang_AlignPitchToVector(vec3_t vec)
         return 0.0f;
     }
 
-    return (float)acos(vec[1] / (float)sqrt(d)) - (M_RAD * 90.0f);
+    return (float)acos(vec[1] / (float)sqrt(d)) - DEG2RAD(90);
 }
 
 //

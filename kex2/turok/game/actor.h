@@ -29,7 +29,8 @@
 
 typedef enum
 {
-    AF_NOALIGNPITCH     = 0x1
+    AF_NOALIGNPITCH     = 0x1,
+    AF_CLIENTJUMP       = 0x2
 } actorflags_t;
 
 typedef enum
@@ -46,15 +47,13 @@ typedef enum
 typedef struct actor_s
 {
     vec3_t              origin;
-    vec3_t              prevorigin;
     vec3_t              velocity;
-    actorflags_t        flags;
+    unsigned int        flags;
     float               yaw;
     float               pitch;
     int                 svclient_id;
     int                 health;
     short               skin;
-    float               meleerange;
     object_t            object;
     plane_t             *plane;
     terriantype_t       terriantype;
@@ -68,7 +67,6 @@ extern actor_t *g_actorlist;
 
 void G_LinkActor(actor_t *actor);
 void G_UnlinkActor(actor_t* actor);
-kbool G_ActorOnPlane(actor_t *actor);
 void G_ActorMovement(actor_t *actor);
 actor_t *G_SpawnActor(void);
 void G_SetActorLinkList(int map);

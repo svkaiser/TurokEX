@@ -266,6 +266,10 @@ static void SV_ReadTiccmd(ENetEvent *sev, ENetPacket *packet)
 
     Packet_Read8(packet, &tmp);
     cmd.msec = tmp;
+    Packet_Read8(packet, &tmp);
+    cmd.heldtime[0] = tmp;
+    Packet_Read8(packet, &tmp);
+    cmd.heldtime[1] = tmp;
 
     memcpy(&svclients[SV_GetPlayerID(sev->peer)].cmd,
         &cmd, sizeof(ticcmd_t));

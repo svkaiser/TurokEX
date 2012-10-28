@@ -37,7 +37,7 @@
 
 #define FRICTION_GROUND     0.5f
 #define FRICTION_LAVA       0.205f
-#define FRICTION_WATERMASS  0.902f
+#define FRICTION_WATERMASS  0.975f
 #define FRICTION_WTRIMPACT  0.905f
 
 #define GRAVITY_NORMAL      0.62f
@@ -45,7 +45,6 @@
 #define GRAVITY_FLOAT       0.45f
 
 #define VELOCITY_EPSILON    0.0001f
-#define ONPLANE_EPSILON     0.512f
 
 #define WATERHEIGHT         15.36f
 #define SHALLOWHEIGHT       51.2f
@@ -115,36 +114,6 @@ void G_SetActorLinkList(int map)
 }
 
 //
-// G_ActorOnPlane
-//
-
-kbool G_ActorOnPlane(actor_t *actor)
-{
-    if(actor->plane == NULL)
-    {
-        return false;
-    }
-
-    if((actor->origin[1] + actor->velocity[1]) -
-        Plane_GetDistance(actor->plane, actor->origin) < ONPLANE_EPSILON)
-    {
-        if(Plane_IsAWall(actor->plane))
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    if(actor->velocity[1] < 0 && actor->velocity[1] > -16)
-    {
-        return true;
-    }
-
-    return false;
-}
-
-//
 // G_CheckObjectStep
 //
 // Very basic check to see if an actor can stand on top
@@ -204,7 +173,8 @@ static int G_CheckWaterLevel(actor_t *actor)
         {
             area_t *area = Map_GetArea(actor->plane);
 
-            if(actor->origin[1] + actor->meleerange >= area->waterplane)
+            if(actor->origin[1] + actor->object.centerheight
+                >= area->waterplane)
             {
                 if(actor->origin[1] < area->waterplane)
                 {
@@ -262,6 +232,11 @@ static void G_GetTerrianType(actor_t *actor)
         switch(G_CheckWaterLevel(actor))
         {
         case WL_BETWEEN:
+            if(actor->terriantype == TT_WATER_UNDER)
+            {
+                actor->velocity[1] = 0;
+            }
+
             actor->terriantype = TT_WATER_SURFACE;
             return;
 
@@ -308,9 +283,6 @@ void G_ActorMovement(actor_t *actor)
     // clip velocity before we update it
     G_ClipMovement(actor);
 
-    // save previous origin first
-    Vec_Copy3(actor->prevorigin, actor->origin);
-
     // set the next desired position
     Vec_Add(position, actor->origin, actor->velocity);
     friction = FRICTION_GROUND;
@@ -323,7 +295,7 @@ void G_ActorMovement(actor_t *actor)
         if(pl->flags & CLF_CHECKHEIGHT)
         {
             dist = Plane_GetHeight(pl, position) -
-                (actor->meleerange + actor->object.viewheight);
+                (actor->object.centerheight + actor->object.viewheight);
 
             if(position[1] > dist)
             {
@@ -338,21 +310,20 @@ void G_ActorMovement(actor_t *actor)
 
         if(dist < ONPLANE_EPSILON)
         {
-            // lerp player back to the surface
-            if(dist < 0)
-            {
-                vec3_t lerp;
+            vec3_t lerp;
 
-                Vec_Set3(lerp, position[0], position[1] - dist, position[2]);
-                Vec_Lerp3(position, 0.125f, position, lerp);
-            }
+            // lerp player back to the surface
+            Vec_Set3(lerp, position[0], position[1] - dist, position[2]);
+            Vec_Lerp3(position, 0.125f, position, lerp);
 
             // continue sliding if on a slope
-            if(!Plane_IsAWall(pl))
+            if(!Plane_IsAWall(pl) && actor->terriantype != TT_WATER_UNDER)
             {
                 // surface was hit, kill vertical velocity
                 actor->velocity[1] = 0;
             }
+
+            actor->flags &= ~AF_CLIENTJUMP;
         }
 
         G_GetTerrianType(actor);
@@ -369,24 +340,18 @@ void G_ActorMovement(actor_t *actor)
 
         case TT_WATER_SURFACE:
             friction = FRICTION_WATERMASS;
-
-            if(actor->velocity[1] > 0)
-            {
-                // stay afloat on the surface
-                actor->velocity[1] *= GRAVITY_FLOAT;
-            }
             break;
 
         case TT_WATER_UNDER:
             friction = FRICTION_WATERMASS;
-            if(actor->velocity[1] > 0.25f)
+            if(actor->velocity[1] > 0.1f)
             {
                 area_t *area = Map_GetArea(actor->plane);
 
                 // swimming back up to the surface?
-                if(position[1] - 2.048f + actor->meleerange >=
+                if(position[1] - 2.048f + actor->object.centerheight >=
                     area->waterplane -
-                    (actor->meleerange * 0.5f) - 20.48f)
+                    (actor->object.centerheight * 0.5f) - 20.48f)
                 {
                     vec3_t lerp;
 
@@ -400,7 +365,7 @@ void G_ActorMovement(actor_t *actor)
                     actor->velocity[1] *= FRICTION_WATERMASS;
                 }
             }
-            else if(actor->velocity[1] < -1)
+            else if(actor->velocity[1] < -FRICTION_WATERMASS)
             {
                 // friction from impact
                 actor->velocity[1] *= FRICTION_WTRIMPACT;
@@ -408,11 +373,24 @@ void G_ActorMovement(actor_t *actor)
             else
             {
                 // sink
-                actor->velocity[1] -= GRAVITY_WATER;
-
-                if(actor->velocity[1] <= -FRICTION_WATERMASS)
+                if(Vec_Unit2(actor->velocity) < FRICTION_WATERMASS)
                 {
-                    actor->velocity[1] = -FRICTION_WATERMASS;
+                    actor->velocity[1] -= GRAVITY_WATER;
+
+                    if(actor->velocity[1] <= -FRICTION_WATERMASS)
+                    {
+                        actor->velocity[1] = -FRICTION_WATERMASS;
+                    }
+                }
+                else
+                {
+                    actor->velocity[1] *= FRICTION_WATERMASS;
+
+                    if(actor->velocity[1] < VELOCITY_EPSILON &&
+                        actor->velocity[1] > -VELOCITY_EPSILON)
+                    {
+                        actor->velocity[1] = 0;
+                    }
                 }
             }
             break;
