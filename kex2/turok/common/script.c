@@ -178,8 +178,6 @@ void SC_PopParser(void)
 
 scparser_t *SC_Open(const char* name)
 {
-    Com_DPrintf("--------SC_Open: Reading %s--------\n", name);
-
 #ifdef SC_DEBUG
     SC_DebugPrintf("opening %s\n", name);
 #endif
@@ -200,8 +198,6 @@ scparser_t *SC_Open(const char* name)
             Com_Error("%s not found", name);
         }
     }
-
-    Com_DPrintf("%s size: %i bytes\n", name, sc_parser->buffsize);
 
     SC_PushNestedFilename(name);
 

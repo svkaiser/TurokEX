@@ -254,13 +254,6 @@ int KF_OpenFileCache(const char *filename, byte **data, int tag)
                         unzCloseCurrentFile(pack->filehandle);
                     }
 
-                    if(developer.value)
-                    {
-                        Com_DPrintf("\n%s - shared hashes: %i\nloadtime: %f seconds\n\n",
-                            filename, pack->hashcount[hash],
-                            (float)(Sys_GetMilliseconds() - time) / 1000.0f);
-                    }
-
                     *data = file->cache;
                     return file->info.uncompressed_size;
                 }

@@ -48,7 +48,7 @@ typedef struct
     unsigned int        client_id;
     svclient_state_e    state;
     ticcmd_t            cmd;
-    actor_t             *clientactor;
+    actor_t             actor;
 } svclient_t;
 
 typedef struct

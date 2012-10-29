@@ -389,6 +389,127 @@ static void Mdl_ParseScript(kmodel_t *model, scparser_t *parser)
 }
 
 //
+// Mdl_DrawSection
+//
+
+void Mdl_DrawSection(kmodel_t *model, mdlsection_t *section, char *texture)
+{
+    texture_t *tex;
+    char *texturepath;
+
+    if(texture == NULL)
+    {
+        texturepath = section->texpath;
+    }
+    else
+    {
+        texturepath = texture;
+    }
+
+    if(section->flags & MDF_NOCULLFACES)
+    {
+        GL_SetState(GLSTATE_CULL, false);
+    }
+    else
+    {
+        GL_SetState(GLSTATE_CULL, true);
+    }
+
+    if(section->flags & MDF_MASKED)
+    {
+        GL_SetState(GLSTATE_BLEND, true);
+        dglEnable(GL_ALPHA_TEST);
+    }
+    else
+    {
+        GL_SetState(GLSTATE_BLEND, false);
+        dglDisable(GL_ALPHA_TEST);
+    }
+
+    if(section->flags & MDF_SHINYSURFACE)
+    {
+        dglEnable(GL_TEXTURE_GEN_S);
+        dglEnable(GL_TEXTURE_GEN_T);
+    }
+    else
+    {
+        dglDisable(GL_TEXTURE_GEN_S);
+        dglDisable(GL_TEXTURE_GEN_T);
+    }
+
+    if(section->flags & MDF_COLORIZE)
+    {
+        dglColor4ubv((byte*)&section->color1);
+    }
+    else
+    {
+        dglColor4ub(255, 255, 255, 255);
+    }
+
+    dglNormalPointer(GL_FLOAT, sizeof(float), section->normals);
+    dglTexCoordPointer(2, GL_FLOAT, 0, section->coords);
+    dglVertexPointer(3, GL_FLOAT, sizeof(vec3_t), section->xyz);
+
+    tex = Tex_CacheTextureFile(texturepath, GL_REPEAT,
+        section->flags & MDF_MASKED);
+
+    if(tex)
+    {
+        GL_SetState(GLSTATE_TEXTURE0, true);
+        GL_BindTexture(tex);
+    }
+    else
+    {
+        GL_SetState(GLSTATE_TEXTURE0, false);
+        dglColor4ubv((byte*)&section->color1);
+    }
+
+    dglDrawElements(GL_TRIANGLES, section->numtris, GL_UNSIGNED_SHORT, section->tris);
+}
+
+//
+// Mdl_TraverseDrawNode
+//
+
+void Mdl_TraverseDrawNode(kmodel_t *model, mdlnode_t *node, char **textures)
+{
+    unsigned int i;
+    unsigned int j;
+
+    dglPushMatrix();
+
+    if(node->nummeshes > 0)
+    {
+        for(i = 0; i < node->nummeshes; i++)
+        {
+            for(j = 0; j < node->meshes[i].numsections; j++)
+            {
+                mdlsection_t *section = &node->meshes[i].sections[j];
+                char *texturepath = NULL;
+
+                if(textures != NULL)
+                {
+                    if(textures[j][0] != '-')
+                    {
+                        texturepath = textures[j];
+                    }
+                }
+
+                Mdl_DrawSection(model, section, texturepath);
+            }
+        }
+    }
+
+    for(i = 1; i < node->numchildren; i++)
+    {
+        Mdl_TraverseDrawNode(model,
+            &model->nodes[node->children[i]], textures);
+    }
+
+    dglPopMatrix();
+}
+
+//
 // Mdl_Find
 //
 

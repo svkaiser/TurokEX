@@ -53,6 +53,7 @@ typedef struct actor_s
     float               pitch;
     int                 svclient_id;
     int                 health;
+    int                 anim;
     short               skin;
     object_t            object;
     plane_t             *plane;

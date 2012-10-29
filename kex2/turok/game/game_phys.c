@@ -445,7 +445,6 @@ static plane_t *G_GetNextPlaneLink(trace_t *trace, plane_t *p, int point)
         return NULL;
     }
 
-
     if(Plane_IsAWall(link))
     {
         if(Plane_GetDistance(link, trace->end) <=
