@@ -392,7 +392,7 @@ static void Mdl_ParseScript(kmodel_t *model, scparser_t *parser)
 // Mdl_DrawSection
 //
 
-void Mdl_DrawSection(kmodel_t *model, mdlsection_t *section, char *texture)
+void Mdl_DrawSection(mdlsection_t *section, char *texture)
 {
     texture_t *tex;
     char *texturepath;
@@ -495,12 +495,12 @@ void Mdl_TraverseDrawNode(kmodel_t *model, mdlnode_t *node, char **textures)
                     }
                 }
 
-                Mdl_DrawSection(model, section, texturepath);
+                Mdl_DrawSection(section, texturepath);
             }
         }
     }
 
-    for(i = 1; i < node->numchildren; i++)
+    for(i = 0; i < node->numchildren; i++)
     {
         Mdl_TraverseDrawNode(model,
             &model->nodes[node->children[i]], textures);

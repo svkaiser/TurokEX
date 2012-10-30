@@ -50,9 +50,7 @@ typedef struct
     plane_t     *pl;
     plane_t     *hitpl;
     vec3_t      normal;
-    vec3_t      hit;
     float       frac;
-    float       sidedist;
     actor_t     *actor;
     tracetype_e type;
 } trace_t;
@@ -161,7 +159,7 @@ static kbool G_TraceObject(trace_t *trace, vec3_t objpos, float radius)
     float d;
 
     Vec_Sub(dir, trace->end, trace->start);
-    vd = Vec_Unit3(dir);
+    vd = Vec_Unit2(dir);
     Vec_Normalize3(dir);
 
     // validate position
@@ -346,7 +344,6 @@ static kbool G_TracePlane(trace_t *trace, plane_t *pl)
     {
         // intersected
         trace->type = Plane_IsAWall(pl) ? TRT_STEEPSLOPE : TRT_SLOPE;
-        trace->frac = (dstart - 0.03125f) / (dstart - dend);
         trace->hitpl = pl;
 
         Vec_Copy3(trace->normal, pl->normal);
@@ -384,9 +381,9 @@ static kbool G_CheckEdgeSide(trace_t *trace, vec3_t vp1, vec3_t vp2)
 
         d = (dz * x + dx * z) / d;
 
-        if(d < trace->sidedist)
+        if(d < trace->frac)
         {
-            trace->sidedist = d;
+            trace->frac = d;
             return true;
         }
     }
@@ -435,7 +432,7 @@ static plane_t *G_GetNextPlaneLink(trace_t *trace, plane_t *p, int point)
         return NULL;
     }
 
-    Vec_Lerp3(pos, trace->sidedist, trace->end, trace->start);
+    Vec_Lerp3(pos, trace->frac, trace->end, trace->start);
 
     if(!(p->flags & CLF_CHECKHEIGHT) &&
         link->flags & CLF_CHECKHEIGHT &&
@@ -499,7 +496,7 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
     }
 
     pl = NULL;
-    trace->sidedist = 0;
+    trace->frac = 0;
 
     // check if ray crosses into an edge. if multiple edges
     // have been crossed then get the one closest to the ray
@@ -520,8 +517,6 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
         if(G_CheckEdgeSide(trace, vp1, vp2))
         {
             pl = G_GetNextPlaneLink(trace, plane, i);
-
-            trace->frac = trace->sidedist;
 
             if(pl == NULL)
             {
@@ -566,8 +561,7 @@ trace_t G_Trace(actor_t *actor, vec3_t start, vec3_t end, plane_t *plane)
 
     trace.pl        = plane;
     trace.hitpl     = NULL;
-    trace.frac      = 1;
-    trace.sidedist  = 0;
+    trace.frac      = 0;
     trace.type      = TRT_NOHIT;
     trace.actor     = actor;
 
@@ -608,8 +602,6 @@ trace_t G_Trace(actor_t *actor, vec3_t start, vec3_t end, plane_t *plane)
         }
     }
 
-    Vec_Lerp3(trace.hit, trace.frac, start, end);
-
     return trace;
 }
 
@@ -643,6 +635,7 @@ void G_ClipMovement(actor_t *actor)
         vec3_t normals[TRYMOVE_COUNT];
         int moves;
         int i;
+        int hits;
 
         // set start point
         Vec_Copy3(start, actor->origin);
@@ -651,8 +644,6 @@ void G_ClipMovement(actor_t *actor)
 
         for(i = 0; i < TRYMOVE_COUNT; i++)
         {
-            float tmpy;
-
             // set end point
             Vec_Add(end, start, vel);
 
@@ -667,38 +658,42 @@ void G_ClipMovement(actor_t *actor)
                 break;
             }
 
-            // slide along the crease between two normals
-            if(i > 0)
+            Vec_Copy3(normals[moves++], trace.normal);
+
+            // try all interacted normals
+            for(hits = 0; hits < moves; hits++)
             {
-                if(Vec_Dot(trace.normal, normals[i-1]) > 0.99f)
+                if(Vec_Dot(vel, normals[hits]) < 0)
                 {
-                    // fudge velocity if this plane was already collided with
-                    Vec_Add(vel, vel, trace.normal);
+                    int j;
+                    int k;
+
+                    // slide along this plane
+                    G_ClipVelocity(vel, vel, normals[hits], 1.01f);
+
+                    // try bumping against another plane
+                    for(j = 0; j < moves; j++)
+                    {
+                        if(j != hits && Vec_Dot(vel, normals[j]) < 0)
+                        {
+                            // slide along the crease between two planes
+                            G_SlideOnCrease(vel, vel,
+                                normals[hits], normals[j]);
+
+                            // see if it bumps into a third plane
+                            for(k = 0; k < moves; k++)
+                            {
+                                if(k != j && k != hits &&
+                                    Vec_Dot(vel, normals[k]) < 0)
+                                {
+                                    // force a dead stop
+                                    Vec_Set3(actor->velocity, 0, 0, 0);
+                                    return;
+                                }
+                            }
+                        }
+                    }
                 }
-                else if(Vec_Dot(trace.normal, vel) < 0)
-                {
-                    G_SlideOnCrease(vel, vel, trace.normal, normals[i-1]);
-                }
-            }
-
-            // slide against the hit surface. ignore Y-velocity if on a steep slope
-            tmpy = vel[1];
-            G_ClipVelocity(vel, vel, trace.normal, 1.01f);
-            if(trace.type == TRT_STEEPSLOPE && vel[1] > tmpy)
-            {
-                vel[1] = tmpy;
-            }
-
-            // handle vertical sliding if on a steep slope
-            if(Plane_IsAWall(actor->plane) &&
-                actor->origin[1] -
-                Plane_GetDistance(actor->plane, actor->origin) <= 15.36f)
-            {
-                vec3_t push;
-
-                Vec_Scale(push, actor->plane->normal, Vec_Unit2(vel));
-                push[1] = 0;
-                Vec_Add(vel, vel, push);
             }
 
             // force a deadstop if clipped velocity is against
@@ -714,7 +709,6 @@ void G_ClipMovement(actor_t *actor)
 
             // update velocity and try another move
             Vec_Copy3(actor->velocity, vel);
-            Vec_Copy3(normals[moves++], trace.normal);
         }
 
         if(actor->plane)

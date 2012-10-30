@@ -84,7 +84,7 @@ typedef struct kmodel_s
     struct kmodel_s *next;
 } kmodel_t;
 
-void Mdl_DrawSection(kmodel_t *model, mdlsection_t *section, char *texture);
+void Mdl_DrawSection(mdlsection_t *section, char *texture);
 void Mdl_TraverseDrawNode(kmodel_t *model, mdlnode_t *node, char **textures);
 
 kmodel_t *Mdl_Find(const char *name);

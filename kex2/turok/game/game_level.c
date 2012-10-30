@@ -219,6 +219,7 @@ static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
     for(i = 0; i < map->nummapactors; i++)
     {
         actor_t *actor = G_SpawnActor(); // TODO handle test case if returned NULL
+        object_t *obj;
 
         // read into nested actor block
         SC_ExpectNextToken(TK_LBRACK);
@@ -268,6 +269,8 @@ static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
             case scactor_position:
                 SC_AssignVector(mapactortokens, actor->origin,
                     scactor_position, parser, false);
+
+                Vec_Copy3(actor->object.origin, actor->origin);
                 break;
 
             case scactor_scale:
@@ -327,7 +330,12 @@ static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
             SC_Find();
         }
 
-        Vec_SetQuaternion(actor->object.rotation, actor->yaw, 1, 0, 0);
+        obj = &actor->object;
+
+        Vec_SetQuaternion(obj->rotation, actor->yaw, 1, 0, 0);
+        Mtx_ApplyRotation(obj->rotation, obj->matrix);
+        Mtx_Scale(obj->matrix, obj->scale[0], obj->scale[1], obj->scale[2]);
+        Mtx_AddTranslation(obj->matrix, obj->origin[0], obj->origin[1], obj->origin[2]);
     }
 }
 

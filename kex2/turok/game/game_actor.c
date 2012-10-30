@@ -412,7 +412,14 @@ void G_ActorMovement(actor_t *actor)
 
         default:
             // normal gravity
-            if(dist >= ONPLANE_EPSILON)
+            if(Plane_IsAWall(actor->plane) && dist <= 15.36f)
+            {
+                vec3_t push;
+
+                Vec_Scale(push, actor->plane->normal, 10.24f);
+                Vec_Sub(actor->velocity, actor->velocity, push);
+            }
+            else if(dist >= ONPLANE_EPSILON)
             {
                 actor->velocity[1] -= GRAVITY_NORMAL;
             }

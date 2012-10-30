@@ -273,7 +273,8 @@ static void R_SetupViewFrame(actor_t *actor)
             bob_y = (float)sin(client.tics * 0.1625f) * d * 0.0025f;
         }
     }
-    else if(actor->terriantype == TT_WATER_SURFACE)
+    else if(actor->terriantype == TT_WATER_SURFACE ||
+        actor->terriantype == TT_WATER_UNDER)
     {
         bob_x = (float)sin(client.tics * 0.035f) * 0.0150f;
         bob_y = (float)sin(client.tics * 0.025f) * 0.0107f;
@@ -462,6 +463,17 @@ void R_DrawFrame(void)
     }
 
     GL_SetOrtho();
+
+    // underwater overlay
+    if(client.localactor.terriantype == TT_WATER_UNDER)
+    {
+        GL_SetState(GLSTATE_TEXTURE0, false);
+        GL_SetState(GLSTATE_BLEND, true);
+        dglColor4ub(0, 36, 190, 160);
+        dglRectf(0, 0, (float)video_width, (float)video_height);
+        GL_SetState(GLSTATE_TEXTURE0, true);
+        GL_SetState(GLSTATE_BLEND, false);
+    }
 }
 
 //

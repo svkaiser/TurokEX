@@ -81,6 +81,11 @@ static kbool G_CheckJump(actor_t *actor)
             return true;
         }
     }
+    else if(Plane_IsAWall(actor->plane) &&
+        actor->origin[1] - Plane_GetDistance(actor->plane, actor->origin) <= 8)
+    {
+        return false;
+    }
     else if(!(actor->flags & AF_CLIENTJUMP))
     {
         if(actor->velocity[1] < 0 && actor->velocity[1] > -16)
@@ -92,11 +97,6 @@ static kbool G_CheckJump(actor_t *actor)
     if((actor->origin[1] + actor->velocity[1]) -
         Plane_GetDistance(actor->plane, actor->origin) < ONPLANE_EPSILON)
     {
-        if(Plane_IsAWall(actor->plane))
-        {
-            return false;
-        }
-
         return true;
     }
 
