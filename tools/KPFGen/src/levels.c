@@ -257,7 +257,7 @@ typedef struct
     short u2;
     byte u3;
     byte u4;
-    byte u5;
+    byte angle;
     byte flags;
     byte u6;
 } mapinsttype3_t;
@@ -576,12 +576,12 @@ static void ProcessInstances(byte *data)
         Com_Strcat("                model = \"models/mdl%03d/mdl%03d.kmesh\"\n",
             mapinst->model, mapinst->model);
         Com_Strcat("                type = %i\n", GetObjectType(mapinst->model));
+        Com_Strcat("                angle = %f\n", (mapinst->angle * ANGLE_LEVELOBJECT) * M_RAD);
         Com_Strcat("                blockflag = %i\n", GetAttribute(mapinst->attribute)->blockflags);
         Com_Strcat("                // flags = %i\n", mapinst->flags);
         Com_Strcat("                // u2 = %i\n", mapinst->u2);
         Com_Strcat("                // u3 = %i\n", mapinst->u3);
         Com_Strcat("                // u4 = %i\n", mapinst->u4);
-        Com_Strcat("                // u5 = %i\n", mapinst->u5);
         Com_Strcat("            }\n");
     }
 }

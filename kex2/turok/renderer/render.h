@@ -46,42 +46,83 @@
 
 typedef struct
 {
-    unsigned int    flags;
-    unsigned int    numverts;
-    unsigned int    numtris;
-    vec3_t          *xyz;
-    float           *coords;
-    float           *normals;
-    word            *tris;
-    char            texpath[MAX_FILEPATH];
-    rcolor          color1;
-    rcolor          color2;
+    unsigned int        count;
+    vec3_t              *xyz;
+} translationset_t;
+
+typedef struct
+{
+    unsigned int        count;
+    vec4_t              *rot;
+} rotationsets_t;
+
+typedef struct
+{
+    translationset_t    *translations;
+    rotationsets_t      *rotations;
+} frameset_t;
+
+typedef struct
+{
+    int                 frame;
+    int                 action;
+    float               args[4];
+} action_t;
+
+typedef struct
+{
+    unsigned int        flags;
+    unsigned int        numverts;
+    unsigned int        numtris;
+    vec3_t              *xyz;
+    float               *coords;
+    float               *normals;
+    word                *tris;
+    char                texpath[MAX_FILEPATH];
+    rcolor              color1;
+    rcolor              color2;
 } mdlsection_t;
 
 typedef struct
 {
-    unsigned int    numsections;
-    mdlsection_t    *sections;
+    unsigned int        numsections;
+    mdlsection_t        *sections;
 } mdlmesh_t;
 
 typedef struct
 {
-    unsigned int    numvariants;
-    word            *variants;
-    unsigned int    nummeshes;
-    mdlmesh_t       *meshes;
-    unsigned int    numchildren;
-    word            *children;
+    unsigned int        numvariants;
+    word                *variants;
+    unsigned int        nummeshes;
+    mdlmesh_t           *meshes;
+    unsigned int        numchildren;
+    word                *children;
+    frameset_t          *frameset;
 } mdlnode_t;
+
+typedef struct
+{
+    char                *alias;
+    char                animpath[MAX_FILEPATH];
+    unsigned int        numframes;
+    unsigned int        numanimsets;
+    unsigned int        numactions;
+    frameset_t          *framesets;
+    action_t            *actions;
+    vec3_t              xyz;
+    vec4_t              rot;
+} anim_t;
 
 typedef struct kmodel_s
 {
-    char            mdlpath[MAX_FILEPATH];
-    bbox_t          bbox;
-    unsigned int    numbehaviors;
-    unsigned int    numnodes;
-    mdlnode_t       *nodes;
-    struct kmodel_s *next;
+    char                mdlpath[MAX_FILEPATH];
+    bbox_t              bbox;
+    unsigned int        numbehaviors;
+    unsigned int        numnodes;
+    unsigned int        numanimations;
+    mdlnode_t           *nodes;
+    anim_t              *anims;
+    struct kmodel_s     *next;
 } kmodel_t;
 
 void Mdl_DrawSection(mdlsection_t *section, char *texture);
@@ -95,11 +136,16 @@ void Mdl_Init(void);
 // MAIN
 //
 
-void R_DrawCollision(void);
-void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b);
 void R_DrawFrame(void);
 void R_FinishFrame(void);
 void R_Shutdown(void);
 void R_Init(void);
+
+//
+// DEBUG
+//
+
+void R_DrawCollision(void);
+void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b);
 
 #endif

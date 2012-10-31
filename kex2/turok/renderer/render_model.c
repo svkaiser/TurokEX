@@ -33,63 +33,69 @@
 
 static kmodel_t *mdl_hashlist[MAX_HASH];
 
-#define SCMDL_NOP           0
-#define SCMDL_INFO          1
-#define SCMDL_BBOX          2
-#define SCMDL_TYPES         3
-#define SCMDL_BEHAVIORS     4
-#define SCMDL_NUMBEHAVIORS  5
-#define SCMDL_MODEL         6
-#define SCMDL_NUMNODES      7
-#define SCMDL_NODES         8
-#define SCMDL_NUMCHILDREN   9
-#define SCMDL_CHILDREN      10
-#define SCMDL_NUMVARIANTS   11
-#define SCMDL_VARIANTS      12
-#define SCMDL_NUMGROUPS     13
-#define SCMDL_GROUPS        14
-#define SCMDL_NUMSECTIONS   15
-#define SCMDL_SECTIONS      16
-#define SCMDL_TEXTURE       17
-#define SCMDL_RGBA1         18
-#define SCMDL_RGBA2         19
-#define SCMDL_NUMTRIANGLES  20
-#define SCMDL_TRIANGLES     21
-#define SCMDL_NUMVERTICES   22
-#define SCMDL_VERTICES      23
-#define SCMDL_XYZ           24
-#define SCMDL_COORDS        25
-#define SCMDL_NORMALS       26
-
-static const sctokens_t mdltokens[] =
+enum
 {
-    { SCMDL_NOP,            NULL            },
-    { SCMDL_INFO,           "info"          },
-    { SCMDL_BBOX,           "bbox"          },
-    { SCMDL_TYPES,          "types"         },
-    { SCMDL_BEHAVIORS,      "behaviors"     },
-    { SCMDL_NUMBEHAVIORS,   "numbehaviors"  },
-    { SCMDL_MODEL,          "model"         },
-    { SCMDL_NUMNODES,       "numnodes"      },
-    { SCMDL_NODES,          "nodes"         },
-    { SCMDL_NUMCHILDREN,    "numchildren"   },
-    { SCMDL_CHILDREN,       "children"      },
-    { SCMDL_NUMVARIANTS,    "numvariants"   },
-    { SCMDL_VARIANTS,       "variants"      },
-    { SCMDL_NUMGROUPS,      "numgroups"     },
-    { SCMDL_GROUPS,         "groups"        },
-    { SCMDL_NUMSECTIONS,    "numsections"   },
-    { SCMDL_SECTIONS,       "sections"      },
-    { SCMDL_TEXTURE,        "texture"       },
-    { SCMDL_RGBA1,          "rgba"          },
-    { SCMDL_RGBA2,          "rgba2"         },
-    { SCMDL_NUMTRIANGLES,   "numtriangles"  },
-    { SCMDL_TRIANGLES,      "triangles"     },
-    { SCMDL_NUMVERTICES,    "numvertices"   },
-    { SCMDL_VERTICES,       "vertices"      },
-    { SCMDL_XYZ,            "xyz"           },
-    { SCMDL_COORDS,         "coords"        },
-    { SCMDL_NORMALS,        "normals"       },
+    scmdl_info = 0,
+    scmdl_numanims,
+    scmdl_animsets,
+    scmdl_bbox,
+    scmdl_types,
+    scmdl_behaviors,
+    scmdl_numbehaviors,
+    scmdl_model,
+    scmdl_numnodes,
+    scmdl_nodes,
+    scmdl_numchildren,
+    scmdl_children,
+    scmdl_numvariants,
+    scmdl_variants,
+    scmdl_numgroups,
+    scmdl_groups,
+    scmdl_numsections,
+    scmdl_sections,
+    scmdl_texture,
+    scmdl_rgba1,
+    scmdl_rgba2,
+    scmdl_numtriangles,
+    scmdl_triangles,
+    scmdl_numvertices,
+    scmdl_vertices,
+    scmdl_xyz,
+    scmdl_coords,
+    scmdl_normals,
+    scmdl_end
+};
+
+static const sctokens_t mdltokens[scmdl_end+1] =
+{
+    { scmdl_info,           "info"          },
+    { scmdl_numanims,       "numanims"      },
+    { scmdl_animsets,       "animsets"      },
+    { scmdl_bbox,           "bbox"          },
+    { scmdl_types,          "types"         },
+    { scmdl_behaviors,      "behaviors"     },
+    { scmdl_numbehaviors,   "numbehaviors"  },
+    { scmdl_model,          "model"         },
+    { scmdl_numnodes,       "numnodes"      },
+    { scmdl_nodes,          "nodes"         },
+    { scmdl_numchildren,    "numchildren"   },
+    { scmdl_children,       "children"      },
+    { scmdl_numvariants,    "numvariants"   },
+    { scmdl_variants,       "variants"      },
+    { scmdl_numgroups,      "numgroups"     },
+    { scmdl_groups,         "groups"        },
+    { scmdl_numsections,    "numsections"   },
+    { scmdl_sections,       "sections"      },
+    { scmdl_texture,        "texture"       },
+    { scmdl_rgba1,          "rgba"          },
+    { scmdl_rgba2,          "rgba2"         },
+    { scmdl_numtriangles,   "numtriangles"  },
+    { scmdl_triangles,      "triangles"     },
+    { scmdl_numvertices,    "numvertices"   },
+    { scmdl_vertices,       "vertices"      },
+    { scmdl_xyz,            "xyz"           },
+    { scmdl_coords,         "coords"        },
+    { scmdl_normals,        "normals"       },
     { -1,                   NULL            }
 };
 
@@ -135,7 +141,7 @@ static void Mdl_ParseSectionBlock(mdlmesh_t *mesh, scparser_t *parser)
     mesh->sections = (mdlsection_t*)Z_Calloc(sizeof(mdlsection_t) *
         mesh->numsections, PU_MODEL, 0);
 
-    SC_ExpectTokenID(mdltokens, SCMDL_SECTIONS, parser);
+    SC_ExpectTokenID(mdltokens, scmdl_sections, parser);
     SC_ExpectNextToken(TK_LBRACK);
 
     for(i = 0; i < mesh->numsections; i++)
@@ -159,12 +165,12 @@ static void Mdl_ParseSectionBlock(mdlmesh_t *mesh, scparser_t *parser)
             switch(SC_GetIDForToken(mdltokens, parser->token))
             {
                 // texture
-            case SCMDL_TEXTURE:
+            case scmdl_texture:
                 SC_AssignString(mdltokens, section->texpath,
-                    SCMDL_TEXTURE, parser, false);
+                    scmdl_texture, parser, false);
                 break;
                 // rgba
-            case SCMDL_RGBA1:
+            case scmdl_rgba1:
                 {
                     byte r, g, b, a;
 
@@ -179,33 +185,33 @@ static void Mdl_ParseSectionBlock(mdlmesh_t *mesh, scparser_t *parser)
                 }
                 break;
                 // number of triangle indices
-            case SCMDL_NUMTRIANGLES:
+            case scmdl_numtriangles:
                 SC_AssignInteger(mdltokens, &section->numtris,
-                    SCMDL_NUMTRIANGLES, parser, false);
+                    scmdl_numtriangles, parser, false);
                 section->numtris *= 3;
                 break;
                 // triangle indice array
-            case SCMDL_TRIANGLES:
+            case scmdl_triangles:
                 nested = true;
                 SC_AssignArray(mdltokens, AT_SHORT, &section->tris, section->numtris,
-                    SCMDL_TRIANGLES, parser, false, PU_MODEL);
+                    scmdl_triangles, parser, false, PU_MODEL);
                 break;
                 // number of vertices
-            case SCMDL_NUMVERTICES:
+            case scmdl_numvertices:
                 SC_AssignInteger(mdltokens, &section->numverts,
-                    SCMDL_NUMVERTICES, parser, false);
+                    scmdl_numvertices, parser, false);
                 break;
                 // vertex block: contains nested arrays (vertices, tex coords and normals)
-            case SCMDL_VERTICES:
+            case scmdl_vertices:
                 nested = true;
                 SC_ExpectNextToken(TK_EQUAL);
                 SC_ExpectNextToken(TK_LBRACK);
                 SC_AssignArray(mdltokens, AT_VECTOR, (void*)&section->xyz, section->numverts,
-                    SCMDL_XYZ, parser, true, PU_MODEL);
+                    scmdl_xyz, parser, true, PU_MODEL);
                 SC_AssignArray(mdltokens, AT_FLOAT, &section->coords, section->numverts * 2,
-                    SCMDL_COORDS, parser, true, PU_MODEL);
+                    scmdl_coords, parser, true, PU_MODEL);
                 SC_AssignArray(mdltokens, AT_FLOAT, (void*)&section->normals, section->numverts * 3,
-                    SCMDL_NORMALS, parser, true, PU_MODEL);
+                    scmdl_normals, parser, true, PU_MODEL);
                 SC_ExpectNextToken(TK_RBRACK);
                 break;
                 // misc tokens will be considered as a flag or property name
@@ -245,7 +251,7 @@ static void Mdl_ParseMeshBlock(mdlnode_t *node, scparser_t *parser)
 
     node->meshes = (mdlmesh_t*)Z_Calloc(sizeof(mdlmesh_t) * node->nummeshes, PU_MODEL, 0);
 
-    SC_ExpectTokenID(mdltokens, SCMDL_GROUPS, parser);
+    SC_ExpectTokenID(mdltokens, scmdl_groups, parser);
     SC_ExpectNextToken(TK_LBRACK);
 
     for(i = 0; i < node->nummeshes; i++)
@@ -255,7 +261,7 @@ static void Mdl_ParseMeshBlock(mdlnode_t *node, scparser_t *parser)
         // read into the nested mesh block
         SC_ExpectNextToken(TK_LBRACK);
         SC_AssignInteger(mdltokens, &mesh->numsections,
-            SCMDL_NUMSECTIONS, parser, true);
+            scmdl_numsections, parser, true);
 
         // read into section block
         Mdl_ParseSectionBlock(mesh, parser);
@@ -286,16 +292,16 @@ static void Mdl_ParseNodeBlock(kmodel_t *model, scparser_t *parser)
         SC_ExpectNextToken(TK_LBRACK);
 
         SC_AssignInteger(mdltokens, &node->numchildren,
-            SCMDL_NUMCHILDREN, parser, true);
+            scmdl_numchildren, parser, true);
 
         if(node->numchildren > 0)
         {
             SC_AssignArray(mdltokens, AT_SHORT, &node->children, node->numchildren,
-                SCMDL_CHILDREN, parser, true, PU_MODEL);
+                scmdl_children, parser, true, PU_MODEL);
         }
 
         SC_AssignInteger(mdltokens, &node->numvariants,
-            SCMDL_NUMVARIANTS, parser, true);
+            scmdl_numvariants, parser, true);
 
         // must have a variant
         if(node->numvariants <= 0)
@@ -304,9 +310,9 @@ static void Mdl_ParseNodeBlock(kmodel_t *model, scparser_t *parser)
         }
 
         SC_AssignArray(mdltokens, AT_SHORT, &node->variants, node->numvariants,
-            SCMDL_VARIANTS, parser, true, PU_MODEL);
+            scmdl_variants, parser, true, PU_MODEL);
         SC_AssignInteger(mdltokens, &node->nummeshes,
-            SCMDL_NUMGROUPS, parser, true);
+            scmdl_numgroups, parser, true);
 
         // must have a mesh
         if(node->nummeshes <= 0)
@@ -330,10 +336,10 @@ static void Mdl_ParseModelBlock(kmodel_t *model, scparser_t *parser)
 {
     SC_ExpectNextToken(TK_LBRACK);
     SC_AssignInteger(mdltokens, &model->numnodes,
-        SCMDL_NUMNODES, parser, true);
+        scmdl_numnodes, parser, true);
 
     // begin reading into the node block
-    SC_ExpectTokenID(mdltokens, SCMDL_NODES, parser);
+    SC_ExpectTokenID(mdltokens, scmdl_nodes, parser);
     SC_ExpectNextToken(TK_LBRACK);
     Mdl_ParseNodeBlock(model, parser);
 
@@ -341,6 +347,36 @@ static void Mdl_ParseModelBlock(kmodel_t *model, scparser_t *parser)
     SC_ExpectNextToken(TK_RBRACK);
 
     // end of model block
+    SC_ExpectNextToken(TK_RBRACK);
+}
+
+//
+// Mdl_ParseAnimsetBlock
+//
+
+static void Mdl_ParseAnimsetBlock(kmodel_t *model, scparser_t *parser)
+{
+    unsigned int i;
+
+    SC_ExpectNextToken(TK_EQUAL);
+    SC_ExpectNextToken(TK_LBRACK);
+
+    if(model->numanimations > 0)
+    {
+        model->anims = (anim_t*)Z_Calloc(sizeof(anim_t) *
+            model->numanimations, PU_MODEL, 0);
+
+        for(i = 0; i < model->numanimations; i++)
+        {
+            SC_ExpectNextToken(TK_LBRACK);
+            SC_GetString();
+            model->anims[i].alias = Z_Strdup(sc_stringbuffer, PU_MODEL, 0);
+            SC_GetString();
+            memcpy(model->anims[i].animpath, sc_stringbuffer, MAX_FILEPATH);
+            SC_ExpectNextToken(TK_RBRACK);
+        }
+    }
+
     SC_ExpectNextToken(TK_RBRACK);
 }
 
@@ -368,14 +404,23 @@ static void Mdl_ParseScript(kmodel_t *model, scparser_t *parser)
                 switch(SC_GetIDForToken(mdltokens, parser->token))
                 {
                     // info block (bounding box, etc)
-                case SCMDL_INFO:
+                case scmdl_info:
                     break;
                     // behavior block (looping action, startup action, etc)
-                case SCMDL_BEHAVIORS:
+                case scmdl_behaviors:
                     break;
                     // model block (geometry)
-                case SCMDL_MODEL:
+                case scmdl_model:
                     Mdl_ParseModelBlock(model, parser);
+                    break;
+                    // numanims variable
+                case scmdl_numanims:
+                    SC_ExpectNextToken(TK_EQUAL);
+                    model->numanimations = SC_GetNumber();
+                    break;
+                    // animsets
+                case scmdl_animsets:
+                    Mdl_ParseAnimsetBlock(model, parser);
                     break;
                 default:
                     break;

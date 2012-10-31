@@ -412,6 +412,8 @@ static void Map_ParseObjectBlock(instance_t *instances, scparser_t *parser, kboo
             obj = &instances->statics[i];
         }
 
+        Vec_Set4(obj->rotation, 0, 0, 0, 1);
+
         // read into nested static instance block
         SC_ExpectNextToken(TK_LBRACK);
         SC_Find();
@@ -451,16 +453,25 @@ static void Map_ParseObjectBlock(instance_t *instances, scparser_t *parser, kboo
 
             case scinst_angle:
                 SC_ExpectNextToken(TK_EQUAL);
-                SC_ExpectNextToken(TK_LBRACK);
 
-                obj->rotation[0] = (float)SC_GetFloat();
-                obj->rotation[1] = (float)SC_GetFloat();
-                obj->rotation[2] = (float)SC_GetFloat();
-                obj->rotation[3] = (float)SC_GetFloat();
+                if(!nonstatic)
+                {
+                    SC_ExpectNextToken(TK_LBRACK);
+
+                    obj->rotation[0] = (float)SC_GetFloat();
+                    obj->rotation[1] = (float)SC_GetFloat();
+                    obj->rotation[2] = (float)SC_GetFloat();
+                    obj->rotation[3] = (float)SC_GetFloat();
+
+                    SC_ExpectNextToken(TK_RBRACK);
+                }
+                else
+                {
+                    Vec_SetQuaternion(obj->rotation,
+                        (float)SC_GetFloat(), 0, 1, 0);
+                }
 
                 Vec_Normalize4(obj->rotation);
-
-                SC_ExpectNextToken(TK_RBRACK);
                 break;
 
             case scinst_overrides:
@@ -568,7 +579,6 @@ static void Map_ParseObjectBlock(instance_t *instances, scparser_t *parser, kboo
         if(nonstatic)
         {
             Vec_Set3(obj->scale, 0.35f, 0.35f, 0.35f);
-            Vec_Set4(obj->rotation, 0, 0, 0, 1);
         }
 
         Mtx_ApplyRotation(obj->rotation, obj->matrix);
