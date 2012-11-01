@@ -46,24 +46,6 @@
 
 typedef struct
 {
-    unsigned int        count;
-    vec3_t              *xyz;
-} translationset_t;
-
-typedef struct
-{
-    unsigned int        count;
-    vec4_t              *rot;
-} rotationsets_t;
-
-typedef struct
-{
-    translationset_t    *translations;
-    rotationsets_t      *rotations;
-} frameset_t;
-
-typedef struct
-{
     int                 frame;
     int                 action;
     float               args[4];
@@ -91,6 +73,22 @@ typedef struct
 
 typedef struct
 {
+    vec3_t vec;
+} animtranslation_t;
+
+typedef struct
+{
+    vec4_t vec;
+} animrotation_t;
+
+typedef struct
+{
+    animtranslation_t   *translation;
+    animrotation_t      *rotation;
+} frameset_t;
+
+typedef struct
+{
     unsigned int        numvariants;
     word                *variants;
     unsigned int        nummeshes;
@@ -98,6 +96,8 @@ typedef struct
     unsigned int        numchildren;
     word                *children;
     frameset_t          *frameset;
+    vec3_t              translation;
+    vec4_t              rotation;
 } mdlnode_t;
 
 typedef struct
@@ -107,10 +107,13 @@ typedef struct
     unsigned int        numframes;
     unsigned int        numanimsets;
     unsigned int        numactions;
-    frameset_t          *framesets;
+    unsigned int        numtranslations;
+    unsigned int        numrotations;
+    animtranslation_t   **translations;
+    animrotation_t      **rotations;
+    frameset_t          *frameset;
+    frameset_t          initial;
     action_t            *actions;
-    vec3_t              xyz;
-    vec4_t              rot;
 } anim_t;
 
 typedef struct kmodel_s
@@ -127,10 +130,11 @@ typedef struct kmodel_s
 
 void Mdl_DrawSection(mdlsection_t *section, char *texture);
 void Mdl_TraverseDrawNode(kmodel_t *model, mdlnode_t *node, char **textures);
+void Mdl_SetAnimState(kmodel_t *model, const char *name, kbool initial);
+void Mdl_Init(void);
 
 kmodel_t *Mdl_Find(const char *name);
 kmodel_t *Mdl_Load(const char *file);
-void Mdl_Init(void);
 
 //
 // MAIN

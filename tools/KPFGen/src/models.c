@@ -528,7 +528,7 @@ static void ProcessGeometry(byte *data)
     Com_Strcat("                            // rgba = %i %i %i %i\n",
         header->rgba2[0], header->rgba2[1], header->rgba2[2], header->rgba2[3]);
 
-    Com_Strcat("\n                        numtriangles = %i\n",
+    Com_Strcat("\n                            numtriangles = %i\n",
         Com_GetCartOffset(indices, CHUNK_INDICES_COUNT, 0));
 
     Com_Strcat("\n                            triangles =\n");
@@ -830,12 +830,17 @@ static void ProcessMovement(byte *data, int frames)
     dboolean encoded    = Com_GetCartOffset(data, CHUNK_MOVEMENT_ENCODED, 0);
     int i;
 
-    Com_Strcat("    translationsets = %i\n\n", count);
+    Com_Strcat("    numtranslationsets = %i\n", count);
+
+    if(count <= 0)
+        return;
+
+    Com_Strcat("    translationsets =\n");
+    Com_Strcat("    {\n");
 
     for(i = 0; i < count; i++)
     {
-        Com_Strcat("    translation_%02d = // [x y z]\n", i);
-        Com_Strcat("    {\n");
+        Com_Strcat("        { // %i\n", i);
         if(encoded)
         {
             byte *tables[3];
@@ -871,7 +876,7 @@ static void ProcessMovement(byte *data, int frames)
                     dy  = *(short*)&tables[1][j * 2];
                     dz  = *(short*)&tables[2][j * 2];
 
-                    Com_Strcat("        %f %f %f\n",
+                    Com_Strcat("            { %f %f %f }\n",
                         (float)dx * t * flt_48EC8C + x,
                         (float)dy * t * flt_48EC8C + y,
                         (float)dz * t * flt_48EC8C + z);
@@ -882,8 +887,10 @@ static void ProcessMovement(byte *data, int frames)
         {
         }
 
-        Com_Strcat("\n    }\n\n");
+        Com_Strcat("        }\n");
     }
+
+    Com_Strcat("    }\n\n");
 }
 
 //
@@ -897,7 +904,13 @@ static void ProcessRotation(byte *data, int frames)
     int count       = Com_GetCartOffset(data, CHUNK_ROTATIONS_COUNT, 0);
     int i;
 
-    Com_Strcat("    rotationsets = %i\n\n", count);
+    Com_Strcat("    numrotationsets = %i\n", count);
+
+    if(count <= 0)
+        return;
+
+    Com_Strcat("    rotationsets =\n");
+    Com_Strcat("    {\n");
 
     for(i = 0; i < count; i++)
     {
@@ -910,8 +923,7 @@ static void ProcessRotation(byte *data, int frames)
 
         DC_BuildAnimTable((int**)tables, data + 8 + (size * i), 4);
 
-        Com_Strcat("    rotation_%02d = // [x y z w]\n", i);
-        Com_Strcat("    {\n");
+        Com_Strcat("        { // %i\n", i);
 
         if(frames > 0)
         {
@@ -929,7 +941,7 @@ static void ProcessRotation(byte *data, int frames)
                 ys  = *(short*)&tables[2][j * 2];
                 yc  = *(short*)&tables[3][j * 2];
 
-                Com_Strcat("        %f %f %f %f\n",
+                Com_Strcat("            { %f %f %f %f }\n",
                     (float)p  * flt_48EC8C,
                     (float)r  * flt_48EC8C,
                     (float)ys * flt_48EC8C,
@@ -937,8 +949,10 @@ static void ProcessRotation(byte *data, int frames)
             }
         }
 
-        Com_Strcat("\n    }\n\n");
+        Com_Strcat("        }\n");
     }
+
+    Com_Strcat("    }\n\n");
 }
 
 //
@@ -954,6 +968,10 @@ static void ProcessActions(byte *data)
     DC_DecodeData(data, action_buffer, 0);
 
     Com_Strcat("    numactions = %i\n\n", count);
+
+    if(count <= 0)
+        return;
+
     Com_Strcat("    actions = // [frame## action## arg0 arg1 arg2 arg3]\n");
     Com_Strcat("    {\n");
 
@@ -997,30 +1015,15 @@ static void ProcessAnimation(byte *data, int index)
     ProcessMovement(Com_GetCartData(data, CHUNK_ANIMROOT_MOVEMENT, 0), numframes);
     ProcessRotation(Com_GetCartData(data, CHUNK_ANIMROOT_ROTATIONS, 0), numframes);
 
-    Com_Strcat("    nodeframes = // [translation rotation]\n");
+    Com_Strcat("    nodeframes = // [translationset rotationset]\n");
     Com_Strcat("    {\n");
 
     for(i = 0; i < indexes; i++)
     {
         Com_Strcat("        { ");
 
-        if(lookup[TRANSLATION_INDEX] == -1)
-        {
-            Com_Strcat("NULL ");
-        }
-        else
-        {
-            Com_Strcat("\"translation_%02d\" ", lookup[TRANSLATION_INDEX]);
-        }
-
-        if(lookup[ROTATION_INDEX] == -1)
-        {
-            Com_Strcat("NULL }\n");
-        }
-        else
-        {
-            Com_Strcat("\"rotation_%02d\" }\n", lookup[ROTATION_INDEX]);
-        }
+        Com_Strcat("%i ",    lookup[TRANSLATION_INDEX]);
+        Com_Strcat("%i }\n", lookup[ROTATION_INDEX]);
 
         lookup += 2;
     }

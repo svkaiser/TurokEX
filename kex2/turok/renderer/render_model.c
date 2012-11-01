@@ -30,6 +30,7 @@
 #include "gl.h"
 #include "script.h"
 #include "render.h"
+#include "mathlib.h"
 
 static kmodel_t *mdl_hashlist[MAX_HASH];
 
@@ -97,6 +98,42 @@ static const sctokens_t mdltokens[scmdl_end+1] =
     { scmdl_coords,         "coords"        },
     { scmdl_normals,        "normals"       },
     { -1,                   NULL            }
+};
+
+enum
+{
+    scanim_anim = 0,
+    scanim_numframes,
+    scanim_numnodes,
+    scanim_numtranslationsets,
+    scanim_numrotationsets,
+    scanim_nodeframes,
+    scanim_initial_t,
+    scanim_initial_r,
+    scanim_translationsets,
+    scanim_rotationsets,
+    scanim_numactions,
+    scanim_actions,
+    scanim_initialtranslation,
+    scanim_initialrotation,
+    scanim_end
+};
+
+static const sctokens_t animtokens[scanim_end+1] =
+{
+    { scanim_anim,              "anim"                  },
+    { scanim_numframes,         "numframes"             },
+    { scanim_numnodes,          "numnodes"              },
+    { scanim_numtranslationsets,"numtranslationsets"    },
+    { scanim_numrotationsets,   "numrotationsets"       },
+    { scanim_nodeframes,        "nodeframes"            },
+    { scanim_initial_t,         "initialtranslation"    },
+    { scanim_initial_r,         "initialrotation"       },
+    { scanim_translationsets,   "translationsets"       },
+    { scanim_rotationsets,      "rotationsets"          },
+    { scanim_numactions,        "numactions"            },
+    { scanim_actions,           "actions"               },
+    { -1,                       NULL                    }
 };
 
 typedef struct
@@ -434,6 +471,261 @@ static void Mdl_ParseScript(kmodel_t *model, scparser_t *parser)
 }
 
 //
+// Mdl_ParseAnimScript
+//
+
+static void Mdl_ParseAnimScript(kmodel_t *model, anim_t *anim, scparser_t *parser)
+{
+    unsigned int numnodes;
+    unsigned int i;
+    unsigned int j;
+
+    numnodes = 0;
+
+    if(model->numnodes <= 0)
+    {
+        SC_Error("numnodes is 0 or has not been set yet for %s",
+            model->mdlpath);
+    }
+
+    anim->frameset = (frameset_t*)Z_Calloc(sizeof(frameset_t)
+        * model->numnodes, PU_MODEL, 0);
+
+    SC_ExpectTokenID(animtokens, scanim_anim, parser);
+    SC_ExpectNextToken(TK_LBRACK);
+
+    while(SC_CheckScriptState())
+    {
+        SC_Find();
+
+        switch(parser->tokentype)
+        {
+        case TK_NONE:
+            return;
+        case TK_EOF:
+            return;
+        case TK_IDENIFIER:
+            {
+                switch(SC_GetIDForToken(animtokens, parser->token))
+                {
+                    // frame count
+                case scanim_numframes:
+                    SC_AssignInteger(animtokens, &anim->numframes,
+                        scanim_numframes, parser, false);
+                    break;
+                    // action count
+                case scanim_numactions:
+                    SC_AssignInteger(animtokens, &anim->numactions,
+                        scanim_numactions, parser, false);
+                    break;
+                    // number of nodes (must match numnodes in model file)
+                case scanim_numnodes:
+                    SC_AssignInteger(animtokens, &numnodes,
+                        scanim_numnodes, parser, false);
+
+                    if(numnodes != model->numnodes)
+                    {
+                        SC_Error("numnodes(%i) for %s doesn't match numnodes in model file(%i)",
+                            numnodes, anim->alias, model->numnodes);
+                    }
+                    break;
+                    // translation table count
+                case scanim_numtranslationsets:
+                    SC_AssignInteger(animtokens, &anim->numtranslations,
+                        scanim_numtranslationsets, parser, false);
+                    break;
+                    // rotation table count
+                case scanim_numrotationsets:
+                    SC_AssignInteger(animtokens, &anim->numrotations,
+                        scanim_numrotationsets, parser, false);
+                    break;
+                    // translation table
+                case scanim_translationsets:
+                    SC_ExpectNextToken(TK_EQUAL);
+                    if(anim->numtranslations <= 0)
+                    {
+                        SC_Error("numtranslations is 0 or has not been set yet for %s",
+                            anim->alias);
+                    }
+                    if(anim->numframes <= 0)
+                    {
+                        SC_Error("numframes is 0 or has not been set yet for %s",
+                            anim->alias);
+                    }
+                    anim->translations = (animtranslation_t**)Z_Calloc(sizeof(animtranslation_t*)
+                        * anim->numtranslations, PU_MODEL, 0);
+
+                    SC_ExpectNextToken(TK_LBRACK);
+                    for(i = 0; i < anim->numtranslations; i++)
+                    {
+                        anim->translations[i] = (animtranslation_t*)Z_Calloc(
+                            sizeof(animtranslation_t) * anim->numframes, PU_MODEL, 0);
+
+                        SC_ExpectNextToken(TK_LBRACK);
+                        for(j = 0; j < anim->numframes; j++)
+                        {
+                            SC_ExpectNextToken(TK_LBRACK);
+                            anim->translations[i][j].vec[0] = (float)SC_GetFloat();
+                            anim->translations[i][j].vec[1] = (float)SC_GetFloat();
+                            anim->translations[i][j].vec[2] = (float)SC_GetFloat();
+                            SC_ExpectNextToken(TK_RBRACK);
+                        }
+                        SC_ExpectNextToken(TK_RBRACK);
+                    }
+                    SC_ExpectNextToken(TK_RBRACK);
+                    break;
+                    // rotation table
+                case scanim_rotationsets:
+                    SC_ExpectNextToken(TK_EQUAL);
+                    if(anim->numrotations <= 0)
+                    {
+                        SC_Error("numrotations is 0 or has not been set yet for %s",
+                            anim->alias);
+                    }
+                    if(anim->numframes <= 0)
+                    {
+                        SC_Error("numframes is 0 or has not been set yet for %s",
+                            anim->alias);
+                    }
+                    anim->rotations = (animrotation_t**)Z_Calloc(sizeof(animrotation_t*)
+                        * anim->numrotations, PU_MODEL, 0);
+
+                    SC_ExpectNextToken(TK_LBRACK);
+                    for(i = 0; i < anim->numrotations; i++)
+                    {
+                        anim->rotations[i] = (animrotation_t*)Z_Calloc(
+                            sizeof(animrotation_t) * anim->numframes, PU_MODEL, 0);
+
+                        SC_ExpectNextToken(TK_LBRACK);
+                        for(j = 0; j < anim->numframes; j++)
+                        {
+                            SC_ExpectNextToken(TK_LBRACK);
+                            anim->rotations[i][j].vec[0] = (float)SC_GetFloat();
+                            anim->rotations[i][j].vec[1] = (float)SC_GetFloat();
+                            anim->rotations[i][j].vec[2] = (float)SC_GetFloat();
+                            anim->rotations[i][j].vec[3] = (float)SC_GetFloat();
+                            SC_ExpectNextToken(TK_RBRACK);
+                        }
+                        SC_ExpectNextToken(TK_RBRACK);
+                    }
+                    SC_ExpectNextToken(TK_RBRACK);
+                    break;
+                    // lookup table for model nodes
+                case scanim_nodeframes:
+                    SC_ExpectNextToken(TK_EQUAL);
+                    SC_ExpectNextToken(TK_LBRACK);
+                    for(i = 0; i < model->numnodes; i++)
+                    {
+                        int num;
+
+                        SC_ExpectNextToken(TK_LBRACK);
+
+                        num = SC_GetNumber();
+                        anim->frameset[i].translation = num != -1 ?
+                            anim->translations[num] : NULL;
+
+                        num = SC_GetNumber();
+                        anim->frameset[i].rotation = num != -1 ?
+                            anim->rotations[num] : NULL;
+
+                        SC_ExpectNextToken(TK_RBRACK);
+                    }
+                    SC_ExpectNextToken(TK_RBRACK);
+                    break;
+                    // actions
+                /*case scanim_actions:
+                    if(anim->numactions <= 0)
+                    {
+                        SC_Error("numactions is 0 or has not been set yet for %s",
+                            anim->alias);
+                    }
+                    SC_ExpectNextToken(TK_EQUAL);
+                    break;*/
+                    // initial translation frame
+                case scanim_initial_t:
+                    SC_ExpectNextToken(TK_EQUAL);
+                    SC_ExpectNextToken(TK_LBRACK);
+
+                    anim->initial.translation = (animtranslation_t*)Z_Calloc(sizeof(animtranslation_t)
+                        * model->numnodes, PU_MODEL, 0);
+
+                    for(i = 0; i < model->numnodes; i++)
+                    {
+                        SC_ExpectNextToken(TK_LBRACK);
+                        anim->initial.translation[i].vec[0] = (float)SC_GetFloat();
+                        anim->initial.translation[i].vec[1] = (float)SC_GetFloat();
+                        anim->initial.translation[i].vec[2] = (float)SC_GetFloat();
+                        SC_ExpectNextToken(TK_RBRACK);
+                    }
+
+                    SC_ExpectNextToken(TK_RBRACK);
+                    break;
+                    // initial rotation frame
+                case scanim_initial_r:
+                    SC_ExpectNextToken(TK_EQUAL);
+                    SC_ExpectNextToken(TK_LBRACK);
+
+                    anim->initial.rotation = (animrotation_t*)Z_Calloc(sizeof(animrotation_t)
+                        * model->numnodes, PU_MODEL, 0);
+
+                    for(i = 0; i < model->numnodes; i++)
+                    {
+                        SC_ExpectNextToken(TK_LBRACK);
+                        anim->initial.rotation[i].vec[0] = (float)SC_GetFloat();
+                        anim->initial.rotation[i].vec[1] = (float)SC_GetFloat();
+                        anim->initial.rotation[i].vec[2] = (float)SC_GetFloat();
+                        anim->initial.rotation[i].vec[3] = (float)SC_GetFloat();
+                        SC_ExpectNextToken(TK_RBRACK);
+                    }
+
+                    SC_ExpectNextToken(TK_RBRACK);
+                    break;
+                default:
+                    if(parser->tokentype == TK_IDENIFIER)
+                    {
+                        Com_DPrintf("Mdl_ParseAnimScript: Unknown token: %s\n",
+                            parser->token);
+                    }
+                    break;
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+    SC_ExpectNextToken(TK_RBRACK);
+}
+
+//
+// Mdl_LoadAnimations
+//
+
+static void Mdl_LoadAnimations(kmodel_t *model)
+{
+    unsigned int i;
+
+    if(model->anims == NULL || model->numanimations <= 0 || model->numnodes <= 0)
+    {
+        return;
+    }
+
+    for(i = 0; i < model->numanimations; i++)
+    {
+        scparser_t *parser;
+
+        if(!(parser = SC_Open(model->anims[i].animpath)))
+        {
+            continue;
+        }
+
+        Mdl_ParseAnimScript(model, &model->anims[i], parser);
+        SC_Close();
+    }
+}
+
+//
 // Mdl_DrawSection
 //
 
@@ -513,6 +805,64 @@ void Mdl_DrawSection(mdlsection_t *section, char *texture)
 }
 
 //
+// Mdl_GetAnim
+//
+
+static anim_t *Mdl_GetAnim(kmodel_t *model, const char *name)
+{
+    unsigned int i;
+
+    if(model->anims == NULL || model->numanimations <= 0)
+    {
+        return NULL;
+    }
+
+    for(i = 0; i < model->numanimations; i++)
+    {
+        if(!strcmp(model->anims[i].alias, name))
+        {
+            return &model->anims[i];
+        }
+    }
+
+    return NULL;
+}
+
+//
+// Mdl_SetAnimState
+//
+
+void Mdl_SetAnimState(kmodel_t *model, const char *name, kbool initial)
+{
+    anim_t *anim;
+    unsigned int i;
+
+    if(model == NULL)
+    {
+        return;
+    }
+
+    if(!(anim = Mdl_GetAnim(model, name)))
+    {
+        return;
+    }
+
+    for(i = 0; i < model->numnodes; i++)
+    {
+        model->nodes[i].frameset = initial ?
+            &anim->initial : &anim->frameset[i];
+
+        if(initial)
+        {
+            Vec_Copy3(model->nodes[i].translation,
+                anim->initial.translation[i].vec);
+            Vec_Copy4(model->nodes[i].rotation,
+                anim->initial.rotation[i].vec);
+        }
+    }
+}
+
+//
 // Mdl_TraverseDrawNode
 //
 
@@ -520,8 +870,19 @@ void Mdl_TraverseDrawNode(kmodel_t *model, mdlnode_t *node, char **textures)
 {
     unsigned int i;
     unsigned int j;
+    mtx_t mtx;
 
     dglPushMatrix();
+
+    if(model->anims)
+    {
+        Mtx_ApplyRotation(node->rotation, mtx);
+        Mtx_AddTranslation(mtx,
+            node->translation[0],
+            node->translation[1],
+            node->translation[2]);
+        dglMultMatrixf(mtx);
+    }
 
     if(node->nummeshes > 0)
     {
@@ -610,6 +971,8 @@ kmodel_t *Mdl_Load(const char *file)
 
         // we're done with the file
         SC_Close();
+
+        Mdl_LoadAnimations(model);
     }
 
     return model;
