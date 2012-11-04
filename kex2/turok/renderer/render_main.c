@@ -314,28 +314,32 @@ static void R_SetupViewFrame(actor_t *actor)
 void R_DrawObject(object_t *object)
 {
     kmodel_t *model;
+    int var;
 
     if(!(model = Mdl_Load(object->mdlpath)))
     {
         return;
     }
 
-    dglCullFace(GL_BACK);
-    dglEnable(GL_DEPTH_TEST);
-    dglDisableClientState(GL_COLOR_ARRAY);
+    // TODO - temp
+    if(object->type == OT_MINIPORTAL ||
+        object->type == OT_WATER)
+    {
+        int varcount = model->nodes[0].numvariants;
+
+        if(varcount > 0)
+        {
+            float t = (float)(client.tics * 0.25f);
+            var = ((int)t % (varcount-2)) + 2;
+        }
+    }
+    else
+    {
+        var = object->variant;
+    }
 
     Mdl_TraverseDrawNode(model, &model->nodes[0],
-        object->textureswaps);
-
-    dglEnableClientState(GL_COLOR_ARRAY);
-    dglDisable(GL_DEPTH_TEST);
-    dglCullFace(GL_FRONT);
-    GL_SetState(GLSTATE_CULL, true);
-    GL_SetState(GLSTATE_TEXTURE0, true);
-    GL_SetState(GLSTATE_BLEND, false);
-    dglDisable(GL_ALPHA_TEST);
-    dglDisable(GL_TEXTURE_GEN_S);
-    dglDisable(GL_TEXTURE_GEN_T);
+        object->textureswaps, var);
 }
 
 //
@@ -353,12 +357,7 @@ static void R_DrawInstances(void)
         {
             instance_t *inst = &g_currentmap->instances[i];
 
-            if(inst == NULL)
-            {
-                continue;
-            }
-
-            if(inst->statics == NULL)
+            if(inst == NULL || inst->statics == NULL)
             {
                 continue;
             }
@@ -446,6 +445,122 @@ static void R_DrawInstances(void)
 }
 
 //
+// R_GetViewWeaponOffset
+//
+
+static void R_GetViewWeaponOffset(actor_t *actor, vec3_t offset)
+{
+    float x = 0;
+    float y = 0;
+    float z = 0;
+
+    switch(actor->object.type)
+    {
+    case OT_WEAPON_BOW:
+        x = 0.39f;
+        y = 0.44f;
+        z = 0.77f;
+        break;
+
+    case OT_WEAPON_PISTOL:
+        x = 0.47f;
+        y = 0.54f;
+        z = 0.76f;
+        break;
+
+    case OT_WEAPON_RIFLE:
+        x = 0.5f;
+        y = 0.6f;
+        z = 0.75f;
+        break;
+
+    case OT_WEAPON_PULSERIFLE:
+    case OT_WEAPON_SHOTGUN:
+        x = 0.5f;
+        y = 0.5f;
+        z = 0.78f;
+        break;
+
+    case OT_WEAPON_ASHOTGUN:
+        x = 0.5f;
+        y = 0.52f;
+        z = 0.80f;
+        break;
+
+    case OT_WEAPON_MINIGUN:
+        x = 0.48f;
+        y = 0.48f;
+        z = 0.80f;
+        break;
+
+    case OT_WEAPON_KNIFE:
+    case OT_WEAPON_GRENADE:
+    case OT_WEAPON_ALIENGUN:
+    case OT_WEAPON_MISSILE:
+    case OT_WEAPON_ACCELERATOR:
+        x = 0.5f;
+        y = 0.45f;
+        z = 0.78f;
+        break;
+
+    case OT_WEAPON_CANNON:
+        x = 0.5f;
+        y = -0.7f;
+        z = 0.68f;
+        break;
+
+    case OT_WEAPON_CHRONO:
+        x = 0.6f;
+        y = 0.17f;
+        z = 0.85f;
+        break;
+    }
+
+    Vec_Set3(offset,
+        -x * 341.334f,
+        -y * 341.334f,
+         z * 341.334f - 275.456f);
+}
+
+//
+// R_DrawViewWeapon
+//
+
+void R_DrawViewWeapon(void)
+{
+    kmodel_t *model;
+    mtx_t mtx;
+    mtx_t mtx_pos;
+    mtx_t mtx_flip;
+    vec3_t vec;
+
+    // TODO - TEMP
+    if(!(model = Mdl_Load("models/mdl655/mdl655.kmesh")))
+    {
+        return;
+    }
+
+    dglMatrixMode(GL_PROJECTION);
+    dglLoadIdentity();
+    Mtx_ViewFrustum(video_width, video_height, 50, 32);
+    dglMatrixMode(GL_MODELVIEW);
+    Mtx_Identity(mtx_pos);
+    Mtx_Identity(mtx_flip);
+    Mtx_Scale(mtx_flip, -1, 1, 1);
+    Mtx_Transpose(mtx_pos);
+    Mtx_Multiply(mtx, mtx_pos, mtx_flip);
+    Vec_Set3(vec,
+        -0.5f * 341.3333333333334f,
+        -0.5f * 341.3333333333334f,
+        0.78f * 341.3333333333334f - 275.456f);
+    Mtx_ApplyVector(mtx, vec);
+    dglLoadMatrixf(mtx);
+
+    Mdl_SetAnimState(model, "anim00", true);
+    Mdl_TraverseDrawNode(model, &model->nodes[0], NULL, 0);
+}
+
+//
 // R_DrawFrame
 //
 
@@ -455,6 +570,11 @@ void R_DrawFrame(void)
     
     R_SetupViewFrame(&client.localactor);
     R_SetupClipFrustum();
+
+    dglCullFace(GL_BACK);
+    dglEnable(GL_DEPTH_TEST);
+    dglDisableClientState(GL_COLOR_ARRAY);
+
     R_DrawInstances();
 
     if(showcollision)
@@ -462,10 +582,24 @@ void R_DrawFrame(void)
         R_DrawCollision();
     }
 
+    dglCullFace(GL_FRONT);
+
+    R_DrawViewWeapon();
+
+    dglEnableClientState(GL_COLOR_ARRAY);
+    dglDisable(GL_DEPTH_TEST);
+
+    GL_SetState(GLSTATE_CULL, true);
+    GL_SetState(GLSTATE_TEXTURE0, true);
+    GL_SetState(GLSTATE_BLEND, false);
+    GL_SetState(GLSTATE_ALPHATEST, false);
+    GL_SetState(GLSTATE_TEXGEN_S, false);
+    GL_SetState(GLSTATE_TEXGEN_T, false);
+
     GL_SetOrtho();
 
     // underwater overlay
-    if(client.localactor.terriantype == TT_WATER_UNDER)
+    if(client.localactor.flags & AF_SUBMERGED)
     {
         GL_SetState(GLSTATE_TEXTURE0, false);
         GL_SetState(GLSTATE_BLEND, true);

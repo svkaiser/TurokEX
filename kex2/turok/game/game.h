@@ -29,6 +29,56 @@
 
 #define ONPLANE_EPSILON     0.512f
 
+enum
+{
+    wp_knife    = 0,
+    wp_crossbow,
+    wp_pistol,
+    wp_shotgun,
+    wp_autoshotgun,
+    wp_rifle,
+    wp_pulse,
+    wp_grenade,
+    wp_missile,
+    wp_accelerator,
+    wp_bfg,
+    wp_chrono,
+    NUMWEAPONS
+};
+
+enum
+{
+    am_clip     = 0,
+    am_shells,
+    am_expshells,
+    am_cell,
+    am_tekarrows,
+    am_arrows,
+    am_mini,
+    am_grenade,
+    am_rocket,
+    am_fusion,
+    am_chrono,
+    NUMAMMO
+};
+
+//
+// gclient - game-side client controller
+// handled mostly on server side and contains
+// persistent player data
+//
+struct gclient_s
+{
+    kbool       weaponowned[NUMWEAPONS];
+    int         activeweapon;
+    int         ammo[NUMAMMO];
+    int         maxammo[NUMAMMO];
+    kbool       hasbackpack;
+    kbool       hasarmor;
+    int         armorpoints;
+    actor_t     *actor;
+};
+
 plane_t *G_FindClosestPlane(vec3_t coord);
 void G_ClipMovement(actor_t *actor);
 

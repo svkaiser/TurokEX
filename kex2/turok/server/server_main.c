@@ -115,7 +115,7 @@ static void SV_SendMsg(ENetEvent *sev, int type)
         return;
     }
 
-    Packet_Write8(packet, SERVER_PACKET_MSG);
+    Packet_Write8(packet, sp_msg);
     Packet_Write8(packet, type);
     Packet_Send(packet, sev->peer);
 }
@@ -136,7 +136,7 @@ static void SV_UpdateClientInfo(ENetEvent *sev, svclient_t *svc, int id)
     Com_Printf("%s connected...\n",
         SV_GetPeerAddress(sev));
 
-    Packet_Write8(packet, SERVER_PACKET_CLIENTINFO);
+    Packet_Write8(packet, sp_clientinfo);
     Packet_Write8(packet, svc->client_id);
     Packet_Write8(packet, id);
     Packet_Send(packet, svc->peer);
@@ -188,7 +188,7 @@ static void SV_AddClient(ENetEvent *sev)
         }
     }
 
-    SV_SendMsg(sev, SERVER_MSG_FULL);
+    SV_SendMsg(sev, sm_full);
 }
 
 //
@@ -291,7 +291,7 @@ static void SV_SendAcknowledgement(ENetEvent *sev)
         return;
     }
 
-    Packet_Write8(packet, SERVER_PACKET_PING);
+    Packet_Write8(packet, sp_ping);
     Packet_Send(packet, sev->peer);
 }
 
@@ -307,17 +307,17 @@ void SV_ProcessClientPackets(ENetPacket *packet, ENetEvent *sev)
 
     switch(type)
     {
-    case CLIENT_PACKET_PING:
+    case cp_ping:
         Com_Printf("Recieved ping from %s (channel %i)\n",
             SV_GetPeerAddress(sev), sev->channelID);
         SV_SendAcknowledgement(sev);
         break;
 
-    case CLIENT_PACKET_SAY:
+    case cp_say:
         Com_Printf("%s: %s\n", SV_GetPeerAddress(sev), Packet_ReadString(packet));
         break;
 
-    case CLIENT_PACKET_CMD:
+    case cp_cmd:
         SV_ReadTiccmd(sev, packet);
         break;
 

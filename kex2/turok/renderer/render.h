@@ -129,9 +129,11 @@ typedef struct kmodel_s
 } kmodel_t;
 
 void Mdl_DrawSection(mdlsection_t *section, char *texture);
-void Mdl_TraverseDrawNode(kmodel_t *model, mdlnode_t *node, char **textures);
+void Mdl_TraverseDrawNode(kmodel_t *model, mdlnode_t *node, char **textures, int variant);
 void Mdl_SetAnimState(kmodel_t *model, const char *name, kbool initial);
 void Mdl_Init(void);
+
+anim_t *Mdl_GetAnim(kmodel_t *model, const char *name);
 
 kmodel_t *Mdl_Find(const char *name);
 kmodel_t *Mdl_Load(const char *file);

@@ -26,6 +26,7 @@
 #include "enet/enet.h"
 #include "client.h"
 #include "actor.h"
+#include "game.h"
 
 #define MAXCLIENTS  8
 
@@ -42,14 +43,20 @@ typedef enum
     SVC_STATE_ACTIVE
 } svclient_state_e;
 
-typedef struct
+//
+// svclient - server-side client controller
+// may contain non-persistent player/client data.
+// used to communicate data between server
+// and client
+//
+struct svclient_s
 {
     ENetPeer            *peer;
     unsigned int        client_id;
     svclient_state_e    state;
     ticcmd_t            cmd;
-    actor_t             actor;
-} svclient_t;
+    gclient_t           gclient;
+};
 
 typedef struct
 {

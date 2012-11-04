@@ -30,7 +30,8 @@
 typedef enum
 {
     AF_NOALIGNPITCH     = 0x1,
-    AF_CLIENTJUMP       = 0x2
+    AF_CLIENTJUMP       = 0x2,
+    AF_SUBMERGED        = 0x4
 } actorflags_t;
 
 typedef enum
@@ -44,30 +45,37 @@ typedef enum
     TT_NOCLIP           = 6
 } terriantype_t;
 
-typedef struct actor_s
+//
+// client/server-side object controller
+//
+struct actor_s
 {
     vec3_t              origin;
     vec3_t              velocity;
     unsigned int        flags;
     float               yaw;
     float               pitch;
-    int                 svclient_id;
+    svclient_t          *svclient;
     int                 health;
-    int                 anim;
     short               skin;
     object_t            object;
     plane_t             *plane;
     terriantype_t       terriantype;
+    float               animspeed;
+    float               animframe;
+    anim_t              *anim;
+    frameset_t          frameset;
     struct actor_s      *target;
     struct actor_s      *prev;
     struct actor_s      *next;
-} actor_t;
+};
 
 extern actor_t actorlist[MAXMAPS];
 extern actor_t *g_actorlist;
 
 void G_LinkActor(actor_t *actor);
 void G_UnlinkActor(actor_t* actor);
+void G_SetAnimState(actor_t *actor, const char *name);
 void G_ActorMovement(actor_t *actor);
 actor_t *G_SpawnActor(void);
 void G_SetActorLinkList(int map);

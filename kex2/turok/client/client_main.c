@@ -140,11 +140,11 @@ void CL_ProcessServerPackets(ENetPacket *packet, ENetEvent *cev)
 
     switch(type)
     {
-    case SERVER_PACKET_PING:
+    case sp_ping:
         Com_Printf("Recieved acknowledgement from server\n");
         break;
 
-    case SERVER_PACKET_CLIENTINFO:
+    case sp_clientinfo:
         CL_ReadClientInfo(packet);
         break;
 
@@ -305,7 +305,7 @@ static void FCmd_Ping(void)
         return;
     }
 
-    Packet_Write8(packet, CLIENT_PACKET_PING);
+    Packet_Write8(packet, cp_ping);
     Packet_Send(packet, client.peer);
 }
 
@@ -327,7 +327,30 @@ static void FCmd_Say(void)
         return;
     }
 
-    Packet_Write8(packet, CLIENT_PACKET_SAY);
+    Packet_Write8(packet, cp_say);
+    Packet_WriteString(packet, Cmd_GetArgv(1));
+    Packet_Send(packet, client.peer);
+}
+
+//
+// FCmd_MsgServer
+//
+
+static void FCmd_MsgServer(void)
+{
+    ENetPacket *packet;
+
+    if(Cmd_GetArgc() < 2)
+    {
+        return;
+    }
+
+    if(!(packet = Packet_New()))
+    {
+        return;
+    }
+
+    Packet_Write8(packet, cp_msgserver);
     Packet_WriteString(packet, Cmd_GetArgv(1));
     Packet_Send(packet, client.peer);
 }
@@ -374,4 +397,5 @@ void CL_Init(void)
     Cmd_AddCommand("debugclienttime", FCmd_ShowClientTime);
     Cmd_AddCommand("ping", FCmd_Ping);
     Cmd_AddCommand("say", FCmd_Say);
+    Cmd_AddCommand("msgserver", FCmd_MsgServer);
 }

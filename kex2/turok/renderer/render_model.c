@@ -366,58 +366,6 @@ static void Mdl_ParseNodeBlock(kmodel_t *model, scparser_t *parser)
 }
 
 //
-// Mdl_ParseModelBlock
-//
-
-static void Mdl_ParseModelBlock(kmodel_t *model, scparser_t *parser)
-{
-    SC_ExpectNextToken(TK_LBRACK);
-    SC_AssignInteger(mdltokens, &model->numnodes,
-        scmdl_numnodes, parser, true);
-
-    // begin reading into the node block
-    SC_ExpectTokenID(mdltokens, scmdl_nodes, parser);
-    SC_ExpectNextToken(TK_LBRACK);
-    Mdl_ParseNodeBlock(model, parser);
-
-    // end of node block
-    SC_ExpectNextToken(TK_RBRACK);
-
-    // end of model block
-    SC_ExpectNextToken(TK_RBRACK);
-}
-
-//
-// Mdl_ParseAnimsetBlock
-//
-
-static void Mdl_ParseAnimsetBlock(kmodel_t *model, scparser_t *parser)
-{
-    unsigned int i;
-
-    SC_ExpectNextToken(TK_EQUAL);
-    SC_ExpectNextToken(TK_LBRACK);
-
-    if(model->numanimations > 0)
-    {
-        model->anims = (anim_t*)Z_Calloc(sizeof(anim_t) *
-            model->numanimations, PU_MODEL, 0);
-
-        for(i = 0; i < model->numanimations; i++)
-        {
-            SC_ExpectNextToken(TK_LBRACK);
-            SC_GetString();
-            model->anims[i].alias = Z_Strdup(sc_stringbuffer, PU_MODEL, 0);
-            SC_GetString();
-            memcpy(model->anims[i].animpath, sc_stringbuffer, MAX_FILEPATH);
-            SC_ExpectNextToken(TK_RBRACK);
-        }
-    }
-
-    SC_ExpectNextToken(TK_RBRACK);
-}
-
-//
 // Mdl_ParseScript
 //
 // Main parsing routine
@@ -425,6 +373,8 @@ static void Mdl_ParseAnimsetBlock(kmodel_t *model, scparser_t *parser)
 
 static void Mdl_ParseScript(kmodel_t *model, scparser_t *parser)
 {
+    unsigned int i;
+
     while(SC_CheckScriptState())
     {
         SC_Find();
@@ -442,13 +392,38 @@ static void Mdl_ParseScript(kmodel_t *model, scparser_t *parser)
                 {
                     // info block (bounding box, etc)
                 case scmdl_info:
+                    /*SC_ExpectNextToken(TK_LBRACK);
+                    SC_ExpectTokenID(mdltokens, scmdl_bbox, parser);
+                    SC_ExpectNextToken(TK_EQUAL);
+                    SC_ExpectNextToken(TK_LBRACK);
+                    model->bbox.min[0] = (float)SC_GetFloat();
+                    model->bbox.min[1] = (float)SC_GetFloat();
+                    model->bbox.min[2] = (float)SC_GetFloat();
+                    model->bbox.max[0] = (float)SC_GetFloat();
+                    model->bbox.max[1] = (float)SC_GetFloat();
+                    model->bbox.max[2] = (float)SC_GetFloat();
+                    SC_ExpectNextToken(TK_RBRACK);
+                    SC_ExpectNextToken(TK_RBRACK);*/
                     break;
                     // behavior block (looping action, startup action, etc)
                 case scmdl_behaviors:
                     break;
                     // model block (geometry)
                 case scmdl_model:
-                    Mdl_ParseModelBlock(model, parser);
+                    SC_ExpectNextToken(TK_LBRACK);
+                    SC_AssignInteger(mdltokens, &model->numnodes,
+                        scmdl_numnodes, parser, true);
+
+                    // begin reading into the node block
+                    SC_ExpectTokenID(mdltokens, scmdl_nodes, parser);
+                    SC_ExpectNextToken(TK_LBRACK);
+                    Mdl_ParseNodeBlock(model, parser);
+
+                    // end of node block
+                    SC_ExpectNextToken(TK_RBRACK);
+
+                    // end of model block
+                    SC_ExpectNextToken(TK_RBRACK);
                     break;
                     // numanims variable
                 case scmdl_numanims:
@@ -457,7 +432,24 @@ static void Mdl_ParseScript(kmodel_t *model, scparser_t *parser)
                     break;
                     // animsets
                 case scmdl_animsets:
-                    Mdl_ParseAnimsetBlock(model, parser);
+                    SC_ExpectNextToken(TK_EQUAL);
+                    SC_ExpectNextToken(TK_LBRACK);
+                    if(model->numanimations > 0)
+                    {
+                        model->anims = (anim_t*)Z_Calloc(sizeof(anim_t) *
+                            model->numanimations, PU_MODEL, 0);
+
+                        for(i = 0; i < model->numanimations; i++)
+                        {
+                            SC_ExpectNextToken(TK_LBRACK);
+                            SC_GetString();
+                            model->anims[i].alias = Z_Strdup(sc_stringbuffer, PU_MODEL, 0);
+                            SC_GetString();
+                            memcpy(model->anims[i].animpath, sc_stringbuffer, MAX_FILEPATH);
+                            SC_ExpectNextToken(TK_RBRACK);
+                        }
+                    }
+                    SC_ExpectNextToken(TK_RBRACK);
                     break;
                 default:
                     break;
@@ -743,36 +735,11 @@ void Mdl_DrawSection(mdlsection_t *section, char *texture)
         texturepath = texture;
     }
 
-    if(section->flags & MDF_NOCULLFACES)
-    {
-        GL_SetState(GLSTATE_CULL, false);
-    }
-    else
-    {
-        GL_SetState(GLSTATE_CULL, true);
-    }
-
-    if(section->flags & MDF_MASKED)
-    {
-        GL_SetState(GLSTATE_BLEND, true);
-        dglEnable(GL_ALPHA_TEST);
-    }
-    else
-    {
-        GL_SetState(GLSTATE_BLEND, false);
-        dglDisable(GL_ALPHA_TEST);
-    }
-
-    if(section->flags & MDF_SHINYSURFACE)
-    {
-        dglEnable(GL_TEXTURE_GEN_S);
-        dglEnable(GL_TEXTURE_GEN_T);
-    }
-    else
-    {
-        dglDisable(GL_TEXTURE_GEN_S);
-        dglDisable(GL_TEXTURE_GEN_T);
-    }
+    GL_SetState(GLSTATE_CULL, !(section->flags & MDF_NOCULLFACES));
+    GL_SetState(GLSTATE_BLEND, section->flags & MDF_MASKED);
+    GL_SetState(GLSTATE_ALPHATEST, section->flags & MDF_MASKED);
+    GL_SetState(GLSTATE_TEXGEN_S, section->flags & MDF_SHINYSURFACE);
+    GL_SetState(GLSTATE_TEXGEN_T, section->flags & MDF_SHINYSURFACE);
 
     if(section->flags & MDF_COLORIZE)
     {
@@ -808,7 +775,7 @@ void Mdl_DrawSection(mdlsection_t *section, char *texture)
 // Mdl_GetAnim
 //
 
-static anim_t *Mdl_GetAnim(kmodel_t *model, const char *name)
+anim_t *Mdl_GetAnim(kmodel_t *model, const char *name)
 {
     unsigned int i;
 
@@ -866,10 +833,10 @@ void Mdl_SetAnimState(kmodel_t *model, const char *name, kbool initial)
 // Mdl_TraverseDrawNode
 //
 
-void Mdl_TraverseDrawNode(kmodel_t *model, mdlnode_t *node, char **textures)
+void Mdl_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
+                          char **textures, int variant)
 {
     unsigned int i;
-    unsigned int j;
     mtx_t mtx;
 
     dglPushMatrix();
@@ -886,30 +853,27 @@ void Mdl_TraverseDrawNode(kmodel_t *model, mdlnode_t *node, char **textures)
 
     if(node->nummeshes > 0)
     {
-        for(i = 0; i < node->nummeshes; i++)
+        for(i = 0; i < node->meshes[variant].numsections; i++)
         {
-            for(j = 0; j < node->meshes[i].numsections; j++)
+            mdlsection_t *section = &node->meshes[variant].sections[i];
+            char *texturepath = NULL;
+
+            if(textures != NULL)
             {
-                mdlsection_t *section = &node->meshes[i].sections[j];
-                char *texturepath = NULL;
-
-                if(textures != NULL)
+                if(textures[i][0] != '-')
                 {
-                    if(textures[j][0] != '-')
-                    {
-                        texturepath = textures[j];
-                    }
+                    texturepath = textures[i];
                 }
-
-                Mdl_DrawSection(section, texturepath);
             }
+
+            Mdl_DrawSection(section, texturepath);
         }
     }
 
     for(i = 0; i < node->numchildren; i++)
     {
         Mdl_TraverseDrawNode(model,
-            &model->nodes[node->children[i]], textures);
+            &model->nodes[node->children[i]], textures, variant);
     }
 
     dglPopMatrix();
@@ -946,6 +910,15 @@ kmodel_t *Mdl_Find(const char *name)
 kmodel_t *Mdl_Load(const char *file)
 {
     kmodel_t *model;
+
+    if(file == NULL)
+    {
+        return NULL;
+    }
+    else if(file[0] == 0)
+    {
+        return NULL;
+    }
 
     // is the model already parsed/allocated?
     if(!(model = Mdl_Find(file)))

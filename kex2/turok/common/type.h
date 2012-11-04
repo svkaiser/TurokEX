@@ -61,6 +61,10 @@ typedef union
     float   f;
 } fint_t;
 
+typedef struct actor_s actor_t;
+typedef struct gclient_s gclient_t;
+typedef struct svclient_s svclient_t;
+
 #ifndef _MSC_VER
 	typedef signed long long int64;
 	typedef unsigned long long uint64;

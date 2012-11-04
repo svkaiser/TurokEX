@@ -171,20 +171,33 @@ void Cmd_Init(void);
 //
 // CLIENT PACKET TYPES
 //
-#define CLIENT_PACKET_PING          1
-#define CLIENT_PACKET_SAY           2
-#define CLIENT_PACKET_CMD           3
+typedef enum
+{
+    cp_ping         = 1,
+    cp_say,
+    cp_cmd,
+    cp_msgserver,
+    NUMCLIENTPACKETS
+} cl_packets_t;
 
 //
 // SERVER PACKET TYPES
 //
-#define SERVER_PACKET_PING          1
-#define SERVER_PACKET_CLIENTINFO    2
-#define SERVER_PACKET_MSG           3
+typedef enum
+{
+    sp_ping         = 1,
+    sp_clientinfo,
+    sp_msg,
+    NUMSERVERPACKETS
+} sv_packets_t;
 
 //
 // SERVER MESSAGES
 //
-#define SERVER_MSG_FULL             1
+typedef enum
+{
+    sm_full         = 1,
+    NUMSERVERMESSAGES
+} sv_messages_t;
 
 #endif

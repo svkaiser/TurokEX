@@ -75,6 +75,9 @@ d_inline void dglSetVertexColor(vtx_t *v, rcolor c, word count)
 #define GLSTATE_TEXTURE1    3
 #define GLSTATE_TEXTURE2    4
 #define GLSTATE_TEXTURE3    5
+#define GLSTATE_ALPHATEST   6
+#define GLSTATE_TEXGEN_S    7
+#define GLSTATE_TEXGEN_T    8
 
 //
 // TEXTURES

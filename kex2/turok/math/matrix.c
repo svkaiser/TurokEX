@@ -185,7 +185,7 @@ void Mtx_MultiplyByAxis(mtx_t m1, mtx_t m2, float x, float y, float z)
     m1[12] = m2[12];
     m1[13] = m2[13];
     m1[14] = m2[14];
-    m1[15] = 1.0f;
+    m1[15] = 1;
 }
 
 //
@@ -237,7 +237,7 @@ void Mtx_TransposeDup(mtx_t m1, mtx_t m2)
     m1[12] = m2[12];
     m1[13] = m2[13];
     m1[14] = m2[14];
-    m1[15] = 1.0f;
+    m1[15] = 1;
 }
 
 //
@@ -285,7 +285,7 @@ void Mtx_IdentityAxis(mtx_t m, float x, float y, float z)
     m[12] = 0;
     m[13] = 0;
     m[14] = 0;
-    m[15] = 1.0; 
+    m[15] = 1; 
 }
 
 //
@@ -305,7 +305,7 @@ void Mtx_IdentityX(mtx_t m, float angle)
     m[ 2] = -s;
     m[ 3] = 0;
     m[ 4] = 0;
-    m[ 5] = 1.0;
+    m[ 5] = 1;
     m[ 6] = 0;
     m[ 7] = 0;
     m[ 8] = s;
@@ -315,7 +315,7 @@ void Mtx_IdentityX(mtx_t m, float angle)
     m[12] = 0;
     m[13] = 0;
     m[14] = 0;
-    m[15] = 1.0;
+    m[15] = 1;
 }
 
 //
@@ -330,7 +330,7 @@ void Mtx_IdentityY(mtx_t m, float angle)
     s = (float)sin(angle);
     c = (float)cos(angle);
 
-    m[ 0] = 1.0;
+    m[ 0] = 1;
     m[ 1] = 0;
     m[ 2] = 0;
     m[ 3] = 0;
@@ -345,7 +345,7 @@ void Mtx_IdentityY(mtx_t m, float angle)
     m[12] = 0;
     m[13] = 0;
     m[14] = 0;
-    m[15] = 1.0;
+    m[15] = 1;
 }
 
 //
@@ -370,12 +370,12 @@ void Mtx_IdentityZ(mtx_t m, float angle)
     m[ 7] = 0;
     m[ 8] = 0;
     m[ 9] = 0;
-    m[10] = 1.0;
+    m[10] = 1;
     m[11] = 0;
     m[12] = 0;
     m[13] = 0;
     m[14] = 0;
-    m[15] = 1.0;
+    m[15] = 1;
 }
 
 //

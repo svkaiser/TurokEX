@@ -96,9 +96,6 @@ actor_t *G_SpawnActor(void)
     }
 
     actor = (actor_t*)Z_Calloc(sizeof(*actor), PU_ACTOR, NULL);
-
-    actor->svclient_id  = -1;
-
     G_LinkActor(actor);
 
     return actor;
@@ -111,6 +108,36 @@ actor_t *G_SpawnActor(void)
 void G_SetActorLinkList(int map)
 {
     g_actorlist = &actorlist[map];
+}
+
+//
+// G_SetAnimState
+//
+
+void G_SetAnimState(actor_t *actor, const char *name)
+{
+    kmodel_t *model;
+    unsigned int i;
+
+    if(model = Mdl_Load(actor->object.mdlpath))
+    {
+        actor->anim = Mdl_GetAnim(model, name);
+
+        for(i = 0; i < model->numnodes; i++)
+        {
+            if(actor->frameset.translation != NULL)
+            {
+                Vec_Copy3(actor->frameset.translation[i].vec,
+                    actor->anim->initial.translation[i].vec);
+            }
+
+            if(actor->frameset.rotation != NULL)
+            {
+                Vec_Copy4(actor->frameset.rotation[i].vec,
+                    actor->anim->initial.rotation[i].vec);
+            }
+        }
+    }
 }
 
 //
@@ -203,6 +230,8 @@ static void G_GetTerrianType(actor_t *actor)
 {
     float dist;
 
+    actor->flags &= ~AF_SUBMERGED;
+
     if(actor->terriantype == TT_NOCLIP)
     {
         // ignore while in noclip mode
@@ -242,6 +271,7 @@ static void G_GetTerrianType(actor_t *actor)
 
         case WL_UNDER:
             actor->terriantype = TT_WATER_UNDER;
+            actor->flags |= AF_SUBMERGED;
             return;
 
         default:
@@ -250,8 +280,7 @@ static void G_GetTerrianType(actor_t *actor)
     }
     
     // lava
-    if(actor->plane->flags & CLF_DAMAGE_LAVA &&
-        actor->svclient_id != -1 && dist < ONPLANE_EPSILON)
+    if(actor->plane->flags & CLF_DAMAGE_LAVA && dist < ONPLANE_EPSILON)
     {
         actor->terriantype = TT_LAVA;
         return;
@@ -358,6 +387,11 @@ void G_ActorMovement(actor_t *actor)
                     // lerp to the surface
                     Vec_Set3(lerp, position[0], area->waterplane + 2.048f, position[2]);
                     Vec_Lerp3(position, 0.05f, position, lerp);
+
+                    if(actor->flags & AF_SUBMERGED)
+                    {
+                        actor->flags &= ~AF_SUBMERGED;
+                    }
                 }
                 else
                 {
@@ -412,7 +446,7 @@ void G_ActorMovement(actor_t *actor)
 
         default:
             // normal gravity
-            if(Plane_IsAWall(actor->plane) && dist <= 15.36f)
+            if(Plane_IsAWall(actor->plane) && dist <= 10.24f)
             {
                 vec3_t push;
 

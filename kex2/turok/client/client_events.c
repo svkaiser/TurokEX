@@ -208,7 +208,7 @@ void CL_BuildTiccmd(void)
         return;
     }
 
-    Packet_Write8(packet, CLIENT_PACKET_CMD);
+    Packet_Write8(packet, cp_cmd);
 
     CL_WriteTiccmd(packet, &cmd);
     Packet_Send(packet, client.peer);

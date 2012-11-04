@@ -329,6 +329,15 @@ void GL_SetState(int bit, kbool enable)
     case GLSTATE_TEXTURE3:
         TOGGLEGLBIT(GLSTATE_TEXTURE3, GL_TEXTURE_2D);
         break;
+    case GLSTATE_ALPHATEST:
+        TOGGLEGLBIT(GLSTATE_ALPHATEST, GL_ALPHA_TEST);
+        break;
+    case GLSTATE_TEXGEN_S:
+        TOGGLEGLBIT(GLSTATE_TEXGEN_S, GL_TEXTURE_GEN_S);
+        break;
+    case GLSTATE_TEXGEN_T:
+        TOGGLEGLBIT(GLSTATE_TEXGEN_T, GL_TEXTURE_GEN_T);
+        break;
     default:
         Com_Warning("GL_SetState: unknown bit flag: %i\n", bit);
         break;

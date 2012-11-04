@@ -220,6 +220,7 @@ static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
     {
         actor_t *actor = G_SpawnActor(); // TODO handle test case if returned NULL
         object_t *obj;
+        kmodel_t *model;
 
         // read into nested actor block
         SC_ExpectNextToken(TK_LBRACK);
@@ -336,6 +337,18 @@ static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
         Mtx_ApplyRotation(obj->rotation, obj->matrix);
         Mtx_Scale(obj->matrix, obj->scale[0], obj->scale[1], obj->scale[2]);
         Mtx_AddTranslation(obj->matrix, obj->origin[0], obj->origin[1], obj->origin[2]);
+
+        // TODO - FIXME
+        if(actor->object.type != OT_DYNAMIC_PORTAL)
+        {
+            if(model = Mdl_Load(actor->object.mdlpath))
+            {
+                actor->frameset.translation = (animtranslation_t*)Z_Calloc(sizeof(animtranslation_t) *
+                    model->numnodes, PU_ACTOR, 0);
+                actor->frameset.rotation = (animrotation_t*)Z_Calloc(sizeof(animrotation_t) *
+                    model->numnodes, PU_ACTOR, 0);
+            }
+        }
     }
 }
 

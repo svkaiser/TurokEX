@@ -358,6 +358,32 @@ static void G_ClientNoClipMove(actor_t *client, ticcmd_t *cmd)
 }
 
 //
+// G_ClientReborn
+//
+
+void G_ClientReborn(gclient_t *client)
+{
+    memset(client, 0, sizeof(gclient_t));
+
+    client->hasbackpack                 = false;
+    client->maxammo[am_clip]            = 100;
+    client->maxammo[am_shells]          = 20;
+    client->maxammo[am_expshells]       = 10;
+    client->maxammo[am_cell]            = 100;
+    client->maxammo[am_tekarrows]       = 15;
+    client->maxammo[am_arrows]          = 30;
+    client->maxammo[am_mini]            = 125;
+    client->maxammo[am_grenade]         = 20;
+    client->maxammo[am_rocket]          = 6;
+    client->maxammo[am_fusion]          = 2;
+    client->maxammo[am_chrono]          = 3;
+    client->weaponowned[wp_knife]       = true;
+    client->weaponowned[wp_crossbow]    = true;
+    client->activeweapon                = wp_knife;
+    client->actor->health               = 100;
+}
+
+//
 // G_ClientThink
 //
 
