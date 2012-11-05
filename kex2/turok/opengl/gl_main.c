@@ -525,6 +525,7 @@ void GL_Init(void)
     dglClearDepth(1.0f);
     dglDisable(GL_TEXTURE_2D);
     dglEnable(GL_CULL_FACE);
+    dglEnable(GL_NORMALIZE);
     dglCullFace(GL_FRONT);
     dglShadeModel(GL_SMOOTH);
     dglHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);

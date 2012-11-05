@@ -203,8 +203,6 @@ void Kernel_Main(int argc, char **argv)
     Com_Printf("Video Initialized\n");
     R_Init();
     Com_Printf("Renderer Initialized\n");
-    G_Init();
-    Com_Printf("Game Initialized\n");
 
     GL_Register();
 
@@ -217,6 +215,8 @@ void Kernel_Main(int argc, char **argv)
 
     KF_LoadZipFile("game.kpf");
 
+    G_Init();
+    Com_Printf("Game Initialized\n");
     GL_Init();
     Com_Printf("OpenGL Initialized\n");
 

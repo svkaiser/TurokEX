@@ -511,11 +511,14 @@ static void SC_GetLetterToken(char initial)
 {
     int c = initial;
     int i = 0;
+    kbool haschar = false;
 
-    while(sc_charcode[c] == CHAR_LETTER)
+    while(sc_charcode[c] == CHAR_LETTER ||
+        (haschar && sc_charcode[c] == CHAR_NUMBER))
     {
         sc_parser->token[i++] = c;
         c = SC_GetChar();
+        haschar = true;
     }
 
     sc_parser->tokentype = TK_IDENIFIER;

@@ -308,6 +308,172 @@ static void R_SetupViewFrame(actor_t *actor)
 }
 
 //
+// R_DrawSection
+//
+
+void R_DrawSection(mdlsection_t *section, char *texture)
+{
+    texture_t *tex;
+    char *texturepath;
+    rcolor color;
+
+    if(texture == NULL)
+    {
+        texturepath = section->texpath;
+    }
+    else
+    {
+        texturepath = texture;
+    }
+
+    GL_SetState(GLSTATE_CULL, !(section->flags & MDF_NOCULLFACES));
+    GL_SetState(GLSTATE_BLEND, section->flags & (MDF_MASKED|MDF_TRANSPARENT1));
+    GL_SetState(GLSTATE_ALPHATEST, section->flags & (MDF_MASKED|MDF_TRANSPARENT1));
+    GL_SetState(GLSTATE_TEXGEN_S, section->flags & MDF_SHINYSURFACE);
+    GL_SetState(GLSTATE_TEXGEN_T, section->flags & MDF_SHINYSURFACE);
+
+    if(section->flags & MDF_COLORIZE)
+    {
+        color = section->color1;
+    }
+    else
+    {
+        color = COLOR_WHITE;
+    }
+
+    dglNormalPointer(GL_FLOAT, sizeof(float), section->normals);
+    dglTexCoordPointer(2, GL_FLOAT, 0, section->coords);
+    dglVertexPointer(3, GL_FLOAT, sizeof(vec3_t), section->xyz);
+
+    tex = Tex_CacheTextureFile(texturepath, GL_REPEAT,
+        section->flags & MDF_MASKED);
+
+    if(tex)
+    {
+        GL_SetState(GLSTATE_TEXTURE0, true);
+        GL_BindTexture(tex);
+    }
+    else
+    {
+        GL_SetState(GLSTATE_TEXTURE0, false);
+        color = section->color1;
+    }
+
+    if(section->flags & MDF_TRANSPARENT1)
+    {
+        color = color & 0xffffff;
+        color |= (160 << 24);
+    }
+
+    dglColor4ubv((byte*)&color);
+
+    dglDrawElements(GL_TRIANGLES, section->numtris, GL_UNSIGNED_SHORT, section->tris);
+}
+
+//
+// R_TraverseDrawNode
+//
+
+void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
+                          char **textures, int variant)
+{
+    unsigned int i;
+    mtx_t mtx;
+
+    dglPushMatrix();
+
+    if(model->anims)
+    {
+        Mtx_ApplyRotation(node->rotation, mtx);
+        Mtx_AddTranslation(mtx,
+            node->translation[0],
+            node->translation[1],
+            node->translation[2]);
+        dglMultMatrixf(mtx);
+    }
+
+    if(node->nummeshes > 0)
+    {
+        for(i = 0; i < node->meshes[variant].numsections; i++)
+        {
+            mdlsection_t *section = &node->meshes[variant].sections[i];
+            char *texturepath = NULL;
+
+            if(textures != NULL)
+            {
+                if(textures[i][0] != '-')
+                {
+                    texturepath = textures[i];
+                }
+            }
+
+            R_DrawSection(section, texturepath);
+        }
+    }
+
+    for(i = 0; i < node->numchildren; i++)
+    {
+        R_TraverseDrawNode(model,
+            &model->nodes[node->children[i]], textures, variant);
+    }
+
+    dglPopMatrix();
+}
+
+//
+// R_MorphModel
+//
+
+#define R_MORPHSPEED    0.125f
+
+static void R_MorphModel(kmodel_t *model)
+{
+    unsigned int i;
+    unsigned int var;
+    unsigned int varcount;
+    float t;
+    mdlmesh_t *dst;
+    mdlmesh_t *src;
+
+    if(model == NULL)
+    {
+        return;
+    }
+
+    varcount = model->nodes[0].numvariants;
+    
+    if(varcount <= 0)
+    {
+        return;
+    }
+
+    t = (float)(client.tics * R_MORPHSPEED);
+    var = ((int)t % (varcount-2)) + 2;
+
+    if(var >= varcount)
+    {
+        return;
+    }
+
+    dst = &model->nodes[0].meshes[0];
+    src = &model->nodes[0].meshes[var];
+
+    for(i = 0; i < dst->numsections; i++)
+    {
+        unsigned int j;
+
+        mdlsection_t *s1 = &dst->sections[i];
+        mdlsection_t *s2 = &src->sections[i];
+
+        for(j = 0; j < s1->numverts; j++)
+        {
+            Vec_Lerp3(s1->xyz[j], R_MORPHSPEED * 0.92f,
+                s1->xyz[j], s2->xyz[j]);
+        }
+    }
+}
+
+//
 // R_DrawObject
 //
 
@@ -325,20 +491,14 @@ void R_DrawObject(object_t *object)
     if(object->type == OT_MINIPORTAL ||
         object->type == OT_WATER)
     {
-        int varcount = model->nodes[0].numvariants;
-
-        if(varcount > 0)
-        {
-            float t = (float)(client.tics * 0.25f);
-            var = ((int)t % (varcount-2)) + 2;
-        }
+        var = 0;
     }
     else
     {
         var = object->variant;
     }
 
-    Mdl_TraverseDrawNode(model, &model->nodes[0],
+    R_TraverseDrawNode(model, &model->nodes[0],
         object->textureswaps, var);
 }
 
@@ -445,84 +605,6 @@ static void R_DrawInstances(void)
 }
 
 //
-// R_GetViewWeaponOffset
-//
-
-static void R_GetViewWeaponOffset(actor_t *actor, vec3_t offset)
-{
-    float x = 0;
-    float y = 0;
-    float z = 0;
-
-    switch(actor->object.type)
-    {
-    case OT_WEAPON_BOW:
-        x = 0.39f;
-        y = 0.44f;
-        z = 0.77f;
-        break;
-
-    case OT_WEAPON_PISTOL:
-        x = 0.47f;
-        y = 0.54f;
-        z = 0.76f;
-        break;
-
-    case OT_WEAPON_RIFLE:
-        x = 0.5f;
-        y = 0.6f;
-        z = 0.75f;
-        break;
-
-    case OT_WEAPON_PULSERIFLE:
-    case OT_WEAPON_SHOTGUN:
-        x = 0.5f;
-        y = 0.5f;
-        z = 0.78f;
-        break;
-
-    case OT_WEAPON_ASHOTGUN:
-        x = 0.5f;
-        y = 0.52f;
-        z = 0.80f;
-        break;
-
-    case OT_WEAPON_MINIGUN:
-        x = 0.48f;
-        y = 0.48f;
-        z = 0.80f;
-        break;
-
-    case OT_WEAPON_KNIFE:
-    case OT_WEAPON_GRENADE:
-    case OT_WEAPON_ALIENGUN:
-    case OT_WEAPON_MISSILE:
-    case OT_WEAPON_ACCELERATOR:
-        x = 0.5f;
-        y = 0.45f;
-        z = 0.78f;
-        break;
-
-    case OT_WEAPON_CANNON:
-        x = 0.5f;
-        y = -0.7f;
-        z = 0.68f;
-        break;
-
-    case OT_WEAPON_CHRONO:
-        x = 0.6f;
-        y = 0.17f;
-        z = 0.85f;
-        break;
-    }
-
-    Vec_Set3(offset,
-        -x * 341.334f,
-        -y * 341.334f,
-         z * 341.334f - 275.456f);
-}
-
-//
 // R_DrawViewWeapon
 //
 
@@ -557,7 +639,7 @@ void R_DrawViewWeapon(void)
     dglLoadMatrixf(mtx);
 
     Mdl_SetAnimState(model, "anim00", true);
-    Mdl_TraverseDrawNode(model, &model->nodes[0], NULL, 0);
+    R_TraverseDrawNode(model, &model->nodes[0], NULL, 0);
 }
 
 //
@@ -608,6 +690,9 @@ void R_DrawFrame(void)
         GL_SetState(GLSTATE_TEXTURE0, true);
         GL_SetState(GLSTATE_BLEND, false);
     }
+
+    R_MorphModel(Mdl_Find("models/mdl500/mdl500.kmesh"));
+    R_MorphModel(Mdl_Find("models/mdl643/mdl643.kmesh"));
 }
 
 //

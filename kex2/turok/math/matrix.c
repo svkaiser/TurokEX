@@ -81,7 +81,7 @@ void Mtx_ViewFrustum(int width, int height, float fovy, float znear)
     float bottom;
     float top;
     float aspect;
-    float m[16];
+    mtx_t m;
     
     aspect = (float)width / (float)height;
     top = znear * (float)tan((float)fovy * M_PI / 360.0f);

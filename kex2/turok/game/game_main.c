@@ -38,6 +38,8 @@
 #define JUMP_VELOCITY   11.612f
 #define NOCLIPMOVE      (MOVE_VELOCITY * 6)
 
+static weapon_t weapons[NUMWEAPONS];
+
 //
 // G_Shutdown
 //
@@ -358,6 +360,23 @@ static void G_ClientNoClipMove(actor_t *client, ticcmd_t *cmd)
 }
 
 //
+// G_SetupWeapon
+//
+
+static void G_SetupWeapon(weapon_t *weapon, const char *model,
+                          float x, float y, float z)
+{
+    memset(weapon, 0, sizeof(weapon_t));
+
+    weapon->model = Mdl_Load(model);
+    weapon->anim = Mdl_GetAnim(weapon->model, "anim00");
+    Vec_Set3(weapon->origin,
+        -x * 341.334f,
+        -y * 341.334f,
+         z * 341.334f - 275.456f);
+}
+
+//
 // G_ClientReborn
 //
 
@@ -448,6 +467,31 @@ static void FCmd_NoClip(void)
 void G_Init(void)
 {
     Map_Init();
+
+    G_SetupWeapon(&weapons[wp_knife],
+        "models/mdl653/mdl653.kmesh", 0.5f, 0.45f, 0.78f);
+    G_SetupWeapon(&weapons[wp_crossbow],
+        "models/mdl644/mdl644.kmesh", 0.39f, 0.44f, 0.77f);
+    G_SetupWeapon(&weapons[wp_pistol],
+        "models/mdl663/mdl663.kmesh", 0.47f, 0.54f, 0.76f);
+    G_SetupWeapon(&weapons[wp_shotgun],
+        "models/mdl669/mdl669.kmesh", 0.5f, 0.5f, 0.78f);
+    G_SetupWeapon(&weapons[wp_autoshotgun],
+        "models/mdl642/mdl642.kmesh", 0.5f, 0.52f, 0.8f);
+    G_SetupWeapon(&weapons[wp_rifle],
+        "models/mdl665/mdl665.kmesh", 0.5f, 0.6f, 0.75f);
+    G_SetupWeapon(&weapons[wp_pulse],
+        "models/mdl655/mdl655.kmesh", 0.5f, 0.5f, 0.78f);
+    G_SetupWeapon(&weapons[wp_grenade],
+        "models/mdl650/mdl650.kmesh", 0.5f, 0.45f, 0.78f);
+    G_SetupWeapon(&weapons[wp_missile],
+        "models/mdl666/mdl666.kmesh", 0.5f, 0.45f, 0.78f);
+    G_SetupWeapon(&weapons[wp_accelerator],
+        "models/mdl668/mdl668.kmesh", 0.5f, 0.45f, 0.78f);
+    G_SetupWeapon(&weapons[wp_bfg],
+        "models/mdl662/mdl662.kmesh", 0.5f, -0.7f, 0.68f);
+    G_SetupWeapon(&weapons[wp_chrono],
+        "models/mdl645/mdl645.kmesh", 0.6f, 0.17f, 0.85f);
 
     // TODO: TEMP
     Cmd_AddCommand("noclip", FCmd_NoClip);

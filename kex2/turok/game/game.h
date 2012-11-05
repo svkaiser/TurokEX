@@ -62,6 +62,18 @@ enum
     NUMAMMO
 };
 
+typedef struct
+{
+    vec3_t      origin;
+    float       yaw;
+    float       pitch;
+    kmodel_t    *model;
+    anim_t      *anim;
+    float       animspeed;
+    float       animframe;
+    frameset_t  frameset;
+} weapon_t;
+
 //
 // gclient - game-side client controller
 // handled mostly on server side and contains
