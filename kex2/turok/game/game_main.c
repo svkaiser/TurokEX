@@ -33,12 +33,7 @@
 #include "zone.h"
 #include "game.h"
 
-#define MOVE_VELOCITY   2.85f
-#define SWIM_VELOCITY   0.05f
-#define JUMP_VELOCITY   11.612f
-#define NOCLIPMOVE      (MOVE_VELOCITY * 6)
-
-static weapon_t weapons[NUMWEAPONS];
+weapon_t weapons[NUMWEAPONS];
 
 //
 // G_Shutdown
@@ -64,302 +59,6 @@ void G_Ticker(void)
 }
 
 //
-// G_CheckJump
-//
-
-static kbool G_CheckJump(actor_t *actor)
-{
-    if(actor->plane == NULL)
-    {
-        return false;
-    }
-
-    if(actor->terriantype == TT_WATER_SURFACE)
-    {
-        if(actor->origin[1] >
-            (Map_GetArea(actor->plane)->waterplane -
-            actor->object.centerheight))
-        {
-            return true;
-        }
-    }
-    else if(Plane_IsAWall(actor->plane) &&
-        actor->origin[1] - Plane_GetDistance(actor->plane, actor->origin) <= 8)
-    {
-        return false;
-    }
-    else if(!(actor->flags & AF_CLIENTJUMP))
-    {
-        if(actor->velocity[1] < 0 && actor->velocity[1] > -16)
-        {
-            return true;
-        }
-    }
-
-    if((actor->origin[1] + actor->velocity[1]) -
-        Plane_GetDistance(actor->plane, actor->origin) < ONPLANE_EPSILON)
-    {
-        return true;
-    }
-
-    return false;
-}
-
-//
-// G_ClientWalk
-//
-
-static void G_ClientWalk(actor_t *client, ticcmd_t *cmd)
-{
-    float sy;
-    float cy;
-
-    sy = (float)sin(client->yaw);
-    cy = (float)cos(client->yaw);
-
-    if(cmd->buttons & BT_FORWARD)
-    {
-        client->velocity[0] += MOVE_VELOCITY * sy;
-        client->velocity[2] += MOVE_VELOCITY * cy;
-    }
-
-    if(cmd->buttons & BT_BACKWARD)
-    {
-        client->velocity[0] -= MOVE_VELOCITY * sy;
-        client->velocity[2] -= MOVE_VELOCITY * cy;
-    }
-
-    sy = (float)sin(client->yaw + DEG2RAD(90));
-    cy = (float)cos(client->yaw + DEG2RAD(90));
-
-    if(cmd->buttons & BT_STRAFELEFT)
-    {
-        client->velocity[0] += MOVE_VELOCITY * sy;
-        client->velocity[2] += MOVE_VELOCITY * cy;
-    }
-
-    if(cmd->buttons & BT_STRAFERIGHT)
-    {
-        client->velocity[0] -= MOVE_VELOCITY * sy;
-        client->velocity[2] -= MOVE_VELOCITY * cy;
-    }
-
-    if(cmd->buttons & BT_JUMP)
-    {
-        if(G_CheckJump(client) && !cmd->heldtime[1])
-        {
-            client->flags |= AF_CLIENTJUMP;
-            client->velocity[1] = JUMP_VELOCITY;
-        }
-    }
-}
-
-//
-// G_ClientSwim
-//
-
-static void G_ClientSwim(actor_t *client, ticcmd_t *cmd)
-{
-    float sy;
-    float cy;
-    float vsy;
-    float vcy;
-    float vel;
-
-    if(cmd->heldtime[0] == 0 &&
-        Vec_Unit3(client->velocity) < 3)
-    {
-        vel = SWIM_VELOCITY * 60;
-    }
-    else
-    {
-        vel = SWIM_VELOCITY;
-    }
-
-    sy = (float)sin(client->yaw);
-    cy = (float)cos(client->yaw);
-    vsy = (float)sin(client->pitch);
-    vcy = (float)cos(client->pitch);
-
-    if(cmd->buttons & BT_FORWARD)
-    {
-        client->velocity[0] += (vel * sy) * vcy;
-        client->velocity[1] -= (vel * vsy);
-        client->velocity[2] += (vel * cy) * vcy;
-    }
-
-    if(cmd->buttons & BT_BACKWARD)
-    {
-        client->velocity[0] -= (SWIM_VELOCITY * sy) * vcy;
-        client->velocity[1] += (SWIM_VELOCITY * vsy);
-        client->velocity[2] -= (SWIM_VELOCITY * cy) * vcy;
-    }
-
-    sy = (float)sin(client->yaw + DEG2RAD(90));
-    cy = (float)cos(client->yaw + DEG2RAD(90));
-
-    if(cmd->buttons & BT_STRAFELEFT)
-    {
-        client->velocity[0] += SWIM_VELOCITY * sy;
-        client->velocity[2] += SWIM_VELOCITY * cy;
-    }
-
-    if(cmd->buttons & BT_STRAFERIGHT)
-    {
-        client->velocity[0] -= SWIM_VELOCITY * sy;
-        client->velocity[2] -= SWIM_VELOCITY * cy;
-    }
-
-    if(cmd->buttons & BT_JUMP)
-    {
-        client->velocity[1] += SWIM_VELOCITY;
-    }
-}
-
-//
-// G_ClientPaddle
-//
-
-static void G_ClientPaddle(actor_t *client, ticcmd_t *cmd)
-{
-    float sy;
-    float cy;
-    float vsy;
-    float vcy;
-    float ang;
-    float vel;
-
-    sy = (float)sin(client->yaw);
-    cy = (float)cos(client->yaw);
-    vsy = (float)sin(client->pitch);
-    vcy = (float)cos(client->pitch);
-
-    ang = client->pitch;
-
-    Ang_Clamp(&ang);
-            
-    if(ang < DEG2RAD(45))
-    {
-        vsy = 0;
-    }
-    else
-    {
-        vsy *= MOVE_VELOCITY;
-    }
-
-    if(cmd->heldtime[0] == 0 &&
-        Vec_Unit2(client->velocity) < 2)
-    {
-        vel = SWIM_VELOCITY * 80;
-    }
-    else
-    {
-        vel = SWIM_VELOCITY;
-    }
-
-    if(cmd->buttons & BT_FORWARD)
-    {
-        client->velocity[0] += (vel * sy) * vcy;
-        client->velocity[1] -= vsy;
-        client->velocity[2] += (vel * cy) * vcy;
-    }
-
-    if(cmd->buttons & BT_BACKWARD)
-    {
-        client->velocity[0] -= (SWIM_VELOCITY * sy) * vcy;
-        client->velocity[1] += vsy;
-        client->velocity[2] -= (SWIM_VELOCITY * cy) * vcy;
-    }
-
-    sy = (float)sin(client->yaw + DEG2RAD(90));
-    cy = (float)cos(client->yaw + DEG2RAD(90));
-
-    if(cmd->buttons & BT_STRAFELEFT)
-    {
-        client->velocity[0] += SWIM_VELOCITY * sy;
-        client->velocity[2] += SWIM_VELOCITY * cy;
-    }
-
-    if(cmd->buttons & BT_STRAFERIGHT)
-    {
-        client->velocity[0] -= SWIM_VELOCITY * sy;
-        client->velocity[2] -= SWIM_VELOCITY * cy;
-    }
-
-    if(cmd->buttons & BT_JUMP)
-    {
-        if(G_CheckJump(client) && !cmd->heldtime[1])
-        {
-            client->flags |= AF_CLIENTJUMP;
-            client->velocity[1] = JUMP_VELOCITY;
-        }
-    }
-}
-
-//
-// G_ClientNoClipMove
-//
-
-static void G_ClientNoClipMove(actor_t *client, ticcmd_t *cmd)
-{
-    float sy;
-    float cy;
-    float vsy;
-    float vcy;
-    float x1;
-    float y1;
-    float z1;
-    float x2;
-    float y2;
-    float z2;
-
-    sy = (float)sin(client->yaw);
-    cy = (float)cos(client->yaw);
-    vsy = (float)sin(client->pitch);
-    vcy = (float)cos(client->pitch);
-
-    x1 = y1 = z1 = x2 = y2 = z2 = 0;
-
-    if(cmd->buttons & BT_FORWARD)
-    {
-        x1 = (NOCLIPMOVE * sy) * vcy;
-        y1 = NOCLIPMOVE * -vsy;
-        z1 = (NOCLIPMOVE * cy) * vcy;
-    }
-
-    if(cmd->buttons & BT_BACKWARD)
-    {
-        x1 = -(NOCLIPMOVE * sy) * vcy;
-        y1 = NOCLIPMOVE * vsy;
-        z1 = -(NOCLIPMOVE * cy) * vcy;
-    }
-
-    sy = (float)sin(client->yaw + DEG2RAD(90));
-    cy = (float)cos(client->yaw + DEG2RAD(90));
-
-    if(cmd->buttons & BT_STRAFELEFT)
-    {
-        x2 = NOCLIPMOVE * sy;
-        z2 = NOCLIPMOVE * cy;
-    }
-
-    if(cmd->buttons & BT_STRAFERIGHT)
-    {
-        x2 = -NOCLIPMOVE * sy;
-        z2 = -NOCLIPMOVE * cy;
-    }
-
-    if(cmd->buttons & BT_JUMP)
-    {
-        y2 = NOCLIPMOVE;
-    }
-
-    client->velocity[0] = x1 + x2;
-    client->velocity[1] = y1 + y2;
-    client->velocity[2] = z1 + z2;
-}
-
-//
 // G_SetupWeapon
 //
 
@@ -368,12 +67,59 @@ static void G_SetupWeapon(weapon_t *weapon, const char *model,
 {
     memset(weapon, 0, sizeof(weapon_t));
 
+    weapon->speed = 4;
     weapon->model = Mdl_Load(model);
-    weapon->anim = Mdl_GetAnim(weapon->model, "anim00");
+    Mdl_SetAnimState(&weapon->animstate, weapon->model, "anim00", false, 0);
     Vec_Set3(weapon->origin,
         -x * 341.334f,
         -y * 341.334f,
          z * 341.334f - 275.456f);
+}
+
+//
+// G_WeaponThink
+//
+
+#define WEAPONTURN_MAX      0.08f
+#define WEAPONTURN_EPSILON  0.001f
+
+void G_WeaponThink(actor_t *owner, weapon_t *weapon)
+{
+    float d;
+
+    weapon->yaw = (weapon->yaw - (client.cmd.mouse[0].f * 0.1f)) * 0.9f;
+    if(weapon->yaw >  WEAPONTURN_MAX) weapon->yaw =  WEAPONTURN_MAX;
+    if(weapon->yaw < -WEAPONTURN_MAX) weapon->yaw = -WEAPONTURN_MAX;
+    if(weapon->yaw <  WEAPONTURN_EPSILON &&
+        weapon->yaw > -WEAPONTURN_EPSILON)
+    {
+        weapon->yaw = 0;
+    }
+
+    weapon->pitch = (weapon->pitch - (client.cmd.mouse[1].f * 0.1f)) * 0.9f;
+    if(weapon->pitch >  WEAPONTURN_MAX) weapon->pitch =  WEAPONTURN_MAX;
+    if(weapon->pitch < -WEAPONTURN_MAX) weapon->pitch = -WEAPONTURN_MAX;
+    if(weapon->pitch <  WEAPONTURN_EPSILON &&
+        weapon->pitch > -WEAPONTURN_EPSILON)
+    {
+        weapon->pitch = 0;
+    }
+
+    if((d = Vec_Unit2(owner->velocity)) >= 0.1f)
+    {
+        Mdl_SetAnimState(&weapon->animstate, weapon->model, "anim02", true,
+            (float)client.tics + weapon->speed);
+    }
+    else
+    {
+        Mdl_SetAnimState(&weapon->animstate, weapon->model, "anim00", true,
+            (float)client.tics + weapon->speed);
+    }
+
+    Mdl_UpdateAnimState(&weapon->animstate, weapon->speed,
+        (float)client.tics + weapon->speed);
+
+    Com_Printf("%f\n", weapon->yaw * M_DEG);
 }
 
 //
@@ -406,37 +152,13 @@ void G_ClientReborn(gclient_t *client)
 // G_ClientThink
 //
 
-void G_ClientThink(actor_t *client, ticcmd_t *cmd)
+void G_ClientThink(actor_t *client)
 {
-    switch(client->terriantype)
+    // TODO - TEMP
+    if(g_currentmap != NULL)
     {
-    case TT_WATER_SHALLOW:
-        G_ClientWalk(client, cmd);
-        break;
-
-    case TT_WATER_SURFACE:
-        G_ClientPaddle(client, cmd);
-        break;
-
-    case TT_WATER_UNDER:
-        G_ClientSwim(client, cmd);
-        break;
-
-    case TT_LAVA:
-        G_ClientWalk(client, cmd);
-        break;
-
-    case TT_NOCLIP:
-        G_ClientNoClipMove(client, cmd);
-        break;
-
-    default:
-        G_ClientWalk(client, cmd);
-        break;
+        G_WeaponThink(client, &weapons[wp_pulse]);
     }
-
-    // TEMP
-    G_ActorMovement(client);
 }
 
 //
@@ -468,6 +190,7 @@ void G_Init(void)
 {
     Map_Init();
 
+    // TODO - set these up as definitions
     G_SetupWeapon(&weapons[wp_knife],
         "models/mdl653/mdl653.kmesh", 0.5f, 0.45f, 0.78f);
     G_SetupWeapon(&weapons[wp_crossbow],

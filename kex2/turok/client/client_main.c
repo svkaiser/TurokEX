@@ -219,7 +219,7 @@ static void CL_Ticker(void)
     Con_Ticker();
 
     //TEMP
-    G_ClientThink(&client.localactor, &client.cmd);
+    G_ClientThink(&client.localactor);
 
     client.tics++;
 }
@@ -270,6 +270,8 @@ void CL_Run(int msec)
     CL_BuildTiccmd();
 
     CL_Drawer();
+
+    CL_Move(&client);
 
     CL_Ticker();
 }

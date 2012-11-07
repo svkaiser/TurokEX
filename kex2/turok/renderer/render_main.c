@@ -33,6 +33,7 @@
 #include "client.h"
 #include "level.h"
 #include "zone.h"
+#include "game.h"
 
 CVAR_EXTERNAL(cl_fov);
 static kbool showcollision = false;
@@ -375,21 +376,82 @@ void R_DrawSection(mdlsection_t *section, char *texture)
 //
 
 void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
-                          char **textures, int variant)
+                          char **textures, int variant, animstate_t *animstate)
 {
     unsigned int i;
     mtx_t mtx;
+    anim_t *anim;
+    anim_t *prevanim;
+    int frame;
+    int nextframe;
+    float lerp;
 
-    dglPushMatrix();
-
-    if(model->anims)
+    if(animstate != NULL)
     {
-        Mtx_ApplyRotation(node->rotation, mtx);
-        Mtx_AddTranslation(mtx,
-            node->translation[0],
-            node->translation[1],
-            node->translation[2]);
-        dglMultMatrixf(mtx);
+        dglPushMatrix();
+
+        anim = animstate->anim;
+        prevanim = animstate->prevanim;
+        frame = animstate->frame;
+        nextframe = animstate->nextframe;
+        lerp = animstate->lerptime;
+
+        if(anim)
+        {
+            if(frame < (int)anim->numframes)
+            {
+                vec4_t rot;
+                vec3_t pos;
+                vec4_t r1, r2;
+                vec3_t t1, t2;
+                vec4_t rot_cur;
+                vec4_t rot_next;
+                vec3_t pos_cur;
+                vec3_t pos_next;
+                int nodenum;
+
+                nodenum = node - model->nodes;
+
+                Mdl_GetAnimRotation(r1, anim, nodenum, frame);
+                Mdl_GetAnimRotation(r2, anim, nodenum, nextframe);
+                Mdl_GetAnimTranslation(t1, anim, nodenum, frame);
+                Mdl_GetAnimTranslation(t2, anim, nodenum, nextframe);
+
+                if(prevanim == NULL)
+                {
+                    Vec_Copy4(rot_cur, r1);
+                    Vec_Copy4(rot_next, r2);
+                    Vec_Copy3(pos_cur, t1);
+                    Vec_Copy3(pos_next, t2);
+                }
+                else
+                {
+                    vec4_t r3, r4;
+                    vec3_t t3, t4;
+                    int prevframe;
+                    int prevnextframe;
+
+                    prevframe = animstate->prevframe;
+                    prevnextframe = animstate->prevnextframe;
+
+                    Mdl_GetAnimRotation(r3, prevanim, nodenum, prevframe);
+                    Mdl_GetAnimRotation(r4, prevanim, nodenum, prevnextframe);
+                    Mdl_GetAnimTranslation(t3, prevanim, nodenum, prevframe);
+                    Mdl_GetAnimTranslation(t4, prevanim, nodenum, prevnextframe);
+
+                    Vec_Slerp(rot_cur, lerp, r3, r1);
+                    Vec_Slerp(rot_next, lerp, r4, r2);
+                    Vec_Lerp3(pos_cur, lerp, t3, t1);
+                    Vec_Lerp3(pos_next, lerp, t4, t2);
+                }
+
+                Vec_Slerp(rot, lerp, rot_cur, rot_next);
+                Vec_Lerp3(pos, lerp, pos_cur, pos_next);
+                Mtx_ApplyRotation(rot, mtx);
+                Mtx_AddTranslation(mtx, pos[0], pos[1], pos[2]);
+                dglMultMatrixf(mtx);
+            }
+        }
     }
 
     if(node->nummeshes > 0)
@@ -414,28 +476,44 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
     for(i = 0; i < node->numchildren; i++)
     {
         R_TraverseDrawNode(model,
-            &model->nodes[node->children[i]], textures, variant);
+            &model->nodes[node->children[i]], textures, variant, animstate);
     }
 
-    dglPopMatrix();
+    if(animstate != NULL)
+    {
+        dglPopMatrix();
+    }
 }
 
 //
 // R_MorphModel
 //
 
-#define R_MORPHSPEED    0.125f
-
-static void R_MorphModel(kmodel_t *model)
+typedef struct
 {
-    unsigned int i;
-    unsigned int var;
-    unsigned int varcount;
-    float t;
-    mdlmesh_t *dst;
-    mdlmesh_t *src;
+    char    *model;
+    int     speed;
+    float   time;
+    int     tics;
+    int     frame;
+} morphmodel_t;
 
-    if(model == NULL)
+static morphmodel_t morphmodels[2] =
+{
+    { "models/mdl500/mdl500.kmesh", 4, 0, 0, 0 },
+    { "models/mdl643/mdl643.kmesh", 8, 0, 0, 0 }
+};
+
+static void R_MorphModel(morphmodel_t *morph)
+{
+    kmodel_t *model;
+    unsigned int i;
+    unsigned int varcount;
+    mdlmesh_t *dst;
+    mdlmesh_t *src1;
+    mdlmesh_t *src2;
+
+    if(!(model = Mdl_Find(morph->model)))
     {
         return;
     }
@@ -447,30 +525,31 @@ static void R_MorphModel(kmodel_t *model)
         return;
     }
 
-    t = (float)(client.tics * R_MORPHSPEED);
-    var = ((int)t % (varcount-2)) + 2;
-
-    if(var >= varcount)
+    if(morph->tics <= client.tics)
     {
-        return;
+        morph->time = 0;
+        morph->tics = client.tics + morph->speed;
+        morph->frame++;
     }
 
-    dst = &model->nodes[0].meshes[0];
-    src = &model->nodes[0].meshes[var];
+    dst  = &model->nodes[0].meshes[0];
+    src1 = &model->nodes[0].meshes[(morph->frame % (varcount-2)) + 2];
+    src2 = &model->nodes[0].meshes[((morph->frame + 1) % (varcount-2)) + 2];
 
     for(i = 0; i < dst->numsections; i++)
     {
         unsigned int j;
-
         mdlsection_t *s1 = &dst->sections[i];
-        mdlsection_t *s2 = &src->sections[i];
+        mdlsection_t *s2 = &src1->sections[i];
+        mdlsection_t *s3 = &src2->sections[i];
 
         for(j = 0; j < s1->numverts; j++)
         {
-            Vec_Lerp3(s1->xyz[j], R_MORPHSPEED * 0.92f,
-                s1->xyz[j], s2->xyz[j]);
+            Vec_Lerp3(s1->xyz[j], morph->time, s2->xyz[j], s3->xyz[j]);
         }
     }
+
+    morph->time += (1/(float)morph->speed);
 }
 
 //
@@ -499,7 +578,7 @@ void R_DrawObject(object_t *object)
     }
 
     R_TraverseDrawNode(model, &model->nodes[0],
-        object->textureswaps, var);
+        object->textureswaps, var, NULL);
 }
 
 //
@@ -608,38 +687,42 @@ static void R_DrawInstances(void)
 // R_DrawViewWeapon
 //
 
-void R_DrawViewWeapon(void)
+void R_DrawViewWeapon(weapon_t *weapon)
 {
     kmodel_t *model;
-    mtx_t mtx;
+    mtx_t mtx_transform;
+    mtx_t mtx_final;
+    mtx_t mtx_rot;
     mtx_t mtx_pos;
     mtx_t mtx_flip;
-    vec3_t vec;
+    vec4_t yaw;
+    vec4_t pitch;
+    vec4_t aim;
 
-    // TODO - TEMP
-    if(!(model = Mdl_Load("models/mdl655/mdl655.kmesh")))
+    if(!(model = weapon->model))
     {
         return;
     }
 
     dglMatrixMode(GL_PROJECTION);
     dglLoadIdentity();
-    Mtx_ViewFrustum(video_width, video_height, 50, 32);
+    Mtx_ViewFrustum(video_width, video_height, 45, 32);
     dglMatrixMode(GL_MODELVIEW);
     Mtx_Identity(mtx_pos);
     Mtx_Identity(mtx_flip);
     Mtx_Scale(mtx_flip, -1, 1, 1);
     Mtx_Transpose(mtx_pos);
-    Mtx_Multiply(mtx, mtx_pos, mtx_flip);
-    Vec_Set3(vec,
-        -0.5f * 341.3333333333334f,
-        -0.5f * 341.3333333333334f,
-        0.78f * 341.3333333333334f - 275.456f);
-    Mtx_ApplyVector(mtx, vec);
-    dglLoadMatrixf(mtx);
+    Mtx_Multiply(mtx_transform, mtx_pos, mtx_flip);
+    Vec_SetQuaternion(yaw, weapon->yaw, 0, 0, 1);
+    Vec_SetQuaternion(pitch, weapon->pitch, 1, 0, 0);
+    Vec_MultQuaternion(aim, pitch, yaw);
+    Mtx_ApplyRotation(aim, mtx_rot);
+    Mtx_ApplyVector(mtx_transform, weapon->origin);
+    Mtx_Multiply(mtx_final, mtx_rot, mtx_transform);
+    dglLoadMatrixf(mtx_final);
 
-    Mdl_SetAnimState(model, "anim00", true);
-    R_TraverseDrawNode(model, &model->nodes[0], NULL, 0);
+    R_TraverseDrawNode(model, &model->nodes[0],
+        NULL, 0, &weapon->animstate);
 }
 
 //
@@ -666,7 +749,8 @@ void R_DrawFrame(void)
 
     dglCullFace(GL_FRONT);
 
-    R_DrawViewWeapon();
+    // TODO - TEMP
+    R_DrawViewWeapon(&weapons[wp_pulse]);
 
     dglEnableClientState(GL_COLOR_ARRAY);
     dglDisable(GL_DEPTH_TEST);
@@ -691,8 +775,8 @@ void R_DrawFrame(void)
         GL_SetState(GLSTATE_BLEND, false);
     }
 
-    R_MorphModel(Mdl_Find("models/mdl500/mdl500.kmesh"));
-    R_MorphModel(Mdl_Find("models/mdl643/mdl643.kmesh"));
+    R_MorphModel(&morphmodels[0]);
+    R_MorphModel(&morphmodels[1]);
 }
 
 //

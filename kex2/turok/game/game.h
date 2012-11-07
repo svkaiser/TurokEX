@@ -68,11 +68,11 @@ typedef struct
     float       yaw;
     float       pitch;
     kmodel_t    *model;
-    anim_t      *anim;
-    float       animspeed;
-    float       animframe;
-    frameset_t  frameset;
+    animstate_t animstate;
+    float       speed;
 } weapon_t;
+
+extern weapon_t weapons[NUMWEAPONS];
 
 //
 // gclient - game-side client controller
@@ -96,7 +96,7 @@ void G_ClipMovement(actor_t *actor);
 
 void G_Shutdown(void);
 void G_Ticker(void);
-void G_ClientThink(actor_t *client, ticcmd_t *cmd);
+void G_ClientThink(actor_t *client);
 void G_Init(void);
 
 #endif

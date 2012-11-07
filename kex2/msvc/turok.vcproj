@@ -323,6 +323,10 @@
 					RelativePath="..\turok\client\client_main.c"
 					>
 				</File>
+				<File
+					RelativePath="..\turok\client\client_move.c"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="server"

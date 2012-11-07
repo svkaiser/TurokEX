@@ -377,8 +377,10 @@ void SV_Run(int msec)
         if(server.time - server.runtime > 100)
         {
             server.runtime = server.time - 100;
-            return;
         }
+
+        Sys_Sleep(1);
+        return;
     }
 
     server.tics++;

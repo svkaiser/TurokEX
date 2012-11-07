@@ -95,9 +95,6 @@ typedef struct
     mdlmesh_t           *meshes;
     unsigned int        numchildren;
     word                *children;
-    frameset_t          *frameset;
-    vec3_t              translation;
-    vec4_t              rotation;
 } mdlnode_t;
 
 typedef struct
@@ -116,6 +113,18 @@ typedef struct
     action_t            *actions;
 } anim_t;
 
+typedef struct
+{
+    anim_t              *anim;
+    anim_t              *prevanim;
+    float               time;
+    int                 frame;
+    int                 prevframe;
+    int                 nextframe;
+    int                 prevnextframe;
+    float               lerptime;
+} animstate_t;
+
 typedef struct kmodel_s
 {
     char                mdlpath[MAX_FILEPATH];
@@ -128,8 +137,12 @@ typedef struct kmodel_s
     struct kmodel_s     *next;
 } kmodel_t;
 
-void Mdl_SetAnimState(kmodel_t *model, const char *name, kbool initial);
 void Mdl_Init(void);
+void Mdl_GetAnimRotation(vec4_t out, anim_t *anim, int nodenum, int frame);
+void Mdl_GetAnimTranslation(vec3_t out, anim_t *anim, int nodenum, int frame);
+void Mdl_UpdateAnimState(animstate_t *astate, float lerptime, float nexttime);
+void Mdl_SetAnimState(animstate_t *astate, kmodel_t *model, const char *name,
+                      kbool blend, float time);
 
 anim_t *Mdl_GetAnim(kmodel_t *model, const char *name);
 

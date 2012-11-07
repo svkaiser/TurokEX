@@ -28,6 +28,7 @@
 #include "kernel.h"
 #include "zone.h"
 #include "gl.h"
+#include "client.h"
 #include "script.h"
 #include "render.h"
 #include "mathlib.h"
@@ -745,34 +746,92 @@ anim_t *Mdl_GetAnim(kmodel_t *model, const char *name)
 // Mdl_SetAnimState
 //
 
-void Mdl_SetAnimState(kmodel_t *model, const char *name, kbool initial)
+void Mdl_SetAnimState(animstate_t *astate, kmodel_t *model, const char *name,
+                      kbool blend, float time)
 {
-    anim_t *anim;
-    unsigned int i;
+    anim_t *anim = Mdl_GetAnim(model, name);
 
-    if(model == NULL)
+    if(!blend)
     {
-        return;
+        astate->time            = time;
+        astate->frame           = 0;
+        astate->nextframe       = 1;
+        astate->prevframe       = 0;
+        astate->prevnextframe   = 0;
+        astate->anim            = anim;
+        astate->prevanim        = NULL;
     }
-
-    if(!(anim = Mdl_GetAnim(model, name)))
+    else if(anim != astate->anim)
     {
-        return;
+        astate->prevframe       = astate->frame;
+        astate->prevnextframe   = astate->nextframe;
+        astate->frame           = 0;
+        astate->nextframe       = 1;
+        astate->time            = time;
+        astate->lerptime        = 0;
+        astate->prevanim        = astate->anim;
+        astate->anim            = anim;
     }
+}
 
-    for(i = 0; i < model->numnodes; i++)
+//
+// Mdl_UpdateAnimState
+//
+
+void Mdl_UpdateAnimState(animstate_t *astate, float lerptime, float nexttime)
+{
+    if(astate->time <= client.tics)
     {
-        model->nodes[i].frameset = initial ?
-            &anim->initial : &anim->frameset[i];
+        astate->lerptime = 0;
+        astate->time = nexttime;
+        astate->prevanim = NULL;
 
-        if(initial)
+        if(++astate->frame >=
+            (int)astate->anim->numframes)
         {
-            Vec_Copy3(model->nodes[i].translation,
-                anim->initial.translation[i].vec);
-            Vec_Copy4(model->nodes[i].rotation,
-                anim->initial.rotation[i].vec);
+            astate->frame = 0;
+        }
+
+        if(++astate->nextframe >=
+            (int)astate->anim->numframes)
+        {
+            astate->nextframe = 0;
         }
     }
+    else
+    {
+        astate->lerptime += (1/lerptime);
+    }
+}
+
+//
+// Mdl_GetAnimRotation
+//
+
+void Mdl_GetAnimRotation(vec4_t out, anim_t *anim, int nodenum, int frame)
+{
+    if(anim->frameset[nodenum].rotation == NULL)
+    {
+        Vec_Copy4(out, anim->initial.rotation[nodenum].vec);
+        return;
+    }
+    
+    Vec_Copy4(out, anim->frameset[nodenum].rotation[frame].vec);
+}
+
+//
+// Mdl_GetAnimTranslation
+//
+
+void Mdl_GetAnimTranslation(vec3_t out, anim_t *anim, int nodenum, int frame)
+{
+    if(anim->frameset[nodenum].translation == NULL)
+    {
+        Vec_Copy3(out, anim->initial.translation[nodenum].vec);
+        return;
+    }
+    
+    Vec_Copy3(out, anim->frameset[nodenum].translation[frame].vec);
 }
 
 //

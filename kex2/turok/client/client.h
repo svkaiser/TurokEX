@@ -43,10 +43,13 @@ typedef enum
 #define CL_TICDIFF_TURN1        (1 << 0)
 #define CL_TICDIFF_TURN2        (1 << 1)
 #define CL_TICDIFF_BUTTONS      (1 << 2)
+#define CL_TICDIFF_MOUSEX       (1 << 0)
+#define CL_TICDIFF_MOUSEY       (1 << 1)
 
 typedef struct
 {
     fint_t  angle[2];
+    fint_t  mouse[2];
     short   buttons;
     byte    msec;
     byte    heldtime[2];
@@ -83,6 +86,7 @@ typedef struct
 
 extern client_t client;
 
+void CL_Move(client_t *client);
 kbool CL_Responder(event_t *ev);
 void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd);
 void CL_BuildTiccmd(void);

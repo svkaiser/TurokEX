@@ -182,6 +182,8 @@ void CL_BuildTiccmd(void)
 
     cmd.angle[0].f -= (ctrl->mousex * M_RAD);
     cmd.angle[1].f -= (ctrl->mousey * M_RAD);
+    cmd.mouse[0].f = (ctrl->mousex * M_RAD);
+    cmd.mouse[1].f = (ctrl->mousey * M_RAD);
     Ang_Clamp(&cmd.angle[0].f);
     Ang_Clamp(&cmd.angle[1].f);
 
