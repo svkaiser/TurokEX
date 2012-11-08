@@ -753,24 +753,24 @@ void Mdl_SetAnimState(animstate_t *astate, kmodel_t *model, const char *name,
 
     if(!blend)
     {
-        astate->time            = time;
-        astate->frame           = 0;
-        astate->nextframe       = 1;
-        astate->prevframe       = 0;
-        astate->prevnextframe   = 0;
-        astate->anim            = anim;
-        astate->prevanim        = NULL;
+        astate->time                    = (float)client.tics + time;
+        astate->track.frame             = 0;
+        astate->track.nextframe         = 1;
+        astate->prevtrack.frame         = 0;
+        astate->prevtrack.nextframe     = 0;
+        astate->track.anim              = anim;
+        astate->prevtrack.anim          = NULL;
     }
-    else if(anim != astate->anim)
+    else if(anim != astate->track.anim)
     {
-        astate->prevframe       = astate->frame;
-        astate->prevnextframe   = astate->nextframe;
-        astate->frame           = 0;
-        astate->nextframe       = 1;
-        astate->time            = time;
-        astate->lerptime        = 0;
-        astate->prevanim        = astate->anim;
-        astate->anim            = anim;
+        astate->prevtrack.frame         = astate->track.frame;
+        astate->prevtrack.nextframe     = astate->track.nextframe;
+        astate->track.frame             = 0;
+        astate->track.nextframe         = 1;
+        astate->time                    = (float)client.tics + time;
+        astate->deltatime                = 0;
+        astate->prevtrack.anim          = astate->track.anim;
+        astate->track.anim              = anim;
     }
 }
 
@@ -778,29 +778,29 @@ void Mdl_SetAnimState(animstate_t *astate, kmodel_t *model, const char *name,
 // Mdl_UpdateAnimState
 //
 
-void Mdl_UpdateAnimState(animstate_t *astate, float lerptime, float nexttime)
+void Mdl_UpdateAnimState(animstate_t *astate, float lerptime, float nextlerp)
 {
     if(astate->time <= client.tics)
     {
-        astate->lerptime = 0;
-        astate->time = nexttime;
-        astate->prevanim = NULL;
+        astate->deltatime = 0;
+        astate->time = (float)client.tics + nextlerp;
+        astate->prevtrack.anim = NULL;
 
-        if(++astate->frame >=
-            (int)astate->anim->numframes)
+        if(++astate->track.frame >=
+            (int)astate->track.anim->numframes)
         {
-            astate->frame = 0;
+            astate->track.frame = 0;
         }
 
-        if(++astate->nextframe >=
-            (int)astate->anim->numframes)
+        if(++astate->track.nextframe >=
+            (int)astate->track.anim->numframes)
         {
-            astate->nextframe = 0;
+            astate->track.nextframe = 0;
         }
     }
     else
     {
-        astate->lerptime += (1/lerptime);
+        astate->deltatime += (1/lerptime);
     }
 }
 

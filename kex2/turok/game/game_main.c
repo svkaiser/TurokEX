@@ -107,19 +107,16 @@ void G_WeaponThink(actor_t *owner, weapon_t *weapon)
 
     if((d = Vec_Unit2(owner->velocity)) >= 0.1f)
     {
-        Mdl_SetAnimState(&weapon->animstate, weapon->model, "anim02", true,
-            (float)client.tics + weapon->speed);
+        Mdl_SetAnimState(&weapon->animstate, weapon->model,
+            "anim02", true, weapon->speed);
     }
     else
     {
-        Mdl_SetAnimState(&weapon->animstate, weapon->model, "anim00", true,
-            (float)client.tics + weapon->speed);
+        Mdl_SetAnimState(&weapon->animstate, weapon->model,
+            "anim00", true, weapon->speed);
     }
 
-    Mdl_UpdateAnimState(&weapon->animstate, weapon->speed,
-        (float)client.tics + weapon->speed);
-
-    Com_Printf("%f\n", weapon->yaw * M_DEG);
+    Mdl_UpdateAnimState(&weapon->animstate, weapon->speed, weapon->speed);
 }
 
 //

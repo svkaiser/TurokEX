@@ -384,17 +384,17 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
     anim_t *prevanim;
     int frame;
     int nextframe;
-    float lerp;
+    float delta;
 
     if(animstate != NULL)
     {
         dglPushMatrix();
 
-        anim = animstate->anim;
-        prevanim = animstate->prevanim;
-        frame = animstate->frame;
-        nextframe = animstate->nextframe;
-        lerp = animstate->lerptime;
+        anim = animstate->track.anim;
+        prevanim = animstate->prevtrack.anim;
+        frame = animstate->track.frame;
+        nextframe = animstate->track.nextframe;
+        delta = animstate->deltatime;
 
         if(anim)
         {
@@ -428,25 +428,23 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
                 {
                     vec4_t r3, r4;
                     vec3_t t3, t4;
-                    int prevframe;
-                    int prevnextframe;
 
-                    prevframe = animstate->prevframe;
-                    prevnextframe = animstate->prevnextframe;
+                    frame = animstate->prevtrack.frame;
+                    nextframe = animstate->prevtrack.nextframe;
 
-                    Mdl_GetAnimRotation(r3, prevanim, nodenum, prevframe);
-                    Mdl_GetAnimRotation(r4, prevanim, nodenum, prevnextframe);
-                    Mdl_GetAnimTranslation(t3, prevanim, nodenum, prevframe);
-                    Mdl_GetAnimTranslation(t4, prevanim, nodenum, prevnextframe);
+                    Mdl_GetAnimRotation(r3, prevanim, nodenum, frame);
+                    Mdl_GetAnimRotation(r4, prevanim, nodenum, nextframe);
+                    Mdl_GetAnimTranslation(t3, prevanim, nodenum, frame);
+                    Mdl_GetAnimTranslation(t4, prevanim, nodenum, nextframe);
 
-                    Vec_Slerp(rot_cur, lerp, r3, r1);
-                    Vec_Slerp(rot_next, lerp, r4, r2);
-                    Vec_Lerp3(pos_cur, lerp, t3, t1);
-                    Vec_Lerp3(pos_next, lerp, t4, t2);
+                    Vec_Slerp(rot_cur, delta, r3, r1);
+                    Vec_Slerp(rot_next, delta, r4, r2);
+                    Vec_Lerp3(pos_cur, delta, t3, t1);
+                    Vec_Lerp3(pos_next, delta, t4, t2);
                 }
 
-                Vec_Slerp(rot, lerp, rot_cur, rot_next);
-                Vec_Lerp3(pos, lerp, pos_cur, pos_next);
+                Vec_Slerp(rot, delta, rot_cur, rot_next);
+                Vec_Lerp3(pos, delta, pos_cur, pos_next);
                 Mtx_ApplyRotation(rot, mtx);
                 Mtx_AddTranslation(mtx, pos[0], pos[1], pos[2]);
                 dglMultMatrixf(mtx);

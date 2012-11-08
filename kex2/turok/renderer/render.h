@@ -116,13 +116,16 @@ typedef struct
 typedef struct
 {
     anim_t              *anim;
-    anim_t              *prevanim;
-    float               time;
     int                 frame;
-    int                 prevframe;
     int                 nextframe;
-    int                 prevnextframe;
-    float               lerptime;
+} animtrack_t;
+
+typedef struct
+{
+    animtrack_t         track;
+    animtrack_t         prevtrack;
+    float               time;
+    float               deltatime;
 } animstate_t;
 
 typedef struct kmodel_s

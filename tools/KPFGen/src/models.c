@@ -998,6 +998,7 @@ static void ProcessAnimation(byte *data, int index)
     byte *indextable;
     byte *initial;
     short *lookup;
+    int count;
     int i;
 
     numframes = Com_GetCartOffset(Com_GetCartData(data, CHUNK_ANIMROOT_FRAMEINFO, 0),
@@ -1034,7 +1035,8 @@ static void ProcessAnimation(byte *data, int index)
     Com_Strcat("    initialtranslation = // [vx vy vz]\n");
     Com_Strcat("    {\n");
 
-    for(i = 0; i < Com_GetCartOffset(initial, CHUNK_INITIAL_COUNT, 0); i++)
+    count = Com_GetCartOffset(initial, CHUNK_INITIAL_COUNT, 0);
+    for(i = 0; i < count; i++)
     {
         int size = Com_GetCartOffset(initial, CHUNK_INITIAL_SIZE, 0);
         float x = *(float*)((initial + CHUNK_INITIAL_DATA) + (size * i) + (4 * 0));
@@ -1044,12 +1046,21 @@ static void ProcessAnimation(byte *data, int index)
         Com_Strcat("        { %f %f %f }\n", x, y, z);
     }
 
+    if(count < indexes)
+    {
+        for(i = 0; i < (indexes - count); i++)
+        {
+            Com_Strcat("        { 0 0 0 }\n");
+        }
+    }
+
     Com_Strcat("\n    }\n\n");
 
     Com_Strcat("    initialrotation = // [qx qy qz qw]\n");
     Com_Strcat("    {\n");
 
-    for(i = 0; i < Com_GetCartOffset(initial, CHUNK_INITIAL_COUNT, 0); i++)
+    count = Com_GetCartOffset(initial, CHUNK_INITIAL_COUNT, 0);
+    for(i = 0; i < count; i++)
     {
         int size = Com_GetCartOffset(initial, CHUNK_INITIAL_SIZE, 0);
         short *r = (short*)((initial + CHUNK_INITIAL_DATA) + (size * i) + (4 * 3));
@@ -1059,6 +1070,14 @@ static void ProcessAnimation(byte *data, int index)
             (float)(r[1]) * flt_48EC8C,
             (float)(r[2]) * flt_48EC8C,
             (float)(r[3]) * flt_48EC8C);
+    }
+
+    if(count < indexes)
+    {
+        for(i = 0; i < (indexes - count); i++)
+        {
+            Com_Strcat("        { 0 0 0 0 }\n");
+        }
     }
 
     Com_Strcat("\n    }\n\n");
