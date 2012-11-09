@@ -754,6 +754,7 @@ void Mdl_SetAnimState(animstate_t *astate, kmodel_t *model, const char *name,
     if(!blend)
     {
         astate->time                    = (float)client.tics + time;
+        astate->deltatime               = 0;
         astate->track.frame             = 0;
         astate->track.nextframe         = 1;
         astate->prevtrack.frame         = 0;
@@ -763,12 +764,17 @@ void Mdl_SetAnimState(animstate_t *astate, kmodel_t *model, const char *name,
     }
     else if(anim != astate->track.anim)
     {
+        if(astate->prevtrack.anim == anim)
+        {
+            return;
+        }
+
         astate->prevtrack.frame         = astate->track.frame;
         astate->prevtrack.nextframe     = astate->track.nextframe;
         astate->track.frame             = 0;
         astate->track.nextframe         = 1;
         astate->time                    = (float)client.tics + time;
-        astate->deltatime                = 0;
+        astate->deltatime               = 0;
         astate->prevtrack.anim          = astate->track.anim;
         astate->track.anim              = anim;
     }
