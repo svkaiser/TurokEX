@@ -316,6 +316,8 @@ void G_ActorMovement(actor_t *actor)
     Vec_Add(position, actor->origin, actor->velocity);
     friction = FRICTION_GROUND;
 
+    actor->flags &= ~AF_ONGROUND;
+
     // hit surface and update position/velocity
     if(actor->plane && actor->terriantype != TT_NOCLIP)
     {
@@ -352,7 +354,7 @@ void G_ActorMovement(actor_t *actor)
                 actor->velocity[1] = 0;
             }
 
-            actor->flags &= ~AF_CLIENTJUMP;
+            actor->flags |= AF_ONGROUND;
         }
 
         G_GetTerrianType(actor);

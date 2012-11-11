@@ -168,6 +168,15 @@ kbool Cmd_CompleteCommand(char *partial);
 void Cmd_AddCommand(char *name, cmd_t function);
 void Cmd_Init(void);
 
+typedef struct
+{
+    fint_t  angle[2];
+    fint_t  mouse[2];
+    short   buttons;
+    byte    msec;
+    byte    heldtime[2];
+} ticcmd_t;
+
 //
 // CLIENT PACKET TYPES
 //

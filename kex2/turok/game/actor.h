@@ -30,8 +30,8 @@
 typedef enum
 {
     AF_NOALIGNPITCH     = 0x1,
-    AF_CLIENTJUMP       = 0x2,
-    AF_SUBMERGED        = 0x4
+    AF_SUBMERGED        = 0x2,
+    AF_ONGROUND         = 0x4
 } actorflags_t;
 
 typedef enum

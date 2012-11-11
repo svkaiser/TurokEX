@@ -39,6 +39,9 @@ CVAR_EXTERNAL(cl_fov);
 static kbool showcollision = false;
 static kbool showbbox = false;
 
+static float cam_roll = 0;
+static float wpn_thudoffset = 0;
+
 static double viewMatrix[16];
 static double projMatrix[16];
 static float frustum[6][4];
@@ -191,9 +194,8 @@ kbool R_FrustrumTestPlane(plane_t *plane)
 // R_SetupViewFrame
 //
 
-static void R_SetupViewFrame(actor_t *actor)
+static void R_SetupViewFrame(void)
 {
-    static float cam_roll;
     mtx_t mtx;
     vec4_t yaw;
     vec4_t pitch;
@@ -208,19 +210,27 @@ static void R_SetupViewFrame(actor_t *actor)
     vec3_t pos;
     vec3_t dir;
     float angle;
+    vec3_t origin;
+    vec3_t velocity;
+    moveframe_t *frame;
 
     // roll view camera if strafing left or right
 
+    frame = &client.moveframe;
+
+    Vec_Copy3(origin, frame->origin);
+    Vec_Copy3(velocity, frame->velocity);
+
     // create the directional vector
-    Vec_Add(dir, actor->origin, actor->velocity);
-    Vec_Sub(dir, dir, actor->origin);
+    Vec_Add(dir, origin, velocity);
+    Vec_Sub(dir, dir, origin);
 
     // get angle of direction
-    angle = Ang_Diff(actor->yaw + M_PI,
+    angle = Ang_Diff(frame->yaw + M_PI,
         Ang_VectorToAngle(dir) + M_PI);
 
     // get normalized direction vector
-    Vec_Copy3(dir, actor->velocity);
+    Vec_Copy3(dir, velocity);
     Vec_Normalize3(dir);
 
     // clamp angle between -90 and 90
@@ -236,9 +246,9 @@ static void R_SetupViewFrame(actor_t *actor)
         angle = -M_PI - angle;
     }
 
-    d = Vec_Unit2(actor->velocity) * 0.05f;
+    d = Vec_Unit2(velocity) * 0.05f;
 
-    if(actor->terriantype == TT_WATER_UNDER)
+    if(client.pmove.terraintype == TT_WATER_UNDER)
     {
         cam_roll *= 0.935f;
         amt = 0.4f;
@@ -261,12 +271,12 @@ static void R_SetupViewFrame(actor_t *actor)
     bob_x = 0;
     bob_y = 0;
 
-    if(actor->terriantype != TT_WATER_UNDER && (actor->origin[1] +
-        actor->velocity[1]) -
-        Plane_GetDistance(actor->plane, actor->origin) < 4)
+    if(client.pmove.terraintype != TT_WATER_UNDER && (origin[1] +
+        velocity[1]) -
+        Plane_GetDistance(frame->plane, origin) < 4)
     {
         // calculate bobbing
-        d = Vec_Unit2(actor->velocity);
+        d = Vec_Unit2(velocity);
 
         if(d > 0.005f)
         {
@@ -274,8 +284,8 @@ static void R_SetupViewFrame(actor_t *actor)
             bob_y = (float)sin(client.tics * 0.1625f) * d * 0.0025f;
         }
     }
-    else if(actor->terriantype == TT_WATER_SURFACE ||
-        actor->terriantype == TT_WATER_UNDER)
+    else if(client.pmove.terraintype == TT_WATER_SURFACE ||
+        client.pmove.terraintype == TT_WATER_UNDER)
     {
         bob_x = (float)sin(client.tics * 0.035f) * 0.0150f;
         bob_y = (float)sin(client.tics * 0.025f) * 0.0107f;
@@ -283,9 +293,9 @@ static void R_SetupViewFrame(actor_t *actor)
 
     // set view origin
     Vec_Set3(org,
-        actor->origin[0],
-        actor->origin[1] + (actor->object.centerheight + actor->object.viewheight),
-        actor->origin[2]);
+        origin[0],
+        origin[1] + (client.pmove.centerheight.f + client.pmove.viewheight.f),
+        origin[2]);
 
     // setup projection matrix
     dglMatrixMode(GL_PROJECTION);
@@ -295,8 +305,8 @@ static void R_SetupViewFrame(actor_t *actor)
     // setup modelview matrix
     dglMatrixMode(GL_MODELVIEW);
     Mtx_Identity(mtx);
-    Vec_SetQuaternion(yaw, -actor->yaw + M_PI - bob_y, 0, 1, 0);
-    Vec_SetQuaternion(pitch, actor->pitch + bob_x, 1, 0, 0);
+    Vec_SetQuaternion(yaw, -frame->yaw + M_PI - bob_y, 0, 1, 0);
+    Vec_SetQuaternion(pitch, frame->pitch + bob_x, 1, 0, 0);
     Vec_SetQuaternion(roll, cam_roll, 0, 0, 1);
     Vec_MultQuaternion(vroll, yaw, roll);
     Vec_MultQuaternion(rot, vroll, pitch);
@@ -696,29 +706,79 @@ void R_DrawViewWeapon(weapon_t *weapon)
     vec4_t yaw;
     vec4_t pitch;
     vec4_t aim;
+    float offset;
 
     if(!(model = weapon->model))
     {
         return;
     }
 
+    // setup projection
     dglMatrixMode(GL_PROJECTION);
     dglLoadIdentity();
     Mtx_ViewFrustum(video_width, video_height, 45, 32);
     dglMatrixMode(GL_MODELVIEW);
+
+    // setup initial matrix
     Mtx_Identity(mtx_pos);
     Mtx_Identity(mtx_flip);
     Mtx_Scale(mtx_flip, -1, 1, 1);
     Mtx_Transpose(mtx_pos);
     Mtx_Multiply(mtx_transform, mtx_pos, mtx_flip);
+
+    // sway weapon based on user's turn speed
     Vec_SetQuaternion(yaw, weapon->yaw, 0, 0, 1);
     Vec_SetQuaternion(pitch, weapon->pitch, 1, 0, 0);
-    Vec_MultQuaternion(aim, pitch, yaw);
+
+    // lean weapon if strafing
+    if(client.pmove.terraintype != TT_WATER_SURFACE &&
+        client.pmove.terraintype != TT_WATER_UNDER)
+    {
+        vec4_t roll;
+        vec4_t lean;
+
+        Vec_SetQuaternion(roll, cam_roll, 0, 1, 0);
+        Vec_MultQuaternion(lean, yaw, roll);
+        Vec_MultQuaternion(aim, lean, pitch);
+    }
+    else
+    {
+        Vec_MultQuaternion(aim, pitch, yaw);
+    }
+
+    // setup final matrix
     Mtx_ApplyRotation(aim, mtx_rot);
     Mtx_ApplyVector(mtx_transform, weapon->origin);
     Mtx_Multiply(mtx_final, mtx_rot, mtx_transform);
+
+    // add a little vertical force to weapon if jumping or falling
+    offset = (client.moveframe.origin[1] -
+        Plane_GetDistance(client.moveframe.plane, client.moveframe.origin));
+
+    if(!(offset < 0.2f) &&
+        (client.moveframe.velocity[1] < 0.2f ||
+        client.moveframe.velocity[1] > 0.2f))
+    {
+        offset = client.moveframe.velocity[1];
+        if(client.moveframe.velocity[1] > 0)
+        {
+            // cut back offset a little if jumping
+            offset *= 0.35f;
+        }
+    }
+    else
+    {
+        offset = 0;
+    }
+
+    // apply translation offset to matrix
+    wpn_thudoffset = (offset - wpn_thudoffset) * 0.25f + wpn_thudoffset;
+    Mtx_AddTranslation(mtx_final, 0, wpn_thudoffset, 0);
+
+    // load matrix
     dglLoadMatrixf(mtx_final);
 
+    // draw weapon
     R_TraverseDrawNode(model, &model->nodes[0],
         NULL, 0, &weapon->animstate);
 }
@@ -731,7 +791,7 @@ void R_DrawFrame(void)
 {
     GL_ClearView(0xFF3f3f3f);
     
-    R_SetupViewFrame(&client.localactor);
+    R_SetupViewFrame();
     R_SetupClipFrustum();
 
     dglCullFace(GL_BACK);
@@ -748,7 +808,7 @@ void R_DrawFrame(void)
     dglCullFace(GL_FRONT);
 
     // TODO - TEMP
-    R_DrawViewWeapon(&weapons[wp_pulse]);
+    R_DrawViewWeapon(&weapons[wp_shotgun]);
 
     dglEnableClientState(GL_COLOR_ARRAY);
     dglDisable(GL_DEPTH_TEST);
@@ -763,7 +823,7 @@ void R_DrawFrame(void)
     GL_SetOrtho();
 
     // underwater overlay
-    if(client.localactor.flags & AF_SUBMERGED)
+    if(client.pmove.flags & PMF_SUBMERGED)
     {
         GL_SetState(GLSTATE_TEXTURE0, false);
         GL_SetState(GLSTATE_BLEND, true);

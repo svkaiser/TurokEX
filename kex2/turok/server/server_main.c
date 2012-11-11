@@ -296,6 +296,27 @@ static void SV_SendAcknowledgement(ENetEvent *sev)
 }
 
 //
+// SV_ClientCommand
+//
+
+static void SV_ClientCommand(ENetEvent *sev, ENetPacket *packet)
+{
+    char *cmd = Packet_ReadString(packet);
+
+    Com_DPrintf("client command: %s (%s)\n", cmd, SV_GetPeerAddress(sev));
+
+    if(!strcmp(cmd, "noclip"))
+    {
+    }
+    else if(!strcmp(cmd, "god"))
+    {
+    }
+    else if(!strcmp(cmd, "give all"))
+    {
+    }
+}
+
+//
 // SV_ProcessClientPackets
 //
 
@@ -319,6 +340,10 @@ void SV_ProcessClientPackets(ENetPacket *packet, ENetEvent *sev)
 
     case cp_cmd:
         SV_ReadTiccmd(sev, packet);
+        break;
+
+    case cp_msgserver:
+        SV_ClientCommand(sev, packet);
         break;
 
     default:

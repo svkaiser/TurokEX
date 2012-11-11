@@ -38,6 +38,7 @@ enum
     wp_autoshotgun,
     wp_rifle,
     wp_pulse,
+    wp_minigun,
     wp_grenade,
     wp_missile,
     wp_accelerator,
@@ -74,6 +75,9 @@ typedef struct
 
 extern weapon_t weapons[NUMWEAPONS];
 
+void G_WeaponThink(weapon_t *weapon);
+void G_InitWeapons(void);
+
 //
 // gclient - game-side client controller
 // handled mostly on server side and contains
@@ -88,7 +92,7 @@ struct gclient_s
     kbool       hasbackpack;
     kbool       hasarmor;
     int         armorpoints;
-    actor_t     *actor;
+    actor_t     actor;
 };
 
 plane_t *G_FindClosestPlane(vec3_t coord);
@@ -96,7 +100,7 @@ void G_ClipMovement(actor_t *actor);
 
 void G_Shutdown(void);
 void G_Ticker(void);
-void G_ClientThink(actor_t *client);
+void G_ClientThink(void);
 void G_Init(void);
 
 #endif

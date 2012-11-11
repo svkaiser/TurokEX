@@ -26,6 +26,7 @@
 #include "enet/enet.h"
 #include "kernel.h"
 #include "actor.h"
+#include "pred.h"
 
 typedef enum
 {
@@ -46,15 +47,6 @@ typedef enum
 #define CL_TICDIFF_MOUSEX       (1 << 0)
 #define CL_TICDIFF_MOUSEY       (1 << 1)
 
-typedef struct
-{
-    fint_t  angle[2];
-    fint_t  mouse[2];
-    short   buttons;
-    byte    msec;
-    byte    heldtime[2];
-} ticcmd_t;
-
 #define MAXEVENTS 64
 
 extern event_t  events[MAXEVENTS];
@@ -72,6 +64,23 @@ typedef enum
 
 typedef struct
 {
+    float           time;
+    float           runtime;
+    int             tics;
+    int             activeweapon;
+} serverstate_t;
+
+typedef struct
+{
+    vec3_t          origin;
+    vec3_t          velocity;
+    float           yaw;
+    float           pitch;
+    plane_t         *plane;
+} moveframe_t;
+
+typedef struct
+{
     ENetHost        *host;
     client_state_e  state;
     ENetPeer        *peer;
@@ -81,17 +90,19 @@ typedef struct
     kbool           local;
     int             tics;
     ticcmd_t        cmd;
-    actor_t         localactor;
+    pmove_t         pmove;
+    moveframe_t     moveframe;
+    serverstate_t   serverstate;
 } client_t;
 
 extern client_t client;
 
-void CL_Move(client_t *client);
 kbool CL_Responder(event_t *ev);
 void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd);
 void CL_BuildTiccmd(void);
 void CL_PostEvent(event_t *ev);
 void CL_ProcessEvents(void);
+void CL_MessageServer(char *string);
 kbool CL_Responder(event_t *ev);
 int CL_Random(void);
 void CL_Connect(const char *address);

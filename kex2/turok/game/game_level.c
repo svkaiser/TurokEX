@@ -31,6 +31,7 @@
 #include "script.h"
 #include "mathlib.h"
 #include "client.h"
+#include "server.h"
 
 kmap_t kmaps[MAXMAPS];
 kmap_t *g_currentmap = NULL;
@@ -1166,7 +1167,6 @@ static void Map_InitBlocklist(kmap_t *map)
             if(obj->plane_id != -1 && obj->blockflag & BLF_SECTORLINK)
             {
                 plane_t *plane = &map->planes[obj->plane_id];
-
                 Map_TraverseLinkObjects(obj, plane, map);
             }
         }
@@ -1182,10 +1182,31 @@ static void Map_InitBlocklist(kmap_t *map)
             }
 
             plane = &map->planes[obj->plane_id];
-            
             Map_TraverseLinkObjects(obj, plane, map);
         }
     }
+}
+
+//
+// Map_CopyActorToClientFrame
+//
+
+static void Map_CopyActorToClientFrame(actor_t *actor)
+{
+    Vec_Copy3(client.moveframe.origin, actor->origin);
+
+    client.pmove.origin[0].f    = actor->origin[0];
+    client.pmove.origin[1].f    = actor->origin[1];
+    client.pmove.origin[2].f    = actor->origin[2];
+    client.pmove.angles[0].f    = actor->yaw;
+    client.pmove.angles[1].f    = actor->pitch;
+    client.moveframe.yaw        = actor->yaw;
+    client.moveframe.pitch      = actor->pitch;
+    client.pmove.centerheight.f = actor->object.centerheight;
+    client.pmove.viewheight.f   = actor->object.viewheight;
+    client.pmove.radius.f       = actor->object.width;
+    client.pmove.height.f       = actor->object.height;
+    client.pmove.plane          = actor->object.plane_id;
 }
 
 //
@@ -1218,7 +1239,17 @@ static void Map_SetupActors(kmap_t *map)
 
         if(actor->object.type == 0)
         {
-            memcpy(&client.localactor, actor, sizeof(actor_t));
+            unsigned int i;
+            
+            Map_CopyActorToClientFrame(actor);
+
+            for(i = 0; i < server.maxclients; i++)
+            {
+                if(svclients[i].state == SVC_STATE_ACTIVE)
+                {
+                    memcpy(&svclients[i].gclient.actor, actor, sizeof(actor_t));
+                }
+            }
         }
     }
 }

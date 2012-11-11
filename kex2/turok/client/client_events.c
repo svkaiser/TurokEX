@@ -117,6 +117,8 @@ void CL_BuildTiccmd(void)
     control_t *ctrl;
     int msec;
     ENetPacket *packet;
+    float yaw;
+    float pitch;
 
     if(client.state != CL_STATE_READY)
     {
@@ -180,17 +182,26 @@ void CL_BuildTiccmd(void)
         }
     }
 
-    cmd.angle[0].f -= (ctrl->mousex * M_RAD);
-    cmd.angle[1].f -= (ctrl->mousey * M_RAD);
-    cmd.mouse[0].f = (ctrl->mousex * M_RAD);
-    cmd.mouse[1].f = (ctrl->mousey * M_RAD);
+    yaw = (ctrl->mousex * M_RAD);
+    pitch = (ctrl->mousey * M_RAD);
+
+    cmd.angle[0].f -= yaw;
+    cmd.angle[1].f -= pitch;
+    cmd.mouse[0].f = yaw;
+    cmd.mouse[1].f = pitch;
     Ang_Clamp(&cmd.angle[0].f);
     Ang_Clamp(&cmd.angle[1].f);
 
-    client.localactor.yaw -= (ctrl->mousex * M_RAD);
-    client.localactor.pitch -= (ctrl->mousey * M_RAD);
-    Ang_Clamp(&client.localactor.yaw);
-    Ang_Clamp(&client.localactor.pitch);
+    if(cmd.angle[1].f >  DEG2RAD(90)) cmd.angle[1].f =  DEG2RAD(90);
+    if(cmd.angle[1].f < -DEG2RAD(90)) cmd.angle[1].f = -DEG2RAD(90);
+
+    client.pmove.angles[0].f -= yaw;
+    client.pmove.angles[1].f -= pitch;
+    Ang_Clamp(&client.pmove.angles[0].f);
+    Ang_Clamp(&client.pmove.angles[1].f);
+
+    if(client.pmove.angles[1].f >  DEG2RAD(90)) client.pmove.angles[1].f =  DEG2RAD(90);
+    if(client.pmove.angles[1].f < -DEG2RAD(90)) client.pmove.angles[1].f = -DEG2RAD(90);
 
     msec = (int)(client.runtime * 1000);
     if(msec > 250)

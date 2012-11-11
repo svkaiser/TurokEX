@@ -186,6 +186,24 @@ static void CL_CheckHostMsg(void)
 }
 
 //
+// CL_MessageServer
+//
+
+void CL_MessageServer(char *string)
+{
+    ENetPacket *packet;
+
+    if(!(packet = Packet_New()))
+    {
+        return;
+    }
+
+    Packet_Write8(packet, cp_msgserver);
+    Packet_WriteString(packet, string);
+    Packet_Send(packet, client.peer);
+}
+
+//
 // CL_DrawDebug
 //
 
@@ -219,7 +237,7 @@ static void CL_Ticker(void)
     Con_Ticker();
 
     //TEMP
-    G_ClientThink(&client.localactor);
+    G_ClientThink();
 
     client.tics++;
 }
@@ -269,9 +287,9 @@ void CL_Run(int msec)
 
     CL_BuildTiccmd();
 
-    CL_Drawer();
+    Pred_TryMovement();
 
-    CL_Move(&client);
+    CL_Drawer();
 
     CL_Ticker();
 }
@@ -340,21 +358,12 @@ static void FCmd_Say(void)
 
 static void FCmd_MsgServer(void)
 {
-    ENetPacket *packet;
-
     if(Cmd_GetArgc() < 2)
     {
         return;
     }
 
-    if(!(packet = Packet_New()))
-    {
-        return;
-    }
-
-    Packet_Write8(packet, cp_msgserver);
-    Packet_WriteString(packet, Cmd_GetArgv(1));
-    Packet_Send(packet, client.peer);
+    CL_MessageServer(Cmd_GetArgv(1));
 }
 
 //

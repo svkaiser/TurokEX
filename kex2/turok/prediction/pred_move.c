@@ -20,11 +20,12 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION: Client Movement
+// DESCRIPTION: Prediction Movement
 //
 //-----------------------------------------------------------------------------
 
 #include "common.h"
+#include "pred.h"
 #include "client.h"
 #include "mathlib.h"
 #include "level.h"
@@ -35,11 +36,21 @@
 #define JUMP_VELOCITY   11.612f
 #define NOCLIPMOVE      (MOVE_VELOCITY * 6)
 
+typedef struct
+{
+    actor_t     actor;
+    float       roll;
+    float       deltatime;
+    pmflags_t   flags;
+} localpmove_t;
+
+static localpmove_t lpmove;
+
 //
-// CL_CheckJump
+// Pred_CheckJump
 //
 
-static kbool CL_CheckJump(actor_t *actor)
+static kbool Pred_CheckJump(actor_t *actor)
 {
     if(actor->plane == NULL)
     {
@@ -60,7 +71,7 @@ static kbool CL_CheckJump(actor_t *actor)
     {
         return false;
     }
-    else if(!(actor->flags & AF_CLIENTJUMP))
+    else if(!(lpmove.flags & PMF_JUMP))
     {
         if(actor->velocity[1] < 0 && actor->velocity[1] > -16)
         {
@@ -78,10 +89,10 @@ static kbool CL_CheckJump(actor_t *actor)
 }
 
 //
-// CL_ClientWalk
+// Pred_Walk
 //
 
-static void CL_ClientWalk(actor_t *actor, ticcmd_t *cmd)
+static void Pred_Walk(actor_t *actor, ticcmd_t *cmd)
 {
     float sy;
     float cy;
@@ -118,19 +129,19 @@ static void CL_ClientWalk(actor_t *actor, ticcmd_t *cmd)
 
     if(cmd->buttons & BT_JUMP)
     {
-        if(CL_CheckJump(actor) && !cmd->heldtime[1])
+        if(Pred_CheckJump(actor) && !cmd->heldtime[1])
         {
-            actor->flags |= AF_CLIENTJUMP;
+            lpmove.flags |= PMF_JUMP;
             actor->velocity[1] = JUMP_VELOCITY;
         }
     }
 }
 
 //
-// CL_ClientSwim
+// Pred_Swim
 //
 
-static void CL_ClientSwim(actor_t *actor, ticcmd_t *cmd)
+static void Pred_Swim(actor_t *actor, ticcmd_t *cmd)
 {
     float sy;
     float cy;
@@ -189,10 +200,10 @@ static void CL_ClientSwim(actor_t *actor, ticcmd_t *cmd)
 }
 
 //
-// CL_ClientPaddle
+// Pred_Paddle
 //
 
-static void CL_ClientPaddle(actor_t *actor, ticcmd_t *cmd)
+static void Pred_Paddle(actor_t *actor, ticcmd_t *cmd)
 {
     float sy;
     float cy;
@@ -260,19 +271,19 @@ static void CL_ClientPaddle(actor_t *actor, ticcmd_t *cmd)
 
     if(cmd->buttons & BT_JUMP)
     {
-        if(CL_CheckJump(actor) && !cmd->heldtime[1])
+        if(Pred_CheckJump(actor) && !cmd->heldtime[1])
         {
-            actor->flags |= AF_CLIENTJUMP;
+            lpmove.flags |= PMF_JUMP;
             actor->velocity[1] = JUMP_VELOCITY;
         }
     }
 }
 
 //
-// CL_ClientNoClipMove
+// Pred_NoClipMove
 //
 
-static void CL_ClientNoClipMove(actor_t *actor, ticcmd_t *cmd)
+static void Pred_NoClipMove(actor_t *actor, ticcmd_t *cmd)
 {
     float sy;
     float cy;
@@ -332,45 +343,136 @@ static void CL_ClientNoClipMove(actor_t *actor, ticcmd_t *cmd)
 }
 
 //
-// CL_Move
+// Pred_Move
 //
 
-void CL_Move(client_t *client)
+void Pred_Move(pred_t *pred)
 {
     actor_t *actor;
+    object_t *obj;
     ticcmd_t *cmd;
 
-    actor = &client->localactor;
-    cmd = &client->cmd;
+    memset(&lpmove, 0, sizeof(localpmove_t));
+
+    actor = &lpmove.actor;
+    obj = &actor->object;
+    cmd = &pred->cmd;
+
+    Vec_Set3(actor->origin,
+        pred->pmove.origin[0].f,
+        pred->pmove.origin[1].f,
+        pred->pmove.origin[2].f);
+
+    Vec_Set3(actor->velocity,
+        pred->pmove.velocity[0].f,
+        pred->pmove.velocity[1].f,
+        pred->pmove.velocity[2].f);
+
+    actor->yaw          = pred->pmove.angles[0].f;
+    actor->pitch        = pred->pmove.angles[1].f;
+    lpmove.roll         = pred->pmove.angles[2].f;
+    lpmove.deltatime    = client.runtime;
+    lpmove.flags        = pred->pmove.flags;
+    obj->width          = pred->pmove.radius.f;
+    obj->height         = pred->pmove.height.f;
+    obj->centerheight   = pred->pmove.centerheight.f;
+    obj->viewheight     = pred->pmove.viewheight.f;
+    actor->terriantype  = pred->pmove.terraintype;
+    actor->plane        = pred->pmove.plane != -1 ?
+        &g_currentmap->planes[pred->pmove.plane] : NULL;
 
     switch(actor->terriantype)
     {
     case TT_WATER_SHALLOW:
-        CL_ClientWalk(actor, cmd);
+        Pred_Walk(actor, cmd);
         break;
 
     case TT_WATER_SURFACE:
-        CL_ClientPaddle(actor, cmd);
+        Pred_Paddle(actor, cmd);
         break;
 
     case TT_WATER_UNDER:
-        CL_ClientSwim(actor, cmd);
+        Pred_Swim(actor, cmd);
         break;
 
     case TT_LAVA:
-        CL_ClientWalk(actor, cmd);
+        Pred_Walk(actor, cmd);
         break;
 
     case TT_NOCLIP:
-        CL_ClientNoClipMove(actor, cmd);
+        Pred_NoClipMove(actor, cmd);
         break;
 
     default:
-        CL_ClientWalk(actor, cmd);
+        Pred_Walk(actor, cmd);
         break;
     }
 
-    // TODO - TEMP
     G_ActorMovement(actor);
+
+    if(actor->flags & AF_ONGROUND)
+    {
+        lpmove.flags &= ~PMF_JUMP;
+        lpmove.flags |= PMF_ONGROUND;
+    }
+
+    if(actor->flags & AF_SUBMERGED)
+    {
+        lpmove.flags |= PMF_SUBMERGED;
+    }
+    else
+    {
+        lpmove.flags &= ~PMF_SUBMERGED;
+    }
+
+    pred->pmove.angles[0].f     = actor->yaw;
+    pred->pmove.angles[1].f     = actor->pitch;
+    pred->pmove.origin[0].f     = actor->origin[0];
+    pred->pmove.origin[1].f     = actor->origin[1];
+    pred->pmove.origin[2].f     = actor->origin[2];
+    pred->pmove.velocity[0].f   = actor->velocity[0];
+    pred->pmove.velocity[1].f   = actor->velocity[1];
+    pred->pmove.velocity[2].f   = actor->velocity[2];
+    pred->pmove.flags           = lpmove.flags;
+    pred->pmove.terraintype     = actor->terriantype;
+    pred->pmove.plane           = (actor->plane - g_currentmap->planes);
 }
 
+//
+// Pred_TryMovement
+//
+
+void Pred_TryMovement(void)
+{
+    pred_t pred;
+    moveframe_t *frame;
+
+    if(client.state != CL_STATE_READY)
+    {
+        return;
+    }
+
+    if(g_currentmap == NULL)
+    {
+        return;
+    }
+
+    memset(&pred, 0, sizeof(pred_t));
+    pred.pmove = client.pmove;
+    pred.cmd = client.cmd;
+
+    Pred_Move(&pred);
+
+    frame = &client.moveframe;
+
+    client.pmove        = pred.pmove;
+    frame->origin[0]    = client.pmove.origin[0].f;
+    frame->origin[1]    = client.pmove.origin[1].f;
+    frame->origin[2]    = client.pmove.origin[2].f;
+    frame->velocity[0]  = client.pmove.velocity[0].f;
+    frame->velocity[1]  = client.pmove.velocity[1].f;
+    frame->velocity[2]  = client.pmove.velocity[2].f;
+    frame->yaw          = client.pmove.angles[0].f;
+    frame->pitch        = client.pmove.angles[1].f;
+    frame->plane        = &g_currentmap->planes[client.pmove.plane];
+}

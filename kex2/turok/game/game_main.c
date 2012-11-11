@@ -33,8 +33,6 @@
 #include "zone.h"
 #include "game.h"
 
-weapon_t weapons[NUMWEAPONS];
-
 //
 // G_Shutdown
 //
@@ -56,67 +54,6 @@ void G_Ticker(void)
         g_currentmap->tics++;
         g_currentmap->time = (float)g_currentmap->tics * 0.1f;
     }
-}
-
-//
-// G_SetupWeapon
-//
-
-static void G_SetupWeapon(weapon_t *weapon, const char *model,
-                          float x, float y, float z)
-{
-    memset(weapon, 0, sizeof(weapon_t));
-
-    weapon->speed = 4;
-    weapon->model = Mdl_Load(model);
-    Mdl_SetAnimState(&weapon->animstate, weapon->model, "anim00", false, 0);
-    Vec_Set3(weapon->origin,
-        -x * 341.334f,
-        -y * 341.334f,
-         z * 341.334f - 275.456f);
-}
-
-//
-// G_WeaponThink
-//
-
-#define WEAPONTURN_MAX      0.08f
-#define WEAPONTURN_EPSILON  0.001f
-
-void G_WeaponThink(actor_t *owner, weapon_t *weapon)
-{
-    float d;
-
-    weapon->yaw = (weapon->yaw - (client.cmd.mouse[0].f * 0.1f)) * 0.9f;
-    if(weapon->yaw >  WEAPONTURN_MAX) weapon->yaw =  WEAPONTURN_MAX;
-    if(weapon->yaw < -WEAPONTURN_MAX) weapon->yaw = -WEAPONTURN_MAX;
-    if(weapon->yaw <  WEAPONTURN_EPSILON &&
-        weapon->yaw > -WEAPONTURN_EPSILON)
-    {
-        weapon->yaw = 0;
-    }
-
-    weapon->pitch = (weapon->pitch - (client.cmd.mouse[1].f * 0.1f)) * 0.9f;
-    if(weapon->pitch >  WEAPONTURN_MAX) weapon->pitch =  WEAPONTURN_MAX;
-    if(weapon->pitch < -WEAPONTURN_MAX) weapon->pitch = -WEAPONTURN_MAX;
-    if(weapon->pitch <  WEAPONTURN_EPSILON &&
-        weapon->pitch > -WEAPONTURN_EPSILON)
-    {
-        weapon->pitch = 0;
-    }
-
-    if((d = Vec_Unit2(owner->velocity)) >= 0.1f)
-    {
-        Mdl_SetAnimState(&weapon->animstate, weapon->model,
-            "anim02", true, weapon->speed);
-    }
-    else
-    {
-        Mdl_SetAnimState(&weapon->animstate, weapon->model,
-            "anim00", true, weapon->speed);
-    }
-
-    Mdl_UpdateAnimState(&weapon->animstate, weapon->speed, weapon->speed);
 }
 
 //
@@ -142,20 +79,17 @@ void G_ClientReborn(gclient_t *client)
     client->weaponowned[wp_knife]       = true;
     client->weaponowned[wp_crossbow]    = true;
     client->activeweapon                = wp_knife;
-    client->actor->health               = 100;
+    client->actor.health                = 100;
 }
 
 //
 // G_ClientThink
 //
 
-void G_ClientThink(actor_t *client)
+void G_ClientThink(void)
 {
     // TODO - TEMP
-    if(g_currentmap != NULL)
-    {
-        G_WeaponThink(client, &weapons[wp_pulse]);
-    }
+    G_WeaponThink(&weapons[wp_shotgun]);
 }
 
 //
@@ -164,18 +98,23 @@ void G_ClientThink(actor_t *client)
 
 static void FCmd_NoClip(void)
 {
-    actor_t *actor;
+    if(g_currentmap == NULL)
+    {
+        return;
+    }
 
     // TODO: TEMP
-    actor = &client.localactor;
-    if(actor->terriantype == TT_NOCLIP)
+    if(client.pmove.terraintype == TT_NOCLIP)
     {
-        actor->terriantype = TT_NORMAL;
-        actor->plane = G_FindClosestPlane(actor->origin);
+        moveframe_t *frame = &client.moveframe;
+
+        client.pmove.terraintype = TT_NORMAL;
+        frame->plane = G_FindClosestPlane(frame->origin);
+        client.pmove.plane = frame->plane - g_currentmap->planes;
     }
     else
     {
-        actor->terriantype = TT_NOCLIP;
+        client.pmove.terraintype = TT_NOCLIP;
     }
 }
 
@@ -186,32 +125,7 @@ static void FCmd_NoClip(void)
 void G_Init(void)
 {
     Map_Init();
-
-    // TODO - set these up as definitions
-    G_SetupWeapon(&weapons[wp_knife],
-        "models/mdl653/mdl653.kmesh", 0.5f, 0.45f, 0.78f);
-    G_SetupWeapon(&weapons[wp_crossbow],
-        "models/mdl644/mdl644.kmesh", 0.39f, 0.44f, 0.77f);
-    G_SetupWeapon(&weapons[wp_pistol],
-        "models/mdl663/mdl663.kmesh", 0.47f, 0.54f, 0.76f);
-    G_SetupWeapon(&weapons[wp_shotgun],
-        "models/mdl669/mdl669.kmesh", 0.5f, 0.5f, 0.78f);
-    G_SetupWeapon(&weapons[wp_autoshotgun],
-        "models/mdl642/mdl642.kmesh", 0.5f, 0.52f, 0.8f);
-    G_SetupWeapon(&weapons[wp_rifle],
-        "models/mdl665/mdl665.kmesh", 0.5f, 0.6f, 0.75f);
-    G_SetupWeapon(&weapons[wp_pulse],
-        "models/mdl655/mdl655.kmesh", 0.5f, 0.5f, 0.78f);
-    G_SetupWeapon(&weapons[wp_grenade],
-        "models/mdl650/mdl650.kmesh", 0.5f, 0.45f, 0.78f);
-    G_SetupWeapon(&weapons[wp_missile],
-        "models/mdl666/mdl666.kmesh", 0.5f, 0.45f, 0.78f);
-    G_SetupWeapon(&weapons[wp_accelerator],
-        "models/mdl668/mdl668.kmesh", 0.5f, 0.45f, 0.78f);
-    G_SetupWeapon(&weapons[wp_bfg],
-        "models/mdl662/mdl662.kmesh", 0.5f, -0.7f, 0.68f);
-    G_SetupWeapon(&weapons[wp_chrono],
-        "models/mdl645/mdl645.kmesh", 0.6f, 0.17f, 0.85f);
+    G_InitWeapons();
 
     // TODO: TEMP
     Cmd_AddCommand("noclip", FCmd_NoClip);
