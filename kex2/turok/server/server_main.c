@@ -264,8 +264,8 @@ static void SV_ReadTiccmd(ENetEvent *sev, ENetPacket *packet)
     READ_TICCMD32(angle[1].i, CL_TICDIFF_TURN2);
     READ_TICCMD16(buttons, CL_TICDIFF_BUTTONS);
 
-    Packet_Read8(packet, &tmp);
-    cmd.msec = tmp;
+    Packet_Read32(packet, &tmp);
+    cmd.msec.i = tmp;
     Packet_Read8(packet, &tmp);
     cmd.heldtime[0] = tmp;
     Packet_Read8(packet, &tmp);

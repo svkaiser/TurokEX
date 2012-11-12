@@ -40,6 +40,7 @@ enum
     wp_pulse,
     wp_minigun,
     wp_grenade,
+    wp_aliengun,
     wp_missile,
     wp_accelerator,
     wp_bfg,
@@ -71,6 +72,12 @@ typedef struct
     kmodel_t    *model;
     animstate_t animstate;
     float       speed;
+    anim_t      *idle;
+    anim_t      *walk;
+    anim_t      *running;
+    anim_t      *fire;
+    anim_t      *swap_in;
+    anim_t      *swap_out;
 } weapon_t;
 
 extern weapon_t weapons[NUMWEAPONS];

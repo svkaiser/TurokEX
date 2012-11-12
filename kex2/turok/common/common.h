@@ -173,7 +173,7 @@ typedef struct
     fint_t  angle[2];
     fint_t  mouse[2];
     short   buttons;
-    byte    msec;
+    fint_t  msec;
     byte    heldtime[2];
 } ticcmd_t;
 

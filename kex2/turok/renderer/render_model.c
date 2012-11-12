@@ -746,51 +746,81 @@ anim_t *Mdl_GetAnim(kmodel_t *model, const char *name)
 // Mdl_SetAnimState
 //
 
-void Mdl_SetAnimState(animstate_t *astate, kmodel_t *model, const char *name,
-                      kbool blend, float time)
+void Mdl_SetAnimState(animstate_t *astate, anim_t *anim,
+                      float time, animflags_t flags)
 {
-    anim_t *anim = Mdl_GetAnim(model, name);
+    astate->time                    = (float)client.tics + time;
+    astate->deltatime               = 0;
+    astate->blendtime               = 0;
+    astate->frametime               = time;
+    astate->track.frame             = 0;
+    astate->track.nextframe         = 1;
+    astate->flags                   = flags;
+    astate->prevtrack.frame         = 0;
+    astate->prevtrack.nextframe     = 0;
+    astate->track.anim              = anim;
+    astate->prevtrack.anim          = NULL;
+}
 
-    if(!blend)
+
+//
+// Mdl_BlendAnimStates
+//
+
+void Mdl_BlendAnimStates(animstate_t *astate, anim_t *anim,
+                         float time, float blendtime, animflags_t flags)
+{
+    if(astate->flags & (ANF_BLEND|ANF_NOINTERRUPT))
     {
-        astate->time                    = (float)client.tics + time;
-        astate->deltatime               = 0;
-        astate->track.frame             = 0;
-        astate->track.nextframe         = 1;
-        astate->prevtrack.frame         = 0;
-        astate->prevtrack.nextframe     = 0;
-        astate->track.anim              = anim;
-        astate->prevtrack.anim          = NULL;
+        // abort if already blending
+        return;
     }
-    else if(anim != astate->track.anim)
+
+    if(anim != astate->track.anim)
     {
         if(astate->prevtrack.anim == anim)
         {
+            // don't blend the same anim
             return;
         }
 
+        astate->flags                   = flags | ANF_BLEND;
         astate->prevtrack.frame         = astate->track.frame;
         astate->prevtrack.nextframe     = astate->track.nextframe;
         astate->track.frame             = 0;
         astate->track.nextframe         = 1;
-        astate->time                    = (float)client.tics + time;
+        astate->time                    = (float)client.tics + blendtime;
+        astate->frametime               = time;
+        astate->blendtime               = blendtime;
         astate->deltatime               = 0;
         astate->prevtrack.anim          = astate->track.anim;
         astate->track.anim              = anim;
     }
 }
 
+
 //
 // Mdl_UpdateAnimState
 //
 
-void Mdl_UpdateAnimState(animstate_t *astate, float lerptime, float nextlerp)
+void Mdl_UpdateAnimState(animstate_t *astate)
 {
+    if(astate->flags & ANF_STOPPED)
+    {
+        return;
+    }
+
     if(astate->time <= client.tics)
     {
         astate->deltatime = 0;
-        astate->time = (float)client.tics + nextlerp;
-        astate->prevtrack.anim = NULL;
+        astate->time = (float)client.tics + astate->frametime;
+
+        if(astate->flags & ANF_BLEND)
+        {
+            astate->prevtrack.anim = NULL;
+            astate->blendtime = 0;
+            astate->flags &= ~ANF_BLEND;
+        }
 
         if(++astate->track.frame >=
             (int)astate->track.anim->numframes)
@@ -802,11 +832,22 @@ void Mdl_UpdateAnimState(animstate_t *astate, float lerptime, float nextlerp)
             (int)astate->track.anim->numframes)
         {
             astate->track.nextframe = 0;
+
+            if(!(astate->flags & ANF_LOOP))
+            {
+                astate->flags |= ANF_STOPPED;
+                astate->flags &= ~ANF_NOINTERRUPT;
+            }
         }
     }
     else
     {
-        astate->deltatime += (1/lerptime);
+        float blend;
+
+        blend = (astate->flags & ANF_BLEND) ?
+            astate->blendtime : astate->frametime;
+
+        astate->deltatime += (1/blend);
     }
 }
 

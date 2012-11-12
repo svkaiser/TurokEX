@@ -371,7 +371,7 @@ void Pred_Move(pred_t *pred)
     actor->yaw          = pred->pmove.angles[0].f;
     actor->pitch        = pred->pmove.angles[1].f;
     lpmove.roll         = pred->pmove.angles[2].f;
-    lpmove.deltatime    = client.runtime;
+    lpmove.deltatime    = pred->cmd.msec.f;
     lpmove.flags        = pred->pmove.flags;
     obj->width          = pred->pmove.radius.f;
     obj->height         = pred->pmove.height.f;
@@ -476,3 +476,4 @@ void Pred_TryMovement(void)
     frame->pitch        = client.pmove.angles[1].f;
     frame->plane        = &g_currentmap->planes[client.pmove.plane];
 }
+

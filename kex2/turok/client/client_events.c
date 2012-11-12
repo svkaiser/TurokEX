@@ -98,7 +98,7 @@ void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd)
     WRITE_TICCMD32(angle[1].i, CL_TICDIFF_TURN2);
     WRITE_TICCMD16(buttons, CL_TICDIFF_BUTTONS);
 
-    Packet_Write8(packet, cmd->msec);
+    Packet_Write32(packet, cmd->msec.i);
     Packet_Write8(packet, cmd->heldtime[0]);
     Packet_Write8(packet, cmd->heldtime[1]);
 
@@ -115,7 +115,6 @@ void CL_BuildTiccmd(void)
 {
     ticcmd_t cmd;
     control_t *ctrl;
-    int msec;
     ENetPacket *packet;
     float yaw;
     float pitch;
@@ -203,13 +202,7 @@ void CL_BuildTiccmd(void)
     if(client.pmove.angles[1].f >  DEG2RAD(90)) client.pmove.angles[1].f =  DEG2RAD(90);
     if(client.pmove.angles[1].f < -DEG2RAD(90)) client.pmove.angles[1].f = -DEG2RAD(90);
 
-    msec = (int)(client.runtime * 1000);
-    if(msec > 250)
-    {
-        msec = 100;
-    }
-
-    cmd.msec = msec;
+    cmd.msec.f = client.runtime;
 
     client.cmd = cmd;
 

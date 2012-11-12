@@ -427,7 +427,7 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
                 Mdl_GetAnimTranslation(t1, anim, nodenum, frame);
                 Mdl_GetAnimTranslation(t2, anim, nodenum, nextframe);
 
-                if(prevanim == NULL)
+                if(!(animstate->flags & ANF_BLEND))
                 {
                     Vec_Copy4(rot_cur, r1);
                     Vec_Copy4(rot_next, r2);

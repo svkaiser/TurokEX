@@ -120,12 +120,23 @@ typedef struct
     int                 nextframe;
 } animtrack_t;
 
+typedef enum
+{
+    ANF_BLEND       = 1,
+    ANF_LOOP        = 2,
+    ANF_STOPPED     = 4,
+    ANF_NOINTERRUPT = 8
+} animflags_t;
+
 typedef struct
 {
     animtrack_t         track;
     animtrack_t         prevtrack;
     float               time;
     float               deltatime;
+    float               frametime;
+    float               blendtime;
+    animflags_t         flags;
 } animstate_t;
 
 typedef struct kmodel_s
@@ -143,9 +154,11 @@ typedef struct kmodel_s
 void Mdl_Init(void);
 void Mdl_GetAnimRotation(vec4_t out, anim_t *anim, int nodenum, int frame);
 void Mdl_GetAnimTranslation(vec3_t out, anim_t *anim, int nodenum, int frame);
-void Mdl_UpdateAnimState(animstate_t *astate, float lerptime, float nexttime);
-void Mdl_SetAnimState(animstate_t *astate, kmodel_t *model, const char *name,
-                      kbool blend, float time);
+void Mdl_UpdateAnimState(animstate_t *astate);
+void Mdl_BlendAnimStates(animstate_t *astate, anim_t *anim,
+                         float time, float blendtime, animflags_t flags);
+void Mdl_SetAnimState(animstate_t *astate, anim_t *anim,
+                      float time, animflags_t flags);
 
 anim_t *Mdl_GetAnim(kmodel_t *model, const char *name);
 
