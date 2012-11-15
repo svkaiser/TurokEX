@@ -239,6 +239,17 @@ void Vec_Normalize4(vec4_t out)
 }
 
 //
+// Vec_TransformToWorld
+//
+
+void Vec_TransformToWorld(mtx_t m, vec3_t vec, vec3_t out)
+{
+    out[0] = m[ 4] * vec[1] + m[ 8] * vec[2] + m[ 0] * vec[0] + m[12];
+    out[1] = m[ 5] * vec[1] + m[ 9] * vec[2] + m[ 1] * vec[0] + m[13];
+    out[2] = m[ 6] * vec[1] + m[10] * vec[2] + m[ 2] * vec[0] + m[14];
+}
+
+//
 // Vec_Lerp3
 //
 

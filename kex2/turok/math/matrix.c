@@ -427,17 +427,6 @@ void Mtx_MultiplyRotation(mtx_t out, mtx_t m1, mtx_t m2)
 }
 
 //
-// Mtx_ApplyToVector
-//
-
-void Mtx_ApplyToVector(mtx_t m, vec3_t vec, vec3_t out)
-{
-    out[0] = m[ 4] * vec[1] + m[ 8] * vec[2] + m[ 0] * vec[0] + m[12];
-    out[1] = m[ 5] * vec[1] + m[ 9] * vec[2] + m[ 1] * vec[0] + m[13];
-    out[2] = m[ 6] * vec[1] + m[10] * vec[2] + m[ 2] * vec[0] + m[14];
-}
-
-//
 // Mtx_ApplyVector
 //
 
@@ -456,7 +445,7 @@ void Mtx_ApplyCoordinates(mtx_t m, vec3_t src, vec3_t out)
 {
     float w;
 
-    Mtx_ApplyToVector(m, src, out);
+    Vec_TransformToWorld(m, src, out);
 
     w = m[11] * src[2] + m[ 8] * src[1] + m[ 3] * src[0] + m[15];
 

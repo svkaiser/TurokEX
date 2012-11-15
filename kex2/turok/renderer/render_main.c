@@ -36,6 +36,8 @@
 #include "game.h"
 
 CVAR_EXTERNAL(cl_fov);
+CVAR(r_fog, 1);
+
 static kbool showcollision = false;
 static kbool showbbox = false;
 
@@ -311,7 +313,7 @@ static void R_SetupViewFrame(void)
     Vec_MultQuaternion(vroll, yaw, roll);
     Vec_MultQuaternion(rot, vroll, pitch);
     Mtx_ApplyRotation(rot, mtx);
-    Mtx_ApplyToVector(mtx, org, pos);
+    Vec_TransformToWorld(mtx, org, pos);
     Mtx_AddTranslation(mtx, -pos[0], -pos[1], -pos[2]);
 
     // load view matrix
@@ -406,59 +408,56 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
         nextframe = animstate->track.nextframe;
         delta = animstate->deltatime;
 
-        if(anim)
+        if(anim && frame < (int)anim->numframes)
         {
-            if(frame < (int)anim->numframes)
+            vec4_t rot;
+            vec3_t pos;
+            vec4_t r1, r2;
+            vec3_t t1, t2;
+            vec4_t rot_cur;
+            vec4_t rot_next;
+            vec3_t pos_cur;
+            vec3_t pos_next;
+            int nodenum;
+
+            nodenum = node - model->nodes;
+
+            Mdl_GetAnimRotation(r1, anim, nodenum, frame);
+            Mdl_GetAnimRotation(r2, anim, nodenum, nextframe);
+            Mdl_GetAnimTranslation(t1, anim, nodenum, frame);
+            Mdl_GetAnimTranslation(t2, anim, nodenum, nextframe);
+
+            if(!(animstate->flags & ANF_BLEND))
             {
-                vec4_t rot;
-                vec3_t pos;
-                vec4_t r1, r2;
-                vec3_t t1, t2;
-                vec4_t rot_cur;
-                vec4_t rot_next;
-                vec3_t pos_cur;
-                vec3_t pos_next;
-                int nodenum;
-
-                nodenum = node - model->nodes;
-
-                Mdl_GetAnimRotation(r1, anim, nodenum, frame);
-                Mdl_GetAnimRotation(r2, anim, nodenum, nextframe);
-                Mdl_GetAnimTranslation(t1, anim, nodenum, frame);
-                Mdl_GetAnimTranslation(t2, anim, nodenum, nextframe);
-
-                if(!(animstate->flags & ANF_BLEND))
-                {
-                    Vec_Copy4(rot_cur, r1);
-                    Vec_Copy4(rot_next, r2);
-                    Vec_Copy3(pos_cur, t1);
-                    Vec_Copy3(pos_next, t2);
-                }
-                else
-                {
-                    vec4_t r3, r4;
-                    vec3_t t3, t4;
-
-                    frame = animstate->prevtrack.frame;
-                    nextframe = animstate->prevtrack.nextframe;
-
-                    Mdl_GetAnimRotation(r3, prevanim, nodenum, frame);
-                    Mdl_GetAnimRotation(r4, prevanim, nodenum, nextframe);
-                    Mdl_GetAnimTranslation(t3, prevanim, nodenum, frame);
-                    Mdl_GetAnimTranslation(t4, prevanim, nodenum, nextframe);
-
-                    Vec_Slerp(rot_cur, delta, r3, r1);
-                    Vec_Slerp(rot_next, delta, r4, r2);
-                    Vec_Lerp3(pos_cur, delta, t3, t1);
-                    Vec_Lerp3(pos_next, delta, t4, t2);
-                }
-
-                Vec_Slerp(rot, delta, rot_cur, rot_next);
-                Vec_Lerp3(pos, delta, pos_cur, pos_next);
-                Mtx_ApplyRotation(rot, mtx);
-                Mtx_AddTranslation(mtx, pos[0], pos[1], pos[2]);
-                dglMultMatrixf(mtx);
+                Vec_Copy4(rot_cur, r1);
+                Vec_Copy4(rot_next, r2);
+                Vec_Copy3(pos_cur, t1);
+                Vec_Copy3(pos_next, t2);
             }
+            else
+            {
+                vec4_t r3, r4;
+                vec3_t t3, t4;
+
+                frame = animstate->prevtrack.frame;
+                nextframe = animstate->prevtrack.nextframe;
+
+                Mdl_GetAnimRotation(r3, prevanim, nodenum, frame);
+                Mdl_GetAnimRotation(r4, prevanim, nodenum, nextframe);
+                Mdl_GetAnimTranslation(t3, prevanim, nodenum, frame);
+                Mdl_GetAnimTranslation(t4, prevanim, nodenum, nextframe);
+
+                Vec_Slerp(rot_cur, delta, r3, r1);
+                Vec_Slerp(rot_next, delta, r4, r2);
+                Vec_Lerp3(pos_cur, delta, t3, t1);
+                Vec_Lerp3(pos_next, delta, t4, t2);
+            }
+
+            Vec_Slerp(rot, delta, rot_cur, rot_next);
+            Vec_Lerp3(pos, delta, pos_cur, pos_next);
+            Mtx_ApplyRotation(rot, mtx);
+            Mtx_AddTranslation(mtx, pos[0], pos[1], pos[2]);
+            dglMultMatrixf(mtx);
         }
     }
 
@@ -692,6 +691,44 @@ static void R_DrawInstances(void)
 }
 
 //
+// R_SetupFog
+//
+
+static void R_SetupFog(void)
+{
+    static float fognear = 0;
+    static float fogfar = 0;
+    static float fogcolor[4] = { 0, 0, 0, 1 };
+    area_t *area;
+    float color[4];
+
+    if(!client.moveframe.plane || r_fog.value <= 0)
+    {
+        fogcolor[0] = fogcolor[1] = fogcolor[2] = 0.25f;
+        fogcolor[3] = 1;
+        GL_ClearView(fogcolor);
+        return;
+    }
+
+    area = Map_GetArea(client.moveframe.plane);
+
+    dglGetColorf(area->fog_color, color);
+
+    fogfar = (area->fog_far - fogfar) * 0.025f + fogfar;
+    fognear = fogfar * 0.625f;
+    fogcolor[0] = (color[0] - fogcolor[0]) * 0.025f + fogcolor[0];
+    fogcolor[1] = (color[1] - fogcolor[1]) * 0.025f + fogcolor[1];
+    fogcolor[2] = (color[2] - fogcolor[2]) * 0.025f + fogcolor[2];
+
+    GL_ClearView(fogcolor);
+
+    dglEnable(GL_FOG);
+    dglFogfv(GL_FOG_COLOR, fogcolor);
+    dglFogf(GL_FOG_START, fognear);
+    dglFogf(GL_FOG_END, fogfar);
+}
+
+//
 // R_DrawViewWeapon
 //
 
@@ -788,9 +825,8 @@ void R_DrawViewWeapon(weapon_t *weapon)
 //
 
 void R_DrawFrame(void)
-{
-    GL_ClearView(0xFF3f3f3f);
-    
+{   
+    R_SetupFog();
     R_SetupViewFrame();
     R_SetupClipFrustum();
 
@@ -799,6 +835,8 @@ void R_DrawFrame(void)
     dglDisableClientState(GL_COLOR_ARRAY);
 
     R_DrawInstances();
+
+    dglDisable(GL_FOG);
 
     if(showcollision)
     {
@@ -892,6 +930,8 @@ void R_Init(void)
 {
     Cmd_AddCommand("showcollision", FCmd_ShowCollision);
     Cmd_AddCommand("showbbox", FCmd_ShowBoundingBox);
+
+    Cvar_Register(&r_fog);
 
     Mdl_Init();
 }

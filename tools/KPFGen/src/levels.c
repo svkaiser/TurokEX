@@ -27,6 +27,8 @@
 #include "decoders.h"
 #include "zone.h"
 
+void AddTexture(byte *data, int size, const char *path);
+
 #define M_PI                        3.1415926535897932384626433832795
 #define M_RAD                       (M_PI / 180.0)
 #define M_DEG                       (180.0 / M_PI)
@@ -50,6 +52,7 @@
 #define CHUNK_LVROOT_ACTORS         12
 #define CHUNK_LVROOT_GRIDBOUNDS     16
 #define CHUNK_LVROOT_INSTANCES      20
+#define CHUNK_LVROOT_SKYTEXTURE     24
 
 #define CHUNK_LEVELINFO_ENTIRES     0
 #define CHUNK_LEVELINFO_AREAS       4
@@ -187,7 +190,7 @@ typedef struct
     float   u8;
     float   u9;
     float   waterheight;
-    float   u11;
+    float   skyheight;
     float   u12;
     float   u13;
     float   u14;
@@ -404,6 +407,7 @@ static void ProcessAreas(byte *data)
         Com_Strcat("        fogcolor = %i %i %i %i\n",
             area->fogrgba[0], area->fogrgba[1], area->fogrgba[2], area->fogrgba[3]);
         Com_Strcat("        waterheight = %f\n", area->waterheight);
+        Com_Strcat("        skyheight = %f\n", area->skyheight);
         Com_Strcat("        flags = %i\n", area->flags);
         Com_Strcat("        args = { %i %i %i %i %i %i }\n",
             area->args1, area->args2, area->args3, area->args4, area->args5, area->args6);
@@ -770,6 +774,24 @@ static void ProcessInstanceGroups(byte *data)
 }
 
 //
+// ProcessSkyTexture
+//
+
+static void ProcessSkyTexture(byte *data, int index)
+{
+    byte *rncdata;
+    byte *texture;
+    int size;
+    int outsize;
+
+    rncdata = Com_GetCartData(data, CHUNK_LVROOT_SKYTEXTURE, &size);
+    texture = RNC_ParseFile(rncdata, size, &outsize);
+
+    AddTexture(texture, outsize, va("maps/map%02d/mapsky%02d", index, index));
+    Com_Free(&texture);
+}
+
+//
 // ProcessLevel
 //
 
@@ -824,6 +846,7 @@ static void AddLevel(byte *data, int index)
     ProcessHeader(level, index);
     ProcessNavigation(level, index);
     ProcessLevel(level, index);
+    ProcessSkyTexture(level, index);
 }
 
 //

@@ -79,6 +79,8 @@ d_inline void dglSetVertexColor(vtx_t *v, rcolor c, word count)
 #define GLSTATE_TEXGEN_S    7
 #define GLSTATE_TEXGEN_T    8
 
+#define MAX_COORD 32768.0f
+
 //
 // TEXTURES
 //
@@ -116,7 +118,7 @@ void GL_SetTextureUnit(int unit, kbool enable);
 void GL_SetVertexPointer(vtx_t *vtx);
 void GL_Triangle(int v0, int v1, int v2);
 void GL_DrawElements(unsigned int count, vtx_t *vtx);
-void GL_ClearView(rcolor clearcolor);
+void GL_ClearView(float *clear);
 void GL_Register(void);
 void GL_Init(void);
 

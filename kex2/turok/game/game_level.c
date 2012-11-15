@@ -186,6 +186,7 @@ enum
 {
     scarea_fogcolor = 0,
     scarea_waterheight,
+    scarea_skyheight,
     scarea_flags,
     scarea_args,
     scarea_fogz_far,
@@ -197,6 +198,7 @@ static const sctokens_t areatokens[scarea_end+1] =
 {
     { scarea_fogcolor,      "fogcolor"      },
     { scarea_waterheight,   "waterheight"   },
+    { scarea_skyheight,     "skyheight"     },
     { scarea_flags,         "flags"         },
     { scarea_args,          "args"          },
     { scarea_fogz_far,      "fogz_far"      },
@@ -762,6 +764,11 @@ static void Map_ParseAreaBlock(kmap_t *map, scparser_t *parser)
             case scarea_waterheight:
                 SC_AssignFloat(areatokens, &map->areas[i].waterplane,
                     scarea_waterheight, parser, false);
+                break;
+
+            case scarea_skyheight:
+                SC_AssignFloat(areatokens, &map->areas[i].skyheight,
+                    scarea_skyheight, parser, false);
                 break;
 
             case scarea_flags:

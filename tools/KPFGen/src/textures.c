@@ -115,7 +115,7 @@ static void ConvertPalette(dPalette_t* palette, word* data, int indexes)
     }
 }
 
-static void AddTexture(byte *data, int size)
+void AddTexture(byte *data, int size, const char *path)
 {
     tgaheader_t tga;
     turoktexture_t *tex;
@@ -161,7 +161,7 @@ static void AddTexture(byte *data, int size)
         rover = buffer;
 
         memset(&pal, 0, sizeof(dPalette_t) * 256);
-        sprintf(name, "textures/tex%04d_%02d.tga", curtexture, i);
+        sprintf(name, "%s_%02d.tga", path, i);
 
         texdata = Com_GetCartData(texheader, CHUNK_TEXDATA_OFFSET(i), &texsize);
 
@@ -321,7 +321,7 @@ void TX_StoreTextures(void)
 
         data = Com_GetCartData(textures, CHUNK_TEX_OFFSET(i), &size);
         texdata = RNC_ParseFile(data, size, &outsize);
-        AddTexture(texdata, outsize);
+        AddTexture(texdata, outsize, va("textures/tex%04d", curtexture));
 
         Com_Free(&texdata);
     }

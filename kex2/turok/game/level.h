@@ -269,6 +269,7 @@ typedef struct
     float               fog_far;
     float               fog_near;
     float               waterplane;
+    float               skyheight;
     unsigned int        flags;
     int                 args[6];
 } area_t;

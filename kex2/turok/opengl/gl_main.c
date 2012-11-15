@@ -410,12 +410,9 @@ void GL_SetTextureUnit(int unit, kbool enable)
 // GL_ClearView
 //
 
-void GL_ClearView(rcolor clearcolor)
+void GL_ClearView(float *clear)
 {
-    float f[4];
-
-    dglGetColorf(clearcolor, f);
-    dglClearColor(f[0], f[1], f[2], f[3]);
+    dglClearColor(clear[0], clear[1], clear[2], clear[3]);
     dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     dglViewport(ViewWindowX, ViewWindowY, ViewWidth, ViewHeight);
     dglScissor(ViewWindowX, ViewWindowY, ViewWidth, ViewHeight);
