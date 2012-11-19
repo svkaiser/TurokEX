@@ -27,8 +27,9 @@
 #include "SDL.h"
 #include "SDL_opengl.h"
 
-#include "gl.h"
 #include "common.h"
+#include "type.h"
+#include "gl.h"
 #include "zone.h"
 #include "kernel.h"
 

@@ -23,8 +23,6 @@
 #ifndef __SCRIPT_H__
 #define __SCRIPT_H__
 
-#include "type.h"
-
 #define MAX_NESTED_PARSERS  128
 
 typedef enum

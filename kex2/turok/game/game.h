@@ -23,7 +23,6 @@
 #ifndef __GAME_H__
 #define __GAME_H__
 
-#include "type.h"
 #include "client.h"
 #include "actor.h"
 

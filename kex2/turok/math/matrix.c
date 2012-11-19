@@ -67,8 +67,8 @@
 #include <math.h>
 #include <string.h>
 
-#include "gl.h"
 #include "mathlib.h"
+#include "gl.h"
 
 //
 // Mtx_ViewFrustum

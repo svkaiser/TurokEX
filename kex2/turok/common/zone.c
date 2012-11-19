@@ -27,7 +27,7 @@
 
 #include <stdlib.h>
 
-#include "type.h"
+#include "shared.h"
 #include "common.h"
 #include "zone.h"
 

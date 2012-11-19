@@ -24,8 +24,7 @@
 #define _KERNEL_H_
 
 #include "SDL.h"
-
-#include "type.h"
+#include "shared.h"
 
 //
 // SYSTEM

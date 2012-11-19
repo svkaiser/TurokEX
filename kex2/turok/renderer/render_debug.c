@@ -24,9 +24,9 @@
 //
 //-----------------------------------------------------------------------------
 
+#include "common.h"
 #include "gl.h"
 #include "render.h"
-#include "common.h"
 #include "mathlib.h"
 #include "client.h"
 #include "level.h"

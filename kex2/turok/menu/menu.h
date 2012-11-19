@@ -23,7 +23,7 @@
 #ifndef _MENU_H_
 #define _MENU_H_
 
-#include "type.h"
+#include "shared.h"
 #include "client.h"
 
 //------------------------------------------------------------------------

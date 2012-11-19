@@ -27,8 +27,8 @@
 #include <math.h>
 #include "SDL.h"
 
-#include "gl.h"
 #include "common.h"
+#include "gl.h"
 #include "zone.h"
 #include "kernel.h"
 #include "client.h"

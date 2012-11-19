@@ -31,7 +31,7 @@
 #include <stdio.h>
 
 #include "SDL.h"
-#include "type.h"
+#include "shared.h"
 #include "kernel.h"
 
 #define EDIT_ID     100

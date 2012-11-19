@@ -24,7 +24,7 @@
 #define __MATHLIB_H__
 
 #include <math.h>
-#include "type.h"
+#include "shared.h"
 
 #define M_PI    3.1415926535897932384626433832795f
 #define M_RAD   (M_PI / 180.0f)

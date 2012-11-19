@@ -23,7 +23,7 @@
 #ifndef _OPENGL_H_
 #define _OPENGL_H_
 
-#include "type.h"
+#include "shared.h"
 #include "keywds.h"
 #include "dgl.h"
 

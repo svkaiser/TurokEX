@@ -26,8 +26,9 @@
 
 #include <math.h>
 
-#include "gl.h"
 #include "common.h"
+#include "type.h"
+#include "gl.h"
 #include "zone.h"
 #include "kernel.h"
 

@@ -30,40 +30,12 @@
 #include <stdint.h>
 #endif
 
-#define false 0
-#define true (!false)
-
-typedef int             kbool;
-typedef unsigned char   byte;
-typedef unsigned short  word;
-typedef unsigned long   ulong;
 typedef int8_t          int8;
 typedef uint8_t         uint8;
 typedef int16_t         int16;
 typedef uint16_t        uint16;
 typedef int32_t         int32;
 typedef uint32_t        uint32;
-typedef unsigned int    dtexture;
-typedef unsigned int    rcolor;
-typedef float           vec3_t[3];
-typedef float           vec4_t[4];
-typedef float           mtx_t[16];
-
-typedef struct
-{
-    vec3_t min;
-    vec3_t max;
-} bbox_t;
-
-typedef union
-{
-    int     i;
-    float   f;
-} fint_t;
-
-typedef struct actor_s actor_t;
-typedef struct gclient_s gclient_t;
-typedef struct svclient_s svclient_t;
 
 #ifndef _MSC_VER
 	typedef signed long long int64;
@@ -89,19 +61,3 @@ typedef struct svclient_s svclient_t;
 #ifndef BETWEEN
 #define BETWEEN(l,u,x) ((l)>(x)?(l):(x)>(u)?(u):(x))
 #endif
-
-#define MAX_FILEPATH    256
-
-#ifdef _WIN32
-
-#define DIR_SEPARATOR '\\'
-#define PATH_SEPARATOR ';'
-
-#else
-
-#define DIR_SEPARATOR '/'
-#define PATH_SEPARATOR ':'
-
-#endif
-
-

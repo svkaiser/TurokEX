@@ -23,8 +23,7 @@
 #ifndef _PRED_H_
 #define _PRED_H_
 
-#include "common.h"
-#include "type.h"
+#include "shared.h"
 
 typedef enum
 {

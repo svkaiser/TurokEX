@@ -36,6 +36,7 @@
 #include "menu.h"
 #include "script.h"
 #include "game.h"
+#include "js.h"
 
 CVAR(developer, 0);
 CVAR(fixedtime, 0);
@@ -63,6 +64,7 @@ void Sys_Shutdown(void)
     KF_Shutdown();
     SV_Shutdown();
     Com_Shutdown();
+    J_Shutdown();
 
 #ifdef _WIN32
     Sys_DestroyConsole();
@@ -187,6 +189,8 @@ void Kernel_Main(int argc, char **argv)
     Com_Printf("Command System Initialized\n");
     Cvar_Init();
     Com_Printf("Cvar System Initialized\n");
+    J_Init();
+    Com_Printf("Javascript API Initialized\n");
     SC_Init();
     Com_Printf("Lexer System Initialized\n");
     Key_Init();

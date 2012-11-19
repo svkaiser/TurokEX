@@ -24,9 +24,9 @@
 //
 //-----------------------------------------------------------------------------
 
+#include "common.h"
 #include "gl.h"
 #include "kernel.h"
-#include "common.h"
 #include "zone.h"
 
 static vtx_t vtxstring[1024];

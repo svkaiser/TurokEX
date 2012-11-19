@@ -24,12 +24,11 @@
 #define __COMMON_H__
 
 #include "SDL_endian.h"
+#include "shared.h"
 
 #ifdef _WIN32
 #include "opndir.h"
 #endif
-
-#include "type.h"
 
 #define RGBA(r,g,b,a) ((rcolor)((((a)&0xff)<<24)|(((b)&0xff)<<16)|(((g)&0xff)<<8)|((r)&0xff)))
 
