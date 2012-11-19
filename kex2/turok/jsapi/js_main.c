@@ -33,6 +33,73 @@
 
 static JSRuntime    *js_runtime;
 static JSContext    *js_context;
+static JSObject     *js_gobject;
+
+//
+// J_GlobalEnumerate
+//
+// Lazy enumeration for the ECMA standard classes and Aeon API.
+// Doing this is said to lower memory usage.
+//
+
+static JSBool J_GlobalEnumerate(JSContext *cx, JSObject *obj)
+{
+    jsval v;
+    JSBool b;
+    
+    if(!JS_GetProperty(cx, obj, "lazy", &v) || !JS_ValueToBoolean(cx, v, &b))
+    {
+        return JS_FALSE;
+    }
+    
+    return !b || JS_EnumerateStandardClasses(cx, obj);
+}
+
+//
+// J_GlobalResolve
+//
+// Lazy resolution for the ECMA standard classes.
+//
+
+static JSBool J_GlobalResolve(JSContext *cx, JSObject *obj, jsval id,
+                              uintN flags, JSObject **objp)
+{
+    if((flags & JSRESOLVE_ASSIGNING) == 0)
+    {
+        JSBool resolved;
+
+        if(!JS_ResolveStandardClass(cx, obj, id, &resolved))
+        {
+            return JS_FALSE;
+        }
+
+        if(resolved)
+        {
+            *objp = obj;
+            return JS_TRUE;
+        }
+    }
+
+    return JS_TRUE;
+}
+
+//
+// global_class
+//
+static JSClass global_class =
+{
+    "global",                                   // name
+    JSCLASS_NEW_RESOLVE | JSCLASS_GLOBAL_FLAGS, // flags
+    JS_PropertyStub,                            // addProperty
+    JS_PropertyStub,                            // delProperty
+    JS_PropertyStub,                            // getProperty
+    JS_PropertyStub,                            // setProperty
+    J_GlobalEnumerate,                          // enumerate
+    (JSResolveOp)J_GlobalResolve,               // resolve
+    JS_ConvertStub,                             // convert
+    JS_FinalizeStub,                            // finalize
+    JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
+};
 
 //
 // J_Error
@@ -93,11 +160,8 @@ static JSBool J_ContextCallback(JSContext *cx, uintN contextOp)
 
 void J_Shutdown(void)
 {
-    if(js_runtime)
-    {
-        JS_DestroyRuntime(js_runtime);
-    }
-
+    JS_DestroyRuntime(js_runtime);
+    JS_DestroyContext(js_context);
     JS_ShutDown();
 }
 
@@ -116,7 +180,14 @@ void J_Init(void)
 
     if(!(js_context = JS_NewContext(js_runtime, JS_STACK_CHUNK_SIZE)))
     {
-        Com_Error("JS_Init: Failed to initialize JSAPI context");
+        Com_Error("JS_Init: Failed to create a JSAPI context");
     }
+
+    if(!(js_gobject = JS_NewObject(js_context, &global_class, NULL, NULL)))
+    {
+        Com_Error("JS_Init: Failed to create a global class object");
+    }
+
+    JS_SetGlobalObject(js_context, js_gobject);
 }
 
