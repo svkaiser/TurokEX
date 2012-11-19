@@ -48,7 +48,6 @@ GL_EXT_texture_filter_anisotropic_Define();
 
 CVAR(gl_filter, 0);
 CVAR(gl_anisotropic, 0);
-CVAR(gl_fog, 1);
 
 CVAR_EXTERNAL(gl_gamma);
 CVAR_EXTERNAL(v_vsync);
@@ -469,7 +468,6 @@ void GL_Register(void)
 {
     Cvar_Register(&gl_filter);
     Cvar_Register(&gl_anisotropic);
-    Cvar_Register(&gl_fog);
     Cvar_Register(&gl_gamma);
 }
 

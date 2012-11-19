@@ -48,6 +48,38 @@ typedef enum
 
 typedef enum
 {
+    AAF_WATER           = 0x1,
+    AAF_UNKNOWN2        = 0x2,
+    AAF_UNKNOWN4        = 0x4,
+    AAF_UNKNOWN8        = 0x8,
+    AAF_CLIMB           = 0x10,
+    AAF_ONESIDED        = 0x20,
+    AAF_REVERB          = 0x40,
+    AAF_CRAWL           = 0x80,
+    AAF_UNKNOWN100      = 0x100,
+    AAF_TOUCH           = 0x200,
+    AAF_UNKNOWN400      = 0x400,
+    AAF_UNKNOWN800      = 0x800,
+    AAF_UNKNOWN1000     = 0x1000,
+    AAF_UNKNOWN2000     = 0x2000,
+    AAF_DEATHPIT        = 0x4000,
+    AAF_UNKNOWN8000     = 0x8000,
+    AAF_EVENT           = 0x10000,
+    AAF_REPEATABLE      = 0x20000,
+    AAF_TELEPORT        = 0x40000,
+    AAF_DAMAGE          = 0x80000,
+    AAF_DRAWSKY         = 0x100000,
+    AAF_WARP            = 0x200000,
+    AAF_UNKNOWN400000   = 0x400000,
+    AAF_UNKNOWN800000   = 0x800000,
+    AAF_UNKNOWN1000000  = 0x1000000,
+    AAF_UNKNOWN2000000  = 0x2000000,
+    AAF_CHECKPOINT      = 0x4000000,
+    AAF_SAVEGAME        = 0x8000000
+} areaflags_t;
+
+typedef enum
+{
     BLF_SECTORLINK      = 0x1,
     BLF_TOUCH           = 0x2
 } blockflags_t;
@@ -270,7 +302,7 @@ typedef struct
     float               fog_near;
     float               waterplane;
     float               skyheight;
-    unsigned int        flags;
+    areaflags_t         flags;
     int                 args[6];
 } area_t;
 

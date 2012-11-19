@@ -43,6 +43,7 @@ static kbool showbbox = false;
 
 static float cam_roll = 0;
 static float wpn_thudoffset = 0;
+static mtx_t mtx_rotation;
 
 static double viewMatrix[16];
 static double projMatrix[16];
@@ -313,6 +314,7 @@ static void R_SetupViewFrame(void)
     Vec_MultQuaternion(vroll, yaw, roll);
     Vec_MultQuaternion(rot, vroll, pitch);
     Mtx_ApplyRotation(rot, mtx);
+    Mtx_Copy(mtx_rotation, mtx);
     Vec_TransformToWorld(mtx, org, pos);
     Mtx_AddTranslation(mtx, -pos[0], -pos[1], -pos[2]);
 
@@ -352,6 +354,15 @@ void R_DrawSection(mdlsection_t *section, char *texture)
     else
     {
         color = COLOR_WHITE;
+    }
+
+    if(section->flags & MDF_MASKED)
+    {
+        dglAlphaFunc(GL_GEQUAL, 0.6525f);
+    }
+    else
+    {
+        dglAlphaFunc(GL_GEQUAL, 0.01f);
     }
 
     dglNormalPointer(GL_FLOAT, sizeof(float), section->normals);
@@ -715,7 +726,7 @@ static void R_SetupFog(void)
     dglGetColorf(area->fog_color, color);
 
     fogfar = (area->fog_far - fogfar) * 0.025f + fogfar;
-    fognear = fogfar * 0.625f;
+    fognear = fogfar * 0.5f;
     fogcolor[0] = (color[0] - fogcolor[0]) * 0.025f + fogcolor[0];
     fogcolor[1] = (color[1] - fogcolor[1]) * 0.025f + fogcolor[1];
     fogcolor[2] = (color[2] - fogcolor[2]) * 0.025f + fogcolor[2];
@@ -723,9 +734,172 @@ static void R_SetupFog(void)
     GL_ClearView(fogcolor);
 
     dglEnable(GL_FOG);
+    dglFogi(GL_FOG_COORD_SRC, GL_FRAGMENT_DEPTH);
     dglFogfv(GL_FOG_COLOR, fogcolor);
     dglFogf(GL_FOG_START, fognear);
     dglFogf(GL_FOG_END, fogfar);
+}
+
+//
+// R_DrawSkies
+//
+
+static void R_DrawSkies(void)
+{
+    static float sky_cloudpanx = 0;
+    static float sky_cloudpany = 0;
+    static float sky_offset = 0;
+    moveframe_t *frame;
+    int i;
+    area_t *area;
+    vtx_t vtx[12];
+    texture_t *tex;
+    mtx_t mi;
+    mtx_t mt;
+    mtx_t mtx;
+
+    frame = &client.moveframe;
+
+    if(frame->plane == NULL || showcollision)
+    {
+        return;
+    }
+
+    area = Map_GetArea(frame->plane);
+
+    if(!(area->flags & AAF_DRAWSKY))
+    {
+        return;
+    }
+
+    // TODO - handle a better way of loading sky textures per level
+    tex = Tex_CacheTextureFile(kva("maps/map%02d/mapsky%02d_00.tga",
+        g_currentmap - kmaps, g_currentmap - kmaps), GL_REPEAT, false);
+
+    // TODO - TEMP
+    if(Tex_IsDefault(tex))
+    {
+        return;
+    }
+
+    // set up sky offset relative to identity matrix
+    sky_offset = (((area->skyheight - 5.4f) * 10.24f) -
+        sky_offset) * 0.1f + sky_offset;
+
+    GL_SetVertexPointer(vtx);
+
+    // reset some states
+    GL_SetState(GLSTATE_CULL, false);
+    GL_SetState(GLSTATE_BLEND, true);
+    GL_SetState(GLSTATE_ALPHATEST, true);
+    GL_SetState(GLSTATE_TEXGEN_S, false);
+    GL_SetState(GLSTATE_TEXGEN_T, false);
+    GL_SetState(GLSTATE_TEXTURE0, true);
+
+    GL_BindTexture(tex);
+
+    // update panning skies
+    sky_cloudpanx = (client.tics) * 0.768f * -0.0005f;
+    sky_cloudpany = (client.tics) * 1.536f * -0.0005f;
+
+    if(sky_cloudpanx > 12288) sky_cloudpanx = sky_cloudpanx - 12288;
+    if(sky_cloudpany > 12288) sky_cloudpany = sky_cloudpany - 12288;
+
+    // setup persistent vertex data
+    for(i = 0; i < 12; i += 3)
+    {
+        vtx[i+0].r = vtx[i+0].g = vtx[i+0].b =
+        vtx[i+1].r = vtx[i+1].g = vtx[i+1].b =
+        vtx[i+2].r = vtx[i+2].g = vtx[i+2].b = 0xff;
+        vtx[i+0].a = 0;
+        vtx[i+1].a = 0;
+
+        vtx[i+2].tu = 2;
+        vtx[i+2].tv = 3;
+        vtx[i+2].x = 0;
+        vtx[i+2].z = 0;
+    }
+
+    // setup texture coordinates (4 x 6)
+    vtx[ 0].tu = 0; vtx[ 0].tv = 0;
+    vtx[ 1].tu = 4; vtx[ 1].tv = 0;
+    vtx[ 3].tu = 0; vtx[ 3].tv = 0;
+    vtx[ 4].tu = 0; vtx[ 4].tv = 6;
+    vtx[ 6].tu = 4; vtx[ 6].tv = 6;
+    vtx[ 7].tu = 4; vtx[ 7].tv = 0;
+    vtx[ 9].tu = 4; vtx[ 9].tv = 6;
+    vtx[10].tu = 0; vtx[10].tv = 6;
+
+    // setup vertex coordinates (768 x 1024)
+    vtx[ 0].x = -768; vtx[ 0].z = -1024;
+    vtx[ 1].x =  768; vtx[ 1].z = -1024;
+    vtx[ 3].x = -768; vtx[ 3].z = -1024;
+    vtx[ 4].x = -768; vtx[ 4].z =  1024;
+    vtx[ 6].x =  768; vtx[ 6].z =  1024;
+    vtx[ 7].x =  768; vtx[ 7].z = -1024;
+    vtx[ 9].x =  768; vtx[ 9].z =  1024;
+    vtx[10].x = -768; vtx[10].z =  1024;
+
+    // new projection
+    dglMatrixMode(GL_PROJECTION);
+    dglLoadIdentity();
+    Mtx_ViewFrustum(video_width, video_height, cl_fov.value, 0.1f);
+
+    // new model matrix
+    dglMatrixMode(GL_MODELVIEW);
+    Mtx_Identity(mi);
+    Mtx_Multiply(mtx, mi, mtx_rotation);
+    Mtx_RotateY(mtx, frame->yaw);
+    dglLoadMatrixf(mtx);
+
+    // new texture matrix
+    dglMatrixMode(GL_TEXTURE);
+    dglPushMatrix();
+    Mtx_SetTranslation(mtx,
+        sky_cloudpanx + (frame->origin[0] * 0.0005f),
+        sky_cloudpany + (frame->origin[2] * 0.0005f),
+        0);
+    dglMultMatrixf(mtx);
+    dglPushMatrix();
+    Mtx_IdentityZ(mi, -frame->yaw);
+    Mtx_SetTranslation(mt, -2, -3, 0);
+    Mtx_Multiply(mtx, mt, mi);
+    dglMultMatrixf(mtx);
+
+    // setup remaining vertex data for 1st layer
+    for(i = 0; i < 12; i += 3)
+    {
+        vtx[i+2].a = 200;
+        vtx[i+0].y = vtx[i+1].y = vtx[i+2].y = sky_offset -
+            (frame->origin[1] - 79.872f) * 0.5f;
+        GL_Triangle(i+0, i+1, i+2);
+    }
+
+    GL_DrawElements(12, vtx);
+
+    // push another texture matrix for 2nd layer
+    dglPushMatrix();
+    Mtx_SetTranslation(mtx, 1, 1.5f, 0);
+    dglMultMatrixf(mtx);
+
+    // update vertex data for 2nd layer
+    for(i = 0; i < 12; i += 3)
+    {
+        vtx[i+2].a = 127;
+        vtx[i+0].tu /= 2; vtx[i+0].tv /= 2;
+        vtx[i+1].tu /= 2; vtx[i+1].tv /= 2;
+        vtx[i+2].tu /= 2; vtx[i+2].tv /= 2;
+        vtx[i+0].y = vtx[i+1].y = vtx[i+2].y = sky_offset -
+            (frame->origin[1] + 266.24f) * 0.5f;
+        GL_Triangle(i+0, i+1, i+2);
+    }
+
+    GL_DrawElements(12, vtx);
+
+    // pop texture matrix stacks
+    dglPopMatrix();
+    dglPopMatrix();
+    dglPopMatrix();
 }
 
 //
@@ -836,8 +1010,6 @@ void R_DrawFrame(void)
 
     R_DrawInstances();
 
-    dglDisable(GL_FOG);
-
     if(showcollision)
     {
         R_DrawCollision();
@@ -849,6 +1021,14 @@ void R_DrawFrame(void)
     R_DrawViewWeapon(&weapons[wp_shotgun]);
 
     dglEnableClientState(GL_COLOR_ARRAY);
+
+    R_DrawSkies();
+
+    if(!showcollision)
+    {
+        dglDisable(GL_FOG);
+    }
+
     dglDisable(GL_DEPTH_TEST);
 
     GL_SetState(GLSTATE_CULL, true);

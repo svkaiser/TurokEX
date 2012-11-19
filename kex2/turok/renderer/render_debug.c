@@ -48,6 +48,7 @@ void R_DrawCollision(void)
     }
 
     dglEnable(GL_ALPHA_TEST);
+    dglDisable(GL_FOG);
 
     GL_SetState(GLSTATE_TEXTURE0, false);
     GL_SetState(GLSTATE_CULL, false);

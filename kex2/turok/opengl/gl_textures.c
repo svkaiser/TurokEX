@@ -63,6 +63,15 @@ void Tex_Shutdown(void)
 }
 
 //
+// Tex_IsDefault
+//
+
+kbool Tex_IsDefault(texture_t *tex)
+{
+    return tex == tex_default;
+}
+
+//
 // Tex_Alloc
 //
 
