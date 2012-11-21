@@ -25,8 +25,11 @@
 //-----------------------------------------------------------------------------
 
 #include "js.h"
-#include "jsapi.h"
+#include "js_shared.h"
 #include "common.h"
+#include "zone.h"
+
+CVAR_EXTERNAL(kf_basepath);
 
 #define JS_RUNTIME_HEAP_SIZE 64L * 1024L * 1024L
 #define JS_STACK_CHUNK_SIZE  8192
@@ -38,21 +41,13 @@ static JSObject     *js_gobject;
 //
 // J_GlobalEnumerate
 //
-// Lazy enumeration for the ECMA standard classes and Aeon API.
+// Lazy enumeration for the ECMA standard classes.
 // Doing this is said to lower memory usage.
 //
 
 static JSBool J_GlobalEnumerate(JSContext *cx, JSObject *obj)
 {
-    jsval v;
-    JSBool b;
-    
-    if(!JS_GetProperty(cx, obj, "lazy", &v) || !JS_ValueToBoolean(cx, v, &b))
-    {
-        return JS_FALSE;
-    }
-    
-    return !b || JS_EnumerateStandardClasses(cx, obj);
+    return JS_EnumerateStandardClasses(cx, obj);
 }
 
 //
@@ -107,26 +102,37 @@ static JSClass global_class =
 
 static void J_Error(JSContext *cx, const char *message, JSErrorReport *report)
 {
-    static char buf[1024];
+    char *buf;
+    char *f = NULL;
+    char *l = NULL;
+    char *m = NULL;
+    int len = 0;
 
     if(!report)
     {
-        strcat(buf, message);
-        Com_CPrintf(COLOR_RED, buf);
+        Com_CPrintf(COLOR_RED, "%s\n", message);
         return;
     }
 
     if(report->filename)
     {
-        strcat(buf, kva("%s:", report->filename));
+        f = Z_Strdupa(kva("%s: ", report->filename));
+        len += strlen(f);
     }
 
     if(report->lineno)
     {
-        strcat(buf, kva("%i", report->lineno));
+        l = Z_Strdupa(kva("%i ", report->lineno));
+        len += strlen(l);
     }
 
-    strcat(buf, message);
+    m = Z_Strdupa(message);
+    len += strlen(m);
+
+    buf = Z_Alloca(len+1);
+    if(f) strcat(buf, f);
+    if(l) strcat(buf, l);
+    if(m) strcat(buf, m);
 
     if(JSREPORT_IS_WARNING(report->flags))
     {
@@ -135,7 +141,7 @@ static void J_Error(JSContext *cx, const char *message, JSErrorReport *report)
     }
     else
     {
-        Com_Error(buf);
+        Com_CPrintf(COLOR_RED, "%s\n", buf);
     }
 }
 
@@ -155,14 +161,115 @@ static JSBool J_ContextCallback(JSContext *cx, uintN contextOp)
 }
 
 //
+// J_AddObject
+//
+
+JSObject *J_AddObject(JSClass *class, JSFunctionSpec *func, JSPropertySpec *prop,
+                     const char *name, JSContext *cx, JSObject *obj)
+{
+    JSObject *newobj;
+
+    if(!(newobj = JS_DefineObject(cx, obj, name, class, NULL, 0)))
+        Com_Error("J_AddObject: Failed to create a new class for %s", name);
+
+    if(prop)
+    {
+        if(!JS_DefineProperties(cx, newobj, prop))
+             Com_Error("J_AddObject: Failed to define properties for class %s", name);
+    }
+
+    if(func)
+    {
+        if(!JS_DefineFunctions(cx, newobj, func))
+            Com_Error("J_AddObject: Failed to define functions for class %s", name);
+    }
+
+    return newobj;
+}
+
+//
 // J_Shutdown
 //
 
 void J_Shutdown(void)
 {
-    JS_DestroyRuntime(js_runtime);
     JS_DestroyContext(js_context);
+    JS_DestroyRuntime(js_runtime);
     JS_ShutDown();
+}
+
+//
+// FCmd_JS
+//
+
+static void FCmd_JS(void)
+{
+    JSContext *cx = js_context;
+    JSObject *obj = js_gobject;
+    JSBool ok;
+    JSString *str;
+    jsval result;
+    char *buffer;
+
+    if(Cmd_GetArgc() < 2)
+    {
+        Com_Printf("Usage: js <code>\n");
+        return;
+    }
+
+    buffer = Cmd_GetArgv(1);
+
+    if(JS_BufferIsCompilableUnit(cx, obj, buffer, strlen(buffer)))
+    {
+        JSScript *script;
+
+        JS_ClearPendingException(cx);
+        if(script = JS_CompileScript(cx, obj, buffer,
+            strlen(buffer), "console", 1))
+        {
+            ok = JS_ExecuteScript(cx, obj, script, &result);
+
+            if(ok && result != JSVAL_VOID)
+            {
+                if(str = JS_ValueToString(cx, result))
+                {
+                    Com_Printf("%s\n", JS_GetStringBytes(str));
+                }
+            }
+
+            JS_DestroyScript(cx, script);
+        }
+    }
+}
+
+//
+// FCmd_JSFile
+//
+
+static void FCmd_JSFile(void)
+{
+    JSContext *cx = js_context;
+    JSObject *obj = js_gobject;
+    JSScript *script;
+    jsval result;
+    uint32 oldopts;
+
+    if(Cmd_GetArgc() < 2)
+    {
+        Com_Printf("Usage: jsfile <filename>\n");
+        return;
+    }
+
+    oldopts = JS_GetOptions(cx);
+    JS_SetOptions(cx, oldopts | JSOPTION_COMPILE_N_GO);
+    if(script = JS_CompileFile(cx, obj, kva("%s\\%s",
+        kf_basepath.string, Cmd_GetArgv(1))))
+    {
+        JS_ExecuteScript(cx, obj, script, &result);
+        JS_DestroyScript(cx, script);
+    }
+
+    JS_SetOptions(cx, oldopts);
 }
 
 //
@@ -172,22 +279,22 @@ void J_Shutdown(void)
 void J_Init(void)
 {
     if(!(js_runtime = JS_NewRuntime(JS_RUNTIME_HEAP_SIZE)))
-    {
         Com_Error("JS_Init: Failed to initialize JSAPI runtime");
-    }
 
     JS_SetContextCallback(js_runtime, J_ContextCallback);
 
     if(!(js_context = JS_NewContext(js_runtime, JS_STACK_CHUNK_SIZE)))
-    {
         Com_Error("JS_Init: Failed to create a JSAPI context");
-    }
 
     if(!(js_gobject = JS_NewObject(js_context, &global_class, NULL, NULL)))
-    {
         Com_Error("JS_Init: Failed to create a global class object");
-    }
 
     JS_SetGlobalObject(js_context, js_gobject);
+
+    JS_DEFINEOBJECT(sys);
+    JS_INITCLASS(vector3, 3);
+
+    Cmd_AddCommand("js", FCmd_JS);
+    Cmd_AddCommand("jsfile", FCmd_JSFile);
 }
 

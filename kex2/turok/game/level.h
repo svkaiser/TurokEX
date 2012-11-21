@@ -23,8 +23,6 @@
 #ifndef _LEVEL_H_
 #define _LEVEL_H_
 
-#include "type.h"
-
 typedef enum
 {
     CLF_WATER           = 0x1,

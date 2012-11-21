@@ -37,6 +37,7 @@
 #include "script.h"
 #include "game.h"
 #include "js.h"
+#include "type.h"
 
 CVAR(developer, 0);
 CVAR(fixedtime, 0);

@@ -157,7 +157,7 @@ void Cmd_ExecuteCommand(char *buffer)
             }
 
             // execute commands after a newline or semicolon
-            if(*b_rover == '\n' || *b_rover == ';' || *b_rover == 0 && havetoken)
+            if(*b_rover == '\n' || (*b_rover == ';' && !inquotes) || *b_rover == 0 && havetoken)
             {
                 if(inquotes)
                 {

@@ -30,6 +30,7 @@
 #include "packet.h"
 #include "server.h"
 #include "game.h"
+#include "type.h"
 
 CVAR(sv_address, localhost);
 CVAR(sv_port, 58304);

@@ -439,6 +439,14 @@
 					RelativePath="..\turok\jsapi\js_main.c"
 					>
 				</File>
+				<File
+					RelativePath="..\turok\jsapi\js_sys.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\jsapi\js_vector.c"
+					>
+				</File>
 			</Filter>
 		</Filter>
 		<Filter
@@ -582,6 +590,10 @@
 				>
 				<File
 					RelativePath="..\turok\jsapi\js.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\jsapi\js_shared.h"
 					>
 				</File>
 			</Filter>
