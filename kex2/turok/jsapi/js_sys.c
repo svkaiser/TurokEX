@@ -93,9 +93,35 @@ static JSBool sys_getTicks(JSContext *cx, uintN argc, jsval *rval)
     return JS_NewNumberValue(cx, client.tics, rval);
 }
 
+
+//
+// sys_GC
+//
+
+static JSBool sys_GC(JSContext *cx, uintN argc, jsval *vp)
+{
+   JS_GC(cx);
+
+   JS_SET_RVAL(cx, vp, JSVAL_VOID);
+   return JS_TRUE;
+}
+
+//
+// sys_maybeGC
+//
+
+static JSBool sys_maybeGC(JSContext *cx, uintN argc, jsval *vp)
+{
+   JS_MaybeGC(cx);
+
+   JS_SET_RVAL(cx, vp, JSVAL_VOID);
+   return JS_TRUE;
+}
+
 //
 // system_class
 //
+
 JSClass sys_class =
 {
     "sys",                                      // name
@@ -111,17 +137,27 @@ JSClass sys_class =
     JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
 };
 
+//
+// sys_props
+//
+
 JSPropertySpec sys_props[] =
 {
     { NULL, 0, 0, NULL, NULL }
 };
 
+//
+// sys_functions
+//
+
 JSFunctionSpec sys_functions[] =
 {
-   JS_FS("print",       sys_print,        0, 0, 0),
-   JS_FN("ms",          sys_getms,        0, 0, 0),
-   JS_FN("time",        sys_getTime,      0, 0, 0),
-   JS_FN("deltatime",   sys_getDeltaTime, 0, 0, 0),
-   JS_FN("ticks",       sys_getTicks,     0, 0, 0),
-   JS_FS_END
+    JS_FS("print",      sys_print,          0, 0, 0),
+    JS_FN("ms",         sys_getms,          0, 0, 0),
+    JS_FN("time",       sys_getTime,        0, 0, 0),
+    JS_FN("deltatime",  sys_getDeltaTime,   0, 0, 0),
+    JS_FN("ticks",      sys_getTicks,       0, 0, 0),
+    JS_FN("GC",         sys_GC,             0, 0, 0),
+    JS_FN("maybeGC",    sys_maybeGC,        0, 0, 0),
+    JS_FS_END
 };
