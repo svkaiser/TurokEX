@@ -71,3 +71,4 @@ JS_EXTERNOBJECT(sys);
 JS_EXTERNCLASS(vector3);
 
 #endif
+
