@@ -464,6 +464,8 @@ void J_Init(void)
     JS_SetGlobalObject(js_context, js_gobject);
 
     JS_DEFINEOBJECT(Sys);
+    JS_DEFINEOBJECT(Client);
+    JS_DEFINEOBJECT(Cmd);
     JS_INITCLASS(Vector, 3);
     JS_INITCLASS(Quaternion, 4);
     JS_INITCLASS(Matrix, 0);

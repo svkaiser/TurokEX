@@ -53,13 +53,12 @@ static JSBool vector_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *
     {
     case VEC3_X:
         return JS_NewNumberValue(cx, (*vector)[0], vp);
-        break;
+
     case VEC3_Y:
         return JS_NewNumberValue(cx, (*vector)[1], vp);
-        break;
+
     case VEC3_Z:
         return JS_NewNumberValue(cx, (*vector)[2], vp);
-        break;
     }
 
     return JS_FALSE;
