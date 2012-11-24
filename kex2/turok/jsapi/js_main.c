@@ -465,6 +465,7 @@ void J_Init(void)
 
     JS_DEFINEOBJECT(Sys);
     JS_INITCLASS(Vector, 3);
+    JS_INITCLASS(Quaternion, 4);
     JS_INITCLASS(Matrix, 0);
 
     Cmd_AddCommand("js", FCmd_JS);

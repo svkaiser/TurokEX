@@ -112,10 +112,11 @@ static JSBool sys_getCvar(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
         return JS_FALSE;
     }
 
-    if(!(cvar = Cvar_Get(bytes)))
-        return JS_FALSE;
-
+    cvar = Cvar_Get(bytes);
     JS_free(cx, bytes);
+
+    if(!cvar)
+        return JS_FALSE;
 
     return JS_NewNumberValue(cx, cvar->value, rval);
 }

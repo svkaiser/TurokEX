@@ -25,65 +25,80 @@
 
 #include "jsapi.h"
 
-#define JS_DEFINEOBJECT(name)                                                   \
-    js_obj ##name = J_AddObject(&name ## _class, name ## _functions,            \
+#define JS_DEFINEOBJECT(name)                                                       \
+    js_obj ##name = J_AddObject(&name ## _class, name ## _functions,                \
     name ## _props, # name, js_context, js_gobject)
 
-#define JS_INITCLASS(name, args)                                                \
-    js_obj ##name = JS_InitClass(js_context, js_gobject, NULL,                  \
-    &name ## _class, name ## _construct, args, name ## _props,                  \
+#define JS_INITCLASS(name, args)                                                    \
+    js_obj ##name = JS_InitClass(js_context, js_gobject, NULL,                      \
+    &name ## _class, name ## _construct, args, name ## _props,                      \
     name ## _functions, NULL, name ## _functions_static)
 
-#define JS_EXTERNOBJECT(name)                                                   \
-    extern JSObject *js_obj ##name;                                             \
-    extern JSClass name ## _class;                                              \
-    extern JSFunctionSpec name ## _functions[];                                 \
+#define JS_EXTERNOBJECT(name)                                                       \
+    extern JSObject *js_obj ##name;                                                 \
+    extern JSClass name ## _class;                                                  \
+    extern JSFunctionSpec name ## _functions[];                                     \
     extern JSPropertySpec name ## _props[]
 
-#define JS_EXTERNCLASS(name)                                                    \
-    extern JSObject *js_obj ##name;                                             \
-    extern JSClass name ## _class;                                              \
-    extern JSFunctionSpec name ## _functions[];                                 \
-    extern JSFunctionSpec name ## _functions_static[];                          \
-    extern JSPropertySpec name ## _props[];                                     \
-    JSBool name ## _construct(JSContext *cx, JSObject *obj, uintN argc,         \
+#define JS_EXTERNCLASS(name)                                                        \
+    extern JSObject *js_obj ##name;                                                 \
+    extern JSClass name ## _class;                                                  \
+    extern JSFunctionSpec name ## _functions[];                                     \
+    extern JSFunctionSpec name ## _functions_static[];                              \
+    extern JSPropertySpec name ## _props[];                                         \
+    JSBool name ## _construct(JSContext *cx, JSObject *obj, uintN argc,             \
                         jsval *argv, jsval *rval)
 
-#define JS_GETVECTOR(vec, v, a)                                                 \
-{                                                                               \
-    JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) return JS_FALSE;     \
-    if(JSVAL_IS_NULL(v[a])) return JS_FALSE;                                    \
-    if(!(JS_InstanceOf(cx, vobj, &Vector_class, NULL))) return JS_FALSE;        \
-    if(!(vec = (vec3_t*)JS_GetInstancePrivate(cx, vobj, &Vector_class, NULL)))  \
-        return JS_FALSE;                                                        \
+#define JS_GETVECTOR(vec, v, a)                                                     \
+{                                                                                   \
+    JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) return JS_FALSE;         \
+    if(JSVAL_IS_NULL(v[a])) return JS_FALSE;                                        \
+    if(!(JS_InstanceOf(cx, vobj, &Vector_class, NULL))) return JS_FALSE;            \
+    if(!(vec = (vec3_t*)JS_GetInstancePrivate(cx, vobj, &Vector_class, NULL)))      \
+        return JS_FALSE;                                                            \
 }
 
-#define JS_GETMATRIX(mtx, v, a)                                                 \
-{                                                                               \
-    JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) return JS_FALSE;     \
-    if(JSVAL_IS_NULL(v[a])) return JS_FALSE;                                    \
-    if(!(JS_InstanceOf(cx, vobj, &Matrix_class, NULL))) return JS_FALSE;        \
-    if(!(mtx = (mtx_t*)JS_GetInstancePrivate(cx, vobj, &Matrix_class, NULL)))   \
-        return JS_FALSE;                                                        \
+#define JS_GETQUATERNION(vec, v, a)                                                 \
+{                                                                                   \
+    JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) return JS_FALSE;         \
+    if(JSVAL_IS_NULL(v[a])) return JS_FALSE;                                        \
+    if(!(JS_InstanceOf(cx, vobj, &Quaternion_class, NULL))) return JS_FALSE;        \
+    if(!(vec = (vec4_t*)JS_GetInstancePrivate(cx, vobj, &Quaternion_class, NULL)))  \
+        return JS_FALSE;                                                            \
 }
 
-#define JS_GETNUMBER(val, v, a)                                                 \
-    JS_ValueToNumber(cx, v[a], &val);                                           \
-    if(JSVAL_IS_NULL(v[a]))                                                     \
+#define JS_GETMATRIX(mtx, v, a)                                                     \
+{                                                                                   \
+    JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) return JS_FALSE;         \
+    if(JSVAL_IS_NULL(v[a])) return JS_FALSE;                                        \
+    if(!(JS_InstanceOf(cx, vobj, &Matrix_class, NULL))) return JS_FALSE;            \
+    if(!(mtx = (mtx_t*)JS_GetInstancePrivate(cx, vobj, &Matrix_class, NULL)))       \
+        return JS_FALSE;                                                            \
+}
+
+#define JS_GETNUMBER(val, v, a)                                                     \
+    JS_ValueToNumber(cx, v[a], &val);                                               \
+    if(JSVAL_IS_NULL(v[a]))                                                         \
         return JS_FALSE
 
-#define JS_THISVECTOR(vec, v)                                                   \
-    if(!(vec = (vec3_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),        \
-        &Vector_class, NULL)))                                                  \
+#define JS_THISVECTOR(vec, v)                                                       \
+    if(!(vec = (vec3_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),            \
+        &Vector_class, NULL)))                                                      \
         return JS_FALSE
 
-#define JS_THISMATRIX(mtx, v)                                                   \
-    if(!(mtx = (mtx_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),         \
-        &Matrix_class, NULL)))                                                  \
+#define JS_THISQUATERNION(vec, v)                                                   \
+    if(!(vec = (vec4_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),            \
+        &Quaternion_class, NULL)))                                                  \
+        return JS_FALSE
+
+#define JS_THISMATRIX(mtx, v)                                                       \
+    if(!(mtx = (mtx_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),             \
+        &Matrix_class, NULL)))                                                      \
         return JS_FALSE
 
 JS_EXTERNOBJECT(Sys);
 JS_EXTERNCLASS(Vector);
+JS_EXTERNCLASS(Quaternion);
 JS_EXTERNCLASS(Matrix);
 
 #endif

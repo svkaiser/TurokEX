@@ -445,7 +445,7 @@ JSFunctionSpec Vector_functions[] =
 {
     JS_FN("add",        vector_add,         1, 0, 0),
     JS_FN("sub",        vector_sub,         1, 0, 0),
-    JS_FN("mult",       vector_mult,        1, 0, 0),
+    JS_FN("multiply",   vector_mult,        1, 0, 0),
     JS_FN("normalize",  vector_normalize,   0, 0, 0),
     JS_FN("lerp",       vector_lerp,        2, 0, 0),
     JS_FN("scale",      vector_scale,       1, 0, 0),
@@ -479,6 +479,9 @@ JSBool Vector_construct(JSContext *cx, JSObject *obj, uintN argc,
     JSObject *vobj;
     jsval *v;
     vec3_t *vector;
+    jsdouble x;
+    jsdouble y;
+    jsdouble z;
 
     if(!(vobj = JS_NewObject(cx, &Vector_class, NULL, NULL)))
         return JS_FALSE;
@@ -490,9 +493,11 @@ JSBool Vector_construct(JSContext *cx, JSObject *obj, uintN argc,
     if(!(JS_SetPrivate(cx, vobj, vector)))
         return JS_FALSE;
 
-    JS_SetProperty(cx, vobj, "x", &v[-2]);
-    JS_SetProperty(cx, vobj, "y", &v[-1]);
-    JS_SetProperty(cx, vobj, "z", &v[ 0]);
+    JS_GETNUMBER(x, v, -2);
+    JS_GETNUMBER(y, v, -1);
+    JS_GETNUMBER(z, v,  0);
+
+    Vec_Set3(*vector, (float)x, (float)y, (float)z);
 
     JS_SET_RVAL(cx, rval, OBJECT_TO_JSVAL(vobj));
 
