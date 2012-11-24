@@ -28,11 +28,21 @@
 #include "js_shared.h"
 #include "common.h"
 #include "zone.h"
+#include "kernel.h"
 
 CVAR_EXTERNAL(kf_basepath);
 
 #define JS_RUNTIME_HEAP_SIZE 64L * 1024L * 1024L
 #define JS_STACK_CHUNK_SIZE  8192
+
+typedef struct js_scrobj_s
+{
+    char name[MAX_FILEPATH];
+    JSScript *script;
+    struct js_scrobj_s *next;
+} js_scrobj_t;
+
+static js_scrobj_t *js_scrobj_list[MAX_HASH];
 
 static JSRuntime    *js_runtime;
 static JSContext    *js_context;
@@ -188,6 +198,112 @@ JSObject *J_AddObject(JSClass *class, JSFunctionSpec *func, JSPropertySpec *prop
 }
 
 //
+// J_LoadScriptObject
+//
+
+js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer)
+{
+    char scrname[MAX_FILEPATH];
+    unsigned int hash;
+    js_scrobj_t *scrobj;
+    JSContext *cx;
+    JSObject *obj;
+
+    if(strlen(name) >= MAX_FILEPATH)
+    {
+        Com_Error("J_LoadScriptObject: \"%s\" is too long", name);
+    }
+
+    cx = js_context;
+    obj = js_gobject;
+
+    if(!JS_BufferIsCompilableUnit(cx, obj, buffer, strlen(buffer)))
+    {
+        return NULL;
+    }
+
+    scrobj = Z_Calloc(sizeof(js_scrobj_t), PU_JSOBJ, 0);
+    strcpy(scrobj->name, name);
+    strcpy(scrname, name);
+    Com_StripPath(scrname);
+    Com_StripExt(scrname);
+
+    if(!(scrobj->script = JS_CompileScript(cx, obj, buffer,
+        strlen(buffer), scrname, 1)))
+    {
+        Z_Free(scrobj);
+        return NULL;
+    }
+
+    hash = Com_HashFileName(name);
+    scrobj->next = js_scrobj_list[hash];
+    js_scrobj_list[hash] = scrobj;
+
+    return scrobj;
+}
+
+//
+// J_FindScript
+//
+
+js_scrobj_t *J_FindScript(const char *name)
+{
+    js_scrobj_t *scrobj;
+    unsigned int hash;
+
+    if(name[0] == 0)
+    {
+        return NULL;
+    }
+
+    hash = Com_HashFileName(name);
+
+    for(scrobj = js_scrobj_list[hash]; scrobj; scrobj = scrobj->next)
+    {
+        if(!strcmp(name, scrobj->name))
+        {
+            return scrobj;
+        }
+    }
+
+    return NULL;
+}
+
+//
+// J_LoadScript
+//
+
+js_scrobj_t *J_LoadScript(const char *name)
+{
+    js_scrobj_t *scrobj;
+
+    if(name[0] == 0)
+    {
+        return NULL;
+    }
+
+    scrobj = J_FindScript(name);
+
+    if(scrobj == NULL)
+    {
+        byte *file;
+
+        if(KF_OpenFileCache(name, &file, PU_STATIC) == 0)
+        {
+            if(KF_ReadTextFile(name, &file) == -1)
+            {
+                return NULL;
+            }
+        }
+
+        scrobj = J_LoadScriptObject(name, (char*)file);
+        Z_Free(file);
+    }
+
+    return scrobj;
+}
+
+//
 // J_Shutdown
 //
 
@@ -196,6 +312,8 @@ void J_Shutdown(void)
     JS_DestroyContext(js_context);
     JS_DestroyRuntime(js_runtime);
     JS_ShutDown();
+
+    Z_FreeTags(PU_JSOBJ, PU_JSOBJ);
 }
 
 //
@@ -273,6 +391,60 @@ static void FCmd_JSFile(void)
 }
 
 //
+// FCmd_JSLoad
+//
+
+static void FCmd_JSLoad(void)
+{
+    if(Cmd_GetArgc() < 2)
+    {
+        Com_Printf("Usage: jsload <filename>\n");
+        return;
+    }
+
+    if(J_LoadScript(Cmd_GetArgv(1)))
+    {
+        Com_Printf("Script loaded\n");
+    }
+}
+
+//
+// FCmd_JSExec
+//
+
+static void FCmd_JSExec(void)
+{
+    JSContext *cx = js_context;
+    JSObject *obj = js_gobject;
+    JSBool ok;
+    JSString *str;
+    jsval result;
+    js_scrobj_t *scrobj;
+
+    if(Cmd_GetArgc() < 2)
+    {
+        Com_Printf("Usage: jsexec <name>\n");
+        return;
+    }
+
+    if(!(scrobj = J_FindScript(Cmd_GetArgv(1))))
+    {
+        Com_Printf("\"%s\" is not loaded\n", Cmd_GetArgv(1));
+        return;
+    }
+
+    ok = JS_ExecuteScript(cx, obj, scrobj->script, &result);
+
+    if(ok && result != JSVAL_VOID)
+    {
+        if(str = JS_ValueToString(cx, result))
+        {
+            Com_Printf("%s\n", JS_GetStringBytes(str));
+        }
+    }
+}
+
+//
 // J_Init
 //
 
@@ -291,10 +463,13 @@ void J_Init(void)
 
     JS_SetGlobalObject(js_context, js_gobject);
 
-    JS_DEFINEOBJECT(sys);
-    JS_INITCLASS(vector3, 3);
+    JS_DEFINEOBJECT(Sys);
+    JS_INITCLASS(Vector, 3);
+    JS_INITCLASS(Matrix, 0);
 
     Cmd_AddCommand("js", FCmd_JS);
     Cmd_AddCommand("jsfile", FCmd_JSFile);
+    Cmd_AddCommand("jsload", FCmd_JSLoad);
+    Cmd_AddCommand("jsexec", FCmd_JSExec);
 }
 

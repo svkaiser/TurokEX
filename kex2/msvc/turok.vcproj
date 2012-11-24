@@ -440,6 +440,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\jsapi\js_matrix.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\jsapi\js_sys.c"
 					>
 				</File>

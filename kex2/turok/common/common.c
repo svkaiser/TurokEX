@@ -261,6 +261,65 @@ void Com_NormalizeSlashes(char *str)
 }
 
 //
+// Com_StripPath
+//
+
+void Com_StripPath(char *name)
+{
+    char *search;
+    int len = 0;
+    int pos = 0;
+    int i = 0;
+
+    len = strlen(name) - 1;
+    pos = len + 1;
+
+    for(search = name + len;
+        *search != ASCII_BACKSLASH && *search != ASCII_SLASH; search--, pos--)
+    {
+        if(search == name)
+        {
+            return;
+        }
+    }
+
+    if(pos <= 0)
+    {
+        return;
+    }
+
+    for(i = 0; pos < len+1; pos++, i++)
+    {
+        name[i] = name[pos];
+    }
+
+    name[i] = '\0';
+}
+
+//
+// Com_StripExt
+//
+
+void Com_StripExt(char *name)
+{
+    char *search;
+
+    search = name + strlen(name) - 1;
+
+    while(*search != ASCII_BACKSLASH && *search != ASCII_SLASH
+        && search != name)
+    {
+        if(*search == '.')
+        {
+            *search = '\0';
+            return;
+        }
+
+        search--;
+    }
+}
+
+//
 // fcmp
 //
 

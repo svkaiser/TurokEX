@@ -29,7 +29,7 @@
 #include "common.h"
 #include "mathlib.h"
 
-JSObject *js_objvector3;
+JSObject *js_objVector;
 
 enum vec3_enum
 {
@@ -39,14 +39,14 @@ enum vec3_enum
 };
 
 //
-// vector3_getProperty
+// vector_getProperty
 //
 
-static JSBool vector3_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+static JSBool vector_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 {
     vec3_t *vector = NULL;
 
-    if(!(vector = (vec3_t*)JS_GetInstancePrivate(cx, obj, &vector3_class, NULL)))
+    if(!(vector = (vec3_t*)JS_GetInstancePrivate(cx, obj, &Vector_class, NULL)))
         return JS_FALSE;
 
     switch(JSVAL_TO_INT(id))
@@ -66,15 +66,15 @@ static JSBool vector3_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval 
 }
 
 //
-// vector3_setProperty
+// vector_setProperty
 //
 
-static JSBool vector3_setProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+static JSBool vector_setProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 {
     vec3_t *vector = NULL;
     jsdouble val;
 
-    if(!(vector = (vec3_t*)JS_GetInstancePrivate(cx, obj, &vector3_class, NULL)))
+    if(!(vector = (vec3_t*)JS_GetInstancePrivate(cx, obj, &Vector_class, NULL)))
         return JS_FALSE;
 
     if(!(JS_ValueToNumber(cx, *vp, &val)))
@@ -97,10 +97,10 @@ static JSBool vector3_setProperty(JSContext *cx, JSObject *obj, jsval id, jsval 
 }
 
 //
-// vector3_finalize
+// vector_finalize
 //
 
-static void vector3_finalize(JSContext *cx, JSObject *obj)
+static void vector_finalize(JSContext *cx, JSObject *obj)
 {
     vec3_t *vector;
 
@@ -288,7 +288,7 @@ static JSBool vector_cross(JSContext *cx, JSObject *obj, uintN argc,
     if(argc <= 0)
         return JS_FALSE;
 
-    if(!(nobj = JS_NewObject(cx, &vector3_class, NULL, NULL)))
+    if(!(nobj = JS_NewObject(cx, &Vector_class, NULL, NULL)))
         return JS_FALSE;
 
     v = JS_ARGV(cx, argv);
@@ -388,7 +388,7 @@ static JSBool vector_pointToAxis(JSContext *cx, JSObject *obj, uintN argc,
     if(argc <= 0)
         return JS_FALSE;
 
-    if(!(nobj = JS_NewObject(cx, &vector3_class, NULL, NULL)))
+    if(!(nobj = JS_NewObject(cx, &Vector_class, NULL, NULL)))
         return JS_FALSE;
 
     v = JS_ARGV(cx, argv);
@@ -407,29 +407,29 @@ static JSBool vector_pointToAxis(JSContext *cx, JSObject *obj, uintN argc,
 }
 
 //
-// vector3_class
+// Vector_class
 //
 
-JSClass vector3_class =
+JSClass Vector_class =
 {
-    "vector3",                                  // name
+    "Vector",                                   // name
     JSCLASS_HAS_PRIVATE,                        // flags
     JS_PropertyStub,                            // addProperty
     JS_PropertyStub,                            // delProperty
-    vector3_getProperty,                        // getProperty
-    vector3_setProperty,                        // setProperty
+    vector_getProperty,                         // getProperty
+    vector_setProperty,                         // setProperty
     JS_EnumerateStub,                           // enumerate
     JS_ResolveStub,                             // resolve
     JS_ConvertStub,                             // convert
-    vector3_finalize,                           // finalize
+    vector_finalize,                            // finalize
     JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
 };
 
 //
-// vector3_props
+// Vector_props
 //
 
-JSPropertySpec vector3_props[] =
+JSPropertySpec Vector_props[] =
 {
     { "x",  VEC3_X, JSPROP_ENUMERATE,   NULL, NULL },
     { "y",  VEC3_Y, JSPROP_ENUMERATE,   NULL, NULL },
@@ -438,10 +438,10 @@ JSPropertySpec vector3_props[] =
 };
 
 //
-// vector3_functions
+// Vector_functions
 //
 
-JSFunctionSpec vector3_functions[] =
+JSFunctionSpec Vector_functions[] =
 {
     JS_FN("add",        vector_add,         1, 0, 0),
     JS_FN("sub",        vector_sub,         1, 0, 0),
@@ -456,10 +456,10 @@ JSFunctionSpec vector3_functions[] =
 };
 
 //
-// vector3_functions_static
+// Vector_functions_static
 //
 
-JSFunctionSpec vector3_functions_static[] =
+JSFunctionSpec Vector_functions_static[] =
 {
     JS_FS("cross",      vector_cross,       2, 0, 0),
     JS_FS("dot",        vector_dot,         2, 0, 0),
@@ -470,17 +470,17 @@ JSFunctionSpec vector3_functions_static[] =
 };
 
 //
-// vector3_construct
+// vector_construct
 //
 
-JSBool vector3_construct(JSContext *cx, JSObject *obj, uintN argc,
+JSBool Vector_construct(JSContext *cx, JSObject *obj, uintN argc,
                         jsval *argv, jsval *rval)
 {
     JSObject *vobj;
     jsval *v;
     vec3_t *vector;
 
-    if(!(vobj = JS_NewObject(cx, &vector3_class, NULL, NULL)))
+    if(!(vobj = JS_NewObject(cx, &Vector_class, NULL, NULL)))
         return JS_FALSE;
 
     v = JS_ARGV(cx, argv);

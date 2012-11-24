@@ -54,6 +54,9 @@ typedef struct svclient_s svclient_t;
 
 #define MAX_FILEPATH    256
 
+#define ASCII_SLASH		47
+#define ASCII_BACKSLASH 92
+
 #ifdef _WIN32
 
 #define DIR_SEPARATOR '\\'

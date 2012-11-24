@@ -30,7 +30,7 @@
 #include "kernel.h"
 #include "client.h"
 
-JSObject *js_objsys;
+JSObject *js_objSys;
 
 //
 // sys_print
@@ -93,6 +93,33 @@ static JSBool sys_getTicks(JSContext *cx, uintN argc, jsval *rval)
     return JS_NewNumberValue(cx, client.tics, rval);
 }
 
+//
+// sys_getCvar
+//
+
+static JSBool sys_getCvar(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+    JSString *str;
+    char *bytes;
+    cvar_t *cvar;
+
+    if(argc <= 0)
+        return JS_FALSE;
+
+    if(!(str = JS_ValueToString(cx, argv[0])) ||
+            !(bytes = JS_EncodeString(cx, str)))
+    {
+        return JS_FALSE;
+    }
+
+    if(!(cvar = Cvar_Get(bytes)))
+        return JS_FALSE;
+
+    JS_free(cx, bytes);
+
+    return JS_NewNumberValue(cx, cvar->value, rval);
+}
+
 
 //
 // sys_GC
@@ -122,9 +149,9 @@ static JSBool sys_maybeGC(JSContext *cx, uintN argc, jsval *vp)
 // system_class
 //
 
-JSClass sys_class =
+JSClass Sys_class =
 {
-    "sys",                                      // name
+    "Sys",                                      // name
     0,                                          // flags
     JS_PropertyStub,                            // addProperty
     JS_PropertyStub,                            // delProperty
@@ -138,25 +165,26 @@ JSClass sys_class =
 };
 
 //
-// sys_props
+// Sys_props
 //
 
-JSPropertySpec sys_props[] =
+JSPropertySpec Sys_props[] =
 {
     { NULL, 0, 0, NULL, NULL }
 };
 
 //
-// sys_functions
+// Sys_functions
 //
 
-JSFunctionSpec sys_functions[] =
+JSFunctionSpec Sys_functions[] =
 {
     JS_FS("print",      sys_print,          0, 0, 0),
     JS_FN("ms",         sys_getms,          0, 0, 0),
     JS_FN("time",       sys_getTime,        0, 0, 0),
     JS_FN("deltatime",  sys_getDeltaTime,   0, 0, 0),
     JS_FN("ticks",      sys_getTicks,       0, 0, 0),
+    JS_FS("getCvar",    sys_getCvar,        1, 0, 0),
     JS_FN("GC",         sys_GC,             0, 0, 0),
     JS_FN("maybeGC",    sys_maybeGC,        0, 0, 0),
     JS_FS_END

@@ -53,7 +53,17 @@
 {                                                                               \
     JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) return JS_FALSE;     \
     if(JSVAL_IS_NULL(v[a])) return JS_FALSE;                                    \
-    if(!(vec = (vec3_t*)JS_GetInstancePrivate(cx, vobj, &vector3_class, NULL))) \
+    if(!(JS_InstanceOf(cx, vobj, &Vector_class, NULL))) return JS_FALSE;        \
+    if(!(vec = (vec3_t*)JS_GetInstancePrivate(cx, vobj, &Vector_class, NULL)))  \
+        return JS_FALSE;                                                        \
+}
+
+#define JS_GETMATRIX(mtx, v, a)                                                 \
+{                                                                               \
+    JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) return JS_FALSE;     \
+    if(JSVAL_IS_NULL(v[a])) return JS_FALSE;                                    \
+    if(!(JS_InstanceOf(cx, vobj, &Matrix_class, NULL))) return JS_FALSE;        \
+    if(!(mtx = (mtx_t*)JS_GetInstancePrivate(cx, vobj, &Matrix_class, NULL)))   \
         return JS_FALSE;                                                        \
 }
 
@@ -62,13 +72,19 @@
     if(JSVAL_IS_NULL(v[a]))                                                     \
         return JS_FALSE
 
-#define JS_THISVECTOR(vec, v)  \
+#define JS_THISVECTOR(vec, v)                                                   \
     if(!(vec = (vec3_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),        \
-        &vector3_class, NULL)))                                                 \
+        &Vector_class, NULL)))                                                  \
         return JS_FALSE
 
-JS_EXTERNOBJECT(sys);
-JS_EXTERNCLASS(vector3);
+#define JS_THISMATRIX(mtx, v)                                                   \
+    if(!(mtx = (mtx_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),         \
+        &Matrix_class, NULL)))                                                  \
+        return JS_FALSE
+
+JS_EXTERNOBJECT(Sys);
+JS_EXTERNCLASS(Vector);
+JS_EXTERNCLASS(Matrix);
 
 #endif
 
