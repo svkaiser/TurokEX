@@ -39,6 +39,7 @@ typedef struct js_scrobj_s
 {
     char name[MAX_FILEPATH];
     JSScript *script;
+    JSObject *obj;
     struct js_scrobj_s *next;
 } js_scrobj_t;
 
@@ -235,6 +236,20 @@ js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer)
         return NULL;
     }
 
+    if(!(scrobj->obj = JS_NewScriptObject(cx, scrobj->script)))
+    {
+        JS_DestroyScript(cx, scrobj->script);
+        Z_Free(scrobj);
+        return NULL;
+    }
+
+    if(!JS_AddNamedRoot(cx, &scrobj->obj, scrname))
+    {
+        JS_DestroyScript(cx, scrobj->script);
+        Z_Free(scrobj);
+        return NULL;
+    }
+
     hash = Com_HashFileName(name);
     scrobj->next = js_scrobj_list[hash];
     js_scrobj_list[hash] = scrobj;
@@ -416,8 +431,6 @@ static void FCmd_JSExec(void)
 {
     JSContext *cx = js_context;
     JSObject *obj = js_gobject;
-    JSBool ok;
-    JSString *str;
     jsval result;
     js_scrobj_t *scrobj;
 
@@ -433,15 +446,8 @@ static void FCmd_JSExec(void)
         return;
     }
 
-    ok = JS_ExecuteScript(cx, obj, scrobj->script, &result);
-
-    if(ok && result != JSVAL_VOID)
-    {
-        if(str = JS_ValueToString(cx, result))
-        {
-            Com_Printf("%s\n", JS_GetStringBytes(str));
-        }
-    }
+    JS_ExecuteScript(cx, obj, scrobj->script, &result);
+    JS_MaybeGC(cx);
 }
 
 //
@@ -466,9 +472,11 @@ void J_Init(void)
     JS_DEFINEOBJECT(Sys);
     JS_DEFINEOBJECT(Client);
     JS_DEFINEOBJECT(Cmd);
+    JS_DEFINEOBJECT(Angle);
     JS_INITCLASS(Vector, 3);
     JS_INITCLASS(Quaternion, 4);
     JS_INITCLASS(Matrix, 0);
+    JS_INITCLASS_NOSTATIC(Plane, 0);
 
     Cmd_AddCommand("js", FCmd_JS);
     Cmd_AddCommand("jsfile", FCmd_JSFile);

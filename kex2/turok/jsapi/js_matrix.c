@@ -77,6 +77,7 @@ static JSBool matrix_toString(JSContext *cx, uintN argc, jsval *vp)
 static JSBool matrix_addTranslation(JSContext *cx, uintN argc, jsval *vp)
 {
     mtx_t *mtx;
+    jsval *v;
     jsdouble x;
     jsdouble y;
     jsdouble z;
@@ -84,10 +85,12 @@ static JSBool matrix_addTranslation(JSContext *cx, uintN argc, jsval *vp)
     if(argc <= 0)
         return JS_FALSE;
 
+    v = JS_ARGV(cx, vp);
+
     JS_THISMATRIX(mtx, vp);
-    JS_GETNUMBER(x, vp, 2);
-    JS_GETNUMBER(y, vp, 1);
-    JS_GETNUMBER(z, vp, 0);
+    JS_GETNUMBER(x, v, 0);
+    JS_GETNUMBER(y, v, 1);
+    JS_GETNUMBER(z, v, 2);
 
     Mtx_AddTranslation(*mtx, (float)x, (float)y, (float)z);
     return JS_TRUE;
@@ -100,6 +103,7 @@ static JSBool matrix_addTranslation(JSContext *cx, uintN argc, jsval *vp)
 static JSBool matrix_scale(JSContext *cx, uintN argc, jsval *vp)
 {
     mtx_t *mtx;
+    jsval *v;
     jsdouble x;
     jsdouble y;
     jsdouble z;
@@ -107,10 +111,12 @@ static JSBool matrix_scale(JSContext *cx, uintN argc, jsval *vp)
     if(argc <= 0)
         return JS_FALSE;
 
+    v = JS_ARGV(cx, vp);
+
     JS_THISMATRIX(mtx, vp);
-    JS_GETNUMBER(x, vp, 2);
-    JS_GETNUMBER(y, vp, 1);
-    JS_GETNUMBER(z, vp, 0);
+    JS_GETNUMBER(x, v, 0);
+    JS_GETNUMBER(y, v, 1);
+    JS_GETNUMBER(z, v, 2);
 
     Mtx_Scale(*mtx, (float)x, (float)y, (float)z);
     return JS_TRUE;
@@ -123,6 +129,7 @@ static JSBool matrix_scale(JSContext *cx, uintN argc, jsval *vp)
 static JSBool matrix_setTranslation(JSContext *cx, uintN argc, jsval *vp)
 {
     mtx_t *mtx;
+    jsval *v;
     jsdouble x;
     jsdouble y;
     jsdouble z;
@@ -130,10 +137,12 @@ static JSBool matrix_setTranslation(JSContext *cx, uintN argc, jsval *vp)
     if(argc <= 0)
         return JS_FALSE;
 
+    v = JS_ARGV(cx, vp);
+
     JS_THISMATRIX(mtx, vp);
-    JS_GETNUMBER(x, vp, 2);
-    JS_GETNUMBER(y, vp, 1);
-    JS_GETNUMBER(z, vp, 0);
+    JS_GETNUMBER(x, v, 0);
+    JS_GETNUMBER(y, v, 1);
+    JS_GETNUMBER(z, v, 2);
 
     Mtx_SetTranslation(*mtx, (float)x, (float)y, (float)z);
     return JS_TRUE;
@@ -386,7 +395,10 @@ static JSBool matrix_multiply(JSContext *cx, JSObject *obj, uintN argc,
     Mtx_Multiply(*outmtx, *mtx1, *mtx2);
 
     if(!(JS_SetPrivate(cx, nobj, outmtx)))
+    {
+        JS_free(cx, outmtx);
         return JS_FALSE;
+    }
 
     JS_SET_RVAL(cx, rval, OBJECT_TO_JSVAL(nobj));
     return JS_TRUE;
@@ -420,7 +432,45 @@ static JSBool matrix_multRotations(JSContext *cx, JSObject *obj, uintN argc,
     Mtx_MultiplyRotation(*outmtx, *mtx1, *mtx2);
 
     if(!(JS_SetPrivate(cx, nobj, outmtx)))
+    {
+        JS_free(cx, outmtx);
         return JS_FALSE;
+    }
+
+    JS_SET_RVAL(cx, rval, OBJECT_TO_JSVAL(nobj));
+    return JS_TRUE;
+}
+
+//
+// matrix_fromQuaternion
+//
+
+static JSBool matrix_fromQuaternion(JSContext *cx, JSObject *obj, uintN argc,
+                           jsval *argv, jsval *rval)
+{
+    JSObject *nobj;
+    jsval *v;
+    mtx_t *outmtx = NULL;
+    vec4_t *rot = NULL;
+
+    if(argc <= 0)
+        return JS_FALSE;
+
+    if(!(nobj = JS_NewObject(cx, &Matrix_class, NULL, NULL)))
+        return JS_FALSE;
+
+    v = JS_ARGV(cx, argv);
+
+    JS_GETQUATERNION(rot, v, -2);
+
+    outmtx = (mtx_t*)JS_malloc(cx, sizeof(mtx_t));
+    Mtx_ApplyRotation(*rot, *outmtx);
+
+    if(!(JS_SetPrivate(cx, nobj, outmtx)))
+    {
+        JS_free(cx, outmtx);
+        return JS_FALSE;
+    }
 
     JS_SET_RVAL(cx, rval, OBJECT_TO_JSVAL(nobj));
     return JS_TRUE;
@@ -483,10 +533,11 @@ JSFunctionSpec Matrix_functions[] =
 
 JSFunctionSpec Matrix_functions_static[] =
 {
-    JS_FS("setProjection",  matrix_setProjection,   1, 0, 0),
+    JS_FS("setProjection",  matrix_setProjection,   2, 0, 0),
     JS_FS("setModelView",   matrix_modelview,       0, 0, 0),
     JS_FS("multiply",       matrix_multiply,        2, 0, 0),
     JS_FS("multRotations",  matrix_multRotations,   2, 0, 0),
+    JS_FS("fromQuaternion", matrix_fromQuaternion,  1, 0, 0),
     JS_FS_END
 };
 
@@ -506,7 +557,10 @@ JSBool Matrix_construct(JSContext *cx, JSObject *obj, uintN argc,
     mtx = (mtx_t*)JS_malloc(cx, sizeof(mtx_t));
 
     if(!(JS_SetPrivate(cx, vobj, mtx)))
+    {
+        JS_free(cx, mtx);
         return JS_FALSE;
+    }
 
     Mtx_Identity(*mtx);
 

@@ -95,8 +95,8 @@ void  Mtx_ApplyRotation(vec4_t rot, mtx_t out);
 float Ang_AlignPitchToVector(vec3_t vec);
 float Ang_AlignYawToVector(float angle, vec3_t v1, vec3_t v2);
 float Ang_VectorToAngle(vec3_t vec);
-float Ang_Invert(float angle);
-float Ang_InvertSums(float angle1, float angle2);
+float Ang_ClampInvert(float angle);
+float Ang_ClampInvertSums(float angle1, float angle2);
 void  Ang_Clamp(float *angle);
 float Ang_Diff(float angle1, float angle2);
 

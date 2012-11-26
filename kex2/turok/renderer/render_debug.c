@@ -31,8 +31,8 @@
 #include "client.h"
 #include "level.h"
 
-kbool R_FrustrumTestBox(bbox_t box);
-kbool R_FrustrumTestPlane(plane_t *plane);
+kbool R_FrustumTestBox(bbox_t box);
+kbool R_FrustumTestPlane(plane_t *plane);
 
 //
 // R_DrawCollision
@@ -58,7 +58,7 @@ void R_DrawCollision(void)
     {
         plane_t *p = &g_currentmap->planes[i];
 
-        if(!R_FrustrumTestPlane(p))
+        if(!R_FrustumTestPlane(p))
         {
             continue;
         }
@@ -155,7 +155,7 @@ void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b)
         return;
     }
 
-    if(!R_FrustrumTestBox(bbox))
+    if(!R_FrustumTestBox(bbox))
     {
         return;
     }

@@ -58,6 +58,9 @@ typedef struct
 
 static keyinfo_t Keys[] =
 {
+    { SDL_BUTTON_LEFT,  "mouse1" },
+    { SDL_BUTTON_MIDDLE,"mouse2" },
+    { SDL_BUTTON_RIGHT, "mouse3" },
     { SDLK_RIGHT,       "right" },
     { SDLK_LEFT,        "left" },
     { SDLK_UP,          "up" },

@@ -125,6 +125,7 @@ static JSBool vector_add(JSContext *cx, uintN argc, jsval *vp)
     JS_GETVECTOR(vec2, vp, 2);
 
     Vec_Add(*vec1, *vec1, *vec2);
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -144,6 +145,7 @@ static JSBool vector_sub(JSContext *cx, uintN argc, jsval *vp)
     JS_GETVECTOR(vec2, vp, 2);
 
     Vec_Sub(*vec1, *vec1, *vec2);
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -163,6 +165,7 @@ static JSBool vector_mult(JSContext *cx, uintN argc, jsval *vp)
     JS_GETVECTOR(vec2, vp, 2);
 
     Vec_Mult(*vec1, *vec1, *vec2);
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -201,6 +204,7 @@ static JSBool vector_lerp(JSContext *cx, uintN argc, jsval *vp)
     JS_GETNUMBER(x, v, 1);
 
     Vec_Lerp3(*thisvec, (float)x, *thisvec, *nextvec);
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -223,6 +227,7 @@ static JSBool vector_scale(JSContext *cx, uintN argc, jsval *vp)
     JS_GETNUMBER(x, v, 2);
 
     Vec_Scale(*thisvec, *thisvec, (float)x);
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -272,6 +277,19 @@ static JSBool vector_unit3(JSContext *cx, uintN argc, jsval *vp)
 }
 
 //
+// vector_toYaw
+//
+
+static JSBool vector_toYaw(JSContext *cx, uintN argc, jsval *vp)
+{
+    vec3_t *vector;
+
+    JS_THISVECTOR(vector, vp);
+
+    return JS_NewDoubleValue(cx, Ang_VectorToAngle(*vector), vp);;
+}
+
+//
 // vector_cross
 //
 
@@ -299,7 +317,10 @@ static JSBool vector_cross(JSContext *cx, JSObject *obj, uintN argc,
     Vec_Cross(*outvec, *vec1, *vec2);
 
     if(!(JS_SetPrivate(cx, nobj, outvec)))
+    {
+        JS_free(cx, outvec);
         return JS_FALSE;
+    }
 
     JS_SET_RVAL(cx, rval, OBJECT_TO_JSVAL(nobj));
     return JS_TRUE;
@@ -399,7 +420,47 @@ static JSBool vector_pointToAxis(JSContext *cx, JSObject *obj, uintN argc,
     Vec_PointToAxis(*outvec, *vec1, *vec2);
 
     if(!(JS_SetPrivate(cx, nobj, outvec)))
+    {
+        JS_free(cx, outvec);
         return JS_FALSE;
+    }
+
+    JS_SET_RVAL(cx, rval, OBJECT_TO_JSVAL(nobj));
+    return JS_TRUE;
+}
+
+//
+// vector_toWorld
+//
+
+static JSBool vector_toWorld(JSContext *cx, JSObject *obj, uintN argc,
+                           jsval *argv, jsval *rval)
+{
+    JSObject *nobj;
+    jsval *v;
+    vec3_t *outvec = NULL;
+    vec3_t *vec = NULL;
+    mtx_t *mtx = NULL;
+
+    if(argc <= 0)
+        return JS_FALSE;
+
+    if(!(nobj = JS_NewObject(cx, &Vector_class, NULL, NULL)))
+        return JS_FALSE;
+
+    v = JS_ARGV(cx, argv);
+
+    JS_GETVECTOR(vec, v, -2);
+    JS_GETMATRIX(mtx, v, -1);
+
+    outvec = (vec3_t*)JS_malloc(cx, sizeof(vec3_t));
+    Vec_TransformToWorld(*mtx, *vec, *outvec);
+
+    if(!(JS_SetPrivate(cx, nobj, outvec)))
+    {
+        JS_free(cx, outvec);
+        return JS_FALSE;
+    }
 
     JS_SET_RVAL(cx, rval, OBJECT_TO_JSVAL(nobj));
     return JS_TRUE;
@@ -451,6 +512,7 @@ JSFunctionSpec Vector_functions[] =
     JS_FN("toString",   vector_toString,    0, 0, 0),
     JS_FN("unit2",      vector_unit2,       0, 0, 0),
     JS_FN("unit3",      vector_unit3,       0, 0, 0),
+    JS_FN("toYaw",      vector_toYaw,       0, 0, 0),
     JS_FS_END
 };
 
@@ -465,6 +527,7 @@ JSFunctionSpec Vector_functions_static[] =
     JS_FS("length2",    vector_length2,     2, 0, 0),
     JS_FS("length3",    vector_length3,     2, 0, 0),
     JS_FS("pointToAxis",vector_pointToAxis, 2, 0, 0),
+    JS_FS("toWorld",    vector_toWorld,     2, 0, 0),
     JS_FS_END
 };
 
@@ -490,7 +553,10 @@ JSBool Vector_construct(JSContext *cx, JSObject *obj, uintN argc,
     vector = (vec3_t*)JS_malloc(cx, sizeof(vec3_t));
 
     if(!(JS_SetPrivate(cx, vobj, vector)))
+    {
+        JS_free(cx, vector);
         return JS_FALSE;
+    }
 
     JS_GETNUMBER(x, v, -2);
     JS_GETNUMBER(y, v, -1);
@@ -499,6 +565,5 @@ JSBool Vector_construct(JSContext *cx, JSObject *obj, uintN argc,
     Vec_Set3(*vector, (float)x, (float)y, (float)z);
 
     JS_SET_RVAL(cx, rval, OBJECT_TO_JSVAL(vobj));
-
     return JS_TRUE;
 }

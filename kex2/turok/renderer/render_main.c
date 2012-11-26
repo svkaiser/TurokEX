@@ -124,10 +124,10 @@ void R_SetupClipFrustum(void)
 }
 
 //
-// R_FrustrumTestBox
+// R_FrustumTestBox
 //
 
-kbool R_FrustrumTestBox(bbox_t box)
+kbool R_FrustumTestBox(bbox_t box)
 {
    int p;
 
@@ -157,10 +157,10 @@ kbool R_FrustrumTestBox(bbox_t box)
 }
 
 //
-// R_FrustrumTestPlane
+// R_FrustumTestPlane
 //
 
-kbool R_FrustrumTestPlane(plane_t *plane)
+kbool R_FrustumTestPlane(plane_t *plane)
 {
    int p;
    int i;
@@ -633,7 +633,7 @@ static void R_DrawInstances(void)
                 dglPushMatrix();
                 dglMultMatrixf(obj->matrix);
 
-                if(R_FrustrumTestBox(obj->box))
+                if(R_FrustumTestBox(obj->box))
                 {
                     R_DrawObject(obj);
                 }
@@ -671,7 +671,7 @@ static void R_DrawInstances(void)
                 dglPushMatrix();
                 dglMultMatrixf(obj->matrix);
 
-                if(R_FrustrumTestBox(obj->box))
+                if(R_FrustumTestBox(obj->box))
                 {
                     if(item)
                     {

@@ -29,6 +29,7 @@
 #include "common.h"
 #include "kernel.h"
 #include "client.h"
+#include "mathlib.h"
 
 JSObject *js_objClient;
 
@@ -39,7 +40,12 @@ enum client_enum
     CL_VELOCITY,
     CL_YAW,
     CL_PITCH,
-    CL_MOVETYPE
+    CL_CENTER_Y,
+    CL_VIEW_Y,
+    CL_WIDTH,
+    CL_HEIGHT,
+    CL_MOVETYPE,
+    CL_PLANE
 };
 
 //
@@ -48,8 +54,6 @@ enum client_enum
 
 static JSBool client_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 {
-    JSObject *nobj;
-
     switch(JSVAL_TO_INT(id))
     {
     case CL_CMD:
@@ -57,23 +61,11 @@ static JSBool client_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *
         return JS_TRUE;
 
     case CL_ORIGIN:
-        if(!(nobj = JS_NewObject(cx, &Vector_class, NULL, NULL)))
-            return JS_FALSE;
-
-        if(!(JS_SetPrivate(cx, nobj, &client.moveframe.origin)))
-            return JS_FALSE;
-
-        JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));
+        JS_NEWVECTOR(vp, client.moveframe.origin);
         return JS_TRUE;
 
     case CL_VELOCITY:
-        if(!(nobj = JS_NewObject(cx, &Vector_class, NULL, NULL)))
-            return JS_FALSE;
-
-        if(!(JS_SetPrivate(cx, nobj, &client.moveframe.velocity)))
-            return JS_FALSE;
-
-        JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));
+        JS_NEWVECTOR(vp, client.moveframe.velocity);
         return JS_TRUE;
 
     case CL_YAW:
@@ -82,11 +74,85 @@ static JSBool client_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *
     case CL_PITCH:
         return JS_NewNumberValue(cx, client.moveframe.pitch, vp);
 
+    case CL_CENTER_Y:
+        return JS_NewNumberValue(cx, client.pmove.centerheight.f, vp);
+
+    case CL_VIEW_Y:
+        return JS_NewNumberValue(cx, client.pmove.viewheight.f, vp);
+
+    case CL_WIDTH:
+        return JS_NewNumberValue(cx, client.pmove.radius.f, vp);
+
+    case CL_HEIGHT:
+        return JS_NewNumberValue(cx, client.pmove.height.f, vp);
+
     case CL_MOVETYPE:
         return JS_NewNumberValue(cx, client.pmove.terraintype, vp);
+
+    case CL_PLANE:
+        JS_INSTPLANE(vp, client.moveframe.plane);
+        return JS_TRUE;
     }
 
     return JS_FALSE;
+}
+
+//
+// client_setProperty
+//
+
+static JSBool client_setProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+{
+    switch(JSVAL_TO_INT(id))
+    {
+    case CL_CMD:
+        break;
+
+    case CL_ORIGIN:
+        {
+            vec3_t *vector;
+            JS_GETVECTOR(vector, vp, 0);
+            client.pmove.origin[0].f = (*vector)[0];
+            client.pmove.origin[1].f = (*vector)[1];
+            client.pmove.origin[2].f = (*vector)[2];
+            return JS_TRUE;
+        }
+        break;
+
+    case CL_VELOCITY:
+        {
+            vec3_t *vector;
+            JS_GETVECTOR(vector, vp, 0);
+            client.pmove.velocity[0].f = (*vector)[0];
+            client.pmove.velocity[1].f = (*vector)[1];
+            client.pmove.velocity[2].f = (*vector)[2];
+            return JS_TRUE;
+        }
+        break;
+
+    case CL_YAW:
+        break;
+
+    case CL_PITCH:
+        break;
+
+    case CL_MOVETYPE:
+        break;
+    }
+
+    return JS_FALSE;
+}
+
+//
+// client_inLevel
+//
+
+static JSBool client_inLevel(JSContext *cx, uintN argc, jsval *rval)
+{
+    kbool b = (g_currentmap != NULL);
+
+    JS_SET_RVAL(cx, rval, BOOLEAN_TO_JSVAL(b));
+    return JS_TRUE;
 }
 
 //
@@ -100,7 +166,7 @@ JSClass Client_class =
     JS_PropertyStub,                            // addProperty
     JS_PropertyStub,                            // delProperty
     client_getProperty,                         // getProperty
-    JS_PropertyStub,                            // setProperty
+    client_setProperty,                         // setProperty
     JS_EnumerateStub,                           // enumerate
     JS_ResolveStub,                             // resolve
     JS_ConvertStub,                             // convert
@@ -114,12 +180,17 @@ JSClass Client_class =
 
 JSPropertySpec Client_props[] =
 {
-    { "Cmd",        CL_CMD,         JSPROP_ENUMERATE,   NULL, NULL },
-    { "origin",     CL_ORIGIN,      JSPROP_ENUMERATE,   NULL, NULL },
-    { "velocity",   CL_VELOCITY,    JSPROP_ENUMERATE,   NULL, NULL },
-    { "yaw",        CL_YAW,         JSPROP_ENUMERATE,   NULL, NULL },
-    { "pitch",      CL_PITCH,       JSPROP_ENUMERATE,   NULL, NULL },
-    { "movetype",   CL_MOVETYPE,    JSPROP_ENUMERATE,   NULL, NULL },
+    { "Cmd",        CL_CMD,         JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "origin",     CL_ORIGIN,      JSPROP_ENUMERATE,                   NULL, NULL },
+    { "velocity",   CL_VELOCITY,    JSPROP_ENUMERATE,                   NULL, NULL },
+    { "yaw",        CL_YAW,         JSPROP_ENUMERATE,                   NULL, NULL },
+    { "pitch",      CL_PITCH,       JSPROP_ENUMERATE,                   NULL, NULL },
+    { "center_y",   CL_CENTER_Y,    JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "view_y",     CL_VIEW_Y,      JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "width",      CL_WIDTH,       JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "height",     CL_HEIGHT,      JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "movetype",   CL_MOVETYPE,    JSPROP_ENUMERATE,                   NULL, NULL },
+    { "plane",      CL_PLANE,       JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 
@@ -129,5 +200,6 @@ JSPropertySpec Client_props[] =
 
 JSFunctionSpec Client_functions[] =
 {
+    JS_FN("inLevel",    client_inLevel,     0, 0, 0),
     JS_FS_END
 };

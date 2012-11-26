@@ -34,6 +34,11 @@
     &name ## _class, name ## _construct, args, name ## _props,                      \
     name ## _functions, NULL, name ## _functions_static)
 
+#define JS_INITCLASS_NOSTATIC(name, args)                                           \
+    js_obj ##name = JS_InitClass(js_context, js_gobject, NULL,                      \
+    &name ## _class, NULL, args, name ## _props,                                    \
+    name ## _functions, NULL, NULL)
+
 #define JS_EXTERNOBJECT(name)                                                       \
     extern JSObject *js_obj ##name;                                                 \
     extern JSClass name ## _class;                                                  \
@@ -48,6 +53,12 @@
     extern JSPropertySpec name ## _props[];                                         \
     JSBool name ## _construct(JSContext *cx, JSObject *obj, uintN argc,             \
                         jsval *argv, jsval *rval)
+
+#define JS_EXTERNCLASS_NOSTATIC(name)                                               \
+    extern JSObject *js_obj ##name;                                                 \
+    extern JSClass name ## _class;                                                  \
+    extern JSFunctionSpec name ## _functions[];                                     \
+    extern JSPropertySpec name ## _props[];                                         
 
 #define JS_GETVECTOR(vec, v, a)                                                     \
 {                                                                                   \
@@ -96,12 +107,58 @@
         &Matrix_class, NULL)))                                                      \
         return JS_FALSE
 
+#define JS_THISPLANE(pl, v)                                                         \
+    if(!(pl = (plane_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),            \
+        &Plane_class, NULL)))                                                       \
+        return JS_FALSE
+
+#define JS_INSTVECTOR(vp, vec)                                                      \
+{                                                                                   \
+    JSObject *nobj;                                                                 \
+    if(!(nobj = JS_NewObject(cx, &Vector_class, NULL, NULL)))                       \
+        return JS_FALSE;                                                            \
+    if(!(JS_SetPrivate(cx, nobj, vec)))                                             \
+        return JS_FALSE;                                                            \
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));                                     \
+}
+
+#define JS_NEWVECTOR(vp, vec)                                                       \
+{                                                                                   \
+    JSObject *nobj;                                                                 \
+    vec3_t *out;                                                                    \
+    if(!(nobj = JS_NewObject(cx, &Vector_class, NULL, NULL)))                       \
+        return JS_FALSE;                                                            \
+    out = (vec3_t*)JS_malloc(cx, sizeof(vec3_t));                                   \
+    Vec_Copy3(*out, vec);                                                           \
+    if(!(JS_SetPrivate(cx, nobj, out)))                                             \
+    {                                                                               \
+        JS_free(cx, out);                                                           \
+        return JS_FALSE;                                                            \
+    }                                                                               \
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));                                     \
+}
+
+#define JS_INSTPLANE(vp, pl)                                                        \
+{                                                                                   \
+    JSObject *nobj;                                                                 \
+    if(!(nobj = JS_NewObject(cx, &Plane_class, NULL, NULL)))                        \
+        return JS_FALSE;                                                            \
+    if(!(JS_SetPrivate(cx, nobj, pl)))                                              \
+        return JS_FALSE;                                                            \
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));                                     \
+}
+
+#define JS_RETURNOBJECT(vp)                                                         \
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(JS_THIS_OBJECT(cx, vp)))                    \
+
 JS_EXTERNOBJECT(Sys);
 JS_EXTERNOBJECT(Client);
 JS_EXTERNOBJECT(Cmd);
+JS_EXTERNOBJECT(Angle);
 JS_EXTERNCLASS(Vector);
 JS_EXTERNCLASS(Quaternion);
 JS_EXTERNCLASS(Matrix);
+JS_EXTERNCLASS_NOSTATIC(Plane);
 
 #endif
 

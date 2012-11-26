@@ -138,7 +138,7 @@ static void IN_GetEvent(SDL_Event *Event)
             {
                 event.type = Event->type ==
                     SDL_MOUSEBUTTONUP ? ev_mouseup : ev_mousedown;
-                event.data1 = IN_SDLtoDoomMouseState(SDL_GetMouseState(NULL, NULL));
+                event.data1 = Event->button.button;
             }
             
             event.data2 = event.data3 = 0;

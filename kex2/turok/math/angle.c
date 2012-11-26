@@ -27,6 +27,8 @@
 #include <math.h>
 #include "mathlib.h"
 
+#define FULLCIRCLE  (M_PI * 2)
+
 //
 // Ang_AlignPitchToVector
 //
@@ -113,26 +115,26 @@ float Ang_VectorToAngle(vec3_t vec)
 }
 
 //
-// Ang_Invert
+// Ang_ClampInvert
 //
 
-float Ang_Invert(float angle)
+float Ang_ClampInvert(float angle)
 {
     float an;
     
-    for(an = angle; an < -M_PI; an = an - -(M_PI * 2));
-    for(; an > M_PI; an = an - (M_PI * 2));
+    for(an = angle; an < -M_PI; an = an + FULLCIRCLE);
+    for(; an > M_PI; an = an - FULLCIRCLE);
 
     return -an;
 }
 
 //
-// Ang_InvertSums
+// Ang_ClampInvertSums
 //
 
-float Ang_InvertSums(float angle1, float angle2)
+float Ang_ClampInvertSums(float angle1, float angle2)
 {
-    return Ang_Invert(Ang_Invert(angle2) + angle1);
+    return Ang_ClampInvert(Ang_ClampInvert(angle2) + angle1);
 }
 
 //
@@ -143,15 +145,8 @@ void Ang_Clamp(float *angle)
 {
     float an = *angle;
 
-    if(*angle < -M_PI)
-    {
-        for(an = *angle; an < -M_PI; an = an - -(M_PI * 2));
-    }
-
-    if(*angle >= M_PI)
-    {
-        for(; an > M_PI; an = an - (M_PI * 2));
-    }
+    if(an < -M_PI) for(; an < -M_PI; an = an + FULLCIRCLE);
+    if(an >  M_PI) for(; an >  M_PI; an = an - FULLCIRCLE);
 
     *angle = an;
 }
@@ -172,7 +167,7 @@ float Ang_Diff(float angle1, float angle2)
 
     if(angle1 <= angle2)
     {
-        an1 = angle2 - -(M_PI * 2);
+        an1 = angle2 + FULLCIRCLE;
         if(angle1 - angle2 > an1 - angle1)
         {
             an2 = angle1 - an1;
@@ -184,7 +179,7 @@ float Ang_Diff(float angle1, float angle2)
     }
     else
     {
-        an1 = angle2 - (M_PI * 2);
+        an1 = angle2 - FULLCIRCLE;
         if(angle2 - angle1 <= angle1 - an1)
         {
             an2 = angle1 - angle2;

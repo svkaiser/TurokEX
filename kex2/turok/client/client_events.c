@@ -59,6 +59,14 @@ kbool CL_Responder(event_t *ev)
     case ev_keyup:
         Key_ExecCmd(ev->data1, true);
         return true;
+
+    case ev_mousedown:
+        Key_ExecCmd(ev->data1, false);
+        return true;
+
+    case ev_mouseup:
+        Key_ExecCmd(ev->data1, true);
+        return true;
     }
 
     return false;
