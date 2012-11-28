@@ -133,7 +133,7 @@ static JSBool quaternion_toString(JSContext *cx, uintN argc, jsval *vp)
         (*vector)[2],
         (*vector)[3]);
 
-    JS_SET_RVAL(cx, vp, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, buffer)));
+    JS_RETURNSTRING(vp, buffer);
     return JS_TRUE;
 }
 

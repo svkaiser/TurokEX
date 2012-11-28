@@ -120,10 +120,10 @@ float Ang_VectorToAngle(vec3_t vec)
 
 float Ang_ClampInvert(float angle)
 {
-    float an;
+    float an = angle;
     
-    for(an = angle; an < -M_PI; an = an + FULLCIRCLE);
-    for(; an > M_PI; an = an - FULLCIRCLE);
+    for(; an < -M_PI; an = an + FULLCIRCLE);
+    for(; an >  M_PI; an = an - FULLCIRCLE);
 
     return -an;
 }

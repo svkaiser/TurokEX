@@ -237,13 +237,6 @@ int KF_OpenFileCache(const char *filename, byte **data, int tag)
 
                 if(!strcmp(file->name, filename))
                 {
-                    int time;
-
-                    if(developer.value)
-                    {
-                        time = Sys_GetMilliseconds();
-                    }
-
                     if(!file->cache)
                     {
                         Z_Malloc(file->info.uncompressed_size, tag, &file->cache);
@@ -312,7 +305,7 @@ static void FCmd_LoadFile(void)
         return;
     }
 
-    size = KF_OpenFileCache(Cmd_GetArgv(1), &data, PU_STATIC);
+    size = KF_OpenFileCache(Cmd_GetArgv(1), (byte**)&data, PU_STATIC);
 
     if(size)
     {

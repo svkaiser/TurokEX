@@ -66,7 +66,7 @@ static JSBool matrix_toString(JSContext *cx, uintN argc, jsval *vp)
     strcat(buffer, kva("%f %f %f %f\n", (*mtx)[ 2], (*mtx)[ 6], (*mtx)[10], (*mtx)[14]));
     strcat(buffer, kva("%f %f %f %f",   (*mtx)[ 3], (*mtx)[ 7], (*mtx)[11], (*mtx)[15]));
 
-    JS_SET_RVAL(cx, vp, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, buffer)));
+    JS_RETURNSTRING(vp, buffer);
     return JS_TRUE;
 }
 
@@ -93,6 +93,7 @@ static JSBool matrix_addTranslation(JSContext *cx, uintN argc, jsval *vp)
     JS_GETNUMBER(z, v, 2);
 
     Mtx_AddTranslation(*mtx, (float)x, (float)y, (float)z);
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -119,6 +120,7 @@ static JSBool matrix_scale(JSContext *cx, uintN argc, jsval *vp)
     JS_GETNUMBER(z, v, 2);
 
     Mtx_Scale(*mtx, (float)x, (float)y, (float)z);
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -145,6 +147,7 @@ static JSBool matrix_setTranslation(JSContext *cx, uintN argc, jsval *vp)
     JS_GETNUMBER(z, v, 2);
 
     Mtx_SetTranslation(*mtx, (float)x, (float)y, (float)z);
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -157,8 +160,9 @@ static JSBool matrix_transpose(JSContext *cx, uintN argc, jsval *vp)
     mtx_t *mtx;
 
     JS_THISMATRIX(mtx, vp);
-    Mtx_Transpose(*mtx);
 
+    Mtx_Transpose(*mtx);
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -171,8 +175,9 @@ static JSBool matrix_identity(JSContext *cx, uintN argc, jsval *vp)
     mtx_t *mtx;
 
     JS_THISMATRIX(mtx, vp);
-    Mtx_Identity(*mtx);
 
+    Mtx_Identity(*mtx);
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -192,7 +197,7 @@ static JSBool matrix_identityX(JSContext *cx, uintN argc, jsval *vp)
     JS_GETNUMBER(angle, vp, 2);
 
     Mtx_IdentityX(*mtx, (float)angle);
-
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -212,7 +217,7 @@ static JSBool matrix_identityY(JSContext *cx, uintN argc, jsval *vp)
     JS_GETNUMBER(angle, vp, 2);
 
     Mtx_IdentityY(*mtx, (float)angle);
-
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -232,7 +237,7 @@ static JSBool matrix_identityZ(JSContext *cx, uintN argc, jsval *vp)
     JS_GETNUMBER(angle, vp, 2);
 
     Mtx_IdentityZ(*mtx, (float)angle);
-
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -252,7 +257,7 @@ static JSBool matrix_applyVector(JSContext *cx, uintN argc, jsval *vp)
     JS_GETVECTOR(vector, vp, 2);
 
     Mtx_ApplyVector(*mtx, *vector);
-
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -272,7 +277,7 @@ static JSBool matrix_rotateX(JSContext *cx, uintN argc, jsval *vp)
     JS_GETNUMBER(angle, vp, 2);
 
     Mtx_RotateX(*mtx, (float)angle);
-
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -292,7 +297,7 @@ static JSBool matrix_rotateY(JSContext *cx, uintN argc, jsval *vp)
     JS_GETNUMBER(angle, vp, 2);
 
     Mtx_RotateY(*mtx, (float)angle);
-
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -312,7 +317,7 @@ static JSBool matrix_rotateZ(JSContext *cx, uintN argc, jsval *vp)
     JS_GETNUMBER(angle, vp, 2);
 
     Mtx_RotateZ(*mtx, (float)angle);
-
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 

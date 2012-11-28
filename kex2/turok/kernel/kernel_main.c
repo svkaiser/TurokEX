@@ -190,8 +190,6 @@ void Kernel_Main(int argc, char **argv)
     Com_Printf("Command System Initialized\n");
     Cvar_Init();
     Com_Printf("Cvar System Initialized\n");
-    J_Init();
-    Com_Printf("Javascript API Initialized\n");
     SC_Init();
     Com_Printf("Lexer System Initialized\n");
     Key_Init();
@@ -224,6 +222,8 @@ void Kernel_Main(int argc, char **argv)
     Com_Printf("Game Initialized\n");
     GL_Init();
     Com_Printf("OpenGL Initialized\n");
+    J_Init();
+    Com_Printf("Javascript API Initialized\n");
 
     Com_Printf("Running kernel...\n");
     Kernel_Run();

@@ -246,7 +246,7 @@ static JSBool vector_toString(JSContext *cx, uintN argc, jsval *vp)
         (*vector)[1],
         (*vector)[2]);
 
-    JS_SET_RVAL(cx, vp, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, buffer)));
+    JS_RETURNSTRING(vp, buffer);
     return JS_TRUE;
 }
 

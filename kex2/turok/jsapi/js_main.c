@@ -48,6 +48,7 @@ static js_scrobj_t *js_scrobj_list[MAX_HASH];
 static JSRuntime    *js_runtime;
 static JSContext    *js_context;
 static JSObject     *js_gobject;
+static js_scrobj_t  *js_rootscript;
 
 //
 // J_GlobalEnumerate
@@ -202,7 +203,7 @@ JSObject *J_AddObject(JSClass *class, JSFunctionSpec *func, JSPropertySpec *prop
 // J_LoadScriptObject
 //
 
-js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer)
+js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer, int size)
 {
     char scrname[MAX_FILEPATH];
     unsigned int hash;
@@ -218,7 +219,7 @@ js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer)
     cx = js_context;
     obj = js_gobject;
 
-    if(!JS_BufferIsCompilableUnit(cx, obj, buffer, strlen(buffer)))
+    if(!JS_BufferIsCompilableUnit(cx, obj, buffer, size))
     {
         return NULL;
     }
@@ -229,8 +230,7 @@ js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer)
     Com_StripPath(scrname);
     Com_StripExt(scrname);
 
-    if(!(scrobj->script = JS_CompileScript(cx, obj, buffer,
-        strlen(buffer), scrname, 1)))
+    if(!(scrobj->script = JS_CompileScript(cx, obj, buffer, size, scrname, 1)))
     {
         Z_Free(scrobj);
         return NULL;
@@ -291,6 +291,7 @@ js_scrobj_t *J_FindScript(const char *name)
 js_scrobj_t *J_LoadScript(const char *name)
 {
     js_scrobj_t *scrobj;
+    int size;
 
     if(name[0] == 0)
     {
@@ -301,21 +302,46 @@ js_scrobj_t *J_LoadScript(const char *name)
 
     if(scrobj == NULL)
     {
-        byte *file;
+        char *file;
 
-        if(KF_OpenFileCache(name, &file, PU_STATIC) == 0)
+        if((size = KF_OpenFileCache(name, &file, PU_STATIC)) == 0)
         {
-            if(KF_ReadTextFile(name, &file) == -1)
+            if((size = KF_ReadTextFile(name, &file)) == -1)
             {
                 return NULL;
             }
         }
 
-        scrobj = J_LoadScriptObject(name, (char*)file);
+        scrobj = J_LoadScriptObject(name, file, size);
         Z_Free(file);
     }
 
     return scrobj;
+}
+
+//
+// J_ExecBuffer
+//
+
+void J_ExecBuffer(char *buffer)
+{
+    JSContext *cx = js_context;
+    JSObject *obj = js_gobject;
+    jsval result;
+
+    if(JS_BufferIsCompilableUnit(cx, obj, buffer, strlen(buffer)))
+    {
+        JSScript *script;
+
+        JS_ClearPendingException(cx);
+        if(script = JS_CompileScript(cx, obj, buffer,
+            strlen(buffer), "execBuffer", 1))
+        {
+            JS_ExecuteScript(cx, obj, script, &result);
+            JS_MaybeGC(cx);
+            JS_DestroyScript(cx, script);
+        }
+    }
 }
 
 //
@@ -456,16 +482,18 @@ static void FCmd_JSExec(void)
 
 void J_Init(void)
 {
+    jsval result;
+
     if(!(js_runtime = JS_NewRuntime(JS_RUNTIME_HEAP_SIZE)))
-        Com_Error("JS_Init: Failed to initialize JSAPI runtime");
+        Com_Error("J_Init: Failed to initialize JSAPI runtime");
 
     JS_SetContextCallback(js_runtime, J_ContextCallback);
 
     if(!(js_context = JS_NewContext(js_runtime, JS_STACK_CHUNK_SIZE)))
-        Com_Error("JS_Init: Failed to create a JSAPI context");
+        Com_Error("J_Init: Failed to create a JSAPI context");
 
     if(!(js_gobject = JS_NewObject(js_context, &global_class, NULL, NULL)))
-        Com_Error("JS_Init: Failed to create a global class object");
+        Com_Error("J_Init: Failed to create a global class object");
 
     JS_SetGlobalObject(js_context, js_gobject);
 
@@ -477,6 +505,11 @@ void J_Init(void)
     JS_INITCLASS(Quaternion, 4);
     JS_INITCLASS(Matrix, 0);
     JS_INITCLASS_NOSTATIC(Plane, 0);
+
+    if(!(js_rootscript = J_LoadScript("scripts/main.js")))
+        Com_Error("J_Init: Unable to load main.js");
+
+    JS_ExecuteScript(js_context, js_gobject, js_rootscript->script, &result);
 
     Cmd_AddCommand("js", FCmd_JS);
     Cmd_AddCommand("jsfile", FCmd_JSFile);

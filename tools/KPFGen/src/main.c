@@ -136,6 +136,8 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 
     hwndWait = CreateDialogA(hAppInst, MAKEINTRESOURCEA(IDD_DIALOG1), NULL, (DLGPROC)LoadingDlgProc);
 
+    PK_AddFolder("scripts/");
+    StoreExternalFile("main.js", "scripts/main.js");
     TX_StoreFonts();
     SND_StoreSounds();
     Com_GetCartFile(

@@ -34,6 +34,7 @@
 #include "level.h"
 #include "zone.h"
 #include "game.h"
+#include "js.h"
 
 CVAR_EXTERNAL(cl_fov);
 CVAR(r_fog, 1);
@@ -999,7 +1000,9 @@ void R_DrawViewWeapon(weapon_t *weapon)
 //
 
 void R_DrawFrame(void)
-{   
+{
+    J_ExecBuffer("KScript_Run('OnRender');");
+
     R_SetupFog();
     R_SetupViewFrame();
     R_SetupClipFrustum();

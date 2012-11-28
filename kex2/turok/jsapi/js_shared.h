@@ -151,6 +151,9 @@
 #define JS_RETURNOBJECT(vp)                                                         \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(JS_THIS_OBJECT(cx, vp)))                    \
 
+#define JS_RETURNSTRING(vp, string)                                                 \
+    JS_SET_RVAL(cx, vp, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, string)))
+
 JS_EXTERNOBJECT(Sys);
 JS_EXTERNOBJECT(Client);
 JS_EXTERNOBJECT(Cmd);

@@ -43,6 +43,7 @@
 #define XP_WIN
 #endif
 
+void J_ExecBuffer(char *buffer);
 void J_Shutdown(void);
 void J_Init(void);
 
