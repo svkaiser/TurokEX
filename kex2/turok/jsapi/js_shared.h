@@ -92,6 +92,11 @@
     if(JSVAL_IS_NULL(v[a]))                                                         \
         return JS_FALSE
 
+#define JS_GETBOOL(val, v, a)                                                       \
+    JS_ValueToBoolean(cx, v[a], &val);                                              \
+    if(JSVAL_IS_NULL(v[a]))                                                         \
+        return JS_FALSE
+
 #define JS_THISVECTOR(vec, v)                                                       \
     if(!(vec = (vec3_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),            \
         &Vector_class, NULL)))                                                      \
@@ -155,6 +160,7 @@
     JS_SET_RVAL(cx, vp, STRING_TO_JSVAL(JS_NewStringCopyZ(cx, string)))
 
 JS_EXTERNOBJECT(Sys);
+JS_EXTERNOBJECT(GL);
 JS_EXTERNOBJECT(Client);
 JS_EXTERNOBJECT(Cmd);
 JS_EXTERNOBJECT(Angle);

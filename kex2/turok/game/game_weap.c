@@ -114,7 +114,7 @@ static const weaponinfo_t weaponinfo[NUMWEAPONS] =
 
     // grenade launcher
     {
-        "models/mdl655/mdl655.kmesh",
+        "models/mdl650/mdl650.kmesh",
         "anim00", "anim01", "anim02",
         "anim03", "anim04", "anim05",
         0.5f, 0.45f, 0.78f

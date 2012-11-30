@@ -122,6 +122,12 @@ extern JSBool
 js_ArrayInfo(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
 #endif
 
+/*
+ * Utility to access the value from the id returned by array_lookupProperty
+ */
+jsval
+js_GetDenseArrayElementValue(JSObject *obj, JSProperty *prop);
+
 JS_END_EXTERN_C
 
 #endif /* jsarray_h___ */

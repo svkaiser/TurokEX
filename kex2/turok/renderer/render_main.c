@@ -996,6 +996,39 @@ void R_DrawViewWeapon(weapon_t *weapon)
 }
 
 //
+// R_DrawActors
+//
+
+// TODO - TEMP
+void R_DrawActors(void)
+{
+    actor_t *actor;
+
+    if(g_currentmap == NULL)
+    {
+        return;
+    }
+
+    for(actor = g_actorlist->next; actor != g_actorlist; actor = actor->next)
+    {
+        object_t *obj = &actor->object;
+        kmodel_t *model;
+
+        if(!(model = Mdl_Load("models/default.kmesh")))
+        {
+            return;
+        }
+
+        dglPushMatrix();
+        dglMultMatrixf(obj->matrix);
+
+        R_TraverseDrawNode(model, &model->nodes[0], NULL, 0, NULL);
+
+        dglPopMatrix();
+    }
+}
+
+//
 // R_DrawFrame
 //
 
@@ -1019,6 +1052,8 @@ void R_DrawFrame(void)
     }
 
     dglCullFace(GL_FRONT);
+
+    R_DrawActors();
 
     // TODO - TEMP
     R_DrawViewWeapon(&weapons[wp_shotgun]);

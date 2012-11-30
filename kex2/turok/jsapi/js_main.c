@@ -498,6 +498,7 @@ void J_Init(void)
     JS_SetGlobalObject(js_context, js_gobject);
 
     JS_DEFINEOBJECT(Sys);
+    JS_DEFINEOBJECT(GL);
     JS_DEFINEOBJECT(Client);
     JS_DEFINEOBJECT(Cmd);
     JS_DEFINEOBJECT(Angle);
