@@ -198,6 +198,7 @@ typedef enum
     sp_ping         = 1,
     sp_clientinfo,
     sp_msg,
+    sp_pmove,
     NUMSERVERPACKETS
 } sv_packets_t;
 

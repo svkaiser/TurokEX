@@ -79,7 +79,69 @@ void G_ClientReborn(gclient_t *client)
     client->weaponowned[wp_knife]       = true;
     client->weaponowned[wp_crossbow]    = true;
     client->activeweapon                = wp_knife;
-    client->actor.health                = 100;
+    client->actor->health               = 100;
+}
+
+//
+// G_SetupPlayer
+//
+
+void G_SetupPlayer(actor_t *actor)
+{
+    unsigned int i;
+
+    // setup local client
+    Vec_Copy3(client.moveframe.origin, actor->origin);
+
+    client.pmove.origin[0].f    = actor->origin[0];
+    client.pmove.origin[1].f    = actor->origin[1];
+    client.pmove.origin[2].f    = actor->origin[2];
+    client.pmove.angles[0].f    = actor->yaw;
+    client.pmove.angles[1].f    = actor->pitch;
+    client.moveframe.yaw        = actor->yaw;
+    client.moveframe.pitch      = actor->pitch;
+    client.pmove.centerheight.f = actor->object.centerheight;
+    client.pmove.viewheight.f   = actor->object.viewheight;
+    client.pmove.radius.f       = actor->object.width;
+    client.pmove.height.f       = actor->object.height;
+    client.pmove.plane          = actor->object.plane_id;
+
+    // setup svclients
+    for(i = 0; i < server.maxclients; i++)
+    {
+        if(svclients[i].state == SVC_STATE_ACTIVE)
+        {
+            pmove_t *pmove;
+            svclient_t *svcl;
+            actor_t *p;
+            actor_t *prev;
+            actor_t *next;
+
+            svcl = &svclients[i];
+            svcl->gclient.actor = G_SpawnActor();
+            p = svcl->gclient.actor;
+            prev = p->prev;
+            next = p->next;
+
+            memcpy(p, actor, sizeof(actor_t));
+            p->prev = prev;
+            p->next = next;
+
+            svcl->state = SVC_STATE_INGAME;
+            pmove = &svcl->pmove;
+
+            pmove->origin[0].f      = p->origin[0];
+            pmove->origin[1].f      = p->origin[1];
+            pmove->origin[2].f      = p->origin[2];
+            pmove->angles[0].f      = p->yaw;
+            pmove->angles[1].f      = p->pitch;
+            pmove->centerheight.f   = p->object.centerheight;
+            pmove->viewheight.f     = p->object.viewheight;
+            pmove->radius.f         = p->object.width;
+            pmove->height.f         = p->object.height;
+            pmove->plane            = p->object.plane_id;
+        }
+    }
 }
 
 //
@@ -93,28 +155,26 @@ void G_ClientThink(void)
 }
 
 //
-// FCmd_NoClip
+// G_NoClip
 //
 
-static void FCmd_NoClip(void)
+void G_NoClip(svclient_t *svcl)
 {
-    if(g_currentmap == NULL)
-    {
+    if(svcl->state != SVC_STATE_INGAME || g_currentmap == NULL ||
+        svcl->gclient.actor == NULL)
         return;
-    }
 
-    // TODO: TEMP
-    if(client.pmove.terraintype == TT_NOCLIP)
+    if(svcl->pmove.terraintype == TT_NOCLIP)
     {
-        moveframe_t *frame = &client.moveframe;
+        plane_t *plane;
 
-        client.pmove.terraintype = TT_NORMAL;
-        frame->plane = G_FindClosestPlane(frame->origin);
-        client.pmove.plane = frame->plane - g_currentmap->planes;
+        svcl->pmove.terraintype = TT_NORMAL;
+        plane = G_FindClosestPlane(svcl->gclient.actor->origin);
+        svcl->pmove.plane = plane - g_currentmap->planes;
     }
     else
     {
-        client.pmove.terraintype = TT_NOCLIP;
+        svcl->pmove.terraintype = TT_NOCLIP;
     }
 }
 
@@ -126,8 +186,5 @@ void G_Init(void)
 {
     Map_Init();
     G_InitWeapons();
-
-    // TODO: TEMP
-    Cmd_AddCommand("noclip", FCmd_NoClip);
 }
 

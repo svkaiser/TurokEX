@@ -27,6 +27,7 @@
 #include "client.h"
 #include "actor.h"
 #include "game.h"
+#include "pred.h"
 
 #define MAXCLIENTS  8
 
@@ -40,7 +41,8 @@ typedef enum
 typedef enum
 {
     SVC_STATE_INACTIVE,
-    SVC_STATE_ACTIVE
+    SVC_STATE_ACTIVE,
+    SVC_STATE_INGAME
 } svclient_state_e;
 
 //
@@ -55,6 +57,7 @@ struct svclient_s
     unsigned int        client_id;
     svclient_state_e    state;
     ticcmd_t            cmd;
+    pmove_t             pmove;
     gclient_t           gclient;
 };
 
@@ -72,6 +75,19 @@ typedef struct
 extern svclient_t svclients[MAXCLIENTS];
 extern server_t server;
 
+//
+// SEND
+//
+void SV_SendMsg(ENetEvent *sev, int type);
+void SV_SendPMove(svclient_t *svcl);
+void SV_UpdateClientInfo(ENetEvent *sev, svclient_t *svc, int id);
+void SV_SendAcknowledgement(ENetEvent *sev);
+
+//
+// MAIN
+//
+unsigned int SV_GetPlayerID(ENetPeer *peer);
+char *SV_GetPeerAddress(ENetEvent *sev);
 void SV_Shutdown(void);
 void SV_CreateHost(void);
 void SV_Run(int msec);

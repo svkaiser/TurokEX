@@ -331,6 +331,10 @@
 					RelativePath="..\turok\server\server_main.c"
 					>
 				</File>
+				<File
+					RelativePath="..\turok\server\server_send.c"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="opengl"

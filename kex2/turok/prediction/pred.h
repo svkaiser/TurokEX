@@ -52,6 +52,7 @@ typedef struct
     ticcmd_t    cmd;
 } pred_t;
 
-void Pred_TryMovement(void);
+void Pred_ClientMovement(void);
+void Pred_ServerMovement(void);
 
 #endif

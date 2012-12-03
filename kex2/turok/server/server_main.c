@@ -84,7 +84,7 @@ void SV_Shutdown(void)
 // SV_GetPeerAddress
 //
 
-static char *SV_GetPeerAddress(ENetEvent *sev)
+char *SV_GetPeerAddress(ENetEvent *sev)
 {
     char ip[32];
 
@@ -104,46 +104,6 @@ static void SV_ResetAllClients(void)
 }
 
 //
-// SV_SendMsg
-//
-
-static void SV_SendMsg(ENetEvent *sev, int type)
-{
-    ENetPacket *packet;
-
-    if(!(packet = Packet_New()))
-    {
-        return;
-    }
-
-    Packet_Write8(packet, sp_msg);
-    Packet_Write8(packet, type);
-    Packet_Send(packet, sev->peer);
-}
-
-//
-// SV_UpdateClientInfo
-//
-
-static void SV_UpdateClientInfo(ENetEvent *sev, svclient_t *svc, int id)
-{
-    ENetPacket *packet;
-
-    if(!(packet = Packet_New()))
-    {
-        return;
-    }
-
-    Com_Printf("%s connected...\n",
-        SV_GetPeerAddress(sev));
-
-    Packet_Write8(packet, sp_clientinfo);
-    Packet_Write8(packet, svc->client_id);
-    Packet_Write8(packet, id);
-    Packet_Send(packet, svc->peer);
-}
-
-//
 // SV_GetPlayerID
 //
 
@@ -153,15 +113,11 @@ unsigned int SV_GetPlayerID(ENetPeer *peer)
     
     for(i = 0; i < server.maxclients; i++)
     {
-        if(svclients[i].state != SVC_STATE_ACTIVE)
-        {
+        if(svclients[i].state == SVC_STATE_INACTIVE)
             continue;
-        }
 
         if(peer->connectID == svclients[i].client_id)
-        {
             return i;
-        }
     }
 
    return 0;
@@ -201,9 +157,7 @@ void SV_CreateHost(void)
     ENetAddress address;
 
     if(Com_CheckParam("-client"))
-    {
         return;
-    }
 
     SV_DestroyHost();
 
@@ -235,6 +189,7 @@ static void SV_ReadTiccmd(ENetEvent *sev, ENetPacket *packet)
     int bits = 0;
     int tmp = 0;
     ticcmd_t cmd;
+    svclient_t *svcl;
 
     memset(&cmd, 0, sizeof(ticcmd_t));
 
@@ -272,28 +227,11 @@ static void SV_ReadTiccmd(ENetEvent *sev, ENetPacket *packet)
     Packet_Read8(packet, &tmp);
     cmd.heldtime[1] = tmp;
 
-    memcpy(&svclients[SV_GetPlayerID(sev->peer)].cmd,
-        &cmd, sizeof(ticcmd_t));
+    svcl = &svclients[SV_GetPlayerID(sev->peer)];
+    memcpy(&svcl->cmd, &cmd, sizeof(ticcmd_t));
 
 #undef READ_TICCMD16
 #undef READ_TICCMD8
-}
-
-//
-// SV_SendAcknowledgement
-//
-
-static void SV_SendAcknowledgement(ENetEvent *sev)
-{
-    ENetPacket *packet;
-
-    if(!(packet = Packet_New()))
-    {
-        return;
-    }
-
-    Packet_Write8(packet, sp_ping);
-    Packet_Send(packet, sev->peer);
 }
 
 //
@@ -303,11 +241,14 @@ static void SV_SendAcknowledgement(ENetEvent *sev)
 static void SV_ClientCommand(ENetEvent *sev, ENetPacket *packet)
 {
     char *cmd = Packet_ReadString(packet);
+    svclient_t *svcl;
 
+    svcl = &svclients[SV_GetPlayerID(sev->peer)];
     Com_DPrintf("client command: %s (%s)\n", cmd, SV_GetPeerAddress(sev));
 
     if(!strcmp(cmd, "noclip"))
     {
+        G_NoClip(svcl);
     }
     else if(!strcmp(cmd, "god"))
     {
@@ -341,6 +282,7 @@ void SV_ProcessClientPackets(ENetPacket *packet, ENetEvent *sev)
 
     case cp_cmd:
         SV_ReadTiccmd(sev, packet);
+        Pred_ServerMovement();
         break;
 
     case cp_msgserver:
@@ -353,6 +295,23 @@ void SV_ProcessClientPackets(ENetPacket *packet, ENetEvent *sev)
     }
 
     enet_packet_destroy(sev->packet);
+}
+
+//
+// SV_SendClientMessages
+//
+
+static void SV_SendClientMessages(void)
+{
+    unsigned int i;
+
+    for(i = 0; i < server.maxclients; i++)
+    {
+        if(svclients[i].state != SVC_STATE_INACTIVE)
+        {
+            SV_SendPMove(&svclients[i]);
+        }
+    }
 }
 
 //
@@ -373,9 +332,7 @@ void SV_Run(int msec)
     ENetEvent sev;
 
     if(server.state != SV_STATE_ACTIVE)
-    {
         return;
-    }
 
     server.runtime += msec;
 
@@ -401,11 +358,8 @@ void SV_Run(int msec)
     if(server.runtime < server.time)
     {
         if(server.time - server.runtime > 100)
-        {
             server.runtime = server.time - 100;
-        }
 
-        Sys_Sleep(1);
         return;
     }
 
@@ -413,6 +367,7 @@ void SV_Run(int msec)
     server.time = server.tics * 100;
 
     SV_Ticker();
+    SV_SendClientMessages();
 }
 
 //

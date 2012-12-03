@@ -64,10 +64,8 @@ typedef enum
 
 typedef struct
 {
-    float           time;
-    float           runtime;
+    int             time;
     int             tics;
-    int             activeweapon;
 } serverstate_t;
 
 typedef struct
@@ -77,6 +75,7 @@ typedef struct
     float           yaw;
     float           pitch;
     plane_t         *plane;
+    float           lerp;
 } moveframe_t;
 
 typedef struct
@@ -92,6 +91,7 @@ typedef struct
     ticcmd_t        cmd;
     pmove_t         pmove;
     moveframe_t     moveframe;
+    vec3_t          pred_diff;
     serverstate_t   serverstate;
 } client_t;
 

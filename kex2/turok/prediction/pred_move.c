@@ -27,6 +27,7 @@
 #include "common.h"
 #include "pred.h"
 #include "client.h"
+#include "server.h"
 #include "mathlib.h"
 #include "level.h"
 #include "game.h"
@@ -439,23 +440,18 @@ void Pred_Move(pred_t *pred)
 }
 
 //
-// Pred_TryMovement
+// Pred_ClientMovement
 //
 
-void Pred_TryMovement(void)
+void Pred_ClientMovement(void)
 {
     pred_t pred;
-    moveframe_t *frame;
 
     if(client.state != CL_STATE_READY)
-    {
         return;
-    }
 
     if(g_currentmap == NULL)
-    {
         return;
-    }
 
     memset(&pred, 0, sizeof(pred_t));
     pred.pmove = client.pmove;
@@ -463,17 +459,70 @@ void Pred_TryMovement(void)
 
     Pred_Move(&pred);
 
-    frame = &client.moveframe;
+    client.pmove = pred.pmove;
+}
 
-    client.pmove        = pred.pmove;
-    frame->origin[0]    = client.pmove.origin[0].f;
-    frame->origin[1]    = client.pmove.origin[1].f;
-    frame->origin[2]    = client.pmove.origin[2].f;
-    frame->velocity[0]  = client.pmove.velocity[0].f;
-    frame->velocity[1]  = client.pmove.velocity[1].f;
-    frame->velocity[2]  = client.pmove.velocity[2].f;
-    frame->yaw          = client.pmove.angles[0].f;
-    frame->pitch        = client.pmove.angles[1].f;
-    frame->plane        = &g_currentmap->planes[client.pmove.plane];
+//
+// Pred_ServerMovement
+//
+
+void Pred_ServerMovement(void)
+{
+    unsigned int i;
+
+    if(g_currentmap == NULL)
+    {
+        return;
+    }
+
+    for(i = 0; i < server.maxclients; i++)
+    {
+        pred_t pred;
+        svclient_t *svcl;
+        actor_t *actor;
+        object_t *obj;
+
+        svcl = &svclients[i];
+
+        if(svcl->state != SVC_STATE_INGAME)
+            continue;
+
+        svcl->pmove.angles[0].f = svcl->cmd.angle[0].f;
+        svcl->pmove.angles[1].f = svcl->cmd.angle[1].f;
+
+        memset(&pred, 0, sizeof(pred_t));
+        pred.pmove = svcl->pmove;
+        pred.cmd = svcl->cmd;
+
+        Pred_Move(&pred);
+
+        actor = svcl->gclient.actor;
+
+        svcl->pmove         = pred.pmove;
+        actor->origin[0]    = svcl->pmove.origin[0].f;
+        actor->origin[1]    = svcl->pmove.origin[1].f;
+        actor->origin[2]    = svcl->pmove.origin[2].f;
+        actor->velocity[0]  = svcl->pmove.velocity[0].f;
+        actor->velocity[1]  = svcl->pmove.velocity[1].f;
+        actor->velocity[2]  = svcl->pmove.velocity[2].f;
+        actor->yaw          = svcl->pmove.angles[0].f;
+        actor->pitch        = svcl->pmove.angles[1].f;
+        actor->plane        = &g_currentmap->planes[svcl->pmove.plane];
+
+        obj = &actor->object;
+
+        Vec_SetQuaternion(obj->rotation, actor->yaw, 0, 1, 0);
+        Mtx_ApplyRotation(obj->rotation, obj->matrix);
+
+        Mtx_Scale(obj->matrix,
+            obj->scale[0],
+            obj->scale[1],
+            obj->scale[2]);
+
+        Mtx_AddTranslation(obj->matrix,
+            actor->origin[0],
+            actor->origin[1],
+            actor->origin[2]);
+    }
 }
 

@@ -1195,34 +1195,13 @@ static void Map_InitBlocklist(kmap_t *map)
 }
 
 //
-// Map_CopyActorToClientFrame
-//
-
-static void Map_CopyActorToClientFrame(actor_t *actor)
-{
-    Vec_Copy3(client.moveframe.origin, actor->origin);
-
-    client.pmove.origin[0].f    = actor->origin[0];
-    client.pmove.origin[1].f    = actor->origin[1];
-    client.pmove.origin[2].f    = actor->origin[2];
-    client.pmove.angles[0].f    = actor->yaw;
-    client.pmove.angles[1].f    = actor->pitch;
-    client.moveframe.yaw        = actor->yaw;
-    client.moveframe.pitch      = actor->pitch;
-    client.pmove.centerheight.f = actor->object.centerheight;
-    client.pmove.viewheight.f   = actor->object.viewheight;
-    client.pmove.radius.f       = actor->object.width;
-    client.pmove.height.f       = actor->object.height;
-    client.pmove.plane          = actor->object.plane_id;
-}
-
-//
 // Map_SetupActors
 //
 
 static void Map_SetupActors(kmap_t *map)
 {
     actor_t *actor;
+    actor_t *player = NULL;
 
     for(actor = g_actorlist->next; actor != g_actorlist; actor = actor->next)
     {
@@ -1245,20 +1224,13 @@ static void Map_SetupActors(kmap_t *map)
         }
 
         if(actor->object.type == 0)
-        {
-            unsigned int i;
-            
-            Map_CopyActorToClientFrame(actor);
-
-            for(i = 0; i < server.maxclients; i++)
-            {
-                if(svclients[i].state == SVC_STATE_ACTIVE)
-                {
-                    memcpy(&svclients[i].gclient.actor, actor, sizeof(actor_t));
-                }
-            }
-        }
+            player = actor;
     }
+
+    if(!player)
+        Com_Error("Map_SetupActors: no player start found!");
+
+    G_SetupPlayer(player);
 }
 
 //

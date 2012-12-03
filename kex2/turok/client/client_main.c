@@ -33,6 +33,7 @@
 #include "menu.h"
 #include "gl.h"
 #include "game.h"
+#include "mathlib.h"
 
 client_t client;
 
@@ -129,6 +130,102 @@ static void CL_ReadClientInfo(ENetPacket *packet)
 }
 
 //
+// CL_BuildMoveFrame
+//
+
+static void CL_BuildMoveFrame(void)
+{
+    moveframe_t *frame;
+    float lerp;
+
+    if(client.state != CL_STATE_READY)
+        return;
+
+    if(g_currentmap == NULL)
+        return;
+
+    frame = &client.moveframe;
+    lerp = client.moveframe.lerp;
+
+    frame->origin[0]    = client.pmove.origin[0].f - lerp * client.pred_diff[0];
+    frame->origin[1]    = client.pmove.origin[1].f - lerp * client.pred_diff[1];
+    frame->origin[2]    = client.pmove.origin[2].f - lerp * client.pred_diff[2];
+    frame->velocity[0]  = client.pmove.velocity[0].f;
+    frame->velocity[1]  = client.pmove.velocity[1].f;
+    frame->velocity[2]  = client.pmove.velocity[2].f;
+    frame->yaw          = client.pmove.angles[0].f;
+    frame->pitch        = client.pmove.angles[1].f;
+    frame->plane        = &g_currentmap->planes[client.pmove.plane];
+}
+
+//
+// CL_ReadPmove
+//
+
+static void CL_ReadPmove(ENetPacket *packet)
+{
+    moveframe_t *frame;
+    pmove_t pmove;
+
+    if(client.state != CL_STATE_READY)
+        return;
+
+    if(g_currentmap == NULL)
+        return;
+
+    Packet_Read32(packet, &client.serverstate.tics);
+    client.serverstate.time = client.serverstate.tics * 100;
+
+    if(client.time > client.serverstate.time)
+    {
+        client.time = client.serverstate.time;
+        client.moveframe.lerp = 1;
+    }
+    else if(client.time < client.serverstate.time - 100)
+    {
+        client.time = client.serverstate.time - 100;
+        client.moveframe.lerp = 0;
+    }
+    else
+    {
+        client.moveframe.lerp = 1 -
+            (client.serverstate.time - client.time) * 0.01f;
+    }
+
+    frame = &client.moveframe;
+    memset(&pmove, 0, sizeof(pmove_t));
+
+    Packet_Read32(packet, &pmove.origin[0].i);
+    Packet_Read32(packet, &pmove.origin[1].i);
+    Packet_Read32(packet, &pmove.origin[2].i);
+    Packet_Read32(packet, &pmove.velocity[0].i);
+    Packet_Read32(packet, &pmove.velocity[1].i);
+    Packet_Read32(packet, &pmove.velocity[2].i);
+    Packet_Read32(packet, &(int)pmove.flags);
+    Packet_Read32(packet, &pmove.terraintype);
+    Packet_Read32(packet, &pmove.plane);
+
+    client.pmove.terraintype = pmove.terraintype;
+
+    if(client.local)
+        return;
+
+    client.pmove.plane = pmove.plane;
+    client.moveframe.plane  = &g_currentmap->planes[client.pmove.plane];
+
+    client.pred_diff[0] = pmove.origin[0].f - client.pmove.origin[0].f;
+    client.pred_diff[1] = pmove.origin[1].f - client.pmove.origin[1].f;
+    client.pred_diff[2] = pmove.origin[2].f - client.pmove.origin[2].f;
+
+    client.pmove.origin[0].f = pmove.origin[0].f;
+    client.pmove.origin[1].f = pmove.origin[1].f;
+    client.pmove.origin[2].f = pmove.origin[2].f;
+    client.pmove.velocity[0].f = pmove.velocity[0].f;
+    client.pmove.velocity[1].f = pmove.velocity[1].f;
+    client.pmove.velocity[2].f = pmove.velocity[2].f;
+}
+
+//
 // CL_ProcessServerPackets
 //
 
@@ -146,6 +243,10 @@ void CL_ProcessServerPackets(ENetPacket *packet, ENetEvent *cev)
 
     case sp_clientinfo:
         CL_ReadClientInfo(packet);
+        break;
+
+    case sp_pmove:
+        CL_ReadPmove(packet);
         break;
 
     default:
@@ -287,7 +388,9 @@ void CL_Run(int msec)
 
     CL_BuildTiccmd();
 
-    Pred_TryMovement();
+    Pred_ClientMovement();
+
+    CL_BuildMoveFrame();
 
     CL_Drawer();
 
