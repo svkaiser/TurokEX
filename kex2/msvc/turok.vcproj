@@ -256,6 +256,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\common\trace.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\common\unzip.c"
 					>
 				</File>
