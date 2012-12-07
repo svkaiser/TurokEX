@@ -79,7 +79,7 @@ void G_ClientReborn(gclient_t *client)
     client->weaponowned[wp_knife]       = true;
     client->weaponowned[wp_crossbow]    = true;
     client->activeweapon                = wp_knife;
-    client->actor->health               = 100;
+    client->actor.health                = 100;
 }
 
 //
@@ -109,23 +109,16 @@ void G_SetupPlayer(actor_t *actor)
     // setup svclients
     for(i = 0; i < server.maxclients; i++)
     {
-        if(svclients[i].state == SVC_STATE_ACTIVE)
+        if(svclients[i].state != SVC_STATE_INACTIVE)
         {
             pmove_t *pmove;
             svclient_t *svcl;
             actor_t *p;
-            actor_t *prev;
-            actor_t *next;
 
             svcl = &svclients[i];
-            svcl->gclient.actor = G_SpawnActor();
-            p = svcl->gclient.actor;
-            prev = p->prev;
-            next = p->next;
+            p = &svcl->gclient.actor;
 
             memcpy(p, actor, sizeof(actor_t));
-            p->prev = prev;
-            p->next = next;
 
             svcl->state = SVC_STATE_INGAME;
             pmove = &svcl->pmove;
@@ -160,8 +153,7 @@ void G_ClientThink(void)
 
 void G_NoClip(svclient_t *svcl)
 {
-    if(svcl->state != SVC_STATE_INGAME || g_currentmap == NULL ||
-        svcl->gclient.actor == NULL)
+    if(svcl->state != SVC_STATE_INGAME || g_currentmap == NULL)
         return;
 
     if(svcl->pmove.terraintype == TT_NOCLIP)
@@ -169,8 +161,9 @@ void G_NoClip(svclient_t *svcl)
         plane_t *plane;
 
         svcl->pmove.terraintype = TT_NORMAL;
-        plane = G_FindClosestPlane(svcl->gclient.actor->origin);
+        plane = G_FindClosestPlane(svcl->gclient.actor.origin);
         svcl->pmove.plane = plane - g_currentmap->planes;
+        svcl->gclient.actor.plane = plane;
     }
     else
     {

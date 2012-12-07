@@ -1263,6 +1263,7 @@ kmap_t *Map_Load(int map)
 
     if(g_currentmap->tics > 0 || g_currentmap->time > 0)
     {
+        Map_SetupActors(kmap);
         return kmap;
     }
 

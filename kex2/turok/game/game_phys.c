@@ -324,7 +324,7 @@ static kbool G_TracePlane(trace_t *trace, plane_t *pl)
     if(!Plane_IsAWall(pl))
     {
         // ignore if the plane isn't steep enough
-        if(pl->normal[1] >= EPSILON_FLOOR)
+        if(pl->normal[1] <= EPSILON_FLOOR)
         {
             return false;
         }
@@ -442,18 +442,47 @@ static plane_t *G_GetNextPlaneLink(trace_t *trace, plane_t *p, int point)
         return NULL;
     }
 
+    if(Plane_IsAWall(p))
+    {
+        if(!Plane_IsAWall(link))
+            return link;
+
+        if(p->flags & CLF_CLIMB &&
+            !(link->flags & CLF_CLIMB) &&
+            Plane_GetDistance(p, pos) + 1.024f > pos[1])
+        {
+            return NULL;
+        }
+    }
+
     if(Plane_IsAWall(link))
     {
-        if(Plane_GetDistance(link, trace->end) <=
-            Plane_GetDistance(p, trace->start))
-        {
-            // able to step off into this plane
-            return link;
-        }
-
         if(!Plane_IsAWall(p))
         {
             vec3_t dir;
+
+            // check climbable plane
+            if(link->flags & CLF_CLIMB && trace->actor)
+            {
+                float angle = Plane_GetEdgeYaw(p, point) + M_PI;
+                Ang_Clamp(&angle);
+
+                angle = Ang_Diff(angle, trace->actor->yaw);
+                if(angle < 0)
+                    angle = -angle;
+
+                // must be facing the wall
+                if(angle >= DEG2RAD(140))
+                    return link;
+            }
+
+            if(Plane_GetDistance(link, trace->end) <=
+                Plane_GetDistance(p, trace->start))
+            {
+                // able to step off into this plane
+                return link;
+            }
+
             Vec_Sub(dir, trace->end, trace->start);
 
             // special case for planes flagged to block
@@ -523,6 +552,11 @@ void G_PathTraverse(plane_t *plane, trace_t *trace)
                 // treat it as a solid wall
                 G_TraceEdge(trace, vp1, vp2);
                 return;
+            }
+            else if(pl->flags & CLF_CLIMB)
+            {
+                trace->pl = pl;
+                break;
             }
         }
     }
@@ -652,6 +686,9 @@ void G_ClipMovement(actor_t *actor)
 
             actor->plane = trace.pl;
 
+            if(actor->plane->flags & CLF_CLIMB)
+                continue;
+
             if(trace.type == TRT_NOHIT)
             {
                 // went the entire distance
@@ -711,7 +748,7 @@ void G_ClipMovement(actor_t *actor)
             Vec_Copy3(actor->velocity, vel);
         }
 
-        if(actor->plane)
+        if(actor->plane && !(actor->plane->flags & CLF_CLIMB))
         {
             Vec_Add(end, actor->origin, actor->velocity);
 

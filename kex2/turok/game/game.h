@@ -98,7 +98,7 @@ struct gclient_s
     kbool       hasbackpack;
     kbool       hasarmor;
     int         armorpoints;
-    actor_t     *actor;
+    actor_t     actor;
 };
 
 plane_t *G_FindClosestPlane(vec3_t coord);

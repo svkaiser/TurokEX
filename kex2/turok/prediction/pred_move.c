@@ -35,6 +35,7 @@
 #define MOVE_VELOCITY   2.85f
 #define SWIM_VELOCITY   0.05f
 #define JUMP_VELOCITY   11.612f
+#define CLIMB_VELOCITY  6.125f
 #define NOCLIPMOVE      (MOVE_VELOCITY * 6)
 
 typedef struct
@@ -281,6 +282,45 @@ static void Pred_Paddle(actor_t *actor, ticcmd_t *cmd)
 }
 
 //
+// Pred_ClimbMove
+//
+
+static void Pred_ClimbMove(actor_t *actor, ticcmd_t *cmd)
+{
+    if(actor->plane)
+    {
+        float diff;
+        
+        diff = Ang_Diff(actor->yaw + M_PI, Plane_GetYaw(actor->plane));
+        Ang_Clamp(&diff);
+
+        actor->yaw = -diff * 0.084f + actor->yaw;
+    }
+
+    if(cmd->buttons & BT_FORWARD)
+    {
+       if(Vec_Unit3(actor->velocity) < 0.5f)
+       {
+           actor->velocity[0] -= (actor->plane->normal[0]);
+           actor->velocity[1] = CLIMB_VELOCITY;
+           actor->velocity[2] -= (actor->plane->normal[2]);
+       }
+    }
+
+    if(cmd->buttons & BT_JUMP)
+    {
+        if(!cmd->heldtime[1])
+        {
+            lpmove.flags |= PMF_JUMP;
+
+            actor->velocity[0] = (actor->plane->normal[0]) * 32;
+            actor->velocity[1] = (actor->plane->normal[1]) * 32;
+            actor->velocity[2] = (actor->plane->normal[2]) * 32;
+        }
+    }
+}
+
+//
 // Pred_NoClipMove
 //
 
@@ -404,6 +444,10 @@ void Pred_Move(pred_t *pred)
         Pred_NoClipMove(actor, cmd);
         break;
 
+    case TT_CLIMB:
+        Pred_ClimbMove(actor, cmd);
+        break;
+
     default:
         Pred_Walk(actor, cmd);
         break;
@@ -496,7 +540,7 @@ void Pred_ServerMovement(void)
 
         Pred_Move(&pred);
 
-        actor = svcl->gclient.actor;
+        actor = &svcl->gclient.actor;
 
         svcl->pmove         = pred.pmove;
         actor->origin[0]    = svcl->pmove.origin[0].f;

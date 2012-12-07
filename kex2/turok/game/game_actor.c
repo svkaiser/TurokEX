@@ -39,6 +39,7 @@
 #define FRICTION_LAVA       0.205f
 #define FRICTION_WATERMASS  0.975f
 #define FRICTION_WTRIMPACT  0.905f
+#define FRICTION_CLIMB      0.935f
 
 #define GRAVITY_NORMAL      0.62f
 #define GRAVITY_WATER       0.005f
@@ -108,36 +109,6 @@ actor_t *G_SpawnActor(void)
 void G_SetActorLinkList(int map)
 {
     g_actorlist = &actorlist[map];
-}
-
-//
-// G_SetAnimState
-//
-
-void G_SetAnimState(actor_t *actor, const char *name)
-{
-    kmodel_t *model;
-    unsigned int i;
-
-    if(model = Mdl_Load(actor->object.mdlpath))
-    {
-        actor->anim = Mdl_GetAnim(model, name);
-
-        for(i = 0; i < model->numnodes; i++)
-        {
-            if(actor->frameset.translation != NULL)
-            {
-                Vec_Copy3(actor->frameset.translation[i].vec,
-                    actor->anim->initial.translation[i].vec);
-            }
-
-            if(actor->frameset.rotation != NULL)
-            {
-                Vec_Copy4(actor->frameset.rotation[i].vec,
-                    actor->anim->initial.rotation[i].vec);
-            }
-        }
-    }
 }
 
 //
@@ -229,6 +200,7 @@ static int G_CheckWaterLevel(actor_t *actor)
 static void G_GetTerrianType(actor_t *actor)
 {
     float dist;
+    plane_t *plane;
 
     actor->flags &= ~AF_SUBMERGED;
 
@@ -238,17 +210,38 @@ static void G_GetTerrianType(actor_t *actor)
         return;
     }
 
-    if(!actor->plane)
+    plane = actor->plane;
+
+    if(!plane)
     {
         actor->terriantype = TT_NORMAL;
         return;
     }
 
-    dist = Plane_GetDistance(actor->plane, actor->origin);
-
-    if(actor->plane->flags & CLF_WATER)
+    if(plane->flags & CLF_CLIMB)
     {
-        float waterheight = Map_GetArea(actor->plane)->waterplane;
+        if(actor->terriantype != TT_CLIMB)
+        {
+            float dir = Ang_Diff(Ang_VectorToAngle(actor->velocity),
+            Plane_GetYaw(plane) + M_PI);
+
+            Ang_Clamp(&dir);
+
+            if(!(dir <= DEG2RAD(80) && dir >= -DEG2RAD(80)))
+            {
+                actor->terriantype = TT_CLIMB;
+                Vec_Set3(actor->velocity, 0, 0, 0);
+            }
+        }
+
+        return;
+    }
+
+    dist = Plane_GetDistance(plane, actor->origin);
+
+    if(plane->flags & CLF_WATER)
+    {
+        float waterheight = Map_GetArea(plane)->waterplane;
 
         // shallow water
         if(dist - actor->origin[1] <= WATERHEIGHT &&
@@ -280,7 +273,7 @@ static void G_GetTerrianType(actor_t *actor)
     }
     
     // lava
-    if(actor->plane->flags & CLF_DAMAGE_LAVA && dist < ONPLANE_EPSILON)
+    if(plane->flags & CLF_DAMAGE_LAVA && dist < ONPLANE_EPSILON)
     {
         actor->terriantype = TT_LAVA;
         return;
@@ -446,6 +439,25 @@ void G_ActorMovement(actor_t *actor)
             }
             break;
 
+        case TT_CLIMB:
+            {
+                vec3_t dir;
+                vec3_t snap;
+
+                Vec_Scale(dir, actor->plane->normal,
+                    Vec_Dot(position, actor->plane->normal) -
+                    Vec_Dot(actor->plane->points[0], actor->plane->normal));
+
+                Vec_Sub(snap, position, dir);
+                Vec_Lerp3(position, 0.05f, position, snap);
+
+                actor->velocity[0] = -dir[0];
+                actor->velocity[2] = -dir[2];
+
+                actor->velocity[1] *= FRICTION_CLIMB;
+            }
+            break;
+
         default:
             // normal gravity
             if(Plane_IsAWall(actor->plane) && dist <= 10.24f)
@@ -479,8 +491,8 @@ void G_ActorMovement(actor_t *actor)
         actor->velocity[2] = 0;
     }
 
-    // lerp actor to updated position
-    Vec_Lerp3(actor->origin, 1, actor->origin, position);
+    // update actor to new position
+    Vec_Copy3(actor->origin, position);
     G_CheckObjectStep(actor);
 }
 

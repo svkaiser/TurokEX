@@ -179,7 +179,33 @@ kbool Plane_IsAWall(plane_t *plane)
 // Plane_GetYaw
 //
 
-float Plane_GetYaw(plane_t *p, int point)
+float Plane_GetYaw(plane_t *p)
+{
+    if(Plane_IsAWall(p))
+    {
+        float d;
+
+        d = Vec_Unit3(p->normal);
+        if(d != 0)
+        {
+            float phi;
+
+            phi = (float)acos(p->normal[2] / d);
+            if(p->normal[0] <= 0)
+                phi = -phi;
+
+            return phi;
+        }
+    }
+
+    return 0;
+}
+
+//
+// Plane_GetEdgeYaw
+//
+
+float Plane_GetEdgeYaw(plane_t *p, int point)
 {
     float x;
     float z;

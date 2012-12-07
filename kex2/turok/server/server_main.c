@@ -315,26 +315,12 @@ static void SV_SendClientMessages(void)
 }
 
 //
-// SV_Ticker
+// SV_ReadPackets
 //
 
-static void SV_Ticker(void)
-{
-    G_Ticker();
-}
-
-//
-// SV_Run
-//
-
-void SV_Run(int msec)
+static void SV_ReadPackets(void)
 {
     ENetEvent sev;
-
-    if(server.state != SV_STATE_ACTIVE)
-        return;
-
-    server.runtime += msec;
 
     while(enet_host_service(server.host, &sev, 0) > 0)
     {
@@ -354,7 +340,14 @@ void SV_Run(int msec)
                 break;
         }
     }
+}
 
+//
+// SV_Ticker
+//
+
+static void SV_Ticker(void)
+{
     if(server.runtime < server.time)
     {
         if(server.time - server.runtime > 100)
@@ -366,8 +359,25 @@ void SV_Run(int msec)
     server.tics++;
     server.time = server.tics * 100;
 
-    SV_Ticker();
+    G_Ticker();
+}
+
+//
+// SV_Run
+//
+
+void SV_Run(int msec)
+{
+    if(server.state != SV_STATE_ACTIVE)
+        return;
+
+    server.runtime += msec;
+
+    SV_ReadPackets();
+
     SV_SendClientMessages();
+
+    SV_Ticker();
 }
 
 //

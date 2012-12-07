@@ -41,7 +41,8 @@ typedef enum
     TT_WATER_UNDER      = 3,
     TT_LAVA             = 4,
     TT_DEATHPIT         = 5,
-    TT_NOCLIP           = 6
+    TT_NOCLIP           = 6,
+    TT_CLIMB            = 7
 } terriantype_t;
 
 //
@@ -74,7 +75,6 @@ extern actor_t *g_actorlist;
 
 void G_LinkActor(actor_t *actor);
 void G_UnlinkActor(actor_t* actor);
-void G_SetAnimState(actor_t *actor, const char *name);
 void G_ActorMovement(actor_t *actor);
 actor_t *G_SpawnActor(void);
 void G_SetActorLinkList(int map);
