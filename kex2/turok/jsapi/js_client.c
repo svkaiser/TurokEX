@@ -75,16 +75,16 @@ static JSBool client_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *
         return JS_NewNumberValue(cx, client.moveframe.pitch, vp);
 
     case CL_CENTER_Y:
-        return JS_NewNumberValue(cx, client.pmove.centerheight.f, vp);
+        return JS_NewNumberValue(cx, client.pmove.centerheight, vp);
 
     case CL_VIEW_Y:
-        return JS_NewNumberValue(cx, client.pmove.viewheight.f, vp);
+        return JS_NewNumberValue(cx, client.pmove.viewheight, vp);
 
     case CL_WIDTH:
-        return JS_NewNumberValue(cx, client.pmove.radius.f, vp);
+        return JS_NewNumberValue(cx, client.pmove.radius, vp);
 
     case CL_HEIGHT:
-        return JS_NewNumberValue(cx, client.pmove.height.f, vp);
+        return JS_NewNumberValue(cx, client.pmove.height, vp);
 
     case CL_MOVETYPE:
         return JS_NewNumberValue(cx, client.pmove.terraintype, vp);
@@ -112,9 +112,9 @@ static JSBool client_setProperty(JSContext *cx, JSObject *obj, jsval id, jsval *
         {
             vec3_t *vector;
             JS_GETVECTOR(vector, vp, 0);
-            client.pmove.origin[0].f = (*vector)[0];
-            client.pmove.origin[1].f = (*vector)[1];
-            client.pmove.origin[2].f = (*vector)[2];
+            client.pmove.origin[0] = (*vector)[0];
+            client.pmove.origin[1] = (*vector)[1];
+            client.pmove.origin[2] = (*vector)[2];
             return JS_TRUE;
         }
         break;
@@ -123,9 +123,9 @@ static JSBool client_setProperty(JSContext *cx, JSObject *obj, jsval id, jsval *
         {
             vec3_t *vector;
             JS_GETVECTOR(vector, vp, 0);
-            client.pmove.velocity[0].f = (*vector)[0];
-            client.pmove.velocity[1].f = (*vector)[1];
-            client.pmove.velocity[2].f = (*vector)[2];
+            client.pmove.velocity[0] = (*vector)[0];
+            client.pmove.velocity[1] = (*vector)[1];
+            client.pmove.velocity[2] = (*vector)[2];
             return JS_TRUE;
         }
         break;

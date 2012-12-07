@@ -92,18 +92,16 @@ void G_SetupPlayer(actor_t *actor)
 
     // setup local client
     Vec_Copy3(client.moveframe.origin, actor->origin);
+    Vec_Copy3(client.pmove.origin, actor->origin);
 
-    client.pmove.origin[0].f    = actor->origin[0];
-    client.pmove.origin[1].f    = actor->origin[1];
-    client.pmove.origin[2].f    = actor->origin[2];
-    client.pmove.angles[0].f    = actor->yaw;
-    client.pmove.angles[1].f    = actor->pitch;
+    client.pmove.angles[0]      = actor->yaw;
+    client.pmove.angles[1]      = actor->pitch;
     client.moveframe.yaw        = actor->yaw;
     client.moveframe.pitch      = actor->pitch;
-    client.pmove.centerheight.f = actor->object.centerheight;
-    client.pmove.viewheight.f   = actor->object.viewheight;
-    client.pmove.radius.f       = actor->object.width;
-    client.pmove.height.f       = actor->object.height;
+    client.pmove.centerheight   = actor->object.centerheight;
+    client.pmove.viewheight     = actor->object.viewheight;
+    client.pmove.radius         = actor->object.width;
+    client.pmove.height         = actor->object.height;
     client.pmove.plane          = actor->object.plane_id;
 
     // setup svclients
@@ -123,15 +121,14 @@ void G_SetupPlayer(actor_t *actor)
             svcl->state = SVC_STATE_INGAME;
             pmove = &svcl->pmove;
 
-            pmove->origin[0].f      = p->origin[0];
-            pmove->origin[1].f      = p->origin[1];
-            pmove->origin[2].f      = p->origin[2];
-            pmove->angles[0].f      = p->yaw;
-            pmove->angles[1].f      = p->pitch;
-            pmove->centerheight.f   = p->object.centerheight;
-            pmove->viewheight.f     = p->object.viewheight;
-            pmove->radius.f         = p->object.width;
-            pmove->height.f         = p->object.height;
+            Vec_Copy3(pmove->origin, p->origin);
+
+            pmove->angles[0]        = p->yaw;
+            pmove->angles[1]        = p->pitch;
+            pmove->centerheight     = p->object.centerheight;
+            pmove->viewheight       = p->object.viewheight;
+            pmove->radius           = p->object.width;
+            pmove->height           = p->object.height;
             pmove->plane            = p->object.plane_id;
         }
     }

@@ -298,7 +298,7 @@ static void R_SetupViewFrame(void)
     // set view origin
     Vec_Set3(org,
         origin[0],
-        origin[1] + (client.pmove.centerheight.f + client.pmove.viewheight.f),
+        origin[1] + (client.pmove.centerheight + client.pmove.viewheight),
         origin[2]);
 
     // setup projection matrix

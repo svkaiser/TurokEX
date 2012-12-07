@@ -90,6 +90,40 @@ kbool Packet_Read32(ENetPacket *packet, unsigned int *data)
 }
 
 //
+// Packet_ReadFloat
+//
+
+kbool Packet_ReadFloat(ENetPacket *packet, float *data)
+{
+    fint_t fi;
+
+    if(!Packet_Read32(packet, &fi.i))
+        return false;
+
+    *data = fi.f;
+    
+    return true;
+}
+
+//
+// Packet_ReadVector
+//
+
+kbool Packet_ReadVector(ENetPacket *packet, vec3_t *data)
+{
+    if(!Packet_ReadFloat(packet, &(*data)[0]))
+        return false;
+
+    if(!Packet_ReadFloat(packet, &(*data)[1]))
+        return false;
+
+    if(!Packet_ReadFloat(packet, &(*data)[2]))
+        return false;
+    
+    return true;
+}
+
+//
 // Packet_ReadString
 //
 
@@ -176,6 +210,29 @@ void Packet_Write32(ENetPacket *packet, unsigned int i)
     p[3] = i & 0xff;
 
     packet->pos += 4;
+}
+
+//
+// Packet_WriteFloat
+//
+
+void Packet_WriteFloat(ENetPacket *packet, float i)
+{
+    fint_t fi;
+
+    fi.f = i;
+    Packet_Write32(packet, fi.i);
+}
+
+//
+// Packet_WriteVector
+//
+
+void Packet_WriteVector(ENetPacket *packet, vec3_t vec)
+{
+    Packet_WriteFloat(packet, vec[0]);
+    Packet_WriteFloat(packet, vec[1]);
+    Packet_WriteFloat(packet, vec[2]);
 }
 
 //

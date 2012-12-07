@@ -314,7 +314,6 @@ static void Pred_ClimbMove(actor_t *actor, ticcmd_t *cmd)
             lpmove.flags |= PMF_JUMP;
 
             actor->velocity[0] = (actor->plane->normal[0]) * 32;
-            actor->velocity[1] = (actor->plane->normal[1]) * 32;
             actor->velocity[2] = (actor->plane->normal[2]) * 32;
         }
     }
@@ -399,25 +398,18 @@ void Pred_Move(pred_t *pred)
     obj = &actor->object;
     cmd = &pred->cmd;
 
-    Vec_Set3(actor->origin,
-        pred->pmove.origin[0].f,
-        pred->pmove.origin[1].f,
-        pred->pmove.origin[2].f);
+    Vec_Copy3(actor->origin, pred->pmove.origin);
+    Vec_Copy3(actor->velocity, pred->pmove.velocity);
 
-    Vec_Set3(actor->velocity,
-        pred->pmove.velocity[0].f,
-        pred->pmove.velocity[1].f,
-        pred->pmove.velocity[2].f);
-
-    actor->yaw          = pred->pmove.angles[0].f;
-    actor->pitch        = pred->pmove.angles[1].f;
-    lpmove.roll         = pred->pmove.angles[2].f;
+    actor->yaw          = pred->pmove.angles[0];
+    actor->pitch        = pred->pmove.angles[1];
+    lpmove.roll         = pred->pmove.angles[2];
     lpmove.deltatime    = pred->cmd.msec.f;
     lpmove.flags        = pred->pmove.flags;
-    obj->width          = pred->pmove.radius.f;
-    obj->height         = pred->pmove.height.f;
-    obj->centerheight   = pred->pmove.centerheight.f;
-    obj->viewheight     = pred->pmove.viewheight.f;
+    obj->width          = pred->pmove.radius;
+    obj->height         = pred->pmove.height;
+    obj->centerheight   = pred->pmove.centerheight;
+    obj->viewheight     = pred->pmove.viewheight;
     actor->terriantype  = pred->pmove.terraintype;
     actor->plane        = pred->pmove.plane != -1 ?
         &g_currentmap->planes[pred->pmove.plane] : NULL;
@@ -470,17 +462,14 @@ void Pred_Move(pred_t *pred)
         lpmove.flags &= ~PMF_SUBMERGED;
     }
 
-    pred->pmove.angles[0].f     = actor->yaw;
-    pred->pmove.angles[1].f     = actor->pitch;
-    pred->pmove.origin[0].f     = actor->origin[0];
-    pred->pmove.origin[1].f     = actor->origin[1];
-    pred->pmove.origin[2].f     = actor->origin[2];
-    pred->pmove.velocity[0].f   = actor->velocity[0];
-    pred->pmove.velocity[1].f   = actor->velocity[1];
-    pred->pmove.velocity[2].f   = actor->velocity[2];
-    pred->pmove.flags           = lpmove.flags;
-    pred->pmove.terraintype     = actor->terriantype;
-    pred->pmove.plane           = (actor->plane - g_currentmap->planes);
+    Vec_Copy3(pred->pmove.origin, actor->origin);
+    Vec_Copy3(pred->pmove.velocity, actor->velocity);
+
+    pred->pmove.angles[0]   = actor->yaw;
+    pred->pmove.angles[1]   = actor->pitch;
+    pred->pmove.flags       = lpmove.flags;
+    pred->pmove.terraintype = actor->terriantype;
+    pred->pmove.plane       = (actor->plane - g_currentmap->planes);
 }
 
 //
@@ -531,8 +520,8 @@ void Pred_ServerMovement(void)
         if(svcl->state != SVC_STATE_INGAME)
             continue;
 
-        svcl->pmove.angles[0].f = svcl->cmd.angle[0].f;
-        svcl->pmove.angles[1].f = svcl->cmd.angle[1].f;
+        svcl->pmove.angles[0] = svcl->cmd.angle[0].f;
+        svcl->pmove.angles[1] = svcl->cmd.angle[1].f;
 
         memset(&pred, 0, sizeof(pred_t));
         pred.pmove = svcl->pmove;
@@ -543,14 +532,12 @@ void Pred_ServerMovement(void)
         actor = &svcl->gclient.actor;
 
         svcl->pmove         = pred.pmove;
-        actor->origin[0]    = svcl->pmove.origin[0].f;
-        actor->origin[1]    = svcl->pmove.origin[1].f;
-        actor->origin[2]    = svcl->pmove.origin[2].f;
-        actor->velocity[0]  = svcl->pmove.velocity[0].f;
-        actor->velocity[1]  = svcl->pmove.velocity[1].f;
-        actor->velocity[2]  = svcl->pmove.velocity[2].f;
-        actor->yaw          = svcl->pmove.angles[0].f;
-        actor->pitch        = svcl->pmove.angles[1].f;
+
+        Vec_Copy3(actor->origin, svcl->pmove.origin);
+        Vec_Copy3(actor->velocity, svcl->pmove.velocity);
+
+        actor->yaw          = svcl->pmove.angles[0];
+        actor->pitch        = svcl->pmove.angles[1];
         actor->plane        = &g_currentmap->planes[svcl->pmove.plane];
 
         obj = &actor->object;

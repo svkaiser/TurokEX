@@ -195,16 +195,16 @@ void CL_BuildTiccmd(void)
     cmd.mouse[0].f = yaw;
     cmd.mouse[1].f = pitch;
 
-    client.pmove.angles[0].f -= yaw;
-    client.pmove.angles[1].f -= pitch;
-    Ang_Clamp(&client.pmove.angles[0].f);
-    Ang_Clamp(&client.pmove.angles[1].f);
+    client.pmove.angles[0] -= yaw;
+    client.pmove.angles[1] -= pitch;
+    Ang_Clamp(&client.pmove.angles[0]);
+    Ang_Clamp(&client.pmove.angles[1]);
 
-    if(client.pmove.angles[1].f >  DEG2RAD(90)) client.pmove.angles[1].f =  DEG2RAD(90);
-    if(client.pmove.angles[1].f < -DEG2RAD(90)) client.pmove.angles[1].f = -DEG2RAD(90);
+    if(client.pmove.angles[1] >  DEG2RAD(90)) client.pmove.angles[1] =  DEG2RAD(90);
+    if(client.pmove.angles[1] < -DEG2RAD(90)) client.pmove.angles[1] = -DEG2RAD(90);
 
-    cmd.angle[0].f = client.pmove.angles[0].f;
-    cmd.angle[1].f = client.pmove.angles[1].f;
+    cmd.angle[0].f = client.pmove.angles[0];
+    cmd.angle[1].f = client.pmove.angles[1];
 
     cmd.msec.f = client.runtime;
 

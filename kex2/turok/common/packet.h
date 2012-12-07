@@ -28,10 +28,14 @@
 kbool Packet_Read8(ENetPacket *packet, unsigned int *data);
 kbool Packet_Read16(ENetPacket *packet, unsigned int *data);
 kbool Packet_Read32(ENetPacket *packet, unsigned int *data);
+kbool Packet_ReadFloat(ENetPacket *packet, float *data);
+kbool Packet_ReadVector(ENetPacket *packet, vec3_t *data);
 char *Packet_ReadString(ENetPacket *packet);
 void Packet_Write8(ENetPacket *packet, unsigned int i);
 void Packet_Write16(ENetPacket *packet, unsigned int i);
 void Packet_Write32(ENetPacket *packet, unsigned int i);
+void Packet_WriteFloat(ENetPacket *packet, float i);
+void Packet_WriteVector(ENetPacket *packet, vec3_t vec);
 void Packet_WriteString(ENetPacket *packet, char *string);
 void Packet_Send(ENetPacket *packet, ENetPeer *peer);
 ENetPacket *Packet_New(void);

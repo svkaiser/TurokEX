@@ -34,13 +34,13 @@ typedef enum
 
 typedef struct
 {
-    fint_t      origin[3];
-    fint_t      velocity[3];
-    fint_t      angles[3];
-    fint_t      radius;
-    fint_t      height;
-    fint_t      centerheight;
-    fint_t      viewheight;
+    vec3_t      origin;
+    vec3_t      velocity;
+    float       angles[3];
+    float       radius;
+    float       height;
+    float       centerheight;
+    float       viewheight;
     pmflags_t   flags;
     int         terraintype;
     int         plane;

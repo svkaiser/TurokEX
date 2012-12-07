@@ -97,12 +97,8 @@ void SV_SendPMove(svclient_t *svcl)
     
     Packet_Write8(packet, sp_pmove);
     Packet_Write32(packet, server.tics);
-    Packet_Write32(packet, svcl->pmove.origin[0].i);
-    Packet_Write32(packet, svcl->pmove.origin[1].i);
-    Packet_Write32(packet, svcl->pmove.origin[2].i);
-    Packet_Write32(packet, svcl->pmove.velocity[0].i);
-    Packet_Write32(packet, svcl->pmove.velocity[1].i);
-    Packet_Write32(packet, svcl->pmove.velocity[2].i);
+    Packet_WriteVector(packet, svcl->pmove.origin);
+    Packet_WriteVector(packet, svcl->pmove.velocity);
     Packet_Write32(packet, svcl->pmove.flags);
     Packet_Write32(packet, svcl->pmove.terraintype);
     Packet_Write32(packet, svcl->pmove.plane);

@@ -144,36 +144,6 @@ static void CL_BuildMoveFrame(void)
     if(g_currentmap == NULL)
         return;
 
-    frame = &client.moveframe;
-    lerp = client.moveframe.lerp;
-
-    frame->origin[0]    = client.pmove.origin[0].f - lerp * client.pred_diff[0];
-    frame->origin[1]    = client.pmove.origin[1].f - lerp * client.pred_diff[1];
-    frame->origin[2]    = client.pmove.origin[2].f - lerp * client.pred_diff[2];
-    frame->velocity[0]  = client.pmove.velocity[0].f;
-    frame->velocity[1]  = client.pmove.velocity[1].f;
-    frame->velocity[2]  = client.pmove.velocity[2].f;
-    frame->yaw          = client.pmove.angles[0].f;
-    frame->pitch        = client.pmove.angles[1].f;
-    frame->plane        = &g_currentmap->planes[client.pmove.plane];
-}
-
-//
-// CL_ReadPmove
-//
-
-static void CL_ReadPmove(ENetPacket *packet)
-{
-    moveframe_t *frame;
-    pmove_t pmove;
-
-    if(client.state != CL_STATE_READY)
-        return;
-
-    if(g_currentmap == NULL)
-        return;
-
-    Packet_Read32(packet, &client.serverstate.tics);
     client.serverstate.time = client.serverstate.tics * 100;
 
     if(client.time > client.serverstate.time)
@@ -193,36 +163,61 @@ static void CL_ReadPmove(ENetPacket *packet)
     }
 
     frame = &client.moveframe;
+    lerp = client.moveframe.lerp;
+
+    Vec_Copy3(frame->velocity, client.pmove.velocity);
+
+    frame->origin[0]    = client.pmove.origin[0] - lerp * client.pred_diff[0];
+    frame->origin[1]    = client.pmove.origin[1] - lerp * client.pred_diff[1];
+    frame->origin[2]    = client.pmove.origin[2] - lerp * client.pred_diff[2];
+    frame->yaw          = client.pmove.angles[0];
+    frame->pitch        = client.pmove.angles[1];
+    frame->plane        = &g_currentmap->planes[client.pmove.plane];
+}
+
+//
+// CL_ReadPmove
+//
+
+static void CL_ReadPmove(ENetPacket *packet)
+{
+    moveframe_t *frame;
+    pmove_t pmove;
+
+    if(client.state != CL_STATE_READY)
+        return;
+
+    if(g_currentmap == NULL)
+        return;
+
+    Packet_Read32(packet, &client.serverstate.tics);
+
+    frame = &client.moveframe;
     memset(&pmove, 0, sizeof(pmove_t));
 
-    Packet_Read32(packet, &pmove.origin[0].i);
-    Packet_Read32(packet, &pmove.origin[1].i);
-    Packet_Read32(packet, &pmove.origin[2].i);
-    Packet_Read32(packet, &pmove.velocity[0].i);
-    Packet_Read32(packet, &pmove.velocity[1].i);
-    Packet_Read32(packet, &pmove.velocity[2].i);
+    Packet_ReadVector(packet, &pmove.origin);
+    Packet_ReadVector(packet, &pmove.velocity);
     Packet_Read32(packet, &(int)pmove.flags);
     Packet_Read32(packet, &pmove.terraintype);
     Packet_Read32(packet, &pmove.plane);
 
     client.pmove.terraintype = pmove.terraintype;
 
-    if(client.local)
+    //if(client.local)
+        //return;
+
+    /*if(client.serverstate.tics - (client.serverstate.time/100) <= 1)
+    {
+        Vec_Set3(client.pred_diff, 0, 0, 0);
         return;
+    }*/
 
     client.pmove.plane = pmove.plane;
     client.moveframe.plane  = &g_currentmap->planes[client.pmove.plane];
 
-    client.pred_diff[0] = pmove.origin[0].f - client.pmove.origin[0].f;
-    client.pred_diff[1] = pmove.origin[1].f - client.pmove.origin[1].f;
-    client.pred_diff[2] = pmove.origin[2].f - client.pmove.origin[2].f;
-
-    client.pmove.origin[0].f = pmove.origin[0].f;
-    client.pmove.origin[1].f = pmove.origin[1].f;
-    client.pmove.origin[2].f = pmove.origin[2].f;
-    client.pmove.velocity[0].f = pmove.velocity[0].f;
-    client.pmove.velocity[1].f = pmove.velocity[1].f;
-    client.pmove.velocity[2].f = pmove.velocity[2].f;
+    Vec_Sub(client.pred_diff, pmove.origin, client.pmove.origin);
+    Vec_Copy3(client.pmove.origin, pmove.origin);
+    Vec_Copy3(client.pmove.velocity, pmove.velocity);
 }
 
 //
