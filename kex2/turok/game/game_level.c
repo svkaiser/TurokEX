@@ -1243,6 +1243,62 @@ area_t *Map_GetArea(plane_t *plane)
 }
 
 //
+// Map_FindClosestPlane
+//
+
+plane_t *Map_FindClosestPlane(vec3_t coord)
+{
+    unsigned int i;
+    float dist;
+    float curdist;
+    plane_t *plane;
+    kbool ok;
+
+    ok = false;
+    curdist = 0;
+    plane = NULL;
+
+    for(i = 0; i < g_currentmap->numplanes; i++)
+    {
+        plane_t *p;
+
+        p = &g_currentmap->planes[i];
+
+        if(Plane_PointInRange(p, coord[0], coord[2]))
+        {
+            dist = coord[1] - Plane_GetDistance(p, coord);
+
+            if(p->flags & CLF_ONESIDED && dist < -16)
+            {
+                continue;
+            }
+
+            if(dist < 0)
+            {
+                dist = -dist;
+            }
+
+            if(ok)
+            {
+                if(dist < curdist)
+                {
+                    curdist = dist;
+                    plane = p;
+                }
+            }
+            else
+            {
+                plane = p;
+                curdist = dist;
+                ok = true;
+            }
+        }
+    }
+
+    return plane;
+}
+
+//
 // Map_Load
 //
 

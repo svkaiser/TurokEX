@@ -87,7 +87,7 @@ static JSBool client_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *
         return JS_NewNumberValue(cx, client.pmove.height, vp);
 
     case CL_MOVETYPE:
-        return JS_NewNumberValue(cx, client.pmove.terraintype, vp);
+        return JS_NewNumberValue(cx, client.pmove.movetype, vp);
 
     case CL_PLANE:
         JS_INSTPLANE(vp, client.moveframe.plane);

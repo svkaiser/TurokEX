@@ -100,7 +100,7 @@ void SV_SendPMove(svclient_t *svcl)
     Packet_WriteVector(packet, svcl->pmove.origin);
     Packet_WriteVector(packet, svcl->pmove.velocity);
     Packet_Write32(packet, svcl->pmove.flags);
-    Packet_Write32(packet, svcl->pmove.terraintype);
+    Packet_Write32(packet, svcl->pmove.movetype);
     Packet_Write32(packet, svcl->pmove.plane);
     Packet_Send(packet, svcl->peer);
 }

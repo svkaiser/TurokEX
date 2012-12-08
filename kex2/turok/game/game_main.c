@@ -153,18 +153,18 @@ void G_NoClip(svclient_t *svcl)
     if(svcl->state != SVC_STATE_INGAME || g_currentmap == NULL)
         return;
 
-    if(svcl->pmove.terraintype == TT_NOCLIP)
+    if(svcl->pmove.movetype == MT_NOCLIP)
     {
         plane_t *plane;
 
-        svcl->pmove.terraintype = TT_NORMAL;
-        plane = G_FindClosestPlane(svcl->gclient.actor.origin);
+        svcl->pmove.movetype = MT_NORMAL;
+        plane = Map_FindClosestPlane(svcl->gclient.actor.origin);
         svcl->pmove.plane = plane - g_currentmap->planes;
         svcl->gclient.actor.plane = plane;
     }
     else
     {
-        svcl->pmove.terraintype = TT_NOCLIP;
+        svcl->pmove.movetype = MT_NOCLIP;
     }
 }
 

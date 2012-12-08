@@ -346,6 +346,7 @@ extern kmap_t *g_currentmap;
 
 int Obj_GetClassType(object_t *obj);
 area_t *Map_GetArea(plane_t *plane);
+plane_t *Map_FindClosestPlane(vec3_t coord);
 kmap_t *Map_Load(int map);
 void Map_Init(void);
 

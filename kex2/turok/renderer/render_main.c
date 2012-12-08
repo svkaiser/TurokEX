@@ -252,7 +252,7 @@ static void R_SetupViewFrame(void)
 
     d = Vec_Unit2(velocity) * 0.05f;
 
-    if(client.pmove.terraintype == TT_WATER_UNDER)
+    if(client.pmove.movetype == MT_WATER_UNDER)
     {
         cam_roll *= 0.935f;
         amt = 0.4f;
@@ -275,7 +275,7 @@ static void R_SetupViewFrame(void)
     bob_x = 0;
     bob_y = 0;
 
-    if(client.pmove.terraintype != TT_WATER_UNDER && (origin[1] +
+    if(client.pmove.movetype != MT_WATER_UNDER && (origin[1] +
         velocity[1]) -
         Plane_GetDistance(frame->plane, origin) < 4)
     {
@@ -288,8 +288,8 @@ static void R_SetupViewFrame(void)
             bob_y = (float)sin(client.tics * 0.1625f) * d * 0.0025f;
         }
     }
-    else if(client.pmove.terraintype == TT_WATER_SURFACE ||
-        client.pmove.terraintype == TT_WATER_UNDER)
+    else if(client.pmove.movetype == MT_WATER_SURFACE ||
+        client.pmove.movetype == MT_WATER_UNDER)
     {
         bob_x = (float)sin(client.tics * 0.035f) * 0.0150f;
         bob_y = (float)sin(client.tics * 0.025f) * 0.0107f;
@@ -943,8 +943,8 @@ void R_DrawViewWeapon(weapon_t *weapon)
     Vec_SetQuaternion(pitch, weapon->pitch, 1, 0, 0);
 
     // lean weapon if strafing
-    if(client.pmove.terraintype != TT_WATER_SURFACE &&
-        client.pmove.terraintype != TT_WATER_UNDER)
+    if(client.pmove.movetype != MT_WATER_SURFACE &&
+        client.pmove.movetype != MT_WATER_UNDER)
     {
         vec4_t roll;
         vec4_t lean;

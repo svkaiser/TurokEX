@@ -29,30 +29,6 @@
 
 #define EPSILON_FLOOR 0.975f
 
-typedef enum
-{
-    TRT_NOHIT       = 0,
-    TRT_SLOPE       = 1,
-    TRT_WALL        = 2,
-    TRT_EDGE        = 3,
-    TRT_OBJECT      = 4,
-    TRT_INTERACT    = 5
-} tracetype_e;
-
-typedef struct
-{
-    vec3_t      start;
-    vec3_t      end;
-    float       offset;
-    float       width;
-    float       yaw;
-    plane_t     *pl;
-    plane_t     *hitpl;
-    vec3_t      normal;
-    float       frac;
-    tracetype_e type;
-} trace_t;
-
 //
 // Trace_Object
 //
@@ -353,6 +329,13 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
         {
             vec3_t dir;
 
+            if(Plane_GetDistance(link, trace->end) <=
+                Plane_GetDistance(p, trace->start))
+            {
+                // able to step off into this plane
+                return link;
+            }
+
             // check climbable plane
             if(link->flags & CLF_CLIMB)
             {
@@ -360,6 +343,7 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
                 Ang_Clamp(&angle);
 
                 angle = Ang_Diff(angle, trace->yaw);
+
                 if(angle < 0)
                     angle = -angle;
 
@@ -370,13 +354,6 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
                     trace->hitpl = link;
                     return link;
                 }
-            }
-
-            if(Plane_GetDistance(link, trace->end) <=
-                Plane_GetDistance(p, trace->start))
-            {
-                // able to step off into this plane
-                return link;
             }
 
             Vec_Sub(dir, trace->end, trace->start);
@@ -452,7 +429,7 @@ void Trace_TraversePlanes(plane_t *plane, trace_t *trace)
             else if(trace->type == TRT_INTERACT)
             {
                 trace->pl = pl;
-                break;
+                return;
             }
         }
     }
@@ -481,7 +458,8 @@ void Trace_TraversePlanes(plane_t *plane, trace_t *trace)
 //
 //
 
-trace_t Trace(vec3_t start, vec3_t end, plane_t *plane, float width, float offset, float yaw)
+trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
+              float width, float offset, float yaw)
 {
     trace_t trace;
 

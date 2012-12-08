@@ -32,6 +32,19 @@ typedef enum
     PMF_ONGROUND    = 0x4
 } pmflags_t;
 
+typedef enum
+{
+    MT_NORMAL = 0,
+    MT_WATER_SHALLOW,
+    MT_WATER_SURFACE,
+    MT_WATER_UNDER,
+    MT_LAVA,
+    MT_DEATHPIT,
+    MT_NOCLIP,
+    MT_CLIMB,
+    NUMMOVETYPES
+} movetype_t;
+
 typedef struct
 {
     vec3_t      origin;
@@ -42,7 +55,7 @@ typedef struct
     float       centerheight;
     float       viewheight;
     pmflags_t   flags;
-    int         terraintype;
+    int         movetype;
     int         plane;
 } pmove_t;
 

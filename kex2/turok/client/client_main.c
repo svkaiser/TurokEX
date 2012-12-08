@@ -198,10 +198,10 @@ static void CL_ReadPmove(ENetPacket *packet)
     Packet_ReadVector(packet, &pmove.origin);
     Packet_ReadVector(packet, &pmove.velocity);
     Packet_Read32(packet, &(int)pmove.flags);
-    Packet_Read32(packet, &pmove.terraintype);
+    Packet_Read32(packet, &pmove.movetype);
     Packet_Read32(packet, &pmove.plane);
 
-    client.pmove.terraintype = pmove.terraintype;
+    client.pmove.movetype = pmove.movetype;
 
     //if(client.local)
         //return;

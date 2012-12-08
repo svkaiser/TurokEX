@@ -30,6 +30,8 @@
 #include "opndir.h"
 #endif
 
+#include "mathlib.h"
+
 #define RGBA(r,g,b,a) ((rcolor)((((a)&0xff)<<24)|(((b)&0xff)<<16)|(((g)&0xff)<<8)|((r)&0xff)))
 
 #define COLOR_WHITE         RGBA(0xFF, 0xFF, 0xFF, 0xFF)
@@ -210,5 +212,35 @@ typedef enum
     sm_full         = 1,
     NUMSERVERMESSAGES
 } sv_messages_t;
+
+//
+// RAY TRACING
+//
+typedef enum
+{
+    TRT_NOHIT       = 0,
+    TRT_SLOPE       = 1,
+    TRT_WALL        = 2,
+    TRT_EDGE        = 3,
+    TRT_OBJECT      = 4,
+    TRT_INTERACT    = 5
+} tracetype_e;
+
+typedef struct
+{
+    vec3_t      start;
+    vec3_t      end;
+    float       offset;
+    float       width;
+    float       yaw;
+    plane_t     *pl;
+    plane_t     *hitpl;
+    vec3_t      normal;
+    float       frac;
+    tracetype_e type;
+} trace_t;
+
+trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
+              float width, float offset, float yaw);
 
 #endif

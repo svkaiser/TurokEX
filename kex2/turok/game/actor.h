@@ -29,21 +29,7 @@
 typedef enum
 {
     AF_NOALIGNPITCH     = 0x1,
-    AF_SUBMERGED        = 0x2,
-    AF_ONGROUND         = 0x4
 } actorflags_t;
-
-typedef enum
-{
-    TT_NORMAL           = 0,
-    TT_WATER_SHALLOW    = 1,
-    TT_WATER_SURFACE    = 2,
-    TT_WATER_UNDER      = 3,
-    TT_LAVA             = 4,
-    TT_DEATHPIT         = 5,
-    TT_NOCLIP           = 6,
-    TT_CLIMB            = 7
-} terriantype_t;
 
 //
 // client/server-side object controller
@@ -60,7 +46,6 @@ struct actor_s
     short               skin;
     object_t            object;
     plane_t             *plane;
-    terriantype_t       terriantype;
     float               animspeed;
     float               animframe;
     anim_t              *anim;
@@ -75,7 +60,6 @@ extern actor_t *g_actorlist;
 
 void G_LinkActor(actor_t *actor);
 void G_UnlinkActor(actor_t* actor);
-void G_ActorMovement(actor_t *actor);
 actor_t *G_SpawnActor(void);
 void G_SetActorLinkList(int map);
 float G_GetActorMeleeRange(actor_t *actor, vec3_t targetpos);
