@@ -66,6 +66,7 @@ typedef struct
 {
     int             time;
     int             tics;
+    int             difftime;
 } serverstate_t;
 
 typedef struct

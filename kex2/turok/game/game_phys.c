@@ -134,6 +134,37 @@ int G_CheckWaterLevel(vec3_t origin, float centeroffs, plane_t *plane)
 }
 
 //
+// G_ApplyFriction
+//
+
+void G_ApplyFriction(vec3_t velocity, float friction, kbool effectY)
+{
+    float speed;
+
+    speed = Vec_Unit3(velocity);
+
+    if(speed < VELOCITY_EPSILON)
+    {
+        velocity[0] = 0;
+        velocity[2] = 0;
+    }
+    else
+    {
+        float clipspeed = speed - (speed * friction);
+
+        if(clipspeed < 0) clipspeed = 0;
+        clipspeed /= speed;
+
+        // de-accelerate velocity
+        velocity[0] = velocity[0] * clipspeed;
+        velocity[2] = velocity[2] * clipspeed;
+
+        if(effectY)
+            velocity[1] = velocity[1] * clipspeed;
+    }
+}
+
+//
 // G_ClipMovement
 //
 // Trace against surrounding planes and slide

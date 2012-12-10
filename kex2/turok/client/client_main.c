@@ -144,6 +144,37 @@ static void CL_BuildMoveFrame(void)
     if(g_currentmap == NULL)
         return;
 
+    frame = &client.moveframe;
+    lerp = client.moveframe.lerp;
+
+    Vec_Lerp3(frame->origin, lerp, client.pmove.origin, client.pred_diff);
+    Vec_Copy3(frame->velocity, client.pmove.velocity);
+
+    frame->yaw      = client.pmove.angles[0];
+    frame->pitch    = client.pmove.angles[1];
+    frame->plane    = &g_currentmap->planes[client.pmove.plane];
+}
+
+//
+// CL_ReadPmove
+//
+
+static void CL_ReadPmove(ENetPacket *packet)
+{
+    pmove_t *oldmove;
+    pmove_t pmove;
+    int time;
+    vec3_t diff;
+
+    if(client.state != CL_STATE_READY)
+        return;
+
+    if(g_currentmap == NULL)
+        return;
+
+    Packet_Read32(packet, &client.serverstate.tics);
+
+    time = client.serverstate.tics - (client.serverstate.time/100);
     client.serverstate.time = client.serverstate.tics * 100;
 
     if(client.time > client.serverstate.time)
@@ -162,37 +193,6 @@ static void CL_BuildMoveFrame(void)
             (client.serverstate.time - client.time) * 0.01f;
     }
 
-    frame = &client.moveframe;
-    lerp = client.moveframe.lerp;
-
-    Vec_Copy3(frame->velocity, client.pmove.velocity);
-
-    frame->origin[0]    = client.pmove.origin[0] - lerp * client.pred_diff[0];
-    frame->origin[1]    = client.pmove.origin[1] - lerp * client.pred_diff[1];
-    frame->origin[2]    = client.pmove.origin[2] - lerp * client.pred_diff[2];
-    frame->yaw          = client.pmove.angles[0];
-    frame->pitch        = client.pmove.angles[1];
-    frame->plane        = &g_currentmap->planes[client.pmove.plane];
-}
-
-//
-// CL_ReadPmove
-//
-
-static void CL_ReadPmove(ENetPacket *packet)
-{
-    moveframe_t *frame;
-    pmove_t pmove;
-
-    if(client.state != CL_STATE_READY)
-        return;
-
-    if(g_currentmap == NULL)
-        return;
-
-    Packet_Read32(packet, &client.serverstate.tics);
-
-    frame = &client.moveframe;
     memset(&pmove, 0, sizeof(pmove_t));
 
     Packet_ReadVector(packet, &pmove.origin);
@@ -201,23 +201,31 @@ static void CL_ReadPmove(ENetPacket *packet)
     Packet_Read32(packet, &pmove.movetype);
     Packet_Read32(packet, &pmove.plane);
 
-    client.pmove.movetype = pmove.movetype;
+    oldmove = &client.pmove;
 
-    //if(client.local)
-        //return;
+    Vec_Sub(diff, pmove.origin, oldmove->origin);
 
-    /*if(client.serverstate.tics - (client.serverstate.time/100) <= 1)
+    if((float)fabs(
+        Vec_Unit3(oldmove->velocity) -
+        (Vec_Length3(diff, pmove.velocity) - Vec_Unit3(diff))) >= 2)
     {
-        Vec_Set3(client.pred_diff, 0, 0, 0);
-        return;
-    }*/
+        client.serverstate.difftime++;
+    }
+    else
+        client.serverstate.difftime = 0;
 
-    client.pmove.plane = pmove.plane;
-    client.moveframe.plane  = &g_currentmap->planes[client.pmove.plane];
+    if(time > 1 || client.serverstate.difftime > 10)
+    {
+        oldmove->movetype = pmove.movetype;
+        oldmove->plane = pmove.plane;
+        client.moveframe.plane  = &g_currentmap->planes[oldmove->plane];
 
-    Vec_Sub(client.pred_diff, pmove.origin, client.pmove.origin);
-    Vec_Copy3(client.pmove.origin, pmove.origin);
-    Vec_Copy3(client.pmove.velocity, pmove.velocity);
+        Vec_Copy3(oldmove->origin, pmove.origin);
+        Vec_Copy3(oldmove->velocity, pmove.velocity);
+        Vec_Copy3(client.pred_diff, pmove.origin);
+    }
+    else
+        client.moveframe.lerp = 0;
 }
 
 //
@@ -307,18 +315,22 @@ static void CL_DrawDebug(void)
 {
     if(bDebugTime)
     {
-        Draw_Text(0, 16,  COLOR_GREEN, 1, "-------------------");
-        Draw_Text(0, 32,  COLOR_GREEN, 1, "   client debug");
-        Draw_Text(0, 48,  COLOR_GREEN, 1, "-------------------");
-        Draw_Text(0, 64,  COLOR_GREEN, 1, "runtime: %f", client.runtime);
-        Draw_Text(0, 80,  COLOR_GREEN, 1, "time: %i", client.time);
-        Draw_Text(0, 96,  COLOR_GREEN, 1, "tics: %i", client.tics);
-        Draw_Text(0, 112, COLOR_GREEN, 1, "max msecs: %f", (1000.0f / cl_maxfps.value));
+        Draw_Text(32, 16,  COLOR_GREEN, 1, "-------------------");
+        Draw_Text(32, 32,  COLOR_GREEN, 1, "   client debug");
+        Draw_Text(32, 48,  COLOR_GREEN, 1, "-------------------");
+        Draw_Text(32, 64,  COLOR_GREEN, 1, "runtime: %f", client.runtime);
+        Draw_Text(32, 80,  COLOR_GREEN, 1, "time: %i", client.time);
+        Draw_Text(32, 96,  COLOR_GREEN, 1, "tics: %i", client.tics);
+        Draw_Text(32, 112, COLOR_GREEN, 1, "max msecs: %f",
+            (1000.0f / cl_maxfps.value) / 1000.0f);
+        Draw_Text(32, 128, COLOR_GREEN, 1, "diff tics: %i", client.serverstate.difftime);
+        Draw_Text(32, 144, COLOR_GREEN, 1, "server time: %i",
+            client.serverstate.tics - (client.serverstate.time/100));
     }
 
     if(developer.value)
     {
-        Draw_Text(64, 64, COLOR_WHITE, 1, Con_GetBufferHead());
+        Draw_Text(32.0f, bDebugTime ? 160.0f : 64.0f, COLOR_WHITE, 1, Con_GetBufferHead());
     }
 }
 

@@ -27,23 +27,8 @@
 #include "actor.h"
 
 #define ONPLANE_EPSILON     0.512f
-
-#define SLOPE_THRESHOLD     25.0f
-
-#define FRICTION_GROUND     0.5f
-#define FRICTION_LAVA       0.205f
-#define FRICTION_WATERMASS  0.975f
-#define FRICTION_WTRIMPACT  0.905f
-#define FRICTION_CLIMB      0.935f
-
-#define GRAVITY_NORMAL      0.62f
-#define GRAVITY_WATER       0.005f
-#define GRAVITY_FLOAT       0.45f
-
 #define VELOCITY_EPSILON    0.0001f
-
-#define WATERHEIGHT         15.36f
-#define SHALLOWHEIGHT       51.2f
+#define SLOPE_THRESHOLD     25.0f
 
 enum
 {
@@ -128,6 +113,7 @@ enum
 
 void G_CheckObjectStep(vec3_t origin, vec3_t velocity, plane_t *plane);
 int G_CheckWaterLevel(vec3_t origin, float centeroffs, plane_t *plane);
+void G_ApplyFriction(vec3_t velocity, float friction, kbool effectY);
 void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
                     float width, float offset, float yaw, trace_t *t);
 

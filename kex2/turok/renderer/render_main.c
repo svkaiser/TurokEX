@@ -284,15 +284,15 @@ static void R_SetupViewFrame(void)
 
         if(d > 0.005f)
         {
-            bob_x = (float)sin(client.tics * 0.3250f) * d * 0.0025f;
-            bob_y = (float)sin(client.tics * 0.1625f) * d * 0.0025f;
+            bob_x = (float)sin(client.tics * 0.3250f) * d * (0.15625f * client.runtime);
+            bob_y = (float)sin(client.tics * 0.1625f) * d * (0.15625f * client.runtime);
         }
     }
     else if(client.pmove.movetype == MT_WATER_SURFACE ||
         client.pmove.movetype == MT_WATER_UNDER)
     {
-        bob_x = (float)sin(client.tics * 0.035f) * 0.0150f;
-        bob_y = (float)sin(client.tics * 0.025f) * 0.0107f;
+        bob_x = (float)sin(client.tics * 0.035f) * (0.93750f * client.runtime);
+        bob_y = (float)sin(client.tics * 0.025f) * (0.66875f * client.runtime);
     }
 
     // set view origin

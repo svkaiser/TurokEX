@@ -32,11 +32,26 @@
 #include "level.h"
 #include "game.h"
 
-#define MOVE_VELOCITY   2.85f
-#define SWIM_VELOCITY   0.05f
-#define JUMP_VELOCITY   11.612f
-#define CLIMB_VELOCITY  6.125f
-#define NOCLIPMOVE      (MOVE_VELOCITY * 6)
+#define DELTAMOVE(x)    ((x) * move->deltatime)
+
+#define MOVE_VELOCITY       2.85f
+#define SWIM_VELOCITY       0.05f
+#define JUMP_VELOCITY       11.612f
+#define CLIMB_VELOCITY      6.125f
+#define NOCLIPMOVE          17.1f
+
+#define FRICTION_GROUND     0.5f
+#define FRICTION_LAVA       0.205f
+#define FRICTION_WATERMASS  0.025f
+#define FRICTION_WTRIMPACT  0.095f
+#define FRICTION_CLIMB      0.935f
+
+#define GRAVITY_NORMAL      0.62f
+#define GRAVITY_WATER       0.005f
+#define GRAVITY_FLOAT       0.45f
+
+#define WATERHEIGHT         15.36f
+#define SHALLOWHEIGHT       51.2f
 
 typedef struct
 {
@@ -189,6 +204,7 @@ static void Pred_UpdatePosition(move_t *move)
     float dist;
     float friction;
     trace_t trace;
+    kbool yfriction;
 
     if(move->plane == NULL)
     {
@@ -259,6 +275,8 @@ static void Pred_UpdatePosition(move_t *move)
 
         Pred_UpdateMoveType(move);
 
+        yfriction = false;
+
         //
         // update gravity
         //
@@ -275,6 +293,7 @@ static void Pred_UpdatePosition(move_t *move)
 
         case MT_WATER_UNDER:
             friction = FRICTION_WATERMASS;
+            yfriction = true;
             if(move->velocity[1] > 0.1f)
             {
                 area_t *area = Map_GetArea(move->plane);
@@ -295,39 +314,11 @@ static void Pred_UpdatePosition(move_t *move)
                         move->flags &= ~PMF_SUBMERGED;
                     }
                 }
-                else
-                {
-                    // water mass affects movement
-                    move->velocity[1] *= FRICTION_WATERMASS;
-                }
             }
-            else if(move->velocity[1] < -FRICTION_WATERMASS)
-            {
-                // friction from impact
-                move->velocity[1] *= FRICTION_WTRIMPACT;
-            }
-            else
+            else if(Vec_Unit2(move->velocity) < FRICTION_WATERMASS)
             {
                 // sink
-                if(Vec_Unit2(move->velocity) < FRICTION_WATERMASS)
-                {
-                    move->velocity[1] -= GRAVITY_WATER;
-
-                    if(move->velocity[1] <= -FRICTION_WATERMASS)
-                    {
-                        move->velocity[1] = -FRICTION_WATERMASS;
-                    }
-                }
-                else
-                {
-                    move->velocity[1] *= FRICTION_WATERMASS;
-
-                    if(move->velocity[1] < VELOCITY_EPSILON &&
-                        move->velocity[1] > -VELOCITY_EPSILON)
-                    {
-                        move->velocity[1] = 0;
-                    }
-                }
+                move->velocity[1] -= GRAVITY_WATER;
             }
             break;
 
@@ -382,21 +373,7 @@ static void Pred_UpdatePosition(move_t *move)
         }
     }
 
-    // de-accelerate velocity
-    move->velocity[0] = move->velocity[0] * friction;
-    move->velocity[2] = move->velocity[2] * friction;
-
-    if(move->velocity[0] < VELOCITY_EPSILON &&
-        move->velocity[0] > -VELOCITY_EPSILON)
-    {
-        move->velocity[0] = 0;
-    }
-
-    if(move->velocity[2] < VELOCITY_EPSILON &&
-        move->velocity[2] > -VELOCITY_EPSILON)
-    {
-        move->velocity[2] = 0;
-    }
+    G_ApplyFriction(move->velocity, friction, yfriction);
 
     // update move to new position
     Vec_Copy3(move->origin, position);
@@ -469,16 +446,6 @@ static void Pred_Swim(move_t *move)
     float vcy;
     float vel;
 
-    if(move->cmd->heldtime[0] == 0 &&
-        Vec_Unit3(move->velocity) < 3)
-    {
-        vel = SWIM_VELOCITY * 60;
-    }
-    else
-    {
-        vel = SWIM_VELOCITY;
-    }
-
     sy = (float)sin(move->yaw);
     cy = (float)cos(move->yaw);
     vsy = (float)sin(move->pitch);
@@ -486,6 +453,14 @@ static void Pred_Swim(move_t *move)
 
     if(move->cmd->buttons & BT_FORWARD)
     {
+        if(move->cmd->heldtime[0] == 0 &&
+            Vec_Unit3(move->velocity) < 3)
+        {
+            vel = SWIM_VELOCITY * 60;
+        }
+        else
+            vel = SWIM_VELOCITY;
+
         move->velocity[0] += (vel * sy) * vcy;
         move->velocity[1] -= (vel * vsy);
         move->velocity[2] += (vel * cy) * vcy;
