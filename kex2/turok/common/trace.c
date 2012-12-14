@@ -27,7 +27,7 @@
 #include "common.h"
 #include "mathlib.h"
 
-#define EPSILON_FLOOR 0.975f
+#define EPSILON_FLOOR 0.7f
 
 //
 // Trace_Object
@@ -192,7 +192,7 @@ static kbool Trace_Plane(trace_t *trace, plane_t *pl)
     if(!Plane_IsAWall(pl))
     {
         // ignore if the plane isn't steep enough
-        if(pl->normal[1] <= EPSILON_FLOOR)
+        if(pl->normal[1] > EPSILON_FLOOR)
         {
             return false;
         }

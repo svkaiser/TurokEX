@@ -42,8 +42,7 @@
 
 #define FRICTION_GROUND     0.5f
 #define FRICTION_LAVA       0.205f
-#define FRICTION_WATERMASS  0.025f
-#define FRICTION_WTRIMPACT  0.095f
+#define FRICTION_WATERMASS  0.019f
 #define FRICTION_CLIMB      0.935f
 
 #define GRAVITY_NORMAL      0.62f
@@ -57,6 +56,9 @@ typedef struct
 {
     vec3_t      origin;
     vec3_t      velocity;
+    vec3_t      forward;
+    vec3_t      right;
+    vec3_t      up;
     float       width;
     float       height;
     float       center_y;
@@ -310,15 +312,8 @@ static void Pred_UpdatePosition(move_t *move)
                     Vec_Lerp3(position, 0.05f, position, lerp);
 
                     if(move->flags & PMF_SUBMERGED)
-                    {
                         move->flags &= ~PMF_SUBMERGED;
-                    }
                 }
-            }
-            else if(Vec_Unit2(move->velocity) < FRICTION_WATERMASS)
-            {
-                // sink
-                move->velocity[1] -= GRAVITY_WATER;
             }
             break;
 
@@ -381,43 +376,74 @@ static void Pred_UpdatePosition(move_t *move)
 }
 
 //
+// Pred_SetDirection
+//
+
+static void Pred_SetDirection(move_t *move, float yaw, float pitch, float roll)
+{
+    /*vec4_t ry, rp, rr;
+    vec4_t ryr;
+    vec4_t rot;
+    mtx_t mtx;
+    vec3_t dir1, dir2, dir3;
+
+    Vec_SetQuaternion(rp, pitch, 1, 0, 0);
+    Vec_SetQuaternion(ry, yaw, 0, 1, 0);
+    Vec_SetQuaternion(rr, roll, 0, 0, 1);
+    Vec_MultQuaternion(ryr, ry, rr);
+    Vec_MultQuaternion(rot, rp, ryr);
+    Mtx_ApplyRotation(rot, mtx);
+    Vec_Set3(dir1, 0, 0, 1);
+    Vec_Set3(dir2, 0, 1, 0);
+    Vec_Set3(dir3, 1, 0, 0);
+    Vec_TransformToWorld(mtx, dir1, move->forward);
+    Vec_TransformToWorld(mtx, dir2, move->up);
+    Vec_TransformToWorld(mtx, dir3, move->right);*/
+
+    float sy, cy, sp, cp, sr, cr;
+
+    sy = (float)sin(yaw);
+    cy = (float)cos(yaw);
+    sp = (float)sin(pitch);
+    cp = (float)cos(pitch);
+    sr = (float)sin(roll);
+    cr = (float)cos(roll);
+
+    move->forward[0] = sy * cp;
+    move->forward[1] = -sp;
+    move->forward[2] = cy * cp;
+
+    move->right[0] = sr * sp * sy + cr * cy;
+    move->right[1] = sr * cp;
+    move->right[2] = sr * sp * cy + cr * -sy;
+
+    move->up[0] = cr * sp * sy + -sr * cy;
+    move->up[1] = cr * cp;
+    move->up[2] = cr * sp * cy + -sr * -sy;
+}
+
+//
 // Pred_Walk
 //
 
 static void Pred_Walk(move_t *move)
 {
-    float sy;
-    float cy;
+    float fwd = 0;
+    float rgt = 0;
+    vec3_t forward;
+    vec3_t right;
 
-    sy = (float)sin(move->yaw);
-    cy = (float)cos(move->yaw);
+    Pred_SetDirection(move, move->yaw, 0, 0);
 
-    if(move->cmd->buttons & BT_FORWARD)
-    {
-        move->velocity[0] += MOVE_VELOCITY * sy;
-        move->velocity[2] += MOVE_VELOCITY * cy;
-    }
+    if(move->cmd->buttons & BT_FORWARD)     fwd =  MOVE_VELOCITY;
+    if(move->cmd->buttons & BT_BACKWARD)    fwd = -MOVE_VELOCITY;
+    if(move->cmd->buttons & BT_STRAFELEFT)  rgt =  MOVE_VELOCITY;
+    if(move->cmd->buttons & BT_STRAFERIGHT) rgt = -MOVE_VELOCITY;
 
-    if(move->cmd->buttons & BT_BACKWARD)
-    {
-        move->velocity[0] -= MOVE_VELOCITY * sy;
-        move->velocity[2] -= MOVE_VELOCITY * cy;
-    }
-
-    sy = (float)sin(move->yaw + DEG2RAD(90));
-    cy = (float)cos(move->yaw + DEG2RAD(90));
-
-    if(move->cmd->buttons & BT_STRAFELEFT)
-    {
-        move->velocity[0] += MOVE_VELOCITY * sy;
-        move->velocity[2] += MOVE_VELOCITY * cy;
-    }
-
-    if(move->cmd->buttons & BT_STRAFERIGHT)
-    {
-        move->velocity[0] -= MOVE_VELOCITY * sy;
-        move->velocity[2] -= MOVE_VELOCITY * cy;
-    }
+    Vec_Scale(forward, move->forward, fwd);
+    Vec_Scale(right, move->right, rgt);
+    Vec_Add(move->velocity, move->velocity, forward);
+    Vec_Add(move->velocity, move->velocity, right);
 
     if(move->cmd->buttons & BT_JUMP)
     {
@@ -440,142 +466,80 @@ static void Pred_Walk(move_t *move)
 
 static void Pred_Swim(move_t *move)
 {
-    float sy;
-    float cy;
-    float vsy;
-    float vcy;
-    float vel;
-
-    sy = (float)sin(move->yaw);
-    cy = (float)cos(move->yaw);
-    vsy = (float)sin(move->pitch);
-    vcy = (float)cos(move->pitch);
-
-    if(move->cmd->buttons & BT_FORWARD)
-    {
-        if(move->cmd->heldtime[0] == 0 &&
-            Vec_Unit3(move->velocity) < 3)
-        {
-            vel = SWIM_VELOCITY * 60;
-        }
-        else
-            vel = SWIM_VELOCITY;
-
-        move->velocity[0] += (vel * sy) * vcy;
-        move->velocity[1] -= (vel * vsy);
-        move->velocity[2] += (vel * cy) * vcy;
-    }
-
-    if(move->cmd->buttons & BT_BACKWARD)
-    {
-        move->velocity[0] -= (SWIM_VELOCITY * sy) * vcy;
-        move->velocity[1] += (SWIM_VELOCITY * vsy);
-        move->velocity[2] -= (SWIM_VELOCITY * cy) * vcy;
-    }
-
-    sy = (float)sin(move->yaw + DEG2RAD(90));
-    cy = (float)cos(move->yaw + DEG2RAD(90));
-
-    if(move->cmd->buttons & BT_STRAFELEFT)
-    {
-        move->velocity[0] += SWIM_VELOCITY * sy;
-        move->velocity[2] += SWIM_VELOCITY * cy;
-    }
-
-    if(move->cmd->buttons & BT_STRAFERIGHT)
-    {
-        move->velocity[0] -= SWIM_VELOCITY * sy;
-        move->velocity[2] -= SWIM_VELOCITY * cy;
-    }
-
-    if(move->cmd->buttons & BT_JUMP)
-    {
-        move->velocity[1] += SWIM_VELOCITY;
-    }
-
-    Pred_UpdatePosition(move);
-}
-
-//
-// Pred_Paddle
-//
-
-static void Pred_Paddle(move_t *move)
-{
-    float sy;
-    float cy;
-    float vsy;
-    float vcy;
+    static float swim_fwd = 0;
+    static float swim_rgt = 0;
+    static float swim_up = 0;
     float ang;
-    float vel;
-
-    sy = (float)sin(move->yaw);
-    cy = (float)cos(move->yaw);
-    vsy = (float)sin(move->pitch);
-    vcy = (float)cos(move->pitch);
+    vec3_t forward;
+    vec3_t right;
 
     ang = move->pitch;
 
     Ang_Clamp(&ang);
             
-    if(ang < DEG2RAD(45))
-    {
-        vsy = 0;
-    }
-    else
-    {
-        vsy *= MOVE_VELOCITY;
-    }
+    if(move->movetype == MT_WATER_SURFACE && ang < DEG2RAD(45))
+        ang = 0;
 
-    if(move->cmd->heldtime[0] == 0 &&
-        Vec_Unit2(move->velocity) < 2)
-    {
-        vel = SWIM_VELOCITY * 80;
-    }
+    Pred_SetDirection(move, move->yaw, ang, 0);
+
+    // lerp forward and right movement speeds
+    swim_fwd = -swim_fwd * 0.015f + swim_fwd;
+    swim_rgt = -swim_rgt * 0.015f + swim_rgt;
+
+    // set upward speed to last known velocity if on the surface, otherwise
+    // lerp the speed
+    if(move->movetype == MT_WATER_SURFACE)
+        swim_up = move->velocity[1];
     else
-    {
-        vel = SWIM_VELOCITY;
-    }
+        swim_up = -swim_up * FRICTION_WATERMASS + swim_up;
 
     if(move->cmd->buttons & BT_FORWARD)
     {
-        move->velocity[0] += (vel * sy) * vcy;
-        move->velocity[1] -= vsy;
-        move->velocity[2] += (vel * cy) * vcy;
+        float mag = move->movetype == MT_WATER_SURFACE ? 2.0f : 3.0f;
+
+        if(move->cmd->heldtime[0] == 0 && Vec_Unit3(move->velocity) < mag)
+        {
+            // handle extra thrust
+            swim_fwd = SWIM_VELOCITY * 160;
+        }
+        else
+            swim_fwd += SWIM_VELOCITY;
     }
 
-    if(move->cmd->buttons & BT_BACKWARD)
-    {
-        move->velocity[0] -= (SWIM_VELOCITY * sy) * vcy;
-        move->velocity[1] += vsy;
-        move->velocity[2] -= (SWIM_VELOCITY * cy) * vcy;
-    }
-
-    sy = (float)sin(move->yaw + DEG2RAD(90));
-    cy = (float)cos(move->yaw + DEG2RAD(90));
-
-    if(move->cmd->buttons & BT_STRAFELEFT)
-    {
-        move->velocity[0] += SWIM_VELOCITY * sy;
-        move->velocity[2] += SWIM_VELOCITY * cy;
-    }
-
-    if(move->cmd->buttons & BT_STRAFERIGHT)
-    {
-        move->velocity[0] -= SWIM_VELOCITY * sy;
-        move->velocity[2] -= SWIM_VELOCITY * cy;
-    }
+    if(move->cmd->buttons & BT_BACKWARD)    swim_fwd -= SWIM_VELOCITY;
+    if(move->cmd->buttons & BT_STRAFELEFT)  swim_rgt += SWIM_VELOCITY;
+    if(move->cmd->buttons & BT_STRAFERIGHT) swim_rgt -= SWIM_VELOCITY;
 
     if(move->cmd->buttons & BT_JUMP)
     {
-        if(Pred_CheckJump(move) && !move->cmd->heldtime[1])
+        if(move->movetype == MT_WATER_SURFACE)
         {
-            move->flags |= PMF_JUMP;
-            move->velocity[1] = JUMP_VELOCITY;
+            // allow jumping while on the surface
+            if(Pred_CheckJump(move) && !move->cmd->heldtime[1])
+            {
+                move->flags |= PMF_JUMP;
+                swim_up = JUMP_VELOCITY;
+            }
         }
+        else
+            swim_up += SWIM_VELOCITY;
     }
 
+    Vec_Scale(forward, move->forward, swim_fwd);
+    Vec_Scale(right, move->right, swim_rgt);
+    Vec_Add(move->velocity, forward, right);
+
+    // apply extra vertical velocity from jump commands
+    move->velocity[1] += swim_up;
+
     Pred_UpdatePosition(move);
+
+    if(Vec_Unit2(move->velocity) < FRICTION_WATERMASS &&
+        move->velocity[1] <= 0.1f)
+    {
+        // sink
+        swim_up -= GRAVITY_WATER;
+    }
 }
 
 //
@@ -627,61 +591,27 @@ static void Pred_ClimbMove(move_t *move)
 
 static void Pred_NoClipMove(move_t *move)
 {
-    float sy;
-    float cy;
-    float vsy;
-    float vcy;
-    float x1;
-    float y1;
-    float z1;
-    float x2;
-    float y2;
-    float z2;
+    float fwd = 0;
+    float rgt = 0;
+    vec3_t forward;
+    vec3_t right;
 
-    sy = (float)sin(move->yaw);
-    cy = (float)cos(move->yaw);
-    vsy = (float)sin(move->pitch);
-    vcy = (float)cos(move->pitch);
+    move->velocity[0] = move->velocity[1] = move->velocity[2] = 0;
 
-    x1 = y1 = z1 = x2 = y2 = z2 = 0;
+    Pred_SetDirection(move, move->yaw, move->pitch, 0);
 
-    if(move->cmd->buttons & BT_FORWARD)
-    {
-        x1 = (NOCLIPMOVE * sy) * vcy;
-        y1 = NOCLIPMOVE * -vsy;
-        z1 = (NOCLIPMOVE * cy) * vcy;
-    }
+    if(move->cmd->buttons & BT_FORWARD)     fwd =  NOCLIPMOVE;
+    if(move->cmd->buttons & BT_BACKWARD)    fwd = -NOCLIPMOVE;
+    if(move->cmd->buttons & BT_STRAFELEFT)  rgt =  NOCLIPMOVE;
+    if(move->cmd->buttons & BT_STRAFERIGHT) rgt = -NOCLIPMOVE;
 
-    if(move->cmd->buttons & BT_BACKWARD)
-    {
-        x1 = -(NOCLIPMOVE * sy) * vcy;
-        y1 = NOCLIPMOVE * vsy;
-        z1 = -(NOCLIPMOVE * cy) * vcy;
-    }
-
-    sy = (float)sin(move->yaw + DEG2RAD(90));
-    cy = (float)cos(move->yaw + DEG2RAD(90));
-
-    if(move->cmd->buttons & BT_STRAFELEFT)
-    {
-        x2 = NOCLIPMOVE * sy;
-        z2 = NOCLIPMOVE * cy;
-    }
-
-    if(move->cmd->buttons & BT_STRAFERIGHT)
-    {
-        x2 = -NOCLIPMOVE * sy;
-        z2 = -NOCLIPMOVE * cy;
-    }
+    Vec_Scale(forward, move->forward, fwd);
+    Vec_Scale(right, move->right, rgt);
+    Vec_Add(move->velocity, move->velocity, forward);
+    Vec_Add(move->velocity, move->velocity, right);
 
     if(move->cmd->buttons & BT_JUMP)
-    {
-        y2 = NOCLIPMOVE;
-    }
-
-    move->velocity[0] = x1 + x2;
-    move->velocity[1] = y1 + y2;
-    move->velocity[2] = z1 + z2;
+        move->velocity[1] = NOCLIPMOVE;
 
     Vec_Add(move->origin, move->origin, move->velocity);
 }
@@ -694,7 +624,7 @@ static const movefunction_t movefuncs[NUMMOVETYPES] =
 {
     Pred_Walk,
     Pred_Walk,
-    Pred_Paddle,
+    Pred_Swim,
     Pred_Swim,
     Pred_Walk,
     Pred_Walk,
