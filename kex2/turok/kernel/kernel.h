@@ -48,9 +48,7 @@ int KF_ReadTextFile(const char *name, byte **buffer);
 //
 #define MAX_KEYS SDLK_LAST
 
-#define CKF_NEXTWEAPON	0x1
-#define CKF_PREVWEAPON	0x2
-#define CKF_GAMEPAD     0x4
+#define CKF_GAMEPAD     0x1
 #define CKF_UP          0x4000
 #define CKF_COUNTMASK   0x00ff
 
@@ -67,6 +65,8 @@ typedef enum
     KEY_JUMP,
     KEY_LOOKUP,
     KEY_LOOKDOWN,
+    KEY_NEXTWEAP,
+    KEY_PREVWEAP,
     KEY_CENTER,
     NUM_CTRLKEYS
 } ctrlkey_t;

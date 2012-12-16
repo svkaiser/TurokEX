@@ -148,18 +148,10 @@ void CL_BuildTiccmd(void)
     SET_KEYFLAG(KEY_BACK, BT_BACKWARD);
     SET_KEYFLAG(KEY_STRAFELEFT, BT_STRAFELEFT);
     SET_KEYFLAG(KEY_STRAFERIGHT, BT_STRAFERIGHT);
+    SET_KEYFLAG(KEY_NEXTWEAP, BT_NEXTWEAP);
+    SET_KEYFLAG(KEY_PREVWEAP, BT_PREVWEAP);
 
 #undef SET_KEYFLAG
-
-    if(ctrl->flags & CKF_NEXTWEAPON)
-    {
-        cmd.buttons |= BT_NEXTWEAP;
-    }
-
-    if(ctrl->flags & CKF_PREVWEAPON)
-    {
-        cmd.buttons |= BT_PREVWEAP;
-    }
 
     if(cmd.buttons & BT_FORWARD &&
         client.cmd.buttons & BT_FORWARD)

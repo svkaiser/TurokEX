@@ -140,8 +140,6 @@ void G_SetupPlayer(actor_t *actor)
 
 void G_ClientThink(void)
 {
-    // TODO - TEMP
-    G_WeaponThink(&weapons[wp_shotgun]);
 }
 
 //

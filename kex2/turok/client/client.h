@@ -71,6 +71,11 @@ typedef struct
 
 typedef struct
 {
+    int             weapon;
+} gamestate_t;
+
+typedef struct
+{
     vec3_t          origin;
     vec3_t          velocity;
     float           yaw;
@@ -93,7 +98,8 @@ typedef struct
     pmove_t         pmove;
     moveframe_t     moveframe;
     vec3_t          pred_diff;
-    serverstate_t   serverstate;
+    serverstate_t   st;
+    gamestate_t     gt;
 } client_t;
 
 extern client_t client;

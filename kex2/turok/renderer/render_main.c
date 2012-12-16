@@ -448,21 +448,19 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
             }
             else
             {
-                vec4_t r3, r4;
-                vec3_t t3, t4;
+                vec4_t r3;
+                vec3_t t3;
 
                 frame = animstate->prevtrack.frame;
                 nextframe = animstate->prevtrack.nextframe;
 
                 Mdl_GetAnimRotation(r3, prevanim, nodenum, frame);
-                Mdl_GetAnimRotation(r4, prevanim, nodenum, nextframe);
                 Mdl_GetAnimTranslation(t3, prevanim, nodenum, frame);
-                Mdl_GetAnimTranslation(t4, prevanim, nodenum, nextframe);
 
                 Vec_Slerp(rot_cur, delta, r3, r1);
-                Vec_Slerp(rot_next, delta, r4, r2);
+                Vec_Slerp(rot_next, delta, r3, r2);
                 Vec_Lerp3(pos_cur, delta, t3, t1);
-                Vec_Lerp3(pos_next, delta, t4, t2);
+                Vec_Lerp3(pos_next, delta, t3, t2);
             }
 
             Vec_Slerp(rot, delta, rot_cur, rot_next);
@@ -907,7 +905,7 @@ static void R_DrawSkies(void)
 // R_DrawViewWeapon
 //
 
-void R_DrawViewWeapon(weapon_t *weapon)
+void R_DrawViewWeapon(void)
 {
     kmodel_t *model;
     mtx_t mtx_transform;
@@ -919,6 +917,9 @@ void R_DrawViewWeapon(weapon_t *weapon)
     vec4_t pitch;
     vec4_t aim;
     float offset;
+    weapon_t *weapon;
+
+    weapon = &weapons[client.gt.weapon];
 
     if(!(model = weapon->model))
     {
@@ -1055,8 +1056,7 @@ void R_DrawFrame(void)
 
     R_DrawActors();
 
-    // TODO - TEMP
-    R_DrawViewWeapon(&weapons[wp_shotgun]);
+    R_DrawViewWeapon();
 
     dglEnableClientState(GL_COLOR_ARRAY);
 

@@ -172,25 +172,25 @@ static void CL_ReadPmove(ENetPacket *packet)
     if(g_currentmap == NULL)
         return;
 
-    Packet_Read32(packet, &client.serverstate.tics);
+    Packet_Read32(packet, &client.st.tics);
 
-    time = client.serverstate.tics - (client.serverstate.time/100);
-    client.serverstate.time = client.serverstate.tics * 100;
+    time = client.st.tics - (client.st.time/100);
+    client.st.time = client.st.tics * 100;
 
-    if(client.time > client.serverstate.time)
+    if(client.time > client.st.time)
     {
-        client.time = client.serverstate.time;
+        client.time = client.st.time;
         client.moveframe.lerp = 1;
     }
-    else if(client.time < client.serverstate.time - 100)
+    else if(client.time < client.st.time - 100)
     {
-        client.time = client.serverstate.time - 100;
+        client.time = client.st.time - 100;
         client.moveframe.lerp = 0;
     }
     else
     {
         client.moveframe.lerp = 1 -
-            (client.serverstate.time - client.time) * 0.01f;
+            (client.st.time - client.time) * 0.01f;
     }
 
     memset(&pmove, 0, sizeof(pmove_t));
@@ -209,12 +209,12 @@ static void CL_ReadPmove(ENetPacket *packet)
         Vec_Unit3(oldmove->velocity) -
         (Vec_Length3(diff, pmove.velocity) - Vec_Unit3(diff))) >= 2)
     {
-        client.serverstate.difftime++;
+        client.st.difftime++;
     }
     else
-        client.serverstate.difftime = 0;
+        client.st.difftime = 0;
 
-    if(time > 1 || client.serverstate.difftime > 10)
+    if(time > 1 || client.st.difftime > 10)
     {
         oldmove->movetype = pmove.movetype;
         oldmove->plane = pmove.plane;
@@ -323,9 +323,9 @@ static void CL_DrawDebug(void)
         Draw_Text(32, 96,  COLOR_GREEN, 1, "tics: %i", client.tics);
         Draw_Text(32, 112, COLOR_GREEN, 1, "max msecs: %f",
             (1000.0f / cl_maxfps.value) / 1000.0f);
-        Draw_Text(32, 128, COLOR_GREEN, 1, "diff tics: %i", client.serverstate.difftime);
+        Draw_Text(32, 128, COLOR_GREEN, 1, "diff tics: %i", client.st.difftime);
         Draw_Text(32, 144, COLOR_GREEN, 1, "server time: %i",
-            client.serverstate.tics - (client.serverstate.time/100));
+            client.st.tics - (client.st.time/100));
     }
 
     if(developer.value)
@@ -343,6 +343,8 @@ static void CL_Ticker(void)
     Menu_Ticker();
 
     Con_Ticker();
+
+    G_WeaponThink();
 
     //TEMP
     G_ClientThink();

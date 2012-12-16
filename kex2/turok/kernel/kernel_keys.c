@@ -297,6 +297,8 @@ CONTROL_KEY(Run,            KEY_RUN);
 CONTROL_KEY(Jump,           KEY_JUMP);
 CONTROL_KEY(LookUp,         KEY_LOOKUP);
 CONTROL_KEY(LookDown,       KEY_LOOKDOWN);
+CONTROL_KEY(NextWeap,       KEY_NEXTWEAP);
+CONTROL_KEY(PrevWeap,       KEY_PREVWEAP);
 
 //
 // FCmd_Bind
@@ -440,5 +442,9 @@ void Key_Init(void)
     Cmd_AddCommand("-lookup", FCmd_LookUpUp);
     Cmd_AddCommand("+lookdown", FCmd_LookDownDown);
     Cmd_AddCommand("-lookdown", FCmd_LookDownUp);
+    Cmd_AddCommand("+nextweap", FCmd_NextWeapDown);
+    Cmd_AddCommand("-nextweap", FCmd_NextWeapUp);
+    Cmd_AddCommand("+prevweap", FCmd_PrevWeapDown);
+    Cmd_AddCommand("-prevweap", FCmd_PrevWeapUp);
 }
 

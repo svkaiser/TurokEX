@@ -806,9 +806,7 @@ void Mdl_BlendAnimStates(animstate_t *astate, anim_t *anim,
 void Mdl_UpdateAnimState(animstate_t *astate)
 {
     if(astate->flags & ANF_STOPPED)
-    {
         return;
-    }
 
     if(astate->time <= client.tics)
     {

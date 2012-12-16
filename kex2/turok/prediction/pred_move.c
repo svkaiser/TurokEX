@@ -461,6 +461,25 @@ static void Pred_Walk(move_t *move)
 }
 
 //
+// Pred_GetWaterSinkHeight
+//
+
+static float Pred_GetWaterSinkHeight(move_t *move)
+{
+    float dist;
+
+    if(move->plane == NULL)
+        return 0;
+
+    dist = Plane_GetDistance(move->plane, move->origin);
+
+    if(move->origin[1] - dist <= 0.512f)
+        return 0;
+
+    return dist;
+}
+
+//
 // Pred_Swim
 //
 
@@ -491,13 +510,11 @@ static void Pred_Swim(move_t *move)
     if(move->movetype == MT_WATER_SURFACE)
         swim_up = move->velocity[1];
     else
-        swim_up = -swim_up * FRICTION_WATERMASS + swim_up;
+        swim_up = -swim_up * 0.125f + swim_up;
 
     if(move->cmd->buttons & BT_FORWARD)
     {
-        float mag = move->movetype == MT_WATER_SURFACE ? 2.0f : 3.0f;
-
-        if(move->cmd->heldtime[0] == 0 && Vec_Unit3(move->velocity) < mag)
+        if(move->cmd->heldtime[0] == 0 && Vec_Unit3(move->velocity) < 3)
         {
             // handle extra thrust
             swim_fwd = SWIM_VELOCITY * 160;
@@ -522,7 +539,7 @@ static void Pred_Swim(move_t *move)
             }
         }
         else
-            swim_up += SWIM_VELOCITY;
+            swim_up += 0.360448f;
     }
 
     Vec_Scale(forward, move->forward, swim_fwd);
@@ -534,11 +551,13 @@ static void Pred_Swim(move_t *move)
 
     Pred_UpdatePosition(move);
 
-    if(Vec_Unit2(move->velocity) < FRICTION_WATERMASS &&
-        move->velocity[1] <= 0.1f)
+    if( (swim_fwd <= 0.5f && swim_fwd >= -0.5f) &&
+        (swim_rgt <= 0.5f && swim_rgt >= -0.5f) &&
+        (swim_up  <= 0.5f) &&
+        move->movetype == MT_WATER_UNDER)
     {
         // sink
-        swim_up -= GRAVITY_WATER;
+        swim_up -= 0.05f;
     }
 }
 

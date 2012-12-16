@@ -162,6 +162,210 @@ static const weaponinfo_t weaponinfo[NUMWEAPONS] =
 };
 
 //
+// G_ChangeWeapon
+//
+
+void G_ChangeWeapon(int weapon)
+{
+    weapon_t *w;
+
+    if(weapon < 0 || weapon >= NUMWEAPONS)
+        return;
+
+    w = &weapons[weapon];
+    client.gt.weapon = weapon;
+
+    Mdl_SetAnimState(&w->animstate, w->swap_in,
+        w->speed, ANF_NOINTERRUPT);
+
+    w->state = WS_SWAPIN;
+}
+
+//
+// G_CheckHoldster
+//
+
+static kbool G_CheckHoldster(weapon_t *weapon)
+{
+    if(client.pmove.movetype == MT_CLIMB && weapon->state != WS_HOLDSTER)
+    {
+        Mdl_SetAnimState(&weapon->animstate, weapon->idle,
+            weapon->speed, ANF_LOOP);
+
+        Mdl_BlendAnimStates(&weapon->animstate,
+            weapon->swap_out, weapon->speed, 4, ANF_NOINTERRUPT);
+
+        weapon->state = WS_HOLDSTER;
+
+        return true;
+    }
+
+    return false;
+}
+
+//
+// G_WeaponStateReady
+//
+
+static void G_WeaponStateReady(weapon_t *weapon)
+{
+    float d;
+
+    if(G_CheckHoldster(weapon))
+        return;
+
+    if(client.cmd.buttons & BT_ATTACK)
+    {
+        Mdl_SetAnimState(&weapon->animstate, weapon->idle,
+            weapon->speed, ANF_LOOP);
+
+        Mdl_BlendAnimStates(&weapon->animstate,
+            weapon->fire, weapon->speed, 4, ANF_NOINTERRUPT);
+
+        weapon->state = WS_FIRING;
+        return;
+    }
+
+    d = Vec_Unit2(client.moveframe.velocity);
+
+    if(d >= 1.35f)
+    {
+        Mdl_BlendAnimStates(&weapon->animstate,
+            weapon->running, weapon->speed, 8, ANF_LOOP);
+    }
+    else if(d >= 0.1f)
+    {
+        Mdl_BlendAnimStates(&weapon->animstate,
+            weapon->walk, weapon->speed, 8, ANF_LOOP);
+    }
+    else
+    {
+        Mdl_BlendAnimStates(&weapon->animstate,
+            weapon->idle, weapon->speed, 8, ANF_LOOP);
+    }
+}
+
+//
+// G_WeaponStateFire
+//
+
+static void G_WeaponStateFire(weapon_t *weapon)
+{
+    if(G_CheckHoldster(weapon))
+        return;
+
+    if(weapon->animstate.flags & ANF_STOPPED)
+    {
+        Mdl_BlendAnimStates(&weapon->animstate,
+            weapon->idle, weapon->speed, 8, ANF_LOOP);
+
+        weapon->state = WS_READY;
+    }
+}
+
+//
+// G_WeaponStateHoldster
+//
+
+static void G_WeaponStateHoldster(weapon_t *weapon)
+{
+    if(client.pmove.movetype != MT_CLIMB)
+    {
+        Mdl_SetAnimState(&weapon->animstate, weapon->swap_in,
+            weapon->speed, ANF_NOINTERRUPT);
+
+        weapon->state = WS_SWAPIN;
+    }
+}
+
+//
+// G_WeaponStateSwapIn
+//
+
+static void G_WeaponStateSwapIn(weapon_t *weapon)
+{
+    if(weapon->animstate.flags & ANF_STOPPED)
+    {
+        Mdl_BlendAnimStates(&weapon->animstate,
+            weapon->idle, weapon->speed, 8, ANF_LOOP);
+
+        weapon->state = WS_READY;
+    }
+}
+
+//
+// G_WeaponThink
+//
+
+#define WEAPONTURN_MAX      0.08f
+#define WEAPONTURN_EPSILON  0.001f
+
+void G_WeaponThink(void)
+{
+    weapon_t *weapon;
+
+    if(g_currentmap == NULL)
+    {
+        return;
+    }
+
+    weapon = &weapons[client.gt.weapon];
+
+    weapon->yaw = (weapon->yaw - (client.cmd.mouse[0].f * 0.1f)) * 0.9f;
+    if(weapon->yaw >  WEAPONTURN_MAX) weapon->yaw =  WEAPONTURN_MAX;
+    if(weapon->yaw < -WEAPONTURN_MAX) weapon->yaw = -WEAPONTURN_MAX;
+    if(weapon->yaw <  WEAPONTURN_EPSILON &&
+        weapon->yaw > -WEAPONTURN_EPSILON)
+    {
+        weapon->yaw = 0;
+    }
+
+    weapon->pitch = (weapon->pitch - (client.cmd.mouse[1].f * 0.1f)) * 0.9f;
+    if(weapon->pitch >  WEAPONTURN_MAX) weapon->pitch =  WEAPONTURN_MAX;
+    if(weapon->pitch < -WEAPONTURN_MAX) weapon->pitch = -WEAPONTURN_MAX;
+    if(weapon->pitch <  WEAPONTURN_EPSILON &&
+        weapon->pitch > -WEAPONTURN_EPSILON)
+    {
+        weapon->pitch = 0;
+    }
+
+    switch(weapon->state)
+    {
+    case WS_READY:
+        G_WeaponStateReady(weapon);
+        break;
+    case WS_SWAPIN:
+        G_WeaponStateSwapIn(weapon);
+        break;
+    case WS_SWAPOUT:
+        break;
+    case WS_FIRING:
+        G_WeaponStateFire(weapon);
+        break;
+    case WS_HOLDSTER:
+        G_WeaponStateHoldster(weapon);
+        break;
+    default:
+        break;
+    }
+
+    if(weapon->state != WS_DEACTIVATED)
+        Mdl_UpdateAnimState(&weapon->animstate);
+}
+
+//
+// FCmd_ChangeWeapon
+//
+
+static void FCmd_ChangeWeapon(void)
+{
+    if(Cmd_GetArgc() < 2)
+        return;
+
+    G_ChangeWeapon(atoi(Cmd_GetArgv(1)));
+}
+
+//
 // G_SetupWeapon
 //
 
@@ -184,6 +388,7 @@ void G_InitWeapons(void)
         weapon->fire        = Mdl_GetAnim(weapon->model, weaponinfo[i].attack);
         weapon->swap_in     = Mdl_GetAnim(weapon->model, weaponinfo[i].swapin);
         weapon->swap_out    = Mdl_GetAnim(weapon->model, weaponinfo[i].swapout);
+        weapon->state       = WS_READY;
 
         Mdl_SetAnimState(&weapon->animstate, weapon->idle,
             weapon->speed, ANF_LOOP);
@@ -192,74 +397,7 @@ void G_InitWeapons(void)
             -weaponinfo[i].y * 341.334f,
              weaponinfo[i].z * 341.334f - 275.456f);
     }
-}
 
-//
-// G_WeaponThink
-//
-
-#define WEAPONTURN_MAX      0.08f
-#define WEAPONTURN_EPSILON  0.001f
-
-void G_WeaponThink(weapon_t *weapon)
-{
-    float d;
-
-    if(g_currentmap == NULL)
-    {
-        return;
-    }
-
-    weapon->yaw = (weapon->yaw - (client.cmd.mouse[0].f * 0.1f)) * 0.9f;
-    if(weapon->yaw >  WEAPONTURN_MAX) weapon->yaw =  WEAPONTURN_MAX;
-    if(weapon->yaw < -WEAPONTURN_MAX) weapon->yaw = -WEAPONTURN_MAX;
-    if(weapon->yaw <  WEAPONTURN_EPSILON &&
-        weapon->yaw > -WEAPONTURN_EPSILON)
-    {
-        weapon->yaw = 0;
-    }
-
-    weapon->pitch = (weapon->pitch - (client.cmd.mouse[1].f * 0.1f)) * 0.9f;
-    if(weapon->pitch >  WEAPONTURN_MAX) weapon->pitch =  WEAPONTURN_MAX;
-    if(weapon->pitch < -WEAPONTURN_MAX) weapon->pitch = -WEAPONTURN_MAX;
-    if(weapon->pitch <  WEAPONTURN_EPSILON &&
-        weapon->pitch > -WEAPONTURN_EPSILON)
-    {
-        weapon->pitch = 0;
-    }
-
-    if(weapon->animstate.flags & ANF_STOPPED)
-    {
-        Mdl_BlendAnimStates(&weapon->animstate,
-            weapon->idle, weapon->speed, 8, ANF_LOOP);
-    }
-
-    if(client.cmd.buttons & BT_ATTACK)
-    {
-        Mdl_BlendAnimStates(&weapon->animstate,
-            weapon->fire, weapon->speed, 4, ANF_NOINTERRUPT);
-    }
-    else
-    {
-        d = Vec_Unit2(client.moveframe.velocity);
-
-        if(d >= 1.35f)
-        {
-            Mdl_BlendAnimStates(&weapon->animstate,
-                weapon->running, weapon->speed, 8, ANF_LOOP);
-        }
-        else if(d >= 0.1f)
-        {
-            Mdl_BlendAnimStates(&weapon->animstate,
-                weapon->walk, weapon->speed, 8, ANF_LOOP);
-        }
-        else
-        {
-            Mdl_BlendAnimStates(&weapon->animstate,
-                weapon->idle, weapon->speed, 8, ANF_LOOP);
-        }
-    }
-
-    Mdl_UpdateAnimState(&weapon->animstate);
+    Cmd_AddCommand("setweapon", FCmd_ChangeWeapon);
 }
 

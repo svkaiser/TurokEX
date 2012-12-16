@@ -270,13 +270,16 @@ void Vec_Slerp(vec4_t out, float movement, vec4_t vec1, vec4_t vec2)
     float d2;
     float halfcos;
     float halfsin;
+    vec4_t rdest;
 
-    d1 =  vec2[3] * vec1[3] +  vec2[2] * vec1[2] +  vec2[1] * vec1[1] + vec2[0] *  vec1[0];
-    d2 = -vec2[3] * vec1[3] + -vec2[2] * vec1[2] + -vec2[1] * vec1[1] + vec1[0] * -vec2[0];
+    Vec_Copy4(rdest, vec2);
+
+    d1 =  vec2[3] * vec1[3] +  vec2[2] * vec1[2] +  vec2[1] * vec1[1] +  vec2[0] * vec1[0];
+    d2 = -vec2[3] * vec1[3] + -vec2[2] * vec1[2] + -vec2[1] * vec1[1] + -vec2[0] * vec1[0];
 
     if(d1 < d2)
     {
-        vec2[0] = -vec2[0];
+        Vec_Set4(rdest, -vec2[0], -vec2[1], -vec2[2], -vec2[3]);
         d1 = d2;
     }
 
@@ -304,21 +307,21 @@ void Vec_Slerp(vec4_t out, float movement, vec4_t vec1, vec4_t vec2)
 
             if(ms2)
             {
-                vec2[0] = -vec2[0];
+                Vec_Set4(rdest, -vec2[0], -vec2[1], -vec2[2], -vec2[3]);
             }
 
-            out[0] = ms1 * vec1[0] + vec2[0] * ms2;
-            out[1] = ms1 * vec1[1] + vec2[1] * ms2;
-            out[2] = ms1 * vec1[2] + vec2[2] * ms2;
-            out[3] = ms1 * vec1[3] + vec2[3] * ms2;
+            out[0] = ms1 * vec1[0] + rdest[0] * ms2;
+            out[1] = ms1 * vec1[1] + rdest[1] * ms2;
+            out[2] = ms1 * vec1[2] + rdest[2] * ms2;
+            out[3] = ms1 * vec1[3] + rdest[3] * ms2;
         }
     }
     else
     {
-        out[0] = (vec2[0] - vec1[0]) * movement + vec1[0];
-        out[1] = (vec2[1] - vec1[1]) * movement + vec1[1];
-        out[2] = (vec2[2] - vec1[2]) * movement + vec1[2];
-        out[3] = (vec2[3] - vec1[3]) * movement + vec1[3];
+        out[0] = (rdest[0] - vec1[0]) * movement + vec1[0];
+        out[1] = (rdest[1] - vec1[1]) * movement + vec1[1];
+        out[2] = (rdest[2] - vec1[2]) * movement + vec1[2];
+        out[3] = (rdest[3] - vec1[3]) * movement + vec1[3];
 
         Vec_Normalize4(out);
     }

@@ -65,6 +65,16 @@ enum
     NUMAMMO
 };
 
+typedef enum
+{
+    WS_DEACTIVATED,
+    WS_READY,
+    WS_SWAPOUT,
+    WS_SWAPIN,
+    WS_FIRING,
+    WS_HOLDSTER
+} wpnstate_t;
+
 typedef struct
 {
     vec3_t      origin;
@@ -79,11 +89,12 @@ typedef struct
     anim_t      *fire;
     anim_t      *swap_in;
     anim_t      *swap_out;
+    wpnstate_t  state;
 } weapon_t;
 
 extern weapon_t weapons[NUMWEAPONS];
 
-void G_WeaponThink(weapon_t *weapon);
+void G_WeaponThink(void);
 void G_InitWeapons(void);
 
 //
