@@ -94,9 +94,6 @@ typedef struct
 
 extern weapon_t weapons[NUMWEAPONS];
 
-void G_WeaponThink(void);
-void G_InitWeapons(void);
-
 //
 // gclient - game-side client controller
 // handled mostly on server side and contains
@@ -131,7 +128,9 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
 void G_Shutdown(void);
 void G_Ticker(void);
 void G_NoClip(svclient_t *svcl);
+void G_GiveAll(svclient_t *svcl);
 void G_SetupPlayer(actor_t *actor);
+void G_SwitchWeapon(ENetEvent *sev, ENetPacket *packet);
 void G_ClientThink(void);
 void G_Init(void);
 

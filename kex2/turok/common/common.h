@@ -31,6 +31,7 @@
 #endif
 
 #include "mathlib.h"
+#include "kernel.h"
 
 #define RGBA(r,g,b,a) ((rcolor)((((a)&0xff)<<24)|(((b)&0xff)<<16)|(((g)&0xff)<<8)|((r)&0xff)))
 
@@ -177,7 +178,7 @@ typedef struct
     fint_t  mouse[2];
     short   buttons;
     fint_t  msec;
-    byte    heldtime[2];
+    byte    heldtime[NUM_CTRLKEYS];
 } ticcmd_t;
 
 //
@@ -189,6 +190,7 @@ typedef enum
     cp_say,
     cp_cmd,
     cp_msgserver,
+    cp_changeweapon,
     NUMCLIENTPACKETS
 } cl_packets_t;
 
@@ -201,6 +203,7 @@ typedef enum
     sp_clientinfo,
     sp_msg,
     sp_pmove,
+    sp_weaponinfo,
     NUMSERVERPACKETS
 } sv_packets_t;
 

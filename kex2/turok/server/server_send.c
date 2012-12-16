@@ -104,3 +104,22 @@ void SV_SendPMove(svclient_t *svcl)
     Packet_Write32(packet, svcl->pmove.plane);
     Packet_Send(packet, svcl->peer);
 }
+
+//
+// SV_SendWeaponInfo
+//
+
+void SV_SendWeaponInfo(svclient_t *svcl)
+{
+    ENetPacket *packet;
+
+    if(svcl->state != SVC_STATE_INGAME)
+        return;
+
+    if(!(packet = Packet_New()))
+        return;
+    
+    Packet_Write8(packet, sp_weaponinfo);
+    Packet_Write8(packet, svcl->gclient.activeweapon);
+    Packet_Send(packet, svcl->peer);
+}

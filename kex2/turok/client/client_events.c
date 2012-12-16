@@ -79,6 +79,7 @@ kbool CL_Responder(event_t *ev)
 void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd)
 {
     byte bits = 0;
+    int i;
 
 #define DIFF_TICCMDS(name, bit)         \
     if(cmd->name != 0)                  \
@@ -107,8 +108,9 @@ void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd)
     WRITE_TICCMD16(buttons, CL_TICDIFF_BUTTONS);
 
     Packet_Write32(packet, cmd->msec.i);
-    Packet_Write8(packet, cmd->heldtime[0]);
-    Packet_Write8(packet, cmd->heldtime[1]);
+
+    for(i = 0; i < NUM_CTRLKEYS; i++)
+        Packet_Write8(packet, cmd->heldtime[i]);
 
 #undef WRITE_TICCMD16
 #undef WRITE_TICCMD8
@@ -135,10 +137,23 @@ void CL_BuildTiccmd(void)
     memset(&cmd, 0, sizeof(ticcmd_t));
     ctrl = &control;
 
-#define SET_KEYFLAG(kname, button)  \
-    if(ctrl->key[kname])            \
-    {                               \
-        cmd.buttons |= button;      \
+#define SET_KEYFLAG(kname, button)              \
+    if(ctrl->key[kname])                        \
+    {                                           \
+        cmd.buttons |= button;                  \
+    }                                           \
+    if(cmd.buttons & button &&                  \
+        client.cmd.buttons & button)            \
+    {                                           \
+        if(client.cmd.heldtime[kname] < 0xff)   \
+        {                                       \
+            cmd.heldtime[kname] =               \
+                client.cmd.heldtime[kname] + 1; \
+        }                                       \
+        else                                    \
+        {                                       \
+            cmd.heldtime[kname] = 0xff;         \
+        }                                       \
     }
 
     SET_KEYFLAG(KEY_ATTACK, BT_ATTACK);
@@ -152,34 +167,6 @@ void CL_BuildTiccmd(void)
     SET_KEYFLAG(KEY_PREVWEAP, BT_PREVWEAP);
 
 #undef SET_KEYFLAG
-
-    if(cmd.buttons & BT_FORWARD &&
-        client.cmd.buttons & BT_FORWARD)
-    {
-        if(client.cmd.heldtime[0] < 0xff)
-        {
-            cmd.heldtime[0] =
-                client.cmd.heldtime[0] + 1;
-        }
-        else
-        {
-            cmd.heldtime[0] = 0xff;
-        }
-    }
-
-    if(cmd.buttons & BT_JUMP &&
-        client.cmd.buttons & BT_JUMP)
-    {
-        if(client.cmd.heldtime[1] < 0xff)
-        {
-            cmd.heldtime[1] =
-                client.cmd.heldtime[1] + 1;
-        }
-        else
-        {
-            cmd.heldtime[1] = 0xff;
-        }
-    }
 
     yaw = (ctrl->mousex * M_RAD);
     pitch = (ctrl->mousey * M_RAD);

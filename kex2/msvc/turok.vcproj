@@ -327,6 +327,10 @@
 					RelativePath="..\turok\client\client_main.c"
 					>
 				</File>
+				<File
+					RelativePath="..\turok\client\client_weapon.c"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="server"
@@ -405,10 +409,6 @@
 				</File>
 				<File
 					RelativePath="..\turok\game\game_phys.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\game\game_weap.c"
 					>
 				</File>
 			</Filter>

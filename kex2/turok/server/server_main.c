@@ -188,6 +188,7 @@ static void SV_ReadTiccmd(ENetEvent *sev, ENetPacket *packet)
 {
     int bits = 0;
     int tmp = 0;
+    int i;
     ticcmd_t cmd;
     svclient_t *svcl;
 
@@ -222,10 +223,12 @@ static void SV_ReadTiccmd(ENetEvent *sev, ENetPacket *packet)
 
     Packet_Read32(packet, &tmp);
     cmd.msec.i = tmp;
-    Packet_Read8(packet, &tmp);
-    cmd.heldtime[0] = tmp;
-    Packet_Read8(packet, &tmp);
-    cmd.heldtime[1] = tmp;
+
+    for(i = 0; i < NUM_CTRLKEYS; i++)
+    {
+        Packet_Read8(packet, &tmp);
+        cmd.heldtime[i] = tmp;
+    }
 
     svcl = &svclients[SV_GetPlayerID(sev->peer)];
     memcpy(&svcl->cmd, &cmd, sizeof(ticcmd_t));
@@ -250,11 +253,9 @@ static void SV_ClientCommand(ENetEvent *sev, ENetPacket *packet)
     {
         G_NoClip(svcl);
     }
-    else if(!strcmp(cmd, "god"))
+    else if(!strcmp(cmd, "giveall"))
     {
-    }
-    else if(!strcmp(cmd, "give all"))
-    {
+        G_GiveAll(svcl);
     }
 }
 
@@ -287,6 +288,10 @@ void SV_ProcessClientPackets(ENetPacket *packet, ENetEvent *sev)
 
     case cp_msgserver:
         SV_ClientCommand(sev, packet);
+        break;
+
+    case cp_changeweapon:
+        G_SwitchWeapon(sev, packet);
         break;
 
     default:

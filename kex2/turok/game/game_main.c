@@ -32,6 +32,7 @@
 #include "level.h"
 #include "zone.h"
 #include "game.h"
+#include "packet.h"
 
 //
 // G_Shutdown
@@ -54,6 +55,76 @@ void G_Ticker(void)
         g_currentmap->tics++;
         g_currentmap->time = (float)g_currentmap->tics * 0.1f;
     }
+}
+
+//
+// G_SwitchWeapon
+//
+
+void G_SwitchWeapon(ENetEvent *sev, ENetPacket *packet)
+{
+    svclient_t *svcl;
+    gclient_t *gc;
+    kbool cycle;
+    int wpn_id;
+
+    svcl = &svclients[SV_GetPlayerID(sev->peer)];
+    gc = &svcl->gclient;
+    wpn_id = gc->activeweapon;
+
+    Packet_Read8(packet, &cycle);
+
+    if(cycle == true)
+    {
+        kbool cycle_next;
+
+        Packet_Read8(packet, &cycle_next);
+
+        if(cycle_next == true)
+        {
+            int weapon = gc->activeweapon + 1;
+
+            if(weapon >= NUMWEAPONS)
+                weapon = 0;
+
+            while(weapon != gc->activeweapon)
+            {
+                if(gc->weaponowned[weapon])
+                {
+                    gc->activeweapon = weapon;
+                    break;
+                }
+
+                if(++weapon >= NUMWEAPONS)
+                    weapon = 0;
+            }
+        }
+        else
+        {
+            int weapon = gc->activeweapon - 1;
+
+            if(weapon < 0)
+                weapon = (NUMWEAPONS - 1);
+
+            while(weapon != gc->activeweapon)
+            {
+                if(gc->weaponowned[weapon])
+                {
+                    gc->activeweapon = weapon;
+                    break;
+                }
+
+                if(--weapon < 0)
+                    weapon = (NUMWEAPONS - 1);
+            }
+        }
+    }
+    else
+    {
+    }
+
+    if(wpn_id != gc->activeweapon)
+        SV_SendWeaponInfo(svcl);
 }
 
 //
@@ -130,6 +201,9 @@ void G_SetupPlayer(actor_t *actor)
             pmove->radius           = p->object.width;
             pmove->height           = p->object.height;
             pmove->plane            = p->object.plane_id;
+
+            // TODO - Call this for new players only
+            G_ClientReborn(&svcl->gclient);
         }
     }
 }
@@ -167,12 +241,27 @@ void G_NoClip(svclient_t *svcl)
 }
 
 //
+// G_GiveAll
+//
+
+void G_GiveAll(svclient_t *svcl)
+{
+    int i;
+
+    if(svcl->state != SVC_STATE_INGAME || g_currentmap == NULL)
+        return;
+
+    for(i = 0; i < NUMWEAPONS; i++)
+        svcl->gclient.weaponowned[i] = true;
+}
+
+//
 // G_Init
 //
 
 void G_Init(void)
 {
     Map_Init();
-    G_InitWeapons();
+    CL_InitWeapons();
 }
 

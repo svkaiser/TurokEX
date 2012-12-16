@@ -80,6 +80,7 @@ extern server_t server;
 //
 void SV_SendMsg(ENetEvent *sev, int type);
 void SV_SendPMove(svclient_t *svcl);
+void SV_SendWeaponInfo(svclient_t *svcl);
 void SV_UpdateClientInfo(ENetEvent *sev, svclient_t *svc, int id);
 void SV_SendAcknowledgement(ENetEvent *sev);
 

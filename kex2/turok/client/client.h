@@ -27,6 +27,7 @@
 #include "kernel.h"
 #include "actor.h"
 #include "pred.h"
+#include "game.h"
 
 typedef enum
 {
@@ -72,6 +73,7 @@ typedef struct
 typedef struct
 {
     int             weapon;
+    int             pendingweapon;
 } gamestate_t;
 
 typedef struct
@@ -115,5 +117,8 @@ int CL_Random(void);
 void CL_Connect(const char *address);
 void CL_Run(int msec);
 void CL_Init(void);
+void CL_WeaponThink(void);
+void CL_ChangeWeapon(ENetPacket *packet);
+void CL_InitWeapons(void);
 
 #endif

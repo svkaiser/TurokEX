@@ -20,7 +20,7 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION: Main weapon system
+// DESCRIPTION: Local weapon animations / movement
 //
 //-----------------------------------------------------------------------------
 
@@ -28,6 +28,7 @@
 #include "mathlib.h"
 #include "level.h"
 #include "game.h"
+#include "packet.h"
 
 weapon_t weapons[NUMWEAPONS];
 
@@ -162,30 +163,39 @@ static const weaponinfo_t weaponinfo[NUMWEAPONS] =
 };
 
 //
-// G_ChangeWeapon
+// CL_ChangeWeapon
 //
 
-void G_ChangeWeapon(int weapon)
+void CL_ChangeWeapon(ENetPacket *packet)
 {
     weapon_t *w;
+    int weapon;
+
+    Packet_Read8(packet, &weapon);
 
     if(weapon < 0 || weapon >= NUMWEAPONS)
         return;
 
-    w = &weapons[weapon];
-    client.gt.weapon = weapon;
+    w = &weapons[client.gt.weapon];
+    client.gt.pendingweapon = weapon;
 
-    Mdl_SetAnimState(&w->animstate, w->swap_in,
-        w->speed, ANF_NOINTERRUPT);
+    if(w->animstate.track.anim == w->swap_out)
+        return;
 
-    w->state = WS_SWAPIN;
+    Mdl_SetAnimState(&w->animstate, w->idle,
+            w->speed, ANF_LOOP);
+
+    Mdl_BlendAnimStates(&w->animstate,
+        w->swap_out, w->speed, 4, ANF_NOINTERRUPT);
+
+    w->state = WS_SWAPOUT;
 }
 
 //
-// G_CheckHoldster
+// CL_CheckHoldster
 //
 
-static kbool G_CheckHoldster(weapon_t *weapon)
+static kbool CL_CheckHoldster(weapon_t *weapon)
 {
     if(client.pmove.movetype == MT_CLIMB && weapon->state != WS_HOLDSTER)
     {
@@ -204,14 +214,51 @@ static kbool G_CheckHoldster(weapon_t *weapon)
 }
 
 //
-// G_WeaponStateReady
+// CL_CheckWeaponChange
 //
 
-static void G_WeaponStateReady(weapon_t *weapon)
+static kbool CL_CheckWeaponChange(void)
+{
+    if(client.cmd.buttons & BT_NEXTWEAP && !client.cmd.heldtime[KEY_NEXTWEAP])
+    {
+        ENetPacket *packet;
+
+        if(packet = Packet_New())
+        {
+            Packet_Write8(packet, cp_changeweapon);
+            Packet_Write8(packet, true);
+            Packet_Write8(packet, true);
+            Packet_Send(packet, client.peer);
+            return true;
+        }
+    }
+
+    if(client.cmd.buttons & BT_PREVWEAP && !client.cmd.heldtime[KEY_PREVWEAP])
+    {
+        ENetPacket *packet;
+
+        if(packet = Packet_New())
+        {
+            Packet_Write8(packet, cp_changeweapon);
+            Packet_Write8(packet, true);
+            Packet_Write8(packet, false);
+            Packet_Send(packet, client.peer);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+//
+// CL_WeaponStateReady
+//
+
+static void CL_WeaponStateReady(weapon_t *weapon)
 {
     float d;
 
-    if(G_CheckHoldster(weapon))
+    if(CL_CheckHoldster(weapon))
         return;
 
     if(client.cmd.buttons & BT_ATTACK)
@@ -220,11 +267,14 @@ static void G_WeaponStateReady(weapon_t *weapon)
             weapon->speed, ANF_LOOP);
 
         Mdl_BlendAnimStates(&weapon->animstate,
-            weapon->fire, weapon->speed, 4, ANF_NOINTERRUPT);
+            weapon->fire, weapon->speed, 4, ANF_LOOP|ANF_NOINTERRUPT);
 
         weapon->state = WS_FIRING;
         return;
     }
+
+    if(CL_CheckWeaponChange())
+        return;
 
     d = Vec_Unit2(client.moveframe.velocity);
 
@@ -246,12 +296,54 @@ static void G_WeaponStateReady(weapon_t *weapon)
 }
 
 //
-// G_WeaponStateFire
+// CL_WeaponStateFire
 //
 
-static void G_WeaponStateFire(weapon_t *weapon)
+static void CL_WeaponStateFire(weapon_t *weapon)
 {
-    if(G_CheckHoldster(weapon))
+    if(CL_CheckHoldster(weapon))
+    {
+        weapon->animstate.flags &= ~ANF_LOOP;
+        return;
+    }
+
+    if(!(client.cmd.buttons & BT_ATTACK))
+        weapon->animstate.flags &= ~ANF_LOOP;
+
+    if(weapon->animstate.flags & ANF_STOPPED)
+    {
+        Mdl_BlendAnimStates(&weapon->animstate,
+            weapon->idle, weapon->speed, 8, ANF_LOOP);
+
+        weapon->state = WS_READY;
+    }
+}
+
+//
+// CL_WeaponStateHoldster
+//
+
+static void CL_WeaponStateHoldster(weapon_t *weapon)
+{
+    if(client.pmove.movetype != MT_CLIMB)
+    {
+        Mdl_SetAnimState(&weapon->animstate, weapon->swap_in,
+            weapon->speed, ANF_NOINTERRUPT);
+
+        weapon->state = WS_SWAPIN;
+    }
+}
+
+//
+// CL_WeaponStateSwapIn
+//
+
+static void CL_WeaponStateSwapIn(weapon_t *weapon)
+{
+    if(CL_CheckHoldster(weapon))
+        return;
+
+    if(CL_CheckWeaponChange())
         return;
 
     if(weapon->animstate.flags & ANF_STOPPED)
@@ -264,43 +356,39 @@ static void G_WeaponStateFire(weapon_t *weapon)
 }
 
 //
-// G_WeaponStateHoldster
+// CL_WeaponStateSwapOut
 //
 
-static void G_WeaponStateHoldster(weapon_t *weapon)
+static void CL_WeaponStateSwapOut(weapon_t *weapon)
 {
-    if(client.pmove.movetype != MT_CLIMB)
-    {
-        Mdl_SetAnimState(&weapon->animstate, weapon->swap_in,
-            weapon->speed, ANF_NOINTERRUPT);
+    if(CL_CheckHoldster(weapon))
+        return;
 
-        weapon->state = WS_SWAPIN;
-    }
-}
+    if(CL_CheckWeaponChange())
+        return;
 
-//
-// G_WeaponStateSwapIn
-//
-
-static void G_WeaponStateSwapIn(weapon_t *weapon)
-{
     if(weapon->animstate.flags & ANF_STOPPED)
     {
-        Mdl_BlendAnimStates(&weapon->animstate,
-            weapon->idle, weapon->speed, 8, ANF_LOOP);
+        weapon_t *w;
 
-        weapon->state = WS_READY;
+        client.gt.weapon = client.gt.pendingweapon;
+        w = &weapons[client.gt.weapon];
+
+        Mdl_SetAnimState(&w->animstate, w->swap_in,
+            w->speed, ANF_NOINTERRUPT);
+
+        w->state = WS_SWAPIN;
     }
 }
 
 //
-// G_WeaponThink
+// CL_WeaponThink
 //
 
 #define WEAPONTURN_MAX      0.08f
 #define WEAPONTURN_EPSILON  0.001f
 
-void G_WeaponThink(void)
+void CL_WeaponThink(void)
 {
     weapon_t *weapon;
 
@@ -332,18 +420,19 @@ void G_WeaponThink(void)
     switch(weapon->state)
     {
     case WS_READY:
-        G_WeaponStateReady(weapon);
+        CL_WeaponStateReady(weapon);
         break;
     case WS_SWAPIN:
-        G_WeaponStateSwapIn(weapon);
+        CL_WeaponStateSwapIn(weapon);
         break;
     case WS_SWAPOUT:
+        CL_WeaponStateSwapOut(weapon);
         break;
     case WS_FIRING:
-        G_WeaponStateFire(weapon);
+        CL_WeaponStateFire(weapon);
         break;
     case WS_HOLDSTER:
-        G_WeaponStateHoldster(weapon);
+        CL_WeaponStateHoldster(weapon);
         break;
     default:
         break;
@@ -359,17 +448,37 @@ void G_WeaponThink(void)
 
 static void FCmd_ChangeWeapon(void)
 {
+    weapon_t *w;
+    int weapon;
+
     if(Cmd_GetArgc() < 2)
         return;
 
-    G_ChangeWeapon(atoi(Cmd_GetArgv(1)));
+    weapon = atoi(Cmd_GetArgv(1));
+
+    if(weapon < 0 || weapon >= NUMWEAPONS)
+        return;
+
+    w = &weapons[client.gt.weapon];
+    client.gt.pendingweapon = weapon;
+
+    if(w->animstate.track.anim == w->swap_out)
+        return;
+
+    Mdl_SetAnimState(&w->animstate, w->idle,
+            w->speed, ANF_LOOP);
+
+    Mdl_BlendAnimStates(&w->animstate,
+        w->swap_out, w->speed, 4, ANF_NOINTERRUPT);
+
+    w->state = WS_SWAPOUT;
 }
 
 //
-// G_SetupWeapon
+// CL_SetupWeapon
 //
 
-void G_InitWeapons(void)
+void CL_InitWeapons(void)
 {
     weapon_t *weapon;
     int i;

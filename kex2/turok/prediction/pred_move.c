@@ -447,7 +447,7 @@ static void Pred_Walk(move_t *move)
 
     if(move->cmd->buttons & BT_JUMP)
     {
-        if(Pred_CheckJump(move) && !move->cmd->heldtime[1])
+        if(Pred_CheckJump(move) && !move->cmd->heldtime[KEY_JUMP])
         {
             move->flags |= PMF_JUMP;
             move->velocity[1] = JUMP_VELOCITY;
@@ -514,7 +514,8 @@ static void Pred_Swim(move_t *move)
 
     if(move->cmd->buttons & BT_FORWARD)
     {
-        if(move->cmd->heldtime[0] == 0 && Vec_Unit3(move->velocity) < 3)
+        if(move->cmd->heldtime[KEY_FORWARD] == 0 &&
+            Vec_Unit3(move->velocity) < 3)
         {
             // handle extra thrust
             swim_fwd = SWIM_VELOCITY * 160;
@@ -532,7 +533,7 @@ static void Pred_Swim(move_t *move)
         if(move->movetype == MT_WATER_SURFACE)
         {
             // allow jumping while on the surface
-            if(Pred_CheckJump(move) && !move->cmd->heldtime[1])
+            if(Pred_CheckJump(move) && !move->cmd->heldtime[KEY_JUMP])
             {
                 move->flags |= PMF_JUMP;
                 swim_up = JUMP_VELOCITY;
@@ -591,7 +592,7 @@ static void Pred_ClimbMove(move_t *move)
 
     if(move->cmd->buttons & BT_JUMP)
     {
-        if(!move->cmd->heldtime[1])
+        if(!move->cmd->heldtime[KEY_JUMP])
         {
             move->flags |= PMF_JUMP;
 

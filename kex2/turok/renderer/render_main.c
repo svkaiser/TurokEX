@@ -1059,6 +1059,7 @@ void R_DrawFrame(void)
     R_DrawViewWeapon();
 
     dglEnableClientState(GL_COLOR_ARRAY);
+    dglAlphaFunc(GL_GEQUAL, 0.01f);
 
     R_DrawSkies();
 

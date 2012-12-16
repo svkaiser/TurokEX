@@ -252,6 +252,10 @@ void CL_ProcessServerPackets(ENetPacket *packet, ENetEvent *cev)
         CL_ReadPmove(packet);
         break;
 
+    case sp_weaponinfo:
+        CL_ChangeWeapon(packet);
+        break;
+
     default:
         Com_Warning("Recieved unknown packet type: %i\n", type);
         break;
@@ -344,7 +348,7 @@ static void CL_Ticker(void)
 
     Con_Ticker();
 
-    G_WeaponThink();
+    CL_WeaponThink();
 
     //TEMP
     G_ClientThink();
