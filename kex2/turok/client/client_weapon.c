@@ -267,7 +267,7 @@ static void CL_WeaponStateReady(weapon_t *weapon)
             weapon->speed, ANF_LOOP);
 
         Mdl_BlendAnimStates(&weapon->animstate,
-            weapon->fire, weapon->speed, 4, ANF_LOOP|ANF_NOINTERRUPT);
+            weapon->fire, weapon->speed, 4, ANF_NOINTERRUPT);
 
         weapon->state = WS_FIRING;
         return;

@@ -172,6 +172,15 @@ kbool Cmd_CompleteCommand(char *partial);
 void Cmd_AddCommand(char *name, cmd_t function);
 void Cmd_Init(void);
 
+#define NETBACKUPS  64
+
+typedef struct
+{
+    int ingoing;
+    int outgoing;
+    int acks;
+} netsequence_t;
+
 typedef struct
 {
     fint_t  angle[2];

@@ -381,25 +381,6 @@ static void Pred_UpdatePosition(move_t *move)
 
 static void Pred_SetDirection(move_t *move, float yaw, float pitch, float roll)
 {
-    /*vec4_t ry, rp, rr;
-    vec4_t ryr;
-    vec4_t rot;
-    mtx_t mtx;
-    vec3_t dir1, dir2, dir3;
-
-    Vec_SetQuaternion(rp, pitch, 1, 0, 0);
-    Vec_SetQuaternion(ry, yaw, 0, 1, 0);
-    Vec_SetQuaternion(rr, roll, 0, 0, 1);
-    Vec_MultQuaternion(ryr, ry, rr);
-    Vec_MultQuaternion(rot, rp, ryr);
-    Mtx_ApplyRotation(rot, mtx);
-    Vec_Set3(dir1, 0, 0, 1);
-    Vec_Set3(dir2, 0, 1, 0);
-    Vec_Set3(dir3, 1, 0, 0);
-    Vec_TransformToWorld(mtx, dir1, move->forward);
-    Vec_TransformToWorld(mtx, dir2, move->up);
-    Vec_TransformToWorld(mtx, dir3, move->right);*/
-
     float sy, cy, sp, cp, sr, cr;
 
     sy = (float)sin(yaw);
@@ -692,6 +673,7 @@ void Pred_Move(pred_t *pred)
 void Pred_ClientMovement(void)
 {
     pred_t pred;
+    int current;
 
     if(client.state != CL_STATE_READY)
         return;
@@ -705,7 +687,11 @@ void Pred_ClientMovement(void)
 
     Pred_Move(&pred);
 
+    current = (client.ns.outgoing-1) & (NETBACKUPS-1);
+
     client.pmove = pred.pmove;
+    client.oldmoves[current] = client.pmove;
+    client.latency[current] = client.time;
 }
 
 //

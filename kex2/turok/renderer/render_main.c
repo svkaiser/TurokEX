@@ -1035,8 +1035,6 @@ void R_DrawActors(void)
 
 void R_DrawFrame(void)
 {
-    J_ExecBuffer("KScript_Run('OnRender');");
-
     R_SetupFog();
     R_SetupViewFrame();
     R_SetupClipFrustum();

@@ -138,6 +138,8 @@ static void SV_AddClient(ENetEvent *sev)
             svclients[i].state = SVC_STATE_ACTIVE;
             svclients[i].peer = sev->peer;
             svclients[i].client_id = sev->peer->connectID;
+            svclients[i].ns.ingoing = 0;
+            svclients[i].ns.outgoing = 1;
             memset(&svclients[i].cmd, 0, sizeof(ticcmd_t));
 
             SV_UpdateClientInfo(sev, &svclients[i], i);
@@ -232,6 +234,9 @@ static void SV_ReadTiccmd(ENetEvent *sev, ENetPacket *packet)
 
     svcl = &svclients[SV_GetPlayerID(sev->peer)];
     memcpy(&svcl->cmd, &cmd, sizeof(ticcmd_t));
+
+    Packet_Read32(packet, &svcl->ns.acks);
+    Packet_Read32(packet, &svcl->ns.ingoing);
 
 #undef READ_TICCMD16
 #undef READ_TICCMD8

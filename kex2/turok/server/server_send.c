@@ -102,6 +102,10 @@ void SV_SendPMove(svclient_t *svcl)
     Packet_Write32(packet, svcl->pmove.flags);
     Packet_Write32(packet, svcl->pmove.movetype);
     Packet_Write32(packet, svcl->pmove.plane);
+    Packet_Write32(packet, svcl->ns.ingoing);
+    Packet_Write32(packet, svcl->ns.outgoing);
+    svcl->ns.outgoing++;
+
     Packet_Send(packet, svcl->peer);
 }
 

@@ -54,6 +54,7 @@ static JSBool sys_print(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
         JS_free(cx, bytes);
     }
 
+    JS_SET_RVAL(cx, rval, JSVAL_VOID);
     return JS_TRUE;
 }
 
@@ -107,7 +108,7 @@ static JSBool sys_getCvar(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
         return JS_FALSE;
 
     if(!(str = JS_ValueToString(cx, argv[0])) ||
-            !(bytes = JS_EncodeString(cx, str)))
+        !(bytes = JS_EncodeString(cx, str)))
     {
         return JS_FALSE;
     }
@@ -134,7 +135,7 @@ static JSBool sys_execCommand(JSContext *cx, JSObject *obj, uintN argc, jsval *a
         return JS_FALSE;
 
     if(!(str = JS_ValueToString(cx, argv[0])) ||
-            !(bytes = JS_EncodeString(cx, str)))
+        !(bytes = JS_EncodeString(cx, str)))
     {
         return JS_FALSE;
     }
@@ -143,6 +144,38 @@ static JSBool sys_execCommand(JSContext *cx, JSObject *obj, uintN argc, jsval *a
     JS_free(cx, bytes);
 
     JS_SET_RVAL(cx, rval, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+//
+// sys_addInput
+//
+
+static JSBool sys_addInput(JSContext *cx, uintN argc, jsval *vp)
+{
+    jsval *v;
+    jsdouble n;
+    JSString *str;
+    char *bytes;
+
+    if(argc != 2)
+        return JS_FALSE;
+
+    v = JS_ARGV(cx, vp);
+
+    JS_GETNUMBER(n, v, 0);
+
+    if(!(str = JS_ValueToString(cx, v[1])) ||
+        !(bytes = JS_EncodeString(cx, str)))
+    {
+        return JS_FALSE;
+    }
+
+    Key_AddAction((byte)n, bytes);
+
+    JS_free(cx, bytes);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
@@ -212,6 +245,7 @@ JSFunctionSpec Sys_functions[] =
     JS_FN("ticks",      sys_getTicks,       0, 0, 0),
     JS_FS("getCvar",    sys_getCvar,        1, 0, 0),
     JS_FS("callCmd",    sys_execCommand,    1, 0, 0),
+    JS_FN("addInput",   sys_addInput,       2, 0, 0),
     JS_FN("GC",         sys_GC,             0, 0, 0),
     JS_FN("maybeGC",    sys_maybeGC,        0, 0, 0),
     JS_FS_END

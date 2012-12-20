@@ -67,7 +67,6 @@ typedef struct
 {
     int             time;
     int             tics;
-    int             difftime;
 } serverstate_t;
 
 typedef struct
@@ -96,10 +95,13 @@ typedef struct
     float           runtime;
     kbool           local;
     int             tics;
+    int             latency[NETBACKUPS];
     ticcmd_t        cmd;
     pmove_t         pmove;
+    pmove_t         oldmoves[NETBACKUPS];
     moveframe_t     moveframe;
     vec3_t          pred_diff;
+    netsequence_t   ns;
     serverstate_t   st;
     gamestate_t     gt;
 } client_t;

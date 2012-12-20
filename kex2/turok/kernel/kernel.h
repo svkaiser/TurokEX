@@ -71,6 +71,8 @@ typedef enum
     NUM_CTRLKEYS
 } ctrlkey_t;
 
+#define MAXACTIONS  256
+
 typedef struct
 {
     float       mousex;
@@ -78,6 +80,7 @@ typedef struct
     float       joyx;
     float       joyy;
     ctrlkey_t   key[NUM_CTRLKEYS];
+    byte        actions[MAXACTIONS];
     int         flags;
 } control_t;
 
@@ -85,6 +88,7 @@ extern control_t control;
 extern char keycode[2][MAX_KEYS];
 void Key_ExecCmd(char key, kbool keyup);
 void Key_WriteBindings(FILE *file);
+void Key_AddAction(byte id, char *name);
 void Key_ClearControls(void);
 void Key_Init(void);
 

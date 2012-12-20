@@ -58,6 +58,7 @@ struct svclient_s
     svclient_state_e    state;
     ticcmd_t            cmd;
     pmove_t             pmove;
+    netsequence_t       ns;
     gclient_t           gclient;
 };
 

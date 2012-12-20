@@ -30,6 +30,15 @@
 #include "kernel.h"
 #include "zone.h"
 
+typedef struct keyaction_s
+{
+    byte                keyid;
+    char                name[32];
+    struct keyaction_s  *next;
+} keyaction_t;
+
+keyaction_t *keyactions[MAX_HASH];
+
 char keycode[2][MAX_KEYS];
 
 control_t control;
@@ -272,9 +281,7 @@ static void Key_HandleControl(int ctrl)
     if(ctrl & CKF_UP)
     {
         if((control.key[ctrlkey] & CKF_COUNTMASK) > 0)
-        {
             control.key[ctrlkey]--;
-        }
     }
     else
     {
@@ -282,23 +289,74 @@ static void Key_HandleControl(int ctrl)
     }
 }
 
-#define CONTROL_KEY(name, data)                                             \
-    static void FCmd_ ## name ## Down(void) { Key_HandleControl(data); }    \
-    static void FCmd_ ## name ## Up(void) { Key_HandleControl(data|CKF_UP); }
+//
+// Key_AddAction
+//
 
-CONTROL_KEY(Attack,         KEY_ATTACK);
-CONTROL_KEY(Forward,        KEY_FORWARD);
-CONTROL_KEY(Back,           KEY_BACK);
-CONTROL_KEY(Left,           KEY_LEFT);
-CONTROL_KEY(Right,          KEY_RIGHT);
-CONTROL_KEY(StrafeLeft,     KEY_STRAFELEFT);
-CONTROL_KEY(StrafeRight,    KEY_STRAFERIGHT);
-CONTROL_KEY(Run,            KEY_RUN);
-CONTROL_KEY(Jump,           KEY_JUMP);
-CONTROL_KEY(LookUp,         KEY_LOOKUP);
-CONTROL_KEY(LookDown,       KEY_LOOKDOWN);
-CONTROL_KEY(NextWeap,       KEY_NEXTWEAP);
-CONTROL_KEY(PrevWeap,       KEY_PREVWEAP);
+static void FCmd_KeyAction(void);
+
+void Key_AddAction(byte id, char *name)
+{
+    keyaction_t *keyaction;
+    unsigned int hash;
+    
+    if(strlen(name) >= MAX_FILEPATH)
+        Com_Error("Key_AddAction: \"%s\" is too long", name);
+
+    keyaction = Z_Calloc(sizeof(keyaction_t), PU_STATIC, 0);
+    keyaction->keyid = id;
+    strcpy(keyaction->name, name);
+
+    Cmd_AddCommand(keyaction->name, FCmd_KeyAction);
+
+    hash = Com_HashFileName(keyaction->name);
+    keyaction->next = keyactions[hash];
+    keyactions[hash] = keyaction;
+}
+
+//
+// Key_FindAction
+//
+
+int Key_FindAction(char *name)
+{
+    keyaction_t *action;
+    unsigned int hash;
+
+    if(name[0] == 0)
+        return -1;
+
+    hash = Com_HashFileName(name);
+
+    for(action = keyactions[hash]; action; action = action->next)
+    {
+        if(!strcmp(name, action->name))
+            return action->keyid;
+    }
+
+    return -1;
+}
+
+//
+// FCmd_KeyAction
+//
+
+static void FCmd_KeyAction(void)
+{
+    char *argv;
+    int action;
+
+    argv = Cmd_GetArgv(0);
+    action = Key_FindAction(argv);
+
+    if(action == -1)
+        return;
+
+    if(argv[0] == '-')
+        action |= CKF_UP;
+
+    Key_HandleControl(action);
+}
 
 //
 // FCmd_Bind
@@ -374,6 +432,24 @@ static void FCmd_ListBinds(void)
     }
 }
 
+#define CONTROL_KEY(name, data)                                             \
+    static void FCmd_ ## name ## Down(void) { Key_HandleControl(data); }    \
+    static void FCmd_ ## name ## Up(void) { Key_HandleControl(data|CKF_UP); }
+
+CONTROL_KEY(Attack,         KEY_ATTACK);
+CONTROL_KEY(Forward,        KEY_FORWARD);
+CONTROL_KEY(Back,           KEY_BACK);
+CONTROL_KEY(Left,           KEY_LEFT);
+CONTROL_KEY(Right,          KEY_RIGHT);
+CONTROL_KEY(StrafeLeft,     KEY_STRAFELEFT);
+CONTROL_KEY(StrafeRight,    KEY_STRAFERIGHT);
+CONTROL_KEY(Run,            KEY_RUN);
+CONTROL_KEY(Jump,           KEY_JUMP);
+CONTROL_KEY(LookUp,         KEY_LOOKUP);
+CONTROL_KEY(LookDown,       KEY_LOOKDOWN);
+CONTROL_KEY(NextWeap,       KEY_NEXTWEAP);
+CONTROL_KEY(PrevWeap,       KEY_PREVWEAP);
+
 //
 // Key_Init
 //
@@ -413,9 +489,7 @@ void Key_Init(void)
     keycode[1]['`'] = '~';
     
     for(c = 'a'; c <= 'z'; c++)
-    {
         keycode[1][c] = toupper(c);
-    }
 
     Cmd_AddCommand("bind", FCmd_Bind);
     Cmd_AddCommand("unbind", FCmd_UnBind);

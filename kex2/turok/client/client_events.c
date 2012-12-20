@@ -112,6 +112,11 @@ void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd)
     for(i = 0; i < NUM_CTRLKEYS; i++)
         Packet_Write8(packet, cmd->heldtime[i]);
 
+    Packet_Write32(packet, client.ns.ingoing);
+    Packet_Write32(packet, client.ns.outgoing);
+
+    client.ns.outgoing++;
+
 #undef WRITE_TICCMD16
 #undef WRITE_TICCMD8
 #undef DIFF_TICCMDS

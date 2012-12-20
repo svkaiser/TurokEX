@@ -498,15 +498,18 @@ JSBool Vector_construct(JSContext *cx, JSObject *obj, uintN argc,
 {
     jsval *v;
     vec3_t vector;
-    jsdouble x;
-    jsdouble y;
-    jsdouble z;
+    jsdouble x = 0;
+    jsdouble y = 0;
+    jsdouble z = 0;
 
-    v = JS_ARGV(cx, argv);
+    if(argc == 3)
+    {
+        v = JS_ARGV(cx, argv);
 
-    JS_GETNUMBER(x, v, -2);
-    JS_GETNUMBER(y, v, -1);
-    JS_GETNUMBER(z, v,  0);
+        JS_GETNUMBER(x, v, -2);
+        JS_GETNUMBER(y, v, -1);
+        JS_GETNUMBER(z, v,  0);
+    }
 
     Vec_Set3(vector, (float)x, (float)y, (float)z);
 

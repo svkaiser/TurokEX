@@ -147,12 +147,14 @@ static void CL_BuildMoveFrame(void)
     frame = &client.moveframe;
     lerp = client.moveframe.lerp;
 
-    Vec_Lerp3(frame->origin, lerp, client.pmove.origin, client.pred_diff);
     Vec_Copy3(frame->velocity, client.pmove.velocity);
 
-    frame->yaw      = client.pmove.angles[0];
-    frame->pitch    = client.pmove.angles[1];
-    frame->plane    = &g_currentmap->planes[client.pmove.plane];
+    frame->origin[0]    = -client.pred_diff[0] * lerp + client.pmove.origin[0];
+    frame->origin[1]    = -client.pred_diff[1] * lerp + client.pmove.origin[1];
+    frame->origin[2]    = -client.pred_diff[2] * lerp + client.pmove.origin[2];
+    frame->yaw          = client.pmove.angles[0];
+    frame->pitch        = client.pmove.angles[1];
+    frame->plane        = &g_currentmap->planes[client.pmove.plane];
 }
 
 //
@@ -161,10 +163,9 @@ static void CL_BuildMoveFrame(void)
 
 static void CL_ReadPmove(ENetPacket *packet)
 {
-    pmove_t *oldmove;
     pmove_t pmove;
+    pmove_t *clmove;
     int time;
-    vec3_t diff;
 
     if(client.state != CL_STATE_READY)
         return;
@@ -200,32 +201,21 @@ static void CL_ReadPmove(ENetPacket *packet)
     Packet_Read32(packet, &(int)pmove.flags);
     Packet_Read32(packet, &pmove.movetype);
     Packet_Read32(packet, &pmove.plane);
+    Packet_Read32(packet, &client.ns.acks);
+    Packet_Read32(packet, &client.ns.ingoing);
 
-    oldmove = &client.pmove;
+    clmove = &client.oldmoves[client.ns.acks & (NETBACKUPS-1)];
+    Vec_Sub(client.pred_diff, pmove.origin, clmove->origin);
+    Vec_Copy3(clmove->origin, pmove.origin);
+    Vec_Copy3(clmove->velocity, pmove.velocity);
 
-    Vec_Sub(diff, pmove.origin, oldmove->origin);
-
-    if((float)fabs(
-        Vec_Unit3(oldmove->velocity) -
-        (Vec_Length3(diff, pmove.velocity) - Vec_Unit3(diff))) >= 2)
+    if(clmove->plane != pmove.plane)
     {
-        client.st.difftime++;
+        clmove->plane = pmove.plane;
+        client.moveframe.plane = &g_currentmap->planes[pmove.plane];
+        Vec_Copy3(client.pmove.origin, pmove.origin);
+        Vec_Copy3(client.pmove.velocity, pmove.velocity);
     }
-    else
-        client.st.difftime = 0;
-
-    if(time > 1 || client.st.difftime > 10)
-    {
-        oldmove->movetype = pmove.movetype;
-        oldmove->plane = pmove.plane;
-        client.moveframe.plane  = &g_currentmap->planes[oldmove->plane];
-
-        Vec_Copy3(oldmove->origin, pmove.origin);
-        Vec_Copy3(oldmove->velocity, pmove.velocity);
-        Vec_Copy3(client.pred_diff, pmove.origin);
-    }
-    else
-        client.moveframe.lerp = 0;
 }
 
 //
@@ -279,6 +269,8 @@ static void CL_CheckHostMsg(void)
         case ENET_EVENT_TYPE_CONNECT:
             Com_Printf("connected to host\n");
             client.state = CL_STATE_CONNECTED;
+            client.ns.ingoing = 0;
+            client.ns.outgoing = 1;
             break;
 
         case ENET_EVENT_TYPE_DISCONNECT:
@@ -327,9 +319,10 @@ static void CL_DrawDebug(void)
         Draw_Text(32, 96,  COLOR_GREEN, 1, "tics: %i", client.tics);
         Draw_Text(32, 112, COLOR_GREEN, 1, "max msecs: %f",
             (1000.0f / cl_maxfps.value) / 1000.0f);
-        Draw_Text(32, 128, COLOR_GREEN, 1, "diff tics: %i", client.st.difftime);
-        Draw_Text(32, 144, COLOR_GREEN, 1, "server time: %i",
+        Draw_Text(32, 128, COLOR_GREEN, 1, "server time: %i",
             client.st.tics - (client.st.time/100));
+        Draw_Text(32, 144, COLOR_GREEN, 1, "latency: %i",
+            client.time - client.latency[client.ns.acks & (NETBACKUPS-1)]);
     }
 
     if(developer.value)
