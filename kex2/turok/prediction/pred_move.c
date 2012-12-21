@@ -259,11 +259,7 @@ static void Pred_UpdatePosition(move_t *move)
 
         if(dist < ONPLANE_EPSILON)
         {
-            vec3_t lerp;
-
-            // lerp player back to the surface
-            Vec_Set3(lerp, position[0], position[1] - dist, position[2]);
-            Vec_Lerp3(position, 0.125f, position, lerp);
+            position[1] = position[1] - dist;
 
             // continue sliding if on a slope
             if(!Plane_IsAWall(pl) && move->movetype != MT_WATER_UNDER)

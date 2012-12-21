@@ -206,15 +206,28 @@ static void CL_ReadPmove(ENetPacket *packet)
 
     clmove = &client.oldmoves[client.ns.acks & (NETBACKUPS-1)];
     Vec_Sub(client.pred_diff, pmove.origin, clmove->origin);
-    Vec_Copy3(clmove->origin, pmove.origin);
-    Vec_Copy3(clmove->velocity, pmove.velocity);
 
-    if(clmove->plane != pmove.plane)
+    if(Vec_Unit3(client.pred_diff) >= 0.01f)
     {
-        clmove->plane = pmove.plane;
-        client.moveframe.plane = &g_currentmap->planes[pmove.plane];
+        int i;
+
         Vec_Copy3(client.pmove.origin, pmove.origin);
         Vec_Copy3(client.pmove.velocity, pmove.velocity);
+        client.moveframe.plane = &g_currentmap->planes[pmove.plane];
+        client.pmove.plane = pmove.plane;
+        client.pmove.movetype = pmove.movetype;
+        client.pmove.flags = pmove.flags;
+
+        for(i = client.ns.acks; i < client.ns.outgoing; i++)
+        {
+            int frame = (i & (NETBACKUPS-1));
+
+            Vec_Copy3(client.oldmoves[frame].origin, pmove.origin);
+            Vec_Copy3(client.oldmoves[frame].velocity, pmove.velocity);
+            client.oldmoves[frame].plane = pmove.plane;
+            client.oldmoves[frame].movetype = pmove.movetype;
+            client.oldmoves[frame].flags = pmove.flags;
+        }
     }
 }
 
