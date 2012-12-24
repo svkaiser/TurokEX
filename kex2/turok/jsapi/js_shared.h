@@ -24,6 +24,21 @@
 #define _JS_SHARED_H_
 
 #include "jsapi.h"
+#include "shared.h"
+
+extern JSContext    *js_context;
+extern JSObject     *js_gobject;
+
+typedef struct js_scrobj_s
+{
+    char name[MAX_FILEPATH];
+    JSScript *script;
+    JSObject *obj;
+    struct js_scrobj_s *next;
+} js_scrobj_t;
+
+js_scrobj_t *J_LoadScript(const char *name);
+void J_ExecScriptObj(js_scrobj_t *scobj);
 
 #define JS_DEFINEOBJECT(name)                                                       \
     js_obj ##name = J_AddObject(&name ## _class, name ## _functions,                \
@@ -97,6 +112,11 @@
     if(JSVAL_IS_NULL(v[a]))                                                         \
         return JS_FALSE
 
+#define JS_GETOBJECT(val, v, a)                                                     \
+    JS_ValueToObject(cx, v[a], &val);                                               \
+    if(JSVAL_IS_NULL(v[a]))                                                         \
+        return JS_FALSE
+
 #define JS_THISVECTOR(vec, v)                                                       \
     if(!(vec = (vec3_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),            \
         &Vector_class, NULL)))                                                      \
@@ -164,6 +184,7 @@ JS_EXTERNOBJECT(GL);
 JS_EXTERNOBJECT(Client);
 JS_EXTERNOBJECT(Cmd);
 JS_EXTERNOBJECT(Angle);
+JS_EXTERNOBJECT(MoveController);
 JS_EXTERNCLASS(Vector);
 JS_EXTERNCLASS(Quaternion);
 JS_EXTERNCLASS(Matrix);

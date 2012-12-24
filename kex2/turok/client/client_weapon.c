@@ -219,7 +219,7 @@ static kbool CL_CheckHoldster(weapon_t *weapon)
 
 static kbool CL_CheckWeaponChange(void)
 {
-    if(client.cmd.buttons & BT_NEXTWEAP && !client.cmd.heldtime[KEY_NEXTWEAP])
+    if(client.cmd.buttons[11] && !client.cmd.heldtime[11])
     {
         ENetPacket *packet;
 
@@ -233,7 +233,7 @@ static kbool CL_CheckWeaponChange(void)
         }
     }
 
-    if(client.cmd.buttons & BT_PREVWEAP && !client.cmd.heldtime[KEY_PREVWEAP])
+    if(client.cmd.buttons[12] && !client.cmd.heldtime[12])
     {
         ENetPacket *packet;
 
@@ -261,7 +261,7 @@ static void CL_WeaponStateReady(weapon_t *weapon)
     if(CL_CheckHoldster(weapon))
         return;
 
-    if(client.cmd.buttons & BT_ATTACK)
+    if(client.cmd.buttons[0])
     {
         Mdl_SetAnimState(&weapon->animstate, weapon->idle,
             weapon->speed, ANF_LOOP);
@@ -307,7 +307,7 @@ static void CL_WeaponStateFire(weapon_t *weapon)
         return;
     }
 
-    if(!(client.cmd.buttons & BT_ATTACK))
+    if(!(client.cmd.buttons[0]))
         weapon->animstate.flags &= ~ANF_LOOP;
 
     if(weapon->animstate.flags & ANF_STOPPED)

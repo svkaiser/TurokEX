@@ -52,25 +52,6 @@ int KF_ReadTextFile(const char *name, byte **buffer);
 #define CKF_UP          0x4000
 #define CKF_COUNTMASK   0x00ff
 
-typedef enum
-{
-    KEY_ATTACK,
-    KEY_FORWARD,
-    KEY_BACK,
-    KEY_LEFT,
-    KEY_RIGHT,
-    KEY_STRAFELEFT,
-    KEY_STRAFERIGHT,
-    KEY_RUN,
-    KEY_JUMP,
-    KEY_LOOKUP,
-    KEY_LOOKDOWN,
-    KEY_NEXTWEAP,
-    KEY_PREVWEAP,
-    KEY_CENTER,
-    NUM_CTRLKEYS
-} ctrlkey_t;
-
 #define MAXACTIONS  256
 
 typedef struct
@@ -79,8 +60,7 @@ typedef struct
     float       mousey;
     float       joyx;
     float       joyy;
-    ctrlkey_t   key[NUM_CTRLKEYS];
-    byte        actions[MAXACTIONS];
+    int         actions[MAXACTIONS];
     int         flags;
 } control_t;
 
@@ -89,6 +69,7 @@ extern char keycode[2][MAX_KEYS];
 void Key_ExecCmd(char key, kbool keyup);
 void Key_WriteBindings(FILE *file);
 void Key_AddAction(byte id, char *name);
+int Key_FindAction(char *name);
 void Key_ClearControls(void);
 void Key_Init(void);
 

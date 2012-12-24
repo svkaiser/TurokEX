@@ -333,4 +333,6 @@ void KF_Init(void)
     {
         Cvar_Set(kf_basepath.name, KF_BasePath());
     }
+
+    KF_LoadZipFile("game.kpf");
 }

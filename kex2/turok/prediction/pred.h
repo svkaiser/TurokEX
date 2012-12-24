@@ -49,6 +49,31 @@ typedef struct
 {
     vec3_t      origin;
     vec3_t      velocity;
+    vec3_t      forward;
+    vec3_t      right;
+    vec3_t      up;
+    vec3_t      accel;
+    float       width;
+    float       height;
+    float       center_y;
+    float       view_y;
+    float       yaw;
+    float       pitch;
+    float       roll;
+    float       deltatime;
+    int         movetype;
+    plane_t     *plane;
+    pmflags_t   flags;
+    ticcmd_t    *cmd;
+} move_t;
+
+extern move_t movecontroller;
+
+typedef struct
+{
+    vec3_t      origin;
+    vec3_t      velocity;
+    vec3_t      accel;
     float       angles[3];
     float       radius;
     float       height;

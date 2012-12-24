@@ -37,8 +37,7 @@ enum cmd_enum
     CMD_ANGLE_X,
     CMD_ANGLE_Y,
     CMD_MOUSE_X,
-    CMD_MOUSE_Y,
-    CMD_BUTTONS
+    CMD_MOUSE_Y
 };
 
 //
@@ -50,22 +49,78 @@ static JSBool cmd_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
     switch(JSVAL_TO_INT(id))
     {
     case CMD_ANGLE_X:
-        return JS_NewNumberValue(cx, client.cmd.angle[0].f, vp);
+        return JS_NewNumberValue(cx, movecontroller.cmd->angle[0].f, vp);
 
     case CMD_ANGLE_Y:
-        return JS_NewNumberValue(cx, client.cmd.angle[1].f, vp);
+        return JS_NewNumberValue(cx, movecontroller.cmd->angle[1].f, vp);
 
     case CMD_MOUSE_X:
-        return JS_NewNumberValue(cx, client.cmd.mouse[0].f, vp);
+        return JS_NewNumberValue(cx, movecontroller.cmd->mouse[0].f, vp);
 
     case CMD_MOUSE_Y:
-        return JS_NewNumberValue(cx, client.cmd.mouse[1].f, vp);
-
-    case CMD_BUTTONS:
-        return JS_NewNumberValue(cx, client.cmd.buttons, vp);
+        return JS_NewNumberValue(cx, movecontroller.cmd->mouse[1].f, vp);
     }
 
     return JS_FALSE;
+}
+
+//
+// cmd_action
+//
+
+static JSBool cmd_action(JSContext *cx, uintN argc, jsval *vp)
+{
+    jsval *v;
+    JSString *str;
+    char *bytes;
+    int action;
+
+    if(argc != 1)
+        return JS_FALSE;
+
+    v = JS_ARGV(cx, vp);
+
+    if(!(str = JS_ValueToString(cx, v[0])) ||
+        !(bytes = JS_EncodeString(cx, str)))
+    {
+        return JS_FALSE;
+    }
+
+    action = Key_FindAction(bytes);
+    JS_free(cx, bytes);
+
+    JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(action != -1 &&
+        movecontroller.cmd->buttons[action]));
+    return JS_TRUE;
+}
+
+//
+// cmd_actionheld
+//
+
+static JSBool cmd_actionheld(JSContext *cx, uintN argc, jsval *vp)
+{
+    jsval *v;
+    JSString *str;
+    char *bytes;
+    int action;
+
+    if(argc != 1)
+        return JS_FALSE;
+
+    v = JS_ARGV(cx, vp);
+
+    if(!(str = JS_ValueToString(cx, v[0])) ||
+        !(bytes = JS_EncodeString(cx, str)))
+    {
+        return JS_FALSE;
+    }
+
+    action = Key_FindAction(bytes);
+    JS_free(cx, bytes);
+
+    return JS_NewNumberValue(cx, action == -1 ? 0 :
+        movecontroller.cmd->heldtime[action], vp);
 }
 
 //
@@ -97,7 +152,6 @@ JSPropertySpec Cmd_props[] =
     { "angle_y",    CMD_ANGLE_Y,    JSPROP_ENUMERATE,   NULL, NULL },
     { "mouse_x",    CMD_MOUSE_X,    JSPROP_ENUMERATE,   NULL, NULL },
     { "mouse_y",    CMD_MOUSE_Y,    JSPROP_ENUMERATE,   NULL, NULL },
-    { "buttons",    CMD_BUTTONS,    JSPROP_ENUMERATE,   NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 
@@ -107,5 +161,7 @@ JSPropertySpec Cmd_props[] =
 
 JSFunctionSpec Cmd_functions[] =
 {
+    JS_FN("action",     cmd_action,     1, 0, 0),
+    JS_FN("actionHeld", cmd_actionheld, 1, 0, 0),
     JS_FS_END
 };

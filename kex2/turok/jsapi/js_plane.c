@@ -134,6 +134,21 @@ static JSBool plane_getNormal(JSContext *cx, uintN argc, jsval *vp)
     Plane_GetNormal(normal, plane);
     JS_NEWVECTOR(vp, normal);
 
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+//
+// plane_isAWall
+//
+
+static JSBool plane_isAWall(JSContext *cx, uintN argc, jsval *vp)
+{
+    plane_t *plane = NULL;
+
+    JS_THISPLANE(plane, vp);
+
+    JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(Plane_IsAWall(plane)));
     return JS_TRUE;
 }
 
@@ -184,5 +199,6 @@ JSFunctionSpec Plane_functions[] =
 {
     JS_FN("distance",   plane_distance,         1, 0, 0),
     JS_FN("getNormal",  plane_getNormal,        0, 0, 0),
+    JS_FN("isAWall",    plane_isAWall,          0, 0, 0),
     JS_FS_END
 };

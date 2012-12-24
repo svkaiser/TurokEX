@@ -188,48 +188,31 @@ void SV_CreateHost(void)
 
 static void SV_ReadTiccmd(ENetEvent *sev, ENetPacket *packet)
 {
-    int bits = 0;
     int tmp = 0;
+    int numactions;
     int i;
     ticcmd_t cmd;
     svclient_t *svcl;
 
     memset(&cmd, 0, sizeof(ticcmd_t));
 
-#define READ_TICCMD8(name, bit)             \
-    if(bits & bit)                          \
-    {                                       \
-        Packet_Read8(packet, &tmp);         \
-        cmd.name = tmp;                     \
-    }
-
-#define READ_TICCMD16(name, bit)            \
-    if(bits & bit)                          \
-    {                                       \
-        Packet_Read16(packet, &tmp);        \
-        cmd.name = tmp;                     \
-    }
-
-#define READ_TICCMD32(name, bit)            \
-    if(bits & bit)                          \
-    {                                       \
-        Packet_Read32(packet, &tmp);        \
-        cmd.name = tmp;                     \
-    }
-
-    Packet_Read8(packet, &bits);
-
-    READ_TICCMD32(angle[0].i, CL_TICDIFF_TURN1);
-    READ_TICCMD32(angle[1].i, CL_TICDIFF_TURN2);
-    READ_TICCMD16(buttons, CL_TICDIFF_BUTTONS);
-
+    Packet_Read32(packet, &tmp);
+    cmd.angle[0].i = tmp;
+    Packet_Read32(packet, &tmp);
+    cmd.angle[1].i = tmp;
     Packet_Read32(packet, &tmp);
     cmd.msec.i = tmp;
 
-    for(i = 0; i < NUM_CTRLKEYS; i++)
+    Packet_Read32(packet, &numactions);
+
+    for(i = 0; i < numactions; i++)
     {
+        int btn = 0;
+
+        Packet_Read8(packet, &btn);
+        cmd.buttons[btn] = true;
         Packet_Read8(packet, &tmp);
-        cmd.heldtime[i] = tmp;
+        cmd.heldtime[btn] = tmp;
     }
 
     svcl = &svclients[SV_GetPlayerID(sev->peer)];
@@ -237,9 +220,6 @@ static void SV_ReadTiccmd(ENetEvent *sev, ENetPacket *packet)
 
     Packet_Read32(packet, &svcl->ns.acks);
     Packet_Read32(packet, &svcl->ns.ingoing);
-
-#undef READ_TICCMD16
-#undef READ_TICCMD8
 }
 
 //

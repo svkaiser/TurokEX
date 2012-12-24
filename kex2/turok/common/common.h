@@ -185,9 +185,9 @@ typedef struct
 {
     fint_t  angle[2];
     fint_t  mouse[2];
-    short   buttons;
     fint_t  msec;
-    byte    heldtime[NUM_CTRLKEYS];
+    byte    buttons[MAXACTIONS];
+    byte    heldtime[MAXACTIONS];
 } ticcmd_t;
 
 //

@@ -29,25 +29,6 @@
 #include "pred.h"
 #include "game.h"
 
-typedef enum
-{
-    BT_ATTACK       = 1,
-    BT_JUMP         = 2,
-    BT_NEXTWEAP     = 4,
-    BT_PREVWEAP     = 8,
-    BT_CENTER       = 16,
-    BT_FORWARD      = 32,
-    BT_BACKWARD     = 64,
-    BT_STRAFELEFT   = 128,
-    BT_STRAFERIGHT  = 256
-} buttoncode2_t;
-
-#define CL_TICDIFF_TURN1        (1 << 0)
-#define CL_TICDIFF_TURN2        (1 << 1)
-#define CL_TICDIFF_BUTTONS      (1 << 2)
-#define CL_TICDIFF_MOUSEX       (1 << 0)
-#define CL_TICDIFF_MOUSEY       (1 << 1)
-
 #define MAXEVENTS 64
 
 extern event_t  events[MAXEVENTS];

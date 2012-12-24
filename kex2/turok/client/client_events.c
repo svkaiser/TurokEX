@@ -78,39 +78,28 @@ kbool CL_Responder(event_t *ev)
 
 void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd)
 {
-    byte bits = 0;
+    int numactions = 0;
     int i;
 
-#define DIFF_TICCMDS(name, bit)         \
-    if(cmd->name != 0)                  \
-    bits |= bit
+    for(i = 0; i < MAXACTIONS; i++)
+    {
+        if(cmd->buttons[i])
+            numactions++;
+    }
 
-#define WRITE_TICCMD8(name, bit)        \
-    if(bits & bit)                      \
-    Packet_Write8(packet, cmd->name)
-
-#define WRITE_TICCMD16(name, bit)       \
-    if(bits & bit)                      \
-    Packet_Write16(packet, cmd->name)
-
-#define WRITE_TICCMD32(name, bit)       \
-    if(bits & bit)                      \
-    Packet_Write32(packet, cmd->name)
-
-    DIFF_TICCMDS(angle[0].i, CL_TICDIFF_TURN1);
-    DIFF_TICCMDS(angle[1].i, CL_TICDIFF_TURN2);
-    DIFF_TICCMDS(buttons, CL_TICDIFF_BUTTONS);
-
-    Packet_Write8(packet, bits);
-
-    WRITE_TICCMD32(angle[0].i, CL_TICDIFF_TURN1);
-    WRITE_TICCMD32(angle[1].i, CL_TICDIFF_TURN2);
-    WRITE_TICCMD16(buttons, CL_TICDIFF_BUTTONS);
-
+    Packet_Write32(packet, cmd->angle[0].i);
+    Packet_Write32(packet, cmd->angle[1].i);
     Packet_Write32(packet, cmd->msec.i);
+    Packet_Write32(packet, numactions);
 
-    for(i = 0; i < NUM_CTRLKEYS; i++)
-        Packet_Write8(packet, cmd->heldtime[i]);
+    for(i = 0; i < MAXACTIONS; i++)
+    {
+        if(cmd->buttons[i])
+        {
+            Packet_Write8(packet, i);
+            Packet_Write8(packet, cmd->heldtime[i]);
+        }
+    }
 
     Packet_Write32(packet, client.ns.ingoing);
     Packet_Write32(packet, client.ns.outgoing);
@@ -133,6 +122,7 @@ void CL_BuildTiccmd(void)
     ENetPacket *packet;
     float yaw;
     float pitch;
+    int i;
 
     if(client.state != CL_STATE_READY)
     {
@@ -142,36 +132,23 @@ void CL_BuildTiccmd(void)
     memset(&cmd, 0, sizeof(ticcmd_t));
     ctrl = &control;
 
-#define SET_KEYFLAG(kname, button)              \
-    if(ctrl->key[kname])                        \
-    {                                           \
-        cmd.buttons |= button;                  \
-    }                                           \
-    if(cmd.buttons & button &&                  \
-        client.cmd.buttons & button)            \
-    {                                           \
-        if(client.cmd.heldtime[kname] < 0xff)   \
-        {                                       \
-            cmd.heldtime[kname] =               \
-                client.cmd.heldtime[kname] + 1; \
-        }                                       \
-        else                                    \
-        {                                       \
-            cmd.heldtime[kname] = 0xff;         \
-        }                                       \
+    for(i = 0; i < MAXACTIONS; i++)
+    {
+        if(ctrl->actions[i])
+            cmd.buttons[i] = true;
+
+        if(cmd.buttons[i] && client.cmd.buttons[i])
+        {
+            if(client.cmd.heldtime[i] < 0xff)
+            {
+                cmd.heldtime[i] = client.cmd.heldtime[i] + 1;
+            }
+            else
+            {
+                cmd.heldtime[i] = 0xff;
+            }
+        }
     }
-
-    SET_KEYFLAG(KEY_ATTACK, BT_ATTACK);
-    SET_KEYFLAG(KEY_JUMP, BT_JUMP);
-    SET_KEYFLAG(KEY_CENTER, BT_CENTER);
-    SET_KEYFLAG(KEY_FORWARD, BT_FORWARD);
-    SET_KEYFLAG(KEY_BACK, BT_BACKWARD);
-    SET_KEYFLAG(KEY_STRAFELEFT, BT_STRAFELEFT);
-    SET_KEYFLAG(KEY_STRAFERIGHT, BT_STRAFERIGHT);
-    SET_KEYFLAG(KEY_NEXTWEAP, BT_NEXTWEAP);
-    SET_KEYFLAG(KEY_PREVWEAP, BT_PREVWEAP);
-
-#undef SET_KEYFLAG
 
     yaw = (ctrl->mousex * M_RAD);
     pitch = (ctrl->mousey * M_RAD);

@@ -280,12 +280,12 @@ static void Key_HandleControl(int ctrl)
     
     if(ctrl & CKF_UP)
     {
-        if((control.key[ctrlkey] & CKF_COUNTMASK) > 0)
-            control.key[ctrlkey]--;
+        if((control.actions[ctrlkey] & CKF_COUNTMASK) > 0)
+            control.actions[ctrlkey]--;
     }
     else
     {
-        control.key[ctrlkey]++;
+        control.actions[ctrlkey]++;
     }
 }
 
@@ -432,24 +432,6 @@ static void FCmd_ListBinds(void)
     }
 }
 
-#define CONTROL_KEY(name, data)                                             \
-    static void FCmd_ ## name ## Down(void) { Key_HandleControl(data); }    \
-    static void FCmd_ ## name ## Up(void) { Key_HandleControl(data|CKF_UP); }
-
-CONTROL_KEY(Attack,         KEY_ATTACK);
-CONTROL_KEY(Forward,        KEY_FORWARD);
-CONTROL_KEY(Back,           KEY_BACK);
-CONTROL_KEY(Left,           KEY_LEFT);
-CONTROL_KEY(Right,          KEY_RIGHT);
-CONTROL_KEY(StrafeLeft,     KEY_STRAFELEFT);
-CONTROL_KEY(StrafeRight,    KEY_STRAFERIGHT);
-CONTROL_KEY(Run,            KEY_RUN);
-CONTROL_KEY(Jump,           KEY_JUMP);
-CONTROL_KEY(LookUp,         KEY_LOOKUP);
-CONTROL_KEY(LookDown,       KEY_LOOKDOWN);
-CONTROL_KEY(NextWeap,       KEY_NEXTWEAP);
-CONTROL_KEY(PrevWeap,       KEY_PREVWEAP);
-
 //
 // Key_Init
 //
@@ -494,31 +476,5 @@ void Key_Init(void)
     Cmd_AddCommand("bind", FCmd_Bind);
     Cmd_AddCommand("unbind", FCmd_UnBind);
     Cmd_AddCommand("listbinds", FCmd_ListBinds);
-    Cmd_AddCommand("+attack", FCmd_AttackDown);
-    Cmd_AddCommand("-attack", FCmd_AttackUp);
-    Cmd_AddCommand("+forward", FCmd_ForwardDown);
-    Cmd_AddCommand("-forward", FCmd_ForwardUp);
-    Cmd_AddCommand("+back", FCmd_BackDown);
-    Cmd_AddCommand("-back", FCmd_BackUp);
-    Cmd_AddCommand("+left", FCmd_LeftDown);
-    Cmd_AddCommand("-left", FCmd_LeftUp);
-    Cmd_AddCommand("+right", FCmd_RightDown);
-    Cmd_AddCommand("-right", FCmd_RightUp);
-    Cmd_AddCommand("+strafeleft", FCmd_StrafeLeftDown);
-    Cmd_AddCommand("-strafeleft", FCmd_StrafeLeftUp);
-    Cmd_AddCommand("+straferight", FCmd_StrafeRightDown);
-    Cmd_AddCommand("-straferight", FCmd_StrafeRightUp);
-    Cmd_AddCommand("+run", FCmd_RunDown);
-    Cmd_AddCommand("-run", FCmd_RunUp);
-    Cmd_AddCommand("+jump", FCmd_JumpDown);
-    Cmd_AddCommand("-jump", FCmd_JumpUp);
-    Cmd_AddCommand("+lookup", FCmd_LookUpDown);
-    Cmd_AddCommand("-lookup", FCmd_LookUpUp);
-    Cmd_AddCommand("+lookdown", FCmd_LookDownDown);
-    Cmd_AddCommand("-lookdown", FCmd_LookDownUp);
-    Cmd_AddCommand("+nextweap", FCmd_NextWeapDown);
-    Cmd_AddCommand("-nextweap", FCmd_NextWeapUp);
-    Cmd_AddCommand("+prevweap", FCmd_PrevWeapDown);
-    Cmd_AddCommand("-prevweap", FCmd_PrevWeapUp);
 }
 

@@ -179,6 +179,41 @@ static JSBool sys_addInput(JSContext *cx, uintN argc, jsval *vp)
     return JS_TRUE;
 }
 
+//
+// sys_runScript
+//
+
+static JSBool sys_runScript(JSContext *cx, uintN argc, jsval *vp)
+{
+    jsval *v;
+    JSString *str;
+    js_scrobj_t *jfile;
+    char *bytes;
+
+    if(argc != 1)
+        return JS_FALSE;
+
+    v = JS_ARGV(cx, vp);
+
+    if(!(str = JS_ValueToString(cx, v[0])) ||
+        !(bytes = JS_EncodeString(cx, str)))
+    {
+        return JS_FALSE;
+    }
+
+    if(!(jfile = J_LoadScript(bytes)))
+    {
+        JS_ReportError(cx, "Unable to load %s", bytes);
+        return JS_FALSE;
+    }
+
+    J_ExecScriptObj(jfile);
+    JS_free(cx, bytes);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
 
 //
 // sys_GC
@@ -246,6 +281,7 @@ JSFunctionSpec Sys_functions[] =
     JS_FS("getCvar",    sys_getCvar,        1, 0, 0),
     JS_FS("callCmd",    sys_execCommand,    1, 0, 0),
     JS_FN("addInput",   sys_addInput,       2, 0, 0),
+    JS_FN("runScript",  sys_runScript,      1, 0, 0),
     JS_FN("GC",         sys_GC,             0, 0, 0),
     JS_FN("maybeGC",    sys_maybeGC,        0, 0, 0),
     JS_FS_END

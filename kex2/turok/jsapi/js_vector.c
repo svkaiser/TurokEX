@@ -335,6 +335,30 @@ static JSBool vector_dot(JSContext *cx, uintN argc, jsval *vp)
 }
 
 //
+// vector_gscale
+//
+
+static JSBool vector_gscale(JSContext *cx, uintN argc, jsval *vp)
+{
+    vec3_t outvec;
+    vec3_t *vec = NULL;
+    jsval *v;
+    jsdouble x;
+
+    if(argc != 2)
+        return JS_FALSE;
+
+    v = JS_ARGV(cx, vp);
+
+    JS_GETVECTOR(vec, v, 0);
+    JS_GETNUMBER(x, v, 1);
+
+    Vec_Scale(outvec, *vec, (float)x);
+    JS_NEWVECTOR(vp, outvec);
+    return JS_TRUE;
+}
+
+//
 // vector_length2
 //
 
@@ -482,6 +506,7 @@ JSFunctionSpec Vector_functions_static[] =
 {
     JS_FN("cross",      vector_cross,       2, 0, 0),
     JS_FN("dot",        vector_dot,         2, 0, 0),
+    JS_FN("scale",      vector_gscale,      2, 0, 0),
     JS_FN("length2",    vector_length2,     2, 0, 0),
     JS_FN("length3",    vector_length3,     2, 0, 0),
     JS_FN("pointToAxis",vector_pointToAxis, 2, 0, 0),

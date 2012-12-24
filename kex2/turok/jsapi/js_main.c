@@ -35,20 +35,12 @@ CVAR_EXTERNAL(kf_basepath);
 #define JS_RUNTIME_HEAP_SIZE 64L * 1024L * 1024L
 #define JS_STACK_CHUNK_SIZE  8192
 
-typedef struct js_scrobj_s
-{
-    char name[MAX_FILEPATH];
-    JSScript *script;
-    JSObject *obj;
-    struct js_scrobj_s *next;
-} js_scrobj_t;
-
 static js_scrobj_t *js_scrobj_list[MAX_HASH];
-
 static JSRuntime    *js_runtime;
-static JSContext    *js_context;
-static JSObject     *js_gobject;
 static js_scrobj_t  *js_rootscript;
+
+JSContext   *js_context;
+JSObject    *js_gobject;
 
 //
 // J_GlobalEnumerate
@@ -345,6 +337,45 @@ void J_ExecBuffer(char *buffer)
 }
 
 //
+// J_ExecScriptObj
+//
+
+void J_ExecScriptObj(js_scrobj_t *scobj)
+{
+    JSContext *cx = js_context;
+    JSObject *obj = js_gobject;
+    jsval result;
+
+    JS_ExecuteScript(cx, obj, scobj->script, &result);
+}
+
+#if 0
+//
+// J_LogScript
+//
+
+void J_LogScript(JSFunction *func, JSScript *scr, JSContext *const_cx, JSBool entering)
+{
+    JSContext *cx = const_cx;
+    JSString *name = JS_GetFunctionId((JSFunction*)func);
+    const char *entExit;
+    const char *nameStr;
+ 
+    /* build a C string for the function's name */
+    if(!name) nameStr = "Unnamed function";
+    else nameStr = JS_EncodeString(cx, name);
+ 
+    /* build a string for whether we're entering or exiting */
+    if(entering)  entExit = "Entering";
+    else entExit = "Exiting";
+ 
+    /* output information about the trace */
+    Com_Printf("%s JavaScript function: %s at time: %i",
+        entExit, nameStr, Sys_GetMilliseconds());
+}
+#endif
+
+//
 // J_Shutdown
 //
 
@@ -356,6 +387,30 @@ void J_Shutdown(void)
 
     Z_FreeTags(PU_JSOBJ, PU_JSOBJ);
 }
+
+#if 0
+//
+// FCmd_LogJS
+//
+
+static void FCmd_LogJS(void)
+{
+    kbool enable;
+
+    if(Cmd_GetArgc() != 2)
+    {
+        Com_Printf("Usage: jslog <1=enable, 0=disable>\n");
+        return;
+    }
+
+    enable = atoi(Cmd_GetArgv(1));
+
+    if(enable)
+        JS_SetFunctionCallback(js_context, J_LogScript);
+    else
+        JS_SetFunctionCallback(js_context, NULL);
+}
+#endif
 
 //
 // FCmd_JS
@@ -482,8 +537,6 @@ static void FCmd_JSExec(void)
 
 void J_Init(void)
 {
-    jsval result;
-
     if(!(js_runtime = JS_NewRuntime(JS_RUNTIME_HEAP_SIZE)))
         Com_Error("J_Init: Failed to initialize JSAPI runtime");
 
@@ -502,6 +555,7 @@ void J_Init(void)
     JS_DEFINEOBJECT(Client);
     JS_DEFINEOBJECT(Cmd);
     JS_DEFINEOBJECT(Angle);
+    JS_DEFINEOBJECT(MoveController);
     JS_INITCLASS(Vector, 3);
     JS_INITCLASS(Quaternion, 4);
     JS_INITCLASS(Matrix, 0);
@@ -510,11 +564,14 @@ void J_Init(void)
     if(!(js_rootscript = J_LoadScript("scripts/main.js")))
         Com_Error("J_Init: Unable to load main.js");
 
-    JS_ExecuteScript(js_context, js_gobject, js_rootscript->script, &result);
+    J_ExecScriptObj(js_rootscript);
 
     Cmd_AddCommand("js", FCmd_JS);
     Cmd_AddCommand("jsfile", FCmd_JSFile);
     Cmd_AddCommand("jsload", FCmd_JSLoad);
     Cmd_AddCommand("jsexec", FCmd_JSExec);
+#if 0
+    Cmd_AddCommand("jslog", FCmd_LogJS);
+#endif
 }
 

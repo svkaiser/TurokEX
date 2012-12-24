@@ -207,7 +207,7 @@ static void CL_ReadPmove(ENetPacket *packet)
     clmove = &client.oldmoves[client.ns.acks & (NETBACKUPS-1)];
     Vec_Sub(client.pred_diff, pmove.origin, clmove->origin);
 
-    if(Vec_Unit3(client.pred_diff) >= 0.01f)
+    if(Vec_Unit3(client.pred_diff) >= 0.075f)
     {
         int i;
 

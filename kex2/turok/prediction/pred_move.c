@@ -31,6 +31,7 @@
 #include "mathlib.h"
 #include "level.h"
 #include "game.h"
+#include "js.h"
 
 #define DELTAMOVE(x)    ((x) * move->deltatime)
 
@@ -52,28 +53,7 @@
 #define WATERHEIGHT         15.36f
 #define SHALLOWHEIGHT       51.2f
 
-typedef struct
-{
-    vec3_t      origin;
-    vec3_t      velocity;
-    vec3_t      forward;
-    vec3_t      right;
-    vec3_t      up;
-    float       width;
-    float       height;
-    float       center_y;
-    float       view_y;
-    float       yaw;
-    float       pitch;
-    float       roll;
-    float       deltatime;
-    int         movetype;
-    plane_t     *plane;
-    pmflags_t   flags;
-    ticcmd_t    *cmd;
-} move_t;
-
-static move_t move;
+move_t movecontroller;
 
 typedef void (*movefunction_t)(move_t*);
 
@@ -412,19 +392,19 @@ static void Pred_Walk(move_t *move)
 
     Pred_SetDirection(move, move->yaw, 0, 0);
 
-    if(move->cmd->buttons & BT_FORWARD)     fwd =  MOVE_VELOCITY;
-    if(move->cmd->buttons & BT_BACKWARD)    fwd = -MOVE_VELOCITY;
-    if(move->cmd->buttons & BT_STRAFELEFT)  rgt =  MOVE_VELOCITY;
-    if(move->cmd->buttons & BT_STRAFERIGHT) rgt = -MOVE_VELOCITY;
+    if(move->cmd->buttons[1])   fwd =  MOVE_VELOCITY;
+    if(move->cmd->buttons[2])   fwd = -MOVE_VELOCITY;
+    if(move->cmd->buttons[5])   rgt =  MOVE_VELOCITY;
+    if(move->cmd->buttons[6])   rgt = -MOVE_VELOCITY;
 
     Vec_Scale(forward, move->forward, fwd);
     Vec_Scale(right, move->right, rgt);
     Vec_Add(move->velocity, move->velocity, forward);
     Vec_Add(move->velocity, move->velocity, right);
 
-    if(move->cmd->buttons & BT_JUMP)
+    if(move->cmd->buttons[8])
     {
-        if(Pred_CheckJump(move) && !move->cmd->heldtime[KEY_JUMP])
+        if(Pred_CheckJump(move) && !move->cmd->heldtime[8])
         {
             move->flags |= PMF_JUMP;
             move->velocity[1] = JUMP_VELOCITY;
@@ -462,9 +442,6 @@ static float Pred_GetWaterSinkHeight(move_t *move)
 
 static void Pred_Swim(move_t *move)
 {
-    static float swim_fwd = 0;
-    static float swim_rgt = 0;
-    static float swim_up = 0;
     float ang;
     vec3_t forward;
     vec3_t right;
@@ -479,63 +456,63 @@ static void Pred_Swim(move_t *move)
     Pred_SetDirection(move, move->yaw, ang, 0);
 
     // lerp forward and right movement speeds
-    swim_fwd = -swim_fwd * 0.015f + swim_fwd;
-    swim_rgt = -swim_rgt * 0.015f + swim_rgt;
+    move->accel[2] = -move->accel[2] * 0.015f + move->accel[2];
+    move->accel[0] = -move->accel[0] * 0.015f + move->accel[0];
 
     // set upward speed to last known velocity if on the surface, otherwise
     // lerp the speed
     if(move->movetype == MT_WATER_SURFACE)
-        swim_up = move->velocity[1];
+        move->accel[1] = move->velocity[1];
     else
-        swim_up = -swim_up * 0.125f + swim_up;
+        move->accel[1] = -move->accel[1] * 0.125f + move->accel[1];
 
-    if(move->cmd->buttons & BT_FORWARD)
+    if(move->cmd->buttons[1])
     {
-        if(move->cmd->heldtime[KEY_FORWARD] == 0 &&
+        if(move->cmd->heldtime[1] == 0 &&
             Vec_Unit3(move->velocity) < 3)
         {
             // handle extra thrust
-            swim_fwd = SWIM_VELOCITY * 160;
+            move->accel[2] = SWIM_VELOCITY * 160;
         }
         else
-            swim_fwd += SWIM_VELOCITY;
+            move->accel[2] += SWIM_VELOCITY;
     }
 
-    if(move->cmd->buttons & BT_BACKWARD)    swim_fwd -= SWIM_VELOCITY;
-    if(move->cmd->buttons & BT_STRAFELEFT)  swim_rgt += SWIM_VELOCITY;
-    if(move->cmd->buttons & BT_STRAFERIGHT) swim_rgt -= SWIM_VELOCITY;
+    if(move->cmd->buttons[2]) move->accel[2] -= SWIM_VELOCITY;
+    if(move->cmd->buttons[5]) move->accel[0] += SWIM_VELOCITY;
+    if(move->cmd->buttons[6]) move->accel[0] -= SWIM_VELOCITY;
 
-    if(move->cmd->buttons & BT_JUMP)
+    if(move->cmd->buttons[8])
     {
         if(move->movetype == MT_WATER_SURFACE)
         {
             // allow jumping while on the surface
-            if(Pred_CheckJump(move) && !move->cmd->heldtime[KEY_JUMP])
+            if(Pred_CheckJump(move) && !move->cmd->heldtime[8])
             {
                 move->flags |= PMF_JUMP;
-                swim_up = JUMP_VELOCITY;
+                move->accel[1] = JUMP_VELOCITY;
             }
         }
         else
-            swim_up += 0.360448f;
+            move->accel[1] += 0.360448f;
     }
 
-    Vec_Scale(forward, move->forward, swim_fwd);
-    Vec_Scale(right, move->right, swim_rgt);
+    Vec_Scale(forward, move->forward, move->accel[2]);
+    Vec_Scale(right, move->right, move->accel[0]);
     Vec_Add(move->velocity, forward, right);
 
     // apply extra vertical velocity from jump commands
-    move->velocity[1] += swim_up;
+    move->velocity[1] += move->accel[1];
 
     Pred_UpdatePosition(move);
 
-    if( (swim_fwd <= 0.5f && swim_fwd >= -0.5f) &&
-        (swim_rgt <= 0.5f && swim_rgt >= -0.5f) &&
-        (swim_up  <= 0.5f) &&
+    if( (move->accel[2] <= 0.5f && move->accel[2] >= -0.5f) &&
+        (move->accel[0] <= 0.5f && move->accel[0] >= -0.5f) &&
+        (move->accel[1]  <= 0.5f) &&
         move->movetype == MT_WATER_UNDER)
     {
         // sink
-        swim_up -= 0.05f;
+        move->accel[1] -= 0.05f;
     }
 }
 
@@ -556,7 +533,7 @@ static void Pred_ClimbMove(move_t *move)
         move->yaw = -diff * 0.084f + move->yaw;
     }
 
-    if(move->cmd->buttons & BT_FORWARD)
+    if(move->cmd->buttons[1])
     {
        if(Vec_Unit3(move->velocity) < 0.5f)
        {
@@ -567,9 +544,9 @@ static void Pred_ClimbMove(move_t *move)
        }
     }
 
-    if(move->cmd->buttons & BT_JUMP)
+    if(move->cmd->buttons[8])
     {
-        if(!move->cmd->heldtime[KEY_JUMP])
+        if(!move->cmd->heldtime[8])
         {
             move->flags |= PMF_JUMP;
 
@@ -597,17 +574,17 @@ static void Pred_NoClipMove(move_t *move)
 
     Pred_SetDirection(move, move->yaw, move->pitch, 0);
 
-    if(move->cmd->buttons & BT_FORWARD)     fwd =  NOCLIPMOVE;
-    if(move->cmd->buttons & BT_BACKWARD)    fwd = -NOCLIPMOVE;
-    if(move->cmd->buttons & BT_STRAFELEFT)  rgt =  NOCLIPMOVE;
-    if(move->cmd->buttons & BT_STRAFERIGHT) rgt = -NOCLIPMOVE;
+    if(move->cmd->buttons[1])   fwd =  NOCLIPMOVE;
+    if(move->cmd->buttons[2])   fwd = -NOCLIPMOVE;
+    if(move->cmd->buttons[5])   rgt =  NOCLIPMOVE;
+    if(move->cmd->buttons[6])   rgt = -NOCLIPMOVE;
 
     Vec_Scale(forward, move->forward, fwd);
     Vec_Scale(right, move->right, rgt);
     Vec_Add(move->velocity, move->velocity, forward);
     Vec_Add(move->velocity, move->velocity, right);
 
-    if(move->cmd->buttons & BT_JUMP)
+    if(move->cmd->buttons[8])
         move->velocity[1] = NOCLIPMOVE;
 
     Vec_Add(move->origin, move->origin, move->velocity);
@@ -631,35 +608,41 @@ static const movefunction_t movefuncs[NUMMOVETYPES] =
 
 void Pred_Move(pred_t *pred)
 {
-    memset(&move, 0, sizeof(move_t));
+    move_t *move = &movecontroller;
 
-    Vec_Copy3(move.origin, pred->pmove.origin);
-    Vec_Copy3(move.velocity, pred->pmove.velocity);
+    memset(move, 0, sizeof(move_t));
 
-    move.cmd        = &pred->cmd;
-    move.yaw        = pred->pmove.angles[0];
-    move.pitch      = pred->pmove.angles[1];
-    move.roll       = pred->pmove.angles[2];
-    move.deltatime  = pred->cmd.msec.f;
-    move.flags      = pred->pmove.flags;
-    move.width      = pred->pmove.radius;
-    move.height     = pred->pmove.height;
-    move.center_y   = pred->pmove.centerheight;
-    move.view_y     = pred->pmove.viewheight;
-    move.movetype   = pred->pmove.movetype;
-    move.plane      = pred->pmove.plane != -1 ?
+    Vec_Copy3(move->origin, pred->pmove.origin);
+    Vec_Copy3(move->velocity, pred->pmove.velocity);
+    Vec_Copy3(move->accel, pred->pmove.accel);
+
+    move->cmd       = &pred->cmd;
+    move->yaw       = pred->pmove.angles[0];
+    move->pitch     = pred->pmove.angles[1];
+    move->roll      = pred->pmove.angles[2];
+    move->deltatime = pred->cmd.msec.f;
+    move->flags     = pred->pmove.flags;
+    move->width     = pred->pmove.radius;
+    move->height    = pred->pmove.height;
+    move->center_y  = pred->pmove.centerheight;
+    move->view_y    = pred->pmove.viewheight;
+    move->movetype  = pred->pmove.movetype;
+    move->plane     = pred->pmove.plane != -1 ?
         &g_currentmap->planes[pred->pmove.plane] : NULL;
 
-    movefuncs[move.movetype](&move);
+    //J_RunMoveTypes("OnCheck");
 
-    Vec_Copy3(pred->pmove.origin, move.origin);
-    Vec_Copy3(pred->pmove.velocity, move.velocity);
+    movefuncs[move->movetype](move);
 
-    pred->pmove.angles[0]   = move.yaw;
-    pred->pmove.angles[1]   = move.pitch;
-    pred->pmove.flags       = move.flags;
-    pred->pmove.movetype    = move.movetype;
-    pred->pmove.plane       = (move.plane - g_currentmap->planes);
+    Vec_Copy3(pred->pmove.origin, move->origin);
+    Vec_Copy3(pred->pmove.velocity, move->velocity);
+    Vec_Copy3(pred->pmove.accel, move->accel);
+
+    pred->pmove.angles[0]   = move->yaw;
+    pred->pmove.angles[1]   = move->pitch;
+    pred->pmove.flags       = move->flags;
+    pred->pmove.movetype    = move->movetype;
+    pred->pmove.plane       = (move->plane - g_currentmap->planes);
 }
 
 //

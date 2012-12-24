@@ -206,6 +206,8 @@ void Kernel_Main(int argc, char **argv)
     Com_Printf("Video Initialized\n");
     R_Init();
     Com_Printf("Renderer Initialized\n");
+    J_Init();
+    Com_Printf("Javascript API Initialized\n");
 
     GL_Register();
 
@@ -216,14 +218,10 @@ void Kernel_Main(int argc, char **argv)
     Com_ReadConfigFile("config.cfg");
     Com_ReadConfigFile("autoexec.cfg");
 
-    KF_LoadZipFile("game.kpf");
-
     G_Init();
     Com_Printf("Game Initialized\n");
     GL_Init();
     Com_Printf("OpenGL Initialized\n");
-    J_Init();
-    Com_Printf("Javascript API Initialized\n");
 
     Com_Printf("Running kernel...\n");
     Kernel_Run();

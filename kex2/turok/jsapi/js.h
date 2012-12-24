@@ -46,5 +46,6 @@
 void J_ExecBuffer(char *buffer);
 void J_Shutdown(void);
 void J_Init(void);
+void J_RunMoveTypes(const char *function);
 
 #endif
