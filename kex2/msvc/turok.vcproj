@@ -468,6 +468,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\jsapi\js_movectrl.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\jsapi\js_plane.c"
 					>
 				</File>
