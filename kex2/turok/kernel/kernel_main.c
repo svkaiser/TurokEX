@@ -168,6 +168,7 @@ void Kernel_Run(void)
         prevmsec = nextmsec;
 
         Z_FreeAlloca();
+        J_GarbageCollect();
     }
 }
 

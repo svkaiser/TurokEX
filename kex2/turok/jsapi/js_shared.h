@@ -37,6 +37,7 @@ typedef struct js_scrobj_s
     struct js_scrobj_s *next;
 } js_scrobj_t;
 
+jsval J_CallFunctionOnObject(JSContext *cx, JSObject *object, const char *function);
 js_scrobj_t *J_LoadScript(const char *name);
 void J_ExecScriptObj(js_scrobj_t *scobj);
 

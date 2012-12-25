@@ -90,6 +90,8 @@ typedef struct
     ticcmd_t    cmd;
 } pred_t;
 
+void Pred_SetDirection(move_t *move, float yaw, float pitch, float roll);
+void Pred_ProcessMove(move_t *move, float friction, float gravity);
 void Pred_ClientMovement(void);
 void Pred_ServerMovement(void);
 

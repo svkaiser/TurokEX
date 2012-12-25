@@ -352,10 +352,73 @@ static void Pred_UpdatePosition(move_t *move)
 }
 
 //
+// Pred_ProcessMove
+//
+
+void Pred_ProcessMove(move_t *move, float friction, float gravity)
+{
+    vec3_t position;
+    float dist;
+
+    if(move->plane == NULL)
+    {
+        if(!(move->plane = Map_FindClosestPlane(move->origin)))
+            return;
+    }
+
+    // slide against planes and clip velocity
+    G_ClipMovement(move->origin, move->velocity, &move->plane,
+        move->width, move->center_y, move->yaw, NULL);
+
+    Vec_Add(position, move->origin, move->velocity);
+
+    if(move->plane)
+    {
+        plane_t *pl = move->plane;
+
+        // get floor distance
+        dist = position[1] - Plane_GetDistance(pl, position);
+
+        if(pl->flags & CLF_CHECKHEIGHT)
+        {
+            dist = Plane_GetHeight(pl, position) -
+                (move->center_y + move->view_y);
+
+            if(position[1] > dist)
+            {
+                // hit ceiling
+                position[1] = dist;
+                move->velocity[1] = 0;
+            }
+        }
+
+        // get floor distance
+        dist = position[1] - Plane_GetDistance(pl, position);
+
+        if(dist < ONPLANE_EPSILON)
+        {
+            position[1] = position[1] - dist;
+
+            if(!Plane_IsAWall(pl))
+            {
+                // surface was hit, kill vertical velocity
+                move->velocity[1] = 0;
+            }
+        }
+    }
+
+    // update gravity and apply friction
+    move->velocity[1] -= gravity;
+    G_ApplyFriction(move->velocity, friction, false);
+
+    // update move to new position
+    Vec_Copy3(move->origin, position);
+}
+//
 // Pred_SetDirection
 //
 
-static void Pred_SetDirection(move_t *move, float yaw, float pitch, float roll)
+void Pred_SetDirection(move_t *move, float yaw, float pitch, float roll)
 {
     float sy, cy, sp, cp, sr, cr;
 
@@ -630,7 +693,7 @@ void Pred_Move(pred_t *pred)
     move->plane     = pred->pmove.plane != -1 ?
         &g_currentmap->planes[pred->pmove.plane] : NULL;
 
-    //J_RunMoveTypes("OnCheck");
+    //J_RunMoveState();
 
     movefuncs[move->movetype](move);
 

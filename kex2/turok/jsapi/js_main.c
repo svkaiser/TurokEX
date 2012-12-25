@@ -192,6 +192,33 @@ JSObject *J_AddObject(JSClass *class, JSFunctionSpec *func, JSPropertySpec *prop
 }
 
 //
+// J_CallFunctionOnObject
+//
+
+jsval J_CallFunctionOnObject(JSContext *cx, JSObject *object, const char *function)
+{
+    JSObject *objFunc;
+    JSBool ok;
+    jsval val;
+    jsval rval;
+    jsval argv = JSVAL_VOID;
+
+    if(object != NULL &&
+        (JS_HasProperty(cx, object, function, &ok) && ok) &&
+        JS_GetProperty(cx, object, function, &val) &&
+        !JSVAL_IS_NULL(val) &&
+        JS_ValueToObject(cx, val, &objFunc) &&
+        JS_ObjectIsFunction(cx, objFunc) &&
+        JS_CallFunctionName(cx, object, function, 0, &argv, &rval))
+    {
+        return rval;
+    }
+
+    JS_SET_RVAL(cx, &rval, JSVAL_NULL);
+    return rval;
+}
+
+//
 // J_LoadScriptObject
 //
 
@@ -309,6 +336,15 @@ js_scrobj_t *J_LoadScript(const char *name)
     }
 
     return scrobj;
+}
+
+//
+// J_GarbageCollect
+//
+
+void J_GarbageCollect(void)
+{
+    JS_GC(js_context);
 }
 
 //

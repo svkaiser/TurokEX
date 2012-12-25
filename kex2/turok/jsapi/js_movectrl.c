@@ -43,10 +43,22 @@ static mctrltypes_t *mctrltypes;
 static int num_mctrltypes = 0;
 
 //
-// J_RunMoveTypes
+// J_GetMoveState
 //
 
-void J_RunMoveTypes(const char *function)
+static JSObject *J_GetMoveState(void)
+{
+    if(movecontroller.movetype >= num_mctrltypes)
+        return NULL;
+
+    return mctrltypes[movecontroller.movetype].object;
+}
+
+//
+// J_RunMoveState
+//
+
+void J_RunMoveState(void)
 {
     int i;
 
@@ -54,43 +66,22 @@ void J_RunMoveTypes(const char *function)
     {
         mctrltypes_t *mctrl = &mctrltypes[i];
         JSObject *object = mctrl->object;
-        JSObject *objFunc;
-        JSBool ok;
-        jsval val;
+        jsval rval;
+        JSBool ret;
 
-        if(object == NULL)
+        rval = J_CallFunctionOnObject(js_context, object, "OnCheck");
+
+        if(JSVAL_IS_NULL(rval) || !JSVAL_IS_BOOLEAN(rval))
             continue;
 
-        if(!JS_HasProperty(js_context, object, function, &ok) || !ok)
+        if(!JS_ValueToBoolean(js_context, rval, &ret))
             continue;
 
-        if(!JS_GetProperty(js_context, object, function, &val))
-            continue;
-
-        if(JSVAL_IS_NULL(val))
-            continue;
-
-        if(!JS_ValueToObject(js_context, val, &objFunc))
-            continue;
-
-        if(JS_ObjectIsFunction(js_context, objFunc))
+        if(ret)
         {
-            jsval rval;
-            JSBool ret;
-
-            JS_CallFunctionName(js_context, object, function, 0, NULL, &rval);
-
-            if(JSVAL_IS_NULL(rval) || !JSVAL_IS_BOOLEAN(rval))
-                continue;
-
-            if(!JS_ValueToBoolean(js_context, rval, &ret))
-                continue;
-
-            if(ret)
-            {
-                movecontroller.movetype = i;
-                return;
-            }
+            movecontroller.movetype = i;
+            J_CallFunctionOnObject(js_context, object, "OnMove");
+            return;
         }
     }
 }
@@ -112,7 +103,8 @@ enum movectrl_enum
     MC_ROLL,
     MC_DELTATIME,
     MC_PLANE,
-    MC_CMD
+    MC_CMD,
+    MC_STATE
 };
 
 //
@@ -164,6 +156,10 @@ static JSBool movectrl_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval
     case MC_ROLL:
         return JS_NewNumberValue(cx, movecontroller.roll, vp);
 
+    case MC_STATE:
+        JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(J_GetMoveState()));
+        return JS_TRUE;
+
     default:
         break;
     }
@@ -195,6 +191,7 @@ static JSBool moveCtrl_addMovetype(JSContext *cx, uintN argc, jsval *vp)
     jsval *v;
     JSObject *obj;
     jsdouble priority;
+    int i;
     mctrltypes_t *mctrl;
 
     if(argc != 2)
@@ -205,12 +202,18 @@ static JSBool moveCtrl_addMovetype(JSContext *cx, uintN argc, jsval *vp)
     JS_GETOBJECT(obj, v, 0);
     JS_GETNUMBER(priority, v, 1);
 
+    for(i = 0; i < num_mctrltypes; i++)
+        JS_RemoveRoot(cx, &mctrltypes[i].object);
+
     mctrltypes = Z_Realloc(mctrltypes, sizeof(mctrltypes_t) *
         ++num_mctrltypes, PU_STATIC, 0);
 
     mctrl = &mctrltypes[num_mctrltypes - 1];
     mctrl->object = obj;
     mctrl->priority = (int)priority;
+
+    for(i = 0; i < num_mctrltypes; i++)
+        JS_AddRoot(cx, &mctrltypes[i].object);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
@@ -226,10 +229,6 @@ static JSBool moveCtrl_setDirection(JSContext *cx, uintN argc, jsval *vp)
     jsdouble yaw;
     jsdouble pitch;
     jsdouble roll;
-    move_t *move;
-    float sy, cy;
-    float sp, cp;
-    float sr, cr;
 
     if(argc != 3)
         return JS_FALSE;
@@ -240,26 +239,33 @@ static JSBool moveCtrl_setDirection(JSContext *cx, uintN argc, jsval *vp)
     JS_GETNUMBER(yaw, v, 1);
     JS_GETNUMBER(roll, v, 2);
 
-    sy = (float)sin(yaw);
-    cy = (float)cos(yaw);
-    sp = (float)sin(pitch);
-    cp = (float)cos(pitch);
-    sr = (float)sin(roll);
-    cr = (float)cos(roll);
+    Pred_SetDirection(&movecontroller,
+        (float)yaw, (float)pitch, (float)roll);
 
-    move = &movecontroller;
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
 
-    move->forward[0] = sy * cp;
-    move->forward[1] = -sp;
-    move->forward[2] = cy * cp;
+//
+// moveCtrl_move
+//
 
-    move->right[0] = sr * sp * sy + cr * cy;
-    move->right[1] = sr * cp;
-    move->right[2] = sr * sp * cy + cr * -sy;
+static JSBool moveCtrl_move(JSContext *cx, uintN argc, jsval *vp)
+{
+    jsval *v;
+    jsdouble friction;
+    jsdouble gravity;
 
-    move->up[0] = cr * sp * sy + -sr * cy;
-    move->up[1] = cr * cp;
-    move->up[2] = cr * sp * cy + -sr * -sy;
+    if(argc != 2)
+        return JS_FALSE;
+
+    v = JS_ARGV(cx, vp);
+
+    JS_GETNUMBER(friction, v, 0);
+    JS_GETNUMBER(gravity, v, 1);
+
+    Pred_ProcessMove(&movecontroller,
+        (float)friction, (float)gravity);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
@@ -306,6 +312,7 @@ JSPropertySpec MoveController_props[] =
     { "deltatime",  MC_DELTATIME,   JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
     { "plane",      MC_PLANE,       JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
     { "cmd",        MC_CMD,         JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "state",      MC_STATE,       JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 
@@ -317,5 +324,6 @@ JSFunctionSpec MoveController_functions[] =
 {
     JS_FN("addMovetype",    moveCtrl_addMovetype,   2, 0, 0),
     JS_FN("setDirection",   moveCtrl_setDirection,  3, 0, 0),
+    JS_FN("move",           moveCtrl_move,          2, 0, 0),
     JS_FS_END
 };
