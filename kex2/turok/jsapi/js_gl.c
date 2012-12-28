@@ -213,10 +213,10 @@ JSPropertySpec GL_props[] =
 };
 
 //
-// GL_constants
+// GL_const
 //
 
-JSConstDoubleSpec GL_constants[] =
+JSConstDoubleSpec GL_const[] =
 {
     { GLSTATE_BLEND,        "GLSTATE_BLEND",        0, { 0, 0, 0 } },
     { GLSTATE_CULL,         "GLSTATE_CULL",         0, { 0, 0, 0 } },

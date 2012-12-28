@@ -44,6 +44,7 @@
 #endif
 
 void J_GarbageCollect(void);
+void J_CompileAndRunScript(const char *name);
 void J_ExecBuffer(char *buffer);
 void J_Shutdown(void);
 void J_Init(void);

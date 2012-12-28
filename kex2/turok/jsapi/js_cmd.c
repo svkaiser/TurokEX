@@ -156,6 +156,15 @@ JSPropertySpec Cmd_props[] =
 };
 
 //
+// Cmd_const
+//
+
+JSConstDoubleSpec Cmd_const[] =
+{
+    { 0, 0, 0, { 0, 0, 0 } }
+};
+
+//
 // Cmd_functions
 //
 

@@ -38,12 +38,14 @@ typedef struct js_scrobj_s
 } js_scrobj_t;
 
 jsval J_CallFunctionOnObject(JSContext *cx, JSObject *object, const char *function);
+jsval J_GetObjectElement(JSContext *cx, JSObject *object, jsint index);
+
 js_scrobj_t *J_LoadScript(const char *name);
 void J_ExecScriptObj(js_scrobj_t *scobj);
 
 #define JS_DEFINEOBJECT(name)                                                       \
     js_obj ##name = J_AddObject(&name ## _class, name ## _functions,                \
-    name ## _props, # name, js_context, js_gobject)
+    name ## _props, name ## _const, # name, js_context, js_gobject)
 
 #define JS_INITCLASS(name, args)                                                    \
     js_obj ##name = JS_InitClass(js_context, js_gobject, NULL,                      \
@@ -59,7 +61,8 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
     extern JSObject *js_obj ##name;                                                 \
     extern JSClass name ## _class;                                                  \
     extern JSFunctionSpec name ## _functions[];                                     \
-    extern JSPropertySpec name ## _props[]
+    extern JSPropertySpec name ## _props[];                                         \
+    extern JSConstDoubleSpec name ## _const[]
 
 #define JS_EXTERNCLASS(name)                                                        \
     extern JSObject *js_obj ##name;                                                 \
@@ -186,6 +189,7 @@ JS_EXTERNOBJECT(Client);
 JS_EXTERNOBJECT(Cmd);
 JS_EXTERNOBJECT(Angle);
 JS_EXTERNOBJECT(MoveController);
+JS_EXTERNOBJECT(MapProperty);
 JS_EXTERNCLASS(Vector);
 JS_EXTERNCLASS(Quaternion);
 JS_EXTERNCLASS(Matrix);

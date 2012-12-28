@@ -268,6 +268,15 @@ JSPropertySpec Sys_props[] =
 };
 
 //
+// Sys_const
+//
+
+JSConstDoubleSpec Sys_const[] =
+{
+    { 0, 0, 0, { 0, 0, 0 } }
+};
+
+//
 // Sys_functions
 //
 

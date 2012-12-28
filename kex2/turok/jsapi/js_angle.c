@@ -163,6 +163,15 @@ JSPropertySpec Angle_props[] =
 };
 
 //
+// Angle_const
+//
+
+JSConstDoubleSpec Angle_const[] =
+{
+    { 0, 0, 0, { 0, 0, 0 } }
+};
+
+//
 // Angle_functions
 //
 

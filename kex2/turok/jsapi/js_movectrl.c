@@ -173,8 +173,15 @@ static JSBool movectrl_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval
 
 static JSBool movectrl_setProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 {
+    jsdouble val;
+
     switch(JSVAL_TO_INT(id))
     {
+    case MC_YAW:
+        JS_GETNUMBER(val, vp, 0);
+        movecontroller.yaw = (float)val;
+        return JS_TRUE;
+
     default:
         break;
     }
@@ -314,6 +321,15 @@ JSPropertySpec MoveController_props[] =
     { "cmd",        MC_CMD,         JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
     { "state",      MC_STATE,       JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
+};
+
+//
+// MoveController_const
+//
+
+JSConstDoubleSpec MoveController_const[] =
+{
+    { 0, 0, 0, { 0, 0, 0 } }
 };
 
 //

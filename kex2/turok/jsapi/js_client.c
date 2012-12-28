@@ -195,6 +195,15 @@ JSPropertySpec Client_props[] =
 };
 
 //
+// Client_const
+//
+
+JSConstDoubleSpec Client_const[] =
+{
+    { 0, 0, 0, { 0, 0, 0 } }
+};
+
+//
 // Client_functions
 //
 

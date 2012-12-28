@@ -37,10 +37,10 @@ typedef enum
     MT_NORMAL = 0,
     MT_WATER_SHALLOW,
     MT_WATER_SURFACE,
+    MT_NOCLIP,
     MT_WATER_UNDER,
     MT_LAVA,
     MT_DEATHPIT,
-    MT_NOCLIP,
     MT_CLIMB,
     NUMMOVETYPES
 } movetype_t;

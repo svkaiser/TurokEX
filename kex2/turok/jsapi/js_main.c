@@ -168,8 +168,11 @@ static JSBool J_ContextCallback(JSContext *cx, uintN contextOp)
 // J_AddObject
 //
 
-JSObject *J_AddObject(JSClass *class, JSFunctionSpec *func, JSPropertySpec *prop,
-                     const char *name, JSContext *cx, JSObject *obj)
+JSObject *J_AddObject(JSClass *class,
+                      JSFunctionSpec *func,
+                      JSPropertySpec *prop,
+                      JSConstDoubleSpec *constant,
+                      const char *name, JSContext *cx, JSObject *obj)
 {
     JSObject *newobj;
 
@@ -186,6 +189,12 @@ JSObject *J_AddObject(JSClass *class, JSFunctionSpec *func, JSPropertySpec *prop
     {
         if(!JS_DefineFunctions(cx, newobj, func))
             Com_Error("J_AddObject: Failed to define functions for class %s", name);
+    }
+
+    if(constant)
+    {
+        if(!JS_DefineConstDoubles(cx, newobj, constant))
+            Com_Error("J_AddObject: Failed to define constants for class %s", name);
     }
 
     return newobj;
@@ -216,6 +225,29 @@ jsval J_CallFunctionOnObject(JSContext *cx, JSObject *object, const char *functi
 
     JS_SET_RVAL(cx, &rval, JSVAL_NULL);
     return rval;
+}
+
+//
+// J_GetObjectElement
+//
+
+jsval J_GetObjectElement(JSContext *cx, JSObject *object, jsint index)
+{
+    jsuint length;
+    jsval val;
+
+    if(object != NULL &&
+        JS_IsArrayObject(cx, object) &&
+        JS_GetArrayLength(cx, object, &length) &&
+        length > 0 &&
+        JS_GetElement(cx, object, index, &val) &&
+        !JSVAL_IS_NULL(val))
+    {
+        return val;
+    }
+
+    JS_SET_RVAL(cx, &val, JSVAL_NULL);
+    return val;
 }
 
 //
@@ -313,9 +345,7 @@ js_scrobj_t *J_LoadScript(const char *name)
     int size;
 
     if(name[0] == 0)
-    {
         return NULL;
-    }
 
     scrobj = J_FindScript(name);
 
@@ -326,9 +356,7 @@ js_scrobj_t *J_LoadScript(const char *name)
         if((size = KF_OpenFileCache(name, &file, PU_STATIC)) == 0)
         {
             if((size = KF_ReadTextFile(name, &file)) == -1)
-            {
                 return NULL;
-            }
         }
 
         scrobj = J_LoadScriptObject(name, file, size);
@@ -336,6 +364,15 @@ js_scrobj_t *J_LoadScript(const char *name)
     }
 
     return scrobj;
+}
+
+//
+// J_CompileAndRunScript
+//
+
+void J_CompileAndRunScript(const char *name)
+{
+    J_ExecScriptObj(J_LoadScript(name));
 }
 
 //
@@ -357,13 +394,13 @@ void J_ExecBuffer(char *buffer)
     JSObject *obj = js_gobject;
     jsval result;
 
-    if(JS_BufferIsCompilableUnit(cx, obj, buffer, strlen(buffer)))
+    if(JS_BufferIsCompilableUnit(cx, obj, buffer, strlen(buffer)-1))
     {
         JSScript *script;
 
         JS_ClearPendingException(cx);
         if(script = JS_CompileScript(cx, obj, buffer,
-            strlen(buffer), "execBuffer", 1))
+            strlen(buffer)-1, "execBuffer", 1))
         {
             JS_ExecuteScript(cx, obj, script, &result);
             JS_MaybeGC(cx);
@@ -381,6 +418,9 @@ void J_ExecScriptObj(js_scrobj_t *scobj)
     JSContext *cx = js_context;
     JSObject *obj = js_gobject;
     jsval result;
+
+    if(scobj == NULL)
+        return;
 
     JS_ExecuteScript(cx, obj, scobj->script, &result);
 }
@@ -592,6 +632,7 @@ void J_Init(void)
     JS_DEFINEOBJECT(Cmd);
     JS_DEFINEOBJECT(Angle);
     JS_DEFINEOBJECT(MoveController);
+    JS_DEFINEOBJECT(MapProperty);
     JS_INITCLASS(Vector, 3);
     JS_INITCLASS(Quaternion, 4);
     JS_INITCLASS(Matrix, 0);

@@ -32,6 +32,7 @@
 #include "mathlib.h"
 #include "client.h"
 #include "server.h"
+#include "js.h"
 
 kmap_t kmaps[MAXMAPS];
 kmap_t *g_currentmap = NULL;
@@ -1341,6 +1342,8 @@ kmap_t *Map_Load(int map)
         // we're done with the file
         SC_Close();
     }
+
+    J_CompileAndRunScript(kva("maps/map%02d/map%02d_props.js", map, map));
 
     Map_InitBlocklist(kmap);
     Map_SetupActors(kmap);
