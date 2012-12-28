@@ -419,6 +419,59 @@ static void ProcessAreas(byte *data)
 }
 
 //
+// ProcessAreaProperties
+//
+
+static void ProcessAreaProperties(byte *data, int index)
+{
+    int size = Com_GetCartOffset(data, CHUNK_AREAS_SIZE, 0);
+    int count = Com_GetCartOffset(data, CHUNK_AREAS_COUNT, 0);
+    int i;
+
+    Com_Strcat("MapProperty.add(\n");
+    Com_Strcat("[\n");
+
+    for(i = 0; i < count; i++)
+    {
+        maparea_t *area = (maparea_t*)(data + 8 + (i * size));
+
+        Com_Strcat("    {\n");
+        Com_Strcat("        fogcolor : { r : %i, g : %i, b : %i, a : %i },\n",
+            area->fogrgba[0], area->fogrgba[1], area->fogrgba[2], area->fogrgba[3]);
+        Com_Strcat("        fogz_far : %f", area->fogzfar);
+        if(area->flags & (0x1|0x10|0x100000))
+        {
+            if(area->flags & 0x1)
+            {
+                Com_Strcat(",\n");
+                Com_Strcat("        waterheight : %f", area->waterheight);
+            }
+
+            if(area->flags & 0x10)
+            {
+                Com_Strcat(",\n");
+                Com_Strcat("        climb : 1");
+            }
+
+            if(area->flags & 0x100000)
+            {
+                Com_Strcat(",\n");
+                Com_Strcat("        skyheight : %f", area->skyheight);
+            }
+        }
+
+        Com_Strcat("\n    }");
+
+        if(i < (count-1))
+            Com_Strcat(",");
+
+        Com_Strcat("\n\n");
+    }
+    
+    Com_Strcat("], %i);\n", index);
+}
+
+//
 // ProcessNavigation
 //
 
@@ -467,6 +520,12 @@ static void ProcessNavigation(byte *data, int index)
 
     sprintf(name, "maps/map%02d/map%02d.knav", index, index);
     Com_StrcatAddToFile(name);
+
+    Com_StrcatClear();
+    ProcessAreaProperties(areas, index);
+    sprintf(name, "maps/map%02d/map%02d_props.js", index, index);
+    Com_StrcatAddToFile(name);
+
     Com_Free(&info);
 }
 
