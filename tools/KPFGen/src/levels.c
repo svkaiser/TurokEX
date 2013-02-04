@@ -439,7 +439,7 @@ static void ProcessAreaProperties(byte *data, int index)
         Com_Strcat("        fogcolor : { r : %i, g : %i, b : %i, a : %i },\n",
             area->fogrgba[0], area->fogrgba[1], area->fogrgba[2], area->fogrgba[3]);
         Com_Strcat("        fogz_far : %f", area->fogzfar);
-        if(area->flags & (0x1|0x10|0x100000))
+        if(area->flags & (0x1|0x10|0x80|0x100|0x100000))
         {
             if(area->flags & 0x1)
             {
@@ -450,7 +450,19 @@ static void ProcessAreaProperties(byte *data, int index)
             if(area->flags & 0x10)
             {
                 Com_Strcat(",\n");
-                Com_Strcat("        climb : 1");
+                Com_Strcat("        climb : true");
+            }
+
+            if(area->flags & 0x80)
+            {
+                Com_Strcat(",\n");
+                Com_Strcat("        crawl : true");
+            }
+
+            if(area->flags & 0x100)
+            {
+                Com_Strcat(",\n");
+                Com_Strcat("        exitcrawl : true");
             }
 
             if(area->flags & 0x100000)

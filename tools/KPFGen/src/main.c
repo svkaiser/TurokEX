@@ -137,24 +137,6 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
     hwndWait = CreateDialogA(hAppInst, MAKEINTRESOURCEA(IDD_DIALOG1), NULL, (DLGPROC)LoadingDlgProc);
 
     PK_AddFolder("scripts/");
-    StoreExternalFile("scripts/main.js",
-        "scripts/main.js");
-    StoreExternalFile("scripts/kexmain/Class.js",
-        "scripts/kexmain/Class.js");
-    StoreExternalFile("scripts/kexmain/Movestate.js",
-        "scripts/kexmain/Movestate.js");
-    StoreExternalFile("scripts/turokgame/TurokInput.js",
-        "scripts/turokgame/TurokInput.js");
-    StoreExternalFile("scripts/turokgame/TurokMoveState.js",
-        "scripts/turokgame/TurokMoveState.js");
-    StoreExternalFile("scripts/turokgame/TurokMoveState_Air.js",
-        "scripts/turokgame/TurokMoveState_Air.js");
-    StoreExternalFile("scripts/turokgame/TurokMoveState_Climb.js",
-        "scripts/turokgame/TurokMoveState_Climb.js");
-    StoreExternalFile("scripts/turokgame/TurokMoveState_NoClip.js",
-        "scripts/turokgame/TurokMoveState_NoClip.js");
-    StoreExternalFile("scripts/turokgame/TurokMoveState_Walk.js",
-        "scripts/turokgame/TurokMoveState_Walk.js");
     TX_StoreFonts();
     SND_StoreSounds();
     Com_GetCartFile(
