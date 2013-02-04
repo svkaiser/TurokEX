@@ -37,10 +37,10 @@ typedef enum
     MT_NORMAL = 0,
     MT_WATER_SHALLOW,
     MT_WATER_SURFACE,
-    MT_NOCLIP,
     MT_WATER_UNDER,
     MT_LAVA,
     MT_DEATHPIT,
+    MT_NOCLIP,
     MT_CLIMB,
     NUMMOVETYPES
 } movetype_t;
@@ -55,6 +55,7 @@ typedef struct
     vec3_t      accel;
     float       width;
     float       height;
+    float       movetime;
     float       center_y;
     float       view_y;
     float       yaw;
@@ -65,6 +66,7 @@ typedef struct
     plane_t     *plane;
     pmflags_t   flags;
     ticcmd_t    *cmd;
+    kbool       local;
 } move_t;
 
 extern move_t movecontroller;
@@ -74,6 +76,7 @@ typedef struct
     vec3_t      origin;
     vec3_t      velocity;
     vec3_t      accel;
+    float       movetime;
     float       angles[3];
     float       radius;
     float       height;

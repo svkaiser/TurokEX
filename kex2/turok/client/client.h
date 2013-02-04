@@ -62,6 +62,7 @@ typedef struct
     vec3_t          velocity;
     float           yaw;
     float           pitch;
+    float           roll;
     plane_t         *plane;
     float           lerp;
 } moveframe_t;
@@ -71,6 +72,7 @@ typedef struct
     ENetHost        *host;
     client_state_e  state;
     ENetPeer        *peer;
+    ENetEvent       netEvent;
     int             client_id;
     int             time;
     float           runtime;
@@ -93,6 +95,7 @@ kbool CL_Responder(event_t *ev);
 void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd);
 void CL_BuildTiccmd(void);
 void CL_PostEvent(event_t *ev);
+event_t *CL_GetEvent(void);
 void CL_ProcessEvents(void);
 void CL_MessageServer(char *string);
 kbool CL_Responder(event_t *ev);

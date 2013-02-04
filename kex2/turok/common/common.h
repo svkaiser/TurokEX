@@ -154,12 +154,12 @@ extern cvar_t*  cvarcap;
 
 void Cvar_Init(void);
 void Cvar_Register(cvar_t *variable);
-void Cvar_Set(char *var_name, const char *value);
-void Cvar_SetValue(char *var_name, float value);
-char *Cvar_String(char *name);
-void Cvar_AutoComplete(char *partial);
+void Cvar_Set(const char *var_name, const char *value);
+void Cvar_SetValue(const char *var_name, float value);
+char *Cvar_String(const char *name);
+void Cvar_AutoComplete(const char *partial);
 void Cvar_WriteToFile(FILE *file);
-cvar_t *Cvar_Get(char *name);
+cvar_t *Cvar_Get(const char *name);
 
 //
 // COMMANDS
@@ -168,8 +168,9 @@ typedef void (*cmd_t)(void);
 int Cmd_GetArgc(void);
 char *Cmd_GetArgv(int argv);
 void Cmd_ExecuteCommand(char *buffer);
-kbool Cmd_CompleteCommand(char *partial);
-void Cmd_AddCommand(char *name, cmd_t function);
+kbool Cmd_CompleteCommand(const char *partial);
+void Cmd_AddCommand(const char *name, cmd_t function);
+void Cmd_AddCommandObject(const char *name, void *object);
 void Cmd_Init(void);
 
 #define NETBACKUPS  64

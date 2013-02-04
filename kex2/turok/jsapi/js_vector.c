@@ -103,10 +103,53 @@ static void vector_finalize(JSContext *cx, JSObject *obj)
 {
     vec3_t *vector;
 
+    // TODO - TEMP
+    if(JS_GetParent(cx, obj) == js_objMoveController)
+    {
+        JS_SetPrivate(cx, obj, NULL);
+        return;
+    }
+
     if(vector = (vec3_t*)JS_GetPrivate(cx, obj))
         JS_free(cx, vector);
+}
 
-    return;
+//
+// vector_copy
+//
+
+static JSBool vector_copy(JSContext *cx, uintN argc, jsval *vp)
+{
+    vec3_t *vec1 = NULL;
+    vec3_t *vec2 = NULL;
+
+    if(argc != 1)
+        return JS_FALSE;
+
+    JS_THISVECTOR(vec1, vp);
+    JS_GETVECTOR(vec2, vp, 2);
+
+    Vec_Copy3(*vec1, *vec2);
+    JS_RETURNOBJECT(vp);
+    return JS_TRUE;
+}
+
+//
+// vector_clear
+//
+
+static JSBool vector_clear(JSContext *cx, uintN argc, jsval *vp)
+{
+    vec3_t *vec = NULL;
+
+    if(argc != 0)
+        return JS_FALSE;
+
+    JS_THISVECTOR(vec, vp);
+
+    Vec_Set3(*vec, 0, 0, 0);
+    JS_RETURNOBJECT(vp);
+    return JS_TRUE;
 }
 
 //
@@ -324,7 +367,10 @@ static JSBool vector_dot(JSContext *cx, uintN argc, jsval *vp)
     vec3_t *vec2 = NULL;
 
     if(argc <= 0)
+    {
+        JS_ReportPendingException(cx);
         return JS_FALSE;
+    }
 
     v = JS_ARGV(cx, vp);
 
@@ -485,6 +531,8 @@ JSPropertySpec Vector_props[] =
 
 JSFunctionSpec Vector_functions[] =
 {
+    JS_FN("copy",       vector_copy,        1, 0, 0),
+    JS_FN("clear",      vector_clear,       0, 0, 0),
     JS_FN("add",        vector_add,         1, 0, 0),
     JS_FN("sub",        vector_sub,         1, 0, 0),
     JS_FN("multiply",   vector_mult,        1, 0, 0),

@@ -130,6 +130,23 @@ static void FCmd_Quit(void)
 }
 
 //
+// FCmd_ShowWinConsole
+//
+
+static void FCmd_ShowWinConsole(void)
+{
+    if(Cmd_GetArgc() < 1)
+    {
+        Com_Printf("1 = show, 0 = hide");
+        return;
+    }
+
+#ifdef _WIN32
+    Sys_ShowConsole(atoi(Cmd_GetArgv(1)));
+#endif
+}
+
+//
 // Kernel_Run
 //
 
@@ -147,6 +164,8 @@ void Kernel_Run(void)
 #ifdef _WIN32
     Sys_ShowConsole(0);
 #endif
+
+    J_RunObjectEvent(JS_EV_GAME, "event_GameInitialized");
 
     while(1)
     {
@@ -197,6 +216,8 @@ void Kernel_Main(int argc, char **argv)
     Com_Printf("Key System Initialized\n");
     KF_Init();
     Com_Printf("File System Initialized\n");
+    J_Init();
+    Com_Printf("Javascript API Initialized\n");
     SV_Init();
     Com_Printf("Server Initialized\n");
     CL_Init();
@@ -207,14 +228,14 @@ void Kernel_Main(int argc, char **argv)
     Com_Printf("Video Initialized\n");
     R_Init();
     Com_Printf("Renderer Initialized\n");
-    J_Init();
-    Com_Printf("Javascript API Initialized\n");
 
     GL_Register();
 
     Cvar_Register(&fixedtime);
     Cvar_Register(&developer);
+
     Cmd_AddCommand("quit", FCmd_Quit);
+    Cmd_AddCommand("showconsole", FCmd_ShowWinConsole);
 
     Com_ReadConfigFile("config.cfg");
     Com_ReadConfigFile("autoexec.cfg");

@@ -88,15 +88,36 @@ static JSBool plane_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *v
         return JS_TRUE;
 
     case PL_LINK1:
-        JS_INSTPLANE(vp, plane->link[0]);
+        if(plane->link[0] == NULL)
+        {
+            JS_SET_RVAL(cx, vp, JSVAL_NULL);
+        }
+        else
+        {
+            JS_INSTPLANE(vp, plane->link[0]);
+        }
         return JS_TRUE;
 
     case PL_LINK2:
-        JS_INSTPLANE(vp, plane->link[1]);
+        if(plane->link[1] == NULL)
+        {
+            JS_SET_RVAL(cx, vp, JSVAL_NULL);
+        }
+        else
+        {
+            JS_INSTPLANE(vp, plane->link[1]);
+        }
         return JS_TRUE;
 
     case PL_LINK3:
-        JS_INSTPLANE(vp, plane->link[2]);
+        if(plane->link[2] == NULL)
+        {
+            JS_SET_RVAL(cx, vp, JSVAL_NULL);
+        }
+        else
+        {
+            JS_INSTPLANE(vp, plane->link[2]);
+        }
         return JS_TRUE;
 
     case PL_FLAGS:
@@ -150,6 +171,27 @@ static JSBool plane_distance(JSContext *cx, uintN argc, jsval *vp)
 }
 
 //
+// plane_heightDistance
+//
+
+static JSBool plane_heightDistance(JSContext *cx, uintN argc, jsval *vp)
+{
+    plane_t *plane = NULL;
+    jsval *v;
+    vec3_t *vector;
+
+    if(argc != 1)
+        return JS_FALSE;
+
+    v = JS_ARGV(cx, vp);
+
+    JS_THISPLANE(plane, vp);
+    JS_GETVECTOR(vector, v, 0);
+
+    return JS_NewDoubleValue(cx, Plane_GetHeight(plane, *vector), vp);
+}
+
+//
 // plane_getNormal
 //
 
@@ -190,6 +232,40 @@ static JSBool plane_getYaw(JSContext *cx, uintN argc, jsval *vp)
 
     JS_THISPLANE(plane, vp);
     return JS_NewDoubleValue(cx, Plane_GetYaw(plane), vp);
+}
+
+//
+// plane_toIndex
+//
+
+static JSBool plane_toIndex(JSContext *cx, uintN argc, jsval *vp)
+{
+    plane_t *plane = NULL;
+
+    JS_THISPLANE(plane, vp);
+    return JS_NewDoubleValue(cx, (jsdouble)(plane - g_currentmap->planes), vp);
+}
+
+//
+// plane_fromIndex
+//
+
+JS_FASTNATIVE_BEGIN(Plane, fromIndex)
+{
+    plane_t *plane = NULL;
+    jsval *v;
+    jsdouble n;
+
+    if(argc != 1)
+        return JS_FALSE;
+
+    v = JS_ARGV(cx, vp);
+
+    JS_GETNUMBER(n, v, 0);
+    plane = &g_currentmap->planes[(int)n];
+
+    JS_INSTPLANE(vp, plane);
+    return JS_TRUE;
 }
 
 //
@@ -247,9 +323,17 @@ JSConstDoubleSpec Plane_const[] =
 
 JSFunctionSpec Plane_functions[] =
 {
-    JS_FN("distance",   plane_distance,         1, 0, 0),
-    JS_FN("getNormal",  plane_getNormal,        0, 0, 0),
-    JS_FN("isAWall",    plane_isAWall,          0, 0, 0),
-    JS_FN("getYaw",     plane_getYaw,           0, 0, 0),
+    JS_FN("distance",       plane_distance,         1, 0, 0),
+    JS_FN("heightDistance", plane_heightDistance,   1, 0, 0),
+    JS_FN("getNormal",      plane_getNormal,        0, 0, 0),
+    JS_FN("isAWall",        plane_isAWall,          0, 0, 0),
+    JS_FN("getYaw",         plane_getYaw,           0, 0, 0),
+    JS_FN("toIndex",        plane_toIndex,          0, 0, 0),
+    JS_FS_END
+};
+
+JS_BEGINSTATICFUNCS(Plane)
+{
+    JS_FASTNATIVE(Plane, fromIndex, 1),
     JS_FS_END
 };

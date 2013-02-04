@@ -30,6 +30,7 @@
 #include "common.h"
 #include "zone.h"
 #include "kernel.h"
+#include "js.h"
 
 CVAR_EXTERNAL(kf_basepath);
 CVAR_EXTERNAL(developer);
@@ -45,6 +46,7 @@ void Com_Printf(char *string, ...)
 {
     static char msg[1024];
     va_list	va;
+    char *src;
     
     va_start(va, string);
     vsprintf(msg, string, va);
@@ -56,6 +58,9 @@ void Com_Printf(char *string, ...)
 
     Con_Printf(COLOR_WHITE, msg);
     printf(msg);
+
+    src = (char*)msg;
+    J_CallClassFunction(JS_EV_SYS, "event_OutputText", &src, 1);
 }
 
 //
@@ -66,6 +71,7 @@ void Com_CPrintf(rcolor color, char *string, ...)
 {
     static char msg[1024];
     va_list	va;
+    char *src[2];
     
     va_start(va, string);
     vsprintf(msg, string, va);
@@ -77,6 +83,14 @@ void Com_CPrintf(rcolor color, char *string, ...)
 
     Con_Printf(color, msg);
     printf(msg);
+
+    src[0] = (char*)msg;
+    src[1] = kva("%i,%i,%i",
+        color & 0xff,
+        (color >> 8) & 0xff,
+        (color >> 16) & 0xff);
+
+    J_CallClassFunction(JS_EV_SYS, "event_OutputText", src, 2);
 }
 
 //
@@ -87,6 +101,7 @@ void Com_Warning(char *string, ...)
 {
     static char msg[1024];
     va_list	va;
+    char *src[2];
     
     va_start(va, string);
     vsprintf(msg, string, va);
@@ -98,6 +113,11 @@ void Com_Warning(char *string, ...)
 
     Con_Printf(COLOR_YELLOW, msg);
     printf(msg);
+
+    src[0] = (char*)msg;
+    src[1] = "255,255,0";
+
+    J_CallClassFunction(JS_EV_SYS, "event_OutputText", src, 2);
 }
 
 //
@@ -115,7 +135,7 @@ void Com_DPrintf(char *string, ...)
         vsprintf(msg, string, va);
         va_end(va);
 
-        Com_CPrintf(COLOR_YELLOW, msg);
+        Com_CPrintf(RGBA(0xE0, 0xE0, 0xE0, 0xff), msg);
     }
 }
 

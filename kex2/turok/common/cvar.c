@@ -64,7 +64,7 @@ static void FCmd_Seta(void)
 // Cvar_Get
 //
 
-cvar_t *Cvar_Get(char *name)
+cvar_t *Cvar_Get(const char *name)
 {
     cvar_t *var;
     
@@ -81,7 +81,7 @@ cvar_t *Cvar_Get(char *name)
 // Cvar_Value
 //
 
-float Cvar_Value(char *name)
+float Cvar_Value(const char *name)
 {
     cvar_t	*var;
     
@@ -96,7 +96,7 @@ float Cvar_Value(char *name)
 // Cvar_String
 //
 
-char *Cvar_String(char *name)
+char *Cvar_String(const char *name)
 {
     cvar_t *var;
     
@@ -111,14 +111,14 @@ char *Cvar_String(char *name)
 // Cvar_AutoComplete
 //
 
-void Cvar_AutoComplete(char *partial)
+void Cvar_AutoComplete(const char *partial)
 {
     cvar_t*     cvar;
     int         len;
     char*       name = NULL;
     kbool       match = false;
     
-    strlwr(partial);
+    strlwr((char*)partial);
     
     len = strlen(partial);
     
@@ -150,7 +150,7 @@ void Cvar_AutoComplete(char *partial)
 // Cvar_Set
 //
 
-void Cvar_Set(char *var_name, const char *value)
+void Cvar_Set(const char *var_name, const char *value)
 {
     cvar_t *var;
     kbool changed;
@@ -178,7 +178,7 @@ void Cvar_Set(char *var_name, const char *value)
 // Cvar_SetValue
 //
 
-void Cvar_SetValue(char *var_name, float value)
+void Cvar_SetValue(const char *var_name, float value)
 {
     char val[32];
     

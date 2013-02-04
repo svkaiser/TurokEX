@@ -133,6 +133,10 @@ float Draw_BigText(float x, float y, byte alpha, kbool centered,
 void Draw_ShadowedText(float x, float y, byte alpha, kbool centered,
                        float scale, const char* string);
 void Draw_Pic(const char *pic, float x, float y, byte alpha, float scale);
+void Draw_Tile(const char *pic, float x, float y,
+               float tx1, float ty1, float tx2, float ty2,
+               float width, float height,
+               byte r, byte g, byte b, byte alpha);
 float Draw_Text(float x, float y, rcolor color,
                 float scale, const char* string, ...);
 

@@ -281,11 +281,11 @@ static void Key_HandleControl(int ctrl)
     if(ctrl & CKF_UP)
     {
         if((control.actions[ctrlkey] & CKF_COUNTMASK) > 0)
-            control.actions[ctrlkey]--;
+            control.actions[ctrlkey] = 0;
     }
     else
     {
-        control.actions[ctrlkey]++;
+        control.actions[ctrlkey] = 1;
     }
 }
 

@@ -31,6 +31,7 @@
 #include "server.h"
 #include "game.h"
 #include "type.h"
+#include "js.h"
 
 CVAR(sv_address, localhost);
 CVAR(sv_port, 58304);
@@ -314,7 +315,11 @@ static void SV_ReadPackets(void)
 
     while(enet_host_service(server.host, &sev, 0) > 0)
     {
-        switch(sev.type)
+        server.netEvent = sev;
+
+        J_RunObjectEvent(JS_EV_SERVER, "netUpdate");
+
+        /*switch(sev.type)
         {
             case ENET_EVENT_TYPE_CONNECT:
                 SV_AddClient(&sev);
@@ -328,7 +333,7 @@ static void SV_ReadPackets(void)
             case ENET_EVENT_TYPE_RECEIVE:
                 SV_ProcessClientPackets(sev.packet, &sev);
                 break;
-        }
+        }*/
     }
 }
 
@@ -349,6 +354,7 @@ static void SV_Ticker(void)
     server.tics++;
     server.time = server.tics * 100;
 
+    //J_RunObjectEvent(JS_EV_SERVER, "tick");
     G_Ticker();
 }
 
@@ -365,7 +371,9 @@ void SV_Run(int msec)
 
     SV_ReadPackets();
 
-    SV_SendClientMessages();
+    J_RunObjectEvent(JS_EV_SERVER, "update");
+
+    //SV_SendClientMessages();
 
     SV_Ticker();
 }

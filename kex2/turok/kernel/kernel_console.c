@@ -577,5 +577,5 @@ void Con_Init(void)
 
     console_initialized = true;
 
-    Cmd_AddCommand("clear", FCmd_ClearConsole);
+    //Cmd_AddCommand("clear", FCmd_ClearConsole);
 }

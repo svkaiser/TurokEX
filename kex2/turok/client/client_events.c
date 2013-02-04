@@ -30,6 +30,7 @@
 #include "packet.h"
 #include "menu.h"
 #include "mathlib.h"
+#include "js.h"
 
 event_t events[MAXEVENTS];
 int     eventhead = 0;
@@ -105,10 +106,6 @@ void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd)
     Packet_Write32(packet, client.ns.outgoing);
 
     client.ns.outgoing++;
-
-#undef WRITE_TICCMD16
-#undef WRITE_TICCMD8
-#undef DIFF_TICCMDS
 }
 
 //
@@ -167,7 +164,7 @@ void CL_BuildTiccmd(void)
     cmd.angle[0].f = client.pmove.angles[0];
     cmd.angle[1].f = client.pmove.angles[1];
 
-    cmd.msec.f = client.runtime;
+    cmd.msec.f = (float)client.time;
 
     client.cmd = cmd;
 
@@ -197,6 +194,23 @@ void CL_PostEvent(event_t *ev)
 }
 
 //
+// CL_GetEvent
+//
+
+event_t *CL_GetEvent(void)
+{
+    event_t *ev;
+
+    if(eventtail == eventhead)
+        return NULL;
+
+    ev = &events[eventtail];
+    eventtail = (++eventtail)&(MAXEVENTS-1);
+
+    return ev;
+}
+
+//
 // CL_ProcessEvents
 // Send all the events of the given timestamp down the responder chain
 //
@@ -204,22 +218,29 @@ void CL_PostEvent(event_t *ev)
 void CL_ProcessEvents(void)
 {
     event_t *ev;
+    event_t *oldev = NULL; // TEMP
     
-    for(; eventtail != eventhead; eventtail = (++eventtail)&(MAXEVENTS-1))
+    while((ev = CL_GetEvent()) != NULL)
     {
-        ev = &events[eventtail];
+        if(ev == oldev)
+            return;
 
-        if(Con_Responder(ev))
-        {
-            continue;
-        }
+        //if(Con_Responder(ev))
+        //{
+        //    continue;
+        //}
 
-        if(Menu_Responder(ev))
-        {
-            continue;
-        }
+        //if(Menu_Responder(ev))
+        //{
+        //    continue;
+       // }
 
-        CL_Responder(ev);
+        // TODO - TEMP
+        eventtail = (--eventtail)&(MAXEVENTS-1);
+        J_RunObjectEvent(JS_EV_CLIENT, "_tempResponder");
+        //CL_Responder(ev);
+
+        oldev = ev;
     }
 }
 

@@ -33,6 +33,7 @@
 #include "zone.h"
 #include "game.h"
 #include "packet.h"
+#include "js.h"
 
 //
 // G_Shutdown
@@ -160,6 +161,13 @@ void G_ClientReborn(gclient_t *client)
 void G_SetupPlayer(actor_t *actor)
 {
     unsigned int i;
+
+    // TODO - TEMP
+    J_SpawnPlayer_temp(actor->origin,
+        actor->yaw, actor->pitch, actor->object.plane_id, true);
+
+    J_SpawnPlayer_temp(actor->origin,
+        actor->yaw, actor->pitch, actor->object.plane_id, false);
 
     // setup local client
     Vec_Copy3(client.moveframe.origin, actor->origin);

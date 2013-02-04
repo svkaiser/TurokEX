@@ -359,6 +359,7 @@ void Pred_ProcessMove(move_t *move, float friction, float gravity)
 {
     vec3_t position;
     float dist;
+    trace_t trace;
 
     if(move->plane == NULL)
     {
@@ -368,16 +369,13 @@ void Pred_ProcessMove(move_t *move, float friction, float gravity)
 
     // slide against planes and clip velocity
     G_ClipMovement(move->origin, move->velocity, &move->plane,
-        move->width, move->center_y, move->yaw, NULL);
+        move->width, move->center_y, move->yaw, &trace);
 
     Vec_Add(position, move->origin, move->velocity);
 
     if(move->plane)
     {
         plane_t *pl = move->plane;
-
-        // get floor distance
-        dist = position[1] - Plane_GetDistance(pl, position);
 
         if(pl->flags & CLF_CHECKHEIGHT)
         {
@@ -395,7 +393,7 @@ void Pred_ProcessMove(move_t *move, float friction, float gravity)
         // get floor distance
         dist = position[1] - Plane_GetDistance(pl, position);
 
-        if(dist < ONPLANE_EPSILON)
+        if(dist < ONPLANE_EPSILON && !(move->plane->flags & CLF_CLIMB))
         {
             position[1] = position[1] - dist;
 
@@ -409,7 +407,6 @@ void Pred_ProcessMove(move_t *move, float friction, float gravity)
 
     // update gravity and apply friction
     move->velocity[1] -= gravity;
-    G_ApplyFriction(move->velocity, friction, false);
 
     // update move to new position
     Vec_Copy3(move->origin, position);
@@ -669,7 +666,7 @@ static const movefunction_t movefuncs[NUMMOVETYPES] =
     Pred_ClimbMove
 };
 
-void Pred_Move(pred_t *pred)
+static void Pred_Move(pred_t *pred, kbool local)
 {
     move_t *move = &movecontroller;
 
@@ -679,7 +676,9 @@ void Pred_Move(pred_t *pred)
     Vec_Copy3(move->velocity, pred->pmove.velocity);
     Vec_Copy3(move->accel, pred->pmove.accel);
 
+    move->local     = local;
     move->cmd       = &pred->cmd;
+    move->movetime  = pred->pmove.movetime;
     move->yaw       = pred->pmove.angles[0];
     move->pitch     = pred->pmove.angles[1];
     move->roll      = pred->pmove.angles[2];
@@ -693,7 +692,7 @@ void Pred_Move(pred_t *pred)
     move->plane     = pred->pmove.plane != -1 ?
         &g_currentmap->planes[pred->pmove.plane] : NULL;
 
-    //J_RunMoveState();
+    //J_RunSimulator("userMovement");
 
     movefuncs[move->movetype](move);
 
@@ -701,8 +700,10 @@ void Pred_Move(pred_t *pred)
     Vec_Copy3(pred->pmove.velocity, move->velocity);
     Vec_Copy3(pred->pmove.accel, move->accel);
 
+    pred->pmove.movetime    = move->movetime;
     pred->pmove.angles[0]   = move->yaw;
     pred->pmove.angles[1]   = move->pitch;
+    pred->pmove.angles[2]   = move->roll;
     pred->pmove.flags       = move->flags;
     pred->pmove.movetype    = move->movetype;
     pred->pmove.plane       = (move->plane - g_currentmap->planes);
@@ -727,7 +728,7 @@ void Pred_ClientMovement(void)
     pred.pmove = client.pmove;
     pred.cmd = client.cmd;
 
-    Pred_Move(&pred);
+    Pred_Move(&pred, true);
 
     current = (client.ns.outgoing-1) & (NETBACKUPS-1);
 
@@ -768,7 +769,7 @@ void Pred_ServerMovement(void)
         pred.pmove = svcl->pmove;
         pred.cmd = svcl->cmd;
 
-        Pred_Move(&pred);
+        Pred_Move(&pred, false);
 
         actor = &svcl->gclient.actor;
 

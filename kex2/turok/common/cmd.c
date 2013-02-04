@@ -27,12 +27,14 @@
 #include <string.h>
 #include "common.h"
 #include "zone.h"
+#include "js.h"
 
 typedef struct cmd_function_s
 {
 	struct cmd_function_s   *next;
-	char                    *name;
+	const char              *name;
 	cmd_t                   function;
+    void                    *object;
 } cmd_function_t;
 
 static cmd_function_t *cmd_functions = NULL;
@@ -42,6 +44,8 @@ static cmd_function_t *cmd_functions = NULL;
 
 static int cmd_argc;
 static char cmd_argv[CMD_MAX_ARGV][CMD_BUFFER_LEN];
+
+static void FCmd_Stub(void);
 
 //
 // Cmd_RunCommand
@@ -60,7 +64,21 @@ kbool Cmd_RunCommand(void)
     {
         if(!strcasecmp(cmd_argv[0], cmd->name))
         {
-            cmd->function();
+            if(cmd->object)
+            {
+                int i;
+                char **argv = Z_Alloca(sizeof(char*) * cmd_argc);
+
+                for(i = 0; i < cmd_argc-1; i++)
+                    argv[i] = Z_Strdupa(cmd_argv[i+1]);
+
+                J_CallObject(cmd->object, argv, cmd_argc-1);
+            }
+            else if(cmd->function)
+            {
+                cmd->function();
+            }
+
             return true;
         }
     }
@@ -236,7 +254,7 @@ void Cmd_ExecuteCommand(char *buffer)
 // Cmd_CompleteCommand
 //
 
-kbool Cmd_CompleteCommand(char *partial)
+kbool Cmd_CompleteCommand(const char *partial)
 {
     cmd_function_t *cmd;
     int len;
@@ -285,18 +303,18 @@ kbool Cmd_CompleteCommand(char *partial)
 }
 
 //
-// Cmd_AddCommand
+// Cmd_VerifyCommand
 //
 
-void Cmd_AddCommand(char *name, cmd_t function)
+static kbool Cmd_VerifyCommand(const char *name)
 {
-	cmd_function_t *cmd;
-	
+    cmd_function_t *cmd;
+
     // fail if the command is a variable name
     if(Cvar_String(name)[0])
     {
         Com_Warning("Cmd_AddCommand: %s already defined as a var\n", name);
-        return;
+        return false;
     }
     
     // fail if the command already exists
@@ -305,15 +323,49 @@ void Cmd_AddCommand(char *name, cmd_t function)
         if(!strcmp(name, cmd->name))
         {
             Com_Warning("Cmd_AddCommand: %s already defined\n", name);
-            return;
+            return false;
         }
     }
 
-    cmd = Z_Malloc(sizeof(cmd_function_t), PU_STATIC, 0);
-    cmd->name = name;
-    cmd->function = function;
-    cmd->next = cmd_functions;
-    cmd_functions = cmd;
+    return true;
+}
+
+//
+// Cmd_AddCommand
+//
+
+void Cmd_AddCommand(const char *name, cmd_t function)
+{
+	cmd_function_t *cmd;
+	
+    if(!Cmd_VerifyCommand(name))
+        return;
+
+    cmd             = Z_Malloc(sizeof(cmd_function_t), PU_STATIC, 0);
+    cmd->name       = name;
+    cmd->function   = function;
+    cmd->next       = cmd_functions;
+    cmd->object     = NULL;
+    cmd_functions   = cmd;
+}
+
+//
+// Cmd_AddCommandObject
+//
+
+void Cmd_AddCommandObject(const char *name, void *object)
+{
+	cmd_function_t *cmd;
+	
+    if(!Cmd_VerifyCommand(name))
+        return;
+
+    cmd             = Z_Malloc(sizeof(cmd_function_t), PU_STATIC, 0);
+    cmd->name       = Z_Strdup(name, PU_STATIC, 0);
+    cmd->function   = FCmd_Stub;
+    cmd->next       = cmd_functions;
+    cmd->object     = object;
+    cmd_functions   = cmd;
 }
 
 //
@@ -340,6 +392,14 @@ static void FCmd_List(void)
 //
 
 static void FCmd_Exec(void)
+{
+}
+
+//
+// FCmd_Stub
+//
+
+static void FCmd_Stub(void)
 {
 }
 

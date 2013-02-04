@@ -42,7 +42,6 @@ CVAR(r_fog, 1);
 static kbool showcollision = false;
 static kbool showbbox = false;
 
-static float cam_roll = 0;
 static float wpn_thudoffset = 0;
 static mtx_t mtx_rotation;
 
@@ -254,22 +253,23 @@ static void R_SetupViewFrame(void)
 
     if(client.pmove.movetype == MT_WATER_UNDER)
     {
-        cam_roll *= 0.935f;
+        client.pmove.angles[2] *= 0.935f;
         amt = 0.4f;
     }
     else
     {
-        cam_roll *= 0.9f;
+        client.pmove.angles[2] *= 0.9f;
         amt = 0.0625f;
     }
 
     // interpolate view roll
-    cam_roll = (((angle * amt) * Vec_Unit2(dir)) - cam_roll) * d + cam_roll;
+    client.pmove.angles[2] = (((angle * amt) * Vec_Unit2(dir)) -
+        client.pmove.angles[2]) * d + client.pmove.angles[2];
 
     // clamp roll due to stupid floating point precision
-    if(cam_roll < 0.001f && cam_roll > -0.001f)
+    if(client.pmove.angles[2] < 0.001f && client.pmove.angles[2] > -0.001f)
     {
-        cam_roll = 0;
+        client.pmove.angles[2] = 0;
     }
 
     bob_x = 0;
@@ -311,7 +311,8 @@ static void R_SetupViewFrame(void)
     Mtx_Identity(mtx);
     Vec_SetQuaternion(yaw, -frame->yaw + M_PI - bob_y, 0, 1, 0);
     Vec_SetQuaternion(pitch, frame->pitch + bob_x, 1, 0, 0);
-    Vec_SetQuaternion(roll, cam_roll, 0, 0, 1);
+    Vec_SetQuaternion(roll, client.pmove.angles[2], 0,
+        (float)sin(frame->pitch), (float)cos(frame->pitch));
     Vec_MultQuaternion(vroll, yaw, roll);
     Vec_MultQuaternion(rot, vroll, pitch);
     Mtx_ApplyRotation(rot, mtx);
@@ -950,7 +951,7 @@ void R_DrawViewWeapon(void)
         vec4_t roll;
         vec4_t lean;
 
-        Vec_SetQuaternion(roll, cam_roll, 0, 1, 0);
+        Vec_SetQuaternion(roll, client.pmove.angles[2], 0, 1, 0);
         Vec_MultQuaternion(lean, yaw, roll);
         Vec_MultQuaternion(aim, lean, pitch);
     }
@@ -1035,8 +1036,9 @@ void R_DrawActors(void)
 
 void R_DrawFrame(void)
 {
-    R_SetupFog();
-    R_SetupViewFrame();
+    //R_SetupFog();
+    //R_SetupViewFrame();
+    J_RunObjectEvent(JS_EV_RENDER, "event_PreRender");
     R_SetupClipFrustum();
 
     dglCullFace(GL_BACK);
@@ -1053,7 +1055,6 @@ void R_DrawFrame(void)
     dglCullFace(GL_FRONT);
 
     R_DrawActors();
-
     R_DrawViewWeapon();
 
     dglEnableClientState(GL_COLOR_ARRAY);
@@ -1075,7 +1076,8 @@ void R_DrawFrame(void)
     GL_SetState(GLSTATE_TEXGEN_S, false);
     GL_SetState(GLSTATE_TEXGEN_T, false);
 
-    GL_SetOrtho();
+    J_RunObjectEvent(JS_EV_RENDER, "event_PostRender");
+    //GL_SetOrtho();
 
     // underwater overlay
     if(client.pmove.flags & PMF_SUBMERGED)

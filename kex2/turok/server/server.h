@@ -65,6 +65,7 @@ struct svclient_s
 typedef struct
 {
     ENetHost        *host;
+    ENetEvent       netEvent;
     kbool           local;
     server_state_e  state;
     unsigned int    maxclients;

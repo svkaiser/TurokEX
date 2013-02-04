@@ -456,7 +456,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\jsapi\js_game.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\jsapi\js_gl.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\jsapi\js_input.c"
 					>
 				</File>
 				<File
@@ -476,11 +484,27 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\jsapi\js_net.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\jsapi\js_physics.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\jsapi\js_plane.c"
 					>
 				</File>
 				<File
 					RelativePath="..\turok\jsapi\js_quaternion.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\jsapi\js_render.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\jsapi\js_server.c"
 					>
 				</File>
 				<File

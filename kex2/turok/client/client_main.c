@@ -34,6 +34,7 @@
 #include "gl.h"
 #include "game.h"
 #include "mathlib.h"
+#include "js.h"
 
 client_t client;
 
@@ -120,10 +121,10 @@ void CL_Connect(const char *address)
 
 static void CL_ReadClientInfo(ENetPacket *packet)
 {
-    int tmp;
+    //int tmp;
 
     Packet_Read8(packet, &client.client_id);
-    Packet_Read8(packet, &tmp);
+    //Packet_Read8(packet, &tmp);
     client.state = CL_STATE_READY;
 
     Com_DPrintf("CL_ReadClientInfo: ID is %i\n", client.client_id);
@@ -154,6 +155,7 @@ static void CL_BuildMoveFrame(void)
     frame->origin[2]    = -client.pred_diff[2] * lerp + client.pmove.origin[2];
     frame->yaw          = client.pmove.angles[0];
     frame->pitch        = client.pmove.angles[1];
+    frame->roll         = client.pmove.angles[2];
     frame->plane        = &g_currentmap->planes[client.pmove.plane];
 }
 
@@ -277,7 +279,11 @@ static void CL_CheckHostMsg(void)
 
     while(enet_host_service(client.host, &cev, 0) > 0)
     {
-        switch(cev.type)
+        client.netEvent = cev;
+
+        J_RunObjectEvent(JS_EV_CLIENT, "netUpdate");
+
+        /*switch(cev.type)
         {
         case ENET_EVENT_TYPE_CONNECT:
             Com_Printf("connected to host\n");
@@ -294,7 +300,7 @@ static void CL_CheckHostMsg(void)
         case ENET_EVENT_TYPE_RECEIVE:
             CL_ProcessServerPackets(cev.packet, &cev);
             break;
-        }
+        }*/
     }
 }
 
@@ -401,15 +407,17 @@ void CL_Run(int msec)
 
     CL_CheckHostMsg();
 
-    IN_PollInput();
+    //IN_PollInput();
 
-    CL_ProcessEvents();
+    //CL_ProcessEvents();
 
-    CL_BuildTiccmd();
+    J_RunObjectEvent(JS_EV_CLIENT, "tick");
 
-    Pred_ClientMovement();
+    //CL_BuildTiccmd();
 
-    CL_BuildMoveFrame();
+    //Pred_ClientMovement();
+
+    //CL_BuildMoveFrame();
 
     CL_Drawer();
 
@@ -432,23 +440,6 @@ int CL_Random(void)
 static void FCmd_ShowClientTime(void)
 {
     bDebugTime ^= 1;
-}
-
-//
-// FCmd_Ping
-//
-
-static void FCmd_Ping(void)
-{
-    ENetPacket *packet;
-
-    if(!(packet = Packet_New()))
-    {
-        return;
-    }
-
-    Packet_Write8(packet, cp_ping);
-    Packet_Send(packet, client.peer);
 }
 
 //
@@ -528,7 +519,6 @@ void CL_Init(void)
     Cvar_Register(&cl_port);
 
     Cmd_AddCommand("debugclienttime", FCmd_ShowClientTime);
-    Cmd_AddCommand("ping", FCmd_Ping);
     Cmd_AddCommand("say", FCmd_Say);
-    Cmd_AddCommand("msgserver", FCmd_MsgServer);
+    //Cmd_AddCommand("msgserver", FCmd_MsgServer);
 }

@@ -304,7 +304,7 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
 
     if(!(p->flags & CLF_CHECKHEIGHT) &&
         link->flags & CLF_CHECKHEIGHT &&
-        Plane_GetHeight(link, pos) < pos[1])
+        Plane_GetHeight(link, pos) < (pos[1] + trace->offset + 30.72f))
     {
         // above ceiling height
         return NULL;

@@ -31,184 +31,160 @@
 #include "client.h"
 #include "mathlib.h"
 
-JSObject *js_objClient;
+JS_CLASSOBJECT(NClient);
 
 enum client_enum
 {
-    CL_CMD,
-    CL_ORIGIN,
-    CL_VELOCITY,
-    CL_YAW,
-    CL_PITCH,
-    CL_CENTER_Y,
-    CL_VIEW_Y,
-    CL_WIDTH,
-    CL_HEIGHT,
-    CL_MOVETYPE,
-    CL_PLANE
+    CL_HOST,
+    CL_PEER,
+    CL_STATE,
+    CL_NETEVENT,
+    CL_ID,
+    CL_SUBCLASS
 };
 
-//
-// client_getProperty
-//
-
-static JSBool client_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+JS_PROP_FUNC_GET(NClient)
 {
     switch(JSVAL_TO_INT(id))
     {
-    case CL_CMD:
-        JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(js_objCmd));
+    case CL_STATE:
+        return JS_NewNumberValue(cx, client.state, vp);
+
+    case CL_SUBCLASS:
         return JS_TRUE;
 
-    case CL_ORIGIN:
-        JS_NEWVECTOR(vp, client.moveframe.origin);
+    case CL_HOST:
+        JS_NEWOBJECT_SETPRIVATE(client.host, &Host_class);
         return JS_TRUE;
 
-    case CL_VELOCITY:
-        JS_NEWVECTOR(vp, client.moveframe.velocity);
+    case CL_PEER:
+        JS_NEWOBJECT_SETPRIVATE(client.peer, &Peer_class);
         return JS_TRUE;
 
-    case CL_YAW:
-        return JS_NewNumberValue(cx, client.moveframe.yaw, vp);
+    case CL_NETEVENT:
+        JS_NEWOBJECT_SETPRIVATE(&client.netEvent, &NetEvent_class);
+        return JS_TRUE;
 
-    case CL_PITCH:
-        return JS_NewNumberValue(cx, client.moveframe.pitch, vp);
+    case CL_ID:
+        return JS_NewNumberValue(cx, client.client_id, vp);
 
-    case CL_CENTER_Y:
-        return JS_NewNumberValue(cx, client.pmove.centerheight, vp);
-
-    case CL_VIEW_Y:
-        return JS_NewNumberValue(cx, client.pmove.viewheight, vp);
-
-    case CL_WIDTH:
-        return JS_NewNumberValue(cx, client.pmove.radius, vp);
-
-    case CL_HEIGHT:
-        return JS_NewNumberValue(cx, client.pmove.height, vp);
-
-    case CL_MOVETYPE:
-        return JS_NewNumberValue(cx, client.pmove.movetype, vp);
-
-    case CL_PLANE:
-        JS_INSTPLANE(vp, client.moveframe.plane);
+    default:
         return JS_TRUE;
     }
 
     return JS_FALSE;
 }
 
-//
-// client_setProperty
-//
-
-static JSBool client_setProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+JS_PROP_FUNC_SET(NClient)
 {
+    jsdouble val;
+
     switch(JSVAL_TO_INT(id))
     {
-    case CL_CMD:
-        break;
+    case CL_STATE:
+        JS_GETNUMBER(val, vp, 0);
+        client.state = (float)val;
+        return JS_TRUE;
 
-    case CL_ORIGIN:
+    case CL_ID:
+        JS_GETNUMBER(val, vp, 0);
+        client.client_id = (int)val;
+        return JS_TRUE;
+
+    case CL_SUBCLASS:
         {
-            vec3_t *vector;
-            JS_GETVECTOR(vector, vp, 0);
-            client.pmove.origin[0] = (*vector)[0];
-            client.pmove.origin[1] = (*vector)[1];
-            client.pmove.origin[2] = (*vector)[2];
+            JSObject *obj2;
+            JS_GETOBJECT(obj2, vp, 0);
+            JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj2));
             return JS_TRUE;
         }
-        break;
 
-    case CL_VELOCITY:
-        {
-            vec3_t *vector;
-            JS_GETVECTOR(vector, vp, 0);
-            client.pmove.velocity[0] = (*vector)[0];
-            client.pmove.velocity[1] = (*vector)[1];
-            client.pmove.velocity[2] = (*vector)[2];
-            return JS_TRUE;
-        }
-        break;
-
-    case CL_YAW:
-        break;
-
-    case CL_PITCH:
-        break;
-
-    case CL_MOVETYPE:
+    default:
+        JS_ReportError(cx, "Unknown property");
         break;
     }
 
     return JS_FALSE;
 }
 
-//
-// client_inLevel
-//
-
-static JSBool client_inLevel(JSContext *cx, uintN argc, jsval *rval)
+JS_FASTNATIVE_BEGIN(NClient, inLevel)
 {
     kbool b = (g_currentmap != NULL);
 
-    JS_SET_RVAL(cx, rval, BOOLEAN_TO_JSVAL(b));
+    JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(b));
     return JS_TRUE;
 }
 
-//
-// system_class
-//
-
-JSClass Client_class =
+JS_FASTNATIVE_BEGIN(NClient, getEvent)
 {
-    "Client",                                   // name
+    JSObject *obj;
+    event_t *ev = CL_GetEvent();
+
+    if(ev == NULL)
+    {
+        JS_SET_RVAL(cx, vp, JSVAL_NULL);
+        return JS_TRUE;
+    }
+
+    obj = JS_NewObject(cx, NULL, NULL, NULL);
+    JS_AddRoot(cx, &obj);
+
+    JS_DefineProperty(cx, obj, "type",  INT_TO_JSVAL(ev->type),  NULL, NULL, JSPROP_ENUMERATE);
+    JS_DefineProperty(cx, obj, "data1", INT_TO_JSVAL(ev->data1), NULL, NULL, JSPROP_ENUMERATE);
+    JS_DefineProperty(cx, obj, "data2", INT_TO_JSVAL(ev->data2), NULL, NULL, JSPROP_ENUMERATE);
+    JS_DefineProperty(cx, obj, "data3", INT_TO_JSVAL(ev->data3), NULL, NULL, JSPROP_ENUMERATE);
+    JS_DefineProperty(cx, obj, "data4", INT_TO_JSVAL(ev->data4), NULL, NULL, JSPROP_ENUMERATE);
+
+    JS_RemoveRoot(cx, &obj);
+
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(NClient, spawnPlayer)
+{
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_BEGINCLASS(NClient)
     0,                                          // flags
     JS_PropertyStub,                            // addProperty
     JS_PropertyStub,                            // delProperty
-    client_getProperty,                         // getProperty
-    client_setProperty,                         // setProperty
+    NClient_getProperty,                        // getProperty
+    NClient_setProperty,                        // setProperty
     JS_EnumerateStub,                           // enumerate
     JS_ResolveStub,                             // resolve
     JS_ConvertStub,                             // convert
     JS_FinalizeStub,                            // finalize
     JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
-};
+JS_ENDCLASS();
 
-//
-// Client_props
-//
-
-JSPropertySpec Client_props[] =
+JS_BEGINPROPS(NClient)
 {
-    { "Cmd",        CL_CMD,         JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
-    { "origin",     CL_ORIGIN,      JSPROP_ENUMERATE,                   NULL, NULL },
-    { "velocity",   CL_VELOCITY,    JSPROP_ENUMERATE,                   NULL, NULL },
-    { "yaw",        CL_YAW,         JSPROP_ENUMERATE,                   NULL, NULL },
-    { "pitch",      CL_PITCH,       JSPROP_ENUMERATE,                   NULL, NULL },
-    { "center_y",   CL_CENTER_Y,    JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
-    { "view_y",     CL_VIEW_Y,      JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
-    { "width",      CL_WIDTH,       JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
-    { "height",     CL_HEIGHT,      JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
-    { "movetype",   CL_MOVETYPE,    JSPROP_ENUMERATE,                   NULL, NULL },
-    { "plane",      CL_PLANE,       JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "host",       CL_HOST,        JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "peer",       CL_PEER,        JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "netEvent",   CL_NETEVENT,    JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "state",      CL_STATE,       JSPROP_ENUMERATE,                   NULL, NULL },
+    { "id",         CL_ID,          JSPROP_ENUMERATE,                   NULL, NULL },
+    { "subclass",   CL_SUBCLASS,    JSPROP_ENUMERATE,                   NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 
-//
-// Client_const
-//
-
-JSConstDoubleSpec Client_const[] =
+JS_BEGINCONST(NClient)
 {
+    { CL_STATE_UNINITIALIZED,   "STATE_UNINITIALIZED",  0, { 0, 0, 0 } },
+    { CL_STATE_CONNECTING,      "STATE_CONNECTING",     0, { 0, 0, 0 } },
+    { CL_STATE_CONNECTED,       "STATE_CONNECTED",      0, { 0, 0, 0 } },
+    { CL_STATE_DISCONNECTED,    "STATE_DISCONNECTED",   0, { 0, 0, 0 } },
+    { CL_STATE_READY,           "STATE_READY",          0, { 0, 0, 0 } },
     { 0, 0, 0, { 0, 0, 0 } }
 };
 
-//
-// Client_functions
-//
-
-JSFunctionSpec Client_functions[] =
+JS_BEGINFUNCS(NClient)
 {
-    JS_FN("inLevel",    client_inLevel,     0, 0, 0),
+    JS_FASTNATIVE(NClient, inLevel, 0),
+    JS_FASTNATIVE(NClient, getEvent, 0),
+    JS_FASTNATIVE(NClient, spawnPlayer, 4),
     JS_FS_END
 };

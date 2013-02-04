@@ -781,6 +781,51 @@ void Draw_Pic(const char *pic, float x, float y, byte alpha, float scale)
 }
 
 //
+// Draw_Tile
+// Simplier version of Draw_Pic
+//
+
+void Draw_Tile(const char *pic, float x, float y,
+               float tx1, float ty1, float tx2, float ty2,
+               float width, float height,
+               byte r, byte g, byte b, byte alpha)
+{
+    texture_t *tex;
+    rcolor color;
+    vtx_t vtx[4];
+
+    tex = Tex_CacheTextureFile(pic, DGL_CLAMP, true);
+
+    if(tex == NULL)
+        return;
+
+    GL_BindTexture(tex);
+    GL_SetVertexPointer(vtx);
+
+    vtx[0].x = vtx[2].x = x;
+    vtx[1].x = vtx[3].x = x + width;
+    vtx[0].y = vtx[1].y = y;
+    vtx[2].y = vtx[3].y = y + height;
+    vtx[0].z = vtx[1].z = 0;
+    vtx[2].z = vtx[3].z = 0;
+    vtx[0].tu = vtx[2].tu = tx1;
+    vtx[1].tu = vtx[3].tu = tx2;
+    vtx[0].tv = vtx[1].tv = ty1;
+    vtx[2].tv = vtx[3].tv = ty2;
+
+    color = RGBA(r, g, b, alpha);
+
+    *(rcolor*)&vtx[0].r = color;
+    *(rcolor*)&vtx[1].r = color;
+    *(rcolor*)&vtx[2].r = color;
+    *(rcolor*)&vtx[3].r = color;
+
+    GL_Triangle(0, 1, 2);
+    GL_Triangle(2, 1, 3);
+    GL_DrawElements(4, vtx);
+}
+
+//
 // SetupFontTexture
 //
 

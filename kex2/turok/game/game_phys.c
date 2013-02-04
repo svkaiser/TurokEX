@@ -205,7 +205,7 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
         if(t) *t = trace;
         *plane = trace.pl;
 
-        if(trace.type == TRT_INTERACT)
+        if(trace.type == TRT_INTERACT || trace.pl->flags & CLF_CLIMB)
             break;
 
         if(trace.type == TRT_NOHIT)
@@ -225,7 +225,7 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
                 int k;
 
                 // slide along this plane
-                G_ClipVelocity(vel, vel, normals[hits], 1.01f);
+                G_ClipVelocity(vel, vel, normals[hits], 1);
 
                 // try bumping against another plane
                 for(j = 0; j < moves; j++)

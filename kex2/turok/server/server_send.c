@@ -62,7 +62,7 @@ void SV_UpdateClientInfo(ENetEvent *sev, svclient_t *svc, int id)
 
     Packet_Write8(packet, sp_clientinfo);
     Packet_Write8(packet, svc->client_id);
-    Packet_Write8(packet, id);
+    //Packet_Write8(packet, id);
     Packet_Send(packet, svc->peer);
 }
 

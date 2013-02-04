@@ -36,11 +36,11 @@ CVAR_EXTERNAL(kf_basepath);
 #define JS_STACK_CHUNK_SIZE  8192
 
 static js_scrobj_t *js_scrobj_list[MAX_HASH];
-static JSRuntime    *js_runtime;
-static js_scrobj_t  *js_rootscript;
+static JSRuntime    *js_runtime     = NULL;
+static js_scrobj_t  *js_rootscript  = NULL;
 
-JSContext   *js_context;
-JSObject    *js_gobject;
+JSContext   *js_context = NULL;
+JSObject    *js_gobject = NULL;
 
 //
 // J_GlobalEnumerate
@@ -228,6 +228,42 @@ jsval J_CallFunctionOnObject(JSContext *cx, JSObject *object, const char *functi
 }
 
 //
+// J_CallObject
+//
+
+void J_CallObject(void *object, char **args, int nargs)
+{
+    JSContext *cx;
+    JSObject *obj;
+
+    cx = js_context;
+    obj = (JSObject*)object;
+
+    if(JS_ObjectIsFunction(cx, obj))
+    {
+        jsval rval;
+        jsval *argv;
+
+        if(nargs == 0)
+        {
+            argv = (jsval*)JS_malloc(cx, sizeof(jsval) * 1);
+            argv[0] = JSVAL_VOID;
+        }
+        else
+        {
+            int i;
+
+            argv = (jsval*)JS_malloc(cx, sizeof(jsval) * nargs);
+            for(i = 0; i < nargs; i++)
+                argv[i] = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, args[i]));
+        }
+
+        JS_CallFunctionValue(cx, js_gobject, OBJECT_TO_JSVAL(obj), nargs, argv, &rval);
+        JS_free(cx, argv);
+    }
+}
+
+//
 // J_GetObjectElement
 //
 
@@ -248,6 +284,175 @@ jsval J_GetObjectElement(JSContext *cx, JSObject *object, jsint index)
 
     JS_SET_RVAL(cx, &val, JSVAL_NULL);
     return val;
+}
+
+//
+// J_CallClassFunction
+//
+
+void J_CallClassFunction(int type, const char *function, char **args, int nargs)
+{
+    JSContext *cx;
+    JSObject *object;
+    jsval rval;
+    jsval *argv;
+    JSBool hasFunc;
+
+    if(js_runtime == NULL || js_gobject == NULL)
+        return;
+
+    cx = js_context;
+    object = NULL;
+
+    switch(type)
+    {
+    case JS_EV_CLIENT:
+        object = js_objNClient;
+        break;
+
+    case JS_EV_SERVER:
+        object = js_objNServer;
+        break;
+
+    case JS_EV_RENDER:
+        object = js_objNRender;
+        break;
+
+    case JS_EV_GAME:
+        object = js_objNGame;
+        break;
+
+    case JS_EV_SYS:
+        object = js_objSys;
+        break;
+
+    default:
+        return;
+    }
+
+    if(object == NULL)
+        return;
+
+    if(nargs == 0)
+    {
+        argv = (jsval*)JS_malloc(cx, sizeof(jsval) * 1);
+        argv[0] = JSVAL_VOID;
+    }
+    else
+    {
+        int i;
+
+        argv = (jsval*)JS_malloc(cx, sizeof(jsval) * nargs);
+        for(i = 0; i < nargs; i++)
+            argv[i] = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, args[i]));
+    }
+
+    if(!JS_HasProperty(cx, object, function, &hasFunc))
+    {
+        JS_free(cx, argv);
+        return;
+    }
+
+    if(hasFunc)
+        JS_CallFunctionName(js_context, object, function, nargs, argv, &rval);
+
+    JS_free(cx, argv);
+}
+
+//
+// J_SpawnPlayer_temp
+// TODO - TEMP/PLACEHOLDER FOR PLAYER SPAWNING
+//
+
+void J_SpawnPlayer_temp(float *origin, float yaw, float pitch, int planeid, int client)
+{
+    jsval rval;
+    jsval argv[4];
+    JSContext *cx;
+    JSObject *obj;
+    vec3_t *vec;
+
+    cx = js_context;
+
+    obj = JS_NewObject(cx, &Vector_class, NULL, NULL);
+
+    vec = (vec3_t*)JS_malloc(cx, sizeof(vec3_t));
+    Vec_Copy3(*vec, origin);
+    JS_SetPrivate(cx, obj, vec);
+
+    argv[0] = OBJECT_TO_JSVAL(obj);
+    argv[1] = DOUBLE_TO_JSVAL(JS_NewDouble(cx, yaw));
+    argv[2] = DOUBLE_TO_JSVAL(JS_NewDouble(cx, pitch));
+    argv[3] = INT_TO_JSVAL(planeid);
+
+    JS_CallFunctionName(cx, client ? js_objNClient : js_objNServer,
+        "spawnPlayer", 4, argv, &rval);
+}
+
+//
+// J_RunObjectEvent
+//
+
+void J_RunObjectEvent(int type, const char *function)
+{
+    JSContext *cx;
+    JSObject *object;
+    JSObject *subObj;
+    JSBool hasSub;
+    jsval val;
+    jsval rval;
+    jsval argv = JSVAL_VOID;
+
+    cx = js_context;
+    object = NULL;
+
+    switch(type)
+    {
+    case JS_EV_CLIENT:
+        object = js_objNClient;
+        break;
+
+    case JS_EV_SERVER:
+        object = js_objNServer;
+        break;
+
+    case JS_EV_RENDER:
+        object = js_objNRender;
+        break;
+
+    case JS_EV_GAME:
+        object = js_objNGame;
+        break;
+
+    default:
+        return;
+    }
+
+    if(object == NULL)
+        return;
+
+    if(!JS_HasProperty(cx, object, "subclass", &hasSub))
+        return;
+
+    if(hasSub)
+    {
+        if(!JS_GetProperty(cx, object, "subclass", &val))
+            return;
+
+        if(JSVAL_IS_NULL(val))
+            return;
+
+        if(!JS_ValueToObject(cx, val, &subObj))
+            return;
+
+        if(subObj == NULL)
+            return;
+
+        rval = J_CallFunctionOnObject(cx, subObj, function);
+
+        if(JSVAL_IS_NULL(rval))
+            return;
+    }
 }
 
 //
@@ -283,9 +488,12 @@ js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer, int size)
 
     if(!(scrobj->script = JS_CompileScript(cx, obj, buffer, size, scrname, 1)))
     {
+        JS_ReportPendingException(cx);
         Z_Free(scrobj);
         return NULL;
     }
+
+    JS_ReportPendingException(cx);
 
     if(!(scrobj->obj = JS_NewScriptObject(cx, scrobj->script)))
     {
@@ -422,7 +630,11 @@ void J_ExecScriptObj(js_scrobj_t *scobj)
     if(scobj == NULL)
         return;
 
-    JS_ExecuteScript(cx, obj, scobj->script, &result);
+    if(!JS_ExecuteScript(cx, obj, scobj->script, &result))
+    {
+        JS_ReportPendingException(cx);
+        Com_Warning("Unable to execute %s\n", scobj->name);
+    }
 }
 
 #if 0
@@ -627,16 +839,27 @@ void J_Init(void)
     JS_SetGlobalObject(js_context, js_gobject);
 
     JS_DEFINEOBJECT(Sys);
+    JS_DEFINEOBJECT(Input);
     JS_DEFINEOBJECT(GL);
-    JS_DEFINEOBJECT(Client);
+    JS_DEFINEOBJECT(Net);
+    JS_DEFINEOBJECT(NClient);
+    JS_DEFINEOBJECT(NServer);
+    JS_DEFINEOBJECT(NRender);
+    JS_DEFINEOBJECT(NGame);
     JS_DEFINEOBJECT(Cmd);
     JS_DEFINEOBJECT(Angle);
     JS_DEFINEOBJECT(MoveController);
     JS_DEFINEOBJECT(MapProperty);
+    JS_DEFINEOBJECT(Simulator);
+    JS_DEFINEOBJECT(Physics);
     JS_INITCLASS(Vector, 3);
     JS_INITCLASS(Quaternion, 4);
     JS_INITCLASS(Matrix, 0);
-    JS_INITCLASS_NOSTATIC(Plane, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(NetEvent, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(Packet, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(Peer, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(Host, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(Plane, 0);
 
     if(!(js_rootscript = J_LoadScript("scripts/main.js")))
         Com_Error("J_Init: Unable to load main.js");
