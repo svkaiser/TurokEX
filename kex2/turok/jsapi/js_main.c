@@ -287,6 +287,144 @@ jsval J_GetObjectElement(JSContext *cx, JSObject *object, jsint index)
 }
 
 //
+// J_AllocFloatArray
+//
+
+jsuint J_AllocFloatArray(JSContext *cx, JSObject *object, float **arr, JSBool fixed)
+{
+    float *ptr;
+    jsuint length;
+    jsuint i;
+
+    if(!JS_IsArrayObject(cx, object))
+        return 0;
+
+    if(!JS_GetArrayLength(cx, object, &length))
+        return 0;
+
+    if(!fixed)
+        ptr = (float*)JS_malloc(cx, sizeof(float) * length);
+    else
+        ptr = *arr;
+
+    for(i = 0; i < length; i++)
+    {
+        jsval val;
+        jsdouble n;
+
+        val = J_GetObjectElement(cx, object, i);
+
+        if(JSVAL_IS_NULL(val))
+        {
+            ptr[i] = 0;
+            continue;
+        }
+
+        if(!JS_ValueToNumber(cx, val, &n))
+            return 0;
+
+        ptr[i] = (float)n;
+    }
+
+    if(!fixed)
+        *arr = ptr;
+
+    return length;
+}
+
+//
+// J_AllocWordArray
+//
+
+jsuint J_AllocWordArray(JSContext *cx, JSObject *object, word **arr, JSBool fixed)
+{
+    word *ptr;
+    jsuint length;
+    jsuint i;
+
+    if(!JS_IsArrayObject(cx, object))
+        return 0;
+
+    if(!JS_GetArrayLength(cx, object, &length))
+        return 0;
+
+    if(!fixed)
+        ptr = (word*)JS_malloc(cx, sizeof(word) * length);
+    else
+        ptr = *arr;
+
+    for(i = 0; i < length; i++)
+    {
+        jsval val;
+        jsdouble n;
+
+        val = J_GetObjectElement(cx, object, i);
+
+        if(JSVAL_IS_NULL(val))
+        {
+            ptr[i] = 0;
+            continue;
+        }
+
+        if(!JS_ValueToNumber(cx, val, &n))
+            return 0;
+
+        ptr[i] = (word)n;
+    }
+
+    if(!fixed)
+        *arr = ptr;
+
+    return length;
+}
+
+//
+// J_AllocByteArray
+//
+
+jsuint J_AllocByteArray(JSContext *cx, JSObject *object, byte **arr, JSBool fixed)
+{
+    byte *ptr;
+    jsuint length;
+    jsuint i;
+
+    if(!JS_IsArrayObject(cx, object))
+        return 0;
+
+    if(!JS_GetArrayLength(cx, object, &length))
+        return 0;
+
+    if(!fixed)
+        ptr = (byte*)JS_malloc(cx, sizeof(byte) * length);
+    else
+        ptr = *arr;
+
+    for(i = 0; i < length; i++)
+    {
+        jsval val;
+        jsdouble n;
+
+        val = J_GetObjectElement(cx, object, i);
+
+        if(JSVAL_IS_NULL(val))
+        {
+            ptr[i] = 0;
+            continue;
+        }
+
+        if(!JS_ValueToNumber(cx, val, &n))
+            return 0;
+
+        ptr[i] = (byte)n;
+    }
+
+    if(!fixed)
+        *arr = ptr;
+
+    return length;
+}
+
+//
 // J_CallClassFunction
 //
 
@@ -589,7 +727,7 @@ void J_CompileAndRunScript(const char *name)
 
 void J_GarbageCollect(void)
 {
-    JS_GC(js_context);
+    JS_MaybeGC(js_context);
 }
 
 //
@@ -739,6 +877,7 @@ static void FCmd_JS(void)
                 }
             }
 
+            JS_ReportPendingException(cx);
             JS_DestroyScript(cx, script);
         }
     }
@@ -768,6 +907,7 @@ static void FCmd_JSFile(void)
         kf_basepath.string, Cmd_GetArgv(1))))
     {
         JS_ExecuteScript(cx, obj, script, &result);
+        JS_ReportPendingException(cx);
         JS_DestroyScript(cx, script);
     }
 
@@ -839,7 +979,7 @@ void J_Init(void)
     JS_SetGlobalObject(js_context, js_gobject);
 
     JS_DEFINEOBJECT(Sys);
-    JS_DEFINEOBJECT(Input);
+    JS_DEFINEOBJECT(NInput);
     JS_DEFINEOBJECT(GL);
     JS_DEFINEOBJECT(Net);
     JS_DEFINEOBJECT(NClient);
@@ -850,15 +990,18 @@ void J_Init(void)
     JS_DEFINEOBJECT(Angle);
     JS_DEFINEOBJECT(MoveController);
     JS_DEFINEOBJECT(MapProperty);
-    JS_DEFINEOBJECT(Simulator);
     JS_DEFINEOBJECT(Physics);
     JS_INITCLASS(Vector, 3);
     JS_INITCLASS(Quaternion, 4);
     JS_INITCLASS(Matrix, 0);
+    JS_INITCLASS(AnimState, 0);
     JS_INITCLASS_NOCONSTRUCTOR(NetEvent, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Packet, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Peer, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Host, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(Model, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(Animation, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(Texture, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Plane, 0);
 
     if(!(js_rootscript = J_LoadScript("scripts/main.js")))

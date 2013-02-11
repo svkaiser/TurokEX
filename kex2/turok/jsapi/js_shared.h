@@ -38,6 +38,9 @@ typedef struct js_scrobj_s
 } js_scrobj_t;
 
 jsval J_GetObjectElement(JSContext *cx, JSObject *object, jsint index);
+jsuint J_AllocFloatArray(JSContext *cx, JSObject *object, float **arr, JSBool fixed);
+jsuint J_AllocWordArray(JSContext *cx, JSObject *object, word **arr, JSBool fixed);
+jsuint J_AllocByteArray(JSContext *cx, JSObject *object, byte **arr, JSBool fixed);
 
 js_scrobj_t *J_FindScript(const char *name);
 js_scrobj_t *J_LoadScript(const char *name);
@@ -88,6 +91,9 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 #define JS_BEGINCONST(name) JSConstDoubleSpec name ## _const[] =
 #define JS_BEGINFUNCS(name) JSFunctionSpec name ## _functions[] =
 #define JS_BEGINSTATICFUNCS(name) JSFunctionSpec name ## _functions_static[] =
+
+#define JS_CONSTRUCTOR(class)   \
+    JSBool class ## _construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *vp)
 
 #define JS_FASTNATIVE(class, name, args)  \
     JS_FN(# name,    class ## _ ##name,    args, 0, 0)
@@ -200,6 +206,11 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
     if(JSVAL_IS_NULL(v[a]))                                                         \
         return JS_FALSE
 
+#define JS_GETSTRING(str, bytes, v, a)                                              \
+    if(!(str = JS_ValueToString(cx, v[a])) ||                                       \
+        !(bytes = JS_EncodeString(cx, str)))                                        \
+        return JS_FALSE
+
 #define JS_THISVECTOR(vec, v)                                                       \
     if(!(vec = (vec3_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),            \
         &Vector_class, NULL)))                                                      \
@@ -283,7 +294,7 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
     JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(boolean))
 
 JS_EXTERNOBJECT(Sys);
-JS_EXTERNOBJECT(Input);
+JS_EXTERNOBJECT(NInput);
 JS_EXTERNOBJECT(GL);
 JS_EXTERNOBJECT(Net);
 JS_EXTERNOBJECT(NClient);
@@ -294,15 +305,18 @@ JS_EXTERNOBJECT(Cmd);
 JS_EXTERNOBJECT(Angle);
 JS_EXTERNOBJECT(MoveController);
 JS_EXTERNOBJECT(MapProperty);
-JS_EXTERNOBJECT(Simulator);
 JS_EXTERNOBJECT(Physics);
 JS_EXTERNCLASS(Vector);
 JS_EXTERNCLASS(Quaternion);
 JS_EXTERNCLASS(Matrix);
+JS_EXTERNCLASS(AnimState);
 JS_EXTERNCLASS_NOCONSTRUCTOR(NetEvent);
 JS_EXTERNCLASS_NOCONSTRUCTOR(Packet);
 JS_EXTERNCLASS_NOCONSTRUCTOR(Peer);
 JS_EXTERNCLASS_NOCONSTRUCTOR(Host);
+JS_EXTERNCLASS_NOCONSTRUCTOR(Model);
+JS_EXTERNCLASS_NOCONSTRUCTOR(Animation);
+JS_EXTERNCLASS_NOCONSTRUCTOR(Texture);
 JS_EXTERNCLASS_NOCONSTRUCTOR(Plane);
 
 #endif

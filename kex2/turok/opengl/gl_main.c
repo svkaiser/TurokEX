@@ -34,8 +34,11 @@
 #include "kernel.h"
 
 #define GL_MAX_INDICES  0x10000
+#define GL_MAX_VERTICES 0x10000
 static word indicecnt = 0;
 static word drawIndices[GL_MAX_INDICES];
+static word vertexcnt = 0;
+static vtx_t drawVertices[GL_MAX_VERTICES];
 
 static dtexture prev_texture = 0;
 
@@ -353,14 +356,10 @@ void GL_SetState(int bit, kbool enable)
 void GL_BindTexture(texture_t *texture)
 {
     if(texture == NULL)
-    {
         return;
-    }
 
     if(texture->texid == prev_texture)
-    {
         return;
-    }
 
     dglBindTexture(GL_TEXTURE_2D, texture->texid);
     prev_texture = texture->texid;
@@ -368,17 +367,14 @@ void GL_BindTexture(texture_t *texture)
 
 //
 // GL_BindTextureName
-// Texture must already be allocated and loaded
 //
 
 void GL_BindTextureName(const char *name)
 {
     texture_t *texture;
 
-    if(!(texture = Tex_Find(name)))
-    {
+    if(!(texture = Tex_CacheTextureFile(name, DGL_CLAMP, true)))
         return;
-    }
 
     GL_BindTexture(texture);
 }
@@ -424,10 +420,19 @@ void GL_ClearView(float *clear)
 
 void GL_SetVertexPointer(vtx_t *vtx)
 {
+    static vtx_t *dgl_prevptr = NULL;
+
+    // 20120623 villsa - avoid redundant calls by checking for
+    // the previous pointer that was set
+    if(dgl_prevptr == vtx)
+        return;
+
     dglNormalPointer(GL_FLOAT, sizeof(vtx_t), &vtx->nx);
     dglTexCoordPointer(2, GL_FLOAT, sizeof(vtx_t), &vtx->tu);
     dglVertexPointer(3, GL_FLOAT, sizeof(vtx_t), vtx);
     dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vtx_t), &vtx->r);
+
+    dgl_prevptr = vtx;
 }
 
 //
@@ -437,11 +442,52 @@ void GL_SetVertexPointer(vtx_t *vtx)
 void GL_Triangle(int v0, int v1, int v2)
 {
     if(indicecnt + 3 >= GL_MAX_INDICES)
-        Com_Error("Triangle indice overflow");
+        Com_Error("Static triangle indice overflow");
 
     drawIndices[indicecnt++] = v0;
     drawIndices[indicecnt++] = v1;
     drawIndices[indicecnt++] = v2;
+}
+
+//
+// GL_Vertex
+//
+
+void GL_Vertex(float x, float y, float z,
+               float tu, float tv,
+               float nx, float ny, float nz,
+               byte r, byte g, byte b, byte a)
+{
+    if(vertexcnt >= GL_MAX_VERTICES)
+        Com_Error("Static vertex draw overflow");
+
+    drawVertices[vertexcnt].x   = x;
+    drawVertices[vertexcnt].y   = y;
+    drawVertices[vertexcnt].z   = z;
+    drawVertices[vertexcnt].tu  = tu;
+    drawVertices[vertexcnt].tv  = tv;
+    drawVertices[vertexcnt].nx  = nx;
+    drawVertices[vertexcnt].ny  = ny;
+    drawVertices[vertexcnt].nz  = nz;
+    drawVertices[vertexcnt].r   = r;
+    drawVertices[vertexcnt].g   = g;
+    drawVertices[vertexcnt].b   = b;
+    drawVertices[vertexcnt].a   = a;
+
+    vertexcnt++;
+}
+
+//
+// GL_DrawElements2
+//
+
+void GL_DrawElements2(void)
+{
+    GL_SetVertexPointer(drawVertices);
+    dglDrawElements(GL_TRIANGLES, indicecnt, GL_UNSIGNED_SHORT, drawIndices);
+
+    indicecnt = 0;
+    vertexcnt = 0;
 }
 
 //

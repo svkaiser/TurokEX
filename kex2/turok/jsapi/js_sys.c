@@ -30,80 +30,60 @@
 #include "kernel.h"
 #include "client.h"
 #include "zone.h"
+#include "gl.h"
 
-JSObject *js_objSys;
+JS_CLASSOBJECT(Sys);
 
 CVAR_EXTERNAL(cl_maxfps);
 
-//
-// sys_print
-//
-
-static JSBool sys_print(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+JS_FASTNATIVE_BEGIN(Sys, print)
 {
     uintN i;
     JSString *str;
     char *bytes;
+    jsval *v = JS_ARGV(cx, vp);
 
     for (i = 0; i < argc; i++)
     {
-        if(!(str = JS_ValueToString(cx, argv[i])) ||
-            !(bytes = JS_EncodeString(cx, str)))
-        {
-            return JS_FALSE;
-        }
+        JS_GETSTRING(str, bytes, v, i);
 
         Com_Printf("%s\n", bytes);
         JS_free(cx, bytes);
     }
 
-    JS_SET_RVAL(cx, rval, JSVAL_VOID);
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-//
-// sys_log
-//
-
-static JSBool sys_log(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+JS_FASTNATIVE_BEGIN(Sys, log)
 {
     uintN i;
     JSString *str;
     char *bytes;
+    jsval *v = JS_ARGV(cx, vp);
 
     for (i = 0; i < argc; i++)
     {
-        if(!(str = JS_ValueToString(cx, argv[i])) ||
-            !(bytes = JS_EncodeString(cx, str)))
-        {
-            return JS_FALSE;
-        }
+        JS_GETSTRING(str, bytes, v, i);
 
         Com_DPrintf("%s\n", bytes);
         JS_free(cx, bytes);
     }
 
-    JS_SET_RVAL(cx, rval, JSVAL_VOID);
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-//
-// sys_error
-//
-
-static JSBool sys_error(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+JS_FASTNATIVE_BEGIN(Sys, error)
 {
     uintN i;
     JSString *str;
     char *bytes;
+    jsval *v = JS_ARGV(cx, vp);
 
     for (i = 0; i < argc; i++)
     {
-        if(!(str = JS_ValueToString(cx, argv[i])) ||
-            !(bytes = JS_EncodeString(cx, str)))
-        {
-            return JS_FALSE;
-        }
+        JS_GETSTRING(str, bytes, v, i);
 
         if(JS_IsExceptionPending(cx))
             JS_ReportPendingException(cx);
@@ -112,73 +92,43 @@ static JSBool sys_error(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
         JS_free(cx, bytes);
     }
 
-    JS_SET_RVAL(cx, rval, JSVAL_VOID);
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-//
-// sys_getms
-//
-
-static JSBool sys_getms(JSContext *cx, uintN argc, jsval *rval)
+JS_FASTNATIVE_BEGIN(Sys, ms)
 {
-    return JS_NewNumberValue(cx, Sys_GetMilliseconds(), rval);
+    return JS_NewNumberValue(cx, Sys_GetMilliseconds(), vp);
 }
 
-//
-// sys_getTime
-//
-
-static JSBool sys_getTime(JSContext *cx, uintN argc, jsval *rval)
+JS_FASTNATIVE_BEGIN(Sys, time)
 {
-    return JS_NewNumberValue(cx, client.time, rval);
+    return JS_NewNumberValue(cx, client.time, vp);
 }
 
-//
-// sys_getDeltaTime
-//
-
-static JSBool sys_getDeltaTime(JSContext *cx, uintN argc, jsval *rval)
+JS_FASTNATIVE_BEGIN(Sys, deltatime)
 {
-    return JS_NewDoubleValue(cx, client.runtime, rval);
+    return JS_NewDoubleValue(cx, client.runtime, vp);
 }
 
-//
-// sys_getFixedTime
-//
-
-static JSBool sys_getFixedTime(JSContext *cx, uintN argc, jsval *rval)
+JS_FASTNATIVE_BEGIN(Sys, fixedTime)
 {
-    return JS_NewDoubleValue(cx, (1000.0f / cl_maxfps.value) / 1000.0f, rval);
+    return JS_NewDoubleValue(cx, (1000.0f / cl_maxfps.value) / 1000.0f, vp);
 }
 
-//
-// sys_getTicks
-//
-
-static JSBool sys_getTicks(JSContext *cx, uintN argc, jsval *rval)
+JS_FASTNATIVE_BEGIN(Sys, ticks)
 {
-    return JS_NewNumberValue(cx, client.tics, rval);
+    return JS_NewNumberValue(cx, client.tics, vp);
 }
 
-//
-// sys_getCvar
-//
-
-static JSBool sys_getCvar(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+JS_FASTNATIVE_BEGIN(Sys, getCvar)
 {
     JSString *str;
     char *bytes;
     cvar_t *cvar;
 
-    if(argc <= 0)
-        return JS_FALSE;
-
-    if(!(str = JS_ValueToString(cx, argv[0])) ||
-        !(bytes = JS_EncodeString(cx, str)))
-    {
-        return JS_FALSE;
-    }
+    JS_CHECKARGS(1);
+    JS_GETSTRING(str, bytes, v, 0);
 
     cvar = Cvar_Get(bytes);
     JS_free(cx, bytes);
@@ -186,66 +136,40 @@ static JSBool sys_getCvar(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
     if(!cvar)
         return JS_FALSE;
 
-    return JS_NewNumberValue(cx, cvar->value, rval);
+    return JS_NewNumberValue(cx, cvar->value, vp);
 }
 
-//
-// sys_execCommand
-//
-
-static JSBool sys_execCommand(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+JS_FASTNATIVE_BEGIN(Sys, callCmd)
 {
     JSString *str;
     char *bytes;
 
-    if(argc <= 0)
-        return JS_FALSE;
-
-    if(!(str = JS_ValueToString(cx, argv[0])) ||
-        !(bytes = JS_EncodeString(cx, str)))
-    {
-        return JS_FALSE;
-    }
+    JS_CHECKARGS(1);
+    JS_GETSTRING(str, bytes, v, 0);
 
     Cmd_ExecuteCommand(bytes);
     JS_free(cx, bytes);
 
-    JS_SET_RVAL(cx, rval, JSVAL_VOID);
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-
-//
-// sys_addCommand
-//
-
-static JSBool sys_addCommand(JSContext *cx, uintN argc, jsval *vp)
+JS_FASTNATIVE_BEGIN(Sys, addCommand)
 {
-    jsval *v;
     JSObject *obj;
     JSString *str;
     char *bytes;
 
-    if(argc != 2)
-        return JS_FALSE;
+    JS_CHECKARGS(2);
 
-    v = JS_ARGV(cx, vp);
-
-    if(!(str = JS_ValueToString(cx, v[0])) ||
-        !(bytes = JS_EncodeString(cx, str)))
-    {
-        return JS_FALSE;
-    }
-
+    JS_GETSTRING(str, bytes, v, 0);
     JS_GETOBJECT(obj, v, 1);
 
     if(obj == NULL)
         return JS_FALSE;
 
     if(JS_ObjectIsFunction(cx, obj))
-    {
         Cmd_AddCommandObject(bytes, obj);
-    }
     
     JS_free(cx, bytes);
 
@@ -253,36 +177,18 @@ static JSBool sys_addCommand(JSContext *cx, uintN argc, jsval *vp)
     return JS_TRUE;
 }
 
-//
-// sys_addCvar
-//
-
-static JSBool sys_addCvar(JSContext *cx, uintN argc, jsval *vp)
+JS_FASTNATIVE_BEGIN(Sys, addCvar)
 {
-    jsval *v;
     JSString *str1;
     JSString *str2;
     char *bytes1;
     char *bytes2;
     cvar_t *cvar;
 
-    if(argc != 2)
-        return JS_FALSE;
+    JS_CHECKARGS(2);
 
-    v = JS_ARGV(cx, vp);
-
-    if(!(str1 = JS_ValueToString(cx, v[0])) ||
-        !(bytes1 = JS_EncodeString(cx, str1)))
-    {
-        return JS_FALSE;
-    }
-
-    if(!(str2 = JS_ValueToString(cx, v[1])) ||
-        !(bytes2 = JS_EncodeString(cx, str2)))
-    {
-        JS_free(cx, bytes1);
-        return JS_FALSE;
-    }
+    JS_GETSTRING(str1, bytes1, v, 0);
+    JS_GETSTRING(str2, bytes2, v, 1);
 
     cvar = (cvar_t*)Z_Calloc(sizeof(cvar_t), PU_STATIC, 0);
 
@@ -305,27 +211,14 @@ static JSBool sys_addCvar(JSContext *cx, uintN argc, jsval *vp)
     return JS_TRUE;
 }
 
-//
-// sys_runScript
-//
-
-static JSBool sys_runScript(JSContext *cx, uintN argc, jsval *vp)
+JS_FASTNATIVE_BEGIN(Sys, runScript)
 {
-    jsval *v;
     JSString *str;
     js_scrobj_t *jfile;
     char *bytes;
 
-    if(argc != 1)
-        return JS_FALSE;
-
-    v = JS_ARGV(cx, vp);
-
-    if(!(str = JS_ValueToString(cx, v[0])) ||
-        !(bytes = JS_EncodeString(cx, str)))
-    {
-        return JS_FALSE;
-    }
+    JS_CHECKARGS(1);
+    JS_GETSTRING(str, bytes, v, 0);
 
     if(!(jfile = J_LoadScript(bytes)))
     {
@@ -343,27 +236,14 @@ static JSBool sys_runScript(JSContext *cx, uintN argc, jsval *vp)
     return JS_TRUE;
 }
 
-//
-// sys_dependsOn
-//
-
-static JSBool sys_dependsOn(JSContext *cx, uintN argc, jsval *vp)
+JS_FASTNATIVE_BEGIN(Sys, dependsOn)
 {
-    jsval *v;
     JSString *str;
     char *bytes;
     js_scrobj_t *jfile;
 
-    if(argc != 1)
-        return JS_FALSE;
-
-    v = JS_ARGV(cx, vp);
-
-    if(!(str = JS_ValueToString(cx, v[0])) ||
-        !(bytes = JS_EncodeString(cx, str)))
-    {
-        return JS_FALSE;
-    }
+    JS_CHECKARGS(1);
+    JS_GETSTRING(str, bytes, v, 0);
 
     if(J_FindScript(bytes) == NULL)
     {
@@ -385,58 +265,117 @@ static JSBool sys_dependsOn(JSContext *cx, uintN argc, jsval *vp)
     return JS_TRUE;
 }
 
-//
-// sys_rootObject
-//
-
-static JSBool sys_rootObject(JSContext *cx, uintN argc, jsval *vp)
+JS_FASTNATIVE_BEGIN(Sys, unsetEnumerate)
 {
-    jsval *v;
     JSObject *obj;
+    JSString *str;
+    char *bytes;
+    uintN attributes;
+    JSBool found;
 
-    if(argc != 1)
-        return JS_FALSE;
-
-    v = JS_ARGV(cx, vp);
-
+    JS_CHECKARGS(2);
     JS_GETOBJECT(obj, v, 0);
-    
-    if(!JS_AddRoot(cx, &obj))
-        return JS_FALSE;
+    JS_GETSTRING(str, bytes, v, 1);
+
+    JS_GetPropertyAttributes(cx, obj, bytes, &attributes, &found);
+    attributes &= ~JSPROP_ENUMERATE;
+    JS_SetPropertyAttributes(cx, obj, bytes, attributes, &found);
+    JS_free(cx, bytes);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-//
-// sys_unrootObject
-//
-
-static JSBool sys_unrootObject(JSContext *cx, uintN argc, jsval *vp)
+JS_FASTNATIVE_BEGIN(Sys, cacheTexture)
 {
-    jsval *v;
-    JSObject *obj;
+    JSString *str;
+    char *bytes;
+    texture_t *texture;
 
-    if(argc != 1)
-        return JS_FALSE;
+    JS_CHECKARGS(1);
+    JS_GETSTRING(str, bytes, v, 0);
 
-    v = JS_ARGV(cx, vp);
+    texture = Tex_CacheTextureFile(bytes, DGL_CLAMP, true);
+    JS_free(cx, bytes);
 
-    JS_GETOBJECT(obj, v, 0);
-    
-    if(!JS_RemoveRoot(cx, &obj))
-        return JS_FALSE;
+    if(texture == NULL)
+        JS_SET_RVAL(cx, vp, JSVAL_NULL);
+    else
+    {
+        JSObject *obj = JS_NewObject(cx, &Texture_class, NULL, NULL);
 
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+        if(obj == NULL)
+            return JS_FALSE;
+
+        JS_AddRoot(cx, &obj);
+        JS_DefineProperty(cx, obj, "width", INT_TO_JSVAL(texture->width),
+            NULL, NULL, JSPROP_ENUMERATE|JSPROP_READONLY);
+        JS_DefineProperty(cx, obj, "height", INT_TO_JSVAL(texture->height),
+            NULL, NULL, JSPROP_ENUMERATE|JSPROP_READONLY);
+        JS_DefineProperty(cx, obj, "origWidth", INT_TO_JSVAL(texture->origwidth),
+            NULL, NULL, JSPROP_ENUMERATE|JSPROP_READONLY);
+        JS_DefineProperty(cx, obj, "origHeight", INT_TO_JSVAL(texture->origheight),
+            NULL, NULL, JSPROP_ENUMERATE|JSPROP_READONLY);
+        JS_DefineProperty(cx, obj, "clampMode", INT_TO_JSVAL(texture->clampmode),
+            NULL, NULL, JSPROP_ENUMERATE|JSPROP_READONLY);
+        JS_SetPrivate(cx, obj, texture);
+        JS_RemoveRoot(cx, &obj);
+
+        JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
+    }
+
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(Sys, loadModel)
+{
+    JSString *str;
+    char *bytes;
+    kmodel_t *model;
 
-//
-// sys_GC
-//
+    JS_CHECKARGS(1);
+    JS_GETSTRING(str, bytes, v, 0);
 
-static JSBool sys_GC(JSContext *cx, uintN argc, jsval *vp)
+    model = Mdl_Load(bytes);
+    JS_free(cx, bytes);
+
+    if(model == NULL)
+        JS_SET_RVAL(cx, vp, JSVAL_NULL);
+    else
+    {
+        JS_NEWOBJECT_SETPRIVATE(model, &Model_class);
+    }
+
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Sys, loadAnimation)
+{
+    JSObject *object;
+    JSString *str;
+    char *bytes;
+    kmodel_t *model;
+    anim_t *animation;
+
+    JS_CHECKARGS(2);
+    JS_GETOBJECT(object, v, 0);
+    JS_GETSTRING(str, bytes, v, 1);
+    JS_GET_PRIVATE_DATA(object, &Model_class, kmodel_t, model);
+
+    animation = Mdl_GetAnim(model, bytes);
+    JS_free(cx, bytes);
+
+    if(model == NULL)
+        JS_SET_RVAL(cx, vp, JSVAL_NULL);
+    else
+    {
+        JS_NEWOBJECT_SETPRIVATE(animation, &Animation_class);
+    }
+
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Sys, GC)
 {
    JS_GC(cx);
 
@@ -444,11 +383,7 @@ static JSBool sys_GC(JSContext *cx, uintN argc, jsval *vp)
    return JS_TRUE;
 }
 
-//
-// sys_maybeGC
-//
-
-static JSBool sys_maybeGC(JSContext *cx, uintN argc, jsval *vp)
+JS_FASTNATIVE_BEGIN(Sys, maybeGC)
 {
    JS_MaybeGC(cx);
 
@@ -456,13 +391,7 @@ static JSBool sys_maybeGC(JSContext *cx, uintN argc, jsval *vp)
    return JS_TRUE;
 }
 
-//
-// system_class
-//
-
-JSClass Sys_class =
-{
-    "Sys",                                      // name
+JS_BEGINCLASS(Sys)
     0,                                          // flags
     JS_PropertyStub,                            // addProperty
     JS_PropertyStub,                            // delProperty
@@ -473,49 +402,39 @@ JSClass Sys_class =
     JS_ConvertStub,                             // convert
     JS_FinalizeStub,                            // finalize
     JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
-};
+JS_ENDCLASS();
 
-//
-// Sys_props
-//
-
-JSPropertySpec Sys_props[] =
+JS_BEGINPROPS(Sys)
 {
     { NULL, 0, 0, NULL, NULL }
 };
 
-//
-// Sys_const
-//
-
-JSConstDoubleSpec Sys_const[] =
+JS_BEGINCONST(Sys)
 {
     { 0, 0, 0, { 0, 0, 0 } }
 };
 
-//
-// Sys_functions
-//
-
-JSFunctionSpec Sys_functions[] =
+JS_BEGINFUNCS(Sys)
 {
-    JS_FS("print",          sys_print,          0, 0, 0),
-    JS_FS("log",            sys_log,            0, 0, 0),
-    JS_FS("error",          sys_error,          0, 0, 0),
-    JS_FN("ms",             sys_getms,          0, 0, 0),
-    JS_FN("time",           sys_getTime,        0, 0, 0),
-    JS_FN("deltatime",      sys_getDeltaTime,   0, 0, 0),
-    JS_FN("fixedTime",      sys_getFixedTime,   0, 0, 0),
-    JS_FN("ticks",          sys_getTicks,       0, 0, 0),
-    JS_FS("getCvar",        sys_getCvar,        1, 0, 0),
-    JS_FS("callCmd",        sys_execCommand,    1, 0, 0),
-    JS_FN("addCommand",     sys_addCommand,     2, 0, 0),
-    JS_FN("addCvar",        sys_addCvar,        2, 0, 0),
-    JS_FN("runScript",      sys_runScript,      1, 0, 0),
-    JS_FN("dependsOn",      sys_dependsOn,      1, 0, 0),
-    JS_FN("rootObject",     sys_rootObject,     1, 0, 0),
-    JS_FN("unrootObject",   sys_unrootObject,   1, 0, 0),
-    JS_FN("GC",             sys_GC,             0, 0, 0),
-    JS_FN("maybeGC",        sys_maybeGC,        0, 0, 0),
+    JS_FASTNATIVE(Sys, print, 0),
+    JS_FASTNATIVE(Sys, log, 0),
+    JS_FASTNATIVE(Sys, error, 0),
+    JS_FASTNATIVE(Sys, ms, 0),
+    JS_FASTNATIVE(Sys, time, 0),
+    JS_FASTNATIVE(Sys, deltatime, 0),
+    JS_FASTNATIVE(Sys, fixedTime, 0),
+    JS_FASTNATIVE(Sys, ticks, 0),
+    JS_FASTNATIVE(Sys, getCvar, 1),
+    JS_FASTNATIVE(Sys, callCmd, 1),
+    JS_FASTNATIVE(Sys, addCommand, 2),
+    JS_FASTNATIVE(Sys, addCvar, 2),
+    JS_FASTNATIVE(Sys, runScript, 1),
+    JS_FASTNATIVE(Sys, dependsOn, 1),
+    JS_FASTNATIVE(Sys, unsetEnumerate, 2),
+    JS_FASTNATIVE(Sys, cacheTexture, 1),
+    JS_FASTNATIVE(Sys, loadModel, 1),
+    JS_FASTNATIVE(Sys, loadAnimation, 2),
+    JS_FASTNATIVE(Sys, GC, 0),
+    JS_FASTNATIVE(Sys, maybeGC, 0),
     JS_FS_END
 };

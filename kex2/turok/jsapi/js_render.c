@@ -28,6 +28,13 @@
 #include "js_shared.h"
 #include "common.h"
 #include "gl.h"
+#include "render.h"
+
+// -----------------------------------------------
+//
+// RENDER CLASS
+//
+// -----------------------------------------------
 
 JS_CLASSOBJECT(NRender);
 
@@ -101,50 +108,25 @@ JS_FASTNATIVE_BEGIN(NRender, setOrtho)
     return JS_TRUE;
 }
 
-JS_FASTNATIVE_BEGIN(NRender, drawTile)
+JS_FASTNATIVE_BEGIN(NRender, drawModel)
 {
-    JSString *str;
-    char *bytes;
-    jsdouble x, y;
-    jsdouble tx1, ty1, tx2, ty2;
-    jsdouble r, g, b, a;
-    jsdouble width, height;
-    jsval *v = JS_ARGV(cx, vp);
+    JSObject *object;
+    kmodel_t *model;
+    animstate_t *animstate;
 
-    if(argc < 1)
-        return JS_FALSE;
+    JS_CHECKARGS(2);
+    JS_GETOBJECT(object, v, 0);
+    JS_GET_PRIVATE_DATA(object, &Model_class, kmodel_t, model);
 
-    x = y = 0;
-    tx1 = ty1 = 0;
-    tx2 = ty2 = 1;
-    r = g = b = a = 255;
-    width = height = 8;
+    animstate = NULL;
 
-    if(argc >= 2)  JS_GETNUMBER(x, v, 1);
-    if(argc >= 3)  JS_GETNUMBER(y, v, 2);
-    if(argc >= 4)  JS_GETNUMBER(width, v, 3);
-    if(argc >= 5)  JS_GETNUMBER(height, v, 4);
-    if(argc >= 6)  JS_GETNUMBER(tx1, v, 5);
-    if(argc >= 7)  JS_GETNUMBER(ty1, v, 6);
-    if(argc >= 8)  JS_GETNUMBER(tx2, v, 7);
-    if(argc >= 9)  JS_GETNUMBER(ty2, v, 8);
-    if(argc >= 10) JS_GETNUMBER(r, v, 9);
-    if(argc >= 11) JS_GETNUMBER(g, v, 10);
-    if(argc >= 12) JS_GETNUMBER(b, v, 11);
-    if(argc == 13) JS_GETNUMBER(a, v, 12);
-
-    if(!(str = JS_ValueToString(cx, v[0])) ||
-        !(bytes = JS_EncodeString(cx, str)))
+    if(!JSVAL_IS_NULL(v[1]))
     {
-        return JS_FALSE;
+        JS_GETOBJECT(object, v, 1);
+        JS_GET_PRIVATE_DATA(object, &AnimState_class, animstate_t, animstate);
     }
 
-    Draw_Tile(bytes, (float)x, (float)y,
-        (float)tx1, (float)ty1, (float)tx2, (float)ty2,
-        (float)width, (float)height,
-        (byte)r, (byte)g, (byte)b, (byte)a);
-
-    JS_free(cx, bytes);
+    R_TraverseDrawNode(model, &model->nodes[0], NULL, 0, animstate);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
@@ -172,8 +154,12 @@ JS_BEGINPROPS(NRender)
 
 JS_BEGINCONST(NRender)
 {
-    { FIXED_WIDTH,  "SCREEN_WIDTH",     0, { 0, 0, 0 } },
-    { FIXED_HEIGHT, "SCREEN_HEIGHT",    0, { 0, 0, 0 } },
+    JS_DEFINE_CONST(SCREEN_WIDTH,       FIXED_WIDTH),
+    JS_DEFINE_CONST(SCREEN_HEIGHT,      FIXED_HEIGHT),
+    JS_DEFINE_CONST(ANIM_BLEND,         ANF_BLEND),
+    JS_DEFINE_CONST(ANIM_LOOP,          ANF_LOOP),
+    JS_DEFINE_CONST(ANIM_STOPPED,       ANF_STOPPED),
+    JS_DEFINE_CONST(ANIM_NOINTERRUPT,   ANF_NOINTERRUPT),
     { 0, 0, 0, { 0, 0, 0 } }
 };
 
@@ -181,6 +167,89 @@ JS_BEGINFUNCS(NRender)
 {
     JS_FASTNATIVE(NRender, clearViewPort, 3),
     JS_FASTNATIVE(NRender, setOrtho, 0),
-    JS_FASTNATIVE(NRender, drawTile, 13),
+    JS_FASTNATIVE(NRender, drawModel, 2),
     JS_FS_END
 };
+
+// -----------------------------------------------
+//
+// MODEL CLASS
+//
+// -----------------------------------------------
+
+JS_CLASSOBJECT(Model);
+
+JS_BEGINCLASS(Model)
+    JSCLASS_HAS_PRIVATE,                        // flags
+    JS_PropertyStub,                            // addProperty
+    JS_PropertyStub,                            // delProperty
+    JS_PropertyStub,                            // getProperty
+    JS_PropertyStub,                            // setProperty
+    JS_EnumerateStub,                           // enumerate
+    JS_ResolveStub,                             // resolve
+    JS_ConvertStub,                             // convert
+    JS_FinalizeStub,                            // finalize
+    JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
+JS_ENDCLASS();
+
+JS_BEGINPROPS(Model)
+{
+    { NULL, 0, 0, NULL, NULL }
+};
+
+JS_BEGINCONST(Model)
+{
+    { 0, 0, 0, { 0, 0, 0 } }
+};
+
+JS_BEGINFUNCS(Model)
+{
+    JS_FS_END
+};
+
+JS_BEGINSTATICFUNCS(Model)
+{
+    JS_FS_END
+};
+
+// -----------------------------------------------
+//
+// TEXTURE CLASS
+//
+// -----------------------------------------------
+
+JS_CLASSOBJECT(Texture);
+
+JS_BEGINCLASS(Texture)
+    JSCLASS_HAS_PRIVATE,                        // flags
+    JS_PropertyStub,                            // addProperty
+    JS_PropertyStub,                            // delProperty
+    JS_PropertyStub,                            // getProperty
+    JS_PropertyStub,                            // setProperty
+    JS_EnumerateStub,                           // enumerate
+    JS_ResolveStub,                             // resolve
+    JS_ConvertStub,                             // convert
+    JS_FinalizeStub,                            // finalize
+    JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
+JS_ENDCLASS();
+
+JS_BEGINPROPS(Texture)
+{
+    { NULL, 0, 0, NULL, NULL }
+};
+
+JS_BEGINCONST(Texture)
+{
+    { 0, 0, 0, { 0, 0, 0 } }
+};
+
+JS_BEGINFUNCS(Texture)
+{
+    JS_FS_END
+};
+
+JS_BEGINSTATICFUNCS(Texture)
+{
+    JS_FS_END
+};
+

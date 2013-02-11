@@ -28,6 +28,7 @@
 #include "js_shared.h"
 #include "common.h"
 #include "gl.h"
+#include "zone.h"
 
 #define JS_MAX_GL_PARAMS    16
 
@@ -197,33 +198,15 @@ JS_FASTNATIVE_BEGIN(GL, fog)
     if(JSVAL_IS_OBJECT(JS_ARG(1)))
     {
         JSObject *obj;
-        jsuint length;
         float params[JS_MAX_GL_PARAMS];
-        jsuint i;
+        float *p;
 
         JS_GETOBJECT(obj, v, 1);
 
-        if(!JS_IsArrayObject(cx, obj))
+        p = (float*)params;
+
+        if(J_AllocFloatArray(cx, obj, &p, JS_TRUE) == 0)
             return JS_FALSE;
-
-        if(!JS_GetArrayLength(cx, obj, &length))
-            return false;
-
-        for(i = 0; i < length; i++)
-        {
-            jsval val;
-            jsdouble n;
-
-            val = J_GetObjectElement(cx, obj, i);
-
-            if(JSVAL_IS_NULL(val))
-                continue;
-
-            if(!JS_ValueToNumber(cx, val, &n))
-                return JS_FALSE;
-
-            params[i] = (float)n;
-        }
 
         dglFogfv(JSVAL_TO_INT(JS_ARG(0)), params);
         return JS_TRUE;
@@ -294,6 +277,144 @@ JS_GL_STATEFUNC(enableTexture, GLSTATE_TEXTURE0);
 JS_GL_STATEFUNC(setAlphaTest, GLSTATE_ALPHATEST);
 JS_GL_STATEFUNC(setTexgen_S, GLSTATE_TEXGEN_S);
 JS_GL_STATEFUNC(setTexgen_T, GLSTATE_TEXGEN_T);
+
+JS_FASTNATIVE_BEGIN(GL, enableClientState)
+{
+    JSBool toggle;
+    unsigned int state;
+
+    JS_CHECKARGS(2);
+    JS_GETBOOL(toggle, v, 0);
+    JS_GETINTEGER(state, 1);
+
+    if(toggle)
+        dglEnableClientState(state);
+    else
+        dglDisableClientState(state);
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GL, bindTexture)
+{
+    JSObject *obj;
+    JSString *str;
+    char *bytes;
+    texture_t *texture;
+
+    JS_CHECKARGS(1);
+
+    if(JSVAL_IS_OBJECT(JS_ARG(0)))
+    {
+        JS_GETOBJECT(obj, v, 0);
+        JS_GET_PRIVATE_DATA(obj, &Texture_class, texture_t, texture);
+
+        GL_BindTexture(texture);
+    }
+    else if(JSVAL_IS_STRING(JS_ARG(0)))
+    {
+        JS_GETSTRING(str, bytes, v, 0);
+
+        GL_BindTextureName(bytes);
+        JS_free(cx, bytes);
+    }
+    else
+    {
+        // bad argument type
+        return JS_FALSE;
+    }
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GL, vertex)
+{
+    jsdouble x, y, z;
+    jsdouble tu, tv;
+    jsdouble nx, ny, nz;
+    jsdouble r, g, b, a;
+
+    JS_CHECKARGS(12);
+
+    JS_GETNUMBER(x, v, 0);
+    JS_GETNUMBER(y, v, 1);
+    JS_GETNUMBER(z, v, 2);
+    JS_GETNUMBER(tu, v, 3);
+    JS_GETNUMBER(tv, v, 4);
+    JS_GETNUMBER(nx, v, 5);
+    JS_GETNUMBER(ny, v, 6);
+    JS_GETNUMBER(nz, v, 7);
+    JS_GETNUMBER(r, v, 8);
+    JS_GETNUMBER(g, v, 9);
+    JS_GETNUMBER(b, v, 10);
+    JS_GETNUMBER(a, v, 11);
+
+    GL_Vertex((float)x, (float)y, (float)z,
+        (float)tu, (float)tv,
+        (float)nx, (float)ny, (float)nz,
+        (byte)r, (byte)g, (byte)b, (byte)a);
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GL, triangle)
+{
+    JS_CHECKARGS(3);
+
+    JS_CHECKINTEGER(0);
+    JS_CHECKINTEGER(1);
+    JS_CHECKINTEGER(2);
+
+    GL_Triangle(
+        JSVAL_TO_INT(JS_ARG(0)),
+        JSVAL_TO_INT(JS_ARG(1)),
+        JSVAL_TO_INT(JS_ARG(2)));
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GL, drawElements)
+{
+    JS_CHECKARGS(0);
+
+    GL_DrawElements2();
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GL, pushMatrix)
+{
+    dglPushMatrix();
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GL, popMatrix)
+{
+    dglPopMatrix();
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GL, multMatrix)
+{
+    mtx_t *mtx = NULL;
+
+    JS_CHECKARGS(1);
+    JS_GETMATRIX(mtx, v, 0);
+
+    dglMultMatrixf(*mtx);
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
 
 JS_BEGINCLASS(GL)
     0,                                          // flags
@@ -869,6 +990,7 @@ JS_BEGINCONST(GL)
     GL_CONST(T2F_C4F_N3F_V3F),
     GL_CONST(T4F_C4F_N3F_V4F),
 
+
     GL_CONST_EX(VERTEX_ARRAY, EXT),
     GL_CONST_EX(NORMAL_ARRAY, EXT),
     GL_CONST_EX(COLOR_ARRAY, EXT),
@@ -1107,6 +1229,12 @@ JS_BEGINFUNCS(GL)
     JS_FASTNATIVE(GL, setTexgen_S, 1),
     JS_FASTNATIVE(GL, setTexgen_T, 1),
 
+    JS_FASTNATIVE(GL, enableClientState, 2),
+    JS_FASTNATIVE(GL, bindTexture, 1),
+    JS_FASTNATIVE(GL, vertex, 12),
+    JS_FASTNATIVE(GL, triangle, 3),
+    JS_FASTNATIVE(GL, drawElements, 0),
+
     /*JS_FASTNATIVE(GL, pointSize, 1), // size
     JS_FASTNATIVE(GL, lineWidth, 1), // width
     JS_FASTNATIVE(GL, shadeModel, 1), // mode
@@ -1131,11 +1259,11 @@ JS_BEGINFUNCS(GL)
     JS_FASTNATIVE(GL, ortho, 6), // left, right, bottom, top, zNear, zFar
     JS_FASTNATIVE(GL, matrixMode, 1), // mode
     JS_FASTNATIVE(GL, loadIdentity, 0),
-    JS_FASTNATIVE(GL, pushMatrix, 0),
+    */JS_FASTNATIVE(GL, pushMatrix, 0),
     JS_FASTNATIVE(GL, popMatrix, 0),
-    JS_FASTNATIVE(GL, loadMatrix, 1), // matrix
-    JS_FASTNATIVE(GL, multMatrix, 1), // matrix
-    JS_FASTNATIVE(GL, rotate, 4), // angle, x, y, z
+    /*JS_FASTNATIVE(GL, loadMatrix, 1), // matrix
+    */JS_FASTNATIVE(GL, multMatrix, 1), // matrix
+    /*JS_FASTNATIVE(GL, rotate, 4), // angle, x, y, z
     JS_FASTNATIVE(GL, translate, 3), // x, y, z
     JS_FASTNATIVE(GL, scale, 3), // x, y, z
     JS_FASTNATIVE(GL, newList, 0),
@@ -1148,7 +1276,6 @@ JS_BEGINFUNCS(GL)
     JS_FASTNATIVE(GL, pushAttrib, 1), // mask
     JS_FASTNATIVE(GL, popAttrib, 0),
     JS_FASTNATIVE(GL, genTexture, 0),
-    JS_FASTNATIVE(GL, bindTexture, 2), // target, texture
     JS_FASTNATIVE(GL, deleteTexture, 1), // textureId
     JS_FASTNATIVE(GL, copyTexImage2D, 8), // target, level, internalFormat, x, y, width, height, border
     JS_FASTNATIVE(GL, pixelTransfer, 2), // pname, param

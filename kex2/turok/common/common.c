@@ -38,28 +38,29 @@ CVAR_EXTERNAL(developer);
 int     myargc;
 char**  myargv;
 
+static char com_buffer[4096];
+
 //
 // Com_Printf
 //
 
 void Com_Printf(char *string, ...)
 {
-    static char msg[1024];
     va_list	va;
     char *src;
     
     va_start(va, string);
-    vsprintf(msg, string, va);
+    vsprintf(com_buffer, string, va);
     va_end(va);
 
 #ifdef _WIN32
-    Sys_Printf(msg);
+    Sys_Printf(com_buffer);
 #endif
 
-    Con_Printf(COLOR_WHITE, msg);
-    printf(msg);
+    Con_Printf(COLOR_WHITE, com_buffer);
+    printf(com_buffer);
 
-    src = (char*)msg;
+    src = (char*)com_buffer;
     J_CallClassFunction(JS_EV_SYS, "event_OutputText", &src, 1);
 }
 
@@ -69,22 +70,21 @@ void Com_Printf(char *string, ...)
 
 void Com_CPrintf(rcolor color, char *string, ...)
 {
-    static char msg[1024];
     va_list	va;
     char *src[2];
     
     va_start(va, string);
-    vsprintf(msg, string, va);
+    vsprintf(com_buffer, string, va);
     va_end(va);
 
 #ifdef _WIN32
-    Sys_Printf(msg);
+    Sys_Printf(com_buffer);
 #endif
 
-    Con_Printf(color, msg);
-    printf(msg);
+    Con_Printf(color, com_buffer);
+    printf(com_buffer);
 
-    src[0] = (char*)msg;
+    src[0] = (char*)com_buffer;
     src[1] = kva("%i,%i,%i",
         color & 0xff,
         (color >> 8) & 0xff,
@@ -99,22 +99,21 @@ void Com_CPrintf(rcolor color, char *string, ...)
 
 void Com_Warning(char *string, ...)
 {
-    static char msg[1024];
     va_list	va;
     char *src[2];
     
     va_start(va, string);
-    vsprintf(msg, string, va);
+    vsprintf(com_buffer, string, va);
     va_end(va);
 
 #ifdef _WIN32
-    Sys_Printf(msg);
+    Sys_Printf(com_buffer);
 #endif
 
-    Con_Printf(COLOR_YELLOW, msg);
-    printf(msg);
+    Con_Printf(COLOR_YELLOW, com_buffer);
+    printf(com_buffer);
 
-    src[0] = (char*)msg;
+    src[0] = (char*)com_buffer;
     src[1] = "255,255,0";
 
     J_CallClassFunction(JS_EV_SYS, "event_OutputText", src, 2);
@@ -128,14 +127,14 @@ void Com_DPrintf(char *string, ...)
 {
     if(developer.value)
     {
-        static char msg[1024];
+        static char com_buffer[1024];
         va_list	va;
         
         va_start(va, string);
-        vsprintf(msg, string, va);
+        vsprintf(com_buffer, string, va);
         va_end(va);
 
-        Com_CPrintf(RGBA(0xE0, 0xE0, 0xE0, 0xff), msg);
+        Com_CPrintf(RGBA(0xE0, 0xE0, 0xE0, 0xff), com_buffer);
     }
 }
 
@@ -145,21 +144,20 @@ void Com_DPrintf(char *string, ...)
 
 void Com_Error(char* string, ...)
 {
-    static char buff[1024];
     va_list	va;
 
     va_start(va, string);
-    vsprintf(buff, string, va);
+    vsprintf(com_buffer, string, va);
     va_end(va);
     
-    fprintf(stderr, "Error - %s\n", buff);
+    fprintf(stderr, "Error - %s\n", com_buffer);
     fflush(stderr);
 
 #ifdef _WIN32
-    Sys_Error(buff);
+    Sys_Error(com_buffer);
 #endif
 
-    printf(buff);
+    printf(com_buffer);
 
     exit(0);    // just in case...
 }

@@ -1370,7 +1370,7 @@ static void FCmd_LoadTestMap(void)
     kmap = &kmaps[map];
     Map_Load(map);
 
-    Com_DPrintf("\nplanes: %i\nareas: %i\n\n",
+    Com_DPrintf(" \nplanes: %i\nareas: %i\n \n",
         kmap->numplanes, kmap->numareas);
 }
 

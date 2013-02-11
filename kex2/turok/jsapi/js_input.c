@@ -31,9 +31,9 @@
 #include "common.h"
 #include "client.h"
 
-JS_CLASSOBJECT(Input);
+JS_CLASSOBJECT(NInput);
 
-JS_FASTNATIVE_BEGIN(Input, add)
+JS_FASTNATIVE_BEGIN(NInput, add)
 {
     jsval *v;
     jsdouble n;
@@ -61,7 +61,7 @@ JS_FASTNATIVE_BEGIN(Input, add)
     return JS_TRUE;
 }
 
-JS_FASTNATIVE_BEGIN(Input, process)
+JS_FASTNATIVE_BEGIN(NInput, process)
 {
     jsval *v;
 
@@ -76,7 +76,7 @@ JS_FASTNATIVE_BEGIN(Input, process)
     return JS_TRUE;
 }
 
-JS_FASTNATIVE_BEGIN(Input, keyPress)
+JS_FASTNATIVE_BEGIN(NInput, keyPress)
 {
     jsval *v;
     jsdouble key;
@@ -96,7 +96,7 @@ JS_FASTNATIVE_BEGIN(Input, keyPress)
     return JS_TRUE;
 }
 
-JS_FASTNATIVE_BEGIN(Input, getActions)
+JS_FASTNATIVE_BEGIN(NInput, getActions)
 {
     jsval *v;
     jsval eval;
@@ -122,7 +122,7 @@ JS_FASTNATIVE_BEGIN(Input, getActions)
     return JS_TRUE;
 }
 
-JS_FASTNATIVE_BEGIN(Input, getActionID)
+JS_FASTNATIVE_BEGIN(NInput, getActionID)
 {
     jsval *v;
     JSString *str;
@@ -146,7 +146,7 @@ JS_FASTNATIVE_BEGIN(Input, getActionID)
     return JS_NewNumberValue(cx, action, vp);
 }
 
-JS_BEGINCLASS(Input)
+JS_BEGINCLASS(NInput)
     0,                                          // flags
     JS_PropertyStub,                            // addProperty
     JS_PropertyStub,                            // delProperty
@@ -159,12 +159,12 @@ JS_BEGINCLASS(Input)
     JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
 JS_ENDCLASS();
 
-JS_BEGINPROPS(Input)
+JS_BEGINPROPS(NInput)
 {
     { NULL, 0, 0, NULL, NULL }
 };
 
-JS_BEGINCONST(Input)
+JS_BEGINCONST(NInput)
 {
     JS_DEFINE_CONST(MAXKEYS, MAX_KEYS),
     JS_DEFINE_CONST(K_UNKNOWN          , SDLK_UNKNOWN),
@@ -312,12 +312,12 @@ JS_BEGINCONST(Input)
     { 0, 0, 0, { 0, 0, 0 } }
 };
 
-JS_BEGINFUNCS(Input)
+JS_BEGINFUNCS(NInput)
 {
-    JS_FASTNATIVE(Input, add,           2),
-    JS_FASTNATIVE(Input, process,       0),
-    JS_FASTNATIVE(Input, keyPress,      2),
-    JS_FASTNATIVE(Input, getActions,    0),
-    JS_FASTNATIVE(Input, getActionID,   1),
+    JS_FASTNATIVE(NInput,   add,            2),
+    JS_FASTNATIVE(NInput,   process,        0),
+    JS_FASTNATIVE(NInput,   keyPress,       2),
+    JS_FASTNATIVE(NInput,   getActions,     0),
+    JS_FASTNATIVE(NInput,   getActionID,    1),
     JS_FS_END
 };

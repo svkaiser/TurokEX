@@ -66,7 +66,7 @@ void Sys_ShowConsole(kbool show);
 void Sys_SpawnConsole(void);
 void Sys_DestroyConsole(void);
 void Sys_UpdateConsole(void);
-void Sys_Printf(const char* string, ...);
+void Sys_Printf(const char *string);
 void Sys_Error(const char *string);
 #endif
 

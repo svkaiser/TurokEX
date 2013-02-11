@@ -239,43 +239,81 @@ void Sys_SpawnConsole(void)
 // Sys_Printf
 //
 
-void Sys_Printf(const char* string, ...)
+#define CONSOLE_BUFFER_SIZE		16384
+
+void Sys_Printf(const char *string)
 {
-    char buff[1024];
-    va_list	va;
+    char buffer[CONSOLE_BUFFER_SIZE*2];
+    char *b = buffer;
+    const char *msg;
+    int bufLen;
+    int i = 0;
+    static unsigned long s_totalChars;
 
-    memset(buff, 0, 1024);
-    
-    va_start(va, string);
-    vsprintf(buff, string, va);
-    va_end(va);
-    
+    //
+    // if the message is REALLY long, use just the last portion of it
+    //
+    if(strlen(string) > CONSOLE_BUFFER_SIZE - 1)
     {
-        char winBuff[1024];
-        char *c = buff;
-        char *b = winBuff;
-
-        memset(winBuff, 0, 1024);
-
-        do
-        {
-            if(!*c)
-                break;
-
-            if(*c == '\n')
-            {
-                *b = '\r';
-                b++;
-            }
-            *b = *c;
-            b++;
-
-        } while(c++);
-
-        SendMessage(hwndBuffer, EM_LINESCROLL, 0, 0xffff);
-	    SendMessage(hwndBuffer, EM_SCROLLCARET, 0, 0 );
-	    SendMessage(hwndBuffer, EM_REPLACESEL, 0, (LPARAM)winBuff);
+        msg = string + strlen(string) - CONSOLE_BUFFER_SIZE + 1;
     }
+    else
+    {
+        msg = string;
+    }
+
+    //
+    // copy into an intermediate buffer
+    //
+    while(msg[i] && ((b - buffer) < sizeof(buffer) - 1 ))
+    {
+        if(msg[i] == '\n' && msg[i+1] == '\r')
+        {
+            b[0] = '\r';
+            b[1] = '\n';
+            b += 2;
+            i++;
+        }
+        else if(msg[i] == '\r')
+        {
+            b[0] = '\r';
+            b[1] = '\n';
+            b += 2;
+        }
+        else if(msg[i] == '\n')
+        {
+            b[0] = '\r';
+            b[1] = '\n';
+            b += 2;
+        }
+        else
+        {
+            *b= msg[i];
+            b++;
+        }
+
+        i++;
+    }
+
+    *b = 0;
+    bufLen = b - buffer;
+    s_totalChars += bufLen;
+
+    //
+    // replace selection instead of appending if we're overflowing
+    //
+    if(s_totalChars > 0x7fff)
+    {
+        SendMessage(hwndBuffer, EM_SETSEL, 0, -1 );
+        s_totalChars = bufLen;
+    }
+
+    //
+    // put this text into the windows console
+    //
+    SendMessage(hwndBuffer, EM_LINESCROLL, 0, 0xffff);
+    SendMessage(hwndBuffer, EM_SCROLLCARET, 0, 0 );
+    SendMessage(hwndBuffer, EM_REPLACESEL, 0, (LPARAM) buffer);
 }
 
 //

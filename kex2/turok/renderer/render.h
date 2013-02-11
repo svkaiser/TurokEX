@@ -173,6 +173,8 @@ void R_DrawFrame(void);
 void R_FinishFrame(void);
 void R_Shutdown(void);
 void R_Init(void);
+void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
+                        char **textures, int variant, animstate_t *animstate);
 
 //
 // DEBUG

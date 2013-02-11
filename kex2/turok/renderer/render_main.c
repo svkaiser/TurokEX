@@ -1055,7 +1055,8 @@ void R_DrawFrame(void)
     dglCullFace(GL_FRONT);
 
     R_DrawActors();
-    R_DrawViewWeapon();
+    J_RunObjectEvent(JS_EV_RENDER, "event_OnRender");
+    //R_DrawViewWeapon();
 
     dglEnableClientState(GL_COLOR_ARRAY);
     dglAlphaFunc(GL_GEQUAL, 0.01f);
@@ -1078,17 +1079,6 @@ void R_DrawFrame(void)
 
     J_RunObjectEvent(JS_EV_RENDER, "event_PostRender");
     //GL_SetOrtho();
-
-    // underwater overlay
-    if(client.pmove.flags & PMF_SUBMERGED)
-    {
-        GL_SetState(GLSTATE_TEXTURE0, false);
-        GL_SetState(GLSTATE_BLEND, true);
-        dglColor4ub(0, 36, 190, 160);
-        dglRectf(0, 0, (float)video_width, (float)video_height);
-        GL_SetState(GLSTATE_TEXTURE0, true);
-        GL_SetState(GLSTATE_BLEND, false);
-    }
 
     R_MorphModel(&morphmodels[0]);
     R_MorphModel(&morphmodels[1]);

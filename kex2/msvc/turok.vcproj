@@ -448,6 +448,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\jsapi\js_anim.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\jsapi\js_client.c"
 					>
 				</File>

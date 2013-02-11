@@ -118,7 +118,12 @@ void GL_BindTextureName(const char *name);
 void GL_SetTextureUnit(int unit, kbool enable);
 void GL_SetVertexPointer(vtx_t *vtx);
 void GL_Triangle(int v0, int v1, int v2);
+void GL_Vertex(float x, float y, float z,
+               float tu, float tv,
+               float nx, float ny, float nz,
+               byte r, byte g, byte b, byte a);
 void GL_DrawElements(unsigned int count, vtx_t *vtx);
+void GL_DrawElements2(void);
 void GL_ClearView(float *clear);
 void GL_Register(void);
 void GL_Init(void);
