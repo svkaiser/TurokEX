@@ -20,7 +20,7 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION: Javascript Render Class
+// DESCRIPTION: Javascript Animation Class
 //
 //-----------------------------------------------------------------------------
 
@@ -49,6 +49,39 @@ JS_PROP_FUNC_GET(Animation)
     return JS_FALSE;
 }
 
+JS_FASTNATIVE_BEGIN(Animation, nextAnim)
+{
+    JSObject *object;
+    anim_t *thisanim;
+    anim_t *anim;
+    jsdouble nextblend;
+    jsdouble nextspeed;
+
+    JS_CHECKARGS(4);
+    JS_GET_PRIVATE_DATA(JS_THIS_OBJECT(cx, vp), &Animation_class,
+        anim_t, thisanim);
+
+    anim = NULL;
+
+    if(!JSVAL_IS_NULL(v[0]))
+    {
+        JS_GETOBJECT(object, v, 0);
+        JS_GET_PRIVATE_DATA(object, &Animation_class, anim_t, anim);
+    }
+
+    JS_GETNUMBER(nextblend, v, 1);
+    JS_GETNUMBER(nextspeed, v, 2);
+    JS_CHECKINTEGER(3);
+
+    thisanim->next              = anim;
+    thisanim->nextblend         = (float)nextblend;
+    thisanim->nextanimspeed     = (float)nextspeed;
+    thisanim->nextanimflag      = JSVAL_TO_INT(JS_ARG(3));
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
 JS_BEGINCLASS(Animation)
     JSCLASS_HAS_PRIVATE,                        // flags
     JS_PropertyStub,                            // addProperty
@@ -74,6 +107,7 @@ JS_BEGINCONST(Animation)
 
 JS_BEGINFUNCS(Animation)
 {
+    JS_FASTNATIVE(Animation, nextAnim, 4),
     JS_FS_END
 };
 
@@ -88,17 +122,54 @@ JS_BEGINSTATICFUNCS(Animation)
 //
 // -----------------------------------------------
 
+enum animstate_enum
+{
+    ANS_FLAGS,
+    ANS_TIME,
+    ANS_FRAMETIME
+};
+
 JS_CLASSOBJECT(AnimState);
 
 JS_PROP_FUNC_GET(AnimState)
 {
+    animstate_t *animstate;
+
+    JS_GET_PRIVATE_DATA(obj, &AnimState_class, animstate_t, animstate);
+
     switch(JSVAL_TO_INT(id))
     {
+    case ANS_FLAGS:
+        return JS_NewNumberValue(cx, animstate->flags, vp);
+
+    case ANS_TIME:
+        return JS_NewNumberValue(cx, animstate->time, vp);
+
     default:
         return JS_TRUE;
     }
 
     return JS_FALSE;
+}
+
+JS_PROP_FUNC_SET(AnimState)
+{
+    animstate_t *animstate;
+    jsval *v = vp;
+
+    JS_GET_PRIVATE_DATA(obj, &AnimState_class, animstate_t, animstate);
+
+    switch(JSVAL_TO_INT(id))
+    {
+    case ANS_FLAGS:
+        {
+            JS_CHECKINTEGER(0);
+            animstate->flags = JSVAL_TO_INT(JS_ARG(0));
+            break;
+        }
+    }
+
+    return JS_TRUE;
 }
 
 JS_FASTNATIVE_BEGIN(AnimState, setAnim)
@@ -117,6 +188,29 @@ JS_FASTNATIVE_BEGIN(AnimState, setAnim)
     JS_CHECKINTEGER(2);
 
     Mdl_SetAnimState(animstate, anim, (float)speed, JSVAL_TO_INT(JS_ARG(2)));
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(AnimState, blendAnim)
+{
+    JSObject *object;
+    jsdouble speed;
+    jsdouble blendtime;
+    anim_t *anim;
+    animstate_t *animstate;
+
+    JS_CHECKARGS(4);
+    JS_GET_PRIVATE_DATA(JS_THIS_OBJECT(cx, vp), &AnimState_class,
+        animstate_t, animstate);
+    JS_GETOBJECT(object, v, 0);
+    JS_GET_PRIVATE_DATA(object, &Animation_class, anim_t, anim);
+    JS_GETNUMBER(speed, v, 1);
+    JS_GETNUMBER(blendtime, v, 2);
+    JS_CHECKINTEGER(3);
+
+    Mdl_BlendAnimStates(animstate, anim, (float)speed, (float)blendtime, JSVAL_TO_INT(JS_ARG(3)));
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
@@ -151,6 +245,9 @@ JS_ENDCLASS();
 
 JS_BEGINPROPS(AnimState)
 {
+    { "flags",      ANS_FLAGS,      JSPROP_ENUMERATE,                   NULL, NULL },
+    { "time",       ANS_TIME,       JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "frameTime",  ANS_FRAMETIME,  JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 
@@ -162,6 +259,7 @@ JS_BEGINCONST(AnimState)
 JS_BEGINFUNCS(AnimState)
 {
     JS_FASTNATIVE(AnimState, setAnim, 3),
+    JS_FASTNATIVE(AnimState, blendAnim, 4),
     JS_FASTNATIVE(AnimState, update, 0),
     JS_FS_END
 };

@@ -97,7 +97,15 @@ typedef struct
     word                *children;
 } mdlnode_t;
 
-typedef struct
+typedef enum
+{
+    ANF_BLEND       = 1,
+    ANF_LOOP        = 2,
+    ANF_STOPPED     = 4,
+    ANF_NOINTERRUPT = 8
+} animflags_t;
+
+typedef struct anim_s
 {
     char                *alias;
     char                animpath[MAX_FILEPATH];
@@ -111,6 +119,10 @@ typedef struct
     frameset_t          *frameset;
     frameset_t          initial;
     action_t            *actions;
+    struct anim_s       *next;
+    float               nextblend;
+    float               nextanimspeed;
+    animflags_t         nextanimflag;
 } anim_t;
 
 typedef struct
@@ -119,14 +131,6 @@ typedef struct
     int                 frame;
     int                 nextframe;
 } animtrack_t;
-
-typedef enum
-{
-    ANF_BLEND       = 1,
-    ANF_LOOP        = 2,
-    ANF_STOPPED     = 4,
-    ANF_NOINTERRUPT = 8
-} animflags_t;
 
 typedef struct
 {
@@ -182,5 +186,52 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
 
 void R_DrawCollision(void);
 void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b);
+
+//
+// FONT
+//
+
+typedef struct
+{
+    int x;
+    int y;
+    int w;
+    int h;
+} atlas_t;
+
+typedef struct
+{
+    char    *texture;
+    int     width;
+    int     height;
+    atlas_t atlas[256];
+} font_t;
+
+void Font_MapChar(font_t *font, byte ch, int x, int y, int w, int h);
+float Font_StringWidth(font_t *font, const char* string, float scale, int fixedLen);
+
+//
+// CANVAS
+//
+
+#include "gl.h"
+
+typedef struct
+{
+    byte    drawColor[4];
+    float   drawCoord[4];
+    float   scale;
+    kbool   center;
+    font_t  *font;
+} canvas_t;
+
+void Canvas_SetDrawColor(canvas_t *canvas, byte r, byte g, byte b);
+void Canvas_SetDrawAlpha(canvas_t *canvas, byte a);
+void Canvas_SetTextureTile(canvas_t *canvas,
+                           float u1, float u2, float t1, float t2);
+void Canvas_SetFont(canvas_t *canvas, font_t *font);
+void Canvas_DrawTile(canvas_t *canvas, texture_t *texture,
+                     float x, float y, float w, float h);
+void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y);
 
 #endif

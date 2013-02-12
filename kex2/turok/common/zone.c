@@ -445,6 +445,26 @@ char *(Z_Strdup)(const char *s, int tag, void *user, const char *file, int line)
 }
 
 //
+// Z_Strndup
+//
+
+char *(Z_Strndup)(const char *s, unsigned int n, int tag, void *user, const char *file, int line)
+{
+    unsigned int len;
+
+#ifdef ZONEFILE
+    Z_LogPrintf("* Z_Strndup(file=%s:%d)\n", file, line);
+#endif
+    
+    len = strlen(s);
+
+    if(n < len)
+        len = n;
+
+	return strcpy((Z_Malloc)(len+1, tag, user, file, line), s);
+}
+
+//
 // Z_Strdupa
 //
 // strdup that uses alloca, for convenience.

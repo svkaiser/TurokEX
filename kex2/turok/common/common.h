@@ -94,6 +94,7 @@ unsigned int Com_HashFileName(const char *name);
 void Com_NormalizeSlashes(char *str);
 void Com_StripPath(char *name);
 void Com_StripExt(char *name);
+char *Com_SubStr(const char *from, unsigned int idx1, unsigned int idx2);
 
 //
 // CVARS

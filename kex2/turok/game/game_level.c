@@ -1316,6 +1316,8 @@ kmap_t *Map_Load(int map)
     kmap = &kmaps[map];
     g_currentmap = kmap;
 
+    Random_SetSeed(-470403613);
+
     G_SetActorLinkList(map);
 
     if(g_currentmap->tics > 0 || g_currentmap->time > 0)

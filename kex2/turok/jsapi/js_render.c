@@ -253,3 +253,412 @@ JS_BEGINSTATICFUNCS(Texture)
     JS_FS_END
 };
 
+// -----------------------------------------------
+//
+// CANVAS CLASS
+//
+// -----------------------------------------------
+
+JS_CLASSOBJECT(Canvas);
+
+JS_PROP_FUNC_GET(Canvas)
+{
+    switch(JSVAL_TO_INT(id))
+    {
+    default:
+        return JS_TRUE;
+    }
+
+    return JS_FALSE;
+}
+
+#define JS_THISCANVAS() \
+    JS_GET_PRIVATE_DATA(JS_THIS_OBJECT(cx, vp), &Canvas_class, \
+        canvas_t, canvas)
+
+JS_FASTNATIVE_BEGIN(Canvas, setDrawColor)
+{
+    canvas_t *canvas;
+
+    JS_CHECKARGS(3);
+    JS_THISCANVAS();
+    JS_CHECKINTEGER(0);
+    JS_CHECKINTEGER(1);
+    JS_CHECKINTEGER(2);
+
+    Canvas_SetDrawColor(canvas,
+        (byte)JSVAL_TO_INT(JS_ARG(0)),
+        (byte)JSVAL_TO_INT(JS_ARG(1)),
+        (byte)JSVAL_TO_INT(JS_ARG(2)));
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Canvas, setDrawAlpha)
+{
+    canvas_t *canvas;
+
+    JS_CHECKARGS(1);
+    JS_THISCANVAS();
+    JS_CHECKINTEGER(0);
+
+    Canvas_SetDrawAlpha(canvas, (byte)JSVAL_TO_INT(JS_ARG(0)));
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Canvas, setTextureTile)
+{
+    canvas_t *canvas;
+    jsdouble u1, u2, t1, t2;
+
+    JS_CHECKARGS(4);
+    JS_THISCANVAS();
+    JS_GETNUMBER(u1, v, 0);
+    JS_GETNUMBER(u2, v, 1);
+    JS_GETNUMBER(t1, v, 2);
+    JS_GETNUMBER(t2, v, 3);
+
+    Canvas_SetTextureTile(canvas,
+        (float)u1,
+        (float)u2,
+        (float)t1,
+        (float)t2);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Canvas, setFont)
+{
+    JSObject *obj;
+    canvas_t *canvas;
+    font_t *font;
+
+    JS_CHECKARGS(1);
+    JS_THISCANVAS();
+    JS_GETOBJECT(obj, v, 0);
+    JS_GET_PRIVATE_DATA(obj, &Font_class, font_t, font);
+
+    Canvas_SetFont(canvas, font);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Canvas, drawTile)
+{
+    canvas_t *canvas;
+    texture_t *texture;
+    jsdouble x, y, w, h;
+
+    JS_CHECKARGS(5);
+    JS_THISCANVAS();
+
+    if(JSVAL_IS_STRING(v[0]))
+    {
+        JSString *str;
+        char *bytes;
+
+        JS_GETSTRING(str, bytes, v, 0);
+        texture = Tex_CacheTextureFile(bytes, DGL_CLAMP, true);
+        JS_free(cx, bytes);
+    }
+    else
+    {
+        JSObject *obj;
+
+        JS_GETOBJECT(obj, v, 0);
+        JS_GET_PRIVATE_DATA(obj, &Texture_class, texture_t, texture);
+    }
+
+    JS_GETNUMBER(x, v, 1);
+    JS_GETNUMBER(y, v, 2);
+    JS_GETNUMBER(w, v, 3);
+    JS_GETNUMBER(h, v, 4);
+
+    Canvas_DrawTile(canvas, texture,
+        (float)x, (float)y, (float)w, (float)h);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Canvas, drawString)
+{
+    canvas_t *canvas;
+    JSString *str;
+    char *bytes;
+    jsdouble x, y;
+    jsval *v = JS_ARGV(cx, vp);
+
+    if(argc < 3)
+        return JS_FALSE;
+
+    JS_THISCANVAS();
+    JS_GETSTRING(str, bytes, v, 0);
+    JS_GETNUMBER(x, v, 1);
+    JS_GETNUMBER(y, v, 2);
+
+    Canvas_DrawString(canvas, bytes, (float)x, (float)y);
+    JS_free(cx, bytes);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_BEGINCLASS(Canvas)
+    JSCLASS_HAS_PRIVATE,                        // flags
+    JS_PropertyStub,                            // addProperty
+    JS_PropertyStub,                            // delProperty
+    Canvas_getProperty,                         // getProperty
+    JS_PropertyStub,                            // setProperty
+    JS_EnumerateStub,                           // enumerate
+    JS_ResolveStub,                             // resolve
+    JS_ConvertStub,                             // convert
+    JS_FinalizeStub,                            // finalize
+    JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
+JS_ENDCLASS();
+
+JS_BEGINPROPS(Canvas)
+{
+    { NULL, 0, 0, NULL, NULL }
+};
+
+JS_BEGINCONST(Canvas)
+{
+    { 0, 0, 0, { 0, 0, 0 } }
+};
+
+JS_BEGINFUNCS(Canvas)
+{
+    JS_FASTNATIVE(Canvas, setDrawColor, 3),
+    JS_FASTNATIVE(Canvas, setDrawAlpha, 1),
+    JS_FASTNATIVE(Canvas, setTextureTile, 4),
+    JS_FASTNATIVE(Canvas, setFont, 1),
+    JS_FASTNATIVE(Canvas, drawTile, 5),
+    JS_FASTNATIVE(Canvas, drawString, 3),
+    JS_FS_END
+};
+
+JS_BEGINSTATICFUNCS(Canvas)
+{
+    JS_FS_END
+};
+
+JS_CONSTRUCTOR(Canvas)
+{
+    canvas_t *canvas;
+
+    canvas = (canvas_t*)JS_malloc(cx, sizeof(canvas_t));
+    if(canvas == NULL)
+        return JS_FALSE;
+
+    memset(canvas, 0, sizeof(canvas_t));
+
+    canvas->scale = 1.0f;
+    canvas->drawColor[3] = 255;
+    canvas->drawCoord[2] = 1.0f;
+    canvas->drawCoord[3] = 1.0f;
+
+    JS_NEWOBJECT_SETPRIVATE(canvas, &Canvas_class);
+    return JS_TRUE;
+}
+
+// -----------------------------------------------
+//
+// FONT CLASS
+//
+// -----------------------------------------------
+
+JS_CLASSOBJECT(Font);
+
+enum jsfont_enum
+{
+    JSF_TEXTURE,
+    JSF_WIDTH,
+    JSF_HEIGHT
+};
+
+#define JS_THISFONT() \
+    JS_GET_PRIVATE_DATA(JS_THIS_OBJECT(cx, vp), &Font_class, \
+        font_t, font)
+
+JS_PROP_FUNC_GET(Font)
+{
+    switch(JSVAL_TO_INT(id))
+    {
+    case JSF_TEXTURE:
+        break;
+
+    case JSF_WIDTH:
+        break;
+
+    case JSF_HEIGHT:
+        break;
+
+    default:
+        return JS_TRUE;
+    }
+
+    return JS_FALSE;
+}
+
+JS_PROP_FUNC_SET(Font)
+{
+    font_t *font;
+
+    JS_GET_PRIVATE_DATA(obj, &Font_class, font_t, font);
+
+    switch(JSVAL_TO_INT(id))
+    {
+    case JSF_TEXTURE:
+        {
+            JSString    *str;
+            char        *bytes;
+
+            JS_GETSTRING(str, bytes, vp, 0);
+            font->texture = bytes;
+
+            return JS_TRUE;
+        }
+
+    case JSF_WIDTH:
+        font->width = JSVAL_TO_INT(*vp);
+        return JS_TRUE;
+
+    case JSF_HEIGHT:
+        font->height = JSVAL_TO_INT(*vp);
+        return JS_TRUE;
+
+    default:
+        return JS_TRUE;
+    }
+
+    return JS_FALSE;
+}
+
+JS_FASTNATIVE_BEGIN(Font, mapChar)
+{
+    font_t *font;
+    byte ch;
+
+    JS_CHECKARGS(5);
+    JS_THISFONT();
+
+    if(JSVAL_IS_STRING(v[0]))
+    {
+        JSString *str;
+        char *bytes;
+
+        JS_GETSTRING(str, bytes, v, 0);
+
+        ch = *bytes;
+        JS_free(cx, bytes);
+    }
+    else
+    {
+        JS_CHECKINTEGER(0);
+        ch = (byte)JSVAL_TO_INT(JS_ARG(0));
+    }
+
+    JS_CHECKINTEGER(1);
+    JS_CHECKINTEGER(2);
+    JS_CHECKINTEGER(3);
+    JS_CHECKINTEGER(4);
+
+    Font_MapChar(font, ch,
+        JSVAL_TO_INT(JS_ARG(1)),
+        JSVAL_TO_INT(JS_ARG(2)),
+        JSVAL_TO_INT(JS_ARG(3)),
+        JSVAL_TO_INT(JS_ARG(4)));
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Font, stringWidth)
+{
+    font_t      *font;
+    JSString    *str;
+    char        *bytes;
+    jsdouble    scale;
+    int         fixedLen;
+    float       width;
+    jsval       *v = JS_ARGV(cx, vp);
+
+    if(argc < 2)
+        return JS_FALSE;
+
+    JS_THISFONT();
+    JS_GETSTRING(str, bytes, v, 0);
+    JS_GETNUMBER(scale, v, 1);
+
+    fixedLen = -1;
+
+    if(argc >= 3)
+    {
+        JS_CHECKINTEGER(2);
+        fixedLen = JSVAL_TO_INT(JS_ARG(2));
+    }
+
+    width = Font_StringWidth(font, bytes, (float)scale, fixedLen);
+    JS_free(cx, bytes);
+
+    return JS_NewNumberValue(cx, width, vp);
+}
+
+JS_BEGINCLASS(Font)
+    JSCLASS_HAS_PRIVATE,                        // flags
+    JS_PropertyStub,                            // addProperty
+    JS_PropertyStub,                            // delProperty
+    Font_getProperty,                           // getProperty
+    Font_setProperty,                           // setProperty
+    JS_EnumerateStub,                           // enumerate
+    JS_ResolveStub,                             // resolve
+    JS_ConvertStub,                             // convert
+    JS_FinalizeStub,                            // finalize
+    JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
+JS_ENDCLASS();
+
+JS_BEGINPROPS(Font)
+{
+    { "texture",    JSF_TEXTURE,    JSPROP_ENUMERATE,   NULL, NULL },
+    { "tex_width",  JSF_WIDTH,      JSPROP_ENUMERATE,   NULL, NULL },
+    { "tex_height", JSF_HEIGHT,     JSPROP_ENUMERATE,   NULL, NULL },
+    { NULL, 0, 0, NULL, NULL }
+};
+
+JS_BEGINCONST(Font)
+{
+    { 0, 0, 0, { 0, 0, 0 } }
+};
+
+JS_BEGINFUNCS(Font)
+{
+    JS_FASTNATIVE(Font, mapChar, 5),
+    JS_FASTNATIVE(Font, stringWidth, 3),
+    JS_FS_END
+};
+
+JS_BEGINSTATICFUNCS(Font)
+{
+    JS_FS_END
+};
+
+JS_CONSTRUCTOR(Font)
+{
+    font_t *font;
+
+    font = (font_t*)JS_malloc(cx, sizeof(font_t));
+    if(font == NULL)
+        return JS_FALSE;
+
+    memset(font, 0, sizeof(font_t));
+
+    JS_NEWOBJECT_SETPRIVATE(font, &Font_class);
+    return JS_TRUE;
+}
+

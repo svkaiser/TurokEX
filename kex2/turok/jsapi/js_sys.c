@@ -121,6 +121,31 @@ JS_FASTNATIVE_BEGIN(Sys, ticks)
     return JS_NewNumberValue(cx, client.tics, vp);
 }
 
+JS_FASTNATIVE_BEGIN(Sys, rand)
+{
+    if(argc > 0)
+    {
+        JS_CHECKARGS(1);
+        JS_CHECKINTEGER(0);
+
+        return JS_NewNumberValue(cx,
+            (jsdouble)Random_Max(JSVAL_TO_INT(JS_ARG(0))), vp);
+    }
+
+    return JS_NewNumberValue(cx, (jsdouble)Random_Int(), vp);
+}
+
+JS_FASTNATIVE_BEGIN(Sys, fRand)
+{
+    return JS_NewNumberValue(cx, (jsdouble)Random_Float(), vp);
+}
+
+JS_FASTNATIVE_BEGIN(Sys, cRand)
+{
+    return JS_NewNumberValue(cx, (jsdouble)Random_CFloat(), vp);
+}
+
+
 JS_FASTNATIVE_BEGIN(Sys, getCvar)
 {
     JSString *str;
@@ -424,6 +449,9 @@ JS_BEGINFUNCS(Sys)
     JS_FASTNATIVE(Sys, deltatime, 0),
     JS_FASTNATIVE(Sys, fixedTime, 0),
     JS_FASTNATIVE(Sys, ticks, 0),
+    JS_FASTNATIVE(Sys, rand, 1),
+    JS_FASTNATIVE(Sys, fRand, 0),
+    JS_FASTNATIVE(Sys, cRand, 0),
     JS_FASTNATIVE(Sys, getCvar, 1),
     JS_FASTNATIVE(Sys, callCmd, 1),
     JS_FASTNATIVE(Sys, addCommand, 2),

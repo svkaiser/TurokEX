@@ -338,6 +338,15 @@ void Com_StripExt(char *name)
 }
 
 //
+// Com_SubStr
+//
+
+char *Com_SubStr(const char *from, unsigned int idx1, unsigned int idx2)
+{
+    return Z_Strndup(from+idx1, idx2, PU_STATIC, NULL);
+}
+
+//
 // fcmp
 //
 

@@ -368,7 +368,15 @@
 				Name="renderer"
 				>
 				<File
+					RelativePath="..\turok\renderer\render_canvas.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\render_debug.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\render_font.c"
 					>
 				</File>
 				<File
@@ -425,6 +433,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\math\plane.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\math\random.c"
 					>
 				</File>
 				<File

@@ -835,6 +835,16 @@ void Mdl_UpdateAnimState(animstate_t *astate)
             {
                 astate->flags |= ANF_STOPPED;
                 astate->flags &= ~ANF_NOINTERRUPT;
+
+                if(astate->track.anim->next != NULL)
+                {
+                    Mdl_BlendAnimStates(
+                        astate,
+                        astate->track.anim->next,
+                        astate->track.anim->nextanimspeed,
+                        astate->track.anim->nextblend,
+                        astate->track.anim->nextanimflag);
+                }
             }
         }
     }

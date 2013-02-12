@@ -69,6 +69,7 @@ void    (Z_Init)(void);
 void*   (Z_Calloc)(int n, int tag, void *user, const char *, int);
 void*   (Z_Realloc)(void *ptr, int size, int tag, void *user, const char *, int);
 char*   (Z_Strdup)(const char *s, int tag, void *user, const char *, int);
+char*   (Z_Strndup)(const char *s, unsigned int n, int tag, void *user, const char *file, int line);
 char*   (Z_Strdupa)(const char *s, const char *file, int line);
 void*   (Z_Alloca)(int n, const char *file, int line);
 void    (Z_FreeAlloca)(const char *file, int line);
@@ -81,6 +82,7 @@ void    (Z_Touch)(void *ptr, const char *, int);
 #define Z_ChangeTag(a,b)    (Z_ChangeTag)   (a,b,    __FILE__,__LINE__)
 #define Z_Malloc(a,b,c)     (Z_Malloc)      (a,b,c,  __FILE__,__LINE__)
 #define Z_Strdup(a,b,c)     (Z_Strdup)      (a,b,c,  __FILE__,__LINE__)
+#define Z_Strndup(a,b,c,d)  (Z_Strndup)     (a,b,c,d,__FILE__,__LINE__)
 #define Z_Strdupa(a)        (Z_Strdupa)     (a,      __FILE__,__LINE__)
 #define Z_Calloc(a,b,c)     (Z_Calloc)      (a,b,c,  __FILE__,__LINE__)
 #define Z_Realloc(a,b,c,d)  (Z_Realloc)     (a,b,c,d,__FILE__,__LINE__)

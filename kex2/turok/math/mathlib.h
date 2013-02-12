@@ -120,5 +120,14 @@ void  Plane_GetRotation(vec4_t vec, plane_t *p);
 void  Plane_AdjustRotation(vec4_t out, plane_t *p);
 kbool Plane_PointInRange(plane_t *p, float x, float z);
 
+//
+// RANDOM OPERATIONS
+
+void Random_SetSeed(seed);
+int Random_Int(void);
+int Random_Max(int max);
+float Random_Float(void);
+float Random_CFloat(void);
+
 #endif
 
