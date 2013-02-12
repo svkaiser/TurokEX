@@ -272,6 +272,14 @@ JS_PROP_FUNC_GET(Canvas)
     return JS_FALSE;
 }
 
+JS_FINALIZE_FUNC(Canvas)
+{
+    canvas_t *canvas;
+
+    if(canvas = (canvas_t*)JS_GetPrivate(cx, obj))
+        JS_free(cx, canvas);
+}
+
 #define JS_THISCANVAS() \
     JS_GET_PRIVATE_DATA(JS_THIS_OBJECT(cx, vp), &Canvas_class, \
         canvas_t, canvas)
@@ -418,7 +426,7 @@ JS_BEGINCLASS(Canvas)
     JS_EnumerateStub,                           // enumerate
     JS_ResolveStub,                             // resolve
     JS_ConvertStub,                             // convert
-    JS_FinalizeStub,                            // finalize
+    Canvas_finalize,                            // finalize
     JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
 JS_ENDCLASS();
 

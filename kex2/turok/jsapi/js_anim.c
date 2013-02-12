@@ -49,6 +49,14 @@ JS_PROP_FUNC_GET(Animation)
     return JS_FALSE;
 }
 
+JS_FINALIZE_FUNC(Animation)
+{
+    anim_t *anim;
+
+    if(anim = (anim_t*)JS_GetPrivate(cx, obj))
+        JS_free(cx, anim);
+}
+
 JS_FASTNATIVE_BEGIN(Animation, nextAnim)
 {
     JSObject *object;
@@ -91,7 +99,7 @@ JS_BEGINCLASS(Animation)
     JS_EnumerateStub,                           // enumerate
     JS_ResolveStub,                             // resolve
     JS_ConvertStub,                             // convert
-    JS_FinalizeStub,                            // finalize
+    Animation_finalize,                         // finalize
     JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
 JS_ENDCLASS();
 
@@ -172,6 +180,14 @@ JS_PROP_FUNC_SET(AnimState)
     return JS_TRUE;
 }
 
+JS_FINALIZE_FUNC(AnimState)
+{
+    animstate_t *animstate;
+
+    if(animstate = (animstate_t*)JS_GetPrivate(cx, obj))
+        JS_free(cx, animstate);
+}
+
 JS_FASTNATIVE_BEGIN(AnimState, setAnim)
 {
     JSObject *object;
@@ -239,7 +255,7 @@ JS_BEGINCLASS(AnimState)
     JS_EnumerateStub,                           // enumerate
     JS_ResolveStub,                             // resolve
     JS_ConvertStub,                             // convert
-    JS_FinalizeStub,                            // finalize
+    AnimState_finalize,                         // finalize
     JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
 JS_ENDCLASS();
 
