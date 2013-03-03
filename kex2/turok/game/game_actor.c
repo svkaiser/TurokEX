@@ -24,90 +24,300 @@
 //
 //-----------------------------------------------------------------------------
 
+#include "js.h"
+#include "js_shared.h"
 #include "common.h"
-#include "server.h"
-#include "kernel.h"
 #include "mathlib.h"
-#include "game.h"
 #include "actor.h"
 #include "level.h"
 #include "zone.h"
 
-static actor_t *g_currentactor;
-
-actor_t *g_actorlist;
-actor_t actorlist[MAXMAPS];
-
 //
-// G_LinkActor
+// Actor_HasComponent
 //
 
-void G_LinkActor(actor_t *actor)
+kbool Actor_HasComponent(gActor_t *actor, const char *component)
 {
-    g_actorlist->prev->next = actor;
-    actor->next = g_actorlist;
-    actor->prev = g_actorlist->prev;
-    g_actorlist->prev = actor;
+    kbool found;
+
+    if(!JS_HasProperty(js_context, actor->components, component, &found))
+        return false;
+
+    return found;
 }
 
 //
-// G_UnlinkActor
+// Actor_OnTouchEvent
 //
 
-void G_UnlinkActor(actor_t* actor)
+void Actor_OnTouchEvent(gActor_t *actor)
 {
-    /* Remove from main actor list */
-    actor_t* next = g_currentactor->next;
+    if(!actor->bTouch)
+        return;
 
-    /* Note that g_currentactor is guaranteed to point to us,
-    * and since we're freeing our memory, we had better change that. So
-    * point it to actor->prev, so the iterator will correctly move on to
-    * actor->prev->next = actor->next */
-    (next->prev = g_currentactor = actor->prev)->next = next;
+    Actor_CallEvent(actor, "onTouch");
 }
 
 //
-// G_SpawnActor
+// Actor_UpdateBox
 //
 
-actor_t *G_SpawnActor(void)
+void Actor_UpdateBox(gActor_t *actor, gObject_t *meshComponent)
 {
-    actor_t *actor;
+    JSContext *cx = js_context;
+    jsval minx, maxx;
+    jsval miny, maxy;
+    jsval minz, maxz;
+    jsdouble d;
 
-    if(g_currentmap == NULL)
+    if(!JS_GetProperty(cx, meshComponent, "box_min_x", &minx))
+        return;
+    if(!JS_GetProperty(cx, meshComponent, "box_min_y", &miny))
+        return;
+    if(!JS_GetProperty(cx, meshComponent, "box_min_z", &minz))
+        return;
+    if(!JS_GetProperty(cx, meshComponent, "box_max_x", &maxx))
+        return;
+    if(!JS_GetProperty(cx, meshComponent, "box_max_y", &maxy))
+        return;
+    if(!JS_GetProperty(cx, meshComponent, "box_max_z", &maxz))
+        return;
+
+    JS_ValueToNumber(cx, minx, &d);
+    actor->bbox.min[0] = (float)d + actor->origin[0];
+    JS_ValueToNumber(cx, miny, &d);
+    actor->bbox.min[1] = (float)d + actor->origin[1];
+    JS_ValueToNumber(cx, minz, &d);
+    actor->bbox.min[2] = (float)d + actor->origin[2];
+    JS_ValueToNumber(cx, maxx, &d);
+    actor->bbox.max[0] = (float)d + actor->origin[0];
+    JS_ValueToNumber(cx, maxy, &d);
+    actor->bbox.max[1] = (float)d + actor->origin[1];
+    JS_ValueToNumber(cx, maxz, &d);
+    actor->bbox.max[2] = (float)d + actor->origin[2];
+}
+
+//
+// Actor_UpdateMesh
+//
+
+void Actor_UpdateMesh(gActor_t *actor, gObject_t *meshComponent)
+{
+    JSContext *cx = js_context;
+    jsval val;
+    kbool found = false;
+
+    if(JS_HasProperty(cx, meshComponent, "mesh", &found) && found)
     {
-        return NULL;
+        gObject_t *modelObject;
+        
+        if(!JS_GetProperty(cx, meshComponent, "mesh", &val))
+            return;
+        if(!JS_ValueToObject(cx, val, &modelObject))
+            return;
+            
+        actor->model = (kmodel_t*)JS_GetInstancePrivate(cx, modelObject, &Model_class, NULL);
+    }
+}
+
+//
+// Actor_UpdateVariant
+//
+
+void Actor_UpdateVariant(gActor_t *actor, gObject_t *meshComponent)
+{
+    JSContext *cx = js_context;
+    jsval val;
+    kbool found = false;
+
+    if(JS_HasProperty(cx, meshComponent, "variant", &found) && found)
+    {
+        if(!JS_GetProperty(cx, meshComponent, "variant", &val))
+            return;
+        
+        actor->variant = JSVAL_TO_INT(val);
+    }
+}
+
+//
+// Actor_UpdateTransform
+//
+
+void Actor_UpdateTransform(gActor_t *actor)
+{
+    Mtx_ApplyRotation(actor->rotation, actor->matrix);
+    Mtx_Scale(actor->matrix,
+        actor->scale[0],
+        actor->scale[1],
+        actor->scale[2]);
+    Mtx_AddTranslation(actor->matrix,
+        actor->origin[0],
+        actor->origin[1],
+        actor->origin[2]);
+}
+
+//
+// Actor_CallEvent
+//
+
+void Actor_CallEvent(gActor_t *actor, const char *function)
+{
+    gObject_t *iter;
+    jsid id;
+
+    iter = JS_NewPropertyIterator(js_context, actor->components);
+
+    while(JS_NextProperty(js_context, iter, &id))
+    {
+        jsval vp;
+        gObject_t *obj;
+        gObject_t *component;
+
+        if(id == JSVAL_VOID)
+            break;
+
+        if(!JS_GetMethodById(js_context, actor->components, id, &obj, &vp))
+            continue;
+        if(!JS_ValueToObject(js_context, vp, &component))
+            continue;
+
+        J_CallFunctionOnObject(js_context, component, function);
+    }
+}
+
+//
+// Actor_ComponentFunc
+//
+
+void Actor_ComponentFunc(const char *function)
+{
+    unsigned int i;
+
+    if(!gLevel.loaded)
+        return;
+
+    for(i = 0; i < gLevel.numGridBounds; i++)
+    {
+        gridBounds_t *gb = &gLevel.gridBounds[i];
+        unsigned int j;
+
+        for(j = 0; j < gb->numStatics; j++)
+        {
+            gActor_t *actor = &gb->statics[j];
+
+            if(actor->bHidden)
+                continue;
+
+            if(actor->bStatic && !actor->bTouch)
+                continue;
+
+            Actor_CallEvent(actor, function);
+        }
+    }
+}
+
+//
+// Actor_Setup
+//
+
+void Actor_Setup(gActor_t *actor)
+{
+    kbool found = false;
+    gObject_t *ownerObject;
+    jsval ownerVal;
+    JSContext *cx = js_context;
+
+    if( actor->rotation[0] == 0 &&
+        actor->rotation[1] == 0 &&
+        actor->rotation[2] == 0 &&
+        actor->rotation[3] == 0)
+    {
+        Vec_SetQuaternion(actor->rotation, actor->angles[0], 0, 1, 0);
     }
 
-    actor = (actor_t*)Z_Calloc(sizeof(*actor), PU_ACTOR, NULL);
-    G_LinkActor(actor);
+    Vec_Normalize4(actor->rotation);
 
-    return actor;
-}
+    Actor_UpdateTransform(actor);
 
-//
-// G_SetActorLinkList
-//
+    // create and set owner property
+    ownerObject = JS_NewObject(cx, &GameActor_class, NULL, NULL);
 
-void G_SetActorLinkList(int map)
-{
-    g_actorlist = &actorlist[map];
-}
+    if(!JS_SetPrivate(cx, ownerObject, actor))
+        return;
 
-//
-// G_GetActorMeleeRange
-//
+    ownerVal = OBJECT_TO_JSVAL(ownerObject);
+    if(!JS_SetProperty(cx, actor->components, "owner", &ownerVal))
+        return;
 
-float G_GetActorMeleeRange(actor_t *actor, vec3_t targetpos)
-{
-    float x;
-    float y;
-    float z;
+    if(Actor_HasComponent(actor, "ComponentTouchBox"))
+        actor->bTouch = true;
 
-    x = actor->origin[0] - targetpos[0];
-    y = actor->object.height + actor->origin[1] - targetpos[1];
-    z = actor->origin[2] - targetpos[2];
+    if(Actor_HasComponent(actor, "ComponentMesh"))
+    {
+        gObject_t *meshComponent;
+        jsval val;
 
-    return (float)sqrt(x * x + y * y + z * z);
+        if(!JS_GetProperty(cx, actor->components, "ComponentMesh", &val))
+            return;
+        if(!JS_ValueToObject(cx, val, &meshComponent))
+            return;
+
+        Actor_UpdateBox(actor, meshComponent);
+        Actor_UpdateMesh(actor, meshComponent);
+        Actor_UpdateVariant(actor, meshComponent);
+
+        // TODO - allow updates for texture swap array?
+        if(JS_HasProperty(cx, meshComponent, "textureSwaps", &found) && found)
+        {
+            gObject_t *tSwapObject;
+            jsuint length;
+
+            if(!JS_GetProperty(cx, meshComponent, "textureSwaps", &val))
+                return;
+            if(!JS_ValueToObject(cx, val, &tSwapObject))
+                return;
+            if(!JS_IsArrayObject(cx, tSwapObject))
+                return;
+            if(!JS_GetArrayLength(cx, tSwapObject, &length))
+                return;
+
+            if(length > 0)
+            {
+                jsuint i;
+
+                actor->textureSwaps = (char**)Z_Calloc(sizeof(char*) * length, PU_ACTOR, NULL);
+
+                for(i = 0; i < length; i++)
+                {
+                    JSString *str;
+                    char *bytes;
+
+                    val = J_GetObjectElement(cx, tSwapObject, i);
+
+                    actor->textureSwaps[i] = NULL;
+
+                    if(JSVAL_IS_NULL(val))
+                        continue;
+
+                    if((str = JS_ValueToString(cx, val)))
+                    {
+                        if(!(bytes = JS_EncodeString(cx, str)))
+                            continue;
+                            
+                        actor->textureSwaps[i] = Z_Strdup(bytes, PU_ACTOR, NULL);
+                        JS_free(cx, bytes);
+                    }
+                }
+            }
+        }
+
+        if(actor->bStatic)
+        {
+            // TODO
+            JS_DeleteProperty(cx, actor->components, "ComponentPickup");
+            JS_DeleteProperty(cx, actor->components, "ComponentTouchBox");
+            JS_DeleteProperty(cx, actor->components, "ComponentMesh");
+        }
+    }
 }
 

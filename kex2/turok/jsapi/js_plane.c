@@ -63,15 +63,15 @@ static JSBool plane_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *v
     switch(JSVAL_TO_INT(id))
     {
     case PL_PT1:
-        JS_NEWVECTOR(vp, plane->points[0]);
+        JS_NEWVECTOR2(plane->points[0]);
         return JS_TRUE;
 
     case PL_PT2:
-        JS_NEWVECTOR(vp, plane->points[1]);
+        JS_NEWVECTOR2(plane->points[1]);
         return JS_TRUE;
 
     case PL_PT3:
-        JS_NEWVECTOR(vp, plane->points[2]);
+        JS_NEWVECTOR2(plane->points[2]);
         return JS_TRUE;
 
     case PL_HEIGHT1:
@@ -84,7 +84,7 @@ static JSBool plane_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *v
         return JS_NewNumberValue(cx, plane->height[2], vp);
 
     case PL_NORMAL:
-        JS_NEWVECTOR(vp, plane->normal);
+        JS_NEWVECTOR2(plane->normal);
         return JS_TRUE;
 
     case PL_LINK1:
@@ -125,18 +125,15 @@ static JSBool plane_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *v
 
     case PL_AREA:
         {
-            int map;
             jsval val;
 
-            if(g_currentmap == NULL)
+            if(gLevel.loaded == false || plane->area_id < 0)
+            {
+                *vp = JSVAL_NULL;
                 return JS_FALSE;
+            }
 
-            map = (g_currentmap - kmaps);
-
-            if(map < 0 || map >= MAXMAPS)
-                return JS_FALSE;
-
-            val = J_GetObjectElement(cx, mapProperties[map], plane->area_id);
+            val = OBJECT_TO_JSVAL(gLevel.areas[plane->area_id].components);
 
             if(!JSVAL_IS_OBJECT(val))
                 return JS_FALSE;
@@ -156,18 +153,16 @@ static JSBool plane_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *v
 static JSBool plane_distance(JSContext *cx, uintN argc, jsval *vp)
 {
     plane_t *plane = NULL;
-    jsval *v;
-    vec3_t *vector;
+    vec3_t vector;
+    JSObject *obj;
 
-    if(argc != 1)
-        return JS_FALSE;
-
-    v = JS_ARGV(cx, vp);
+    JS_CHECKARGS(1);
 
     JS_THISPLANE(plane, vp);
-    JS_GETVECTOR(vector, v, 0);
+    JS_GETOBJECT(obj, v, 0);
+    JS_GETVECTOR2(obj, vector);
 
-    return JS_NewDoubleValue(cx, Plane_GetDistance(plane, *vector), vp);
+    return JS_NewDoubleValue(cx, Plane_GetDistance(plane, vector), vp);
 }
 
 //
@@ -177,18 +172,16 @@ static JSBool plane_distance(JSContext *cx, uintN argc, jsval *vp)
 static JSBool plane_heightDistance(JSContext *cx, uintN argc, jsval *vp)
 {
     plane_t *plane = NULL;
-    jsval *v;
-    vec3_t *vector;
+    vec3_t vector;
+    JSObject *obj;
 
-    if(argc != 1)
-        return JS_FALSE;
-
-    v = JS_ARGV(cx, vp);
+    JS_CHECKARGS(1);
 
     JS_THISPLANE(plane, vp);
-    JS_GETVECTOR(vector, v, 0);
+    JS_GETOBJECT(obj, v, 0);
+    JS_GETVECTOR2(obj, vector);
 
-    return JS_NewDoubleValue(cx, Plane_GetHeight(plane, *vector), vp);
+    return JS_NewDoubleValue(cx, Plane_GetHeight(plane, vector), vp);
 }
 
 //
@@ -202,9 +195,8 @@ static JSBool plane_getNormal(JSContext *cx, uintN argc, jsval *vp)
 
     JS_THISPLANE(plane, vp);
     Plane_GetNormal(normal, plane);
-    JS_NEWVECTOR(vp, normal);
 
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    JS_NEWVECTOR2(normal);
     return JS_TRUE;
 }
 
@@ -243,7 +235,7 @@ static JSBool plane_toIndex(JSContext *cx, uintN argc, jsval *vp)
     plane_t *plane = NULL;
 
     JS_THISPLANE(plane, vp);
-    return JS_NewDoubleValue(cx, (jsdouble)(plane - g_currentmap->planes), vp);
+    return JS_NewDoubleValue(cx, (jsdouble)(plane - gLevel.planes), vp);
 }
 
 //
@@ -262,7 +254,7 @@ JS_FASTNATIVE_BEGIN(Plane, fromIndex)
     v = JS_ARGV(cx, vp);
 
     JS_GETNUMBER(n, v, 0);
-    plane = &g_currentmap->planes[(int)n];
+    plane = &gLevel.planes[(int)n];
 
     JS_INSTPLANE(vp, plane);
     return JS_TRUE;

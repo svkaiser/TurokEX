@@ -239,7 +239,7 @@ int KF_OpenFileCache(const char *filename, byte **data, int tag)
                 {
                     if(!file->cache)
                     {
-                        Z_Calloc(file->info.uncompressed_size, tag, &file->cache);
+                        Z_Calloc(file->info.uncompressed_size+1, tag, &file->cache);
                         unzSetCurrentFileInfoPosition(pack->filehandle, file->position);
                         unzOpenCurrentFile(pack->filehandle);
                         unzReadCurrentFile(pack->filehandle, file->cache,

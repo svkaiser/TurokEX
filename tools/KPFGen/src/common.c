@@ -44,6 +44,7 @@ static char com_textbuffer[TEXTBUFFER_SIZE];
 #ifdef _WIN32
 extern HWND hwndWait;
 extern HWND hwndLoadBar;
+extern HWND hwndDataBar;
 #endif
 
 //
@@ -119,6 +120,31 @@ void Com_UpdateProgress(char *fmt, ...)
     UpdateWindow(hwndWait);
 #else
 
+#endif
+}
+
+//
+// Com_UpdateDataProgress
+//
+
+void Com_UpdateDataProgress(void)
+{
+#ifdef _WIN32
+    SendMessage(hwndDataBar, PBM_STEPIT, 0, 0);
+    UpdateWindow(hwndWait);
+#endif
+}
+
+//
+// Com_SetDataProgress
+//
+
+void Com_SetDataProgress(int range)
+{
+#ifdef _WIN32
+    SendMessage(hwndDataBar, PBM_SETPOS, 0, 0);
+    SendMessage(hwndDataBar, PBM_SETRANGE, 0, MAKELPARAM(0, range));
+    UpdateWindow(hwndWait);
 #endif
 }
 

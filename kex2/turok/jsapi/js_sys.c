@@ -400,6 +400,27 @@ JS_FASTNATIVE_BEGIN(Sys, loadAnimation)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(Sys, readTextFile)
+{
+    JSString *str;
+    char *bytes;
+    char *buffer;
+    int len;
+
+    JS_CHECKARGS(1);
+    JS_GETSTRING(str, bytes, v, 0);
+
+    len = KF_ReadTextFile(bytes, &buffer);
+    JS_free(cx, bytes);
+
+    if(len == -1)
+        JS_SET_RVAL(cx, vp, JSVAL_NULL);
+    else
+        JS_RETURNSTRING(vp, buffer);
+
+    return JS_TRUE;
+}
+
 JS_FASTNATIVE_BEGIN(Sys, GC)
 {
    JS_GC(cx);
@@ -462,6 +483,7 @@ JS_BEGINFUNCS(Sys)
     JS_FASTNATIVE(Sys, cacheTexture, 1),
     JS_FASTNATIVE(Sys, loadModel, 1),
     JS_FASTNATIVE(Sys, loadAnimation, 2),
+    JS_FASTNATIVE(Sys, readTextFile, 1),
     JS_FASTNATIVE(Sys, GC, 0),
     JS_FASTNATIVE(Sys, maybeGC, 0),
     JS_FS_END

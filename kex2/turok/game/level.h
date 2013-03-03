@@ -23,6 +23,8 @@
 #ifndef _LEVEL_H_
 #define _LEVEL_H_
 
+#include "actor.h"
+
 typedef enum
 {
     CLF_WATER           = 0x1,
@@ -339,6 +341,48 @@ typedef struct
     float               time;
 } kmap_t;
 
+typedef struct
+{
+    int             (*length)(void);
+    kbool           (*get)(int, gActor_t*);
+} gActorList_t;
+
+typedef struct
+{
+    float           minx;
+    float           minz;
+    float           maxx;
+    float           maxz;
+    gActor_t        *statics;
+    unsigned int    numStatics;
+} gridBounds_t;
+
+typedef struct
+{
+    gObject_t       *components;
+} gArea_t;
+
+typedef struct
+{
+    kbool           (*load)(const char*);
+    kbool           (*tick)(void);
+    kbool           loaded;
+    unsigned int    numActors;
+    unsigned int    numGridBounds;
+    unsigned int    numplanes;
+    unsigned int    numAreas;
+    gActor_t        *gActors;
+    plane_t         *planes;
+    gridBounds_t    *gridBounds;
+    gArea_t         *areas;
+    int             mapID;
+    char            name[64];
+    int             tics;
+    float           time;
+} gLevel_t;
+
+extern gLevel_t gLevel;
+
 #define MAXMAPS     50
 
 extern kmap_t kmaps[MAXMAPS];
@@ -347,7 +391,7 @@ extern kmap_t *g_currentmap;
 int Obj_GetClassType(object_t *obj);
 area_t *Map_GetArea(plane_t *plane);
 plane_t *Map_FindClosestPlane(vec3_t coord);
-kmap_t *Map_Load(int map);
+void Map_Load(int map);
 void Map_Init(void);
 
 #endif

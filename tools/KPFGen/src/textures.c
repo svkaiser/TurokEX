@@ -311,6 +311,8 @@ void TX_StoreTextures(void)
 
     PK_AddFolder("textures/");
     StoreExternalFile("default.tga", "textures/default.tga");
+    StoreExternalFile("black.tga", "textures/black.tga");
+    StoreExternalFile("white.tga", "textures/white.tga");
 
     for(i = 0; i < numtextures; i++)
     {

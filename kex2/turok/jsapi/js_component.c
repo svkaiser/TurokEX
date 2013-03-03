@@ -20,95 +20,74 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION: Javascript MapProperty Class
+// DESCRIPTION: Javascript Component Class
 //
 //-----------------------------------------------------------------------------
 
 #include "js.h"
 #include "js_shared.h"
 #include "common.h"
-#include "zone.h"
+#include "actor.h"
 
-JSObject *js_objMapProperty;
-JSObject *mapProperties[MAXMAPS];
+JS_CLASSOBJECT(Component);
 
-//
-// mapProp_add
-//
-
-static JSBool mapProp_add(JSContext *cx, uintN argc, jsval *vp)
+JS_PROP_FUNC_GET(Component)
 {
-    jsval *v;
-    JSObject *obj;
-    jsdouble mapid;
-    int id;
+    switch(JSVAL_TO_INT(id))
+    {
+    default:
+        return JS_TRUE;
+    }
 
-    if(argc != 2)
-        return JS_FALSE;
-
-    v = JS_ARGV(cx, vp);
-
-    JS_GETOBJECT(obj, v, 0);
-    JS_GETNUMBER(mapid, v, 1);
-
-    if(!JS_IsArrayObject(cx, obj))
-        return JS_FALSE;
-
-    id = (int)mapid;
-
-    if(id < 0 || id >= MAXMAPS)
-        return JS_FALSE;
-
-    mapProperties[id] = obj;
-    JS_AddRoot(cx, &mapProperties[id]);
-
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-//
-// MapProperty_class
-//
-
-JSClass MapProperty_class =
+JS_PROP_FUNC_SET(Component)
 {
-    "MapProperty",                              // name
-    0,                                          // flags
+    switch(JSVAL_TO_INT(id))
+    {
+    default:
+        return JS_TRUE;
+    }
+
+    return JS_TRUE;
+}
+
+JS_FINALIZE_FUNC(Component)
+{
+}
+
+JS_BEGINCLASS(Component)
+    JSCLASS_HAS_PRIVATE,                        // flags
     JS_PropertyStub,                            // addProperty
     JS_PropertyStub,                            // delProperty
-    JS_PropertyStub,                            // getProperty
-    JS_PropertyStub,                            // setProperty
+    Component_getProperty,                      // getProperty
+    Component_setProperty,                      // setProperty
     JS_EnumerateStub,                           // enumerate
     JS_ResolveStub,                             // resolve
     JS_ConvertStub,                             // convert
-    JS_FinalizeStub,                            // finalize
+    Component_finalize,                         // finalize
     JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
-};
+JS_ENDCLASS();
 
-//
-// MapProperty_props
-//
-
-JSPropertySpec MapProperty_props[] =
+JS_BEGINPROPS(Component)
 {
+    { "parent",  0, JSPROP_ENUMERATE, NULL, NULL },
+    { "active", 1, JSPROP_ENUMERATE, NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 
-//
-// MapProperty_const
-//
-
-JSConstDoubleSpec MapProperty_const[] =
+JS_BEGINCONST(Component)
 {
     { 0, 0, 0, { 0, 0, 0 } }
 };
 
-//
-// MapProperty_functions
-//
-
-JSFunctionSpec MapProperty_functions[] =
+JS_BEGINFUNCS(Component)
 {
-    JS_FN("add",    mapProp_add,   2, 0, 0),
+    JS_FS_END
+};
+
+JS_BEGINSTATICFUNCS(Component)
+{
     JS_FS_END
 };

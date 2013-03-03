@@ -136,6 +136,10 @@ void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y)
 
     GL_BindTextureName(canvas->font->texture);
 
+    // TODO - TEMP
+    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
     for(i = 0; i < len; i++)
     {
         char ch         = string[i];

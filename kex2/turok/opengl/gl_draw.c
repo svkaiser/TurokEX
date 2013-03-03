@@ -47,9 +47,9 @@ typedef struct
     int y;
     int w;
     int h;
-} atlas_t;
+} atlas2_t;
 
-static const atlas_t fontmap[256] =
+static const atlas2_t fontmap[256] =
 {
     { 0, 1, 13, 16 },
     { 14, 1, 13, 16 },
@@ -407,7 +407,7 @@ float Draw_Text(float x, float y, rcolor color,
     return x;
 }
 
-static const atlas_t bigfontmap[48] =
+static const atlas2_t bigfontmap[48] =
 {
     { 0, 0, 24, 32 },       // 0
     { 32, 0, 24, 32 },      // 1

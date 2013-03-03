@@ -25,9 +25,14 @@
 
 #include "jsapi.h"
 #include "shared.h"
+#include "js_objPool.h"
 
 extern JSContext    *js_context;
 extern JSObject     *js_gobject;
+
+extern jsObjectPool_t objPoolVector;
+extern jsObjectPool_t objPoolQuaternion;
+extern jsObjectPool_t objPoolPacket;
 
 typedef struct js_scrobj_s
 {
@@ -38,9 +43,11 @@ typedef struct js_scrobj_s
 } js_scrobj_t;
 
 jsval J_GetObjectElement(JSContext *cx, JSObject *object, jsint index);
+jsval J_CallFunctionOnObject(JSContext *cx, JSObject *object, const char *function);
 jsuint J_AllocFloatArray(JSContext *cx, JSObject *object, float **arr, JSBool fixed);
 jsuint J_AllocWordArray(JSContext *cx, JSObject *object, word **arr, JSBool fixed);
 jsuint J_AllocByteArray(JSContext *cx, JSObject *object, byte **arr, JSBool fixed);
+char *J_GetObjectClassName(JSObject *object);
 
 js_scrobj_t *J_FindScript(const char *name);
 js_scrobj_t *J_LoadScript(const char *name);
@@ -143,18 +150,25 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
         return JS_FALSE;                                            \
 }
 
+#define JS_GET_PROPERTY_BOOL(obj, prop, outBool)                    \
+{                                                                   \
+    jsval val;                                                      \
+    JSBool b;                                                       \
+    if(!JS_HasProperty(cx, obj, prop, &b))                          \
+        return JS_FALSE;                                            \
+    if(!b)                                                          \
+        return JS_FALSE;                                            \
+    if(!JS_GetProperty(cx, obj, prop, &val))                        \
+        return JS_FALSE;                                            \
+    if(JSVAL_IS_NULL(val))                                          \
+        return JS_FALSE;                                            \
+    if(!JS_ValueToBoolean(cx, val, &outBool))                       \
+        return JS_FALSE;                                            \
+}
+
 #define JS_GET_PRIVATE_DATA(obj, class, size, out)                  \
     if(!(out = (size*)JS_GetInstancePrivate(cx, obj, class, NULL))) \
         return JS_FALSE
-
-#define JS_GETVECTOR(vec, v, a)                                                     \
-{                                                                                   \
-    JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) return JS_FALSE;         \
-    if(JSVAL_IS_NULL(v[a])) return JS_FALSE;                                        \
-    if(!(JS_InstanceOf(cx, vobj, &Vector_class, NULL))) return JS_FALSE;            \
-    if(!(vec = (vec3_t*)JS_GetInstancePrivate(cx, vobj, &Vector_class, NULL)))      \
-        return JS_FALSE;                                                            \
-}
 
 #define JS_GETQUATERNION(vec, v, a)                                                 \
 {                                                                                   \
@@ -163,6 +177,120 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
     if(!(JS_InstanceOf(cx, vobj, &Quaternion_class, NULL))) return JS_FALSE;        \
     if(!(vec = (vec4_t*)JS_GetInstancePrivate(cx, vobj, &Quaternion_class, NULL)))  \
         return JS_FALSE;                                                            \
+}
+
+#define JS_GETVECTOR2(obj, vec)                     \
+{                                                   \
+    jsval xval, yval, zval;                         \
+    jsdouble x, y, z;                               \
+    if(!JS_GetProperty(cx, obj, "x", &xval))        \
+        return JS_FALSE;                            \
+    if(!JS_GetProperty(cx, obj, "y", &yval))        \
+        return JS_FALSE;                            \
+    if(!JS_GetProperty(cx, obj, "z", &zval))        \
+        return JS_FALSE;                            \
+    if(!JS_ValueToNumber(cx, xval, &x))             \
+        return JS_FALSE;                            \
+    if(!JS_ValueToNumber(cx, yval, &y))             \
+        return JS_FALSE;                            \
+    if(!JS_ValueToNumber(cx, zval, &z))             \
+        return JS_FALSE;                            \
+    vec[0] = (float)x;                              \
+    vec[1] = (float)y;                              \
+    vec[2] = (float)z;                              \
+}
+
+#define JS_SETVECTOR(obj, vec)                          \
+{                                                       \
+    jsval val;                                          \
+    val = DOUBLE_TO_JSVAL(JS_NewDouble(cx, vec[0]));    \
+    if(!JS_SetProperty(cx, obj, "x", &val))             \
+        return JS_FALSE;                                \
+    val = DOUBLE_TO_JSVAL(JS_NewDouble(cx, vec[1]));    \
+    if(!JS_SetProperty(cx, obj, "y", &val))             \
+        return JS_FALSE;                                \
+    val = DOUBLE_TO_JSVAL(JS_NewDouble(cx, vec[2]));    \
+    if(!JS_SetProperty(cx, obj, "z", &val))             \
+        return JS_FALSE;                                \
+}
+
+#define JS_NEWVECTOR2(vec)                                          \
+{                                                                   \
+    JSObject *vobj;                                                 \
+    if(!(vobj = JS_NewObject(cx, &Vector_class, NULL, NULL)))       \
+        return JS_FALSE;                                            \
+    JS_SETVECTOR(vobj, vec);                                        \
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(vobj));                     \
+}
+
+#define JS_NEWVECTORPOOL(vec)                                       \
+{                                                                   \
+    JSObject *vobj;                                                 \
+    if(!(vobj = JPool_GetFree(&objPoolVector, &Vector_class)))      \
+        return JS_FALSE;                                            \
+    JS_SETVECTOR(vobj, vec);                                        \
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(vobj));                     \
+}
+
+#define JS_GETQUATERNION2(obj, vec)                 \
+{                                                   \
+    jsval xval, yval, zval, wval;                   \
+    jsdouble x, y, z, w;                            \
+    if(!JS_GetProperty(cx, obj, "x", &xval))        \
+        return JS_FALSE;                            \
+    if(!JS_GetProperty(cx, obj, "y", &yval))        \
+        return JS_FALSE;                            \
+    if(!JS_GetProperty(cx, obj, "z", &zval))        \
+        return JS_FALSE;                            \
+    if(!JS_GetProperty(cx, obj, "w", &wval))        \
+        return JS_FALSE;                            \
+    if(!JS_ValueToNumber(cx, xval, &x))             \
+        return JS_FALSE;                            \
+    if(!JS_ValueToNumber(cx, yval, &y))             \
+        return JS_FALSE;                            \
+    if(!JS_ValueToNumber(cx, zval, &z))             \
+        return JS_FALSE;                            \
+    if(!JS_ValueToNumber(cx, wval, &w))             \
+        return JS_FALSE;                            \
+    vec[0] = (float)x;                              \
+    vec[1] = (float)y;                              \
+    vec[2] = (float)z;                              \
+    vec[3] = (float)w;                              \
+}
+
+#define JS_SETQUATERNION(obj, rot)                      \
+{                                                       \
+    jsval val;                                          \
+    val = DOUBLE_TO_JSVAL(JS_NewDouble(cx, rot[0]));    \
+    if(!JS_SetProperty(cx, obj, "x", &val))             \
+        return JS_FALSE;                                \
+    val = DOUBLE_TO_JSVAL(JS_NewDouble(cx, rot[1]));    \
+    if(!JS_SetProperty(cx, obj, "y", &val))             \
+        return JS_FALSE;                                \
+    val = DOUBLE_TO_JSVAL(JS_NewDouble(cx, rot[2]));    \
+    if(!JS_SetProperty(cx, obj, "z", &val))             \
+        return JS_FALSE;                                \
+    val = DOUBLE_TO_JSVAL(JS_NewDouble(cx, rot[3]));    \
+    if(!JS_SetProperty(cx, obj, "w", &val))             \
+        return JS_FALSE;                                \
+}
+
+#define JS_NEWQUATERNION(rot)                                       \
+{                                                                   \
+    JSObject *vobj;                                                 \
+    if(!(vobj = JS_NewObject(cx, &Quaternion_class, NULL, NULL)))   \
+        return JS_FALSE;                                            \
+    JS_SETQUATERNION(vobj, rot);                                    \
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(vobj));                     \
+}
+
+#define JS_NEWQUATERNIONPOOL(rot)                                       \
+{                                                                       \
+    JSObject *vobj;                                                     \
+    if(!(vobj = JPool_GetFree(&objPoolQuaternion, &Quaternion_class)))  \
+        return JS_FALSE;                                                \
+    JS_SETQUATERNION(vobj, rot);                                        \
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(vobj));                         \
 }
 
 #define JS_GETMATRIX(mtx, v, a)                                                     \
@@ -211,15 +339,11 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
         !(bytes = JS_EncodeString(cx, str)))                                        \
         return JS_FALSE
 
-#define JS_THISVECTOR(vec, v)                                                       \
-    if(!(vec = (vec3_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),            \
-        &Vector_class, NULL)))                                                      \
-        return JS_FALSE
-
-#define JS_THISQUATERNION(vec, v)                                                   \
-    if(!(vec = (vec4_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),            \
-        &Quaternion_class, NULL)))                                                  \
-        return JS_FALSE
+#define JS_THISVECTOR(vec)                                                          \
+{                                                                                   \
+    JSObject *obj = JS_THIS_OBJECT(cx, vp);                                         \
+    JS_GETVECTOR2(obj, vec);                                                        \
+}
 
 #define JS_THISMATRIX(mtx, v)                                                       \
     if(!(mtx = (mtx_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),             \
@@ -241,19 +365,13 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));                                     \
 }
 
-#define JS_NEWVECTOR(vp, vec)                                                       \
+#define JS_INSTQUATERNION(c, vp, rot)                                               \
 {                                                                                   \
     JSObject *nobj;                                                                 \
-    vec3_t *out;                                                                    \
-    if(!(nobj = JS_NewObject(cx, &Vector_class, NULL, NULL)))                       \
+    if(!(nobj = JS_NewObject(cx, &Quaternion_class, NULL, c)))                      \
         return JS_FALSE;                                                            \
-    out = (vec3_t*)JS_malloc(cx, sizeof(vec3_t));                                   \
-    Vec_Copy3(*out, vec);                                                           \
-    if(!(JS_SetPrivate(cx, nobj, out)))                                             \
-    {                                                                               \
-        JS_free(cx, out);                                                           \
+    if(!(JS_SetPrivate(cx, nobj, rot)))                                             \
         return JS_FALSE;                                                            \
-    }                                                                               \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));                                     \
 }
 
@@ -303,9 +421,8 @@ JS_EXTERNOBJECT(NRender);
 JS_EXTERNOBJECT(NGame);
 JS_EXTERNOBJECT(Cmd);
 JS_EXTERNOBJECT(Angle);
-JS_EXTERNOBJECT(MoveController);
-JS_EXTERNOBJECT(MapProperty);
 JS_EXTERNOBJECT(Physics);
+JS_EXTERNOBJECT(Level);
 JS_EXTERNCLASS(Vector);
 JS_EXTERNCLASS(Quaternion);
 JS_EXTERNCLASS(Matrix);
@@ -320,6 +437,8 @@ JS_EXTERNCLASS_NOCONSTRUCTOR(Model);
 JS_EXTERNCLASS_NOCONSTRUCTOR(Animation);
 JS_EXTERNCLASS_NOCONSTRUCTOR(Texture);
 JS_EXTERNCLASS_NOCONSTRUCTOR(Plane);
+JS_EXTERNCLASS_NOCONSTRUCTOR(GameActor);
+JS_EXTERNCLASS_NOCONSTRUCTOR(Component);
 
 #endif
 

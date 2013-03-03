@@ -44,8 +44,6 @@ static void matrix_finalize(JSContext *cx, JSObject *obj)
 
     if(mtx = (mtx_t*)JS_GetPrivate(cx, obj))
         JS_free(cx, mtx);
-
-    return;
 }
 
 //
@@ -248,15 +246,16 @@ static JSBool matrix_identityZ(JSContext *cx, uintN argc, jsval *vp)
 static JSBool matrix_applyVector(JSContext *cx, uintN argc, jsval *vp)
 {
     mtx_t *mtx;
-    vec3_t *vector;
+    vec3_t vector;
+    JSObject *object;
 
-    if(argc <= 0)
-        return JS_FALSE;
+    JS_CHECKARGS(1);
 
     JS_THISMATRIX(mtx, vp);
-    JS_GETVECTOR(vector, vp, 2);
+    JS_GETOBJECT(object, v, 0);
+    JS_GETVECTOR2(object, vector);
 
-    Mtx_ApplyVector(*mtx, *vector);
+    Mtx_ApplyVector(*mtx, vector);
     JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
@@ -332,6 +331,28 @@ static JSBool matrix_load(JSContext *cx, uintN argc, jsval *vp)
     JS_THISMATRIX(mtx, vp);
     dglLoadMatrixf(*mtx);
 
+    return JS_TRUE;
+}
+
+//
+// matrix_setRotation
+//
+
+static JSBool matrix_setRotation(JSContext *cx, uintN argc, jsval *vp)
+{
+    mtx_t *mtx;
+    JSObject *obj;
+    vec4_t rot;
+
+    JS_CHECKARGS(1);
+
+    JS_THISMATRIX(mtx, vp);
+    JS_GETOBJECT(obj, v, 0);
+    JS_GETQUATERNION2(obj, rot);
+
+    Mtx_ApplyRotation(rot, *mtx);
+
+    JS_RETURNOBJECT(vp);
     return JS_TRUE;
 }
 
@@ -529,6 +550,7 @@ JSFunctionSpec Matrix_functions[] =
     JS_FN("rotateY",        matrix_rotateY,         1, 0, 0),
     JS_FN("rotateZ",        matrix_rotateZ,         1, 0, 0),
     JS_FN("load",           matrix_load,            0, 0, 0),
+    JS_FN("setRotation",    matrix_setRotation,     1, 0, 0),
     JS_FS_END
 };
 

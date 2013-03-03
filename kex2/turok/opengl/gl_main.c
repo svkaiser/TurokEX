@@ -420,19 +420,10 @@ void GL_ClearView(float *clear)
 
 void GL_SetVertexPointer(vtx_t *vtx)
 {
-    static vtx_t *dgl_prevptr = NULL;
-
-    // 20120623 villsa - avoid redundant calls by checking for
-    // the previous pointer that was set
-    if(dgl_prevptr == vtx)
-        return;
-
     dglNormalPointer(GL_FLOAT, sizeof(vtx_t), &vtx->nx);
     dglTexCoordPointer(2, GL_FLOAT, sizeof(vtx_t), &vtx->tu);
     dglVertexPointer(3, GL_FLOAT, sizeof(vtx_t), vtx);
     dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(vtx_t), &vtx->r);
-
-    dgl_prevptr = vtx;
 }
 
 //

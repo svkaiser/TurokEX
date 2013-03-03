@@ -808,6 +808,9 @@ void Mdl_UpdateAnimState(animstate_t *astate)
     if(astate->flags & ANF_STOPPED)
         return;
 
+    if(astate->track.anim == NULL)
+        return;
+
     if(astate->time <= client.tics)
     {
         astate->deltatime = 0;

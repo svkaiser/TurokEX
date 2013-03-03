@@ -456,81 +456,97 @@
 				Name="jsapi"
 				>
 				<File
-					RelativePath="..\turok\jsapi\js_angle.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_anim.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_client.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_cmd.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_game.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_gl.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_input.c"
-					>
-				</File>
-				<File
 					RelativePath="..\turok\jsapi\js_main.c"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\jsapi\js_mapprop.c"
+					RelativePath="..\turok\jsapi\js_objPool.c"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\jsapi\js_matrix.c"
+					RelativePath="..\turok\jsapi\js_parse.c"
 					>
 				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_movectrl.c"
+				<Filter
+					Name="classes"
 					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_net.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_physics.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_plane.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_quaternion.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_render.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_server.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_sys.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_vector.c"
-					>
-				</File>
+					<File
+						RelativePath="..\turok\jsapi\js_actor.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_angle.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_anim.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_client.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_cmd.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_component.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_game.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_gl.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_input.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_level.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_matrix.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_net.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_physics.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_plane.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_quaternion.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_render.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_server.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_sys.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_vector.c"
+						>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 		<Filter
@@ -674,6 +690,14 @@
 				>
 				<File
 					RelativePath="..\turok\jsapi\js.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\jsapi\js_objPool.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\jsapi\js_parse.h"
 					>
 				</File>
 				<File

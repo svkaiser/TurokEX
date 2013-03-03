@@ -26,42 +26,37 @@
 #include "render.h"
 #include "level.h"
 
-typedef enum
+typedef struct gActor_s
 {
-    AF_NOALIGNPITCH     = 0x1,
-} actorflags_t;
-
-//
-// client/server-side object controller
-//
-struct actor_s
-{
+    kbool               bOrientOnSlope;
+    kbool               bStatic;
+    kbool               bCollision;
+    kbool               bTouch;
+    kbool               bClientOnly;
+    kbool               bHidden;
     vec3_t              origin;
-    vec3_t              velocity;
-    unsigned int        flags;
-    float               yaw;
-    float               pitch;
-    svclient_t          *svclient;
-    int                 health;
-    short               skin;
-    object_t            object;
-    plane_t             *plane;
-    float               animspeed;
-    float               animframe;
-    anim_t              *anim;
-    frameset_t          frameset;
-    struct actor_s      *target;
-    struct actor_s      *prev;
-    struct actor_s      *next;
-};
+    vec3_t              scale;
+    vec4_t              rotation;
+    bbox_t              bbox;
+    kmodel_t            *model;
+    int                 variant;
+    char                **textureSwaps;
+    float               angles[3];
+    char                name[64];
+    int                 plane;
+    float               radius;
+    float               height;
+    float               centerHeight;
+    float               viewHeight;
+    mtx_t               matrix;
+    gObject_t           *components;
+} gActor_t;
 
-extern actor_t actorlist[MAXMAPS];
-extern actor_t *g_actorlist;
-
-void G_LinkActor(actor_t *actor);
-void G_UnlinkActor(actor_t* actor);
-actor_t *G_SpawnActor(void);
-void G_SetActorLinkList(int map);
-float G_GetActorMeleeRange(actor_t *actor, vec3_t targetpos);
+void Actor_Setup(gActor_t *actor);
+void Actor_UpdateTransform(gActor_t *actor);
+void Actor_CallEvent(gActor_t *actor, const char *function);
+void Actor_ComponentFunc(const char *function);
+kbool Actor_HasComponent(gActor_t *actor, const char *component);
+void Actor_OnTouchEvent(gActor_t *actor);
 
 #endif

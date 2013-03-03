@@ -743,7 +743,7 @@ void Pred_ClientMovement(void)
 
 void Pred_ServerMovement(void)
 {
-    unsigned int i;
+    /*unsigned int i;
 
     if(g_currentmap == NULL)
     {
@@ -796,6 +796,6 @@ void Pred_ServerMovement(void)
             actor->origin[0],
             actor->origin[1],
             actor->origin[2]);
-    }
+    }*/
 }
 

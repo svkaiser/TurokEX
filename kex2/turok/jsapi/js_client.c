@@ -109,7 +109,7 @@ JS_PROP_FUNC_SET(NClient)
 
 JS_FASTNATIVE_BEGIN(NClient, inLevel)
 {
-    kbool b = (g_currentmap != NULL);
+    kbool b = gLevel.loaded;
 
     JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(b));
     return JS_TRUE;

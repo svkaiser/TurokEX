@@ -32,7 +32,7 @@
 
 CVAR_EXTERNAL(kf_basepath);
 
-#define JS_RUNTIME_HEAP_SIZE 64L * 1024L * 1024L
+#define JS_RUNTIME_HEAP_SIZE 128L * 1024L * 1024L
 #define JS_STACK_CHUNK_SIZE  8192
 
 static js_scrobj_t *js_scrobj_list[MAX_HASH];
@@ -41,6 +41,10 @@ static js_scrobj_t  *js_rootscript  = NULL;
 
 JSContext   *js_context = NULL;
 JSObject    *js_gobject = NULL;
+
+jsObjectPool_t objPoolVector;
+jsObjectPool_t objPoolQuaternion;
+jsObjectPool_t objPoolPacket;
 
 //
 // J_GlobalEnumerate
@@ -225,6 +229,54 @@ jsval J_CallFunctionOnObject(JSContext *cx, JSObject *object, const char *functi
 
     JS_SET_RVAL(cx, &rval, JSVAL_NULL);
     return rval;
+}
+
+//
+// J_GetObjectClassName
+// Calls Object.prototype.classname in object.js
+//
+
+char *J_GetObjectClassName(JSObject *object)
+{
+    JSObject *objClass;
+    JSString *str;
+    char *bytes;
+    jsval val;
+    jsval rval;
+    JSBool ok;
+    JSContext *cx;
+
+    cx = js_context;
+
+    if(!JS_HasProperty(cx, object, "classname", &ok) && !ok)
+        return NULL;
+
+    if(!JS_GetProperty(cx, object, "classname", &val))
+        return NULL;
+
+    if(!JS_ValueToObject(cx, val, &objClass))
+        return NULL;
+
+    if(!JS_ObjectIsFunction(cx, objClass))
+        return NULL;
+
+    if(!JS_CallFunctionValue(cx, object, OBJECT_TO_JSVAL(objClass), 0, NULL, &rval))
+        return NULL;
+
+    if(!JSVAL_IS_STRING(rval))
+        return NULL;
+
+    str = JS_ValueToString(cx, rval);
+
+    if(str == NULL)
+        return NULL;
+
+    bytes = JS_EncodeString(cx, str);
+
+    if(bytes == NULL)
+        return NULL;
+
+    return bytes;
 }
 
 //
@@ -727,6 +779,10 @@ void J_CompileAndRunScript(const char *name)
 
 void J_GarbageCollect(void)
 {
+    JPool_ReleaseObjects(&objPoolVector);
+    JPool_ReleaseObjects(&objPoolQuaternion);
+    JPool_ReleaseObjects(&objPoolPacket);
+
     JS_MaybeGC(js_context);
 }
 
@@ -988,9 +1044,8 @@ void J_Init(void)
     JS_DEFINEOBJECT(NGame);
     JS_DEFINEOBJECT(Cmd);
     JS_DEFINEOBJECT(Angle);
-    JS_DEFINEOBJECT(MoveController);
-    JS_DEFINEOBJECT(MapProperty);
     JS_DEFINEOBJECT(Physics);
+    JS_DEFINEOBJECT(Level);
     JS_INITCLASS(Vector, 3);
     JS_INITCLASS(Quaternion, 4);
     JS_INITCLASS(Matrix, 0);
@@ -1005,9 +1060,15 @@ void J_Init(void)
     JS_INITCLASS_NOCONSTRUCTOR(Animation, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Texture, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Plane, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(GameActor, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(Component, 0);
 
     if(!(js_rootscript = J_LoadScript("scripts/main.js")))
         Com_Error("J_Init: Unable to load main.js");
+
+    JPool_Initialize(&objPoolVector, 128, &Vector_class);
+    JPool_Initialize(&objPoolQuaternion, 128, &Quaternion_class);
+    JPool_Initialize(&objPoolPacket, 64, &Packet_class);
 
     J_ExecScriptObj(js_rootscript);
 

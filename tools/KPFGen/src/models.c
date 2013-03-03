@@ -808,10 +808,16 @@ static void AddModel(byte *data, int index)
     char name[256];
 
     Com_StrcatClear();
+    Com_SetDataProgress(3);
 
     ProcessProperties(modeldata, index);
+    Com_UpdateDataProgress();
+
     ProcessSpawnActions(modeldata, index);
+    Com_UpdateDataProgress();
+
     ProcessMeshes(modeldata, index);
+    Com_UpdateDataProgress();
 
     sprintf(name, "%smdl%03d/mdl%03d.kmesh",
         GetModelNamespace(0), index, index);

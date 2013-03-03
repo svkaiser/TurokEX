@@ -19,37 +19,18 @@
 // 02111-1307, USA.
 //
 //-----------------------------------------------------------------------------
-//
-// DESCRIPTION: Base Console Functions
-//
-//-----------------------------------------------------------------------------
 
-#include "common.h"
-#include "kernel.h"
-#include "js.h"
+#ifndef _JSPOOL_H_
+#define _JSPOOL_H_
 
-//
-// Con_Printf
-//
-
-void Con_Printf(rcolor clr, const char *s)
+typedef struct
 {
-    char *src;
-    
-    if(clr != COLOR_WHITE)
-    {
-        char *buf[2];
-        
-        buf[0] = (char*)s;
-        buf[1] = kva("%i,%i,%i",
-            clr & 0xff,
-            (clr >> 8) & 0xff,
-            (clr >> 16) & 0xff);
+    JSObject *pool;
+    JSObject *objects;
+} jsObjectPool_t;
 
-        J_CallClassFunction(JS_EV_SYS, "event_OutputText", buf, 2);
-        return;
-    }
-    
-    src = (char*)s;
-    J_CallClassFunction(JS_EV_SYS, "event_OutputText", &src, 1);
-}
+void JPool_Initialize(jsObjectPool_t *jsPool, jsint length, JSClass *class);
+JSObject *JPool_GetFree(jsObjectPool_t *jsPool, JSClass *class);
+void JPool_ReleaseObjects(jsObjectPool_t *jsPool);
+
+#endif

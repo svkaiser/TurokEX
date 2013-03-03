@@ -19,37 +19,10 @@
 // 02111-1307, USA.
 //
 //-----------------------------------------------------------------------------
-//
-// DESCRIPTION: Base Console Functions
-//
-//-----------------------------------------------------------------------------
 
-#include "common.h"
-#include "kernel.h"
-#include "js.h"
+#ifndef _JSPARSE_H_
+#define _JSPARSE_H_
 
-//
-// Con_Printf
-//
+kbool JParse_Start(scparser_t *parser, gObject_t **object, int count);
 
-void Con_Printf(rcolor clr, const char *s)
-{
-    char *src;
-    
-    if(clr != COLOR_WHITE)
-    {
-        char *buf[2];
-        
-        buf[0] = (char*)s;
-        buf[1] = kva("%i,%i,%i",
-            clr & 0xff,
-            (clr >> 8) & 0xff,
-            (clr >> 16) & 0xff);
-
-        J_CallClassFunction(JS_EV_SYS, "event_OutputText", buf, 2);
-        return;
-    }
-    
-    src = (char*)s;
-    J_CallClassFunction(JS_EV_SYS, "event_OutputText", &src, 1);
-}
+#endif

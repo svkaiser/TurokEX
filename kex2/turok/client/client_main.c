@@ -333,20 +333,16 @@ static void CL_DrawDebug(void)
         Draw_Text(32, 16,  COLOR_GREEN, 1, "-------------------");
         Draw_Text(32, 32,  COLOR_GREEN, 1, "   client debug");
         Draw_Text(32, 48,  COLOR_GREEN, 1, "-------------------");
-        Draw_Text(32, 64,  COLOR_GREEN, 1, "runtime: %f", client.runtime);
-        Draw_Text(32, 80,  COLOR_GREEN, 1, "time: %i", client.time);
-        Draw_Text(32, 96,  COLOR_GREEN, 1, "tics: %i", client.tics);
-        Draw_Text(32, 112, COLOR_GREEN, 1, "max msecs: %f",
+        Draw_Text(32, 64,  COLOR_GREEN, 1, "FPS: %i", (int)(1000.0f / (client.runtime * 1000.0f)));
+        Draw_Text(32, 80,  COLOR_GREEN, 1, "runtime: %f", client.runtime);
+        Draw_Text(32, 96,  COLOR_GREEN, 1, "time: %i", client.time);
+        Draw_Text(32, 112,  COLOR_GREEN, 1, "tics: %i", client.tics);
+        Draw_Text(32, 128, COLOR_GREEN, 1, "max msecs: %f",
             (1000.0f / cl_maxfps.value) / 1000.0f);
-        Draw_Text(32, 128, COLOR_GREEN, 1, "server time: %i",
+        Draw_Text(32, 144, COLOR_GREEN, 1, "server time: %i",
             client.st.tics - (client.st.time/100));
-        Draw_Text(32, 144, COLOR_GREEN, 1, "latency: %i",
+        Draw_Text(32, 160, COLOR_GREEN, 1, "latency: %i",
             client.time - client.latency[client.ns.acks & (NETBACKUPS-1)]);
-    }
-
-    if(developer.value)
-    {
-        Draw_Text(32.0f, bDebugTime ? 160.0f : 64.0f, COLOR_WHITE, 1, Con_GetBufferHead());
     }
 }
 
@@ -357,8 +353,6 @@ static void CL_DrawDebug(void)
 static void CL_Ticker(void)
 {
     Menu_Ticker();
-
-    Con_Ticker();
 
     CL_WeaponThink();
 
@@ -379,8 +373,6 @@ static void CL_Drawer(void)
     CL_DrawDebug();
 
     Menu_Drawer();
-
-    Con_Draw();
 
     R_FinishFrame();
 }

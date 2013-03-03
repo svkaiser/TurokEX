@@ -26,6 +26,7 @@
 
 #include "common.h"
 #include "mathlib.h"
+#include "actor.h"
 
 #define EPSILON_FLOOR 0.7f
 
@@ -118,33 +119,50 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
 // collision against them
 //
 
-static kbool Trace_Objects(trace_t *trace, plane_t *plane)
+static kbool Trace_Objects(trace_t *trace)
 {
-    blockobj_t *obj;
+    unsigned int i;
 
-    if(plane == NULL)
+    for(i = 0; i < gLevel.numGridBounds; i++)
     {
-        return false;
-    }
+        gridBounds_t *grid = &gLevel.gridBounds[i];
 
-    // go through the list
-    for(obj = plane->blocklist.next; obj != &plane->blocklist; obj = obj->next)
-    {
-        if(Trace_Object(trace, obj->object->origin, obj->object->width))
+        if((trace->end[0] > grid->minx && trace->end[0] < grid->maxx) &&
+            (trace->end[2] > grid->minz && trace->end[2] < grid->maxz))
         {
-            float offset;
+            unsigned int j;
 
-            offset = trace->offset;
-
-            // check object height
-            if(trace->end[1] > obj->object->origin[1] + obj->object->height ||
-                trace->end[1] + offset < obj->object->origin[1])
+            for(j = 0; j < grid->numStatics; j++)
             {
-                continue;
-            }
+                gActor_t *actor = &grid->statics[j];
 
-            trace->type = TRT_OBJECT;
-            return true;
+                if(!actor->bCollision && !actor->bTouch)
+                    continue;
+
+                if(trace->end[1] > actor->origin[1] + actor->height ||
+                    trace->end[1] + trace->offset < actor->origin[1])
+                {
+                    continue;
+                }
+
+                if(actor->bTouch)
+                {
+                    if(Vec_Length3(trace->end, actor->origin) +
+                        actor->radius < trace->width)
+                    {
+                        Actor_OnTouchEvent(actor);
+                    }
+                }
+
+                if(actor->bCollision)
+                {
+                    if(Trace_Object(trace, actor->origin, actor->radius))
+                    {
+                        trace->type = TRT_OBJECT;
+                        return true;
+                    }
+                }
+            }
         }
     }
 
@@ -391,12 +409,6 @@ void Trace_TraversePlanes(plane_t *plane, trace_t *trace)
     // we've entered a new plane
     trace->pl = plane;
 
-    if(Trace_Objects(trace, plane))
-    {
-        // an object was hit
-        return;
-    }
-
     pl = NULL;
     trace->frac = 0;
 
@@ -409,12 +421,6 @@ void Trace_TraversePlanes(plane_t *plane, trace_t *trace)
 
         Vec_Copy3(vp1, plane->points[i]);
         Vec_Copy3(vp2, plane->points[(i + 1) % 3]);
-
-        if(Trace_Objects(trace, plane->link[i]))
-        {
-            // an object was hit
-            return;
-        }
 
         if(Trace_PlaneEdge(trace, vp1, vp2))
         {
@@ -475,10 +481,10 @@ trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
     trace.offset    = offset;
     trace.yaw       = yaw;
 
-    // try to trace something as early as possible
-    if(!Trace_Plane(&trace, trace.pl))
+    if(!Trace_Objects(&trace))
     {
-        if(!Trace_Objects(&trace, trace.pl))
+        // try to trace something as early as possible
+        if(!Trace_Plane(&trace, trace.pl))
         {
             int i;
 
@@ -501,11 +507,11 @@ trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
                     break;
                 }
             }
-        }
 
-        // start traversing into other planes if we couldn't trace anything
-        if(trace.type == TRT_NOHIT)
-            Trace_TraversePlanes(plane, &trace);
+            // start traversing into other planes if we couldn't trace anything
+            if(trace.type == TRT_NOHIT)
+                Trace_TraversePlanes(plane, &trace);
+        }
     }
 
     return trace;

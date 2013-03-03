@@ -59,13 +59,13 @@ void Sys_Shutdown(void)
 {
     Com_WriteConfigFile();
 
+    J_Shutdown();
     Tex_Shutdown();
     R_Shutdown();
     G_Shutdown();
     KF_Shutdown();
     SV_Shutdown();
     Com_Shutdown();
-    J_Shutdown();
 
 #ifdef _WIN32
     Sys_DestroyConsole();
@@ -117,7 +117,6 @@ static void Sys_Init(void)
         "Kex Engine");
 
     Z_Init();
-    Con_Init();
 }
 
 //

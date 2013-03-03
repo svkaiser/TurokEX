@@ -20,6 +20,8 @@
 //
 //-----------------------------------------------------------------------------
 
+#include <math.h>
+
 #include "types.h"
 #include "common.h"
 #include "pak.h"
@@ -115,6 +117,7 @@ static short *typedata;
 static int numlevels;
 static int numattributes;
 static byte decode_buffer[0x40000];
+static int actorTally = 0;
 
 extern short section_count[800];
 extern short texindexes[2000];
@@ -301,6 +304,16 @@ static short GetObjectType(int index)
 }
 
 //
+// IsAPickup
+//
+
+static dboolean IsAPickup(int model)
+{
+    return (GetObjectType(model) >= 400 &&
+            GetObjectType(model) <= 456);
+}
+
+//
 // ProcessHeader
 //
 
@@ -331,6 +344,7 @@ static void ProcessPoints(byte *data)
             (float)rover[3] * 0.029296875f);
 
         rover += 4;
+        Com_UpdateDataProgress();
     }
 
     Com_Strcat("}\n\n");
@@ -356,6 +370,7 @@ static void ProcessLeafs(byte *data)
         Com_Strcat("    %i %i %i %i %i %i %i %i\n",
             leaf->area_id, leaf->flags, leaf->pt1, leaf->pt2, leaf->pt3,
             leaf->link1, leaf->link2, leaf->link3);
+        Com_UpdateDataProgress();
     }
 
     Com_Strcat("}\n\n");
@@ -395,92 +410,69 @@ static void ProcessAreas(byte *data)
     int size = Com_GetCartOffset(data, CHUNK_AREAS_SIZE, 0);
     int count = Com_GetCartOffset(data, CHUNK_AREAS_COUNT, 0);
     int i;
+    int total;
 
-    Com_Strcat("areas =\n");
-    Com_Strcat("{\n");
-
-    for(i = 0; i < count; i++)
-    {
-        maparea_t *area = (maparea_t*)(data + 8 + (i * size));
-
-        Com_Strcat("    { // area %02d\n", i);
-        Com_Strcat("        fogcolor = %i %i %i %i\n",
-            area->fogrgba[0], area->fogrgba[1], area->fogrgba[2], area->fogrgba[3]);
-        Com_Strcat("        waterheight = %f\n", area->waterheight);
-        Com_Strcat("        skyheight = %f\n", area->skyheight);
-        Com_Strcat("        flags = %i\n", area->flags);
-        Com_Strcat("        args = { %i %i %i %i %i %i }\n",
-            area->args1, area->args2, area->args3, area->args4, area->args5, area->args6);
-        Com_Strcat("        fogz_far = %f\n", area->fogzfar);
-        Com_Strcat("    }\n");
-    }
-
-    Com_Strcat("}\n\n");
-}
-
-//
-// ProcessAreaProperties
-//
-
-static void ProcessAreaProperties(byte *data, int index)
-{
-    int size = Com_GetCartOffset(data, CHUNK_AREAS_SIZE, 0);
-    int count = Com_GetCartOffset(data, CHUNK_AREAS_COUNT, 0);
-    int i;
-
-    Com_Strcat("MapProperty.add(\n");
-    Com_Strcat("[\n");
+    Com_Strcat("areas[%i] =\n{\n", count);
+    total = 1;
 
     for(i = 0; i < count; i++)
     {
         maparea_t *area = (maparea_t*)(data + 8 + (i * size));
+
+        total = 1;
+
+        if(area->flags & 0x1)       total++;
+        if(area->flags & 0x10)      total++;
+        if(area->flags & 0x80)      total++;
+        if(area->flags & 0x100000)  total++;
 
         Com_Strcat("    {\n");
-        Com_Strcat("        fogcolor : { r : %i, g : %i, b : %i, a : %i },\n",
-            area->fogrgba[0], area->fogrgba[1], area->fogrgba[2], area->fogrgba[3]);
-        Com_Strcat("        fogz_far : %f", area->fogzfar);
-        if(area->flags & (0x1|0x10|0x80|0x100|0x100000))
+        Com_Strcat("        components[%i] =\n", total);
+        Com_Strcat("        {\n");
+
+        if(area->flags & 0x1)
         {
-            if(area->flags & 0x1)
-            {
-                Com_Strcat(",\n");
-                Com_Strcat("        waterheight : %f", area->waterheight);
-            }
-
-            if(area->flags & 0x10)
-            {
-                Com_Strcat(",\n");
-                Com_Strcat("        climb : true");
-            }
-
-            if(area->flags & 0x80)
-            {
-                Com_Strcat(",\n");
-                Com_Strcat("        crawl : true");
-            }
-
-            if(area->flags & 0x100)
-            {
-                Com_Strcat(",\n");
-                Com_Strcat("        exitcrawl : true");
-            }
-
-            if(area->flags & 0x100000)
-            {
-                Com_Strcat(",\n");
-                Com_Strcat("        skyheight : %f", area->skyheight);
-            }
+            Com_Strcat("            BeginObject = \"ComponentAreaWater\"\n");
+            Com_Strcat("                { \"active\" : true,\n");
+            Com_Strcat("                \"waterYPlane\" : %f }\n", area->waterheight);
+            Com_Strcat("            EndObject\n");
         }
 
-        Com_Strcat("\n    }");
+        if(area->flags & 0x10)
+        {
+            Com_Strcat("            BeginObject = \"ComponentAreaClimb\"\n");
+            Com_Strcat("                { \"active\" : true }\n");
+            Com_Strcat("            EndObject\n");
+        }
 
-        if(i < (count-1))
-            Com_Strcat(",");
+        if(area->flags & 0x80)
+        {
+            Com_Strcat("            BeginObject = \"ComponentAreaCrawl\"\n");
+            Com_Strcat("                { \"active\" : true }\n");
+            Com_Strcat("            EndObject\n");
+        }
 
-        Com_Strcat("\n\n");
+        if(area->flags & 0x100000)
+        {
+            Com_Strcat("            BeginObject = \"ComponentAreaSky\"\n");
+            Com_Strcat("                { \"active\" : true,\n");
+            Com_Strcat("                \"skyYPlane\" : %f }\n", area->skyheight);
+            Com_Strcat("            EndObject\n");
+        }
+
+        Com_Strcat("            BeginObject = \"ComponentAreaFog\"\n");
+        Com_Strcat("                { \"fog_Color_r\" : %i,\n", area->fogrgba[0]);
+        Com_Strcat("                \"fog_Color_g\" : %i,\n", area->fogrgba[1]);
+        Com_Strcat("                \"fog_Color_b\" : %i,\n", area->fogrgba[2]);
+        Com_Strcat("                \"fog_Far\" : %f }\n", area->fogzfar);
+        Com_Strcat("            EndObject\n");
+        Com_Strcat("        }\n");
+        Com_Strcat("    }\n");
+
+        Com_UpdateDataProgress();
     }
-    
-    Com_Strcat("], %i);\n", index);
+
+    Com_Strcat("}\n");
 }
 
 //
@@ -491,10 +483,9 @@ static void ProcessNavigation(byte *data, int index)
 {
     byte *rncdata;
     byte *info;
-    byte *areas;
     byte *points;
     byte *leafs;
-    byte *zones;
+    //byte *zones;
     int size;
     int outsize;
     char name[256];
@@ -504,10 +495,6 @@ static void ProcessNavigation(byte *data, int index)
     rncdata = Com_GetCartData(data, CHUNK_LVROOT_INFO, &size);
     info = RNC_ParseFile(rncdata, size, &outsize);
 
-    areas = Com_GetCartData(info, CHUNK_LEVELINFO_AREAS, &size);
-    DC_DecodeData(areas, decode_buffer, 0);
-    memcpy(areas, decode_buffer, size);
-
     points = Com_GetCartData(info, CHUNK_LEVELINFO_POINTS, &size);
     DC_DecodeData(points, decode_buffer, 0);
     memcpy(points, decode_buffer, size);
@@ -516,26 +503,22 @@ static void ProcessNavigation(byte *data, int index)
     DC_DecodeData(leafs, decode_buffer, 0);
     memcpy(leafs, decode_buffer, size);
 
-    zones = Com_GetCartData(info, CHUNK_LEVELINFO_ZONEBOUNDS, &size);
-    DC_DecodeData(zones, decode_buffer, 0);
-    memcpy(zones, decode_buffer, size);
+    //zones = Com_GetCartData(info, CHUNK_LEVELINFO_ZONEBOUNDS, &size);
+    //DC_DecodeData(zones, decode_buffer, 0);
+    //memcpy(zones, decode_buffer, size);
 
-    Com_Strcat("numareas = %i\n", Com_GetCartOffset(areas, CHUNK_AREAS_COUNT, 0));
     Com_Strcat("numpoints = %i\n", Com_GetCartOffset(points, CHUNK_POINTS_COUNT, 0));
-    Com_Strcat("numleafs = %i\n", Com_GetCartOffset(leafs, CHUNK_LEAFS_COUNT, 0));
-    Com_Strcat("numzonebounds = %i\n\n", Com_GetCartOffset(zones, CHUNK_ZONE_COUNT, 0));
+    Com_Strcat("numleafs = %i\n\n", Com_GetCartOffset(leafs, CHUNK_LEAFS_COUNT, 0));
+    //Com_Strcat("numzonebounds = %i\n\n", Com_GetCartOffset(zones, CHUNK_ZONE_COUNT, 0));
 
-    ProcessAreas(areas);
+    Com_SetDataProgress(Com_GetCartOffset(points, CHUNK_POINTS_COUNT, 0) +
+        Com_GetCartOffset(leafs, CHUNK_LEAFS_COUNT, 0));
+
     ProcessPoints(points);
     ProcessLeafs(leafs);
-    ProcessZones(zones);
+    //ProcessZones(zones);
 
-    sprintf(name, "maps/map%02d/map%02d.knav", index, index);
-    Com_StrcatAddToFile(name);
-
-    Com_StrcatClear();
-    ProcessAreaProperties(areas, index);
-    sprintf(name, "maps/map%02d/map%02d_props.js", index, index);
+    sprintf(name, "maps/map%02d/map%02d.kcm", index, index);
     Com_StrcatAddToFile(name);
 
     Com_Free(&info);
@@ -551,69 +534,164 @@ static void ProcessActors(byte *data)
     int count = Com_GetCartOffset(data, CHUNK_ACTORS_COUNT, 0);
     int i;
 
-    Com_Strcat("\nactors =\n");
-    Com_Strcat("{\n");
+    Com_Strcat("actors[%i] =\n{\n", count);
 
     for(i = 0; i < count; i++)
     {
         mapactor_t *actor = (mapactor_t*)(data + 8 + (i * size));
 
-         Com_Strcat("    { // actor %02d\n", i);
-         Com_Strcat("        model = \"models/mdl%03d/mdl%03d.kmesh\"\n",
-             actor->model, actor->model);
-         Com_Strcat("        texture_alt = %i\n", GetAttribute(actor->attribute)->texture);
-         Com_Strcat("        skin = %i\n", GetAttribute(actor->attribute)->skin);
-         Com_Strcat("        target_id = %i\n", GetAttribute(actor->attribute)->tid);
-         Com_Strcat("        target = %i\n", GetAttribute(actor->attribute)->target);
-         Com_Strcat("        variant = %i\n", GetAttribute(actor->attribute)->variant1);
-         Com_Strcat("        leaf = %i\n", actor->leaf);
-         Com_Strcat("        angle = %f\n",
-             (((-(float)actor->angle / 180.0f) * M_RAD) + M_PI) / M_RAD);
-         Com_Strcat("        position = { %f %f %f }\n",
-             actor->xyz[0], actor->xyz[1], actor->xyz[2]);
-         Com_Strcat("        scale = { %f %f %f }\n",
-             actor->scale[0], actor->scale[1], actor->scale[2]);
-         Com_Strcat("        type = %i\n", actor->type);
-         Com_Strcat("        flags = %i\n", actor->flags);
-         Com_Strcat("        meleerange = %f\n", GetAttribute(actor->attribute)->meleerange);
-         Com_Strcat("        health = %i\n", GetAttribute(actor->attribute)->health);
-         Com_Strcat("        width = %f\n", GetAttribute(actor->attribute)->width);
-         Com_Strcat("        height = %f\n", GetAttribute(actor->attribute)->height);
-         Com_Strcat("        viewheight = %f\n", GetAttribute(actor->attribute)->viewheight);
-         Com_Strcat("        blockflag = %i\n", GetAttribute(actor->attribute)->blockflags);
-         Com_Strcat("        // u3 = %i\n", actor->u3);
-         Com_Strcat("        // attrib uf2 = %f\n", GetAttribute(actor->attribute)->uf2);
-         Com_Strcat("        // attrib uf6 = %f\n", GetAttribute(actor->attribute)->uf6);
-         Com_Strcat("    }\n");
+        Com_Strcat("    {\n");
+
+        Com_Strcat("        name = \"Actor_%i\"\n", actorTally++);
+        Com_Strcat("        components[%i] =\n", actor->type == 0 ? 2 : 1);
+        Com_Strcat("        {\n");
+        if(actor->type == 0)
+        {
+            Com_Strcat("            BeginObject = \"ComponentPlayerStart\"\n");
+            Com_Strcat("                { \"playerID\" : 0 }\n");
+            Com_Strcat("            EndObject\n");
+        }
+
+        Com_Strcat("            BeginObject = \"ComponentMesh\"\n");
+        Com_Strcat("                { \"modelfile\" : \"models/mdl%03d/mdl%03d.kmesh\",\n",
+            actor->model, actor->model);
+        Com_Strcat("                \"box_min_x\" : 0,\n");
+        Com_Strcat("                \"box_min_y\" : 0,\n");
+        Com_Strcat("                \"box_min_z\" : 0,\n");
+        Com_Strcat("                \"box_max_x\" : 0,\n");
+        Com_Strcat("                \"box_max_y\" : 0,\n");
+        Com_Strcat("                \"box_max_z\" : 0 }\n");
+        Com_Strcat("            EndObject\n");
+
+        Com_Strcat("        }\n");
+
+        Com_Strcat("        bCollision = %i\n",
+            GetAttribute(actor->attribute)->blockflags & 1);
+        Com_Strcat("        bStatic = 0\n");
+        Com_Strcat("        plane = %i\n", actor->leaf);
+        Com_Strcat("        origin = { %f %f %f }\n",
+            actor->xyz[0], actor->xyz[1], actor->xyz[2]);
+        Com_Strcat("        scale = { %f %f %f }\n",
+            actor->scale[0], actor->scale[1], actor->scale[2]);
+        Com_Strcat("        angles = { %f 0.0 0.0 }\n",
+            ((((-(float)actor->angle / 180.0f) * M_RAD) + M_PI) / M_RAD) * M_RAD);
+        Com_Strcat("        radius = %f\n", GetAttribute(actor->attribute)->width);
+        Com_Strcat("        height = %f\n", GetAttribute(actor->attribute)->height);
+        Com_Strcat("        centerheight = %f\n", GetAttribute(actor->attribute)->meleerange);
+        Com_Strcat("        viewheight = %f\n", GetAttribute(actor->attribute)->viewheight);
+
+        Com_Strcat("    }\n");
+
+        Com_UpdateDataProgress();
     }
 
-    Com_Strcat("}\n\n");
+    Com_Strcat("}\n");
 }
 
 //
 // ProcessGridBounds
 //
 
-static void ProcessGridBounds(byte *data)
+static void ProcessStaticInstances2(byte *data, byte *data2);
+static void ProcessInstances(byte *data);
+
+static void ProcessGridBounds(byte *data, byte *inst)
 {
     byte *grid = Com_GetCartData(data, CHUNK_LEVELGRID_BOUNDS, 0);
     int size = Com_GetCartOffset(grid, CHUNK_GRIDBOUNDS_SIZE, 0);
     int count = Com_GetCartOffset(grid, CHUNK_GRIDBOUNDS_COUNT, 0);
+    int total = count;
     int i;
 
-    Com_Strcat("gridbounds =\n");
-    Com_Strcat("{\n");
+    // some gridbounds can contain bad or empty data....UGH
+    if(count > 1)
+    {
+        total = 0;
+
+        for(i = 0; i < count; i++)
+        {
+            float tmp;
+            char tmp2[32];
+
+            int gsize;
+            byte *rncdata = Com_GetCartData(inst, CHUNK_INSTGROUP_OFFSET(i), &gsize);
+            byte *group = RNC_ParseFile(rncdata, gsize, 0);
+
+            tmp = *(float*)((int*)(grid + 8 + 0  + (i * size)));
+            sprintf(tmp2, "%f", tmp);
+            if(strstr(tmp2, "#INF"))
+            {
+                Com_Free(&group);
+                continue;
+            }
+
+            tmp = *(float*)((int*)(grid + 8 + 4  + (i * size)));
+            sprintf(tmp2, "%f", tmp);
+            if(strstr(tmp2, "#INF"))
+            {
+                Com_Free(&group);
+                continue;
+            }
+
+            tmp = *(float*)((int*)(grid + 8 + 8  + (i * size)));
+            sprintf(tmp2, "%f", tmp);
+            if(strstr(tmp2, "#INF"))
+            {
+                Com_Free(&group);
+                continue;
+            }
+
+            tmp = *(float*)((int*)(grid + 8 + 12 + (i * size)));
+            sprintf(tmp2, "%f", tmp);
+            if(strstr(tmp2, "#INF"))
+            {
+                Com_Free(&group);
+                continue;
+            }
+
+            if(Com_GetCartOffset(group, CHUNK_INSTANCE_SIZE, 0) &&
+                Com_GetCartOffset(group, CHUNK_INSTANCE_COUNT, 0))
+            {
+                total++;
+            }
+
+            Com_Free(&group);
+        }
+    }
+
+    Com_Strcat("gridbounds[%i] =\n{\n", total);
 
     for(i = 0; i < count; i++)
     {
-        Com_Strcat("    %f %f %f %f\n",
-            *(float*)((int*)(grid + 8 + 0  + (i * size))),
-            *(float*)((int*)(grid + 8 + 4  + (i * size))),
-            *(float*)((int*)(grid + 8 + 8  + (i * size))),
-            *(float*)((int*)(grid + 8 + 12 + (i * size))));
+        int gsize;
+        byte *rncdata = Com_GetCartData(inst, CHUNK_INSTGROUP_OFFSET(i), &gsize);
+        byte *group = RNC_ParseFile(rncdata, gsize, 0);
+
+        if(Com_GetCartOffset(group, CHUNK_INSTANCE_SIZE, 0) &&
+            Com_GetCartOffset(group, CHUNK_INSTANCE_COUNT, 0))
+        {
+
+            float min_x = *(float*)((int*)(grid + 8 + 0  + (i * size)));
+            float min_z = *(float*)((int*)(grid + 8 + 4  + (i * size)));
+            float max_x = *(float*)((int*)(grid + 8 + 8  + (i * size)));
+            float max_z = *(float*)((int*)(grid + 8 + 12 + (i * size)));
+
+            Com_Strcat("    {\n");
+            Com_Strcat("        bounds = %f %f %f %f\n", min_x, min_z, max_x, max_z);
+            
+            ProcessStaticInstances2(
+                Com_GetCartData(group, CHUNK_STATICINST_GROUP2, 0),
+                Com_GetCartData(group, CHUNK_STATICINST_GROUP3, 0));
+            //ProcessInstances(Com_GetCartData(group, CHUNK_STATICINST_GROUP3, 0));
+
+            Com_Strcat("    }\n");
+        }
+
+         Com_Free(&group);
+         Com_UpdateDataProgress();
     }
 
-    Com_Strcat("}\n\n");
+    Com_Strcat("}\n");
 }
 
 //
@@ -629,34 +707,53 @@ static void ProcessInstances(byte *data)
     size = Com_GetCartOffset(data, CHUNK_INSTANCE_SIZE, 0);
     count = Com_GetCartOffset(data, CHUNK_INSTANCE_COUNT, 0);
 
-    if(!size || !count)
-    {
-        Com_Strcat("            numinstances = 0\n");
-        return;
-    }
-
-    Com_Strcat("            numinstances = %i\n\n", count);
-
     DC_DecodeData(data, decode_buffer, 0);
     memcpy(data, decode_buffer, (size * count) + 8);
 
     for(i = 0; i < count; i++)
     {
         mapinsttype3_t *mapinst = (mapinsttype3_t*)(data + 8 + (i * size));
+        int cCount = 1;
 
-        Com_Strcat("            { // instance %02d\n", i);
-        Com_Strcat("                position = { %f %f %f }\n",
+        if(IsAPickup(mapinst->model))
+            cCount = 3;
+
+        Com_Strcat("            {\n");
+        Com_Strcat("                name = \"Actor_%i\"\n", actorTally++);
+        Com_Strcat("                origin = { %f %f %f }\n",
             mapinst->xyz[0], mapinst->xyz[1], mapinst->xyz[2]);
-        Com_Strcat("                boundsize = %f\n", mapinst->bboxsize);
-        Com_Strcat("                model = \"models/mdl%03d/mdl%03d.kmesh\"\n",
+        Com_Strcat("                scale = { 0.35 0.35 0.35 }\n");
+        Com_Strcat("                bStatic = 1\n");
+        Com_Strcat("                bCollision = 0\n");
+        Com_Strcat("                angles = { %f 0 0 }\n",
+            (mapinst->angle * ANGLE_LEVELOBJECT) * M_RAD);
+        Com_Strcat("                radius = %f\n", mapinst->bboxsize);
+        Com_Strcat("                height = %f\n", mapinst->bboxsize);
+        Com_Strcat("                components[%i] =\n", cCount);
+        Com_Strcat("                {\n");
+        Com_Strcat("                    BeginObject = \"ComponentMesh\"\n");
+        Com_Strcat("                        { \"modelfile\" : \"models/mdl%03d/mdl%03d.kmesh\",\n",
             mapinst->model, mapinst->model);
-        Com_Strcat("                type = %i\n", GetObjectType(mapinst->model));
-        Com_Strcat("                angle = %f\n", (mapinst->angle * ANGLE_LEVELOBJECT) * M_RAD);
-        Com_Strcat("                blockflag = %i\n", GetAttribute(mapinst->attribute)->blockflags);
-        Com_Strcat("                // flags = %i\n", mapinst->flags);
-        Com_Strcat("                // u2 = %i\n", mapinst->u2);
-        Com_Strcat("                // u3 = %i\n", mapinst->u3);
-        Com_Strcat("                // u4 = %i\n", mapinst->u4);
+        Com_Strcat("                        \"box_min_x\" : %f,\n", -mapinst->bboxsize);
+        Com_Strcat("                        \"box_min_y\" : %f,\n", -mapinst->bboxsize);
+        Com_Strcat("                        \"box_min_z\" : %f,\n", -mapinst->bboxsize);
+        Com_Strcat("                        \"box_max_x\" : %f,\n", mapinst->bboxsize);
+        Com_Strcat("                        \"box_max_y\" : %f,\n", mapinst->bboxsize);
+        Com_Strcat("                        \"box_max_z\" : %f }\n", mapinst->bboxsize);
+        Com_Strcat("                    EndObject\n");
+
+        if(IsAPickup(mapinst->model))
+        {
+            Com_Strcat("                    BeginObject = \"ComponentTouchBox\"\n");
+            Com_Strcat("                        { \"active\" : true }\n");
+            Com_Strcat("                    EndObject\n");
+            Com_Strcat("                    BeginObject = \"ComponentPickup\"\n");
+            Com_Strcat("                        { \"active\" : true }\n");
+            Com_Strcat("                    EndObject\n");
+        }
+
+        Com_Strcat("                }\n");
+
         Com_Strcat("            }\n");
     }
 }
@@ -703,26 +800,25 @@ static void ProcessTextureOverrides(short model, int textureid)
 
     scount = section_count[model];
 
-    Com_Strcat("                overrides =\n");
-    Com_Strcat("                {\n");
+    Com_Strcat("                        \"textureSwaps\" : [\n");
 
     for(i = 0; i < scount; i++)
     {
-        Com_Strcat("                    { ");
+        //Com_Strcat("                            { ");
 
         tcount = texindexes[section_textures[model][i]];
 
         if(textureid >= tcount)
         {
-            Com_Strcat("\"-\"");
+            Com_Strcat("                            \"-\"");
         }
         else
         {
-            Com_Strcat("\"textures/tex%04d_%02d.tga\"",
+            Com_Strcat("                            \"textures/tex%04d_%02d.tga\"",
                 section_textures[model][i], textureid);
         }
 
-        Com_Strcat(" }");
+        //Com_Strcat(" }");
 
         if(i != (scount-1))
         {
@@ -732,14 +828,14 @@ static void ProcessTextureOverrides(short model, int textureid)
         Com_Strcat("\n");
     }
 
-    Com_Strcat("                }\n");
+    Com_Strcat("                        ],\n");
 }
 
 //
 // ProcessStaticInstances2
 //
 
-static void ProcessStaticInstances2(byte *data)
+static void ProcessStaticInstances2(byte *data, byte *data2)
 {
     int size;
     int count;
@@ -748,13 +844,8 @@ static void ProcessStaticInstances2(byte *data)
     size = Com_GetCartOffset(data, CHUNK_INSTANCE_SIZE, 0);
     count = Com_GetCartOffset(data, CHUNK_INSTANCE_COUNT, 0);
 
-    if(!size || !count)
-    {
-        Com_Strcat("            numstaticinstances = 0\n");
-        return;
-    }
-
-    Com_Strcat("            numstaticinstances = %i\n\n", count);
+    Com_Strcat("        statics[%i] =\n        {\n",
+        count + Com_GetCartOffset(data2, CHUNK_INSTANCE_COUNT, 0));
 
     DC_DecodeData(data, decode_buffer, 0);
     memcpy(data, decode_buffer, (size * count) + 8);
@@ -764,40 +855,47 @@ static void ProcessStaticInstances2(byte *data)
         mapinsttype2_t *mapinst = (mapinsttype2_t*)(data + 8 + (i * size));
         float rotvec[4];
 
-        Com_Strcat("            { // instance %02d\n", i);
+        Com_Strcat("            {\n");
+        Com_Strcat("                name = \"Actor_%i\"\n", actorTally++);
 
         rotvec[0] = (float)mapinst->angle[0] * ANGLE_INSTANCE;
         rotvec[1] = (float)mapinst->angle[1] * ANGLE_INSTANCE;
         rotvec[2] = (float)mapinst->angle[2] * ANGLE_INSTANCE;
         rotvec[3] = (float)mapinst->angle[3] * ANGLE_INSTANCE;
 
-        Com_Strcat("                position = { %f %f %f }\n",
+        Com_Strcat("                components[1] =\n");
+        Com_Strcat("                {\n");
+        Com_Strcat("                    BeginObject = \"ComponentMesh\"\n");
+        Com_Strcat("                        { \"modelfile\" : \"models/mdl%03d/mdl%03d.kmesh\",\n",
+            mapinst->model, mapinst->model);
+        ProcessTextureOverrides(mapinst->model, GetAttribute(mapinst->attribute)->texture);
+        Com_Strcat("                        \"box_min_x\" : %f,\n", CoerceFloat(mapinst->bbox[0]));
+        Com_Strcat("                        \"box_min_y\" : %f,\n", CoerceFloat(mapinst->bbox[1]));
+        Com_Strcat("                        \"box_min_z\" : %f,\n", CoerceFloat(mapinst->bbox[2]));
+        Com_Strcat("                        \"box_max_x\" : %f,\n", CoerceFloat(mapinst->bbox[3]));
+        Com_Strcat("                        \"box_max_y\" : %f,\n", CoerceFloat(mapinst->bbox[4]));
+        Com_Strcat("                        \"box_max_z\" : %f }\n", CoerceFloat(mapinst->bbox[5]));
+        Com_Strcat("                    EndObject\n");
+        Com_Strcat("                }\n");
+        Com_Strcat("                bCollision = %i\n",
+            GetAttribute(mapinst->attribute)->blockflags & 1);
+        Com_Strcat("                bStatic = 1\n");
+        Com_Strcat("                origin = { %f %f %f }\n",
             mapinst->xyz[0], mapinst->xyz[1], mapinst->xyz[2]);
         Com_Strcat("                scale = { %f %f %f }\n",
             mapinst->scale[0], mapinst->scale[1], mapinst->scale[2]);
-        Com_Strcat("                bounds = { %f %f %f %f %f %f }\n",
-            CoerceFloat(mapinst->bbox[0]),
-            CoerceFloat(mapinst->bbox[1]),
-            CoerceFloat(mapinst->bbox[2]),
-            CoerceFloat(mapinst->bbox[3]),
-            CoerceFloat(mapinst->bbox[4]),
-            CoerceFloat(mapinst->bbox[5]));
-        Com_Strcat("                model = \"models/mdl%03d/mdl%03d.kmesh\"\n",
-            mapinst->model, mapinst->model);
-        Com_Strcat("                type = %i\n", GetObjectType(mapinst->model));
-        Com_Strcat("                angle = { %f %f %f %f }\n",
+        Com_Strcat("                rotation = { %f %f %f %f }\n",
             rotvec[0], rotvec[1], rotvec[2], rotvec[3]);
-        Com_Strcat("                // texture_alt = %i\n", GetAttribute(mapinst->attribute)->texture);
-        ProcessTextureOverrides(mapinst->model, GetAttribute(mapinst->attribute)->texture);
-        Com_Strcat("                leaf = %i\n", mapinst->plane);
-        Com_Strcat("                flags = %i\n", mapinst->flags);
-        Com_Strcat("                radius = %f\n", GetAttribute(mapinst->attribute)->meleerange);
+        Com_Strcat("                plane = %i\n", mapinst->plane);
+        Com_Strcat("                radius = %f\n", GetAttribute(mapinst->attribute)->width);
         Com_Strcat("                height = %f\n", GetAttribute(mapinst->attribute)->height);
-        Com_Strcat("                viewheight = %f\n", GetAttribute(mapinst->attribute)->viewheight);
-        Com_Strcat("                blockflag = %i\n", GetAttribute(mapinst->attribute)->blockflags);
-        Com_Strcat("                // u1 = %i\n", mapinst->u1);
+
         Com_Strcat("            }\n");
     }
+
+    ProcessInstances(data2);
+
+    Com_Strcat("        }\n");
 }
 
 //
@@ -806,7 +904,7 @@ static void ProcessStaticInstances2(byte *data)
 
 static void ProcessInstanceGroups(byte *data)
 {
-    int count = Com_GetCartOffset(data, CHUNK_INSTGROUP_COUNT, 0);
+    /*int count = Com_GetCartOffset(data, CHUNK_INSTGROUP_COUNT, 0);
     int i;
 
     Com_Strcat("instancegroups =\n");
@@ -841,7 +939,7 @@ static void ProcessInstanceGroups(byte *data)
         Com_Free(&group);
     }
 
-    Com_Strcat("}\n\n");
+    Com_Strcat("}\n\n");*/
 }
 
 //
@@ -872,6 +970,8 @@ static void ProcessLevel(byte *data, int index)
     byte *actors;
     byte *grid;
     byte *inst;
+    byte *info;
+    byte *areas;
     int size;
     int outsize;
     char name[256];
@@ -888,20 +988,31 @@ static void ProcessLevel(byte *data, int index)
 
     inst = Com_GetCartData(data, CHUNK_LVROOT_INSTANCES, 0);
 
-    Com_Strcat("numactors = %i\n", Com_GetCartOffset(actors, CHUNK_ACTORS_COUNT, 0));
-    Com_Strcat("numgridbounds = %i\n", Com_GetCartOffset(
-        Com_GetCartData(grid, CHUNK_LEVELGRID_BOUNDS, 0), CHUNK_GRIDBOUNDS_COUNT, 0));
-    Com_Strcat("numinstancegroups = %i\n", Com_GetCartOffset(inst, CHUNK_INSTGROUP_COUNT, 0));
+    Com_SetDataProgress(Com_GetCartOffset(actors, CHUNK_ACTORS_COUNT, 0) +
+        Com_GetCartOffset(grid, CHUNK_GRIDBOUNDS_COUNT, 0) +
+        Com_GetCartOffset(data, CHUNK_AREAS_COUNT, 0));
+
+    Com_Strcat("title = \"Map%02d\"\n", index);
+    Com_Strcat("mapID = %i\n\n", index);
 
     ProcessActors(actors);
-    ProcessGridBounds(grid);
-    ProcessInstanceGroups(inst);
+    ProcessGridBounds(grid, inst);
+
+    rncdata = Com_GetCartData(data, CHUNK_LVROOT_INFO, &size);
+    info = RNC_ParseFile(rncdata, size, &outsize);
+
+    areas = Com_GetCartData(info, CHUNK_LEVELINFO_AREAS, &size);
+    DC_DecodeData(areas, decode_buffer, 0);
+    memcpy(areas, decode_buffer, size);
+
+    ProcessAreas(areas);
 
     sprintf(name, "maps/map%02d/map%02d.kmap", index, index);
     Com_StrcatAddToFile(name);
 
     Com_Free(&grid);
     Com_Free(&actors);
+    Com_Free(&info);
 }
 
 //
@@ -911,6 +1022,8 @@ static void ProcessLevel(byte *data, int index)
 static void AddLevel(byte *data, int index)
 {
     byte *level;
+
+    actorTally = 0;
 
     level = Com_GetCartData(data, CHUNK_LEVEL_OFFSET(index), 0);
 

@@ -29,7 +29,7 @@
 #include "common.h"
 #include "mathlib.h"
 
-JSObject *js_objQuaternion;
+JS_CLASSOBJECT(Quaternion);
 
 enum vec4_enum
 {
@@ -39,210 +39,161 @@ enum vec4_enum
     VEC4_W
 };
 
-//
-// quaternion_getProperty
-//
-
-static JSBool quaternion_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+JS_PROP_FUNC_GET(Quaternion)
 {
     vec4_t *vector = NULL;
 
-    if(!(vector = (vec4_t*)JS_GetInstancePrivate(cx, obj, &Quaternion_class, NULL)))
-        return JS_FALSE;
-
-    switch(JSVAL_TO_INT(id))
+    if(vector = (vec4_t*)JS_GetInstancePrivate(cx, obj, &Quaternion_class, NULL))
     {
-    case VEC4_X:
-        return JS_NewNumberValue(cx, (*vector)[0], vp);
-        break;
-    case VEC4_Y:
-        return JS_NewNumberValue(cx, (*vector)[1], vp);
-        break;
-    case VEC4_Z:
-        return JS_NewNumberValue(cx, (*vector)[2], vp);
-        break;
-    case VEC4_W:
-        return JS_NewNumberValue(cx, (*vector)[3], vp);
-        break;
-    }
-
-    return JS_FALSE;
-}
-
-//
-// quaternion_setProperty
-//
-
-static JSBool quaternion_setProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-{
-    vec4_t *vector = NULL;
-    jsdouble val;
-
-    if(!(vector = (vec4_t*)JS_GetInstancePrivate(cx, obj, &Quaternion_class, NULL)))
-        return JS_FALSE;
-
-    if(!(JS_ValueToNumber(cx, *vp, &val)))
-        return JS_FALSE;
-
-    switch(JSVAL_TO_INT(id))
-    {
-    case VEC4_X:
-        (*vector)[0] = (float)val;
-        break;
-    case VEC4_Y:
-        (*vector)[1] = (float)val;
-        break;
-    case VEC4_Z:
-        (*vector)[2] = (float)val;
-        break;
-    case VEC4_W:
-        (*vector)[3] = (float)val;
-        break;
+        switch(JSVAL_TO_INT(id))
+        {
+        case VEC4_X:
+            return JS_NewNumberValue(cx, (*vector)[0], vp);
+        case VEC4_Y:
+            return JS_NewNumberValue(cx, (*vector)[1], vp);
+        case VEC4_Z:
+            return JS_NewNumberValue(cx, (*vector)[2], vp);
+        case VEC4_W:
+            return JS_NewNumberValue(cx, (*vector)[2], vp);
+        }
     }
 
     return JS_TRUE;
 }
 
-//
-// quaternion_finalize
-//
-
-static void quaternion_finalize(JSContext *cx, JSObject *obj)
+JS_PROP_FUNC_SET(Quaternion)
 {
-    vec4_t *rot;
+    vec4_t *vector = NULL;
 
-    if(rot = (vec4_t*)JS_GetPrivate(cx, obj))
-        JS_free(cx, rot);
+    if(vector = (vec4_t*)JS_GetInstancePrivate(cx, obj, &Quaternion_class, NULL))
+    {
+        jsdouble val;
 
-    return;
+        if(!(JS_ValueToNumber(cx, *vp, &val)))
+            return JS_FALSE;
+
+        switch(JSVAL_TO_INT(id))
+        {
+        case VEC4_X:
+            (*vector)[0] = (float)val;
+            break;
+        case VEC4_Y:
+            (*vector)[1] = (float)val;
+            break;
+        case VEC4_Z:
+            (*vector)[2] = (float)val;
+            break;
+        case VEC4_W:
+            (*vector)[2] = (float)val;
+            break;
+        }
+    }
+
+    return JS_TRUE;
 }
 
-//
-// quaternion_toString
-//
-
-static JSBool quaternion_toString(JSContext *cx, uintN argc, jsval *vp)
+JS_FASTNATIVE_BEGIN(Quaternion, toString)
 {
-    vec4_t *vector;
+    vec4_t rot;
+    JSObject *object;
     char buffer[256];
 
-    JS_THISQUATERNION(vector, vp);
+    object = JS_THIS_OBJECT(cx, vp);
+
+    JS_GETQUATERNION2(object, rot);
+
     sprintf(buffer, "%f, %f, %f, %f",
-        (*vector)[0],
-        (*vector)[1],
-        (*vector)[2],
-        (*vector)[3]);
+        rot[0], rot[1], rot[2], rot[3]);
 
     JS_RETURNSTRING(vp, buffer);
     return JS_TRUE;
 }
 
-//
-// quaternion_normalize
-//
-
-static JSBool quaternion_normalize(JSContext *cx, uintN argc, jsval *vp)
+JS_FASTNATIVE_BEGIN(Quaternion, normalize)
 {
-    vec4_t *vector;
+    vec4_t rot;
+    JSObject *object;
 
-    JS_THISQUATERNION(vector, vp);
+    object = JS_THIS_OBJECT(cx, vp);
 
-    Vec_Normalize4(*vector);
+    JS_GETQUATERNION2(object, rot);
+
+    Vec_Normalize4(rot);
+
+    JS_SETQUATERNION(object, rot);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-//
-// quaternion_multiply
-//
-
-static JSBool quaternion_multiply(JSContext *cx, JSObject *obj, uintN argc,
-                           jsval *argv, jsval *rval)
+JS_FASTNATIVE_BEGIN(Quaternion, setRotation)
 {
-    JSObject *nobj;
-    jsval *v;
-    vec4_t *outrot = NULL;
-    vec4_t *rot1 = NULL;
-    vec4_t *rot2 = NULL;
+    vec4_t rot;
+    JSObject *object;
+    jsdouble angle;
+    jsdouble x, y, z;
 
-    if(argc <= 0)
-        return JS_FALSE;
+    JS_CHECKARGS(4);
 
-    if(!(nobj = JS_NewObject(cx, &Quaternion_class, NULL, NULL)))
-        return JS_FALSE;
+    object = JS_THIS_OBJECT(cx, vp);
 
-    v = JS_ARGV(cx, argv);
+    JS_GETQUATERNION2(object, rot);
 
-    JS_GETQUATERNION(rot1, v, -2);
-    JS_GETQUATERNION(rot2, v, -1);
+    JS_GETNUMBER(angle, v, 0);
+    JS_GETNUMBER(x, v, 1);
+    JS_GETNUMBER(y, v, 2);
+    JS_GETNUMBER(z, v, 3);
 
-    outrot = (vec4_t*)JS_malloc(cx, sizeof(vec4_t));
-    Vec_MultQuaternion(*outrot, *rot1, *rot2);
+    Vec_SetQuaternion(rot, (float)angle, (float)x, (float)y, (float)z);
 
-    if(!(JS_SetPrivate(cx, nobj, outrot)))
-        return JS_FALSE;
+    JS_SETQUATERNION(object, rot);
 
-    JS_SET_RVAL(cx, rval, OBJECT_TO_JSVAL(nobj));
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-//
-// quaternion_pointTo
-//
-
-static JSBool quaternion_pointTo(JSContext *cx, JSObject *obj, uintN argc,
-                           jsval *argv, jsval *rval)
+JS_FASTNATIVE_BEGIN(Quaternion, multiply)
 {
-    JSObject *nobj;
-    jsval *v;
-    vec4_t *outvec = NULL;
-    vec3_t *vec1 = NULL;
-    vec3_t *vec2 = NULL;
+    vec4_t rot1;
+    vec4_t rot2;
+    vec4_t out;
+    JSObject *obj1;
+    JSObject *obj2;
 
-    if(argc <= 0)
-        return JS_FALSE;
+    JS_CHECKARGS(2);
 
-    if(!(nobj = JS_NewObject(cx, &Quaternion_class, NULL, NULL)))
-        return JS_FALSE;
+    JS_GETOBJECT(obj1, v, 0);
+    JS_GETOBJECT(obj2, v, 1);
+    JS_GETQUATERNION2(obj1, rot1);
+    JS_GETQUATERNION2(obj2, rot2);
 
-    v = JS_ARGV(cx, argv);
+    Vec_MultQuaternion(out, rot1, rot2);
 
-    JS_GETVECTOR(vec1, v, -2);
-    JS_GETVECTOR(vec2, v, -1);
-
-    outvec = (vec4_t*)JS_malloc(cx, sizeof(vec4_t));
-    Vec_PointToAngle(*outvec, *vec1, *vec2);
-
-    if(!(JS_SetPrivate(cx, nobj, outvec)))
-        return JS_FALSE;
-
-    JS_SET_RVAL(cx, rval, OBJECT_TO_JSVAL(nobj));
+    JS_NEWQUATERNIONPOOL(out);
     return JS_TRUE;
 }
 
-//
-// Quaternion_class
-//
-
-JSClass Quaternion_class =
+JS_FASTNATIVE_BEGIN(Quaternion, pointTo)
 {
-    "Quaternion",                               // name
-    JSCLASS_HAS_PRIVATE,                        // flags
+    // TODO
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(JS_THIS_OBJECT(cx, vp)));
+    return JS_TRUE;
+}
+
+JS_BEGINCLASS(Quaternion)
+    0,                                          // flags
     JS_PropertyStub,                            // addProperty
     JS_PropertyStub,                            // delProperty
-    quaternion_getProperty,                     // getProperty
-    quaternion_setProperty,                     // setProperty
+    Quaternion_getProperty,                     // getProperty
+    Quaternion_setProperty,                     // setProperty
     JS_EnumerateStub,                           // enumerate
     JS_ResolveStub,                             // resolve
     JS_ConvertStub,                             // convert
-    quaternion_finalize,                        // finalize
+    JS_FinalizeStub,                            // finalize
     JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
-};
+JS_ENDCLASS();
 
-//
-// Quaternion_props
-//
-
-JSPropertySpec Quaternion_props[] =
+JS_BEGINPROPS(Quaternion)
 {
     { "x",  VEC4_X, JSPROP_ENUMERATE,   NULL, NULL },
     { "y",  VEC4_Y, JSPROP_ENUMERATE,   NULL, NULL },
@@ -251,61 +202,44 @@ JSPropertySpec Quaternion_props[] =
     { NULL, 0, 0, NULL, NULL }
 };
 
-//
-// Quaternion_functions
-//
-
-JSFunctionSpec Quaternion_functions[] =
+JS_BEGINFUNCS(Quaternion)
 {
-    JS_FN("toString",   quaternion_toString,    0, 0, 0),
-    JS_FN("normalize",  quaternion_normalize,   0, 0, 0),
+    JS_FASTNATIVE(Quaternion, toString, 0),
+    JS_FASTNATIVE(Quaternion, normalize, 0),
+    JS_FASTNATIVE(Quaternion, setRotation, 4),
     JS_FS_END
 };
 
-//
-// Quaternion_functions_static
-//
-
-JSFunctionSpec Quaternion_functions_static[] =
+JS_BEGINSTATICFUNCS(Quaternion)
 {
-    JS_FS("multiply",   quaternion_multiply,    2, 0, 0),
-    JS_FS("pointTo",    quaternion_pointTo,     2, 0, 0),
+    JS_FASTNATIVE(Quaternion, multiply, 2),
+    JS_FASTNATIVE(Quaternion, pointTo, 2),
     JS_FS_END
 };
 
-//
-// Quaternion_construct
-//
-
-JSBool Quaternion_construct(JSContext *cx, JSObject *obj, uintN argc,
-                        jsval *argv, jsval *rval)
+JS_BEGINCONST(Quaternion)
 {
-    JSObject *vobj;
+    { 0, 0, 0, { 0, 0, 0 } }
+};
+
+JS_CONSTRUCTOR(Quaternion)
+{
     jsval *v;
-    vec4_t *rot;
+    vec4_t rot;
     jsdouble x;
     jsdouble y;
     jsdouble z;
     jsdouble angle;
 
-    if(!(vobj = JS_NewObject(cx, &Quaternion_class, NULL, NULL)))
-        return JS_FALSE;
-
     v = JS_ARGV(cx, argv);
-
-    rot = (vec4_t*)JS_malloc(cx, sizeof(vec4_t));
-
-    if(!(JS_SetPrivate(cx, vobj, rot)))
-        return JS_FALSE;
 
     JS_GETNUMBER(angle, v, -2);
     JS_GETNUMBER(x, v, -1);
     JS_GETNUMBER(y, v, 0);
     JS_GETNUMBER(z, v, 1);
 
-    Vec_SetQuaternion(*rot, (float)angle, (float)x, (float)y, (float)z);
+    Vec_SetQuaternion(rot, (float)angle, (float)x, (float)y, (float)z);
 
-    JS_SET_RVAL(cx, rval, OBJECT_TO_JSVAL(vobj));
-
+    JS_NEWQUATERNION(rot);
     return JS_TRUE;
 }

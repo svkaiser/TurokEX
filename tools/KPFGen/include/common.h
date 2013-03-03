@@ -59,6 +59,8 @@ int Com_Swap16(int x);
 dword Com_Swap32(unsigned int x);
 void Com_CloseCartFile(void);
 void Com_UpdateProgress(char *fmt, ...);
+void Com_UpdateDataProgress(void);
+void Com_SetDataProgress(int range);
 void Com_StrcatClear(void);
 void Com_StrcatAddToFile(const char *name);
 void Com_Strcat(const char *string, ...);

@@ -108,7 +108,6 @@ struct gclient_s
     kbool       hasbackpack;
     kbool       hasarmor;
     int         armorpoints;
-    actor_t     actor;
 };
 
 enum
@@ -129,7 +128,6 @@ void G_Shutdown(void);
 void G_Ticker(void);
 void G_NoClip(svclient_t *svcl);
 void G_GiveAll(svclient_t *svcl);
-void G_SetupPlayer(actor_t *actor);
 void G_SwitchWeapon(ENetEvent *sev, ENetPacket *packet);
 void G_ClientThink(void);
 void G_Init(void);

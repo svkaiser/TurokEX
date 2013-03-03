@@ -24,9 +24,7 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "SDL_opengl.h"
 #include "common.h"
-#include "gl.h"
 #include "render.h"
 
 //

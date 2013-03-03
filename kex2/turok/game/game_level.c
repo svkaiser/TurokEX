@@ -33,800 +33,41 @@
 #include "client.h"
 #include "server.h"
 #include "js.h"
+#include "js_parse.h"
+
+gLevel_t gLevel;
 
 kmap_t kmaps[MAXMAPS];
 kmap_t *g_currentmap = NULL;
 
 enum
 {
-    scmap_numactors = 0,
-    scmap_numgridbounds,
-    scmap_numinstancegroups,
-    scmap_actors,
-    scmap_gridbounds,
-    scmap_instancegroups,
-    scmap_end
-};
-
-static const sctokens_t maptokens[scmap_end+1] =
-{
-    { scmap_numactors,          "numactors"             },
-    { scmap_numgridbounds,      "numgridbounds"         },
-    { scmap_numinstancegroups,  "numinstancegroups"     },
-    { scmap_actors,             "actors"                },
-    { scmap_gridbounds,         "gridbounds"            },
-    { scmap_instancegroups,     "instancegroups"        },
-    { -1,                       NULL                    }
-};
-
-enum
-{
-    scactor_model = 0,
-    scactor_skin,
-    scactor_targetid,
-    scactor_target,
-    scactor_variant,
-    scactor_leaf,
-    scactor_angle,
-    scactor_position,
-    scactor_scale,
-    scactor_type,
-    scactor_flags,
-    scactor_meleerange,
-    scactor_health,
-    scactor_width,
-    scactor_height,
-    scactor_viewheight,
-    scactor_blockflag,
-    scactor_end
-};
-
-static const sctokens_t mapactortokens[scactor_end+1] =
-{
-    { scactor_model,        "model"         },
-    { scactor_skin,         "skin"          },
-    { scactor_targetid,     "target_id"     },
-    { scactor_target,       "target"        },
-    { scactor_variant,      "variant"       },
-    { scactor_leaf,         "leaf"          },
-    { scactor_angle,        "angle"         },
-    { scactor_position,     "position"      },
-    { scactor_scale,        "scale"         },
-    { scactor_type,         "type"          },
-    { scactor_flags,        "flags"         },
-    { scactor_meleerange,   "meleerange"    },
-    { scactor_health,       "health"        },
-    { scactor_width,        "width"         },
-    { scactor_height,       "height"        },
-    { scactor_viewheight,   "viewheight"    },
-    { scactor_blockflag,    "blockflag"     },
-    { -1,                   NULL            }
-};
-
-enum
-{
-    scinst_position = 0,
-    scinst_scale,
-    scinst_bounds,
-    scinst_model,
-    scinst_angle,
-    scinst_skin,
-    scinst_targetid,
-    scinst_target,
-    scinst_variant,
-    scinst_boundize,
-    scinst_radius,
-    scinst_flags,
-    scinst_plane,
-    scinst_blockflag,
-    scinst_height,
-    scinst_viewheight,
-    scinst_type,
-    scinst_overrides,
-    scinst_instances,
-    scinst_numinstances,
-    scinst_staticinstnaces,
-    scinst_numstaticinstances,
-    scinst_end
-};
-
-static const sctokens_t insttokens[scinst_end+1] =
-{
-    { scinst_position,              "position"              },
-    { scinst_scale,                 "scale"                 },
-    { scinst_bounds,                "bounds"                },
-    { scinst_model,                 "model"                 },
-    { scinst_angle,                 "angle"                 },
-    { scinst_skin,                  "skin"                  },
-    { scinst_targetid,              "target_id"             },
-    { scinst_target,                "target"                },
-    { scinst_variant,               "variant"               },
-    { scinst_boundize,              "boundsize"             },
-    { scinst_radius,                "radius"                },
-    { scinst_flags,                 "flags"                 },
-    { scinst_plane,                 "leaf"                  },
-    { scinst_blockflag,             "blockflag"             },
-    { scinst_height,                "height"                },
-    { scinst_viewheight,            "viewheight"            },
-    { scinst_type,                  "type"                  },
-    { scinst_overrides,             "overrides"             },
-    { scinst_staticinstnaces,       "staticinstances"       },
-    { scinst_numstaticinstances,    "numstaticinstances"    },
-    { scinst_instances,             "instances"             },
-    { scinst_numinstances,          "numinstances"          },
-    { -1,                           NULL                    }
-};
-
-enum
-{
-    scnav_numareas = 0,
-    scnav_numpoints,
+    scnav_numpoints = 0,
     scnav_numleafs,
-    scnav_numzonebounds,
-    scnav_areas,
     scnav_points,
     scnav_leafs,
-    scnav_zonebounds,
     scnav_end
 };
 
 static const sctokens_t navtokens[scnav_end+1] =
 {
-    { scnav_numareas,       "numareas"      },
     { scnav_numpoints,      "numpoints"     },
     { scnav_numleafs,       "numleafs"      },
-    { scnav_numzonebounds,  "numzonebounds" },
-    { scnav_areas,          "areas"         },
     { scnav_points,         "points"        },
     { scnav_leafs,          "leafs"         },
-    { scnav_zonebounds,     "zonebounds"    },
     { -1,                   NULL            }
 };
-
-enum
-{
-    scarea_fogcolor = 0,
-    scarea_waterheight,
-    scarea_skyheight,
-    scarea_flags,
-    scarea_args,
-    scarea_fogz_far,
-    scarea_fogz_near,
-    scarea_end
-};
-
-static const sctokens_t areatokens[scarea_end+1] =
-{
-    { scarea_fogcolor,      "fogcolor"      },
-    { scarea_waterheight,   "waterheight"   },
-    { scarea_skyheight,     "skyheight"     },
-    { scarea_flags,         "flags"         },
-    { scarea_args,          "args"          },
-    { scarea_fogz_far,      "fogz_far"      },
-    { scarea_fogz_near,     "fogz_near"     },
-    { -1,                   NULL            }
-};
-
-//
-// Map_ParseActorBlock
-//
-
-static void Map_ParseActorBlock(kmap_t *map, scparser_t *parser)
-{
-    unsigned int i;
-
-    if(map->nummapactors <= 0)
-    {
-        return;
-    }
-
-    for(i = 0; i < map->nummapactors; i++)
-    {
-        actor_t *actor = G_SpawnActor(); // TODO handle test case if returned NULL
-        object_t *obj;
-        kmodel_t *model;
-
-        // read into nested actor block
-        SC_ExpectNextToken(TK_LBRACK);
-        SC_Find();
-
-        while(parser->tokentype != TK_RBRACK)
-        {
-            switch(SC_GetIDForToken(mapactortokens, parser->token))
-            {
-            case scactor_model:
-                SC_AssignString(mapactortokens, actor->object.mdlpath,
-                    scactor_model, parser, false);
-                break;
-
-            case scactor_skin:
-                SC_AssignWord(mapactortokens, &actor->skin,
-                    scactor_skin, parser, false);
-                break;
-
-            case scactor_targetid:
-                SC_AssignWord(mapactortokens, &actor->object.tid,
-                    scactor_targetid, parser, false);
-                break;
-
-            case scactor_target:
-                SC_AssignWord(mapactortokens, &actor->object.target,
-                    scactor_target, parser, false);
-                break;
-
-            case scactor_variant:
-                SC_AssignWord(mapactortokens, &actor->object.variant,
-                    scactor_variant, parser, false);
-                break;
-
-            case scactor_leaf:
-                SC_AssignWord(mapactortokens, &actor->object.plane_id,
-                    scactor_leaf, parser, false);
-                break;
-
-            case scactor_angle:
-                SC_AssignFloat(mapactortokens, &actor->yaw,
-                    scactor_angle, parser, false);
-
-                actor->yaw = actor->yaw * M_RAD;
-                break;
-
-            case scactor_position:
-                SC_AssignVector(mapactortokens, actor->origin,
-                    scactor_position, parser, false);
-
-                Vec_Copy3(actor->object.origin, actor->origin);
-                break;
-
-            case scactor_scale:
-                SC_AssignVector(mapactortokens, actor->object.scale,
-                    scactor_scale, parser, false);
-                break;
-
-            case scactor_type:
-                SC_AssignWord(mapactortokens, &actor->object.type,
-                    scactor_type, parser, false);
-                break;
-
-            case scactor_flags:
-                SC_AssignInteger(mapactortokens, (int*)&actor->object.flags,
-                    scactor_flags, parser, false);
-                break;
-
-            case scactor_meleerange:
-                SC_AssignFloat(mapactortokens, &actor->object.centerheight,
-                    scactor_meleerange, parser, false);
-                break;
-
-            case scactor_health:
-                SC_AssignInteger(mapactortokens, &actor->health,
-                    scactor_health, parser, false);
-                break;
-
-            case scactor_width:
-                SC_AssignFloat(mapactortokens, &actor->object.width,
-                    scactor_width, parser, false);
-                break;
-
-            case scactor_height:
-                SC_AssignFloat(mapactortokens, &actor->object.height,
-                    scactor_height, parser, false);
-                break;
-
-            case scactor_viewheight:
-                SC_AssignFloat(mapactortokens, &actor->object.viewheight,
-                    scactor_viewheight, parser, false);
-                break;
-
-            case scactor_blockflag:
-                SC_AssignInteger(insttokens, (int*)&actor->object.blockflag,
-                    scactor_blockflag, parser, false);
-                break;
-
-            default:
-                if(parser->tokentype == TK_IDENIFIER)
-                {
-                    Com_DPrintf("Map_ParseActorBlock: Unknown token: %s\n",
-                        parser->token);
-                }
-                break;
-            }
-
-            SC_Find();
-        }
-
-        obj = &actor->object;
-
-        Vec_SetQuaternion(obj->rotation, actor->yaw, 1, 0, 0);
-        Mtx_ApplyRotation(obj->rotation, obj->matrix);
-        Mtx_Scale(obj->matrix, obj->scale[0], obj->scale[1], obj->scale[2]);
-        Mtx_AddTranslation(obj->matrix, obj->origin[0], obj->origin[1], obj->origin[2]);
-
-        // TODO - FIXME
-        if(actor->object.type != OT_DYNAMIC_PORTAL)
-        {
-            if(model = Mdl_Load(actor->object.mdlpath))
-            {
-                actor->frameset.translation = (animtranslation_t*)Z_Calloc(sizeof(animtranslation_t) *
-                    model->numnodes, PU_ACTOR, 0);
-                actor->frameset.rotation = (animrotation_t*)Z_Calloc(sizeof(animrotation_t) *
-                    model->numnodes, PU_ACTOR, 0);
-            }
-        }
-    }
-}
-
-//
-// Map_ParseGridSectionBlock
-//
-
-static void Map_ParseGridSectionBlock(kmap_t *map, scparser_t *parser)
-{
-    unsigned int i;
-
-    if(map->numgridbounds <= 0)
-    {
-        return;
-    }
-
-    map->gridbounds = (mapgrid_t*)Z_Calloc(sizeof(mapgrid_t) * map->numgridbounds, PU_LEVEL, 0);
-
-    for(i = 0; i < map->numgridbounds; i++)
-    {
-        mapgrid_t *gridbound = &map->gridbounds[i];
-
-        gridbound->minx = (float)SC_GetFloat();
-        gridbound->minz = (float)SC_GetFloat();
-        gridbound->maxx = (float)SC_GetFloat();
-        gridbound->maxz = (float)SC_GetFloat();
-    }
-}
-
-//
-// Map_ParseObjectBlock
-//
-
-static void Map_ParseObjectBlock(instance_t *instances, scparser_t *parser, kbool nonstatic)
-{
-    unsigned int i;
-    unsigned int count;
-
-    if(nonstatic)
-    {
-        if(instances->numspecials <= 0)
-        {
-            return;
-        }
-
-        instances->specials = (object_t*)Z_Calloc(sizeof(object_t) *
-            instances->numspecials, PU_LEVEL, 0);
-
-        count = instances->numspecials;
-    }
-    else
-    {
-        if(instances->numstatics <= 0)
-        {
-            return;
-        }
-
-        instances->statics = (object_t*)Z_Calloc(sizeof(object_t) *
-            instances->numstatics, PU_LEVEL, 0);
-
-        count = instances->numstatics;
-    }
-
-    for(i = 0; i < count; i++)
-    {
-        object_t *obj;
-
-        if(nonstatic)
-        {
-            obj = &instances->specials[i];
-        }
-        else
-        {
-            obj = &instances->statics[i];
-        }
-
-        Vec_Set4(obj->rotation, 0, 0, 0, 1);
-
-        // read into nested static instance block
-        SC_ExpectNextToken(TK_LBRACK);
-        SC_Find();
-
-        while(parser->tokentype != TK_RBRACK)
-        {
-            switch(SC_GetIDForToken(insttokens, parser->token))
-            {
-            case scinst_position:
-                SC_AssignVector(insttokens, obj->origin,
-                    scinst_position, parser, false);
-                break;
-
-            case scinst_scale:
-                SC_AssignVector(insttokens, obj->scale,
-                    scinst_scale, parser, false);
-                break;
-
-            case scinst_bounds:
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_ExpectNextToken(TK_LBRACK);
-
-                obj->box.min[0] = (float)SC_GetFloat();
-                obj->box.min[1] = (float)SC_GetFloat();
-                obj->box.min[2] = (float)SC_GetFloat();
-                obj->box.max[0] = (float)SC_GetFloat();
-                obj->box.max[1] = (float)SC_GetFloat();
-                obj->box.max[2] = (float)SC_GetFloat();
-
-                SC_ExpectNextToken(TK_RBRACK);
-                break;
-
-            case scinst_model:
-                SC_AssignString(insttokens, obj->mdlpath,
-                    scinst_model, parser, false);
-                break;
-
-            case scinst_angle:
-                SC_ExpectNextToken(TK_EQUAL);
-
-                if(!nonstatic)
-                {
-                    SC_ExpectNextToken(TK_LBRACK);
-
-                    obj->rotation[0] = (float)SC_GetFloat();
-                    obj->rotation[1] = (float)SC_GetFloat();
-                    obj->rotation[2] = (float)SC_GetFloat();
-                    obj->rotation[3] = (float)SC_GetFloat();
-
-                    SC_ExpectNextToken(TK_RBRACK);
-                }
-                else
-                {
-                    Vec_SetQuaternion(obj->rotation,
-                        (float)SC_GetFloat(), 0, 1, 0);
-                }
-
-                Vec_Normalize4(obj->rotation);
-                break;
-
-            case scinst_overrides:
-                {
-                    int count = 0;
-
-                    SC_ExpectNextToken(TK_EQUAL);
-                    SC_ExpectNextToken(TK_LBRACK);
-
-                    while(1)
-                    {
-                        obj->textureswaps = (char**)Z_Realloc(obj->textureswaps,
-                            sizeof(char*) * (count+1), PU_LEVEL, 0);
-
-                        SC_ExpectNextToken(TK_LBRACK);
-                        SC_GetString();
-                        obj->textureswaps[count] = Z_Strdup(sc_stringbuffer, PU_LEVEL, 0);
-                        SC_ExpectNextToken(TK_RBRACK);
-
-                        SC_Find();
-
-                        if(sc_parser->tokentype != TK_COMMA)
-                        {
-                            SC_Rewind();
-                            break;
-                        }
-
-                        count++;
-                    }
-
-                    SC_ExpectNextToken(TK_RBRACK);
-                }
-                break;
-
-            case scinst_boundize:
-                {
-                    float size;
-
-                    SC_AssignFloat(insttokens, &size,
-                        scinst_boundize, parser, false);
-
-                    obj->box.min[0] = -size;
-                    obj->box.min[1] = -size;
-                    obj->box.min[2] = -size;
-                    obj->box.max[0] = size;
-                    obj->box.max[1] = size;
-                    obj->box.max[2] = size;
-                }
-                break;
-
-            case scinst_radius:
-                SC_AssignFloat(insttokens, &obj->width,
-                    scinst_radius, parser, false);
-                break;
-
-            case scinst_height:
-                SC_AssignFloat(insttokens, &obj->height,
-                    scinst_height, parser, false);
-                break;
-
-            case scinst_viewheight:
-                SC_AssignFloat(insttokens, &obj->viewheight,
-                    scinst_viewheight, parser, false);
-                break;
-
-            case scinst_flags:
-                SC_AssignInteger(insttokens, (int*)&obj->flags,
-                    scinst_flags, parser, false);
-                break;
-
-            case scinst_plane:
-                SC_AssignWord(insttokens, &obj->plane_id,
-                    scinst_plane, parser, false);
-                break;
-
-            case scinst_blockflag:
-                SC_AssignInteger(insttokens, (int*)&obj->blockflag,
-                    scinst_blockflag, parser, false);
-                break;
-
-            case scinst_type:
-                SC_AssignWord(insttokens, &obj->type,
-                    scinst_type, parser, false);
-                break;
-
-            default:
-                if(parser->tokentype == TK_IDENIFIER)
-                {
-                    Com_DPrintf("Map_ParseObjectBlock: Unknown token: %s\n",
-                        parser->token);
-                }
-                break;
-            }
-
-            SC_Find();
-        }
-
-        obj->box.min[0] += obj->origin[0];
-        obj->box.min[1] += obj->origin[1];
-        obj->box.min[2] += obj->origin[2];
-        obj->box.max[0] += obj->origin[0];
-        obj->box.max[1] += obj->origin[1];
-        obj->box.max[2] += obj->origin[2];
-
-        if(nonstatic)
-        {
-            Vec_Set3(obj->scale, 0.35f, 0.35f, 0.35f);
-        }
-
-        Mtx_ApplyRotation(obj->rotation, obj->matrix);
-        Mtx_Scale(obj->matrix, obj->scale[0], obj->scale[1], obj->scale[2]);
-        Mtx_AddTranslation(obj->matrix, obj->origin[0], obj->origin[1], obj->origin[2]);
-    }
-}
-
-//
-// Map_ParseInstanceBlock
-//
-
-static void Map_ParseInstanceBlock(kmap_t *map, scparser_t *parser)
-{
-    unsigned int i;
-
-    if(map->numinstances <= 0)
-    {
-        return;
-    }
-
-    map->instances = (instance_t*)Z_Calloc(sizeof(instance_t) *
-        map->numinstances, PU_LEVEL, 0);
-
-    for(i = 0; i < map->numinstances; i++)
-    {
-        instance_t *instances = &map->instances[i];
-
-        SC_ExpectNextToken(TK_LBRACK);
-
-        SC_ExpectTokenID(insttokens, scinst_staticinstnaces, parser);
-        SC_ExpectNextToken(TK_EQUAL);
-        SC_ExpectNextToken(TK_LBRACK);
-        SC_AssignInteger(insttokens, &instances->numstatics,
-            scinst_numstaticinstances, parser, true);
-        Map_ParseObjectBlock(instances, parser, false);
-        SC_ExpectNextToken(TK_RBRACK);
-
-        SC_ExpectTokenID(insttokens, scinst_instances, parser);
-        SC_ExpectNextToken(TK_EQUAL);
-        SC_ExpectNextToken(TK_LBRACK);
-        SC_AssignInteger(insttokens, &instances->numspecials,
-            scinst_numinstances, parser, true);
-        Map_ParseObjectBlock(instances, parser, true);
-        SC_ExpectNextToken(TK_RBRACK);
-
-        SC_ExpectNextToken(TK_RBRACK);
-    }
-}
-
-//
-// Map_ParseLevelScript
-//
-
-static void Map_ParseLevelScript(kmap_t *map, scparser_t *parser)
-{
-    while(SC_CheckScriptState())
-    {
-        SC_Find();
-
-        switch(parser->tokentype)
-        {
-        case TK_NONE:
-            break;
-        case TK_EOF:
-            return;
-        case TK_IDENIFIER:
-            {
-                switch(SC_GetIDForToken(maptokens, parser->token))
-                {
-                case scmap_numactors:
-                    SC_AssignInteger(maptokens, &map->nummapactors,
-                        scmap_numactors, parser, false);
-                    break;
-
-                case scmap_numgridbounds:
-                    SC_AssignInteger(maptokens, &map->numgridbounds,
-                        scmap_numgridbounds, parser, false);
-                    break;
-
-                case scmap_numinstancegroups:
-                    SC_AssignInteger(maptokens, &map->numinstances,
-                        scmap_numinstancegroups, parser, false);
-                    break;
-
-                case scmap_actors:
-                    SC_ExpectNextToken(TK_EQUAL);
-                    SC_ExpectNextToken(TK_LBRACK);
-                    Map_ParseActorBlock(map, parser);
-                    SC_ExpectNextToken(TK_RBRACK);
-                    break;
-
-                /*case scmap_gridbounds:
-                    SC_ExpectNextToken(TK_EQUAL);
-                    SC_ExpectNextToken(TK_LBRACK);
-                    Map_ParseGridSectionBlock(map, parser);
-                    SC_ExpectNextToken(TK_RBRACK);
-                    break;*/
-
-                case scmap_instancegroups:
-                    SC_ExpectNextToken(TK_EQUAL);
-                    SC_ExpectNextToken(TK_LBRACK);
-                    Map_ParseInstanceBlock(map, parser);
-                    SC_ExpectNextToken(TK_RBRACK);
-                    break;
-
-                default:
-                    if(parser->tokentype == TK_IDENIFIER)
-                    {
-                        Com_DPrintf("Map_ParseLevelScript: Unknown token: %s\n",
-                            parser->token);
-                    }
-                    break;
-                }
-            }
-            break;
-        default:
-            break;
-        }
-    }
-}
-
-//
-// Map_ParseAreaBlock
-//
-
-static void Map_ParseAreaBlock(kmap_t *map, scparser_t *parser)
-{
-    unsigned int i;
-
-    if(map->numareas <= 0)
-    {
-        SC_Error("numareas is 0 or hasn't been set yet");
-        return;
-    }
-
-    map->areas = (area_t*)Z_Calloc(sizeof(area_t) *
-        map->numareas, PU_LEVEL, 0);
-
-    SC_ExpectNextToken(TK_EQUAL);
-    SC_ExpectNextToken(TK_LBRACK);
-
-    for(i = 0; i < map->numareas; i++)
-    {
-        // read into nested area block
-        SC_ExpectNextToken(TK_LBRACK);
-        SC_Find();
-
-        while(parser->tokentype != TK_RBRACK)
-        {
-            switch(SC_GetIDForToken(areatokens, parser->token))
-            {
-            case scarea_fogcolor:
-                {
-                    byte r, g, b, a;
-
-                    SC_ExpectNextToken(TK_EQUAL);
-                    r = SC_GetNumber();
-                    g = SC_GetNumber();
-                    b = SC_GetNumber();
-                    a = SC_GetNumber();
-
-                    map->areas[i].fog_color = RGBA(r, g, b, a);
-                }
-                break;
-
-            case scarea_waterheight:
-                SC_AssignFloat(areatokens, &map->areas[i].waterplane,
-                    scarea_waterheight, parser, false);
-                break;
-
-            case scarea_skyheight:
-                SC_AssignFloat(areatokens, &map->areas[i].skyheight,
-                    scarea_skyheight, parser, false);
-                break;
-
-            case scarea_flags:
-                SC_AssignInteger(areatokens, &map->areas[i].flags,
-                    scarea_flags, parser, false);
-                break;
-
-            case scarea_args:
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_ExpectNextToken(TK_LBRACK);
-
-                map->areas[i].args[0] = SC_GetNumber();
-                map->areas[i].args[1] = SC_GetNumber();
-                map->areas[i].args[2] = SC_GetNumber();
-                map->areas[i].args[3] = SC_GetNumber();
-                map->areas[i].args[4] = SC_GetNumber();
-                map->areas[i].args[5] = SC_GetNumber();
-
-                SC_ExpectNextToken(TK_RBRACK);
-                break;
-                
-            case scarea_fogz_far:
-                SC_AssignFloat(areatokens, &map->areas[i].fog_far,
-                    scarea_fogz_far, parser, false);
-                break;
-
-            case scarea_fogz_near:
-                SC_AssignFloat(areatokens, &map->areas[i].fog_near,
-                    scarea_fogz_near, parser, false);
-                break;
-
-            default:
-                if(parser->tokentype == TK_IDENIFIER)
-                {
-                    Com_DPrintf("Map_ParseAreaBlock: Unknown token: %s\n",
-                        parser->token);
-                }
-                break;
-            }
-
-            SC_Find();
-        }
-    }
-
-    SC_ExpectNextToken(TK_RBRACK);
-}
 
 //
 // Map_ParseCollisionPlanes
 //
 
-static void Map_ParseCollisionPlanes(kmap_t *map, scparser_t *parser,
+static void Map_ParseCollisionPlanes(scparser_t *parser,
                                      unsigned int numpoints, float *points)
 {
     unsigned int i;
 
-    if(map->numplanes <= 0)
+    if(gLevel.numplanes <= 0)
     {
         SC_Error("numplanes is 0 or hasn't been set yet");
         return;
@@ -844,16 +85,16 @@ static void Map_ParseCollisionPlanes(kmap_t *map, scparser_t *parser,
         return;
     }
 
-    map->planes = (plane_t*)Z_Calloc(sizeof(plane_t) *
-        map->numplanes, PU_LEVEL, 0);
+    gLevel.planes = (plane_t*)Z_Calloc(sizeof(plane_t) *
+        gLevel.numplanes, PU_LEVEL, 0);
 
     SC_ExpectNextToken(TK_EQUAL);
     SC_ExpectNextToken(TK_LBRACK);
 
-    for(i = 0; i < map->numplanes; i++)
+    for(i = 0; i < gLevel.numplanes; i++)
     {
         int p;
-        plane_t *pl = &map->planes[i];
+        plane_t *pl = &gLevel.planes[i];
 
         pl->area_id = SC_GetNumber();
         pl->flags = SC_GetNumber();
@@ -874,7 +115,7 @@ static void Map_ParseCollisionPlanes(kmap_t *map, scparser_t *parser,
         for(p = 0; p < 3; p++)
         {
             int link = SC_GetNumber();
-            pl->link[p] = link == -1 ? NULL : &map->planes[link];
+            pl->link[p] = link == -1 ? NULL : &gLevel.planes[link];
         }
 
         Plane_GetNormal(pl->normal, pl);
@@ -888,9 +129,8 @@ static void Map_ParseCollisionPlanes(kmap_t *map, scparser_t *parser,
 // Map_ParseNavScript
 //
 
-static void Map_ParseNavScript(kmap_t *map, scparser_t *parser)
+static void Map_ParseNavScript(scparser_t *parser)
 {
-    unsigned int i;
     unsigned int numpoints = 0;
     float *points = NULL;
 
@@ -908,28 +148,14 @@ static void Map_ParseNavScript(kmap_t *map, scparser_t *parser)
             {
                 switch(SC_GetIDForToken(navtokens, parser->token))
                 {
-                case scnav_numareas:
-                    SC_AssignInteger(navtokens, &map->numareas,
-                        scnav_numareas, parser, false);
-                    break;
-
                 case scnav_numpoints:
                     SC_AssignInteger(navtokens, &numpoints,
                         scnav_numpoints, parser, false);
                     break;
 
                 case scnav_numleafs:
-                    SC_AssignInteger(navtokens, &map->numplanes,
+                    SC_AssignInteger(navtokens, &gLevel.numplanes,
                         scnav_numleafs, parser, false);
-                    break;
-
-                case scnav_numzonebounds:
-                    SC_AssignInteger(navtokens, &map->numzonebounds,
-                        scnav_numzonebounds, parser, false);
-                    break;
-
-                case scnav_areas:
-                    Map_ParseAreaBlock(map, parser);
                     break;
 
                 case scnav_points:
@@ -938,36 +164,7 @@ static void Map_ParseNavScript(kmap_t *map, scparser_t *parser)
                     break;
 
                 case scnav_leafs:
-                    Map_ParseCollisionPlanes(map, parser, numpoints, points);
-                    break;
-
-                case scnav_zonebounds:
-
-                    if(map->numzonebounds <= 0)
-                    {
-                        SC_Error("numzonebounds is 0 or hasn't been set yet");
-                        return;
-                    }
-
-                    map->zones = (mapgrid_t*)Z_Calloc(sizeof(mapgrid_t) *
-                        map->numzonebounds, PU_LEVEL, 0);
-
-                    SC_ExpectNextToken(TK_EQUAL);
-                    SC_ExpectNextToken(TK_LBRACK);
-
-                    for(i = 0; i < map->numzonebounds; i++)
-                    {
-                        map->zones[i].minx = (float)SC_GetFloat();
-                        map->zones[i].minz = (float)SC_GetFloat();
-                        map->zones[i].maxx = (float)SC_GetFloat();
-                        map->zones[i].maxz = (float)SC_GetFloat();
-                        
-                        SC_GetNumber();
-                        SC_GetNumber();
-                        SC_GetNumber();
-                    }
-
-                    SC_ExpectNextToken(TK_RBRACK);
+                    Map_ParseCollisionPlanes(parser, numpoints, points);
                     break;
 
                 default:
@@ -987,8 +184,408 @@ static void Map_ParseNavScript(kmap_t *map, scparser_t *parser)
     }
 
     if(points != NULL)
-    {
         Z_Free(points);
+}
+
+enum
+{
+    scmap_title = 0,
+    scmap_mapID,
+    scmap_actors,
+    scmap_gridbounds,
+    scmap_areas,
+    scmap_end
+};
+
+static const sctokens_t maptokens[scmap_end+1] =
+{
+    { scmap_title,              "title"                 },
+    { scmap_mapID,              "mapID"                 },
+    { scmap_actors,             "actors"                },
+    { scmap_gridbounds,         "gridbounds"            },
+    { scmap_areas,              "areas"                 },
+    { -1,                       NULL                    }
+};
+
+enum
+{
+    scactor_name = 0,
+    scactor_components,
+    scactor_bCollision,
+    scactor_bStatic,
+    scactor_bTouch,
+    scactor_plane,
+    scactor_origin,
+    scactor_scale,
+    scactor_angles,
+    scactor_rotation,
+    scactor_radius,
+    scactor_height,
+    scactor_centerheight,
+    scactor_viewheight,
+    scactor_end
+};
+
+static const sctokens_t mapactortokens[scactor_end+1] =
+{
+    { scactor_name,         "name"          },
+    { scactor_components,   "components"    },
+    { scactor_bCollision,   "bCollision"    },
+    { scactor_bStatic,      "bStatic"       },
+    { scactor_bTouch,       "bTouch"        },
+    { scactor_plane,        "plane"         },
+    { scactor_origin,       "origin"        },
+    { scactor_scale,        "scale"         },
+    { scactor_angles,       "angles"        },
+    { scactor_rotation,     "rotation"      },
+    { scactor_radius,       "radius"        },
+    { scactor_height,       "height"        },
+    { scactor_centerheight, "centerheight"  },
+    { scactor_viewheight,   "viewheight"    },
+    { -1,                   NULL            }
+};
+
+enum
+{
+    scgridbnd_bounds = 0,
+    scgridbnd_statics,
+    scgridbnd_end
+};
+
+static const sctokens_t mapgridtokens[scgridbnd_end+1] =
+{
+    { scgridbnd_bounds,     "bounds"    },
+    { scgridbnd_statics,    "statics"   },
+    { -1,                   NULL        }
+};
+
+enum
+{
+    scarea_components = 0,
+    scarea_end
+};
+
+static const sctokens_t mapareatokens[scarea_end+1] =
+{
+    { scarea_components,    "components"    },
+    { -1,                   NULL            }
+};
+
+//
+// Map_ParseActorBlock
+//
+
+static void Map_ParseActorBlock(scparser_t *parser, int count, gActor_t **actorList)
+{
+    int i;
+
+    SC_ExpectNextToken(TK_EQUAL);
+    SC_ExpectNextToken(TK_LBRACK);
+
+    if(count <= 0)
+    {
+        SC_ExpectNextToken(TK_RBRACK);
+        return;
+    }
+
+    *actorList = (gActor_t*)Z_Calloc(sizeof(gActor_t) * count, PU_ACTOR, NULL);
+
+    for(i = 0; i < count; i++)
+    {
+        int numComponents;
+        gActor_t *actor = &(*actorList)[i];
+        
+        Vec_Set3(actor->scale, 1, 1, 1);
+
+        // read into nested actor block
+        SC_ExpectNextToken(TK_LBRACK);
+        SC_Find();
+
+        while(parser->tokentype != TK_RBRACK)
+        {
+            switch(SC_GetIDForToken(mapactortokens, parser->token))
+            {
+            case scactor_name:
+                SC_AssignString(mapactortokens, actor->name,
+                    scactor_name, parser, false);
+                break;
+
+            case scactor_components:
+                SC_ExpectNextToken(TK_LSQBRACK);
+                numComponents = SC_GetNumber();
+                SC_ExpectNextToken(TK_RSQBRACK);
+                SC_ExpectNextToken(TK_EQUAL);
+                SC_ExpectNextToken(TK_LBRACK);
+                JParse_Start(parser, &actor->components, numComponents);
+                SC_ExpectNextToken(TK_RBRACK);
+                break;
+
+            case scactor_bCollision:
+                SC_AssignInteger(mapactortokens, &actor->bCollision,
+                    scactor_bCollision, parser, false);
+                break;
+
+            case scactor_bStatic:
+                SC_AssignInteger(mapactortokens, &actor->bStatic,
+                    scactor_bStatic, parser, false);
+                break;
+
+            case scactor_bTouch:
+                SC_AssignInteger(mapactortokens, &actor->bTouch,
+                    scactor_bTouch, parser, false);
+                break;
+
+            case scactor_plane:
+                SC_AssignInteger(mapactortokens, &actor->plane,
+                    scactor_plane, parser, false);
+                break;
+
+            case scactor_origin:
+                SC_AssignVector(mapactortokens, actor->origin,
+                    scactor_origin, parser, false);
+                break;
+
+            case scactor_scale:
+                SC_AssignVector(mapactortokens, actor->scale,
+                    scactor_scale, parser, false);
+                break;
+
+            case scactor_angles:
+                SC_AssignVector(mapactortokens, actor->angles,
+                    scactor_angles, parser, false);
+                break;
+
+            case scactor_rotation:
+                SC_ExpectNextToken(TK_EQUAL);
+                SC_ExpectNextToken(TK_LBRACK);
+
+                actor->rotation[0] = (float)SC_GetFloat();
+                actor->rotation[1] = (float)SC_GetFloat();
+                actor->rotation[2] = (float)SC_GetFloat();
+                actor->rotation[3] = (float)SC_GetFloat();
+
+                SC_ExpectNextToken(TK_RBRACK);
+                break;
+
+            case scactor_radius:
+                SC_AssignFloat(mapactortokens, &actor->radius,
+                    scactor_radius, parser, false);
+                break;
+
+            case scactor_height:
+                SC_AssignFloat(mapactortokens, &actor->height,
+                    scactor_height, parser, false);
+                break;
+
+            case scactor_centerheight:
+                SC_AssignFloat(mapactortokens, &actor->centerHeight,
+                    scactor_centerheight, parser, false);
+                break;
+
+            case scactor_viewheight:
+                SC_AssignFloat(mapactortokens, &actor->viewHeight,
+                    scactor_viewheight, parser, false);
+                break;
+
+            default:
+                if(parser->tokentype == TK_IDENIFIER)
+                {
+                    SC_Error("Map_ParseActorBlock: Unknown token: %s\n",
+                        parser->token);
+                }
+                break;
+            }
+
+            SC_Find();
+        }
+
+        Actor_Setup(actor);
+    }
+
+    SC_ExpectNextToken(TK_RBRACK);
+}
+
+//
+// Map_ParseGridSectionBlock
+//
+
+static void Map_ParseGridSectionBlock(scparser_t *parser)
+{
+    unsigned int i;
+
+    if(gLevel.numGridBounds == 0)
+        return;
+
+    SC_ExpectNextToken(TK_EQUAL);
+    SC_ExpectNextToken(TK_LBRACK);
+
+    gLevel.gridBounds = (gridBounds_t*)Z_Calloc(sizeof(gridBounds_t) *
+        gLevel.numGridBounds, PU_LEVEL, 0);
+
+    for(i = 0; i < gLevel.numGridBounds; i++)
+    {
+        gridBounds_t *gridbound = &gLevel.gridBounds[i];
+
+        // read into nested gridBound block
+        SC_ExpectNextToken(TK_LBRACK);
+        SC_Find();
+
+        while(parser->tokentype != TK_RBRACK)
+        {
+            switch(SC_GetIDForToken(mapgridtokens, parser->token))
+            {
+            case scgridbnd_bounds:
+                SC_ExpectNextToken(TK_EQUAL);
+                gridbound->minx = (float)SC_GetFloat();
+                gridbound->minz = (float)SC_GetFloat();
+                gridbound->maxx = (float)SC_GetFloat();
+                gridbound->maxz = (float)SC_GetFloat();
+                break;
+
+            case scgridbnd_statics:
+                SC_ExpectNextToken(TK_LSQBRACK);
+                gridbound->numStatics = SC_GetNumber();
+                SC_ExpectNextToken(TK_RSQBRACK);
+                Map_ParseActorBlock(parser, gridbound->numStatics,
+                    &gridbound->statics);
+                break;
+
+            default:
+                if(parser->tokentype == TK_IDENIFIER)
+                {
+                    SC_Error("Map_ParseGridSectionBlock: Unknown token: %s\n",
+                        parser->token);
+                }
+                break;
+            }
+
+            SC_Find();
+        }
+    }
+
+    SC_ExpectNextToken(TK_RBRACK);
+}
+
+//
+// Map_ParseAreaBlock
+//
+
+static void Map_ParseAreaBlock(scparser_t *parser)
+{
+    unsigned int i;
+
+    if(gLevel.numAreas == 0)
+        return;
+
+    SC_ExpectNextToken(TK_EQUAL);
+    SC_ExpectNextToken(TK_LBRACK);
+
+    gLevel.areas = (gArea_t*)Z_Calloc(sizeof(gArea_t) *
+        gLevel.numAreas, PU_LEVEL, 0);
+
+    for(i = 0; i < gLevel.numAreas; i++)
+    {
+        int numComponents = 0;
+        gArea_t *area = &gLevel.areas[i];
+
+        // read into nested gridBound block
+        SC_ExpectNextToken(TK_LBRACK);
+        SC_Find();
+
+        while(parser->tokentype != TK_RBRACK)
+        {
+            switch(SC_GetIDForToken(mapareatokens, parser->token))
+            {
+            case scarea_components:
+                SC_ExpectNextToken(TK_LSQBRACK);
+                numComponents = SC_GetNumber();
+                SC_ExpectNextToken(TK_RSQBRACK);
+                SC_ExpectNextToken(TK_EQUAL);
+                SC_ExpectNextToken(TK_LBRACK);
+                JParse_Start(parser, &area->components, numComponents);
+                SC_ExpectNextToken(TK_RBRACK);
+                break;
+
+            default:
+                if(parser->tokentype == TK_IDENIFIER)
+                {
+                    SC_Error("Map_ParseAreaBlock: Unknown token: %s\n",
+                        parser->token);
+                }
+                break;
+            }
+
+            SC_Find();
+        }
+    }
+
+    SC_ExpectNextToken(TK_RBRACK);
+}
+
+//
+// Map_ParseLevelScript
+//
+
+static void Map_ParseLevelScript(scparser_t *parser)
+{
+    while(SC_CheckScriptState())
+    {
+        SC_Find();
+
+        switch(parser->tokentype)
+        {
+        case TK_NONE:
+            break;
+        case TK_EOF:
+            return;
+        case TK_IDENIFIER:
+            {
+                switch(SC_GetIDForToken(maptokens, parser->token))
+                {
+                case scmap_title:
+                    SC_AssignString(maptokens, gLevel.name,
+                        scmap_title, parser, false);
+                    break;
+
+                case scmap_mapID:
+                    SC_AssignInteger(maptokens, &gLevel.mapID,
+                        scmap_mapID, parser, false);
+                    break;
+
+                case scmap_actors:
+                    SC_ExpectNextToken(TK_LSQBRACK);
+                    gLevel.numActors = SC_GetNumber();
+                    SC_ExpectNextToken(TK_RSQBRACK);
+                    Map_ParseActorBlock(parser, gLevel.numActors, &gLevel.gActors);
+                    break;
+
+                case scmap_gridbounds:
+                    SC_ExpectNextToken(TK_LSQBRACK);
+                    gLevel.numGridBounds = SC_GetNumber();
+                    SC_ExpectNextToken(TK_RSQBRACK);
+                    Map_ParseGridSectionBlock(parser);
+                    break;
+
+                case scmap_areas:
+                    SC_ExpectNextToken(TK_LSQBRACK);
+                    gLevel.numAreas = SC_GetNumber();
+                    SC_ExpectNextToken(TK_RSQBRACK);
+                    Map_ParseAreaBlock(parser);
+                    break;
+
+                default:
+                    if(parser->tokentype == TK_IDENIFIER)
+                    {
+                        SC_Error("Map_ParseLevelScript: Unknown token: %s\n",
+                            parser->token);
+                    }
+                    break;
+                }
+            }
+            break;
+        default:
+            break;
+        }
     }
 }
 
@@ -1054,26 +651,6 @@ void Map_LinkObjToBlocklist(object_t *obj, plane_t *plane)
 }
 
 //
-// Map_ObjectInBlocklist
-//
-
-static kbool Map_ObjectInBlocklist(object_t *obj, plane_t *plane)
-{
-    blockobj_t *blockobj;
-
-    for(blockobj = plane->blocklist.next;
-        blockobj != &plane->blocklist; blockobj = blockobj->next)
-    {
-        if(blockobj->object == obj)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-//
 // Map_CheckObjectPlaneRange
 //
 // Returns true if the object's radius crosses
@@ -1120,121 +697,6 @@ static kbool Map_CheckObjectPlaneRange(object_t *obj, plane_t *plane)
 }
 
 //
-// Map_TraverseLinkObjects
-//
-
-static void Map_TraverseLinkObjects(object_t *obj, plane_t *plane, kmap_t *map)
-{
-    int i;
-
-    if(plane == NULL || Map_ObjectInBlocklist(obj, plane))
-    {
-        return;
-    }
-
-    Map_LinkObjToBlocklist(obj, plane);
-
-    for(i = 0; i < 3; i++)
-    {
-        plane_t *pl = plane->link[i];
-
-        if(pl == NULL)
-        {
-            continue;
-        }
-
-        if(Map_CheckObjectPlaneRange(obj, pl))
-        {
-            Map_TraverseLinkObjects(obj, pl, map);
-        }
-    }
-}
-
-//
-// Map_InitBlocklist
-//
-
-static void Map_InitBlocklist(kmap_t *map)
-{
-    unsigned int i;
-    unsigned int j;
-
-    for(i = 0; i < map->numinstances; i++)
-    {
-        instance_t *instances = &map->instances[i];
-
-        for(j = 0; j < instances->numstatics; j++)
-        {
-            object_t *obj = &instances->statics[j];
-
-            if(obj == NULL)
-            {
-                continue;
-            }
-
-            if(obj->plane_id != -1 && obj->blockflag & BLF_SECTORLINK)
-            {
-                plane_t *plane = &map->planes[obj->plane_id];
-                Map_TraverseLinkObjects(obj, plane, map);
-            }
-        }
-
-        for(j = 0; j < instances->numspecials; j++)
-        {
-            object_t *obj = &instances->specials[j];
-            plane_t *plane;
-
-            if(obj == NULL)
-            {
-                continue;
-            }
-
-            plane = &map->planes[obj->plane_id];
-            Map_TraverseLinkObjects(obj, plane, map);
-        }
-    }
-}
-
-//
-// Map_SetupActors
-//
-
-static void Map_SetupActors(kmap_t *map)
-{
-    actor_t *actor;
-    actor_t *player = NULL;
-
-    for(actor = g_actorlist->next; actor != g_actorlist; actor = actor->next)
-    {
-        if(actor->object.plane_id != -1)
-        {
-            actor->plane = &map->planes[actor->object.plane_id];
-
-            if(!(actor->flags & AF_NOALIGNPITCH))
-            {
-                float dist;
-
-                dist = Plane_GetDistance(actor->plane, actor->origin);
-
-                if(actor->origin[1] - dist <
-                    (actor->object.centerheight + actor->object.viewheight))
-                {
-                    actor->origin[1] = dist;
-                }
-            }
-        }
-
-        if(actor->object.type == 0)
-            player = actor;
-    }
-
-    if(!player)
-        Com_Error("Map_SetupActors: no player start found!");
-
-    G_SetupPlayer(player);
-}
-
-//
 // Map_GetArea
 //
 
@@ -1259,11 +721,11 @@ plane_t *Map_FindClosestPlane(vec3_t coord)
     curdist = 0;
     plane = NULL;
 
-    for(i = 0; i < g_currentmap->numplanes; i++)
+    for(i = 0; i < gLevel.numplanes; i++)
     {
         plane_t *p;
 
-        p = &g_currentmap->planes[i];
+        p = &gLevel.planes[i];
 
         if(Plane_PointInRange(p, coord[0], coord[2]))
         {
@@ -1303,54 +765,36 @@ plane_t *Map_FindClosestPlane(vec3_t coord)
 // Map_Load
 //
 
-kmap_t *Map_Load(int map)
+void Map_Load(int map)
 {
     scparser_t *parser;
-    kmap_t *kmap;
 
-    if(map >= MAXMAPS)
-    {
-        return NULL;
-    }
-
-    kmap = &kmaps[map];
-    g_currentmap = kmap;
+    // TODO
+    if(gLevel.loaded == true)
+        return;
 
     Random_SetSeed(-470403613);
 
-    G_SetActorLinkList(map);
-
-    if(g_currentmap->tics > 0 || g_currentmap->time > 0)
-    {
-        Map_SetupActors(kmap);
-        return kmap;
-    }
-
-    g_currentmap->tics = 0;
-    g_currentmap->time = 0;
+    gLevel.loaded       = false;
+    gLevel.numplanes    = 0;
+    gLevel.planes       = NULL;
 
     if(!(parser = SC_Open(kva("maps/map%02d/map%02d.kmap", map, map))))
-    {
-        return NULL;
-    }
+        return;
 
-    Map_ParseLevelScript(kmap, parser);
-    // we're done with the file
+    Map_ParseLevelScript(parser);
     SC_Close();
 
-    if(parser = SC_Open(kva("maps/map%02d/map%02d.knav", map, map)))
+    if(parser = SC_Open(kva("maps/map%02d/map%02d.kcm", map, map)))
     {
-        Map_ParseNavScript(kmap, parser);
+        Map_ParseNavScript(parser);
         // we're done with the file
         SC_Close();
     }
 
-    J_CompileAndRunScript(kva("maps/map%02d/map%02d_props.js", map, map));
+    gLevel.loaded = true;
 
-    Map_InitBlocklist(kmap);
-    Map_SetupActors(kmap);
-
-    return kmap;
+    J_RunObjectEvent(JS_EV_GAME, "event_BeginLevel");
 }
 
 //
@@ -1359,21 +803,13 @@ kmap_t *Map_Load(int map)
 
 static void FCmd_LoadTestMap(void)
 {
-     kmap_t *kmap;
      int map;
 
     if(Cmd_GetArgc() < 2)
-    {
         return;
-    }
 
     map = atoi(Cmd_GetArgv(1));
-
-    kmap = &kmaps[map];
     Map_Load(map);
-
-    Com_DPrintf(" \nplanes: %i\nareas: %i\n \n",
-        kmap->numplanes, kmap->numareas);
 }
 
 //
@@ -1382,14 +818,8 @@ static void FCmd_LoadTestMap(void)
 
 void Map_Init(void)
 {
-    int i;
-
     memset(kmaps, 0, sizeof(kmap_t) * MAXMAPS);
-
-    for(i = 0; i < MAXMAPS; i++)
-    {
-        actorlist[i].next = actorlist[i].prev = &actorlist[i];
-    }
+    memset(&gLevel, 0, sizeof(gLevel_t));
 
     Cmd_AddCommand("loadmap", FCmd_LoadTestMap);
 }

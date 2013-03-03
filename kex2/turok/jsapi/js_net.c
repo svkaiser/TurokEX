@@ -46,7 +46,7 @@ JS_FASTNATIVE_BEGIN(Net, newPacket)
     {
         JSObject *object;
 
-        if(!(object = JS_NewObject(cx, &Packet_class, NULL, NULL)) ||
+        if(!(object = JPool_GetFree(&objPoolPacket, &Packet_class)) ||
             !(JS_SetPrivate(cx, object, packet)))
         {
             enet_packet_destroy(packet);
@@ -313,19 +313,17 @@ JS_FASTNATIVE_BEGIN(Packet, readString)
 
 JS_FASTNATIVE_BEGIN(Packet, writeVector)
 {
-    jsval *v;
     ENetPacket *packet;
-    vec3_t *vec = NULL;
+    vec3_t vec;
+    JSObject *object;
 
-    if(argc != 1)
-        return JS_FALSE;
-
-    v = JS_ARGV(cx, vp);
+    JS_CHECKARGS(1);
 
     JS_GETPACKET(JS_THIS_OBJECT(cx, vp));
-    JS_GETVECTOR(vec, v, 0);
+    JS_GETOBJECT(object, v, 0);
+    JS_GETVECTOR2(object, vec);
 
-    Packet_WriteVector(packet, *vec);
+    Packet_WriteVector(packet, vec);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
@@ -342,7 +340,7 @@ JS_FASTNATIVE_BEGIN(Packet, readVector)
     JS_GETPACKET(JS_THIS_OBJECT(cx, vp));
     Packet_ReadVector(packet, &vec);
 
-    JS_NEWVECTOR(vp, vec);
+    JS_NEWVECTOR2(vec);
     return JS_TRUE;
 }
 
@@ -418,7 +416,7 @@ JS_FASTNATIVE_BEGIN(Packet, destroy)
 
     v = JS_ARGV(cx, vp);
 
-    obj = JS_THIS_OBJECT(cx, v);
+    obj = JS_THIS_OBJECT(cx, vp);
     JS_GETPACKET(obj);
 
     enet_packet_destroy(packet);

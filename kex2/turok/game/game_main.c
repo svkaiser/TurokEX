@@ -56,6 +56,8 @@ void G_Ticker(void)
         g_currentmap->tics++;
         g_currentmap->time = (float)g_currentmap->tics * 0.1f;
     }
+
+    Actor_ComponentFunc("onTick");
 }
 
 //
@@ -129,99 +131,12 @@ void G_SwitchWeapon(ENetEvent *sev, ENetPacket *packet)
 }
 
 //
-// G_ClientReborn
-//
-
-void G_ClientReborn(gclient_t *client)
-{
-    memset(client, 0, sizeof(gclient_t));
-
-    client->hasbackpack                 = false;
-    client->maxammo[am_clip]            = 100;
-    client->maxammo[am_shells]          = 20;
-    client->maxammo[am_expshells]       = 10;
-    client->maxammo[am_cell]            = 100;
-    client->maxammo[am_tekarrows]       = 15;
-    client->maxammo[am_arrows]          = 30;
-    client->maxammo[am_mini]            = 125;
-    client->maxammo[am_grenade]         = 20;
-    client->maxammo[am_rocket]          = 6;
-    client->maxammo[am_fusion]          = 2;
-    client->maxammo[am_chrono]          = 3;
-    client->weaponowned[wp_knife]       = true;
-    client->weaponowned[wp_crossbow]    = true;
-    client->activeweapon                = wp_knife;
-    client->actor.health                = 100;
-}
-
-//
-// G_SetupPlayer
-//
-
-void G_SetupPlayer(actor_t *actor)
-{
-    unsigned int i;
-
-    // TODO - TEMP
-    J_SpawnPlayer_temp(actor->origin,
-        actor->yaw, actor->pitch, actor->object.plane_id, true);
-
-    J_SpawnPlayer_temp(actor->origin,
-        actor->yaw, actor->pitch, actor->object.plane_id, false);
-
-    // setup local client
-    Vec_Copy3(client.moveframe.origin, actor->origin);
-    Vec_Copy3(client.pmove.origin, actor->origin);
-
-    client.pmove.angles[0]      = actor->yaw;
-    client.pmove.angles[1]      = actor->pitch;
-    client.moveframe.yaw        = actor->yaw;
-    client.moveframe.pitch      = actor->pitch;
-    client.pmove.centerheight   = actor->object.centerheight;
-    client.pmove.viewheight     = actor->object.viewheight;
-    client.pmove.radius         = actor->object.width;
-    client.pmove.height         = actor->object.height;
-    client.pmove.plane          = actor->object.plane_id;
-
-    // setup svclients
-    for(i = 0; i < server.maxclients; i++)
-    {
-        if(svclients[i].state != SVC_STATE_INACTIVE)
-        {
-            pmove_t *pmove;
-            svclient_t *svcl;
-            actor_t *p;
-
-            svcl = &svclients[i];
-            p = &svcl->gclient.actor;
-
-            memcpy(p, actor, sizeof(actor_t));
-
-            svcl->state = SVC_STATE_INGAME;
-            pmove = &svcl->pmove;
-
-            Vec_Copy3(pmove->origin, p->origin);
-
-            pmove->angles[0]        = p->yaw;
-            pmove->angles[1]        = p->pitch;
-            pmove->centerheight     = p->object.centerheight;
-            pmove->viewheight       = p->object.viewheight;
-            pmove->radius           = p->object.width;
-            pmove->height           = p->object.height;
-            pmove->plane            = p->object.plane_id;
-
-            // TODO - Call this for new players only
-            G_ClientReborn(&svcl->gclient);
-        }
-    }
-}
-
-//
 // G_ClientThink
 //
 
 void G_ClientThink(void)
 {
+    Actor_ComponentFunc("onLocalTick");
 }
 
 //
@@ -230,7 +145,7 @@ void G_ClientThink(void)
 
 void G_NoClip(svclient_t *svcl)
 {
-    if(svcl->state != SVC_STATE_INGAME || g_currentmap == NULL)
+    /*if(svcl->state != SVC_STATE_INGAME || g_currentmap == NULL)
         return;
 
     if(svcl->pmove.movetype == MT_NOCLIP)
@@ -245,7 +160,7 @@ void G_NoClip(svclient_t *svcl)
     else
     {
         svcl->pmove.movetype = MT_NOCLIP;
-    }
+    }*/
 }
 
 //

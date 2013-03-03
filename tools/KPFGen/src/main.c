@@ -50,6 +50,7 @@ HINSTANCE	hAppInst	= NULL;
 HWND		hwnd		= NULL;
 HWND		hwndWait	= NULL;
 HWND		hwndLoadBar	= NULL;
+HWND        hwndDataBar = NULL;
 #endif
 
 #ifdef _WIN32
@@ -62,8 +63,11 @@ dboolean __stdcall LoadingDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
     {
     case WM_INITDIALOG:
         hwndLoadBar = GetDlgItem(hWnd, IDC_PROGRESS1);
+        hwndDataBar = GetDlgItem(hWnd, IDC_PROGRESS2);
         SendMessage(hwndLoadBar, PBM_SETRANGE, 0, MAKELPARAM(0, TOTALSTEPS));
         SendMessage(hwndLoadBar, PBM_SETSTEP, (WPARAM)(int)1, 0);
+        SendMessage(hwndDataBar, PBM_SETRANGE, 0, MAKELPARAM(0, 1));
+        SendMessage(hwndDataBar, PBM_SETSTEP, (WPARAM)(int)1, 0);
         return true;
     case WM_PAINT:
         return true;

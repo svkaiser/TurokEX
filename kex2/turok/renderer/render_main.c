@@ -194,137 +194,6 @@ kbool R_FrustumTestPlane(plane_t *plane)
 }
 
 //
-// R_SetupViewFrame
-//
-
-static void R_SetupViewFrame(void)
-{
-    mtx_t mtx;
-    vec4_t yaw;
-    vec4_t pitch;
-    vec4_t roll;
-    vec4_t vroll;
-    vec4_t rot;
-    float bob_x;
-    float bob_y;
-    float d;
-    float amt;
-    vec3_t org;
-    vec3_t pos;
-    vec3_t dir;
-    float angle;
-    vec3_t origin;
-    vec3_t velocity;
-    moveframe_t *frame;
-
-    // roll view camera if strafing left or right
-
-    frame = &client.moveframe;
-
-    Vec_Copy3(origin, frame->origin);
-    Vec_Copy3(velocity, frame->velocity);
-
-    // create the directional vector
-    Vec_Add(dir, origin, velocity);
-    Vec_Sub(dir, dir, origin);
-
-    // get angle of direction
-    angle = Ang_Diff(frame->yaw + M_PI,
-        Ang_VectorToAngle(dir) + M_PI);
-
-    // get normalized direction vector
-    Vec_Copy3(dir, velocity);
-    Vec_Normalize3(dir);
-
-    // clamp angle between -90 and 90
-    Ang_Clamp(&angle);
-
-    if(angle > DEG2RAD(90))
-    {
-        angle = M_PI - angle;
-    }
-
-    if(angle < -DEG2RAD(90))
-    {
-        angle = -M_PI - angle;
-    }
-
-    d = Vec_Unit2(velocity) * 0.05f;
-
-    if(client.pmove.movetype == MT_WATER_UNDER)
-    {
-        client.pmove.angles[2] *= 0.935f;
-        amt = 0.4f;
-    }
-    else
-    {
-        client.pmove.angles[2] *= 0.9f;
-        amt = 0.0625f;
-    }
-
-    // interpolate view roll
-    client.pmove.angles[2] = (((angle * amt) * Vec_Unit2(dir)) -
-        client.pmove.angles[2]) * d + client.pmove.angles[2];
-
-    // clamp roll due to stupid floating point precision
-    if(client.pmove.angles[2] < 0.001f && client.pmove.angles[2] > -0.001f)
-    {
-        client.pmove.angles[2] = 0;
-    }
-
-    bob_x = 0;
-    bob_y = 0;
-
-    if(client.pmove.movetype != MT_WATER_UNDER && (origin[1] +
-        velocity[1]) -
-        Plane_GetDistance(frame->plane, origin) < 4)
-    {
-        // calculate bobbing
-        d = Vec_Unit2(velocity);
-
-        if(d > 0.005f)
-        {
-            bob_x = (float)sin(client.tics * 0.3250f) * d * (0.15625f * client.runtime);
-            bob_y = (float)sin(client.tics * 0.1625f) * d * (0.15625f * client.runtime);
-        }
-    }
-    else if(client.pmove.movetype == MT_WATER_SURFACE ||
-        client.pmove.movetype == MT_WATER_UNDER)
-    {
-        bob_x = (float)sin(client.tics * 0.035f) * (0.93750f * client.runtime);
-        bob_y = (float)sin(client.tics * 0.025f) * (0.66875f * client.runtime);
-    }
-
-    // set view origin
-    Vec_Set3(org,
-        origin[0],
-        origin[1] + (client.pmove.centerheight + client.pmove.viewheight),
-        origin[2]);
-
-    // setup projection matrix
-    dglMatrixMode(GL_PROJECTION);
-    dglLoadIdentity();
-    Mtx_ViewFrustum(video_width, video_height, cl_fov.value, 0.1f);
-
-    // setup modelview matrix
-    dglMatrixMode(GL_MODELVIEW);
-    Mtx_Identity(mtx);
-    Vec_SetQuaternion(yaw, -frame->yaw + M_PI - bob_y, 0, 1, 0);
-    Vec_SetQuaternion(pitch, frame->pitch + bob_x, 1, 0, 0);
-    Vec_SetQuaternion(roll, client.pmove.angles[2], 0,
-        (float)sin(frame->pitch), (float)cos(frame->pitch));
-    Vec_MultQuaternion(vroll, yaw, roll);
-    Vec_MultQuaternion(rot, vroll, pitch);
-    Mtx_ApplyRotation(rot, mtx);
-    Mtx_Copy(mtx_rotation, mtx);
-    Vec_TransformToWorld(mtx, org, pos);
-    Mtx_AddTranslation(mtx, -pos[0], -pos[1], -pos[2]);
-
-    // load view matrix
-    dglLoadMatrixf(mtx);
-}
-
-//
 // R_DrawSection
 //
 
@@ -482,9 +351,7 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
             if(textures != NULL)
             {
                 if(textures[i][0] != '-')
-                {
                     texturepath = textures[i];
-                }
             }
 
             R_DrawSection(section, texturepath);
@@ -571,173 +438,40 @@ static void R_MorphModel(morphmodel_t *morph)
 }
 
 //
-// R_DrawObject
+// R_DrawStatics
 //
 
-void R_DrawObject(object_t *object)
+void R_DrawStatics(void)
 {
-    kmodel_t *model;
-    int var;
+    unsigned int i;
 
-    if(!(model = Mdl_Load(object->mdlpath)))
-    {
+    if(showcollision || !gLevel.loaded)
         return;
-    }
 
-    // TODO - temp
-    if(object->type == OT_MINIPORTAL ||
-        object->type == OT_WATER)
+    for(i = 0; i < gLevel.numGridBounds; i++)
     {
-        var = 0;
-    }
-    else
-    {
-        var = object->variant;
-    }
-
-    R_TraverseDrawNode(model, &model->nodes[0],
-        object->textureswaps, var, NULL);
-}
-
-//
-// R_DrawInstances
-//
-
-static void R_DrawInstances(void)
-{
-    if(g_currentmap != NULL && !showcollision)
-    {
-        unsigned int i;
+        gridBounds_t *gb = &gLevel.gridBounds[i];
         unsigned int j;
 
-        for(i = 0; i < g_currentmap->numinstances; i++)
+        for(j = 0; j < gb->numStatics; j++)
         {
-            instance_t *inst = &g_currentmap->instances[i];
+            gActor_t *actor = &gb->statics[j];
 
-            if(inst == NULL || inst->statics == NULL)
-            {
+            if(actor->bHidden)
                 continue;
-            }
 
-            for(j = 0; j < inst->numstatics; j++)
-            {
-                object_t *obj;
-                
-                obj = &inst->statics[j];
-
-                if(obj == NULL)
-                {
-                    continue;
-                }
-
-                dglPushMatrix();
-                dglMultMatrixf(obj->matrix);
-
-                if(R_FrustumTestBox(obj->box))
-                {
-                    R_DrawObject(obj);
-                }
-
-                dglPopMatrix();
-
-                if(showbbox)
-                {
-                    byte r, g, b;
-
-                    r = 255; g = 255; b = 0;
-                    R_DrawBoundingBox(obj->box, r, g, b);
-                }
-            }
-
-            if(inst->specials == NULL)
-            {
+            if(!R_FrustumTestBox(actor->bbox))
                 continue;
-            }
 
-            for(j = 0; j < inst->numspecials; j++)
-            {
-                object_t *obj;
-                kbool item = false;
-                
-                obj = &inst->specials[j];
+            dglPushMatrix();
+            dglMultMatrixf(actor->matrix);
 
-                if(obj == NULL)
-                {
-                    continue;
-                }
+            R_TraverseDrawNode(actor->model, &actor->model->nodes[0],
+                actor->textureSwaps, actor->variant, NULL);
 
-                item = (Obj_GetClassType(obj) == OC_PICKUP);
-                
-                dglPushMatrix();
-                dglMultMatrixf(obj->matrix);
-
-                if(R_FrustumTestBox(obj->box))
-                {
-                    if(item)
-                    {
-                        dglPushMatrix();
-                        dglRotatef((float)(client.tics % 360), 0, 1, 0);
-                    }
-
-                    R_DrawObject(obj);
-
-                    if(item)
-                    {
-                        dglPopMatrix();
-                    }
-                }
-
-                dglPopMatrix();
-
-                if(showbbox)
-                {
-                    byte r, g, b;
-                    
-                    r = 0; g = 255; b = 0;
-                    R_DrawBoundingBox(obj->box, r, g, b);
-                }
-            }
+            dglPopMatrix();
         }
     }
-}
-
-//
-// R_SetupFog
-//
-
-static void R_SetupFog(void)
-{
-    static float fognear = 0;
-    static float fogfar = 0;
-    static float fogcolor[4] = { 0, 0, 0, 1 };
-    area_t *area;
-    float color[4];
-
-    if(!client.moveframe.plane || r_fog.value <= 0)
-    {
-        fogcolor[0] = fogcolor[1] = fogcolor[2] = 0.25f;
-        fogcolor[3] = 1;
-        GL_ClearView(fogcolor);
-        return;
-    }
-
-    area = Map_GetArea(client.moveframe.plane);
-
-    dglGetColorf(area->fog_color, color);
-
-    fogfar = (area->fog_far - fogfar) * 0.025f + fogfar;
-    fognear = fogfar * 0.5f;
-    fogcolor[0] = (color[0] - fogcolor[0]) * 0.025f + fogcolor[0];
-    fogcolor[1] = (color[1] - fogcolor[1]) * 0.025f + fogcolor[1];
-    fogcolor[2] = (color[2] - fogcolor[2]) * 0.025f + fogcolor[2];
-
-    GL_ClearView(fogcolor);
-
-    dglEnable(GL_FOG);
-    dglFogi(GL_FOG_COORD_SRC, GL_FRAGMENT_DEPTH);
-    dglFogfv(GL_FOG_COLOR, fogcolor);
-    dglFogf(GL_FOG_START, fognear);
-    dglFogf(GL_FOG_END, fogfar);
 }
 
 //
@@ -903,141 +637,11 @@ static void R_DrawSkies(void)
 }
 
 //
-// R_DrawViewWeapon
-//
-
-void R_DrawViewWeapon(void)
-{
-    kmodel_t *model;
-    mtx_t mtx_transform;
-    mtx_t mtx_final;
-    mtx_t mtx_rot;
-    mtx_t mtx_pos;
-    mtx_t mtx_flip;
-    vec4_t yaw;
-    vec4_t pitch;
-    vec4_t aim;
-    float offset;
-    weapon_t *weapon;
-
-    weapon = &weapons[client.gt.weapon];
-
-    if(!(model = weapon->model))
-    {
-        return;
-    }
-
-    // setup projection
-    dglMatrixMode(GL_PROJECTION);
-    dglLoadIdentity();
-    Mtx_ViewFrustum(video_width, video_height, 45, 32);
-    dglMatrixMode(GL_MODELVIEW);
-
-    // setup initial matrix
-    Mtx_Identity(mtx_pos);
-    Mtx_Identity(mtx_flip);
-    Mtx_Scale(mtx_flip, -1, 1, 1);
-    Mtx_Transpose(mtx_pos);
-    Mtx_Multiply(mtx_transform, mtx_pos, mtx_flip);
-
-    // sway weapon based on user's turn speed
-    Vec_SetQuaternion(yaw, weapon->yaw, 0, 0, 1);
-    Vec_SetQuaternion(pitch, weapon->pitch, 1, 0, 0);
-
-    // lean weapon if strafing
-    if(client.pmove.movetype != MT_WATER_SURFACE &&
-        client.pmove.movetype != MT_WATER_UNDER)
-    {
-        vec4_t roll;
-        vec4_t lean;
-
-        Vec_SetQuaternion(roll, client.pmove.angles[2], 0, 1, 0);
-        Vec_MultQuaternion(lean, yaw, roll);
-        Vec_MultQuaternion(aim, lean, pitch);
-    }
-    else
-    {
-        Vec_MultQuaternion(aim, pitch, yaw);
-    }
-
-    // setup final matrix
-    Mtx_ApplyRotation(aim, mtx_rot);
-    Mtx_ApplyVector(mtx_transform, weapon->origin);
-    Mtx_Multiply(mtx_final, mtx_rot, mtx_transform);
-
-    // add a little vertical force to weapon if jumping or falling
-    offset = (client.moveframe.origin[1] -
-        Plane_GetDistance(client.moveframe.plane, client.moveframe.origin));
-
-    if(!(offset < 0.2f) &&
-        (client.moveframe.velocity[1] < 0.2f ||
-        client.moveframe.velocity[1] > 0.2f))
-    {
-        offset = client.moveframe.velocity[1];
-        if(client.moveframe.velocity[1] > 0)
-        {
-            // cut back offset a little if jumping
-            offset *= 0.35f;
-        }
-    }
-    else
-    {
-        offset = 0;
-    }
-
-    // apply translation offset to matrix
-    wpn_thudoffset = (offset - wpn_thudoffset) * 0.25f + wpn_thudoffset;
-    Mtx_AddTranslation(mtx_final, 0, wpn_thudoffset, 0);
-
-    // load matrix
-    dglLoadMatrixf(mtx_final);
-
-    // draw weapon
-    R_TraverseDrawNode(model, &model->nodes[0],
-        NULL, 0, &weapon->animstate);
-}
-
-//
-// R_DrawActors
-//
-
-// TODO - TEMP
-void R_DrawActors(void)
-{
-    actor_t *actor;
-
-    if(g_currentmap == NULL)
-    {
-        return;
-    }
-
-    for(actor = g_actorlist->next; actor != g_actorlist; actor = actor->next)
-    {
-        object_t *obj = &actor->object;
-        kmodel_t *model;
-
-        if(!(model = Mdl_Load("models/default.kmesh")))
-        {
-            return;
-        }
-
-        dglPushMatrix();
-        dglMultMatrixf(obj->matrix);
-
-        R_TraverseDrawNode(model, &model->nodes[0], NULL, 0, NULL);
-
-        dglPopMatrix();
-    }
-}
-
-//
 // R_DrawFrame
 //
 
 void R_DrawFrame(void)
 {
-    //R_SetupFog();
-    //R_SetupViewFrame();
     J_RunObjectEvent(JS_EV_RENDER, "event_PreRender");
     R_SetupClipFrustum();
 
@@ -1045,18 +649,13 @@ void R_DrawFrame(void)
     dglEnable(GL_DEPTH_TEST);
     dglDisableClientState(GL_COLOR_ARRAY);
 
-    R_DrawInstances();
-
     if(showcollision)
-    {
         R_DrawCollision();
-    }
+
+    R_DrawStatics();
 
     dglCullFace(GL_FRONT);
-
-    R_DrawActors();
     J_RunObjectEvent(JS_EV_RENDER, "event_OnRender");
-    //R_DrawViewWeapon();
 
     dglEnableClientState(GL_COLOR_ARRAY);
     dglAlphaFunc(GL_GEQUAL, 0.01f);
@@ -1064,9 +663,7 @@ void R_DrawFrame(void)
     R_DrawSkies();
 
     if(!showcollision)
-    {
         dglDisable(GL_FOG);
-    }
 
     dglDisable(GL_DEPTH_TEST);
 
@@ -1078,7 +675,6 @@ void R_DrawFrame(void)
     GL_SetState(GLSTATE_TEXGEN_T, false);
 
     J_RunObjectEvent(JS_EV_RENDER, "event_PostRender");
-    //GL_SetOrtho();
 
     R_MorphModel(&morphmodels[0]);
     R_MorphModel(&morphmodels[1]);

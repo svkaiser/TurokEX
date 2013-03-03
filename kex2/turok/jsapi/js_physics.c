@@ -33,24 +33,24 @@ JS_CLASSOBJECT(Physics);
 
 JS_FASTNATIVE_BEGIN(Physics, move)
 {
-    jsval *v;
     JSObject *objPlane;
-    vec3_t *origin;
-    vec3_t *velocity;
+    vec3_t origin;
+    vec3_t velocity;
     plane_t *plane;
     jsdouble center_y;
     jsdouble yaw;
     jsdouble width;
+    JSObject *objOrig;
+    JSObject *objVel;
+
+    JS_CHECKARGS(6);
 
     plane = NULL;
 
-    if(argc != 6)
-        return JS_FALSE;
-
-    v = JS_ARGV(cx, vp);
-
-    JS_GETVECTOR(origin, v, 0);
-    JS_GETVECTOR(velocity, v, 1);
+    JS_GETOBJECT(objOrig, v, 0);
+    JS_GETOBJECT(objVel, v, 1);
+    JS_GETVECTOR2(objOrig, origin);
+    JS_GETVECTOR2(objVel, velocity);
     JS_GETOBJECT(objPlane, v, 2);
     JS_GETNUMBER(center_y, v, 3);
     JS_GETNUMBER(yaw, v, 4);
@@ -61,14 +61,17 @@ JS_FASTNATIVE_BEGIN(Physics, move)
 
     if(plane == NULL)
     {
-        if(!(plane = Map_FindClosestPlane(*origin)))
+        if(!(plane = Map_FindClosestPlane(origin)))
             return JS_TRUE;
     }
 
-    G_ClipMovement(*origin, *velocity, &plane,
+    G_ClipMovement(origin, velocity, &plane,
         (float)width, (float)center_y, (float)yaw, NULL);
 
-    Vec_Add(*origin, *origin, *velocity);
+    Vec_Add(origin, origin, velocity);
+
+    JS_SETVECTOR(objOrig, origin);
+    JS_SETVECTOR(objVel, velocity);
 
     JS_SetPrivate(cx, objPlane, plane);
 

@@ -57,7 +57,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="winmm.lib"
-				OutputFile="$(OutDir)\$(ProjectName).dll"
+				OutputFile="..\..\libs\$(ProjectName).dll"
 				GenerateDebugInformation="true"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"

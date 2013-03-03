@@ -42,10 +42,8 @@ void R_DrawCollision(void)
 {
     unsigned int i;
 
-    if(g_currentmap == NULL)
-    {
+    if(!gLevel.loaded)
         return;
-    }
 
     dglEnable(GL_ALPHA_TEST);
     dglDisable(GL_FOG);
@@ -54,14 +52,12 @@ void R_DrawCollision(void)
     GL_SetState(GLSTATE_CULL, false);
     GL_SetState(GLSTATE_BLEND, true);
 
-    for(i = 0; i < g_currentmap->numplanes; i++)
+    for(i = 0; i < gLevel.numplanes; i++)
     {
-        plane_t *p = &g_currentmap->planes[i];
+        plane_t *p = &gLevel.planes[i];
 
         if(!R_FrustumTestPlane(p))
-        {
             continue;
-        }
 
         dglBegin(GL_TRIANGLES);
 
@@ -150,15 +146,11 @@ void R_DrawCollision(void)
 
 void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b)
 {
-    if(g_currentmap == NULL)
-    {
+    if(!gLevel.loaded)
         return;
-    }
 
     if(!R_FrustumTestBox(bbox))
-    {
         return;
-    }
 
     dglEnable(GL_DEPTH_TEST);
     GL_SetState(GLSTATE_TEXTURE0, false);

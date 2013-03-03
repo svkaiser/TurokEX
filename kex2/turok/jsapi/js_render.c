@@ -30,6 +30,8 @@
 #include "gl.h"
 #include "render.h"
 
+kbool R_FrustumTestBox(bbox_t box);
+
 // -----------------------------------------------
 //
 // RENDER CLASS
@@ -132,6 +134,30 @@ JS_FASTNATIVE_BEGIN(NRender, drawModel)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(NRender, testBoxInFrustum)
+{
+    bbox_t bbox;
+    jsdouble box[6];
+
+    JS_CHECKARGS(6);
+    JS_GETNUMBER(box[0], v, 0);
+    JS_GETNUMBER(box[1], v, 1);
+    JS_GETNUMBER(box[2], v, 2);
+    JS_GETNUMBER(box[3], v, 3);
+    JS_GETNUMBER(box[4], v, 4);
+    JS_GETNUMBER(box[5], v, 5);
+
+    bbox.min[0] = (float)box[0];
+    bbox.min[1] = (float)box[1];
+    bbox.min[2] = (float)box[2];
+    bbox.max[0] = (float)box[3];
+    bbox.max[1] = (float)box[4];
+    bbox.max[2] = (float)box[5];
+
+    JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(R_FrustumTestBox(bbox)));
+    return JS_TRUE;
+}
+
 JS_BEGINCLASS(NRender)
     0,                                          // flags
     JS_PropertyStub,                            // addProperty
@@ -168,6 +194,7 @@ JS_BEGINFUNCS(NRender)
     JS_FASTNATIVE(NRender, clearViewPort, 3),
     JS_FASTNATIVE(NRender, setOrtho, 0),
     JS_FASTNATIVE(NRender, drawModel, 2),
+    JS_FASTNATIVE(NRender, testBoxInFrustum, 6),
     JS_FS_END
 };
 
