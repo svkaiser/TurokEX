@@ -314,7 +314,6 @@ void Actor_Setup(gActor_t *actor)
         if(actor->bStatic)
         {
             // TODO
-            JS_DeleteProperty(cx, actor->components, "ComponentPickup");
             JS_DeleteProperty(cx, actor->components, "ComponentTouchBox");
             JS_DeleteProperty(cx, actor->components, "ComponentMesh");
         }
