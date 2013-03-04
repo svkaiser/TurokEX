@@ -47,11 +47,11 @@ JS_PROP_FUNC_GET(Vector)
         switch(JSVAL_TO_INT(id))
         {
         case VEC3_X:
-            return JS_NewNumberValue(cx, (*vector)[0], vp);
+            return JS_NewDoubleValue(cx, (*vector)[0], vp);
         case VEC3_Y:
-            return JS_NewNumberValue(cx, (*vector)[1], vp);
+            return JS_NewDoubleValue(cx, (*vector)[1], vp);
         case VEC3_Z:
-            return JS_NewNumberValue(cx, (*vector)[2], vp);
+            return JS_NewDoubleValue(cx, (*vector)[2], vp);
         }
     }
 

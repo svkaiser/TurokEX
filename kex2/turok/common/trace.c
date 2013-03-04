@@ -70,7 +70,7 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
         x = x - ld * dx;
         z = z - ld * dz;
 
-        r = trace->width * trace->width + radius * radius;
+        r = radius * radius;
         len = r - (x * x + z * z);
 
         // is the ray inside the radius?
@@ -139,23 +139,20 @@ static kbool Trace_Objects(trace_t *trace)
                 if(!actor->bCollision && !actor->bTouch)
                     continue;
 
-                if(trace->end[1] > actor->origin[1] + actor->height ||
-                    trace->end[1] + trace->offset < actor->origin[1])
-                {
-                    continue;
-                }
-
                 if(actor->bTouch)
                 {
-                    if(Vec_Length3(trace->end, actor->origin) +
-                        actor->radius < trace->width)
-                    {
+                    if(Vec_Length3(trace->end, actor->origin) < trace->width)
                         Actor_OnTouchEvent(actor);
-                    }
                 }
 
                 if(actor->bCollision)
                 {
+                    if(trace->end[1] > actor->origin[1] + actor->height ||
+                    trace->end[1] + trace->offset < actor->origin[1])
+                    {
+                        continue;
+                    }
+
                     if(Trace_Object(trace, actor->origin, actor->radius))
                     {
                         trace->type = TRT_OBJECT;

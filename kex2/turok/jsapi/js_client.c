@@ -48,25 +48,32 @@ JS_PROP_FUNC_GET(NClient)
     switch(JSVAL_TO_INT(id))
     {
     case CL_STATE:
-        return JS_NewNumberValue(cx, client.state, vp);
+        //return JS_NewNumberValue(cx, client.state, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(client.state));
+        return JS_TRUE;
 
     case CL_SUBCLASS:
         return JS_TRUE;
 
     case CL_HOST:
-        JS_NEWOBJECT_SETPRIVATE(client.host, &Host_class);
+        JS_NEWOBJECTPOOL(client.host, Host);
+        //JS_NEWOBJECT_SETPRIVATE(client.host, &Host_class);
         return JS_TRUE;
 
     case CL_PEER:
-        JS_NEWOBJECT_SETPRIVATE(client.peer, &Peer_class);
+        JS_NEWOBJECTPOOL(client.peer, Peer);
+        //JS_NEWOBJECT_SETPRIVATE(client.peer, &Peer_class);
         return JS_TRUE;
 
     case CL_NETEVENT:
-        JS_NEWOBJECT_SETPRIVATE(&client.netEvent, &NetEvent_class);
+        JS_NEWOBJECTPOOL(&client.netEvent, NetEvent);
+        //JS_NEWOBJECT_SETPRIVATE(&client.netEvent, &NetEvent_class);
         return JS_TRUE;
 
     case CL_ID:
-        return JS_NewNumberValue(cx, client.client_id, vp);
+        //return JS_NewNumberValue(cx, client.client_id, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(client.client_id));
+        return JS_TRUE;
 
     default:
         return JS_TRUE;
@@ -117,7 +124,6 @@ JS_FASTNATIVE_BEGIN(NClient, inLevel)
 
 JS_FASTNATIVE_BEGIN(NClient, getEvent)
 {
-    JSObject *obj;
     event_t *ev = CL_GetEvent();
 
     if(ev == NULL)
@@ -126,18 +132,7 @@ JS_FASTNATIVE_BEGIN(NClient, getEvent)
         return JS_TRUE;
     }
 
-    obj = JS_NewObject(cx, NULL, NULL, NULL);
-    JS_AddRoot(cx, &obj);
-
-    JS_DefineProperty(cx, obj, "type",  INT_TO_JSVAL(ev->type),  NULL, NULL, JSPROP_ENUMERATE);
-    JS_DefineProperty(cx, obj, "data1", INT_TO_JSVAL(ev->data1), NULL, NULL, JSPROP_ENUMERATE);
-    JS_DefineProperty(cx, obj, "data2", INT_TO_JSVAL(ev->data2), NULL, NULL, JSPROP_ENUMERATE);
-    JS_DefineProperty(cx, obj, "data3", INT_TO_JSVAL(ev->data3), NULL, NULL, JSPROP_ENUMERATE);
-    JS_DefineProperty(cx, obj, "data4", INT_TO_JSVAL(ev->data4), NULL, NULL, JSPROP_ENUMERATE);
-
-    JS_RemoveRoot(cx, &obj);
-
-    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
+    JS_NEWOBJECTPOOL(ev, InputEvent);
     return JS_TRUE;
 }
 

@@ -36,17 +36,21 @@ JS_PROP_FUNC_GET(Level)
     switch(JSVAL_TO_INT(id))
     {
     case 0:
-        return JS_NewNumberValue(cx, gLevel.mapID, vp);
+        //return JS_NewNumberValue(cx, gLevel.mapID, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(gLevel.mapID));
+        return JS_TRUE;
 
     case 1:
         JS_RETURNSTRING(vp, gLevel.name);
         return JS_TRUE;
 
     case 2:
-        return JS_NewNumberValue(cx, gLevel.tics, vp);
+        //return JS_NewNumberValue(cx, gLevel.tics, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(gLevel.tics));
+        return JS_TRUE;
 
     case 3:
-        return JS_NewNumberValue(cx, gLevel.time, vp);
+        return JS_NewDoubleValue(cx, gLevel.time, vp);
 
     case 4:
         JS_RETURNBOOLEAN(vp, gLevel.loaded);
@@ -84,7 +88,8 @@ JS_FASTNATIVE_BEGIN(Level, findPlane)
 
     if(plane != NULL)
     {
-        JS_INSTPLANE(vp, plane);
+        JS_NEWOBJECTPOOL(plane, Plane);
+        //JS_INSTPLANE(vp, plane);
     }
     else
     {
@@ -107,7 +112,8 @@ JS_FASTNATIVE_BEGIN(Level, getActor)
         return JS_TRUE;
     }
 
-    JS_NEWOBJECT_SETPRIVATE(&gLevel.gActors[index], &GameActor_class);
+    JS_NEWOBJECTPOOL(&gLevel.gActors[index], GameActor);
+    //JS_NEWOBJECT_SETPRIVATE(&gLevel.gActors[index], &GameActor_class);
     return JS_TRUE;
 }
 

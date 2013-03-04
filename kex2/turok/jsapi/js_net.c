@@ -83,7 +83,8 @@ JS_FASTNATIVE_BEGIN(Net, hostService)
 
     if(ret > 0)
     {
-        JS_NEWOBJECT_SETPRIVATE(&ev, &NetEvent_class);
+        //JS_NEWOBJECT_SETPRIVATE(&ev, &NetEvent_class);
+        JS_NEWOBJECTPOOL(&ev, NetEvent);
     }
     else
     {
@@ -157,17 +158,23 @@ JS_PROP_FUNC_GET(NetEvent)
     switch(JSVAL_TO_INT(id))
     {
     case NE_TYPE:
-        return JS_NewNumberValue(cx, ev->type, vp);
+        //return JS_NewNumberValue(cx, ev->type, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(ev->type));
+        return JS_TRUE;
 
     case NE_PEER:
-        JS_NEWOBJECT_SETPRIVATE(ev->peer, &Peer_class);
+        JS_NEWOBJECTPOOL(ev->peer, Peer);
+        //JS_NEWOBJECT_SETPRIVATE(ev->peer, &Peer_class);
         return JS_TRUE;
 
     case NE_CHANNEL:
-        return JS_NewNumberValue(cx, ev->channelID, vp);
+        //return JS_NewNumberValue(cx, ev->channelID, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(ev->channelID));
+        return JS_TRUE;
 
     case NE_PACKET:
-        JS_NEWOBJECT_SETPRIVATE(ev->packet, &Packet_class);
+        JS_NEWOBJECTPOOL(ev->packet, Packet);
+        //JS_NEWOBJECT_SETPRIVATE(ev->packet, &Packet_class);
         return JS_TRUE;
 
     default:
@@ -260,7 +267,8 @@ JS_FINALIZE_FUNC(Packet)
         v = JS_ARGV(cx, vp);                            \
         JS_GETPACKET(JS_THIS_OBJECT(cx, vp));           \
         func(packet, &n);                               \
-        return JS_NewNumberValue(cx, (jsdouble)n, vp);  \
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(n));           \
+        return JS_TRUE;                                 \
     }
 
 JS_WRITE_PACKET_FUNC(write8, Packet_Write8);
@@ -495,7 +503,9 @@ JS_PROP_FUNC_GET(Peer)
     switch(JSVAL_TO_INT(id))
     {
     case NP_CONNECTID:
-        return JS_NewNumberValue(cx, peer->connectID, vp);
+        //return JS_NewNumberValue(cx, peer->connectID, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(peer->connectID));
+        return JS_TRUE;
 
     default:
         JS_ReportError(cx, "Unknown property");

@@ -33,6 +33,13 @@ extern JSObject     *js_gobject;
 extern jsObjectPool_t objPoolVector;
 extern jsObjectPool_t objPoolQuaternion;
 extern jsObjectPool_t objPoolPacket;
+extern jsObjectPool_t objPoolAnimState;
+extern jsObjectPool_t objPoolHost;
+extern jsObjectPool_t objPoolPeer;
+extern jsObjectPool_t objPoolNetEvent;
+extern jsObjectPool_t objPoolGameActor;
+extern jsObjectPool_t objPoolPlane;
+extern jsObjectPool_t objPoolInputEvent;
 
 typedef struct js_scrobj_s
 {
@@ -203,13 +210,16 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 #define JS_SETVECTOR(obj, vec)                          \
 {                                                       \
     jsval val;                                          \
-    val = DOUBLE_TO_JSVAL(JS_NewDouble(cx, vec[0]));    \
+    if(!JS_NewDoubleValue(cx, vec[0], &val))            \
+        return JS_FALSE;                                \
     if(!JS_SetProperty(cx, obj, "x", &val))             \
         return JS_FALSE;                                \
-    val = DOUBLE_TO_JSVAL(JS_NewDouble(cx, vec[1]));    \
+    if(!JS_NewDoubleValue(cx, vec[1], &val))            \
+        return JS_FALSE;                                \
     if(!JS_SetProperty(cx, obj, "y", &val))             \
         return JS_FALSE;                                \
-    val = DOUBLE_TO_JSVAL(JS_NewDouble(cx, vec[2]));    \
+    if(!JS_NewDoubleValue(cx, vec[2], &val))            \
+        return JS_FALSE;                                \
     if(!JS_SetProperty(cx, obj, "z", &val))             \
         return JS_FALSE;                                \
 }
@@ -261,16 +271,20 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 #define JS_SETQUATERNION(obj, rot)                      \
 {                                                       \
     jsval val;                                          \
-    val = DOUBLE_TO_JSVAL(JS_NewDouble(cx, rot[0]));    \
+    if(!JS_NewDoubleValue(cx, rot[0], &val))            \
+        return JS_FALSE;                                \
     if(!JS_SetProperty(cx, obj, "x", &val))             \
         return JS_FALSE;                                \
-    val = DOUBLE_TO_JSVAL(JS_NewDouble(cx, rot[1]));    \
+    if(!JS_NewDoubleValue(cx, rot[1], &val))            \
+        return JS_FALSE;                                \
     if(!JS_SetProperty(cx, obj, "y", &val))             \
         return JS_FALSE;                                \
-    val = DOUBLE_TO_JSVAL(JS_NewDouble(cx, rot[2]));    \
+    if(!JS_NewDoubleValue(cx, rot[2], &val))            \
+        return JS_FALSE;                                \
     if(!JS_SetProperty(cx, obj, "z", &val))             \
         return JS_FALSE;                                \
-    val = DOUBLE_TO_JSVAL(JS_NewDouble(cx, rot[3]));    \
+    if(!JS_NewDoubleValue(cx, rot[3], &val))            \
+        return JS_FALSE;                                \
     if(!JS_SetProperty(cx, obj, "w", &val))             \
         return JS_FALSE;                                \
 }
@@ -396,6 +410,17 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(object));                                   \
 }
 
+#define JS_NEWOBJECTPOOL(data, class)                                               \
+{                                                                                   \
+    JSObject *object;                                                               \
+    if(!(object = JPool_GetFree(&objPool ##class, &class ## _class)) ||             \
+        !(JS_SetPrivate(cx, object, data)))                                         \
+    {                                                                               \
+        return JS_FALSE;                                                            \
+    }                                                                               \
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(object));                                   \
+}
+
 #define JS_CHECKARGS(n)                                                             \
     jsval *v = JS_ARGV(cx, vp);                                                     \
     if(argc != n) return JS_FALSE
@@ -439,6 +464,7 @@ JS_EXTERNCLASS_NOCONSTRUCTOR(Texture);
 JS_EXTERNCLASS_NOCONSTRUCTOR(Plane);
 JS_EXTERNCLASS_NOCONSTRUCTOR(GameActor);
 JS_EXTERNCLASS_NOCONSTRUCTOR(Component);
+JS_EXTERNCLASS_NOCONSTRUCTOR(InputEvent);
 
 #endif
 

@@ -210,6 +210,9 @@ static const sctokens_t maptokens[scmap_end+1] =
 enum
 {
     scactor_name = 0,
+    scactor_mesh,
+    scactor_bounds,
+    scactor_textureSwaps,
     scactor_components,
     scactor_bCollision,
     scactor_bStatic,
@@ -229,6 +232,9 @@ enum
 static const sctokens_t mapactortokens[scactor_end+1] =
 {
     { scactor_name,         "name"          },
+    { scactor_mesh,         "mesh"          },
+    { scactor_bounds,       "bounds"        },
+    { scactor_textureSwaps, "textureSwaps"  },
     { scactor_components,   "components"    },
     { scactor_bCollision,   "bCollision"    },
     { scactor_bStatic,      "bStatic"       },
@@ -292,7 +298,9 @@ static void Map_ParseActorBlock(scparser_t *parser, int count, gActor_t **actorL
 
     for(i = 0; i < count; i++)
     {
-        int numComponents;
+        int numComponents = 0;
+        int numTexSwaps = 0;
+        int j;
         gActor_t *actor = &(*actorList)[i];
         
         Vec_Set3(actor->scale, 1, 1, 1);
@@ -308,6 +316,47 @@ static void Map_ParseActorBlock(scparser_t *parser, int count, gActor_t **actorL
             case scactor_name:
                 SC_AssignString(mapactortokens, actor->name,
                     scactor_name, parser, false);
+                break;
+
+            case scactor_mesh:
+                SC_ExpectNextToken(TK_EQUAL);
+                SC_GetString();
+                actor->model = Mdl_Load(sc_stringbuffer);
+                break;
+
+            case scactor_bounds:
+                SC_ExpectNextToken(TK_EQUAL);
+                SC_ExpectNextToken(TK_LBRACK);
+                actor->bbox.min[0] = (float)SC_GetFloat();
+                actor->bbox.min[1] = (float)SC_GetFloat();
+                actor->bbox.min[2] = (float)SC_GetFloat();
+                actor->bbox.max[0] = (float)SC_GetFloat();
+                actor->bbox.max[1] = (float)SC_GetFloat();
+                actor->bbox.max[2] = (float)SC_GetFloat();
+                SC_ExpectNextToken(TK_RBRACK);
+                break;
+
+            case scactor_textureSwaps:
+                SC_ExpectNextToken(TK_LSQBRACK);
+                numTexSwaps = SC_GetNumber();
+                if(numTexSwaps > 0)
+                {
+                    actor->textureSwaps = (char**)Z_Calloc(sizeof(char*) *
+                        numTexSwaps, PU_ACTOR, NULL);
+                }
+                else
+                {
+                    actor->textureSwaps = NULL;
+                }
+                SC_ExpectNextToken(TK_RSQBRACK);
+                SC_ExpectNextToken(TK_EQUAL);
+                SC_ExpectNextToken(TK_LBRACK);
+                for(j = 0; j < numTexSwaps; j++)
+                {
+                    SC_GetString();
+                    actor->textureSwaps[j] = Z_Strdup(sc_stringbuffer, PU_ACTOR, NULL);
+                }
+                SC_ExpectNextToken(TK_RBRACK);
                 break;
 
             case scactor_components:

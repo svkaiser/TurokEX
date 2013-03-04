@@ -543,27 +543,20 @@ static void ProcessActors(byte *data)
         Com_Strcat("    {\n");
 
         Com_Strcat("        name = \"Actor_%i\"\n", actorTally++);
-        Com_Strcat("        components[%i] =\n", actor->type == 0 ? 2 : 1);
-        Com_Strcat("        {\n");
+        
         if(actor->type == 0)
         {
+            Com_Strcat("        components[1] =\n");
+            Com_Strcat("        {\n");
             Com_Strcat("            BeginObject = \"ComponentPlayerStart\"\n");
             Com_Strcat("                { \"playerID\" : 0 }\n");
             Com_Strcat("            EndObject\n");
+            Com_Strcat("        }\n");
         }
 
-        Com_Strcat("            BeginObject = \"ComponentMesh\"\n");
-        Com_Strcat("                { \"modelfile\" : \"models/mdl%03d/mdl%03d.kmesh\",\n",
+        Com_Strcat("        mesh = \"models/mdl%03d/mdl%03d.kmesh\"\n",
             actor->model, actor->model);
-        Com_Strcat("                \"box_min_x\" : 0,\n");
-        Com_Strcat("                \"box_min_y\" : 0,\n");
-        Com_Strcat("                \"box_min_z\" : 0,\n");
-        Com_Strcat("                \"box_max_x\" : 0,\n");
-        Com_Strcat("                \"box_max_y\" : 0,\n");
-        Com_Strcat("                \"box_max_z\" : 0 }\n");
-        Com_Strcat("            EndObject\n");
-
-        Com_Strcat("        }\n");
+        Com_Strcat("        bounds = { 0 0 0 0 0 0 }\n");
 
         Com_Strcat("        bCollision = %i\n",
             GetAttribute(actor->attribute)->blockflags & 1);
@@ -713,46 +706,34 @@ static void ProcessInstances(byte *data)
     for(i = 0; i < count; i++)
     {
         mapinsttype3_t *mapinst = (mapinsttype3_t*)(data + 8 + (i * size));
-        int cCount = 1;
-
-        if(IsAPickup(mapinst->model))
-            cCount = 3;
 
         Com_Strcat("            {\n");
         Com_Strcat("                name = \"Actor_%i\"\n", actorTally++);
         Com_Strcat("                origin = { %f %f %f }\n",
             mapinst->xyz[0], mapinst->xyz[1], mapinst->xyz[2]);
         Com_Strcat("                scale = { 0.35 0.35 0.35 }\n");
-        Com_Strcat("                bStatic = 1\n");
+        Com_Strcat("                bStatic = 0\n");
         Com_Strcat("                bCollision = 0\n");
         Com_Strcat("                angles = { %f 0 0 }\n",
             (mapinst->angle * ANGLE_LEVELOBJECT) * M_RAD);
         Com_Strcat("                radius = %f\n", mapinst->bboxsize);
         Com_Strcat("                height = %f\n", mapinst->bboxsize);
-        Com_Strcat("                components[%i] =\n", cCount);
-        Com_Strcat("                {\n");
-        Com_Strcat("                    BeginObject = \"ComponentMesh\"\n");
-        Com_Strcat("                        { \"modelfile\" : \"models/mdl%03d/mdl%03d.kmesh\",\n",
+        Com_Strcat("                mesh = \"models/mdl%03d/mdl%03d.kmesh\"\n",
             mapinst->model, mapinst->model);
-        Com_Strcat("                        \"box_min_x\" : %f,\n", -mapinst->bboxsize);
-        Com_Strcat("                        \"box_min_y\" : %f,\n", -mapinst->bboxsize);
-        Com_Strcat("                        \"box_min_z\" : %f,\n", -mapinst->bboxsize);
-        Com_Strcat("                        \"box_max_x\" : %f,\n", mapinst->bboxsize);
-        Com_Strcat("                        \"box_max_y\" : %f,\n", mapinst->bboxsize);
-        Com_Strcat("                        \"box_max_z\" : %f }\n", mapinst->bboxsize);
-        Com_Strcat("                    EndObject\n");
+        Com_Strcat("                bounds = { %f %f %f %f %f %f }\n",
+            -mapinst->bboxsize, -mapinst->bboxsize, -mapinst->bboxsize,
+            mapinst->bboxsize, mapinst->bboxsize, mapinst->bboxsize);
 
         if(IsAPickup(mapinst->model))
         {
-            Com_Strcat("                    BeginObject = \"ComponentTouchBox\"\n");
-            Com_Strcat("                        { \"active\" : true }\n");
-            Com_Strcat("                    EndObject\n");
+            Com_Strcat("                bTouch = 1\n");
+            Com_Strcat("                components[1] =\n");
+            Com_Strcat("                {\n");
             Com_Strcat("                    BeginObject = \"ComponentPickup\"\n");
             Com_Strcat("                        { \"active\" : true }\n");
             Com_Strcat("                    EndObject\n");
+            Com_Strcat("                }\n");
         }
-
-        Com_Strcat("                }\n");
 
         Com_Strcat("            }\n");
     }
@@ -800,7 +781,8 @@ static void ProcessTextureOverrides(short model, int textureid)
 
     scount = section_count[model];
 
-    Com_Strcat("                        \"textureSwaps\" : [\n");
+    Com_Strcat("                textureSwaps[%i] =\n", scount);
+    Com_Strcat("                {\n");
 
     for(i = 0; i < scount; i++)
     {
@@ -810,25 +792,25 @@ static void ProcessTextureOverrides(short model, int textureid)
 
         if(textureid >= tcount)
         {
-            Com_Strcat("                            \"-\"");
+            Com_Strcat("                    \"-\"");
         }
         else
         {
-            Com_Strcat("                            \"textures/tex%04d_%02d.tga\"",
+            Com_Strcat("                    \"textures/tex%04d_%02d.tga\"",
                 section_textures[model][i], textureid);
         }
 
         //Com_Strcat(" }");
 
-        if(i != (scount-1))
+        /*if(i != (scount-1))
         {
             Com_Strcat(",");
-        }
+        }*/
 
         Com_Strcat("\n");
     }
 
-    Com_Strcat("                        ],\n");
+    Com_Strcat("                }\n");
 }
 
 //
@@ -863,20 +845,18 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
         rotvec[2] = (float)mapinst->angle[2] * ANGLE_INSTANCE;
         rotvec[3] = (float)mapinst->angle[3] * ANGLE_INSTANCE;
 
-        Com_Strcat("                components[1] =\n");
-        Com_Strcat("                {\n");
-        Com_Strcat("                    BeginObject = \"ComponentMesh\"\n");
-        Com_Strcat("                        { \"modelfile\" : \"models/mdl%03d/mdl%03d.kmesh\",\n",
+        Com_Strcat("                mesh = \"models/mdl%03d/mdl%03d.kmesh\"\n",
             mapinst->model, mapinst->model);
+        Com_Strcat("                bounds = { %f %f %f %f %f %f }\n",
+            CoerceFloat(mapinst->bbox[0]),
+            CoerceFloat(mapinst->bbox[1]),
+            CoerceFloat(mapinst->bbox[2]),
+            CoerceFloat(mapinst->bbox[3]),
+            CoerceFloat(mapinst->bbox[4]),
+            CoerceFloat(mapinst->bbox[5]));
+
         ProcessTextureOverrides(mapinst->model, GetAttribute(mapinst->attribute)->texture);
-        Com_Strcat("                        \"box_min_x\" : %f,\n", CoerceFloat(mapinst->bbox[0]));
-        Com_Strcat("                        \"box_min_y\" : %f,\n", CoerceFloat(mapinst->bbox[1]));
-        Com_Strcat("                        \"box_min_z\" : %f,\n", CoerceFloat(mapinst->bbox[2]));
-        Com_Strcat("                        \"box_max_x\" : %f,\n", CoerceFloat(mapinst->bbox[3]));
-        Com_Strcat("                        \"box_max_y\" : %f,\n", CoerceFloat(mapinst->bbox[4]));
-        Com_Strcat("                        \"box_max_z\" : %f }\n", CoerceFloat(mapinst->bbox[5]));
-        Com_Strcat("                    EndObject\n");
-        Com_Strcat("                }\n");
+
         Com_Strcat("                bCollision = %i\n",
             GetAttribute(mapinst->attribute)->blockflags & 1);
         Com_Strcat("                bStatic = 1\n");

@@ -47,23 +47,33 @@ JS_PROP_FUNC_GET(NServer)
     switch(JSVAL_TO_INT(id))
     {
     case NS_TOTALCLIENTS:
-        return JS_NewNumberValue(cx, server.maxclients, vp);
+        //return JS_NewNumberValue(cx, server.maxclients, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(server.maxclients));
+        return JS_TRUE;
 
     case NS_TIME:
-        return JS_NewNumberValue(cx, server.time, vp);
+        //return JS_NewNumberValue(cx, server.time, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(server.time));
+        return JS_TRUE;
 
     case NS_RUNTIME:
-        return JS_NewNumberValue(cx, server.runtime, vp);
+        //return JS_NewNumberValue(cx, server.runtime, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(server.runtime));
+        return JS_TRUE;
 
     case NS_TICS:
-        return JS_NewNumberValue(cx, server.tics, vp);
+        //return JS_NewNumberValue(cx, server.tics, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(server.tics));
+        return JS_TRUE;
 
     case NS_HOST:
-        JS_NEWOBJECT_SETPRIVATE(server.host, NULL);
+        JS_NEWOBJECTPOOL(server.host, Host);
+        //JS_NEWOBJECT_SETPRIVATE(server.host, NULL);
         return JS_TRUE;
 
     case NS_NETEVENT:
-        JS_NEWOBJECT_SETPRIVATE(&server.netEvent, &NetEvent_class);
+        JS_NEWOBJECTPOOL(&server.netEvent, NetEvent);
+        //JS_NEWOBJECT_SETPRIVATE(&server.netEvent, &NetEvent_class);
         return JS_TRUE;
 
     default:
@@ -142,7 +152,9 @@ JS_FASTNATIVE_BEGIN(NServer, getClientID)
     JS_GETOBJECT(obj, v, 0);
     JS_GETNETPEER(obj);
 
-    return JS_NewNumberValue(cx, (jsdouble)SV_GetPlayerID(peer), vp);
+    //return JS_NewNumberValue(cx, (jsdouble)SV_GetPlayerID(peer), vp);
+    JS_SET_RVAL(cx, vp, INT_TO_JSVAL(SV_GetPlayerID(peer)));
+    return JS_TRUE;
 }
 
 JS_FASTNATIVE_BEGIN(NServer, spawnPlayer)

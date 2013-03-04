@@ -75,13 +75,13 @@ static JSBool plane_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *v
         return JS_TRUE;
 
     case PL_HEIGHT1:
-        return JS_NewNumberValue(cx, plane->height[0], vp);
+        return JS_NewDoubleValue(cx, plane->height[0], vp);
 
     case PL_HEIGHT2:
-        return JS_NewNumberValue(cx, plane->height[1], vp);
+        return JS_NewDoubleValue(cx, plane->height[1], vp);
 
     case PL_HEIGHT3:
-        return JS_NewNumberValue(cx, plane->height[2], vp);
+        return JS_NewDoubleValue(cx, plane->height[2], vp);
 
     case PL_NORMAL:
         JS_NEWVECTOR2(plane->normal);
@@ -94,7 +94,8 @@ static JSBool plane_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *v
         }
         else
         {
-            JS_INSTPLANE(vp, plane->link[0]);
+            JS_NEWOBJECTPOOL(plane->link[0], Plane);
+            //JS_INSTPLANE(vp, plane->link[0]);
         }
         return JS_TRUE;
 
@@ -105,7 +106,8 @@ static JSBool plane_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *v
         }
         else
         {
-            JS_INSTPLANE(vp, plane->link[1]);
+            JS_NEWOBJECTPOOL(plane->link[1], Plane);
+            //JS_INSTPLANE(vp, plane->link[1]);
         }
         return JS_TRUE;
 
@@ -116,12 +118,15 @@ static JSBool plane_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *v
         }
         else
         {
-            JS_INSTPLANE(vp, plane->link[2]);
+            JS_NEWOBJECTPOOL(plane->link[2], Plane);
+            //JS_INSTPLANE(vp, plane->link[2]);
         }
         return JS_TRUE;
 
     case PL_FLAGS:
-        return JS_NewNumberValue(cx, plane->flags, vp);
+        //return JS_NewNumberValue(cx, plane->flags, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(plane->flags));
+        return JS_TRUE;
 
     case PL_AREA:
         {

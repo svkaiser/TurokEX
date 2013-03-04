@@ -41,6 +41,9 @@ CVAR(r_fog, 1);
 
 static kbool showcollision = false;
 static kbool showbbox = false;
+static kbool showgrid = false;
+static float grid_high_y = 0;
+static float grid_low_y = 0;
 
 static float wpn_thudoffset = 0;
 static mtx_t mtx_rotation;
@@ -445,7 +448,7 @@ void R_DrawStatics(void)
 {
     unsigned int i;
 
-    if(showcollision || !gLevel.loaded)
+    if(!gLevel.loaded)
         return;
 
     for(i = 0; i < gLevel.numGridBounds; i++)
@@ -453,15 +456,38 @@ void R_DrawStatics(void)
         gridBounds_t *gb = &gLevel.gridBounds[i];
         unsigned int j;
 
+        if(showgrid)
+        {
+            bbox_t box;
+
+            box.min[0] = gb->minx;
+            box.min[1] = grid_low_y;
+            box.min[2] = gb->minz;
+            box.max[0] = gb->maxx;
+            box.max[1] = grid_high_y;
+            box.max[2] = gb->maxz;
+
+            R_DrawBoundingBox(box, 224, 244, 224);
+        }
+
         for(j = 0; j < gb->numStatics; j++)
         {
             gActor_t *actor = &gb->statics[j];
 
-            if(actor->bHidden)
+            if(actor->bHidden || showcollision)
                 continue;
 
             if(!R_FrustumTestBox(actor->bbox))
                 continue;
+
+            if(showgrid)
+            {
+                if(actor->bbox.max[1] > grid_high_y)
+                    grid_high_y = actor->bbox.max[1];
+
+                if(actor->bbox.min[1] < grid_low_y)
+                    grid_low_y = actor->bbox.min[1];
+            }
 
             dglPushMatrix();
             dglMultMatrixf(actor->matrix);
@@ -470,6 +496,14 @@ void R_DrawStatics(void)
                 actor->textureSwaps, actor->variant, NULL);
 
             dglPopMatrix();
+
+            if(showbbox)
+            {
+                if(actor->bTouch)
+                    R_DrawBoundingBox(actor->bbox, 0, 255, 0);
+                else
+                    R_DrawBoundingBox(actor->bbox, 255, 255, 0);
+            }
         }
     }
 }
@@ -719,6 +753,20 @@ static void FCmd_ShowBoundingBox(void)
 }
 
 //
+// FCmd_ShowGrid
+//
+
+static void FCmd_ShowGrid(void)
+{
+    if(Cmd_GetArgc() < 1)
+    {
+        return;
+    }
+
+    showgrid ^= 1;
+}
+
+//
 // R_Shutdown
 //
 
@@ -735,6 +783,7 @@ void R_Init(void)
 {
     Cmd_AddCommand("showcollision", FCmd_ShowCollision);
     Cmd_AddCommand("showbbox", FCmd_ShowBoundingBox);
+    Cmd_AddCommand("showgrid", FCmd_ShowGrid);
 
     Cvar_Register(&r_fog);
 

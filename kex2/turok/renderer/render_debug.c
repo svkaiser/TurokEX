@@ -152,7 +152,7 @@ void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b)
     if(!R_FrustumTestBox(bbox))
         return;
 
-    dglEnable(GL_DEPTH_TEST);
+    //dglEnable(GL_DEPTH_TEST);
     GL_SetState(GLSTATE_TEXTURE0, false);
     GL_SetState(GLSTATE_CULL, false);
     GL_SetState(GLSTATE_BLEND, true);
@@ -195,6 +195,6 @@ void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b)
     GL_SetState(GLSTATE_CULL, true);
     GL_SetState(GLSTATE_BLEND, false);
 
-    dglDisable(GL_DEPTH_TEST);
+    //dglDisable(GL_DEPTH_TEST);
 }
 

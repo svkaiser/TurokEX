@@ -642,7 +642,7 @@ JS_FASTNATIVE_BEGIN(Font, stringWidth)
     width = Font_StringWidth(font, bytes, (float)scale, fixedLen);
     JS_free(cx, bytes);
 
-    return JS_NewNumberValue(cx, width, vp);
+    return JS_NewDoubleValue(cx, width, vp);
 }
 
 JS_BEGINCLASS(Font)

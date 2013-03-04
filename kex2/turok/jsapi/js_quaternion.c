@@ -48,13 +48,13 @@ JS_PROP_FUNC_GET(Quaternion)
         switch(JSVAL_TO_INT(id))
         {
         case VEC4_X:
-            return JS_NewNumberValue(cx, (*vector)[0], vp);
+            return JS_NewDoubleValue(cx, (*vector)[0], vp);
         case VEC4_Y:
-            return JS_NewNumberValue(cx, (*vector)[1], vp);
+            return JS_NewDoubleValue(cx, (*vector)[1], vp);
         case VEC4_Z:
-            return JS_NewNumberValue(cx, (*vector)[2], vp);
+            return JS_NewDoubleValue(cx, (*vector)[2], vp);
         case VEC4_W:
-            return JS_NewNumberValue(cx, (*vector)[2], vp);
+            return JS_NewDoubleValue(cx, (*vector)[2], vp);
         }
     }
 

@@ -148,10 +148,12 @@ JS_PROP_FUNC_GET(AnimState)
     switch(JSVAL_TO_INT(id))
     {
     case ANS_FLAGS:
-        return JS_NewNumberValue(cx, animstate->flags, vp);
+        //return JS_NewNumberValue(cx, animstate->flags, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(animstate->flags));
+        return JS_TRUE;
 
     case ANS_TIME:
-        return JS_NewNumberValue(cx, animstate->time, vp);
+        return JS_NewDoubleValue(cx, animstate->time, vp);
 
     default:
         return JS_TRUE;

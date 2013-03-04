@@ -45,6 +45,13 @@ JSObject    *js_gobject = NULL;
 jsObjectPool_t objPoolVector;
 jsObjectPool_t objPoolQuaternion;
 jsObjectPool_t objPoolPacket;
+jsObjectPool_t objPoolAnimState;
+jsObjectPool_t objPoolHost;
+jsObjectPool_t objPoolPeer;
+jsObjectPool_t objPoolNetEvent;
+jsObjectPool_t objPoolGameActor;
+jsObjectPool_t objPoolPlane;
+jsObjectPool_t objPoolInputEvent;
 
 //
 // J_GlobalEnumerate
@@ -777,13 +784,36 @@ void J_CompileAndRunScript(const char *name)
 // J_GarbageCollect
 //
 
+CVAR_EXTERNAL(cl_maxfps);
+CVAR_EXTERNAL(developer);
 void J_GarbageCollect(void)
 {
+    int ms;
+
     JPool_ReleaseObjects(&objPoolVector);
     JPool_ReleaseObjects(&objPoolQuaternion);
+    JPool_ReleaseObjects(&objPoolPlane);
     JPool_ReleaseObjects(&objPoolPacket);
+    JPool_ReleaseObjects(&objPoolAnimState);
+    JPool_ReleaseObjects(&objPoolHost);
+    JPool_ReleaseObjects(&objPoolPeer);
+    JPool_ReleaseObjects(&objPoolNetEvent);
+    JPool_ReleaseObjects(&objPoolGameActor);
+    JPool_ReleaseObjects(&objPoolInputEvent);
 
-    JS_MaybeGC(js_context);
+    if(developer.value)
+        ms = Sys_GetMilliseconds();
+
+    JS_GC(js_context);
+
+    if(developer.value)
+    {
+        ms = Sys_GetMilliseconds() - ms;
+        if(ms > (int)(((1.0f / cl_maxfps.value) * 1000) / 4))
+        {
+            Com_DPrintf("GC hitch: %ims\n", ms);
+        }
+    }
 }
 
 //
@@ -1062,13 +1092,21 @@ void J_Init(void)
     JS_INITCLASS_NOCONSTRUCTOR(Plane, 0);
     JS_INITCLASS_NOCONSTRUCTOR(GameActor, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Component, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(InputEvent, 0);
 
     if(!(js_rootscript = J_LoadScript("scripts/main.js")))
         Com_Error("J_Init: Unable to load main.js");
 
     JPool_Initialize(&objPoolVector, 128, &Vector_class);
     JPool_Initialize(&objPoolQuaternion, 128, &Quaternion_class);
+    JPool_Initialize(&objPoolPlane, 64, &Plane_class);
     JPool_Initialize(&objPoolPacket, 64, &Packet_class);
+    JPool_Initialize(&objPoolAnimState, 32, &AnimState_class);
+    JPool_Initialize(&objPoolHost, 32, &Host_class);
+    JPool_Initialize(&objPoolPeer, 32, &Peer_class);
+    JPool_Initialize(&objPoolNetEvent, 32, &NetEvent_class);
+    JPool_Initialize(&objPoolGameActor, 32, &GameActor_class);
+    JPool_Initialize(&objPoolInputEvent, 8, &InputEvent_class);
 
     J_ExecScriptObj(js_rootscript);
 

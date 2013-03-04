@@ -98,12 +98,16 @@ JS_FASTNATIVE_BEGIN(Sys, error)
 
 JS_FASTNATIVE_BEGIN(Sys, ms)
 {
-    return JS_NewNumberValue(cx, Sys_GetMilliseconds(), vp);
+    //return JS_NewNumberValue(cx, Sys_GetMilliseconds(), vp);
+    JS_SET_RVAL(cx, vp, INT_TO_JSVAL(Sys_GetMilliseconds()));
+    return JS_TRUE;
 }
 
 JS_FASTNATIVE_BEGIN(Sys, time)
 {
-    return JS_NewNumberValue(cx, client.time, vp);
+    //return JS_NewNumberValue(cx, client.time, vp);
+    JS_SET_RVAL(cx, vp, INT_TO_JSVAL(client.time));
+    return JS_TRUE;
 }
 
 JS_FASTNATIVE_BEGIN(Sys, deltatime)
@@ -118,7 +122,9 @@ JS_FASTNATIVE_BEGIN(Sys, fixedTime)
 
 JS_FASTNATIVE_BEGIN(Sys, ticks)
 {
-    return JS_NewNumberValue(cx, client.tics, vp);
+    //return JS_NewNumberValue(cx, client.tics, vp);
+    JS_SET_RVAL(cx, vp, INT_TO_JSVAL(client.tics));
+    return JS_TRUE;
 }
 
 JS_FASTNATIVE_BEGIN(Sys, rand)
@@ -128,23 +134,27 @@ JS_FASTNATIVE_BEGIN(Sys, rand)
         JS_CHECKARGS(1);
         JS_CHECKINTEGER(0);
 
-        return JS_NewNumberValue(cx,
-            (jsdouble)Random_Max(JSVAL_TO_INT(JS_ARG(0))), vp);
+        //return JS_NewNumberValue(cx,
+            //(jsdouble)Random_Max(JSVAL_TO_INT(JS_ARG(0))), vp);
+
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(Random_Max(JSVAL_TO_INT(JS_ARG(0)))));
+        return JS_TRUE;
     }
 
-    return JS_NewNumberValue(cx, (jsdouble)Random_Int(), vp);
+    //return JS_NewNumberValue(cx, (jsdouble)Random_Int(), vp);
+    JS_SET_RVAL(cx, vp, INT_TO_JSVAL(Random_Int()));
+    return JS_TRUE;
 }
 
 JS_FASTNATIVE_BEGIN(Sys, fRand)
 {
-    return JS_NewNumberValue(cx, (jsdouble)Random_Float(), vp);
+    return JS_NewDoubleValue(cx, (jsdouble)Random_Float(), vp);
 }
 
 JS_FASTNATIVE_BEGIN(Sys, cRand)
 {
-    return JS_NewNumberValue(cx, (jsdouble)Random_CFloat(), vp);
+    return JS_NewDoubleValue(cx, (jsdouble)Random_CFloat(), vp);
 }
-
 
 JS_FASTNATIVE_BEGIN(Sys, getCvar)
 {
@@ -161,7 +171,7 @@ JS_FASTNATIVE_BEGIN(Sys, getCvar)
     if(!cvar)
         return JS_FALSE;
 
-    return JS_NewNumberValue(cx, cvar->value, vp);
+    return JS_NewDoubleValue(cx, cvar->value, vp);
 }
 
 JS_FASTNATIVE_BEGIN(Sys, callCmd)

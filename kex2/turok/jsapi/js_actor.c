@@ -128,19 +128,21 @@ JS_PROP_FUNC_GET(GameActor)
         return JS_TRUE;
 
     case 11:
-        return JS_NewNumberValue(cx, actor->plane, vp);
+        //return JS_NewNumberValue(cx, actor->plane, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(actor->plane));
+        return JS_TRUE;
 
     case 12:
-        return JS_NewNumberValue(cx, actor->radius, vp);
+        return JS_NewDoubleValue(cx, actor->radius, vp);
 
     case 13:
-        return JS_NewNumberValue(cx, actor->height, vp);
+        return JS_NewDoubleValue(cx, actor->height, vp);
 
     case 14:
-        return JS_NewNumberValue(cx, actor->centerHeight, vp);
+        return JS_NewDoubleValue(cx, actor->centerHeight, vp);
 
     case 15:
-        return JS_NewNumberValue(cx, actor->viewHeight, vp);
+        return JS_NewDoubleValue(cx, actor->viewHeight, vp);
 
     case 16:
         return JS_TRUE;

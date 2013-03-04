@@ -143,7 +143,9 @@ JS_FASTNATIVE_BEGIN(NInput, getActionID)
     action = Key_FindAction(bytes);
     JS_free(cx, bytes);
 
-    return JS_NewNumberValue(cx, action, vp);
+    //return JS_NewNumberValue(cx, action, vp);
+    JS_SET_RVAL(cx, vp, INT_TO_JSVAL(action));
+    return JS_TRUE;
 }
 
 JS_BEGINCLASS(NInput)
@@ -319,5 +321,110 @@ JS_BEGINFUNCS(NInput)
     JS_FASTNATIVE(NInput,   keyPress,       2),
     JS_FASTNATIVE(NInput,   getActions,     0),
     JS_FASTNATIVE(NInput,   getActionID,    1),
+    JS_FS_END
+};
+
+JS_CLASSOBJECT(InputEvent);
+
+JS_PROP_FUNC_GET(InputEvent)
+{
+    event_t *ev;
+
+    if(!(ev = (event_t*)JS_GetInstancePrivate(cx, obj, &InputEvent_class, NULL)))
+        return JS_TRUE;
+
+    switch(JSVAL_TO_INT(id))
+    {
+    case 0:
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(ev->type));
+        return JS_TRUE;
+    case 1:
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(ev->data1));
+        return JS_TRUE;
+    case 2:
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(ev->data2));
+        return JS_TRUE;
+    case 3:
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(ev->data3));
+        return JS_TRUE;
+    case 4:
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(ev->data4));
+        return JS_TRUE;
+    default:
+        return JS_FALSE;
+    }
+
+    return JS_TRUE;
+}
+
+JS_PROP_FUNC_SET(InputEvent)
+{
+    event_t *ev;
+    int val;
+
+    if(!(ev = (event_t*)JS_GetInstancePrivate(cx, obj, &InputEvent_class, NULL)))
+        return JS_TRUE;
+
+    val = JSVAL_TO_INT(*vp);
+
+    switch(JSVAL_TO_INT(id))
+    {
+    case 0:
+        ev->type = val;
+        return JS_TRUE;
+    case 1:
+        ev->data1 = val;
+        return JS_TRUE;
+    case 2:
+        ev->data2 = val;
+        return JS_TRUE;
+    case 3:
+        ev->data3 = val;
+        return JS_TRUE;
+    case 4:
+        ev->data4 = val;
+        return JS_TRUE;
+    default:
+        return JS_FALSE;
+    }
+
+    return JS_TRUE;
+}
+
+JS_BEGINCLASS(InputEvent)
+    0,                                          // flags
+    JS_PropertyStub,                            // addProperty
+    JS_PropertyStub,                            // delProperty
+    InputEvent_getProperty,                     // getProperty
+    InputEvent_setProperty,                     // setProperty
+    JS_EnumerateStub,                           // enumerate
+    JS_ResolveStub,                             // resolve
+    JS_ConvertStub,                             // convert
+    JS_FinalizeStub,                            // finalize
+    JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
+JS_ENDCLASS();
+
+JS_BEGINPROPS(InputEvent)
+{
+    { "type",   0,  JSPROP_ENUMERATE,   NULL, NULL },
+    { "data1",  1,  JSPROP_ENUMERATE,   NULL, NULL },
+    { "data2",  2,  JSPROP_ENUMERATE,   NULL, NULL },
+    { "data3",  3,  JSPROP_ENUMERATE,   NULL, NULL },
+    { "data4",  4,  JSPROP_ENUMERATE,   NULL, NULL },
+    { NULL, 0, 0, NULL, NULL }
+};
+
+JS_BEGINCONST(InputEvent)
+{
+    { 0, 0, 0, { 0, 0, 0 } }
+};
+
+JS_BEGINFUNCS(InputEvent)
+{
+    JS_FS_END
+};
+
+JS_BEGINSTATICFUNCS(InputEvent)
+{
     JS_FS_END
 };

@@ -47,7 +47,7 @@ static JSBool angle_clamp(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
     an = (float)x;
     Ang_Clamp(&an);
 
-    return JS_NewNumberValue(cx, an, rval);
+    return JS_NewDoubleValue(cx, an, rval);
 }
 
 //
@@ -63,7 +63,7 @@ static JSBool angle_invertClamp(JSContext *cx, JSObject *obj, uintN argc, jsval 
 
     JS_GETNUMBER(x, argv, 0);
 
-    return JS_NewNumberValue(cx, Ang_ClampInvert((float)x), rval);
+    return JS_NewDoubleValue(cx, Ang_ClampInvert((float)x), rval);
 }
 
 //
@@ -81,7 +81,7 @@ static JSBool angle_invertClampSum(JSContext *cx, JSObject *obj, uintN argc, jsv
     JS_GETNUMBER(x1, argv, 0);
     JS_GETNUMBER(x2, argv, 1);
 
-    return JS_NewNumberValue(cx, Ang_ClampInvertSums((float)x1, (float)x2), rval);
+    return JS_NewDoubleValue(cx, Ang_ClampInvertSums((float)x1, (float)x2), rval);
 }
 
 //
@@ -99,7 +99,7 @@ static JSBool angle_diff(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
     JS_GETNUMBER(x1, argv, 0);
     JS_GETNUMBER(x2, argv, 1);
 
-    return JS_NewNumberValue(cx, Ang_Diff((float)x1, (float)x2), rval);
+    return JS_NewDoubleValue(cx, Ang_Diff((float)x1, (float)x2), rval);
 }
 
 //
@@ -115,7 +115,7 @@ static JSBool angle_radToDeg(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 
     JS_GETNUMBER(x, argv, 0);
 
-    return JS_NewNumberValue(cx, RAD2DEG((float)x), rval);
+    return JS_NewDoubleValue(cx, RAD2DEG((float)x), rval);
 }
 
 //
@@ -131,7 +131,7 @@ static JSBool angle_degToRad(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 
     JS_GETNUMBER(x, argv, 0);
 
-    return JS_NewNumberValue(cx, DEG2RAD((float)x), rval);
+    return JS_NewDoubleValue(cx, DEG2RAD((float)x), rval);
 }
 
 //
