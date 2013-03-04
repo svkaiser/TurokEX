@@ -804,7 +804,7 @@ void J_GarbageCollect(void)
     if(developer.value)
         ms = Sys_GetMilliseconds();
 
-    JS_GC(js_context);
+    JS_MaybeGC(js_context);
 
     if(developer.value)
     {
