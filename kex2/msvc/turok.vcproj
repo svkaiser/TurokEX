@@ -151,7 +151,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\SDL\include\&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\turok\common\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\client\&quot;;&quot;$(OutDir)\turok\server\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\menu\&quot;;&quot;$(OutDir)\turok\game\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDIr)\turok\prediction\&quot;;&quot;$(OutDIr)\turok\jsapi\&quot;"
+				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\SDL\include\&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\turok\common\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\client\&quot;;&quot;$(OutDir)\turok\server\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\menu\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDIr)\turok\prediction\&quot;;&quot;$(OutDIr)\turok\jsapi\&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -401,22 +401,22 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="game"
+				Name="framework"
 				>
 				<File
-					RelativePath="..\turok\game\game_actor.c"
+					RelativePath="..\turok\framework\actor.c"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\game\game_level.c"
+					RelativePath="..\turok\framework\game.c"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\game\game_main.c"
+					RelativePath="..\turok\framework\level.c"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\game\game_phys.c"
+					RelativePath="..\turok\framework\physics.c"
 					>
 				</File>
 			</Filter>
@@ -654,18 +654,18 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="game"
+				Name="framework"
 				>
 				<File
-					RelativePath="..\turok\game\actor.h"
+					RelativePath="..\turok\framework\actor.h"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\game\game.h"
+					RelativePath="..\turok\framework\game.h"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\game\level.h"
+					RelativePath="..\turok\framework\level.h"
 					>
 				</File>
 			</Filter>
