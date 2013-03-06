@@ -125,5 +125,6 @@ void V_SetupScreen(void);
 // CONSOLE
 //
 void Con_Printf(rcolor clr, const char *s);
+char *Con_GetLastBuffer(void);
 
 #endif

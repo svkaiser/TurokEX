@@ -70,7 +70,7 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
         x = x - ld * dx;
         z = z - ld * dz;
 
-        r = radius * radius;
+        r = radius * radius + trace->width * trace->width;
         len = r - (x * x + z * z);
 
         // is the ray inside the radius?
@@ -142,7 +142,7 @@ static kbool Trace_Objects(trace_t *trace)
                 if(actor->bTouch)
                 {
                     if(Vec_Length3(trace->end, actor->origin) < trace->width)
-                        Actor_OnTouchEvent(actor);
+                        Actor_OnTouchEvent(actor, trace->actor);
                 }
 
                 if(actor->bCollision)
@@ -462,7 +462,7 @@ void Trace_TraversePlanes(plane_t *plane, trace_t *trace)
 //
 
 trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
-              float width, float offset, float yaw)
+              gActor_t *actor, float yaw)
 {
     trace_t trace;
 
@@ -474,9 +474,10 @@ trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
     trace.hitpl     = NULL;
     trace.frac      = 0;
     trace.type      = TRT_NOHIT;
-    trace.width     = width;
-    trace.offset    = offset;
+    trace.width     = actor ? actor->radius : 71.68f;
+    trace.offset    = actor ? actor->centerHeight : 20.48f;
     trace.yaw       = yaw;
+    trace.actor     = actor;
 
     if(!Trace_Objects(&trace))
     {

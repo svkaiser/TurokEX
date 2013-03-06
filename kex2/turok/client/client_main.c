@@ -343,7 +343,12 @@ static void CL_DrawDebug(void)
             client.st.tics - (client.st.time/100));
         Draw_Text(32, 160, COLOR_GREEN, 1, "latency: %i",
             client.time - client.latency[client.ns.acks & (NETBACKUPS-1)]);
+        Draw_Text(32, 176, COLOR_WHITE, 1, Con_GetLastBuffer());
+        return;
     }
+
+    if(developer.value)
+        Draw_Text(32, 32, COLOR_WHITE, 1, Con_GetLastBuffer());
 }
 
 //

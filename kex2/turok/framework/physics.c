@@ -173,7 +173,7 @@ void G_ApplyFriction(vec3_t velocity, float friction, kbool effectY)
 //
 
 void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
-                    float width, float offset, float yaw, trace_t *t)
+                    gActor_t *actor, float yaw, trace_t *t)
 {
     trace_t trace;
     vec3_t start;
@@ -200,7 +200,7 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
         Vec_Add(end, start, vel);
 
         // get trace results
-        trace = Trace(start, end, *plane, width, offset, yaw);
+        trace = Trace(start, end, *plane, actor, yaw);
 
         if(t) *t = trace;
         *plane = trace.pl;

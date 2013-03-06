@@ -122,7 +122,7 @@ void G_CheckObjectStep(vec3_t origin, vec3_t velocity, plane_t *plane);
 int G_CheckWaterLevel(vec3_t origin, float centeroffs, plane_t *plane);
 void G_ApplyFriction(vec3_t velocity, float friction, kbool effectY);
 void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
-                    float width, float offset, float yaw, trace_t *t);
+                    gActor_t *actor, float yaw, trace_t *t);
 
 void G_Shutdown(void);
 void G_Ticker(void);

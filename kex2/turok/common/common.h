@@ -251,10 +251,11 @@ typedef struct
     plane_t     *hitpl;
     vec3_t      normal;
     float       frac;
+    gActor_t    *actor;
     tracetype_e type;
 } trace_t;
 
 trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
-              float width, float offset, float yaw);
+              gActor_t *actor, float yaw);
 
 #endif

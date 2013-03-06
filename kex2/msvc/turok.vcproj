@@ -408,6 +408,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\framework\controller.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\game.c"
 					>
 				</File>

@@ -182,7 +182,7 @@ static void Pred_UpdateMoveType(move_t *move)
 
 static void Pred_UpdatePosition(move_t *move)
 {
-    vec3_t position;
+    /*vec3_t position;
     float dist;
     float friction;
     trace_t trace;
@@ -348,7 +348,7 @@ static void Pred_UpdatePosition(move_t *move)
 
     // update move to new position
     Vec_Copy3(move->origin, position);
-    G_CheckObjectStep(move->origin, move->velocity, move->plane);
+    G_CheckObjectStep(move->origin, move->velocity, move->plane);*/
 }
 
 //
@@ -357,7 +357,7 @@ static void Pred_UpdatePosition(move_t *move)
 
 void Pred_ProcessMove(move_t *move, float friction, float gravity)
 {
-    vec3_t position;
+    /*vec3_t position;
     float dist;
     trace_t trace;
 
@@ -409,7 +409,7 @@ void Pred_ProcessMove(move_t *move, float friction, float gravity)
     move->velocity[1] -= gravity;
 
     // update move to new position
-    Vec_Copy3(move->origin, position);
+    Vec_Copy3(move->origin, position);*/
 }
 //
 // Pred_SetDirection

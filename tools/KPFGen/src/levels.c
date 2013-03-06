@@ -548,7 +548,7 @@ static void ProcessActors(byte *data)
         {
             Com_Strcat("        components[1] =\n");
             Com_Strcat("        {\n");
-            Com_Strcat("            BeginObject = \"ComponentPlayerStart\"\n");
+            Com_Strcat("            BeginObject = \"ComponentTurokPlayer\"\n");
             Com_Strcat("                { \"playerID\" : 0 }\n");
             Com_Strcat("            EndObject\n");
             Com_Strcat("        }\n");
@@ -729,8 +729,27 @@ static void ProcessInstances(byte *data)
             Com_Strcat("                bTouch = 1\n");
             Com_Strcat("                components[1] =\n");
             Com_Strcat("                {\n");
-            Com_Strcat("                    BeginObject = \"ComponentPickup\"\n");
-            Com_Strcat("                        { \"active\" : true }\n");
+            switch(GetObjectType(mapinst->model))
+            {
+            case 438:
+                Com_Strcat("                    BeginObject = \"ComponentPickupLifeForce\"\n");
+                Com_Strcat("                    {\n");
+                Com_Strcat("                        \"active\" : true,\n");
+                Com_Strcat("                        \"amount\" : 1\n");
+                Com_Strcat("                    }\n");
+                break;
+            case 439:
+                Com_Strcat("                    BeginObject = \"ComponentPickupLifeForce\"\n");
+                Com_Strcat("                    {\n");
+                Com_Strcat("                        \"active\" : true,\n");
+                Com_Strcat("                        \"amount\" : 10\n");
+                Com_Strcat("                    }\n");
+                break;
+            default:
+                Com_Strcat("                    BeginObject = \"ComponentPickup\"\n");
+                Com_Strcat("                        { \"active\" : true }\n");
+                break;
+            }
             Com_Strcat("                    EndObject\n");
             Com_Strcat("                }\n");
         }

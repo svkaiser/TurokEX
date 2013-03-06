@@ -54,9 +54,9 @@ typedef struct gActor_s
 
 void Actor_Setup(gActor_t *actor);
 void Actor_UpdateTransform(gActor_t *actor);
-void Actor_CallEvent(gActor_t *actor, const char *function);
+void Actor_CallEvent(gActor_t *actor, const char *function, gActor_t *instigator);
 void Actor_ComponentFunc(const char *function);
 kbool Actor_HasComponent(gActor_t *actor, const char *component);
-void Actor_OnTouchEvent(gActor_t *actor);
+void Actor_OnTouchEvent(gActor_t *actor, gActor_t *instigator);
 
 #endif

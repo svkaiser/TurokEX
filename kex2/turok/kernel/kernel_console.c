@@ -28,6 +28,19 @@
 #include "kernel.h"
 #include "js.h"
 
+CVAR_EXTERNAL(developer);
+
+char con_lastOutputBuffer[512];
+
+//
+// Con_GetLastBuffer
+//
+
+char *Con_GetLastBuffer(void)
+{
+    return con_lastOutputBuffer;
+}
+
 //
 // Con_Printf
 //
@@ -35,6 +48,12 @@
 void Con_Printf(rcolor clr, const char *s)
 {
     char *src;
+
+    if(developer.value)
+    {
+        memset(con_lastOutputBuffer, 0, 512);
+        strcpy(con_lastOutputBuffer, kva("%f : %s", (Sys_GetMilliseconds() / 1000.0f), s));
+    }
     
     if(clr != COLOR_WHITE)
     {

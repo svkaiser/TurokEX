@@ -37,13 +37,13 @@ JS_FASTNATIVE_BEGIN(Physics, move)
     vec3_t origin;
     vec3_t velocity;
     plane_t *plane;
-    jsdouble center_y;
+    gActor_t *actor;
     jsdouble yaw;
-    jsdouble width;
     JSObject *objOrig;
     JSObject *objVel;
+    JSObject *objActor;
 
-    JS_CHECKARGS(6);
+    JS_CHECKARGS(5);
 
     plane = NULL;
 
@@ -52,9 +52,10 @@ JS_FASTNATIVE_BEGIN(Physics, move)
     JS_GETVECTOR2(objOrig, origin);
     JS_GETVECTOR2(objVel, velocity);
     JS_GETOBJECT(objPlane, v, 2);
-    JS_GETNUMBER(center_y, v, 3);
+    //JS_GETNUMBER(center_y, v, 3);
+    JS_GETOBJECT(objActor, v, 3);
     JS_GETNUMBER(yaw, v, 4);
-    JS_GETNUMBER(width, v, 5);
+    //JS_GETNUMBER(width, v, 5);
 
     if(objPlane)
         JS_GET_PRIVATE_DATA(objPlane, &Plane_class, plane_t, plane);
@@ -65,8 +66,11 @@ JS_FASTNATIVE_BEGIN(Physics, move)
             return JS_TRUE;
     }
 
+    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, objActor, &GameActor_class, NULL)))
+        return JS_FALSE;
+
     G_ClipMovement(origin, velocity, &plane,
-        (float)width, (float)center_y, (float)yaw, NULL);
+        actor, (float)yaw, NULL);
 
     Vec_Add(origin, origin, velocity);
 
@@ -104,6 +108,6 @@ JS_BEGINCONST(Physics)
 
 JS_BEGINFUNCS(Physics)
 {
-    JS_FASTNATIVE(Physics, move,  6),
+    JS_FASTNATIVE(Physics, move,  5),
     JS_FS_END
 };

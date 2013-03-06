@@ -195,6 +195,10 @@ JS_PROP_FUNC_SET(GameActor)
         JS_GETQUATERNION2(object, actor->rotation);
         return JS_TRUE;
 
+    case 11:
+        actor->plane = JSVAL_TO_INT(*vp);
+        return JS_TRUE;
+
     case 18:
         JS_GETBOOL(actor->bHidden, vp, 0);
         return JS_TRUE;

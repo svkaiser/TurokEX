@@ -20,7 +20,7 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION: Actor system
+// DESCRIPTION: GameActor system
 //
 //-----------------------------------------------------------------------------
 
@@ -50,7 +50,7 @@ kbool Actor_HasComponent(gActor_t *actor, const char *component)
 // Actor_OnTouchEvent
 //
 
-void Actor_OnTouchEvent(gActor_t *actor)
+void Actor_OnTouchEvent(gActor_t *actor, gActor_t *instigator)
 {
     if(actor->bStatic)
         return;
@@ -58,7 +58,7 @@ void Actor_OnTouchEvent(gActor_t *actor)
     if(!actor->bTouch)
         return;
 
-    Actor_CallEvent(actor, "onTouch");
+    Actor_CallEvent(actor, "onTouch", instigator);
 }
 
 //
@@ -82,7 +82,7 @@ void Actor_UpdateTransform(gActor_t *actor)
 // Actor_CallEvent
 //
 
-void Actor_CallEvent(gActor_t *actor, const char *function)
+void Actor_CallEvent(gActor_t *actor, const char *function, gActor_t *instigator)
 {
     gObject_t *iter;
     jsid id;
@@ -95,8 +95,13 @@ void Actor_CallEvent(gActor_t *actor, const char *function)
     while(JS_NextProperty(js_context, iter, &id))
     {
         jsval vp;
+        kbool found;
+        gObject_t *func;
         gObject_t *obj;
         gObject_t *component;
+        jsval rval;
+        jsval argv = JSVAL_VOID;
+        uintN nargs = 0;
 
         if(id == JSVAL_VOID)
             break;
@@ -105,8 +110,30 @@ void Actor_CallEvent(gActor_t *actor, const char *function)
             continue;
         if(!JS_ValueToObject(js_context, vp, &component))
             continue;
+        if(!JS_HasProperty(js_context, component, function, &found))
+            continue;
+        if(!found)
+            continue;
+        if(!JS_GetProperty(js_context, component, function, &vp))
+            continue;
+        if(!JS_ValueToObject(js_context, vp, &func))
+            continue;
+        if(!JS_ObjectIsFunction(js_context, func))
+            continue;
 
-        J_CallFunctionOnObject(js_context, component, function);
+        if(instigator)
+        {
+            gObject_t *aObject;
+
+            if(!(aObject = JPool_GetFree(&objPoolGameActor, &GameActor_class)) ||
+                !(JS_SetPrivate(js_context, aObject, instigator)))
+                continue;
+
+            argv = OBJECT_TO_JSVAL(aObject);
+            nargs = 1;
+        }
+
+        JS_CallFunctionName(js_context, component, function, nargs, &argv, &rval);
     }
 }
 
@@ -130,13 +157,10 @@ void Actor_ComponentFunc(const char *function)
         {
             gActor_t *actor = &gb->statics[j];
 
-            if(actor->bHidden)
-                continue;
-
             if(actor->bStatic)
                 continue;
 
-            Actor_CallEvent(actor, function);
+            Actor_CallEvent(actor, function, NULL);
         }
     }
 }
