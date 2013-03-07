@@ -50,6 +50,7 @@ typedef struct gActor_s
     float               viewHeight;
     mtx_t               matrix;
     gObject_t           *components;
+	gObject_t			*iterator;
 } gActor_t;
 
 void Actor_Setup(gActor_t *actor);

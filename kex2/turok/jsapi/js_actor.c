@@ -61,11 +61,11 @@ JS_PROP_FUNC_GET(GameActor)
         return JS_TRUE;
 
     case 5:
-        JS_INSTVECTOR(js_objGameActor, vp, actor->origin);
+        JS_NEWVECTOR2(actor->origin);
         return JS_TRUE;
 
     case 6:
-        JS_INSTVECTOR(js_objGameActor, vp, actor->scale);
+        JS_NEWVECTOR2(actor->scale);
         return JS_TRUE;
 
     case 7:

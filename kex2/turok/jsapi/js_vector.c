@@ -54,6 +54,54 @@ JS_PROP_FUNC_GET(Vector)
             return JS_NewDoubleValue(cx, (*vector)[2], vp);
         }
     }
+    else
+    {
+        switch(JSVAL_TO_INT(id))
+        {
+        case VEC3_X:
+            {
+                fint_t x;
+                int s1, s2;
+                jsval val;
+
+                JS_GetReservedSlot(cx, obj, 0, &val);
+                s1 = JSVAL_TO_INT(val);
+                JS_GetReservedSlot(cx, obj, 1, &val);
+                s2 = JSVAL_TO_INT(val);
+                x.i = (s1 | (s2 << 16));
+
+                return JS_NewDoubleValue(cx, x.f, vp);
+            }
+        case VEC3_Y:
+            {
+                fint_t y;
+                int s1, s2;
+                jsval val;
+
+                JS_GetReservedSlot(cx, obj, 2, &val);
+                s1 = JSVAL_TO_INT(val);
+                JS_GetReservedSlot(cx, obj, 3, &val);
+                s2 = JSVAL_TO_INT(val);
+                y.i = (s1 | (s2 << 16));
+
+                return JS_NewDoubleValue(cx, y.f, vp);
+            }
+        case VEC3_Z:
+            {
+                fint_t z;
+                int s1, s2;
+                jsval val;
+
+                JS_GetReservedSlot(cx, obj, 4, &val);
+                s1 = JSVAL_TO_INT(val);
+                JS_GetReservedSlot(cx, obj, 5, &val);
+                s2 = JSVAL_TO_INT(val);
+                z.i = (s1 | (s2 << 16));
+
+                return JS_NewDoubleValue(cx, z.f, vp);
+            }
+        }
+    }
 
     return JS_TRUE;
 }
@@ -79,6 +127,44 @@ JS_PROP_FUNC_SET(Vector)
             break;
         case VEC3_Z:
             (*vector)[2] = (float)val;
+            break;
+        }
+    }
+    else
+    {
+        jsdouble val;
+
+        if(!(JS_ValueToNumber(cx, *vp, &val)))
+            return JS_FALSE;
+
+        switch(JSVAL_TO_INT(id))
+        {
+        case VEC3_X:
+            {
+                fint_t fx;
+
+                fx.f = (float)val;
+                JS_SetReservedSlot(cx, obj, 0, INT_TO_JSVAL(fx.i & 0xffff));
+                JS_SetReservedSlot(cx, obj, 1, INT_TO_JSVAL(fx.i >> 16));
+            }
+            break;
+        case VEC3_Y:
+            {
+                fint_t fy;
+
+                fy.f = (float)val;
+                JS_SetReservedSlot(cx, obj, 2, INT_TO_JSVAL(fy.i & 0xffff));
+                JS_SetReservedSlot(cx, obj, 3, INT_TO_JSVAL(fy.i >> 16));
+            }
+            break;
+        case VEC3_Z:
+            {
+                fint_t fz;
+
+                fz.f = (float)val;
+                JS_SetReservedSlot(cx, obj, 4, INT_TO_JSVAL(fz.i & 0xffff));
+                JS_SetReservedSlot(cx, obj, 5, INT_TO_JSVAL(fz.i >> 16));
+            }
             break;
         }
     }
@@ -427,7 +513,8 @@ JS_FASTNATIVE_BEGIN(Vector, toWorld)
 }
 
 JS_BEGINCLASS(Vector)
-    JSCLASS_HAS_PRIVATE,                        // flags
+    JSCLASS_HAS_PRIVATE |
+    JSCLASS_HAS_RESERVED_SLOTS(6),              // flags
     JS_PropertyStub,                            // addProperty
     JS_PropertyStub,                            // delProperty
     Vector_getProperty,                         // getProperty

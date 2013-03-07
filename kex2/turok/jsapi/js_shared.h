@@ -188,40 +188,41 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 
 #define JS_GETVECTOR2(obj, vec)                     \
 {                                                   \
-    jsval xval, yval, zval;                         \
-    jsdouble x, y, z;                               \
-    if(!JS_GetProperty(cx, obj, "x", &xval))        \
-        return JS_FALSE;                            \
-    if(!JS_GetProperty(cx, obj, "y", &yval))        \
-        return JS_FALSE;                            \
-    if(!JS_GetProperty(cx, obj, "z", &zval))        \
-        return JS_FALSE;                            \
-    if(!JS_ValueToNumber(cx, xval, &x))             \
-        return JS_FALSE;                            \
-    if(!JS_ValueToNumber(cx, yval, &y))             \
-        return JS_FALSE;                            \
-    if(!JS_ValueToNumber(cx, zval, &z))             \
-        return JS_FALSE;                            \
-    vec[0] = (float)x;                              \
-    vec[1] = (float)y;                              \
-    vec[2] = (float)z;                              \
+    fint_t x, y, z;                                 \
+    int s1, s2;                                     \
+    jsval val;                                      \
+    JS_GetReservedSlot(cx, obj, 0, &val);           \
+    s1 = JSVAL_TO_INT(val);                         \
+    JS_GetReservedSlot(cx, obj, 1, &val);           \
+    s2 = JSVAL_TO_INT(val);                         \
+    x.i = (s1 | (s2 << 16));                        \
+    JS_GetReservedSlot(cx, obj, 2, &val);           \
+    s1 = JSVAL_TO_INT(val);                         \
+    JS_GetReservedSlot(cx, obj, 3, &val);           \
+    s2 = JSVAL_TO_INT(val);                         \
+    y.i = (s1 | (s2 << 16));                        \
+    JS_GetReservedSlot(cx, obj, 4, &val);           \
+    s1 = JSVAL_TO_INT(val);                         \
+    JS_GetReservedSlot(cx, obj, 5, &val);           \
+    s2 = JSVAL_TO_INT(val);                         \
+    z.i = (s1 | (s2 << 16));                        \
+    vec[0] = x.f;                                   \
+    vec[1] = y.f;                                   \
+    vec[2] = z.f;                                   \
 }
 
-#define JS_SETVECTOR(obj, vec)                          \
-{                                                       \
-    jsval val;                                          \
-    if(!JS_NewDoubleValue(cx, vec[0], &val))            \
-        return JS_FALSE;                                \
-    if(!JS_SetProperty(cx, obj, "x", &val))             \
-        return JS_FALSE;                                \
-    if(!JS_NewDoubleValue(cx, vec[1], &val))            \
-        return JS_FALSE;                                \
-    if(!JS_SetProperty(cx, obj, "y", &val))             \
-        return JS_FALSE;                                \
-    if(!JS_NewDoubleValue(cx, vec[2], &val))            \
-        return JS_FALSE;                                \
-    if(!JS_SetProperty(cx, obj, "z", &val))             \
-        return JS_FALSE;                                \
+#define JS_SETVECTOR(obj, vec)                                      \
+{                                                                   \
+    fint_t fx, fy, fz;                                              \
+    fx.f = vec[0];                                                  \
+    fy.f = vec[1];                                                  \
+    fz.f = vec[2];                                                  \
+    JS_SetReservedSlot(cx, obj, 0, INT_TO_JSVAL(fx.i & 0xffff));    \
+    JS_SetReservedSlot(cx, obj, 1, INT_TO_JSVAL(fx.i >> 16));       \
+    JS_SetReservedSlot(cx, obj, 2, INT_TO_JSVAL(fy.i & 0xffff));    \
+    JS_SetReservedSlot(cx, obj, 3, INT_TO_JSVAL(fy.i >> 16));       \
+    JS_SetReservedSlot(cx, obj, 4, INT_TO_JSVAL(fz.i & 0xffff));    \
+    JS_SetReservedSlot(cx, obj, 5, INT_TO_JSVAL(fz.i >> 16));       \
 }
 
 #define JS_NEWVECTOR2(vec)                                          \
