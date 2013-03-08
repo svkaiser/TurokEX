@@ -441,6 +441,40 @@ static void R_MorphModel(morphmodel_t *morph)
 }
 
 //
+// R_DrawActors
+//
+
+void R_DrawActors(void)
+{
+    unsigned int i;
+
+    if(!gLevel.loaded)
+        return;
+
+    for(i = 0; i < gLevel.numActors; i++)
+    {
+        gActor_t *actor = &gLevel.gActors[i];
+
+        if(actor->bHidden)
+            continue;
+
+        if(!R_FrustumTestBox(actor->bbox))
+            continue;
+
+        dglPushMatrix();
+        dglMultMatrixf(actor->matrix);
+
+        R_TraverseDrawNode(actor->model, &actor->model->nodes[0],
+            actor->textureSwaps, actor->variant, &actor->animState);
+
+        dglPopMatrix();
+
+        if(showbbox)
+            R_DrawBoundingBox(actor->bbox, 255, 0, 0);
+    }
+}
+
+//
 // R_DrawStatics
 //
 
@@ -689,6 +723,7 @@ void R_DrawFrame(void)
     R_DrawStatics();
 
     dglCullFace(GL_FRONT);
+    R_DrawActors();
     J_RunObjectEvent(JS_EV_RENDER, "event_OnRender");
 
     dglEnableClientState(GL_COLOR_ARRAY);

@@ -178,6 +178,7 @@ void Actor_ComponentFunc(const char *function)
 void Actor_Setup(gActor_t *actor)
 {
     gObject_t *ownerObject;
+    anim_t *anim;
     jsval ownerVal;
     JSContext *cx = js_context;
 
@@ -198,6 +199,37 @@ void Actor_Setup(gActor_t *actor)
     actor->bbox.max[0] += actor->origin[0];
     actor->bbox.max[1] += actor->origin[1];
     actor->bbox.max[2] += actor->origin[2];
+
+    if((anim = Mdl_GetAnim(actor->model, "anim00")))
+    {
+        vec4_t rot;
+        vec4_t adjust;
+        float yaw;
+
+        Mdl_SetAnimState(&actor->animState, anim, 1, ANF_LOOP);
+
+        yaw = -actor->angles[0];
+        if(!actor->bOrientOnSlope)
+            yaw += M_PI;
+
+        Vec_SetQuaternion(adjust, DEG2RAD(-90), 1, 0, 0);
+        Vec_SetQuaternion(rot, yaw, 0, 1, 0);
+        Vec_MultQuaternion(actor->rotation, adjust, rot);
+
+        // TODO - TEMP
+        if(actor->plane != -1)
+        {
+            vec4_t cur;
+            plane_t *plane;
+
+            plane = &gLevel.planes[actor->plane];
+            Vec_Copy4(cur, actor->rotation);
+            Plane_GetRotation(rot, plane);
+            Vec_MultQuaternion(actor->rotation, rot, cur);
+        }
+
+        Actor_UpdateTransform(actor);
+    }
 
     if(actor->components == NULL)
         return;

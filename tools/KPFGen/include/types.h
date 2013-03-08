@@ -40,6 +40,7 @@ typedef int             dboolean;
 typedef unsigned char   byte;
 typedef unsigned short  word;
 typedef unsigned long   dword;
+typedef float           bbox[6];
 
 #ifdef _WIN32
 

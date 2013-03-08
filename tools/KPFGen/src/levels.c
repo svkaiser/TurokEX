@@ -122,6 +122,7 @@ static int actorTally = 0;
 extern short section_count[800];
 extern short texindexes[2000];
 extern short section_textures[800][100];
+extern bbox mdlboxes[1000];
 
 typedef struct
 {
@@ -556,11 +557,23 @@ static void ProcessActors(byte *data)
 
         Com_Strcat("        mesh = \"models/mdl%03d/mdl%03d.kmesh\"\n",
             actor->model, actor->model);
-        Com_Strcat("        bounds = { 0 0 0 0 0 0 }\n");
+        Com_Strcat("        bounds = { %f %f %f %f %f %f }\n",
+            mdlboxes[actor->model][0],
+            mdlboxes[actor->model][1],
+            mdlboxes[actor->model][2],
+            mdlboxes[actor->model][3],
+            mdlboxes[actor->model][4],
+            mdlboxes[actor->model][5]);
 
         Com_Strcat("        bCollision = %i\n",
             GetAttribute(actor->attribute)->blockflags & 1);
         Com_Strcat("        bStatic = 0\n");
+
+        if(actor->flags & 1)
+            Com_Strcat("        bOrientOnSlope = 0\n");
+        else
+            Com_Strcat("        bOrientOnSlope = 1\n");
+
         Com_Strcat("        plane = %i\n", actor->leaf);
         Com_Strcat("        origin = { %f %f %f }\n",
             actor->xyz[0], actor->xyz[1], actor->xyz[2]);

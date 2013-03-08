@@ -39,6 +39,7 @@ typedef struct gActor_s
     vec4_t              rotation;
     bbox_t              bbox;
     kmodel_t            *model;
+    animstate_t         animState;
     int                 variant;
     char                **textureSwaps;
     float               angles[3];

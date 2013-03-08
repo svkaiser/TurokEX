@@ -217,6 +217,7 @@ enum
     scactor_bCollision,
     scactor_bStatic,
     scactor_bTouch,
+    scactor_bOrientOnSlope,
     scactor_plane,
     scactor_origin,
     scactor_scale,
@@ -231,24 +232,25 @@ enum
 
 static const sctokens_t mapactortokens[scactor_end+1] =
 {
-    { scactor_name,         "name"          },
-    { scactor_mesh,         "mesh"          },
-    { scactor_bounds,       "bounds"        },
-    { scactor_textureSwaps, "textureSwaps"  },
-    { scactor_components,   "components"    },
-    { scactor_bCollision,   "bCollision"    },
-    { scactor_bStatic,      "bStatic"       },
-    { scactor_bTouch,       "bTouch"        },
-    { scactor_plane,        "plane"         },
-    { scactor_origin,       "origin"        },
-    { scactor_scale,        "scale"         },
-    { scactor_angles,       "angles"        },
-    { scactor_rotation,     "rotation"      },
-    { scactor_radius,       "radius"        },
-    { scactor_height,       "height"        },
-    { scactor_centerheight, "centerheight"  },
-    { scactor_viewheight,   "viewheight"    },
-    { -1,                   NULL            }
+    { scactor_name,             "name"              },
+    { scactor_mesh,             "mesh"              },
+    { scactor_bounds,           "bounds"            },
+    { scactor_textureSwaps,     "textureSwaps"      },
+    { scactor_components,       "components"        },
+    { scactor_bCollision,       "bCollision"        },
+    { scactor_bStatic,          "bStatic"           },
+    { scactor_bTouch,           "bTouch"            },
+    { scactor_bOrientOnSlope,   "bOrientOnSlope"    },
+    { scactor_plane,            "plane"             },
+    { scactor_origin,           "origin"            },
+    { scactor_scale,            "scale"             },
+    { scactor_angles,           "angles"            },
+    { scactor_rotation,         "rotation"          },
+    { scactor_radius,           "radius"            },
+    { scactor_height,           "height"            },
+    { scactor_centerheight,     "centerheight"      },
+    { scactor_viewheight,       "viewheight"        },
+    { -1,                       NULL                }
 };
 
 enum
@@ -382,6 +384,11 @@ static void Map_ParseActorBlock(scparser_t *parser, int count, gActor_t **actorL
             case scactor_bTouch:
                 SC_AssignInteger(mapactortokens, &actor->bTouch,
                     scactor_bTouch, parser, false);
+                break;
+
+            case scactor_bOrientOnSlope:
+                SC_AssignInteger(mapactortokens, &actor->bOrientOnSlope,
+                    scactor_bOrientOnSlope, parser, false);
                 break;
 
             case scactor_plane:
@@ -828,18 +835,18 @@ void Map_Load(int map)
     gLevel.numplanes    = 0;
     gLevel.planes       = NULL;
 
-    if(!(parser = SC_Open(kva("maps/map%02d/map%02d.kmap", map, map))))
-        return;
-
-    Map_ParseLevelScript(parser);
-    SC_Close();
-
     if(parser = SC_Open(kva("maps/map%02d/map%02d.kcm", map, map)))
     {
         Map_ParseNavScript(parser);
         // we're done with the file
         SC_Close();
     }
+
+    if(!(parser = SC_Open(kva("maps/map%02d/map%02d.kmap", map, map))))
+        return;
+
+    Map_ParseLevelScript(parser);
+    SC_Close();
 
     gLevel.loaded = true;
 

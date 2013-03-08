@@ -176,6 +176,7 @@ static short curmodel;
 
 short section_count[800];
 short section_textures[800][100];
+bbox mdlboxes[1000];
 
 typedef struct
 {
@@ -744,6 +745,13 @@ static void ProcessProperties(byte *data, int index)
 
         Com_Strcat("    bbox = { %f %f %f %f %f %f }\n",
             fbbox[0], fbbox[1], fbbox[2], fbbox[3], fbbox[4], fbbox[5]);
+
+        mdlboxes[index][0] = fbbox[0];
+        mdlboxes[index][1] = fbbox[1];
+        mdlboxes[index][2] = fbbox[2];
+        mdlboxes[index][3] = fbbox[3];
+        mdlboxes[index][4] = fbbox[4];
+        mdlboxes[index][5] = fbbox[5];
     }
 
     Com_Strcat("    types =\n    {");
@@ -1155,6 +1163,8 @@ void MDL_StoreModels(void)
     PK_AddFolder("models/temple/");
     PK_AddFolder("models/village/");
     PK_AddFolder("models/weapons/");*/
+
+    memset(mdlboxes, 0, sizeof(bbox) * 1000);
 
     for(i = 0; i < nummodels; i++)
     {
