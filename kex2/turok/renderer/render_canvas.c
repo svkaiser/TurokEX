@@ -50,6 +50,15 @@ void Canvas_SetDrawAlpha(canvas_t *canvas, byte a)
 }
 
 //
+// Canvas_SetDrawScale
+//
+
+void Canvas_SetDrawScale(canvas_t *canvas, float scale)
+{
+	canvas->scale = scale;
+}
+
+//
 // Canvas_SetTextureTile
 //
 
@@ -87,8 +96,11 @@ void Canvas_DrawTile(canvas_t *canvas, texture_t *texture,
     byte b      = canvas->drawColor[2];
     byte a      = canvas->drawColor[3];
 
-    if(canvas->scale <= 0)
+    if(canvas->scale <= 0.01f)
         canvas->scale = 1;
+
+	w *= canvas->scale;
+	h *= canvas->scale;
 
     GL_Vertex(x+0, y+0, 0, u1, t1, 0, 0, 0, r, g, b, a);
     GL_Vertex(x+w, y+0, 0, u2, t1, 0, 0, 0, r, g, b, a);
@@ -98,6 +110,30 @@ void Canvas_DrawTile(canvas_t *canvas, texture_t *texture,
     GL_Triangle(2, 1, 3);
     GL_BindTexture(texture);
     GL_DrawElements2();
+}
+
+//
+// Canvas_DrawFixedTile
+//
+
+void Canvas_DrawFixedTile(canvas_t *canvas, texture_t *texture,
+                     float x, float y)
+{
+    float ratiox;
+    float ratioy;
+    float rx;
+    float ry;
+    float rw;
+    float rh;
+
+    ratiox = (float)FIXED_WIDTH / video_width;
+    ratioy = (float)FIXED_HEIGHT / video_height;
+    rx = x / ratiox;
+    rw = (float)texture->width / ratiox;
+    ry = y / ratioy;
+    rh = (float)texture->height / ratioy;
+
+    Canvas_DrawTile(canvas, texture, rx, ry, rw, rh);
 }
 
 //
@@ -118,7 +154,7 @@ void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y)
     if(canvas->font == NULL)
         return;
 
-    if(canvas->scale <= 0)
+    if(canvas->scale <= 0.01f)
         canvas->scale = 1;
 
     width       = (float)canvas->font->width;
@@ -137,8 +173,8 @@ void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y)
     GL_BindTextureName(canvas->font->texture);
 
     // TODO - TEMP
-    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    //dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
     for(i = 0; i < len; i++)
     {
@@ -229,3 +265,25 @@ void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y)
     GL_DrawElements2();
 }
 
+//
+// Canvas_DrawFixedString
+//
+
+void Canvas_DrawFixedString(canvas_t *canvas, const char *string, float x, float y)
+{
+    float ratiox;
+    float ratioy;
+    float rx;
+    float ry;
+    float oldScale;
+
+    ratiox = (float)FIXED_WIDTH / video_width;
+    ratioy = (float)FIXED_HEIGHT / video_height;
+    rx = x / ratiox;
+    ry = y / ratioy;
+
+    oldScale = canvas->scale;
+    canvas->scale /= ratiox;
+    Canvas_DrawString(canvas, string, rx, ry);
+    canvas->scale = oldScale;
+}

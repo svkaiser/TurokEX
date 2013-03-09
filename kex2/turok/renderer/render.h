@@ -227,11 +227,15 @@ typedef struct
 
 void Canvas_SetDrawColor(canvas_t *canvas, byte r, byte g, byte b);
 void Canvas_SetDrawAlpha(canvas_t *canvas, byte a);
+void Canvas_SetDrawScale(canvas_t *canvas, float scale);
 void Canvas_SetTextureTile(canvas_t *canvas,
                            float u1, float u2, float t1, float t2);
 void Canvas_SetFont(canvas_t *canvas, font_t *font);
 void Canvas_DrawTile(canvas_t *canvas, texture_t *texture,
                      float x, float y, float w, float h);
+void Canvas_DrawFixedTile(canvas_t *canvas, texture_t *texture,
+                     float x, float y);
 void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y);
+void Canvas_DrawFixedString(canvas_t *canvas, const char *string, float x, float y);
 
 #endif

@@ -550,7 +550,10 @@ static void ProcessActors(byte *data)
             Com_Strcat("        components[1] =\n");
             Com_Strcat("        {\n");
             Com_Strcat("            BeginObject = \"ComponentTurokPlayer\"\n");
-            Com_Strcat("                { \"playerID\" : 0 }\n");
+            Com_Strcat("                {\n");
+			Com_Strcat("                    \"playerID\" : 0,\n");
+			Com_Strcat("                    \"hudClass\" : \"TurokHud\"\n");
+			Com_Strcat("                }\n");
             Com_Strcat("            EndObject\n");
             Com_Strcat("        }\n");
         }

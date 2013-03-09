@@ -366,6 +366,21 @@ JS_FASTNATIVE_BEGIN(Canvas, setTextureTile)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(Canvas, setDrawScale)
+{
+    canvas_t *canvas;
+    jsdouble scale;
+
+    JS_CHECKARGS(1);
+    JS_THISCANVAS();
+    JS_GETNUMBER(scale, v, 0);
+
+    Canvas_SetDrawScale(canvas, (float)scale);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
 JS_FASTNATIVE_BEGIN(Canvas, setFont)
 {
     JSObject *obj;
@@ -421,6 +436,41 @@ JS_FASTNATIVE_BEGIN(Canvas, drawTile)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(Canvas, drawFixedTile)
+{
+    canvas_t *canvas;
+    texture_t *texture;
+    jsdouble x, y;
+
+    JS_CHECKARGS(3);
+    JS_THISCANVAS();
+
+    if(JSVAL_IS_STRING(v[0]))
+    {
+        JSString *str;
+        char *bytes;
+
+        JS_GETSTRING(str, bytes, v, 0);
+        texture = Tex_CacheTextureFile(bytes, DGL_CLAMP, true);
+        JS_free(cx, bytes);
+    }
+    else
+    {
+        JSObject *obj;
+
+        JS_GETOBJECT(obj, v, 0);
+        JS_GET_PRIVATE_DATA(obj, &Texture_class, texture_t, texture);
+    }
+
+    JS_GETNUMBER(x, v, 1);
+    JS_GETNUMBER(y, v, 2);
+
+    Canvas_DrawFixedTile(canvas, texture, (float)x, (float)y);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
 JS_FASTNATIVE_BEGIN(Canvas, drawString)
 {
     canvas_t *canvas;
@@ -438,6 +488,29 @@ JS_FASTNATIVE_BEGIN(Canvas, drawString)
     JS_GETNUMBER(y, v, 2);
 
     Canvas_DrawString(canvas, bytes, (float)x, (float)y);
+    JS_free(cx, bytes);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Canvas, drawFixedString)
+{
+    canvas_t *canvas;
+    JSString *str;
+    char *bytes;
+    jsdouble x, y;
+    jsval *v = JS_ARGV(cx, vp);
+
+    if(argc < 3)
+        return JS_FALSE;
+
+    JS_THISCANVAS();
+    JS_GETSTRING(str, bytes, v, 0);
+    JS_GETNUMBER(x, v, 1);
+    JS_GETNUMBER(y, v, 2);
+
+    Canvas_DrawFixedString(canvas, bytes, (float)x, (float)y);
     JS_free(cx, bytes);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
@@ -472,9 +545,12 @@ JS_BEGINFUNCS(Canvas)
     JS_FASTNATIVE(Canvas, setDrawColor, 3),
     JS_FASTNATIVE(Canvas, setDrawAlpha, 1),
     JS_FASTNATIVE(Canvas, setTextureTile, 4),
+	JS_FASTNATIVE(Canvas, setDrawScale, 1),
     JS_FASTNATIVE(Canvas, setFont, 1),
     JS_FASTNATIVE(Canvas, drawTile, 5),
+    JS_FASTNATIVE(Canvas, drawFixedTile, 3),
     JS_FASTNATIVE(Canvas, drawString, 3),
+    JS_FASTNATIVE(Canvas, drawFixedString, 3),
     JS_FS_END
 };
 
