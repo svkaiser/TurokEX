@@ -72,8 +72,9 @@ JS_ENDCLASS();
 
 JS_BEGINPROPS(Component)
 {
-    { "parent",  0, JSPROP_ENUMERATE, NULL, NULL },
-    { "active", 1, JSPROP_ENUMERATE, NULL, NULL },
+    { "parent",  0, 0, NULL, NULL },
+    { "active", 1, 0, NULL, NULL },
+    { "owner", 2, 0, NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 

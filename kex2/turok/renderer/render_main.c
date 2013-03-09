@@ -724,6 +724,7 @@ void R_DrawFrame(void)
 
     dglCullFace(GL_FRONT);
     R_DrawActors();
+
     J_RunObjectEvent(JS_EV_RENDER, "event_OnRender");
 
     dglEnableClientState(GL_COLOR_ARRAY);

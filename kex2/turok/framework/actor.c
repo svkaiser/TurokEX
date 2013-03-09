@@ -113,6 +113,8 @@ void Actor_CallEvent(gActor_t *actor, const char *function, gActor_t *instigator
             continue;
         if(!JS_ValueToObject(js_context, vp, &component))
             continue;
+        if(component == NULL)
+            continue;
         if(!JS_HasProperty(js_context, component, function, &found))
             continue;
         if(!found)
@@ -180,6 +182,7 @@ void Actor_Setup(gActor_t *actor)
     gObject_t *ownerObject;
     anim_t *anim;
     jsval ownerVal;
+    kbool found;
     JSContext *cx = js_context;
 
     if( actor->rotation[0] == 0 &&
@@ -217,7 +220,7 @@ void Actor_Setup(gActor_t *actor)
         Vec_MultQuaternion(actor->rotation, adjust, rot);
 
         // TODO - TEMP
-        if(actor->plane != -1)
+        /*if(actor->plane != -1)
         {
             vec4_t cur;
             plane_t *plane;
@@ -226,7 +229,7 @@ void Actor_Setup(gActor_t *actor)
             Vec_Copy4(cur, actor->rotation);
             Plane_GetRotation(rot, plane);
             Vec_MultQuaternion(actor->rotation, rot, cur);
-        }
+        }*/
 
         Actor_UpdateTransform(actor);
     }
@@ -247,7 +250,7 @@ void Actor_Setup(gActor_t *actor)
         return;
 
     ownerVal = OBJECT_TO_JSVAL(ownerObject);
-    if(!JS_SetProperty(cx, actor->components, "owner", &ownerVal))
-        return;
+    JS_SetProperty(cx, actor->components, "owner", &ownerVal);
+    JS_SetPropertyAttributes(cx, actor->components, "owner", 0, &found);
 }
 
