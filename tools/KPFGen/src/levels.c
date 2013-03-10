@@ -748,21 +748,21 @@ static void ProcessInstances(byte *data)
             switch(GetObjectType(mapinst->model))
             {
             case 438:
-                Com_Strcat("                    BeginObject = \"ComponentPickupLifeForce\"\n");
+                Com_Strcat("                    BeginObject = \"TurokPickupLifeForce\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true,\n");
                 Com_Strcat("                        \"amount\" : 1\n");
                 Com_Strcat("                    }\n");
                 break;
             case 439:
-                Com_Strcat("                    BeginObject = \"ComponentPickupLifeForce\"\n");
+                Com_Strcat("                    BeginObject = \"TurokPickupLifeForce\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true,\n");
                 Com_Strcat("                        \"amount\" : 10\n");
                 Com_Strcat("                    }\n");
                 break;
             default:
-                Com_Strcat("                    BeginObject = \"ComponentPickup\"\n");
+                Com_Strcat("                    BeginObject = \"TurokPickup\"\n");
                 Com_Strcat("                        { \"active\" : true }\n");
                 break;
             }

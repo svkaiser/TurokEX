@@ -447,9 +447,12 @@ static void R_MorphModel(morphmodel_t *morph)
 void R_DrawActors(void)
 {
     unsigned int i;
+    mtx_t mtx;
 
     if(!gLevel.loaded)
         return;
+
+    Mtx_IdentityY(mtx, DEG2RAD(-90));
 
     for(i = 0; i < gLevel.numActors; i++)
     {
@@ -463,10 +466,13 @@ void R_DrawActors(void)
 
         dglPushMatrix();
         dglMultMatrixf(actor->matrix);
+        dglPushMatrix();
+        dglMultMatrixf(mtx);
 
         R_TraverseDrawNode(actor->model, &actor->model->nodes[0],
             actor->textureSwaps, actor->variant, &actor->animState);
 
+        dglPopMatrix();
         dglPopMatrix();
 
         if(showbbox)

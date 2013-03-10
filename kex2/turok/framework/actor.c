@@ -205,31 +205,17 @@ void Actor_Setup(gActor_t *actor)
 
     if((anim = Mdl_GetAnim(actor->model, "anim00")))
     {
-        vec4_t rot;
-        vec4_t adjust;
-        float yaw;
-
         Mdl_SetAnimState(&actor->animState, anim, 1, ANF_LOOP);
+        Vec_SetQuaternion(actor->rotation, -actor->angles[0], 0, 1, 0);
 
-        yaw = -actor->angles[0];
-        if(!actor->bOrientOnSlope)
-            yaw += M_PI;
-
-        Vec_SetQuaternion(adjust, DEG2RAD(-90), 1, 0, 0);
-        Vec_SetQuaternion(rot, yaw, 0, 1, 0);
-        Vec_MultQuaternion(actor->rotation, adjust, rot);
-
-        // TODO - TEMP
-        /*if(actor->plane != -1)
+        if(actor->plane != -1)
         {
-            vec4_t cur;
-            plane_t *plane;
+            vec4_t rot;
+            plane_t *plane = &gLevel.planes[actor->plane];
 
-            plane = &gLevel.planes[actor->plane];
-            Vec_Copy4(cur, actor->rotation);
             Plane_GetRotation(rot, plane);
-            Vec_MultQuaternion(actor->rotation, rot, cur);
-        }*/
+            Vec_AdjustQuaternion(actor->rotation, rot, -actor->angles[0] + M_PI);
+        }
 
         Actor_UpdateTransform(actor);
     }
