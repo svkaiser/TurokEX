@@ -747,6 +747,72 @@ static void ProcessInstances(byte *data)
             Com_Strcat("                {\n");
             switch(GetObjectType(mapinst->model))
             {
+            case 409:
+                Com_Strcat("                    BeginObject = \"TurokPickupWeaponPistol\"\n");
+                Com_Strcat("                    {\n");
+                Com_Strcat("                        \"active\" : true\n");
+                Com_Strcat("                    }\n");
+                break;
+            case 410:
+                Com_Strcat("                    BeginObject = \"TurokPickupWeaponRifle\"\n");
+                Com_Strcat("                    {\n");
+                Com_Strcat("                        \"active\" : true\n");
+                Com_Strcat("                    }\n");
+                break;
+            case 415:
+                Com_Strcat("                    BeginObject = \"TurokPickupWeaponPulseRifle\"\n");
+                Com_Strcat("                    {\n");
+                Com_Strcat("                        \"active\" : true\n");
+                Com_Strcat("                    }\n");
+                break;
+            case 411:
+                Com_Strcat("                    BeginObject = \"TurokPickupWeaponShotgun\"\n");
+                Com_Strcat("                    {\n");
+                Com_Strcat("                        \"active\" : true\n");
+                Com_Strcat("                    }\n");
+                break;
+            case 412:
+                Com_Strcat("                    BeginObject = \"TurokPickupWeaponRiotgun\"\n");
+                Com_Strcat("                    {\n");
+                Com_Strcat("                        \"active\" : true\n");
+                Com_Strcat("                    }\n");
+                break;
+            case 413:
+                Com_Strcat("                    BeginObject = \"TurokPickupWeaponMinigun\"\n");
+                Com_Strcat("                    {\n");
+                Com_Strcat("                        \"active\" : true\n");
+                Com_Strcat("                    }\n");
+                break;
+            case 414:
+                Com_Strcat("                    BeginObject = \"TurokPickupWeaponGrenadeLauncher\"\n");
+                Com_Strcat("                    {\n");
+                Com_Strcat("                        \"active\" : true\n");
+                Com_Strcat("                    }\n");
+                break;
+            case 416:
+                Com_Strcat("                    BeginObject = \"TurokPickupWeaponAlienRifle\"\n");
+                Com_Strcat("                    {\n");
+                Com_Strcat("                        \"active\" : true\n");
+                Com_Strcat("                    }\n");
+                break;
+            case 419:
+                Com_Strcat("                    BeginObject = \"TurokPickupWeaponFusion\"\n");
+                Com_Strcat("                    {\n");
+                Com_Strcat("                        \"active\" : true\n");
+                Com_Strcat("                    }\n");
+                break;
+            case 417:
+                Com_Strcat("                    BeginObject = \"TurokPickupWeaponRocketLauncher\"\n");
+                Com_Strcat("                    {\n");
+                Com_Strcat("                        \"active\" : true\n");
+                Com_Strcat("                    }\n");
+                break;
+            case 418:
+                Com_Strcat("                    BeginObject = \"TurokPickupWeaponAccelerator\"\n");
+                Com_Strcat("                    {\n");
+                Com_Strcat("                        \"active\" : true\n");
+                Com_Strcat("                    }\n");
+                break;
             case 438:
                 Com_Strcat("                    BeginObject = \"TurokPickupLifeForce\"\n");
                 Com_Strcat("                    {\n");

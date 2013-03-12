@@ -770,20 +770,8 @@ void Mdl_SetAnimState(animstate_t *astate, anim_t *anim,
 void Mdl_BlendAnimStates(animstate_t *astate, anim_t *anim,
                          float time, float blendtime, animflags_t flags)
 {
-    if(astate->flags & (ANF_BLEND|ANF_NOINTERRUPT))
-    {
-        // abort if already blending
-        return;
-    }
-
     if(anim != astate->track.anim)
     {
-        if(astate->prevtrack.anim == anim)
-        {
-            // don't blend the same anim
-            return;
-        }
-
         astate->flags                   = flags | ANF_BLEND;
         astate->prevtrack.frame         = astate->track.frame;
         astate->prevtrack.nextframe     = astate->track.nextframe;

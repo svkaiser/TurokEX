@@ -33,6 +33,35 @@ PulseRifle = class.extends(Weapon, function()
     
     this.state          = WS_READY;
     
+    this.checkAttack = function()
+    {
+        if(Client.localPlayer.command.getAction('+attack'))
+        {
+            this.animState.blendAnim(this.anim_Fire,
+                this.playSpeed, 4.0, NRender.ANIM_LOOP);
+
+            this.state = WS_FIRING;
+            return true;
+        }
+        
+        return false;
+    }
+    
+    this.fire = function()
+    {
+        if(this.checkHoldster())
+        {
+            this.animState.flags &= ~NRender.ANIM_LOOP;
+            return;
+        }
+        
+        if(!Client.localPlayer.command.getAction('+attack'))
+        {
+            this.readyAnim();
+            this.state = WS_READY;
+        }
+    }
+    
     //------------------------------------------------------------------------
     // INITIALIZATION
     //------------------------------------------------------------------------

@@ -54,9 +54,6 @@ Weapon = class.define(function()
         if(Client.localPlayer.controller.state == STATE_MOVE_CLIMB &&
             this.state != WS_HOLDSTER)
         {
-            this.animState.setAnim(this.anim_Idle,
-                this.playSpeed, NRender.ANIM_LOOP);
-                
             this.animState.blendAnim(this.anim_SwapOut,
                 this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
 
@@ -70,9 +67,6 @@ Weapon = class.define(function()
     
     this.change = function()
     {
-        this.animState.setAnim(this.anim_Idle,
-            this.playSpeed, NRender.ANIM_LOOP);
-            
         this.animState.blendAnim(this.anim_SwapOut,
             this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
 
@@ -83,9 +77,6 @@ Weapon = class.define(function()
     {
         if(Client.localPlayer.command.getAction('+attack'))
         {
-            this.animState.setAnim(this.anim_Idle,
-                this.playSpeed, NRender.ANIM_LOOP);
-                
             this.animState.blendAnim(this.anim_Fire,
                 this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
 
@@ -98,7 +89,8 @@ Weapon = class.define(function()
     
     this.checkWeaponChange = function()
     {
-        if(Client.localPlayer.command.getAction('+nextweap'))
+        if(Client.localPlayer.command.getAction('+nextweap') &&
+            !Client.localPlayer.command.getActionHeldTime('+nextweap'))
         {
             var tPlayer = Client.localPlayer.controller.owner.components.ComponentTurokPlayer;
             
@@ -109,7 +101,8 @@ Weapon = class.define(function()
             return true;
         }
         
-        if(Client.localPlayer.command.getAction('+prevweap'))
+        if(Client.localPlayer.command.getAction('+prevweap') &&
+            !Client.localPlayer.command.getActionHeldTime('+prevweap'))
         {
             var tPlayer = Client.localPlayer.controller.owner.components.ComponentTurokPlayer;
             
@@ -123,17 +116,11 @@ Weapon = class.define(function()
         return false;
     }
     
-    this.ready = function()
+    this.readyAnim = function()
     {
-        if(this.checkHoldster())
+        if(this.animState.flags & NRender.ANIM_BLEND)
             return;
-            
-        if(this.checkAttack())
-            return;
-            
-        if(this.checkWeaponChange())
-            return;
-            
+        
         var d = Client.localPlayer.prediction.accel.unit2();
         
         if(d >= 1.35)
@@ -153,6 +140,20 @@ Weapon = class.define(function()
         }
     }
     
+    this.ready = function()
+    {
+        if(this.checkHoldster())
+            return;
+            
+        if(this.checkAttack())
+            return;
+            
+        if(this.checkWeaponChange())
+            return;
+            
+        this.readyAnim();
+    }
+    
     this.fire = function()
     {
         if(this.checkHoldster())
@@ -163,9 +164,7 @@ Weapon = class.define(function()
         
         if(this.animState.flags & NRender.ANIM_STOPPED)
         {
-            this.animState.blendAnim(this.anim_Idle,
-                this.playSpeed, 8.0, NRender.ANIM_LOOP);
-                
+            this.readyAnim();
             this.state = WS_READY;
         }
     }
@@ -184,6 +183,9 @@ Weapon = class.define(function()
     this.swapOut = function()
     {
         if(this.checkHoldster())
+            return;
+            
+        if(this.checkWeaponChange())
             return;
             
         if(this.animState.flags & NRender.ANIM_STOPPED)
@@ -209,11 +211,12 @@ Weapon = class.define(function()
         if(this.checkHoldster())
             return;
             
+        if(this.checkWeaponChange())
+            return;
+            
         if(this.animState.flags & NRender.ANIM_STOPPED)
         {
-            this.animState.blendAnim(this.anim_Idle,
-                this.playSpeed, 8.0, NRender.ANIM_LOOP);
-                
+            this.readyAnim();
             this.state = WS_READY;
         }
     }

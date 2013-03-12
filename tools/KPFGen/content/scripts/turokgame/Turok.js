@@ -9,6 +9,18 @@
 Sys.runScript('scripts/turokgame/ComponentTurokPlayer.js');
 Sys.runScript('scripts/turokgame/TurokPickup.js');
 Sys.runScript('scripts/turokgame/TurokPickupLifeForce.js');
+Sys.runScript('scripts/turokgame/TurokPickupWeapon.js');
+Sys.runScript('scripts/turokgame/TurokPickupWeaponPistol.js');
+Sys.runScript('scripts/turokgame/TurokPickupWeaponRifle.js');
+Sys.runScript('scripts/turokgame/TurokPickupWeaponShotgun.js');
+Sys.runScript('scripts/turokgame/TurokPickupWeaponRiotgun.js');
+Sys.runScript('scripts/turokgame/TurokPickupWeaponGrenadeLauncher.js');
+Sys.runScript('scripts/turokgame/TurokPickupWeaponMinigun.js');
+Sys.runScript('scripts/turokgame/TurokPickupWeaponPulseRifle.js');
+Sys.runScript('scripts/turokgame/TurokPickupWeaponAlienRifle.js');
+Sys.runScript('scripts/turokgame/TurokPickupWeaponRocketLauncher.js');
+Sys.runScript('scripts/turokgame/TurokPickupWeaponAccelerator.js');
+Sys.runScript('scripts/turokgame/TurokPickupWeaponFusion.js');
 
 // features
 Sys.runScript('scripts/turokgame/TurokHud.js');
@@ -33,10 +45,13 @@ Sys.runScript('scripts/turokgame/Shotgun.js');
 Sys.runScript('scripts/turokgame/PacketEventRequestWeapon.js');
 Sys.runScript('scripts/turokgame/PacketEventChangeWeapon.js');
 
+// initialize game
 Game.event_GameInitialized = function()
 {
     PacketManager.add(PacketEventRequestWeapon);
     PacketManager.add(PacketEventChangeWeapon);
+    
+    Sys.addCvar('g_wpnautoswitch', '1');
     
     Game.giveAll = function()
     {
@@ -56,5 +71,5 @@ Game.event_GameInitialized = function()
         }
     }
     
-    Server.addMessageEvent(Game.giveAll, 'giveAll');
+    Server.addMessageEvent(Game.giveAll, 'giveall');
 }

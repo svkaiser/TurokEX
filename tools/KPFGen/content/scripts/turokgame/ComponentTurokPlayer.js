@@ -83,7 +83,13 @@ class.properties(ComponentTurokPlayer,
     
     cycleNextWeapon : function()
     {
-        var nextWpn = this.activeWeaponID + 1;
+        var nextWpn;
+
+        if(this.pendingWeapon != -1)
+            nextWpn = this.pendingWeapon + 1;
+        else
+            nextWpn = this.activeWeaponID + 1;
+            
         if(nextWpn >= this.numWeapons)
             nextWpn = 0;
             
@@ -91,6 +97,12 @@ class.properties(ComponentTurokPlayer,
         {
             if(this.weapons[nextWpn].bOwned)
             {
+                if(this.pendingWeapon != -1)
+                {
+                    this.pendingWeapon = nextWpn;
+                    return;
+                }
+                
                 PacketManager.send(PacketEventRequestWeapon, Client.peer, nextWpn);
                 break;
             }
@@ -102,7 +114,13 @@ class.properties(ComponentTurokPlayer,
     
     cyclePrevWeapon : function()
     {
-        var nextWpn = this.activeWeaponID - 1;
+        var nextWpn;
+
+        if(this.pendingWeapon != -1)
+            nextWpn = this.pendingWeapon - 1;
+        else
+            nextWpn = this.activeWeaponID - 1;
+        
         if(nextWpn < 0)
             nextWpn = (this.numWeapons - 1);
             
@@ -110,6 +128,12 @@ class.properties(ComponentTurokPlayer,
         {
             if(this.weapons[nextWpn].bOwned)
             {
+                if(this.pendingWeapon != -1)
+                {
+                    this.pendingWeapon = nextWpn;
+                    return;
+                }
+                
                 PacketManager.send(PacketEventRequestWeapon, Client.peer, nextWpn);
                 break;
             }
@@ -119,8 +143,11 @@ class.properties(ComponentTurokPlayer,
         }
     },
     
-    setNewWeapon : function(id)
+    setNewWeapon : function()
     {
+        if(this.pendingWeapon == -1)
+            return;
+        
         this.activeWeapon = this.weapons[this.pendingWeapon];
         this.activeWeaponID = this.pendingWeapon;
         this.pendingWeapon = -1;
@@ -142,5 +169,22 @@ class.properties(ComponentTurokPlayer,
             this.pendingWeapon = id;
             this.activeWeapon.change();
         }
+    },
+    
+    giveWeapon : function(id)
+    {
+        if(id < 0 || id >= this.numWeapons)
+            return false;
+            
+        var weapon = this.weapons[id];
+        
+        if(weapon == null)
+            return false;
+        
+        if(Sys.getCvar('g_wpnautoswitch') != 0 && weapon.bOwned == false)
+            PacketManager.send(PacketEventRequestWeapon, Client.peer, id);
+        
+        weapon.bOwned = true;
+        return true;
     }
 });

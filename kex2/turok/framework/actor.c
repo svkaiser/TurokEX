@@ -86,14 +86,14 @@ void Actor_UpdateTransform(gActor_t *actor)
 void Actor_CallEvent(gActor_t *actor, const char *function, gActor_t *instigator)
 {
     jsid id;
-	jsval val;
-	JSScopeProperty *sprop;
+    jsval val;
+    JSScopeProperty *sprop;
 
     if(actor->components == NULL)
         return;
 
-	JS_GetReservedSlot(js_context, actor->iterator, 0, &val);
-	sprop = (JSScopeProperty*)JS_GetPrivate(js_context, actor->iterator);
+    JS_GetReservedSlot(js_context, actor->iterator, 0, &val);
+    sprop = (JSScopeProperty*)JS_GetPrivate(js_context, actor->iterator);
 
     while(JS_NextProperty(js_context, actor->iterator, &id))
     {
@@ -141,8 +141,8 @@ void Actor_CallEvent(gActor_t *actor, const char *function, gActor_t *instigator
         JS_CallFunctionName(js_context, component, function, nargs, &argv, &rval);
     }
 
-	JS_SetReservedSlot(js_context, actor->iterator, 0, val);
-	JS_SetPrivate(js_context, actor->iterator, sprop);
+    JS_SetReservedSlot(js_context, actor->iterator, 0, val);
+    JS_SetPrivate(js_context, actor->iterator, sprop);
 }
 
 //
@@ -223,8 +223,8 @@ void Actor_Setup(gActor_t *actor)
     if(actor->components == NULL)
         return;
 
-	actor->iterator = JS_NewPropertyIterator(js_context, actor->components);
-	JS_AddRoot(js_context, &actor->iterator);
+    actor->iterator = JS_NewPropertyIterator(js_context, actor->components);
+    JS_AddRoot(js_context, &actor->iterator);
 
     if(actor->bStatic)
         Com_Error("Static actor (%s) should not contain any components", actor->name);

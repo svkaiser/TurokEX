@@ -45,9 +45,6 @@ Knife = class.extends(Weapon, function()
     {
         if(Client.localPlayer.command.getAction('+attack'))
         {
-            this.animState.setAnim(this.anim_Idle,
-                this.playSpeed, NRender.ANIM_LOOP);
-            
             var fireAnim;
             var r = Sys.rand(100);
             

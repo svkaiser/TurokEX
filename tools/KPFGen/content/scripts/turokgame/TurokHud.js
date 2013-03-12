@@ -21,7 +21,7 @@ class.properties(TurokHud,
     
     opacity     : 192,
     bFlash      : false,
-    flashAlpha  : 224,
+    flashAlpha  : 128,
     flash_r     : 0,
     flash_g     : 44,
     flash_b     : 148,
@@ -34,7 +34,7 @@ class.properties(TurokHud,
     flash : function()
     {
         this.bFlash = true;
-        this.flashAlpha = 224;
+        this.flashAlpha = 128;
         
         if(arguments.length == 3)
         {
@@ -69,7 +69,7 @@ class.properties(TurokHud,
             if(this.flashAlpha <= 0)
             {
                 this.bFlash = false;
-                this.flashAlpha = 224;
+                this.flashAlpha = 128;
             }
         }
         
