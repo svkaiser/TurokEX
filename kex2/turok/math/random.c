@@ -35,7 +35,7 @@ static int rand_seed = 0;
 // Random_SetSeed
 //
 
-void Random_SetSeed(seed)
+void Random_SetSeed(int seed)
 {
     rand_seed = seed;
 }

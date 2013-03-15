@@ -123,7 +123,7 @@ kbool Plane_PointInRange(plane_t *p, float x, float z);
 //
 // RANDOM OPERATIONS
 
-void Random_SetSeed(seed);
+void Random_SetSeed(int seed);
 int Random_Int(void);
 int Random_Max(int max);
 float Random_Float(void);

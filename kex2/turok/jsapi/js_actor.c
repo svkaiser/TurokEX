@@ -192,7 +192,7 @@ JS_PROP_FUNC_SET(GameActor)
 
     case 7:
         JS_GETOBJECT(object, vp, 0);
-        JS_GETQUATERNION2(object, actor->rotation);
+        //JS_GETQUATERNION2(object, actor->rotation);
         return JS_TRUE;
 
     case 11:

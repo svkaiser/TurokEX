@@ -95,6 +95,8 @@ typedef struct
     mdlmesh_t           *meshes;
     unsigned int        numchildren;
     word                *children;
+    vec3_t              offset_t;
+    vec4_t              offset_r;
 } mdlnode_t;
 
 typedef enum
@@ -218,7 +220,7 @@ float Font_StringWidth(font_t *font, const char* string, float scale, int fixedL
 
 typedef struct
 {
-    byte    drawColor[4];
+    byte    drawColor[4][4];
     float   drawCoord[4];
     float   scale;
     kbool   center;

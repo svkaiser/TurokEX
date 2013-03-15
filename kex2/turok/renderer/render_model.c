@@ -326,6 +326,9 @@ static void Mdl_ParseNodeBlock(kmodel_t *model, scparser_t *parser)
     {
         mdlnode_t *node = &model->nodes[i];
 
+        Vec_Set3(node->offset_t, 0, 0, 0);
+        Vec_Set4(node->offset_r, 0, 0, 0, 1);
+
         // read into nested node block
         SC_ExpectNextToken(TK_LBRACK);
 

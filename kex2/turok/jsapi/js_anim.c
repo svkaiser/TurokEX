@@ -155,6 +155,9 @@ JS_PROP_FUNC_GET(AnimState)
     case ANS_TIME:
         return JS_NewDoubleValue(cx, animstate->time, vp);
 
+    case ANS_FRAMETIME:
+        return JS_NewDoubleValue(cx, animstate->frametime, vp);
+
     default:
         return JS_TRUE;
     }

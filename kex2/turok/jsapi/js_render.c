@@ -206,6 +206,29 @@ JS_BEGINFUNCS(NRender)
 
 JS_CLASSOBJECT(Model);
 
+JS_FASTNATIVE_BEGIN(Model, setNodeRotation)
+{
+    JSObject *thisObj;
+    JSObject *obj;
+    vec4_t rot;
+    int node;
+    kmodel_t *model;
+
+    JS_CHECKARGS(2);
+    thisObj = JS_THIS_OBJECT(cx, vp);
+    JS_CHECKINTEGER(0);
+    node = JSVAL_TO_INT(JS_ARG(0));
+    JS_GET_PRIVATE_DATA(thisObj, &Model_class, kmodel_t, model);
+    JS_GETOBJECT(obj, v, 1);
+    JS_GETQUATERNION2(obj, rot);
+
+    if(node >= 0 && node < (int)model->numnodes)
+        Vec_Copy4(model->nodes[node].offset_r, rot);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
 JS_BEGINCLASS(Model)
     JSCLASS_HAS_PRIVATE,                        // flags
     JS_PropertyStub,                            // addProperty
@@ -231,6 +254,7 @@ JS_BEGINCONST(Model)
 
 JS_BEGINFUNCS(Model)
 {
+    JS_FASTNATIVE(Model, setNodeRotation, 2),
     JS_FS_END
 };
 
@@ -325,6 +349,31 @@ JS_FASTNATIVE_BEGIN(Canvas, setDrawColor)
         (byte)JSVAL_TO_INT(JS_ARG(0)),
         (byte)JSVAL_TO_INT(JS_ARG(1)),
         (byte)JSVAL_TO_INT(JS_ARG(2)));
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Canvas, setVertexColor)
+{
+    canvas_t *canvas;
+    int i;
+
+    JS_CHECKARGS(4);
+    JS_THISCANVAS();
+    JS_CHECKINTEGER(0);
+    JS_CHECKINTEGER(1);
+    JS_CHECKINTEGER(2);
+    JS_CHECKINTEGER(3);
+
+    i = JSVAL_TO_INT(JS_ARG(0));
+
+    if(i >= 0 && i < 4)
+    {
+        canvas->drawColor[i][0] = (byte)JSVAL_TO_INT(JS_ARG(1));
+        canvas->drawColor[i][1] = (byte)JSVAL_TO_INT(JS_ARG(2));
+        canvas->drawColor[i][2] = (byte)JSVAL_TO_INT(JS_ARG(3));
+    }
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
@@ -543,6 +592,7 @@ JS_BEGINCONST(Canvas)
 JS_BEGINFUNCS(Canvas)
 {
     JS_FASTNATIVE(Canvas, setDrawColor, 3),
+    JS_FASTNATIVE(Canvas, setVertexColor, 4),
     JS_FASTNATIVE(Canvas, setDrawAlpha, 1),
     JS_FASTNATIVE(Canvas, setTextureTile, 4),
 	JS_FASTNATIVE(Canvas, setDrawScale, 1),
@@ -570,7 +620,7 @@ JS_CONSTRUCTOR(Canvas)
     memset(canvas, 0, sizeof(canvas_t));
 
     canvas->scale = 1.0f;
-    canvas->drawColor[3] = 255;
+    Canvas_SetDrawAlpha(canvas, 255);
     canvas->drawCoord[2] = 1.0f;
     canvas->drawCoord[3] = 1.0f;
 

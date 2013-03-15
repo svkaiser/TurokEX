@@ -303,6 +303,7 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
             vec4_t rot_next;
             vec3_t pos_cur;
             vec3_t pos_next;
+            vec4_t rCur;
             int nodenum;
 
             nodenum = node - model->nodes;
@@ -338,6 +339,10 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
 
             Vec_Slerp(rot, delta, rot_cur, rot_next);
             Vec_Lerp3(pos, delta, pos_cur, pos_next);
+
+            Vec_Copy4(rCur, rot);
+            Vec_MultQuaternion(rot, rCur, node->offset_r);
+
             Mtx_ApplyRotation(rot, mtx);
             Mtx_AddTranslation(mtx, pos[0], pos[1], pos[2]);
             dglMultMatrixf(mtx);

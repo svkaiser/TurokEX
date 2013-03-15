@@ -35,9 +35,14 @@
 
 void Canvas_SetDrawColor(canvas_t *canvas, byte r, byte g, byte b)
 {
-    canvas->drawColor[0] = r;
-    canvas->drawColor[1] = g;
-    canvas->drawColor[2] = b;
+    int i;
+
+    for(i = 0; i < 4; i++)
+    {
+        canvas->drawColor[i][0] = r;
+        canvas->drawColor[i][1] = g;
+        canvas->drawColor[i][2] = b;
+    }
 }
 
 //
@@ -46,7 +51,10 @@ void Canvas_SetDrawColor(canvas_t *canvas, byte r, byte g, byte b)
 
 void Canvas_SetDrawAlpha(canvas_t *canvas, byte a)
 {
-    canvas->drawColor[3] = a;
+    int i;
+
+    for(i = 0; i < 4; i++)
+        canvas->drawColor[i][3] = a;
 }
 
 //
@@ -91,10 +99,19 @@ void Canvas_DrawTile(canvas_t *canvas, texture_t *texture,
     float u2    = canvas->drawCoord[1];
     float t1    = canvas->drawCoord[2];
     float t2    = canvas->drawCoord[3];
-    byte r      = canvas->drawColor[0];
-    byte g      = canvas->drawColor[1];
-    byte b      = canvas->drawColor[2];
-    byte a      = canvas->drawColor[3];
+    byte r[4];
+    byte g[4];
+    byte b[4];
+    byte a[4];
+    int i;
+
+    for(i = 0; i < 4; i++)
+    {
+        r[i] = canvas->drawColor[i][0];
+        g[i] = canvas->drawColor[i][1];
+        b[i] = canvas->drawColor[i][2];
+        a[i] = canvas->drawColor[i][3];
+    }
 
     if(canvas->scale <= 0.01f)
         canvas->scale = 1;
@@ -102,10 +119,10 @@ void Canvas_DrawTile(canvas_t *canvas, texture_t *texture,
 	w *= canvas->scale;
 	h *= canvas->scale;
 
-    GL_Vertex(x+0, y+0, 0, u1, t1, 0, 0, 0, r, g, b, a);
-    GL_Vertex(x+w, y+0, 0, u2, t1, 0, 0, 0, r, g, b, a);
-    GL_Vertex(x+0, y+h, 0, u1, t2, 0, 0, 0, r, g, b, a);
-    GL_Vertex(x+w, y+h, 0, u2, t2, 0, 0, 0, r, g, b, a);
+    GL_Vertex(x+0, y+0, 0, u1, t1, 0, 0, 0, r[0], g[0], b[0], a[0]);
+    GL_Vertex(x+w, y+0, 0, u2, t1, 0, 0, 0, r[1], g[1], b[1], a[1]);
+    GL_Vertex(x+0, y+h, 0, u1, t2, 0, 0, 0, r[2], g[2], b[2], a[2]);
+    GL_Vertex(x+w, y+h, 0, u2, t2, 0, 0, 0, r[3], g[3], b[3], a[3]);
     GL_Triangle(0, 1, 2);
     GL_Triangle(2, 1, 3);
     GL_BindTexture(texture);
@@ -144,7 +161,10 @@ void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y)
 {
     float width;
     float height;
-    byte r, g, b, a;
+    byte r[4];
+    byte g[4];
+    byte b[4];
+    byte a[4];
     byte old_r, old_g, old_b;
     int tri;
     unsigned int i;
@@ -159,15 +179,20 @@ void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y)
 
     width       = (float)canvas->font->width;
     height      = (float)canvas->font->height;
-    r           = canvas->drawColor[0];
-    g           = canvas->drawColor[1];
-    b           = canvas->drawColor[2];
-    a           = canvas->drawColor[3];
+
+    for(i = 0; i < 4; i++)
+    {
+        r[i] = canvas->drawColor[i][0];
+        g[i] = canvas->drawColor[i][1];
+        b[i] = canvas->drawColor[i][2];
+        a[i] = canvas->drawColor[i][3];
+    }
+
     tri         = 0;
     enterTag    = false;
-    old_r       = r;
-    old_g       = g;
-    old_b       = b;
+    old_r       = r[0];
+    old_g       = g[0];
+    old_b       = b[0];
     len         = strlen(string);
 
     GL_BindTextureName(canvas->font->texture);
@@ -194,6 +219,7 @@ void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y)
         {
             unsigned int rgbStart;
             char val[3];
+            int k;
 
             enterTag = true;
             rgbStart = i+7;
@@ -202,8 +228,12 @@ void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y)
             {
                 if(string[i] == ',')
                 {
+                    byte cr;
                     strncpy(val, string+rgbStart, i-rgbStart);
-                    r = atoi(val);
+                    cr = atoi(val);
+                    for(k = 0; k < 4; k++)
+                        r[k] = cr;
+
                     break;
                 }
             }
@@ -217,8 +247,11 @@ void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y)
             {
                 if(string[i] == ',')
                 {
+                    byte cg;
                     strncpy(val, string+rgbStart, i-rgbStart);
-                    g = atoi(val);
+                    cg = atoi(val);
+                    for(k = 0; k < 4; k++)
+                        g[k] = cg;
                     break;
                 }
             }
@@ -232,8 +265,11 @@ void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y)
             {
                 if(string[i] == '>')
                 {
+                    byte cb;
                     strncpy(val, string+rgbStart, i-rgbStart);
-                    b = atoi(val);
+                    cb = atoi(val);
+                    for(k = 0; k < 4; k++)
+                        b[k] = cb;
                     break;
                 }
             }
@@ -242,18 +278,18 @@ void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y)
         }
         else if(!strncmp(check, "</color>", 7))
         {
-            r = old_r;
-            g = old_g;
-            b = old_b;
+            r[0] = old_r;
+            g[0] = old_g;
+            b[0] = old_b;
 
             i += 7;
             continue;
         }
 
-        GL_Vertex(vx1, vy1, 0, tx1, ty1, 0, 0, 0, r, g, b, a);
-        GL_Vertex(vx2, vy1, 0, tx2, ty1, 0, 0, 0, r, g, b, a);
-        GL_Vertex(vx1, vy2, 0, tx1, ty2, 0, 0, 0, r, g, b, a);
-        GL_Vertex(vx2, vy2, 0, tx2, ty2, 0, 0, 0, r, g, b, a);
+        GL_Vertex(vx1, vy1, 0, tx1, ty1, 0, 0, 0, r[0], g[0], b[0], a[0]);
+        GL_Vertex(vx2, vy1, 0, tx2, ty1, 0, 0, 0, r[1], g[1], b[1], a[1]);
+        GL_Vertex(vx1, vy2, 0, tx1, ty2, 0, 0, 0, r[2], g[2], b[2], a[2]);
+        GL_Vertex(vx2, vy2, 0, tx2, ty2, 0, 0, 0, r[3], g[3], b[3], a[3]);
 
         GL_Triangle(0+tri, 1+tri, 2+tri);
         GL_Triangle(2+tri, 1+tri, 3+tri);
