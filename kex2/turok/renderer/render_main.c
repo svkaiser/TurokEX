@@ -240,7 +240,7 @@ void R_DrawSection(mdlsection_t *section, char *texture)
     }
 
     dglNormalPointer(GL_FLOAT, sizeof(float), section->normals);
-    dglTexCoordPointer(2, GL_FLOAT, 0, section->coords);
+    dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, section->coords);
     dglVertexPointer(3, GL_FLOAT, sizeof(vec3_t), section->xyz);
 
     tex = Tex_CacheTextureFile(texturepath, GL_REPEAT,

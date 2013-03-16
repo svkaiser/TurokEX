@@ -58,20 +58,29 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
         float dx;
         float dz;
         float ld;
+        float rd;
         float len;
         float r;
 
-        vd = 1.0f / vd;
+        rd = 1.0f / vd;
 
-        dx = vd * dir[0];
-        dz = vd * dir[2];
+        dx = rd * dir[0];
+        dz = rd * dir[2];
         ld = dx * x + dz * z;
 
         x = x - ld * dx;
         z = z - ld * dz;
 
-        r = radius * radius + trace->width * trace->width;
-        len = r - (x * x + z * z);
+        if(radius > trace->width)
+        {
+            r = radius * radius + trace->width * trace->width;
+            len = r - (x * x + z * z);
+        }
+        else
+        {
+            r = (radius + trace->width) * 0.5f;
+            len = (r * r) - (x * x + z * z);
+        }
 
         // is the ray inside the radius?
         if(len > 0)

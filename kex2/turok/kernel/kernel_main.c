@@ -32,6 +32,7 @@
 #include "server.h"
 #include "client.h"
 #include "render.h"
+#include "sound.h"
 #include "gl.h"
 #include "menu.h"
 #include "script.h"
@@ -60,6 +61,7 @@ void Sys_Shutdown(void)
     Com_WriteConfigFile();
 
     J_Shutdown();
+    Snd_Shutdown();
     Tex_Shutdown();
     R_Shutdown();
     G_Shutdown();
@@ -215,6 +217,8 @@ void Kernel_Main(int argc, char **argv)
     Com_Printf("Key System Initialized\n");
     KF_Init();
     Com_Printf("File System Initialized\n");
+    Snd_Init();
+    Com_Printf("Sound System Initialized (%s)\n", Snd_GetDeviceName());
     J_Init();
     Com_Printf("Javascript API Initialized\n");
     SV_Init();

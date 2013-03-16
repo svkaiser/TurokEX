@@ -30,23 +30,9 @@
 #include "mathlib.h"
 #include "actor.h"
 #include "level.h"
+#include "controller.h"
 
 #define VELOCITY_EPSILON    0.0001f
-
-typedef struct
-{
-    gActor_t    *owner;
-    vec3_t      velocity;
-    vec3_t      forward;
-    vec3_t      right;
-    vec3_t      up;
-    vec3_t      accel;
-    vec3_t      angles;
-    float       moveTime;
-    float       frameTime;
-    float       timeStamp;
-    plane_t     *plane;
-} aController_t;
 
 //
 // Ctrl_SetDirection

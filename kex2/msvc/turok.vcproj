@@ -151,7 +151,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\SDL\include\&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\turok\common\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\client\&quot;;&quot;$(OutDir)\turok\server\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\menu\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDIr)\turok\prediction\&quot;;&quot;$(OutDIr)\turok\jsapi\&quot;"
+				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\openal\include\&quot;;&quot;$(OutDir)\SDL\include\&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\turok\common\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\client\&quot;;&quot;$(OutDir)\turok\server\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\sound\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\menu\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDIr)\turok\prediction\&quot;;&quot;$(OutDIr)\turok\jsapi\&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -178,7 +178,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="sdl.lib sdlmain.lib opengl32.lib glu32.lib enet.lib ws2_32.lib winmm.lib js32.lib"
+				AdditionalDependencies="sdl.lib sdlmain.lib opengl32.lib glu32.lib enet.lib ws2_32.lib winmm.lib js32.lib openal32.lib eaxguid.lib"
 				OutputFile="$(OutDir)\msvc\bin\KEX2.EXE"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -499,6 +499,10 @@
 						>
 					</File>
 					<File
+						RelativePath="..\turok\jsapi\js_controller.c"
+						>
+					</File>
+					<File
 						RelativePath="..\turok\jsapi\js_game.c"
 						>
 					</File>
@@ -551,6 +555,14 @@
 						>
 					</File>
 				</Filter>
+			</Filter>
+			<Filter
+				Name="sound"
+				>
+				<File
+					RelativePath="..\turok\sound\snd_system.c"
+					>
+				</File>
 			</Filter>
 		</Filter>
 		<Filter
@@ -665,6 +677,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\framework\controller.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\game.h"
 					>
 				</File>
@@ -706,6 +722,14 @@
 				</File>
 				<File
 					RelativePath="..\turok\jsapi\js_shared.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="sound"
+				>
+				<File
+					RelativePath="..\turok\sound\sound.h"
 					>
 				</File>
 			</Filter>
