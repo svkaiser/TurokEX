@@ -23,6 +23,21 @@
 #ifndef _SND_H_
 #define _SND_H_
 
+typedef struct wave_s
+{
+    char            name[MAX_FILEPATH];
+    short           formatCode;
+    short           channels;
+    int             samples;
+    int             bytes;
+    short           blockAlign;
+    short           bits;
+    int             waveSize;
+    byte            *data;
+    byte            *waveFile;
+    struct wave_s   *next;
+} wave_t;
+
 typedef struct
 {
     unsigned int    handle;
@@ -30,6 +45,13 @@ typedef struct
     kbool           inUse;
     kbool           looping;
 } sndSource_t;
+
+typedef struct
+{
+    wave_t          *wave;
+    sndSource_t     *source;
+    float           volume;
+} sndChannel_t;
 
 #define SND_MAX_SOURCES 256
 

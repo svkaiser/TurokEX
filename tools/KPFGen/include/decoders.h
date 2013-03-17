@@ -28,5 +28,6 @@ extern int off_49CF1C[0x1000];
 
 void DC_BuildAnimTable(int **a1, byte *a2, int a3);
 void DC_DecodeData(byte *a1, byte *a2, int a3);
+int DC_LookupSndFXIndex(int *a1, int a2, int a3);
 
 #endif

@@ -131,7 +131,7 @@ static void Z_RemoveBlock(memblock_t *block)
 
 static void FCmd_ZoneStats(void)
 {
-    Com_CPrintf(COLOR_GREEN, "\n---------------- Zone Stats ----------------\n");
+    Com_CPrintf(COLOR_CYAN, "\n---------------- Zone Stats ----------------\n");
     Com_CPrintf(COLOR_GREEN, "Mem Allocated: %ikb\n", Z_FreeMemory() >> 10);
     Com_CPrintf(COLOR_GREEN, "Static: %ikb\n", Z_TagUsage(PU_STATIC) >> 10);
     Com_CPrintf(COLOR_GREEN, "Auto: %ikb\n", Z_TagUsage(PU_AUTO) >> 10);
@@ -140,7 +140,9 @@ static void FCmd_ZoneStats(void)
     Com_CPrintf(COLOR_GREEN, "Model: %ikb\n", Z_TagUsage(PU_MODEL) >> 10);
     Com_CPrintf(COLOR_GREEN, "Level: %ikb\n", Z_TagUsage(PU_LEVEL) >> 10);
     Com_CPrintf(COLOR_GREEN, "Actors: %ikb\n", Z_TagUsage(PU_ACTOR) >> 10);
+    Com_CPrintf(COLOR_GREEN, "Sound: %ikb\n", Z_TagUsage(PU_SOUND) >> 10);
     Com_CPrintf(COLOR_GREEN, "Cache: %ikb\n", Z_TagUsage(PU_CACHE) >> 10);
+    Com_CPrintf(COLOR_GREEN, "Script: %ikb\n", Z_TagUsage(PU_JSOBJ) >> 10);
     Com_Printf("\n");
 }
 

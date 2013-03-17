@@ -37,6 +37,7 @@
 void TX_StoreTextures(void);
 void TX_StoreFonts(void);
 void SND_StoreSounds(void);
+void SND_StoreSoundShaders(void);
 void MDL_StoreModels(void);
 void LV_StoreLevels(void);
 
@@ -55,7 +56,7 @@ HWND        hwndDataBar = NULL;
 
 #ifdef _WIN32
 
-#define TOTALSTEPS	4200
+#define TOTALSTEPS	4800
 
 dboolean __stdcall LoadingDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -146,6 +147,7 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
     Com_GetCartFile(
         "PC Turok Cart File (.dat) \0*.dat\0All Files (*.*)\0*.*\0",
         "Locate CARTFILE.DAT");
+    SND_StoreSoundShaders();
     TX_StoreTextures();
     MDL_StoreModels();
     LV_StoreLevels();

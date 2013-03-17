@@ -55,6 +55,7 @@ enum
    PU_LEVEL,
    PU_ACTOR,
    PU_JSOBJ,
+   PU_SOUND,
    PU_CACHE,   // block is cached (may be implicitly freed at any time!)
    PU_MAX      // Must always be last -- killough
 };

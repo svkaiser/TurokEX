@@ -319,3 +319,32 @@ void DC_DecodeData(byte *a1, byte *a2, int a3)
     }
 }
 
+int DC_LookupSndFXIndex(int *a1, int a2, int a3)
+{
+    int result; // eax@2
+    int v4; // edx@2
+    int v5; // ecx@3
+
+    if ( !a2 )
+        return -1;
+
+    v4 = a2 - 1;
+    result = 0;
+    if ( a2 != 1 )
+    {
+        do
+        {
+            v5 = (v4 + result) >> 1;
+            if ( a1[v5] >= a3 )
+                v4 = (v4 + result) >> 1;
+            else
+                result = v5 + 1;
+        }
+        while ( result < v4 );
+    }
+
+    if ( a1[result] != a3 )
+        result = -1;
+
+    return result;
+}
