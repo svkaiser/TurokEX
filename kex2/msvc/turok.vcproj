@@ -560,6 +560,10 @@
 				Name="sound"
 				>
 				<File
+					RelativePath="..\turok\sound\snd_shader.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\sound\snd_system.c"
 					>
 				</File>

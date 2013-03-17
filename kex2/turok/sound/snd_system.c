@@ -24,19 +24,23 @@
 //
 //-----------------------------------------------------------------------------
 
+#include "SDL.h"
 #include "al.h"
 #include "alc.h"
 #include "common.h"
 #include "zone.h"
 #include "sound.h"
 
-ALCdevice *alDevice = NULL;
-ALCcontext *alContext = NULL;
+SDL_mutex   *snd_mutex  = NULL;
+SDL_Thread  *snd_thread = NULL;
+
+ALCdevice   *alDevice   = NULL;
+ALCcontext  *alContext  = NULL;
 
 sndSource_t sndSources[SND_MAX_SOURCES];
 int nSndSources = 0;
 
-static wave_t *snd_hashlist[MAX_HASH];
+static wave_t *wave_hashlist[MAX_HASH];
 
 //
 // Snd_Shutdown
@@ -45,6 +49,9 @@ static wave_t *snd_hashlist[MAX_HASH];
 void Snd_Shutdown(void)
 {
     int i;
+
+    SDL_KillThread(snd_thread);
+    SDL_DestroyMutex(snd_mutex);
 
     for(i = 0; i < nSndSources; i++)
     {
@@ -58,6 +65,8 @@ void Snd_Shutdown(void)
     alcMakeContextCurrent(NULL);
     alcDestroyContext(alContext);
     alcCloseDevice(alDevice);
+
+    Z_FreeTags(PU_SOUND, PU_SOUND);
 }
 
 //
@@ -156,8 +165,8 @@ wave_t *Snd_AllocWave(const char *name, byte *data)
     wave->data          = data + 44;
 
     hash = Com_HashFileName(name);
-    wave->next = snd_hashlist[hash];
-    snd_hashlist[hash] = wave;
+    wave->next = wave_hashlist[hash];
+    wave_hashlist[hash] = wave;
 
     return wave;
 }
@@ -176,7 +185,7 @@ wave_t *Snd_FindWave(const char *name)
 
     hash = Com_HashFileName(name);
 
-    for(wave = snd_hashlist[hash]; wave; wave = wave->next)
+    for(wave = wave_hashlist[hash]; wave; wave = wave->next)
     {
         if(!strcmp(name, wave->name))
             return wave;
@@ -209,6 +218,29 @@ wave_t *Snd_CacheWaveFile(const char *name)
     }
 
     return wave;
+}
+
+//
+// Thread_SoundHandler
+//
+
+static int SDLCALL Thread_SoundHandler(void *param)
+{
+    long start = SDL_GetTicks();
+    long delay = 0;
+    unsigned long count = 0;
+
+    while(1)
+    {
+        count++;
+        // try to avoid incremental time de-syncs
+        delay = count - (SDL_GetTicks() - start);
+
+        if(delay > 0)
+            Sys_Sleep(delay);
+    }
+
+    return 0;
 }
 
 //
@@ -313,6 +345,9 @@ void Snd_Init(void)
         alSourcef(handle, AL_PITCH, 1.0f);
         nSndSources++;
     }
+
+    snd_mutex = SDL_CreateMutex();
+    snd_thread = SDL_CreateThread(Thread_SoundHandler, NULL);
 
     Cmd_AddCommand("printsoundinfo", FCmd_SoundInfo);
     Cmd_AddCommand("playsound", FCmd_LoadTestSound);

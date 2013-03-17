@@ -57,8 +57,27 @@ typedef struct
 
 extern sndSource_t sndSources[SND_MAX_SOURCES];
 
+typedef struct
+{
+    wave_t  *wave;
+    int     delay;
+    float   random;
+    float   dbFreq;
+} sfx_t;
+
+typedef struct sndShader_s
+{
+    char                name[MAX_FILEPATH];
+    unsigned int        numsfx;
+    sfx_t               *sfx;
+    struct sndShader_s  *next;
+} sndShader_t;
+
+sndShader_t *Snd_LoadShader(const char *name);
+
 void Snd_Shutdown(void);
 void Snd_Init(void);
 char *Snd_GetDeviceName(void);
+wave_t *Snd_CacheWaveFile(const char *name);
 
 #endif
