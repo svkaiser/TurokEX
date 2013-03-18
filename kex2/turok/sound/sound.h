@@ -35,34 +35,16 @@ typedef struct wave_s
     int             waveSize;
     byte            *data;
     byte            *waveFile;
+    unsigned int    buffer;
     struct wave_s   *next;
 } wave_t;
 
 typedef struct
 {
-    unsigned int    handle;
-    int             startTime;
-    kbool           inUse;
-    kbool           looping;
-} sndSource_t;
-
-typedef struct
-{
     wave_t          *wave;
-    sndSource_t     *source;
-    float           volume;
-} sndChannel_t;
-
-#define SND_MAX_SOURCES 256
-
-extern sndSource_t sndSources[SND_MAX_SOURCES];
-
-typedef struct
-{
-    wave_t  *wave;
-    int     delay;
-    float   random;
-    float   dbFreq;
+    int             delay;
+    float           random;
+    float           dbFreq;
 } sfx_t;
 
 typedef struct sndShader_s
@@ -73,11 +55,33 @@ typedef struct sndShader_s
     struct sndShader_s  *next;
 } sndShader_t;
 
+typedef struct sndSource_s
+{
+    unsigned int        handle;
+    int                 startTime;
+    kbool               inUse;
+    kbool               playing;
+    kbool               looping;
+    float               volume;
+    sfx_t               *sfx;
+    struct sndSource_s  *next;
+} sndSource_t;
+
+#define SND_MAX_SOURCES 256
+
+extern sndSource_t sndSources[SND_MAX_SOURCES];
+extern unsigned long sndTime;
+
 sndShader_t *Snd_LoadShader(const char *name);
+void Snd_PlayShader(const char *name);
 
 void Snd_Shutdown(void);
 void Snd_Init(void);
 char *Snd_GetDeviceName(void);
+void Snd_EnterCriticalSection(void);
+void Snd_ExitCriticalSection(void);
 wave_t *Snd_CacheWaveFile(const char *name);
+sndSource_t *Snd_GetAvailableSource(void);
+void Snd_FreeSource(sndSource_t *src);
 
 #endif

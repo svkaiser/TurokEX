@@ -39,6 +39,7 @@ ALCcontext  *alContext  = NULL;
 
 sndSource_t sndSources[SND_MAX_SOURCES];
 int nSndSources = 0;
+unsigned long sndTime = 0;
 
 static wave_t *wave_hashlist[MAX_HASH];
 
@@ -62,11 +63,39 @@ void Snd_Shutdown(void)
         alDeleteSources(1, &sndSrc->handle);
     }
 
+    for(i = 0; i < MAX_HASH; i++)
+    {
+        wave_t *wave = wave_hashlist[i];
+
+        if(wave == NULL)
+            continue;
+
+        alDeleteBuffers(1, &wave->buffer);
+    }
+
     alcMakeContextCurrent(NULL);
     alcDestroyContext(alContext);
     alcCloseDevice(alDevice);
 
     Z_FreeTags(PU_SOUND, PU_SOUND);
+}
+
+//
+// Snd_EnterCriticalSection
+//
+
+void Snd_EnterCriticalSection(void)
+{
+    SDL_LockMutex(snd_mutex);
+}
+
+//
+// Snd_ExitCriticalSection
+//
+
+void Snd_ExitCriticalSection(void)
+{
+    SDL_UnlockMutex(snd_mutex);
 }
 
 //
@@ -164,6 +193,22 @@ wave_t *Snd_AllocWave(const char *name, byte *data)
     wave->waveSize      = *(int*)(data + 40);
     wave->data          = data + 44;
 
+    Snd_EnterCriticalSection();
+
+    alGetError();
+    alGenBuffers(1, &wave->buffer);
+
+    if(alGetError() != AL_NO_ERROR)
+    {
+        Snd_ExitCriticalSection();
+        Com_Error("Snd_AllocWave: failed to create buffer for %s", name);
+    }
+
+    alBufferData(wave->buffer, Snd_GetWaveFormat(wave),
+        wave->data, wave->waveSize, wave->samples);
+
+    Snd_ExitCriticalSection();
+
     hash = Com_HashFileName(name);
     wave->next = wave_hashlist[hash];
     wave_hashlist[hash] = wave;
@@ -221,6 +266,106 @@ wave_t *Snd_CacheWaveFile(const char *name)
 }
 
 //
+// Snd_GetAvailableSource
+//
+
+sndSource_t *Snd_GetAvailableSource(void)
+{
+    int i;
+    sndSource_t *src = NULL;
+
+    Snd_EnterCriticalSection();
+
+    for(i = 0; i < nSndSources; i++)
+    {
+        sndSource_t *sndSrc = &sndSources[i];
+
+        if(sndSrc->inUse)
+            continue;
+
+        src = sndSrc;
+
+        src->startTime  = sndTime;
+        src->inUse      = true;
+        src->playing    = false;
+        src->next       = NULL;
+        break;
+    }
+
+    Snd_ExitCriticalSection();
+    return src;
+}
+
+//
+// Snd_FreeSource
+//
+
+void Snd_FreeSource(sndSource_t *src)
+{
+    Snd_EnterCriticalSection();
+
+    src->inUse      = false;
+    src->playing    = false;
+    src->next       = NULL;
+    src->sfx        = NULL;
+    src->startTime  = 0;
+
+    Snd_ExitCriticalSection();
+}
+
+//
+// Snd_UpdateSources
+//
+
+static void Snd_UpdateSources(void)
+{
+    int i;
+
+    Snd_EnterCriticalSection();
+
+    for(i = 0; i < nSndSources; i++)
+    {
+        sndSource_t *sndSrc = &sndSources[i];
+
+        if(!sndSrc->inUse)
+            continue;
+
+        if(sndSrc->sfx != NULL)
+        {
+            wave_t *wave = sndSrc->sfx->wave;
+
+            if(!sndSrc->playing)
+            {
+                float time = (float)sndSrc->startTime +
+                    ((float)sndSrc->sfx->delay * ((1.0f / 60.0f) * 1000.0f));
+
+                if(time > sndTime)
+                    continue;
+
+                alSourceQueueBuffers(sndSrc->handle, 1, &wave->buffer);
+                alSourcef(sndSrc->handle, AL_PITCH, 1200.0f / -sndSrc->sfx->dbFreq);
+                alSourcePlay(sndSrc->handle);
+
+                sndSrc->playing = true;
+            }
+            else
+            {
+                ALint state;
+
+                alGetSourcei(sndSrc->handle, AL_SOURCE_STATE, &state);
+                if(state != AL_PLAYING)
+                {
+                    alSourceUnqueueBuffers(sndSrc->handle, 1, &wave->buffer);
+                    Snd_FreeSource(sndSrc);
+                }
+            }
+        }
+    }
+
+    Snd_ExitCriticalSection();
+}
+
+//
 // Thread_SoundHandler
 //
 
@@ -228,13 +373,13 @@ static int SDLCALL Thread_SoundHandler(void *param)
 {
     long start = SDL_GetTicks();
     long delay = 0;
-    unsigned long count = 0;
 
     while(1)
     {
-        count++;
+        Snd_UpdateSources();
+        sndTime++;
         // try to avoid incremental time de-syncs
-        delay = count - (SDL_GetTicks() - start);
+        delay = sndTime - (SDL_GetTicks() - start);
 
         if(delay > 0)
             Sys_Sleep(delay);
@@ -306,6 +451,18 @@ static void FCmd_LoadTestSound(void)
 }
 
 //
+// FCmd_LoadShader
+//
+
+static void FCmd_LoadShader(void)
+{
+    if(Cmd_GetArgc() < 2)
+        return;
+
+    Snd_PlayShader(Cmd_GetArgv(1));
+}
+
+//
 // Snd_Init
 //
 
@@ -335,10 +492,14 @@ void Snd_Init(void)
         if(alGetError() != AL_NO_ERROR)
             break;
 
-        sndSrc->handle = handle;
-        sndSrc->startTime = 0;
-        sndSrc->inUse = false;
-        sndSrc->looping = false;
+        sndSrc->handle      = handle;
+        sndSrc->startTime   = 0;
+        sndSrc->inUse       = false;
+        sndSrc->looping     = false;
+        sndSrc->playing     = false;
+        sndSrc->sfx         = NULL;
+        sndSrc->volume      = 1.0f;
+        sndSrc->next        = NULL;
 
         alSourcei(handle, AL_LOOPING, false);
         alSourcef(handle, AL_GAIN, 1.0f);
@@ -351,4 +512,5 @@ void Snd_Init(void)
 
     Cmd_AddCommand("printsoundinfo", FCmd_SoundInfo);
     Cmd_AddCommand("playsound", FCmd_LoadTestSound);
+    Cmd_AddCommand("playsoundshader", FCmd_LoadShader);
 }

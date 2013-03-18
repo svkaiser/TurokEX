@@ -61,7 +61,7 @@ static void Snd_ParseShaderScript(sndShader_t *snd, scparser_t *parser)
 
     SC_Find();
 
-    if(strcmp(parser->token, "sound"))
+    if(strcmp(parser->token, "sounds"))
         Com_Error("Snd_ParseShaderScript: Expected 'sound', found %s", parser->token);
 
     SC_ExpectNextToken(TK_LSQBRACK);
@@ -152,13 +152,13 @@ sndShader_t *Snd_LoadShader(const char *name)
     if(name == NULL || name[0] == 0)
         return NULL;
 
-    if(strlen(name) >= MAX_FILEPATH)
-        Com_Error("Snd_LoadShader: \"%s\" is too long", name);
-
     if(!(snd = Snd_FindShader(name)))
     {
         unsigned int hash;
         scparser_t *parser;
+
+        if(strlen(name) >= MAX_FILEPATH)
+            Com_Error("Snd_LoadShader: \"%s\" is too long", name);
 
         if(!(parser = SC_Open(name)))
             return NULL;
@@ -176,4 +176,42 @@ sndShader_t *Snd_LoadShader(const char *name)
     }
 
     return snd;
+}
+
+//
+// Snd_PlayShader
+//
+
+void Snd_PlayShader(const char *name)
+{
+    sndShader_t *shader = Snd_LoadShader(name);
+    sndSource_t *src;
+    unsigned int i;
+
+    if(shader == NULL)
+        return;
+
+    src = Snd_GetAvailableSource();
+
+    if(src == NULL)
+        return;
+
+    Snd_EnterCriticalSection();
+    src->sfx = &shader->sfx[0];
+    src->next = NULL;
+    Snd_ExitCriticalSection();
+
+    for(i = 1; i < shader->numsfx; i++)
+    {
+        sndSource_t *nextSrc = Snd_GetAvailableSource();
+
+        if(nextSrc == NULL)
+            return;
+
+        Snd_EnterCriticalSection();
+        src->sfx = &shader->sfx[i];
+        src->next = nextSrc;
+        src = nextSrc;
+        Snd_ExitCriticalSection();
+    }
 }
