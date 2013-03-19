@@ -447,9 +447,9 @@ static void Mdl_ParseScript(kmodel_t *model, scparser_t *parser)
                         {
                             SC_ExpectNextToken(TK_LBRACK);
                             SC_GetString();
-                            model->anims[i].alias = Z_Strdup(sc_stringbuffer, PU_MODEL, 0);
+                            model->anims[i].alias = Z_Strdup(parser->stringToken, PU_MODEL, 0);
                             SC_GetString();
-                            memcpy(model->anims[i].animpath, sc_stringbuffer, MAX_FILEPATH);
+                            memcpy(model->anims[i].animpath, parser->stringToken, MAX_FILEPATH);
                             SC_ExpectNextToken(TK_RBRACK);
                         }
                     }
@@ -755,6 +755,7 @@ void Mdl_SetAnimState(animstate_t *astate, anim_t *anim,
     astate->time                    = (float)client.tics + time;
     astate->deltatime               = 0;
     astate->blendtime               = 0;
+    astate->playtime                = 0;
     astate->frametime               = time;
     astate->track.frame             = 1;
     astate->track.nextframe         = 2;
@@ -781,6 +782,7 @@ void Mdl_BlendAnimStates(animstate_t *astate, anim_t *anim,
         astate->track.frame             = 1;
         astate->track.nextframe         = 2;
         astate->time                    = (float)client.tics + blendtime;
+        astate->playtime                = 0;
         astate->frametime               = time;
         astate->blendtime               = blendtime;
         astate->deltatime               = 0;
@@ -804,6 +806,9 @@ void Mdl_UpdateAnimState(animstate_t *astate)
 
     if(astate->time <= client.tics)
     {
+        // TODO - TEMP
+        astate->playtime += client.runtime;
+
         astate->deltatime = 0;
         astate->time = (float)client.tics + astate->frametime;
 
@@ -830,6 +835,8 @@ void Mdl_UpdateAnimState(animstate_t *astate)
                 astate->flags |= ANF_STOPPED;
                 astate->flags &= ~ANF_NOINTERRUPT;
 
+                astate->playtime = 0;
+
                 if(astate->track.anim->next != NULL)
                 {
                     Mdl_BlendAnimStates(
@@ -850,6 +857,9 @@ void Mdl_UpdateAnimState(animstate_t *astate)
             astate->blendtime : astate->frametime;
 
         astate->deltatime += (1/blend);
+
+        // TODO - TEMP
+        astate->playtime += client.runtime;
     }
 }
 

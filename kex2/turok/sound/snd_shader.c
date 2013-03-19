@@ -39,6 +39,7 @@ enum
     scsfx_delay,
     scsfx_dbFreq,
     scsfx_random,
+    scsfx_gain,
     scsfx_end
 };
 
@@ -48,6 +49,7 @@ static const sctokens_t sfxtokens[scsfx_end+1] =
     { scsfx_delay,      "delay"     },
     { scsfx_dbFreq,     "dbFreq"    },
     { scsfx_random,     "random"    },
+    { scsfx_gain,       "gain"      },
     { -1,               NULL        }
 };
 
@@ -87,7 +89,7 @@ static void Snd_ParseShaderScript(sndShader_t *snd, scparser_t *parser)
             case scsfx_wavefile:
                 SC_ExpectNextToken(TK_EQUAL);
                 SC_GetString();
-                sfx->wave = Snd_CacheWaveFile(sc_stringbuffer);
+                sfx->wave = Snd_CacheWaveFile(parser->stringToken);
                 break;
 
             case scsfx_delay:
@@ -98,6 +100,11 @@ static void Snd_ParseShaderScript(sndShader_t *snd, scparser_t *parser)
             case scsfx_dbFreq:
                 SC_AssignFloat(sfxtokens, &sfx->dbFreq,
                     scsfx_dbFreq, parser, false);
+                break;
+                
+            case scsfx_gain:
+                SC_AssignFloat(sfxtokens, &sfx->gain,
+                    scsfx_gain, parser, false);
                 break;
 
             case scsfx_random:
@@ -191,15 +198,18 @@ void Snd_PlayShader(const char *name)
     if(shader == NULL)
         return;
 
+    Snd_EnterCriticalSection();
+
     src = Snd_GetAvailableSource();
 
     if(src == NULL)
+    {
+        Snd_ExitCriticalSection();
         return;
+    }
 
-    Snd_EnterCriticalSection();
     src->sfx = &shader->sfx[0];
     src->next = NULL;
-    Snd_ExitCriticalSection();
 
     for(i = 1; i < shader->numsfx; i++)
     {
@@ -208,10 +218,9 @@ void Snd_PlayShader(const char *name)
         if(nextSrc == NULL)
             return;
 
-        Snd_EnterCriticalSection();
-        src->sfx = &shader->sfx[i];
-        src->next = nextSrc;
-        src = nextSrc;
-        Snd_ExitCriticalSection();
+        nextSrc->sfx = &shader->sfx[i];
+        nextSrc->next = NULL;
     }
+
+    Snd_ExitCriticalSection();
 }

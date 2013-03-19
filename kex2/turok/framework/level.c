@@ -323,7 +323,7 @@ static void Map_ParseActorBlock(scparser_t *parser, int count, gActor_t **actorL
             case scactor_mesh:
                 SC_ExpectNextToken(TK_EQUAL);
                 SC_GetString();
-                actor->model = Mdl_Load(sc_stringbuffer);
+                actor->model = Mdl_Load(parser->stringToken);
                 break;
 
             case scactor_bounds:
@@ -356,7 +356,7 @@ static void Map_ParseActorBlock(scparser_t *parser, int count, gActor_t **actorL
                 for(j = 0; j < numTexSwaps; j++)
                 {
                     SC_GetString();
-                    actor->textureSwaps[j] = Z_Strdup(sc_stringbuffer, PU_ACTOR, NULL);
+                    actor->textureSwaps[j] = Z_Strdup(parser->stringToken, PU_ACTOR, NULL);
                 }
                 SC_ExpectNextToken(TK_RBRACK);
                 break;

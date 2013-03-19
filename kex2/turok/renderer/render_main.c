@@ -559,7 +559,7 @@ void R_DrawStatics(void)
 
 static void R_DrawSkies(void)
 {
-    static float sky_cloudpanx = 0;
+    /*static float sky_cloudpanx = 0;
     static float sky_cloudpany = 0;
     static float sky_offset = 0;
     moveframe_t *frame;
@@ -712,7 +712,7 @@ static void R_DrawSkies(void)
     // pop texture matrix stacks
     dglPopMatrix();
     dglPopMatrix();
-    dglPopMatrix();
+    dglPopMatrix();*/
 }
 
 //

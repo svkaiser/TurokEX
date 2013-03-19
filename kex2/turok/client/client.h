@@ -26,7 +26,6 @@
 #include "enet/enet.h"
 #include "kernel.h"
 #include "actor.h"
-#include "pred.h"
 #include "game.h"
 
 #define MAXEVENTS 64
@@ -46,29 +45,6 @@ typedef enum
 
 typedef struct
 {
-    int             time;
-    int             tics;
-} serverstate_t;
-
-typedef struct
-{
-    int             weapon;
-    int             pendingweapon;
-} gamestate_t;
-
-typedef struct
-{
-    vec3_t          origin;
-    vec3_t          velocity;
-    float           yaw;
-    float           pitch;
-    float           roll;
-    plane_t         *plane;
-    float           lerp;
-} moveframe_t;
-
-typedef struct
-{
     ENetHost        *host;
     client_state_e  state;
     ENetPeer        *peer;
@@ -78,15 +54,6 @@ typedef struct
     float           runtime;
     kbool           local;
     int             tics;
-    int             latency[NETBACKUPS];
-    ticcmd_t        cmd;
-    pmove_t         pmove;
-    pmove_t         oldmoves[NETBACKUPS];
-    moveframe_t     moveframe;
-    vec3_t          pred_diff;
-    netsequence_t   ns;
-    serverstate_t   st;
-    gamestate_t     gt;
 } client_t;
 
 extern client_t client;
@@ -97,14 +64,9 @@ void CL_BuildTiccmd(void);
 void CL_PostEvent(event_t *ev);
 event_t *CL_GetEvent(void);
 void CL_ProcessEvents(void);
-void CL_MessageServer(char *string);
 kbool CL_Responder(event_t *ev);
-int CL_Random(void);
 void CL_Connect(const char *address);
 void CL_Run(int msec);
 void CL_Init(void);
-void CL_WeaponThink(void);
-void CL_ChangeWeapon(ENetPacket *packet);
-void CL_InitWeapons(void);
 
 #endif

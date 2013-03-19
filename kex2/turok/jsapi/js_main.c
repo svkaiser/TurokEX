@@ -1072,10 +1072,10 @@ void J_Init(void)
     JS_DEFINEOBJECT(NServer);
     JS_DEFINEOBJECT(NRender);
     JS_DEFINEOBJECT(NGame);
-    JS_DEFINEOBJECT(Cmd);
     JS_DEFINEOBJECT(Angle);
     JS_DEFINEOBJECT(Physics);
     JS_DEFINEOBJECT(Level);
+    JS_DEFINEOBJECT(Snd);
     JS_INITCLASS(Vector, 3);
     JS_INITCLASS(Quaternion, 4);
     JS_INITCLASS(Matrix, 0);

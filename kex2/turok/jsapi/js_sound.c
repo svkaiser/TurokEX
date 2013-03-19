@@ -20,68 +20,36 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION: Javascript Physics Class
+// DESCRIPTION: Javascript Sound Class
 //
 //-----------------------------------------------------------------------------
 
 #include "js.h"
 #include "js_shared.h"
 #include "common.h"
-#include "game.h"
+#include "sound.h"
 
-JS_CLASSOBJECT(Physics);
+JS_CLASSOBJECT(Snd);
 
-JS_FASTNATIVE_BEGIN(Physics, move)
+JS_FASTNATIVE_BEGIN(Snd, play)
 {
-    JSObject *objPlane;
-    vec3_t origin;
-    vec3_t velocity;
-    plane_t *plane;
-    gActor_t *actor;
-    jsdouble yaw;
-    JSObject *objOrig;
-    JSObject *objVel;
-    JSObject *objActor;
+    JSString *str;
+    char *bytes;
+    jsval *v = JS_ARGV(cx, vp);
 
-    JS_CHECKARGS(5);
-
-    plane = NULL;
-
-    JS_GETOBJECT(objOrig, v, 0);
-    JS_GETOBJECT(objVel, v, 1);
-    JS_GETVECTOR2(objOrig, origin);
-    JS_GETVECTOR2(objVel, velocity);
-    JS_GETOBJECT(objPlane, v, 2);
-    JS_GETOBJECT(objActor, v, 3);
-    JS_GETNUMBER(yaw, v, 4);
-
-    if(objPlane)
-        JS_GET_PRIVATE_DATA(objPlane, &Plane_class, plane_t, plane);
-
-    if(plane == NULL)
-    {
-        if(!(plane = Map_FindClosestPlane(origin)))
-            return JS_TRUE;
-    }
-
-    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, objActor, &GameActor_class, NULL)))
+    if(argc <= 0)
         return JS_FALSE;
 
-    G_ClipMovement(origin, velocity, &plane,
-        actor, (float)yaw, NULL);
+    JS_GETSTRING(str, bytes, v, 0);
+    Snd_PlayShader(bytes);
 
-    Vec_Add(origin, origin, velocity);
-
-    JS_SETVECTOR(objOrig, origin);
-    JS_SETVECTOR(objVel, velocity);
-
-    JS_SetPrivate(cx, objPlane, plane);
+    JS_free(cx, bytes);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-JS_BEGINCLASS(Physics)
+JS_BEGINCLASS(Snd)
     0,                                          // flags
     JS_PropertyStub,                            // addProperty
     JS_PropertyStub,                            // delProperty
@@ -94,18 +62,18 @@ JS_BEGINCLASS(Physics)
     JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
 JS_ENDCLASS();
 
-JS_BEGINPROPS(Physics)
+JS_BEGINPROPS(Snd)
 {
     { NULL, 0, 0, NULL, NULL }
 };
 
-JS_BEGINCONST(Physics)
+JS_BEGINCONST(Snd)
 {
     { 0, 0, 0, { 0, 0, 0 } }
 };
 
-JS_BEGINFUNCS(Physics)
+JS_BEGINFUNCS(Snd)
 {
-    JS_FASTNATIVE(Physics, move,  5),
+    JS_FASTNATIVE(Snd, play, 2),
     JS_FS_END
 };

@@ -32,86 +32,6 @@
 
 enum
 {
-    wp_knife    = 0,
-    wp_crossbow,
-    wp_pistol,
-    wp_shotgun,
-    wp_autoshotgun,
-    wp_rifle,
-    wp_pulse,
-    wp_minigun,
-    wp_grenade,
-    wp_aliengun,
-    wp_missile,
-    wp_accelerator,
-    wp_bfg,
-    wp_chrono,
-    NUMWEAPONS
-};
-
-enum
-{
-    am_clip     = 0,
-    am_shells,
-    am_expshells,
-    am_cell,
-    am_tekarrows,
-    am_arrows,
-    am_mini,
-    am_grenade,
-    am_rocket,
-    am_fusion,
-    am_chrono,
-    NUMAMMO
-};
-
-typedef enum
-{
-    WS_DEACTIVATED,
-    WS_READY,
-    WS_SWAPOUT,
-    WS_SWAPIN,
-    WS_FIRING,
-    WS_HOLDSTER
-} wpnstate_t;
-
-typedef struct
-{
-    vec3_t      origin;
-    float       yaw;
-    float       pitch;
-    kmodel_t    *model;
-    animstate_t animstate;
-    float       speed;
-    anim_t      *idle;
-    anim_t      *walk;
-    anim_t      *running;
-    anim_t      *fire;
-    anim_t      *swap_in;
-    anim_t      *swap_out;
-    wpnstate_t  state;
-} weapon_t;
-
-extern weapon_t weapons[NUMWEAPONS];
-
-//
-// gclient - game-side client controller
-// handled mostly on server side and contains
-// persistent player data
-//
-struct gclient_s
-{
-    kbool       weaponowned[NUMWEAPONS];
-    int         activeweapon;
-    int         ammo[NUMAMMO];
-    int         maxammo[NUMAMMO];
-    kbool       hasbackpack;
-    kbool       hasarmor;
-    int         armorpoints;
-};
-
-enum
-{
     WL_INVALID  = 0,
     WL_OVER     = 1,
     WL_BETWEEN  = 2,
@@ -126,9 +46,6 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
 
 void G_Shutdown(void);
 void G_Ticker(void);
-void G_NoClip(svclient_t *svcl);
-void G_GiveAll(svclient_t *svcl);
-void G_SwitchWeapon(ENetEvent *sev, ENetPacket *packet);
 void G_ClientThink(void);
 void G_Init(void);
 

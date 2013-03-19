@@ -87,14 +87,14 @@ kbool JParse_BeginObject(scparser_t *parser, gObject_t *object)
     cx = js_context;
 
     // get class name of the prototype object
-    if(!JS_HasProperty(cx, js_gobject, sc_stringbuffer, &found))
+    if(!JS_HasProperty(cx, js_gobject, parser->stringToken, &found))
         return false;
 
     if(!found)
-        SC_Error("Unknown object class: %s", sc_stringbuffer);
+        SC_Error("Unknown object class: %s", parser->stringToken);
 
     // get prototype
-    if(!JS_GetProperty(cx, js_gobject, sc_stringbuffer, &val))
+    if(!JS_GetProperty(cx, js_gobject, parser->stringToken, &val))
         return false;
     if(!JS_ValueToObject(cx, val, &cObject))
         return false;
@@ -120,7 +120,7 @@ kbool JParse_BeginObject(scparser_t *parser, gObject_t *object)
         return false;
 
     // add new object as property
-    if(!JS_DefineProperty(cx, object, sc_stringbuffer, OBJECT_TO_JSVAL(newObject),
+    if(!JS_DefineProperty(cx, object, parser->stringToken, OBJECT_TO_JSVAL(newObject),
         NULL, NULL, JSPROP_ENUMERATE))
         return false;
 

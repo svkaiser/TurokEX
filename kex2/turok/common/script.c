@@ -35,7 +35,6 @@
 scparser_t *sc_parsers[MAX_NESTED_PARSERS];
 int sc_numparsers;
 scparser_t *sc_parser;
-char sc_stringbuffer[MAX_FILEPATH];
 
 #define MAX_NESTED_FILENAMES    128
 static char sc_nested_filenames[MAX_NESTED_FILENAMES][MAX_FILEPATH];
@@ -367,7 +366,7 @@ double SC_GetFloat(void)
 void SC_GetString(void)
 {
     SC_ExpectNextToken(TK_STRING);
-    strcpy(sc_stringbuffer, sc_parser->token);
+    strcpy(sc_parser->stringToken, sc_parser->token);
 }
 
 //
@@ -1008,7 +1007,7 @@ void SC_AssignString(const sctokens_t *tokenlist, char *str, int id,
 
     SC_ExpectNextToken(TK_EQUAL);
     SC_GetString();
-    strcpy(str, sc_stringbuffer);
+    strcpy(str, parser->stringToken);
 }
 
 //

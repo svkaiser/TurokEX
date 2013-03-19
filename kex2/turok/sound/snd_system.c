@@ -31,6 +31,15 @@
 #include "zone.h"
 #include "sound.h"
 
+CVAR(s_pitchshift, 1);
+CVAR_CMD(s_sndvolume, 0.5)
+{
+    if(cvar->value <= 0)
+        cvar->value = 1;
+    if(cvar->value > 1)
+        cvar->value = 1;
+}
+
 SDL_mutex   *snd_mutex  = NULL;
 SDL_Thread  *snd_thread = NULL;
 
@@ -274,8 +283,6 @@ sndSource_t *Snd_GetAvailableSource(void)
     int i;
     sndSource_t *src = NULL;
 
-    Snd_EnterCriticalSection();
-
     for(i = 0; i < nSndSources; i++)
     {
         sndSource_t *sndSrc = &sndSources[i];
@@ -292,7 +299,6 @@ sndSource_t *Snd_GetAvailableSource(void)
         break;
     }
 
-    Snd_ExitCriticalSection();
     return src;
 }
 
@@ -302,15 +308,11 @@ sndSource_t *Snd_GetAvailableSource(void)
 
 void Snd_FreeSource(sndSource_t *src)
 {
-    Snd_EnterCriticalSection();
-
     src->inUse      = false;
     src->playing    = false;
     src->next       = NULL;
     src->sfx        = NULL;
     src->startTime  = 0;
-
-    Snd_ExitCriticalSection();
 }
 
 //
@@ -343,7 +345,12 @@ static void Snd_UpdateSources(void)
                     continue;
 
                 alSourceQueueBuffers(sndSrc->handle, 1, &wave->buffer);
-                alSourcef(sndSrc->handle, AL_PITCH, 1200.0f / -sndSrc->sfx->dbFreq);
+
+                if(s_pitchshift.value)
+                    alSourcef(sndSrc->handle, AL_PITCH, 1200.0f / -sndSrc->sfx->dbFreq);
+
+                alSourcef(sndSrc->handle, AL_GAIN,
+                    ((sndSrc->sfx->gain / 32.0f) + 1.0f) * s_sndvolume.value);
                 alSourcePlay(sndSrc->handle);
 
                 sndSrc->playing = true;
@@ -513,4 +520,7 @@ void Snd_Init(void)
     Cmd_AddCommand("printsoundinfo", FCmd_SoundInfo);
     Cmd_AddCommand("playsound", FCmd_LoadTestSound);
     Cmd_AddCommand("playsoundshader", FCmd_LoadShader);
+
+    Cvar_Register(&s_pitchshift);
+    Cvar_Register(&s_sndvolume);
 }

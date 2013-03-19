@@ -50,7 +50,7 @@ typedef struct
     byte u3;
     byte u4;
     short random;
-    short u6;
+    short volume;
     short u7;
     short u8;
     short u9;
@@ -761,6 +761,7 @@ void SND_StoreSoundShaders(void)
                 Com_Strcat("        wavefile = \"sounds/waves/%s\"\n", sndnames[sfx->waveid]);
                 Com_Strcat("        delay = %i\n", sfx->delay);
                 Com_Strcat("        dbFreq = %f\n", CoerceFloat(sfx->frequency));
+                Com_Strcat("        gain = %f\n", CoerceFloat(sfx->volume));
                 Com_Strcat("        random = %f\n", (float)sfx->random / 100.0f);
                 Com_Strcat("    }\n");
                 Com_UpdateDataProgress();

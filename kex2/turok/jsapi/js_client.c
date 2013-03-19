@@ -48,7 +48,6 @@ JS_PROP_FUNC_GET(NClient)
     switch(JSVAL_TO_INT(id))
     {
     case CL_STATE:
-        //return JS_NewNumberValue(cx, client.state, vp);
         JS_SET_RVAL(cx, vp, INT_TO_JSVAL(client.state));
         return JS_TRUE;
 
@@ -57,21 +56,17 @@ JS_PROP_FUNC_GET(NClient)
 
     case CL_HOST:
         JS_NEWOBJECTPOOL(client.host, Host);
-        //JS_NEWOBJECT_SETPRIVATE(client.host, &Host_class);
         return JS_TRUE;
 
     case CL_PEER:
         JS_NEWOBJECTPOOL(client.peer, Peer);
-        //JS_NEWOBJECT_SETPRIVATE(client.peer, &Peer_class);
         return JS_TRUE;
 
     case CL_NETEVENT:
         JS_NEWOBJECTPOOL(&client.netEvent, NetEvent);
-        //JS_NEWOBJECT_SETPRIVATE(&client.netEvent, &NetEvent_class);
         return JS_TRUE;
 
     case CL_ID:
-        //return JS_NewNumberValue(cx, client.client_id, vp);
         JS_SET_RVAL(cx, vp, INT_TO_JSVAL(client.client_id));
         return JS_TRUE;
 

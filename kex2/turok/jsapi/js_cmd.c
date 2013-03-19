@@ -48,7 +48,7 @@ static JSBool cmd_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 {
     switch(JSVAL_TO_INT(id))
     {
-    case CMD_ANGLE_X:
+    /*case CMD_ANGLE_X:
         return JS_NewNumberValue(cx, movecontroller.cmd->angle[0].f, vp);
 
     case CMD_ANGLE_Y:
@@ -58,7 +58,7 @@ static JSBool cmd_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
         return JS_NewNumberValue(cx, movecontroller.cmd->mouse[0].f, vp);
 
     case CMD_MOUSE_Y:
-        return JS_NewNumberValue(cx, movecontroller.cmd->mouse[1].f, vp);
+        return JS_NewNumberValue(cx, movecontroller.cmd->mouse[1].f, vp);*/
     }
 
     return JS_FALSE;
@@ -70,7 +70,7 @@ static JSBool cmd_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 
 static JSBool cmd_action(JSContext *cx, uintN argc, jsval *vp)
 {
-    jsval *v;
+    /*jsval *v;
     JSString *str;
     char *bytes;
     int action;
@@ -90,7 +90,7 @@ static JSBool cmd_action(JSContext *cx, uintN argc, jsval *vp)
     JS_free(cx, bytes);
 
     JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(action != -1 &&
-        movecontroller.cmd->buttons[action]));
+        movecontroller.cmd->buttons[action]));*/
     return JS_TRUE;
 }
 
@@ -100,7 +100,7 @@ static JSBool cmd_action(JSContext *cx, uintN argc, jsval *vp)
 
 static JSBool cmd_actionheld(JSContext *cx, uintN argc, jsval *vp)
 {
-    jsval *v;
+    /*jsval *v;
     JSString *str;
     char *bytes;
     int action;
@@ -120,7 +120,8 @@ static JSBool cmd_actionheld(JSContext *cx, uintN argc, jsval *vp)
     JS_free(cx, bytes);
 
     return JS_NewNumberValue(cx, action == -1 ? 0 :
-        movecontroller.cmd->heldtime[action], vp);
+        movecontroller.cmd->heldtime[action], vp);*/
+    return JS_TRUE;
 }
 
 //

@@ -27,7 +27,6 @@
 #include "client.h"
 #include "actor.h"
 #include "game.h"
-#include "pred.h"
 
 #define MAXCLIENTS  8
 
@@ -57,9 +56,7 @@ struct svclient_s
     unsigned int        client_id;
     svclient_state_e    state;
     ticcmd_t            cmd;
-    pmove_t             pmove;
     netsequence_t       ns;
-    gclient_t           gclient;
 };
 
 typedef struct

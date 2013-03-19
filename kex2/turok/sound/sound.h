@@ -44,6 +44,7 @@ typedef struct
     wave_t          *wave;
     int             delay;
     float           random;
+    float           gain;
     float           dbFreq;
 } sfx_t;
 

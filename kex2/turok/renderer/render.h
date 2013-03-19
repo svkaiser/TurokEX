@@ -140,6 +140,7 @@ typedef struct
     animtrack_t         prevtrack;
     float               time;
     float               deltatime;
+    float               playtime;
     float               frametime;
     float               blendtime;
     animflags_t         flags;

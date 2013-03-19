@@ -108,165 +108,10 @@ void CL_Connect(const char *address)
     if(client.peer == NULL)
     {
         Com_Warning("No available peers for initiating an ENet connection.\n");
-    }
-    else
-    {
-        client.state = CL_STATE_CONNECTING;
-    }
-}
-
-//
-// CL_ReadClientInfo
-//
-
-static void CL_ReadClientInfo(ENetPacket *packet)
-{
-    //int tmp;
-
-    Packet_Read8(packet, &client.client_id);
-    //Packet_Read8(packet, &tmp);
-    client.state = CL_STATE_READY;
-
-    Com_DPrintf("CL_ReadClientInfo: ID is %i\n", client.client_id);
-}
-
-//
-// CL_BuildMoveFrame
-//
-
-static void CL_BuildMoveFrame(void)
-{
-    moveframe_t *frame;
-    float lerp;
-
-    if(client.state != CL_STATE_READY)
         return;
-
-    if(g_currentmap == NULL)
-        return;
-
-    frame = &client.moveframe;
-    lerp = client.moveframe.lerp;
-
-    Vec_Copy3(frame->velocity, client.pmove.velocity);
-
-    frame->origin[0]    = -client.pred_diff[0] * lerp + client.pmove.origin[0];
-    frame->origin[1]    = -client.pred_diff[1] * lerp + client.pmove.origin[1];
-    frame->origin[2]    = -client.pred_diff[2] * lerp + client.pmove.origin[2];
-    frame->yaw          = client.pmove.angles[0];
-    frame->pitch        = client.pmove.angles[1];
-    frame->roll         = client.pmove.angles[2];
-    frame->plane        = &g_currentmap->planes[client.pmove.plane];
-}
-
-//
-// CL_ReadPmove
-//
-
-static void CL_ReadPmove(ENetPacket *packet)
-{
-    pmove_t pmove;
-    pmove_t *clmove;
-    int time;
-
-    if(client.state != CL_STATE_READY)
-        return;
-
-    if(g_currentmap == NULL)
-        return;
-
-    Packet_Read32(packet, &client.st.tics);
-
-    time = client.st.tics - (client.st.time/100);
-    client.st.time = client.st.tics * 100;
-
-    if(client.time > client.st.time)
-    {
-        client.time = client.st.time;
-        client.moveframe.lerp = 1;
-    }
-    else if(client.time < client.st.time - 100)
-    {
-        client.time = client.st.time - 100;
-        client.moveframe.lerp = 0;
-    }
-    else
-    {
-        client.moveframe.lerp = 1 -
-            (client.st.time - client.time) * 0.01f;
     }
 
-    memset(&pmove, 0, sizeof(pmove_t));
-
-    Packet_ReadVector(packet, &pmove.origin);
-    Packet_ReadVector(packet, &pmove.velocity);
-    Packet_Read32(packet, &(int)pmove.flags);
-    Packet_Read32(packet, &pmove.movetype);
-    Packet_Read32(packet, &pmove.plane);
-    Packet_Read32(packet, &client.ns.acks);
-    Packet_Read32(packet, &client.ns.ingoing);
-
-    clmove = &client.oldmoves[client.ns.acks & (NETBACKUPS-1)];
-    Vec_Sub(client.pred_diff, pmove.origin, clmove->origin);
-
-    if(Vec_Unit3(client.pred_diff) >= 0.075f)
-    {
-        int i;
-
-        Vec_Copy3(client.pmove.origin, pmove.origin);
-        Vec_Copy3(client.pmove.velocity, pmove.velocity);
-        client.moveframe.plane = &g_currentmap->planes[pmove.plane];
-        client.pmove.plane = pmove.plane;
-        client.pmove.movetype = pmove.movetype;
-        client.pmove.flags = pmove.flags;
-
-        for(i = client.ns.acks; i < client.ns.outgoing; i++)
-        {
-            int frame = (i & (NETBACKUPS-1));
-
-            Vec_Copy3(client.oldmoves[frame].origin, pmove.origin);
-            Vec_Copy3(client.oldmoves[frame].velocity, pmove.velocity);
-            client.oldmoves[frame].plane = pmove.plane;
-            client.oldmoves[frame].movetype = pmove.movetype;
-            client.oldmoves[frame].flags = pmove.flags;
-        }
-    }
-}
-
-//
-// CL_ProcessServerPackets
-//
-
-void CL_ProcessServerPackets(ENetPacket *packet, ENetEvent *cev)
-{
-    int type = 0;
-
-    Packet_Read8(packet, &type);
-
-    switch(type)
-    {
-    case sp_ping:
-        Com_Printf("Recieved acknowledgement from server\n");
-        break;
-
-    case sp_clientinfo:
-        CL_ReadClientInfo(packet);
-        break;
-
-    case sp_pmove:
-        CL_ReadPmove(packet);
-        break;
-
-    case sp_weaponinfo:
-        CL_ChangeWeapon(packet);
-        break;
-
-    default:
-        Com_Warning("Recieved unknown packet type: %i\n", type);
-        break;
-    }
-
-    enet_packet_destroy(cev->packet);
+    client.state = CL_STATE_CONNECTING;
 }
 
 //
@@ -279,47 +124,20 @@ static void CL_CheckHostMsg(void)
 
     while(enet_host_service(client.host, &cev, 0) > 0)
     {
-        client.netEvent = cev;
-
-        J_RunObjectEvent(JS_EV_CLIENT, "netUpdate");
-
-        /*switch(cev.type)
+        switch(cev.type)
         {
         case ENET_EVENT_TYPE_CONNECT:
-            Com_Printf("connected to host\n");
             client.state = CL_STATE_CONNECTED;
-            client.ns.ingoing = 0;
-            client.ns.outgoing = 1;
             break;
 
         case ENET_EVENT_TYPE_DISCONNECT:
-            Com_Printf("disconnected from host\n");
             client.state = CL_STATE_DISCONNECTED;
             break;
+        }
 
-        case ENET_EVENT_TYPE_RECEIVE:
-            CL_ProcessServerPackets(cev.packet, &cev);
-            break;
-        }*/
+        client.netEvent = cev;
+        J_RunObjectEvent(JS_EV_CLIENT, "netUpdate");
     }
-}
-
-//
-// CL_MessageServer
-//
-
-void CL_MessageServer(char *string)
-{
-    ENetPacket *packet;
-
-    if(!(packet = Packet_New()))
-    {
-        return;
-    }
-
-    Packet_Write8(packet, cp_msgserver);
-    Packet_WriteString(packet, string);
-    Packet_Send(packet, client.peer);
 }
 
 //
@@ -339,11 +157,11 @@ static void CL_DrawDebug(void)
         Draw_Text(32, 112,  COLOR_GREEN, 1, "tics: %i", client.tics);
         Draw_Text(32, 128, COLOR_GREEN, 1, "max msecs: %f",
             (1000.0f / cl_maxfps.value) / 1000.0f);
-        Draw_Text(32, 144, COLOR_GREEN, 1, "server time: %i",
+        /*Draw_Text(32, 144, COLOR_GREEN, 1, "server time: %i",
             client.st.tics - (client.st.time/100));
         Draw_Text(32, 160, COLOR_GREEN, 1, "latency: %i",
-            client.time - client.latency[client.ns.acks & (NETBACKUPS-1)]);
-        Draw_Text(32, 176, COLOR_WHITE, 1, Con_GetLastBuffer());
+            client.time - client.latency[client.ns.acks & (NETBACKUPS-1)]);*/
+        Draw_Text(32, 144, COLOR_WHITE, 1, Con_GetLastBuffer());
         return;
     }
 
@@ -358,8 +176,6 @@ static void CL_DrawDebug(void)
 static void CL_Ticker(void)
 {
     Menu_Ticker();
-
-    CL_WeaponThink();
 
     //TEMP
     G_ClientThink();
@@ -404,30 +220,11 @@ void CL_Run(int msec)
 
     CL_CheckHostMsg();
 
-    //IN_PollInput();
-
-    //CL_ProcessEvents();
-
     J_RunObjectEvent(JS_EV_CLIENT, "tick");
-
-    //CL_BuildTiccmd();
-
-    //Pred_ClientMovement();
-
-    //CL_BuildMoveFrame();
 
     CL_Drawer();
 
     CL_Ticker();
-}
-
-//
-// CL_Random
-//
-
-int CL_Random(void)
-{
-    return 0;
 }
 
 //
@@ -437,43 +234,6 @@ int CL_Random(void)
 static void FCmd_ShowClientTime(void)
 {
     bDebugTime ^= 1;
-}
-
-//
-// FCmd_Say
-//
-
-static void FCmd_Say(void)
-{
-    ENetPacket *packet;
-
-    if(Cmd_GetArgc() < 2)
-    {
-        return;
-    }
-
-    if(!(packet = Packet_New()))
-    {
-        return;
-    }
-
-    Packet_Write8(packet, cp_say);
-    Packet_WriteString(packet, Cmd_GetArgv(1));
-    Packet_Send(packet, client.peer);
-}
-
-//
-// FCmd_MsgServer
-//
-
-static void FCmd_MsgServer(void)
-{
-    if(Cmd_GetArgc() < 2)
-    {
-        return;
-    }
-
-    CL_MessageServer(Cmd_GetArgv(1));
 }
 
 //
@@ -516,6 +276,4 @@ void CL_Init(void)
     Cvar_Register(&cl_port);
 
     Cmd_AddCommand("debugclienttime", FCmd_ShowClientTime);
-    Cmd_AddCommand("say", FCmd_Say);
-    //Cmd_AddCommand("msgserver", FCmd_MsgServer);
 }

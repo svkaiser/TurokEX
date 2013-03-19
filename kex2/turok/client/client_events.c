@@ -79,7 +79,7 @@ kbool CL_Responder(event_t *ev)
 
 void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd)
 {
-    int numactions = 0;
+    /*int numactions = 0;
     int i;
 
     for(i = 0; i < MAXACTIONS; i++)
@@ -105,7 +105,7 @@ void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd)
     Packet_Write32(packet, client.ns.ingoing);
     Packet_Write32(packet, client.ns.outgoing);
 
-    client.ns.outgoing++;
+    client.ns.outgoing++;*/
 }
 
 //
@@ -114,7 +114,7 @@ void CL_WriteTiccmd(ENetPacket *packet, ticcmd_t *cmd)
 
 void CL_BuildTiccmd(void)
 {
-    ticcmd_t cmd;
+    /*ticcmd_t cmd;
     control_t *ctrl;
     ENetPacket *packet;
     float yaw;
@@ -179,7 +179,7 @@ void CL_BuildTiccmd(void)
     Packet_Write8(packet, cp_cmd);
 
     CL_WriteTiccmd(packet, &cmd);
-    Packet_Send(packet, client.peer);
+    Packet_Send(packet, client.peer);*/
 }
 
 //

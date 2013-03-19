@@ -87,7 +87,7 @@ void SV_SendAcknowledgement(ENetEvent *sev)
 
 void SV_SendPMove(svclient_t *svcl)
 {
-    ENetPacket *packet;
+    /*ENetPacket *packet;
 
     if(svcl->state != SVC_STATE_INGAME)
         return;
@@ -106,7 +106,7 @@ void SV_SendPMove(svclient_t *svcl)
     Packet_Write32(packet, svcl->ns.outgoing);
     svcl->ns.outgoing++;
 
-    Packet_Send(packet, svcl->peer);
+    Packet_Send(packet, svcl->peer);*/
 }
 
 //
@@ -115,7 +115,7 @@ void SV_SendPMove(svclient_t *svcl)
 
 void SV_SendWeaponInfo(svclient_t *svcl)
 {
-    ENetPacket *packet;
+    /*ENetPacket *packet;
 
     if(svcl->state != SVC_STATE_INGAME)
         return;
@@ -125,5 +125,5 @@ void SV_SendWeaponInfo(svclient_t *svcl)
     
     Packet_Write8(packet, sp_weaponinfo);
     Packet_Write8(packet, svcl->gclient.activeweapon);
-    Packet_Send(packet, svcl->peer);
+    Packet_Send(packet, svcl->peer);*/
 }

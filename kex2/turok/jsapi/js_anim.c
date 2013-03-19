@@ -134,7 +134,8 @@ enum animstate_enum
 {
     ANS_FLAGS,
     ANS_TIME,
-    ANS_FRAMETIME
+    ANS_FRAMETIME,
+    ANS_PLAYTIME
 };
 
 JS_CLASSOBJECT(AnimState);
@@ -158,6 +159,9 @@ JS_PROP_FUNC_GET(AnimState)
     case ANS_FRAMETIME:
         return JS_NewDoubleValue(cx, animstate->frametime, vp);
 
+    case ANS_PLAYTIME:
+        return JS_NewDoubleValue(cx, animstate->playtime, vp);
+
     default:
         return JS_TRUE;
     }
@@ -169,17 +173,21 @@ JS_PROP_FUNC_SET(AnimState)
 {
     animstate_t *animstate;
     jsval *v = vp;
+    jsdouble val;
 
     JS_GET_PRIVATE_DATA(obj, &AnimState_class, animstate_t, animstate);
 
     switch(JSVAL_TO_INT(id))
     {
     case ANS_FLAGS:
-        {
-            JS_CHECKINTEGER(0);
-            animstate->flags = JSVAL_TO_INT(JS_ARG(0));
-            break;
-        }
+        JS_CHECKINTEGER(0);
+        animstate->flags = JSVAL_TO_INT(JS_ARG(0));
+        break;
+
+    case ANS_PLAYTIME:
+        JS_GETNUMBER(val, vp, 0);
+        animstate->playtime = (float)val;
+        break;
     }
 
     return JS_TRUE;
@@ -256,7 +264,7 @@ JS_BEGINCLASS(AnimState)
     JS_PropertyStub,                            // addProperty
     JS_PropertyStub,                            // delProperty
     AnimState_getProperty,                      // getProperty
-    JS_PropertyStub,                            // setProperty
+    AnimState_setProperty,                      // setProperty
     JS_EnumerateStub,                           // enumerate
     JS_ResolveStub,                             // resolve
     JS_ConvertStub,                             // convert
@@ -269,6 +277,7 @@ JS_BEGINPROPS(AnimState)
     { "flags",      ANS_FLAGS,      JSPROP_ENUMERATE,                   NULL, NULL },
     { "time",       ANS_TIME,       JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
     { "frameTime",  ANS_FRAMETIME,  JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "playTime",   ANS_PLAYTIME,   JSPROP_ENUMERATE,   NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 

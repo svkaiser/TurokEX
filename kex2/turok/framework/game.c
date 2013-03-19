@@ -61,76 +61,6 @@ void G_Ticker(void)
 }
 
 //
-// G_SwitchWeapon
-//
-
-void G_SwitchWeapon(ENetEvent *sev, ENetPacket *packet)
-{
-    svclient_t *svcl;
-    gclient_t *gc;
-    kbool cycle;
-    int wpn_id;
-
-    svcl = &svclients[SV_GetPlayerID(sev->peer)];
-    gc = &svcl->gclient;
-    wpn_id = gc->activeweapon;
-
-    Packet_Read8(packet, &cycle);
-
-    if(cycle == true)
-    {
-        kbool cycle_next;
-
-        Packet_Read8(packet, &cycle_next);
-
-        if(cycle_next == true)
-        {
-            int weapon = gc->activeweapon + 1;
-
-            if(weapon >= NUMWEAPONS)
-                weapon = 0;
-
-            while(weapon != gc->activeweapon)
-            {
-                if(gc->weaponowned[weapon])
-                {
-                    gc->activeweapon = weapon;
-                    break;
-                }
-
-                if(++weapon >= NUMWEAPONS)
-                    weapon = 0;
-            }
-        }
-        else
-        {
-            int weapon = gc->activeweapon - 1;
-
-            if(weapon < 0)
-                weapon = (NUMWEAPONS - 1);
-
-            while(weapon != gc->activeweapon)
-            {
-                if(gc->weaponowned[weapon])
-                {
-                    gc->activeweapon = weapon;
-                    break;
-                }
-
-                if(--weapon < 0)
-                    weapon = (NUMWEAPONS - 1);
-            }
-        }
-    }
-    else
-    {
-    }
-
-    if(wpn_id != gc->activeweapon)
-        SV_SendWeaponInfo(svcl);
-}
-
-//
 // G_ClientThink
 //
 
@@ -140,51 +70,11 @@ void G_ClientThink(void)
 }
 
 //
-// G_NoClip
-//
-
-void G_NoClip(svclient_t *svcl)
-{
-    /*if(svcl->state != SVC_STATE_INGAME || g_currentmap == NULL)
-        return;
-
-    if(svcl->pmove.movetype == MT_NOCLIP)
-    {
-        plane_t *plane;
-
-        svcl->pmove.movetype = MT_NORMAL;
-        plane = Map_FindClosestPlane(svcl->gclient.actor.origin);
-        svcl->pmove.plane = plane - g_currentmap->planes;
-        svcl->gclient.actor.plane = plane;
-    }
-    else
-    {
-        svcl->pmove.movetype = MT_NOCLIP;
-    }*/
-}
-
-//
-// G_GiveAll
-//
-
-void G_GiveAll(svclient_t *svcl)
-{
-    int i;
-
-    if(svcl->state != SVC_STATE_INGAME || g_currentmap == NULL)
-        return;
-
-    for(i = 0; i < NUMWEAPONS; i++)
-        svcl->gclient.weaponowned[i] = true;
-}
-
-//
 // G_Init
 //
 
 void G_Init(void)
 {
     Map_Init();
-    CL_InitWeapons();
 }
 

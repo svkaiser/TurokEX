@@ -234,15 +234,6 @@ static void SV_ClientCommand(ENetEvent *sev, ENetPacket *packet)
 
     svcl = &svclients[SV_GetPlayerID(sev->peer)];
     Com_DPrintf("client command: %s (%s)\n", cmd, SV_GetPeerAddress(sev));
-
-    if(!strcmp(cmd, "noclip"))
-    {
-        G_NoClip(svcl);
-    }
-    else if(!strcmp(cmd, "giveall"))
-    {
-        G_GiveAll(svcl);
-    }
 }
 
 //
@@ -269,7 +260,6 @@ void SV_ProcessClientPackets(ENetPacket *packet, ENetEvent *sev)
 
     case cp_cmd:
         SV_ReadTiccmd(sev, packet);
-        Pred_ServerMovement();
         break;
 
     case cp_msgserver:
@@ -277,7 +267,6 @@ void SV_ProcessClientPackets(ENetPacket *packet, ENetEvent *sev)
         break;
 
     case cp_changeweapon:
-        G_SwitchWeapon(sev, packet);
         break;
 
     default:

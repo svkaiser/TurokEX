@@ -95,6 +95,7 @@ extern int id_stack_count;
 typedef struct
 {
     char                token[SC_TOKEN_LEN];
+    char                stringToken[MAX_FILEPATH];
     char*               buffer;
     char*               pointer_start;
     char*               pointer_end;
@@ -111,7 +112,6 @@ typedef struct
 
 extern scparser_t *sc_parsers[MAX_NESTED_PARSERS];
 extern scparser_t *sc_parser;
-extern char sc_stringbuffer[MAX_FILEPATH];
 
 typedef struct
 {
