@@ -196,13 +196,6 @@ void Actor_Setup(gActor_t *actor)
     Vec_Normalize4(actor->rotation);
     Actor_UpdateTransform(actor);
 
-    actor->bbox.min[0] += actor->origin[0];
-    actor->bbox.min[1] += actor->origin[1];
-    actor->bbox.min[2] += actor->origin[2];
-    actor->bbox.max[0] += actor->origin[0];
-    actor->bbox.max[1] += actor->origin[1];
-    actor->bbox.max[2] += actor->origin[2];
-
     if((anim = Mdl_GetAnim(actor->model, "anim00")))
     {
         Mdl_SetAnimState(&actor->animState, anim, 1, ANF_LOOP);

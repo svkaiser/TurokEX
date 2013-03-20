@@ -65,6 +65,7 @@ typedef struct sndSource_s
     kbool               looping;
     float               volume;
     sfx_t               *sfx;
+    gActor_t            *actor;
     struct sndSource_s  *next;
 } sndSource_t;
 
@@ -74,7 +75,7 @@ extern sndSource_t sndSources[SND_MAX_SOURCES];
 extern unsigned long sndTime;
 
 sndShader_t *Snd_LoadShader(const char *name);
-void Snd_PlayShader(const char *name);
+void Snd_PlayShader(const char *name, gActor_t *actor);
 
 void Snd_Shutdown(void);
 void Snd_Init(void);
@@ -84,5 +85,6 @@ void Snd_ExitCriticalSection(void);
 wave_t *Snd_CacheWaveFile(const char *name);
 sndSource_t *Snd_GetAvailableSource(void);
 void Snd_FreeSource(sndSource_t *src);
+void Snd_UpdateListener(void);
 
 #endif

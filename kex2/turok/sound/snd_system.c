@@ -30,6 +30,7 @@
 #include "common.h"
 #include "zone.h"
 #include "sound.h"
+#include "client.h"
 
 CVAR(s_pitchshift, 1);
 CVAR_CMD(s_sndvolume, 0.5)
@@ -312,7 +313,37 @@ void Snd_FreeSource(sndSource_t *src)
     src->playing    = false;
     src->next       = NULL;
     src->sfx        = NULL;
+    src->actor      = NULL;
     src->startTime  = 0;
+}
+
+//
+// Snd_UpdateListener
+//
+
+void Snd_UpdateListener(void)
+{
+    if(client.playerActor)
+    {
+        ALfloat orientation[6];
+        vec3_t axis;
+        float angle;
+
+        Vec_QuaternionToAxis(&angle, axis, client.playerActor->rotation);
+        
+        orientation[0] = (float)sin(angle);
+        orientation[1] = 0;
+        orientation[2] = (float)cos(angle);
+        orientation[3] = 0;
+        orientation[4] = 1;
+        orientation[5] = 0;
+
+        alListenerfv(AL_ORIENTATION, orientation);
+        alListener3f(AL_POSITION,
+            client.playerActor->origin[0] * 0.01f,
+            client.playerActor->origin[1] * 0.01f,
+            client.playerActor->origin[2] * 0.01f);
+    }
 }
 
 //
@@ -324,6 +355,7 @@ static void Snd_UpdateSources(void)
     int i;
 
     Snd_EnterCriticalSection();
+    Snd_UpdateListener();
 
     for(i = 0; i < nSndSources; i++)
     {
@@ -348,6 +380,17 @@ static void Snd_UpdateSources(void)
 
                 if(s_pitchshift.value)
                     alSourcef(sndSrc->handle, AL_PITCH, 1200.0f / -sndSrc->sfx->dbFreq);
+
+                if(sndSrc->actor)
+                {
+                    alSourcei(sndSrc->handle, AL_SOURCE_RELATIVE, AL_FALSE);
+                    alSource3f(sndSrc->handle, AL_POSITION,
+                        sndSrc->actor->origin[0] * 0.01f,
+                        sndSrc->actor->origin[1] * 0.01f,
+                        sndSrc->actor->origin[2] * 0.01f);
+                }
+                else
+                    alSourcei(sndSrc->handle, AL_SOURCE_RELATIVE, AL_TRUE);
 
                 alSourcef(sndSrc->handle, AL_GAIN,
                     ((sndSrc->sfx->gain / 32.0f) + 1.0f) * s_sndvolume.value);
@@ -466,7 +509,7 @@ static void FCmd_LoadShader(void)
     if(Cmd_GetArgc() < 2)
         return;
 
-    Snd_PlayShader(Cmd_GetArgv(1));
+    Snd_PlayShader(Cmd_GetArgv(1), NULL);
 }
 
 //
@@ -508,11 +551,14 @@ void Snd_Init(void)
         sndSrc->volume      = 1.0f;
         sndSrc->next        = NULL;
 
-        alSourcei(handle, AL_LOOPING, false);
+        alSourcei(handle, AL_LOOPING, AL_FALSE);
+        alSourcei(sndSrc->handle, AL_SOURCE_RELATIVE, AL_TRUE);
         alSourcef(handle, AL_GAIN, 1.0f);
         alSourcef(handle, AL_PITCH, 1.0f);
         nSndSources++;
     }
+
+    alListener3f(AL_POSITION, 0, 0, 0);
 
     snd_mutex = SDL_CreateMutex();
     snd_thread = SDL_CreateThread(Thread_SoundHandler, NULL);

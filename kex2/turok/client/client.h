@@ -54,6 +54,7 @@ typedef struct
     float           runtime;
     kbool           local;
     int             tics;
+    gActor_t        *playerActor;
 } client_t;
 
 extern client_t client;

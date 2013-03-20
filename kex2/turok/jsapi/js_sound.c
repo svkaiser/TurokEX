@@ -35,14 +35,24 @@ JS_FASTNATIVE_BEGIN(Snd, play)
 {
     JSString *str;
     char *bytes;
+    gActor_t *actor = NULL;
     jsval *v = JS_ARGV(cx, vp);
 
     if(argc <= 0)
         return JS_FALSE;
 
     JS_GETSTRING(str, bytes, v, 0);
-    Snd_PlayShader(bytes);
 
+    if(argc == 2)
+    {
+        JSObject *object;
+
+        JS_GETOBJECT(object, v, 1);
+        actor = (gActor_t*)JS_GetInstancePrivate(cx, object,
+            &GameActor_class, NULL);
+    }
+
+    Snd_PlayShader(bytes, actor);
     JS_free(cx, bytes);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);

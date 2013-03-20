@@ -189,7 +189,7 @@ sndShader_t *Snd_LoadShader(const char *name)
 // Snd_PlayShader
 //
 
-void Snd_PlayShader(const char *name)
+void Snd_PlayShader(const char *name, gActor_t *actor)
 {
     sndShader_t *shader = Snd_LoadShader(name);
     sndSource_t *src;
@@ -209,7 +209,16 @@ void Snd_PlayShader(const char *name)
     }
 
     src->sfx = &shader->sfx[0];
+    src->actor = actor;
     src->next = NULL;
+
+    if(actor != NULL)
+    {
+        alSource3f(src->handle, AL_POSITION,
+            actor->origin[0],
+            actor->origin[1],
+            actor->origin[2]);
+    }
 
     for(i = 1; i < shader->numsfx; i++)
     {
@@ -219,7 +228,16 @@ void Snd_PlayShader(const char *name)
             return;
 
         nextSrc->sfx = &shader->sfx[i];
+        nextSrc->actor = actor;
         nextSrc->next = NULL;
+
+        if(actor != NULL)
+        {
+            alSource3f(nextSrc->handle, AL_POSITION,
+                actor->origin[0],
+                actor->origin[1],
+                actor->origin[2]);
+        }
     }
 
     Snd_ExitCriticalSection();

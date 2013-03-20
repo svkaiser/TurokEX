@@ -40,7 +40,8 @@ enum client_enum
     CL_STATE,
     CL_NETEVENT,
     CL_ID,
-    CL_SUBCLASS
+    CL_SUBCLASS,
+    CL_PLAYERACTOR
 };
 
 JS_PROP_FUNC_GET(NClient)
@@ -68,6 +69,10 @@ JS_PROP_FUNC_GET(NClient)
 
     case CL_ID:
         JS_SET_RVAL(cx, vp, INT_TO_JSVAL(client.client_id));
+        return JS_TRUE;
+
+    case CL_PLAYERACTOR:
+        JS_NEWOBJECTPOOL(client.playerActor, GameActor);
         return JS_TRUE;
 
     default:
@@ -98,6 +103,18 @@ JS_PROP_FUNC_SET(NClient)
             JSObject *obj2;
             JS_GETOBJECT(obj2, vp, 0);
             JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj2));
+            return JS_TRUE;
+        }
+
+    case CL_PLAYERACTOR:
+        {
+            JSObject *object;
+            gActor_t *actor;
+            JS_GETOBJECT(object, vp, 0);
+            if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, object, &GameActor_class, NULL)))
+                return JS_TRUE;
+
+            client.playerActor = actor;
             return JS_TRUE;
         }
 
@@ -158,6 +175,7 @@ JS_BEGINPROPS(NClient)
     { "state",      CL_STATE,       JSPROP_ENUMERATE,                   NULL, NULL },
     { "id",         CL_ID,          JSPROP_ENUMERATE,                   NULL, NULL },
     { "subclass",   CL_SUBCLASS,    JSPROP_ENUMERATE,                   NULL, NULL },
+    { "playerActor",CL_PLAYERACTOR, JSPROP_ENUMERATE,                   NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 

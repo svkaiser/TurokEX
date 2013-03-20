@@ -262,6 +262,7 @@ void CL_Init(void)
     client.peer = NULL;
     client.state = CL_STATE_UNINITIALIZED;
     client.local = (Com_CheckParam("-client") == 0);
+    client.playerActor = NULL;
 
     Cvar_Register(&cl_name);
     Cvar_Register(&cl_fov);

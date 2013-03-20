@@ -462,26 +462,40 @@ void R_DrawActors(void)
     for(i = 0; i < gLevel.numActors; i++)
     {
         gActor_t *actor = &gLevel.gActors[i];
+        bbox_t box;
 
         if(actor->bHidden)
             continue;
 
-        if(!R_FrustumTestBox(actor->bbox))
-            continue;
+        Vec_Copy3(box.min, actor->bbox.min);
+        Vec_Copy3(box.max, actor->bbox.max);
 
-        dglPushMatrix();
-        dglMultMatrixf(actor->matrix);
-        dglPushMatrix();
-        dglMultMatrixf(mtx);
+        box.min[0] += actor->origin[0];
+        box.min[1] += actor->origin[1];
+        box.min[2] += actor->origin[2];
+        box.max[0] += actor->origin[0];
+        box.max[1] += actor->origin[1];
+        box.max[2] += actor->origin[2];
 
-        R_TraverseDrawNode(actor->model, &actor->model->nodes[0],
-            actor->textureSwaps, actor->variant, &actor->animState);
+        if(client.playerActor != actor)
+        {
+            if(!R_FrustumTestBox(box))
+                continue;
 
-        dglPopMatrix();
-        dglPopMatrix();
+            dglPushMatrix();
+            dglMultMatrixf(actor->matrix);
+            dglPushMatrix();
+            dglMultMatrixf(mtx);
+
+            R_TraverseDrawNode(actor->model, &actor->model->nodes[0],
+                actor->textureSwaps, actor->variant, &actor->animState);
+
+            dglPopMatrix();
+            dglPopMatrix();
+        }
 
         if(showbbox)
-            R_DrawBoundingBox(actor->bbox, 255, 0, 0);
+            R_DrawBoundingBox(box, 255, 0, 0);
     }
 }
 
@@ -518,20 +532,31 @@ void R_DrawStatics(void)
         for(j = 0; j < gb->numStatics; j++)
         {
             gActor_t *actor = &gb->statics[j];
+            bbox_t box;
 
             if(actor->bHidden || showcollision)
                 continue;
 
-            if(!R_FrustumTestBox(actor->bbox))
+            Vec_Copy3(box.min, actor->bbox.min);
+            Vec_Copy3(box.max, actor->bbox.max);
+
+            box.min[0] += actor->origin[0];
+            box.min[1] += actor->origin[1];
+            box.min[2] += actor->origin[2];
+            box.max[0] += actor->origin[0];
+            box.max[1] += actor->origin[1];
+            box.max[2] += actor->origin[2];
+
+            if(!R_FrustumTestBox(box))
                 continue;
 
             if(showgrid)
             {
-                if(actor->bbox.max[1] > grid_high_y)
-                    grid_high_y = actor->bbox.max[1];
+                if(box.max[1] > grid_high_y)
+                    grid_high_y = box.max[1];
 
-                if(actor->bbox.min[1] < grid_low_y)
-                    grid_low_y = actor->bbox.min[1];
+                if(box.min[1] < grid_low_y)
+                    grid_low_y = box.min[1];
             }
 
             dglPushMatrix();
@@ -545,9 +570,9 @@ void R_DrawStatics(void)
             if(showbbox)
             {
                 if(actor->bTouch)
-                    R_DrawBoundingBox(actor->bbox, 0, 255, 0);
+                    R_DrawBoundingBox(box, 0, 255, 0);
                 else
-                    R_DrawBoundingBox(actor->bbox, 255, 255, 0);
+                    R_DrawBoundingBox(box, 255, 255, 0);
             }
         }
     }
