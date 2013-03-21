@@ -53,6 +53,12 @@ unsigned long sndTime = 0;
 
 static wave_t *wave_hashlist[MAX_HASH];
 
+#define SND_METRICS 0.01f
+#define SND_VECTOR2METRICS(vec) \
+    vec[0] * SND_METRICS,       \
+    vec[1] * SND_METRICS,       \
+    vec[2] * SND_METRICS
+
 //
 // Snd_Shutdown
 //
@@ -177,7 +183,7 @@ wave_t *Snd_AllocWave(const char *name, byte *data)
     if(strlen(name) >= MAX_FILEPATH)
         Com_Error("Snd_AllocWave: \"%s\" is too long", name);
 
-    wave = Z_Calloc(sizeof(wave_t), PU_SOUND, 0);
+    wave = (wave_t*)Z_Calloc(sizeof(wave_t), PU_SOUND, 0);
     strcpy(wave->name, name);
 
     wave->waveFile = data;
@@ -296,6 +302,7 @@ sndSource_t *Snd_GetAvailableSource(void)
         src->startTime  = sndTime;
         src->inUse      = true;
         src->playing    = false;
+        src->volume     = 1.0f;
         src->next       = NULL;
         break;
     }
@@ -338,11 +345,13 @@ void Snd_UpdateListener(void)
         orientation[4] = 1;
         orientation[5] = 0;
 
+        Snd_EnterCriticalSection();
+
         alListenerfv(AL_ORIENTATION, orientation);
         alListener3f(AL_POSITION,
-            client.playerActor->origin[0] * 0.01f,
-            client.playerActor->origin[1] * 0.01f,
-            client.playerActor->origin[2] * 0.01f);
+            SND_VECTOR2METRICS(client.playerActor->origin));
+
+        Snd_ExitCriticalSection();
     }
 }
 
@@ -355,7 +364,6 @@ static void Snd_UpdateSources(void)
     int i;
 
     Snd_EnterCriticalSection();
-    Snd_UpdateListener();
 
     for(i = 0; i < nSndSources; i++)
     {
@@ -379,21 +387,22 @@ static void Snd_UpdateSources(void)
                 alSourceQueueBuffers(sndSrc->handle, 1, &wave->buffer);
 
                 if(s_pitchshift.value)
-                    alSourcef(sndSrc->handle, AL_PITCH, 1200.0f / -sndSrc->sfx->dbFreq);
+                    alSourcef(sndSrc->handle, AL_PITCH, sndSrc->sfx->dbFreq);
 
-                if(sndSrc->actor)
+                if(sndSrc->actor && sndSrc->actor != client.playerActor)
                 {
                     alSourcei(sndSrc->handle, AL_SOURCE_RELATIVE, AL_FALSE);
                     alSource3f(sndSrc->handle, AL_POSITION,
-                        sndSrc->actor->origin[0] * 0.01f,
-                        sndSrc->actor->origin[1] * 0.01f,
-                        sndSrc->actor->origin[2] * 0.01f);
+                        SND_VECTOR2METRICS(sndSrc->actor->origin));
                 }
                 else
                     alSourcei(sndSrc->handle, AL_SOURCE_RELATIVE, AL_TRUE);
 
                 alSourcef(sndSrc->handle, AL_GAIN,
-                    ((sndSrc->sfx->gain / 32.0f) + 1.0f) * s_sndvolume.value);
+                    sndSrc->sfx->gain *
+                    sndSrc->volume *
+                    s_sndvolume.value);
+
                 alSourcePlay(sndSrc->handle);
 
                 sndSrc->playing = true;
@@ -407,6 +416,20 @@ static void Snd_UpdateSources(void)
                 {
                     alSourceUnqueueBuffers(sndSrc->handle, 1, &wave->buffer);
                     Snd_FreeSource(sndSrc);
+                }
+                else
+                {
+                    if(sndSrc->sfx->bLerpVol)
+                    {
+                        float volLerp = (1.0f / (float)sndSrc->sfx->gainLerpTime) / 32.0f;
+                        sndSrc->volume = (sndSrc->sfx->gainLerpEnd - sndSrc->volume) *
+                            volLerp + sndSrc->volume;
+
+                        alSourcef(sndSrc->handle, AL_GAIN,
+                            sndSrc->sfx->gain *
+                            sndSrc->volume *
+                            s_sndvolume.value);
+                    }
                 }
             }
         }

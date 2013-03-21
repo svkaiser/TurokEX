@@ -33,27 +33,35 @@ JS_CLASSOBJECT(Physics);
 
 JS_FASTNATIVE_BEGIN(Physics, move)
 {
-    JSObject *objPlane;
     vec3_t origin;
     vec3_t velocity;
+    vec3_t velocity2;
     plane_t *plane;
     gActor_t *actor;
     jsdouble yaw;
+    jsdouble frametime;
+    JSObject *objPlane;
     JSObject *objOrig;
     JSObject *objVel;
     JSObject *objActor;
+    JSObject *objAngles;
+    JSObject *ctrlObject;
 
-    JS_CHECKARGS(5);
+    JS_CHECKARGS(1);
 
     plane = NULL;
 
-    JS_GETOBJECT(objOrig, v, 0);
-    JS_GETOBJECT(objVel, v, 1);
+    JS_GETOBJECT(ctrlObject, v, 0);
+
+    JS_GET_PROPERTY_OBJECT(ctrlObject, "origin", objOrig);
+    JS_GET_PROPERTY_OBJECT(ctrlObject, "velocity", objVel);
+    JS_GET_PROPERTY_OBJECT(ctrlObject, "plane", objPlane);
+    JS_GET_PROPERTY_OBJECT(ctrlObject, "owner", objActor);
+    JS_GET_PROPERTY_OBJECT(ctrlObject, "angles", objAngles);
+    JS_GET_PROPERTY_NUMBER(ctrlObject, "frametime", frametime);
+
     JS_GETVECTOR2(objOrig, origin);
     JS_GETVECTOR2(objVel, velocity);
-    JS_GETOBJECT(objPlane, v, 2);
-    JS_GETOBJECT(objActor, v, 3);
-    JS_GETNUMBER(yaw, v, 4);
 
     if(objPlane)
         JS_GET_PRIVATE_DATA(objPlane, &Plane_class, plane_t, plane);
@@ -67,10 +75,15 @@ JS_FASTNATIVE_BEGIN(Physics, move)
     if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, objActor, &GameActor_class, NULL)))
         return JS_FALSE;
 
-    G_ClipMovement(origin, velocity, &plane,
+    JS_GET_PROPERTY_NUMBER(objAngles, "yaw", yaw);
+
+    Vec_Copy3(velocity2, velocity);
+    Vec_Scale(velocity2, velocity2, (float)frametime);
+
+    G_ClipMovement(origin, velocity2, &plane,
         actor, (float)yaw, NULL);
 
-    Vec_Add(origin, origin, velocity);
+    Vec_Add(origin, origin, velocity2);
 
     JS_SETVECTOR(objOrig, origin);
     JS_SETVECTOR(objVel, velocity);
@@ -106,6 +119,6 @@ JS_BEGINCONST(Physics)
 
 JS_BEGINFUNCS(Physics)
 {
-    JS_FASTNATIVE(Physics, move,  5),
+    JS_FASTNATIVE(Physics, move,  1),
     JS_FS_END
 };

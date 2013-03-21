@@ -35,6 +35,7 @@
 #include "game.h"
 #include "mathlib.h"
 #include "js.h"
+#include "sound.h"
 
 client_t client;
 
@@ -179,6 +180,7 @@ static void CL_Ticker(void)
 
     //TEMP
     G_ClientThink();
+    Snd_UpdateListener();
 
     client.tics++;
 }

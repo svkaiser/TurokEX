@@ -112,8 +112,7 @@ JS_FASTNATIVE_BEGIN(Level, getActor)
         return JS_TRUE;
     }
 
-    JS_NEWOBJECTPOOL(&gLevel.gActors[index], GameActor);
-    //JS_NEWOBJECT_SETPRIVATE(&gLevel.gActors[index], &GameActor_class);
+    JS_NEWOBJECT_SETPRIVATE(&gLevel.gActors[index], &GameActor_class);
     return JS_TRUE;
 }
 

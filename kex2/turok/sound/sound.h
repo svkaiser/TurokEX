@@ -46,6 +46,14 @@ typedef struct
     float           random;
     float           gain;
     float           dbFreq;
+    kbool           bLerpVol;
+    kbool           bLerpFreq;
+    float           gainLerpStart;
+    float           gainLerpEnd;
+    int             gainLerpTime;
+    float           freqLerpStart;
+    float           freqLerpEnd;
+    int             freqLerpTime;
 } sfx_t;
 
 typedef struct sndShader_s

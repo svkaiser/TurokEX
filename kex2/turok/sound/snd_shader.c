@@ -30,6 +30,7 @@
 #include "zone.h"
 #include "sound.h"
 #include "script.h"
+#include "client.h"
 
 static sndShader_t *snd_hashlist[MAX_HASH];
 
@@ -40,17 +41,33 @@ enum
     scsfx_dbFreq,
     scsfx_random,
     scsfx_gain,
+    scsfx_interpgain,
+    scsfx_interpfreq,
+    scsfx_gainfactorstart,
+    scsfx_gainfactorend,
+    scsfx_gainfactortime,
+    scsfx_freqfactorstart,
+    scsfx_freqfactorend,
+    scsfx_freqfactortime,
     scsfx_end
 };
 
 static const sctokens_t sfxtokens[scsfx_end+1] =
 {
-    { scsfx_wavefile,   "wavefile"  },
-    { scsfx_delay,      "delay"     },
-    { scsfx_dbFreq,     "dbFreq"    },
-    { scsfx_random,     "random"    },
-    { scsfx_gain,       "gain"      },
-    { -1,               NULL        }
+    { scsfx_wavefile,           "wavefile"          },
+    { scsfx_delay,              "delay"             },
+    { scsfx_dbFreq,             "dbFreq"            },
+    { scsfx_random,             "random"            },
+    { scsfx_gain,               "gain"              },
+    { scsfx_interpgain,         "bInterpGain"       },
+    { scsfx_interpfreq,         "bInterpFreq"       },
+    { scsfx_gainfactorstart,    "gainFactorStart"   },
+    { scsfx_gainfactorend,      "gainFactorEnd"     },
+    { scsfx_gainfactortime,     "gainInterpTime"    },
+    { scsfx_freqfactorstart,    "freqFactorStart"   },
+    { scsfx_freqfactorend,      "freqFactorEnd"     },
+    { scsfx_freqfactortime,     "freqInterpTime"    },
+    { -1,                       NULL                }
 };
 
 //
@@ -110,6 +127,46 @@ static void Snd_ParseShaderScript(sndShader_t *snd, scparser_t *parser)
             case scsfx_random:
                 SC_AssignFloat(sfxtokens, &sfx->random,
                     scsfx_random, parser, false);
+                break;
+
+            case scsfx_interpgain:
+                SC_AssignInteger(sfxtokens, &sfx->bLerpVol,
+                    scsfx_interpgain, parser, false);
+                break;
+
+            case scsfx_interpfreq:
+                SC_AssignInteger(sfxtokens, &sfx->bLerpFreq,
+                    scsfx_interpfreq, parser, false);
+                break;
+
+            case scsfx_gainfactorstart:
+                SC_AssignFloat(sfxtokens, &sfx->gainLerpStart,
+                    scsfx_gainfactorstart, parser, false);
+                break;
+
+            case scsfx_gainfactorend:
+                SC_AssignFloat(sfxtokens, &sfx->gainLerpEnd,
+                    scsfx_gainfactorend, parser, false);
+                break;
+
+            case scsfx_gainfactortime:
+                SC_AssignInteger(sfxtokens, &sfx->gainLerpTime,
+                    scsfx_gainfactortime, parser, false);
+                break;
+
+            case scsfx_freqfactorstart:
+                SC_AssignFloat(sfxtokens, &sfx->freqLerpStart,
+                    scsfx_freqfactorstart, parser, false);
+                break;
+
+            case scsfx_freqfactorend:
+                SC_AssignFloat(sfxtokens, &sfx->freqLerpEnd,
+                    scsfx_freqfactorend, parser, false);
+                break;
+
+            case scsfx_freqfactortime:
+                SC_AssignInteger(sfxtokens, &sfx->freqLerpTime,
+                    scsfx_freqfactortime, parser, false);
                 break;
 
             default:
@@ -210,9 +267,13 @@ void Snd_PlayShader(const char *name, gActor_t *actor)
 
     src->sfx = &shader->sfx[0];
     src->actor = actor;
+
+    if(src->sfx->bLerpVol)
+        src->volume = src->sfx->gainLerpStart;
+
     src->next = NULL;
 
-    if(actor != NULL)
+    if(actor != NULL && client.playerActor != actor)
     {
         alSource3f(src->handle, AL_POSITION,
             actor->origin[0],
@@ -229,9 +290,13 @@ void Snd_PlayShader(const char *name, gActor_t *actor)
 
         nextSrc->sfx = &shader->sfx[i];
         nextSrc->actor = actor;
+
+        if(nextSrc->sfx->bLerpVol)
+            nextSrc->volume = nextSrc->sfx->gainLerpStart;
+
         nextSrc->next = NULL;
 
-        if(actor != NULL)
+        if(actor != NULL && client.playerActor != actor)
         {
             alSource3f(nextSrc->handle, AL_POSITION,
                 actor->origin[0],
