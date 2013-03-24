@@ -72,23 +72,17 @@ const char *KF_BasePath(void)
         
         strcpy(base, *myargv);
         while (p > base && *p!='/' && *p!='\\')
-        {
             *p--=0;
-        }
         
         if(*p=='/' || *p=='\\')
-        {
             *p--=0;
-        }
 
         if(strlen(base) < 2)
         {
             Z_Free(base);
             base = Z_Malloc(1024, PU_STATIC, 0);
             if(!getcwd(base, 1024))
-            {
                 strcpy(base, current_dir_dummy);
-            }
         }
     }
     
@@ -104,9 +98,7 @@ void KF_Shutdown(void)
     kpf_t *pack;
 
     for(pack = kpf_rootfile; pack; pack = pack->next)
-    {
         unzClose(pack->filehandle);
-    }
 
     Z_FreeTags(PU_FILE, PU_FILE);
 }
@@ -149,13 +141,12 @@ void KF_LoadZipFile(const char *file)
     Com_Printf("KF_LoadZipFile: Loading %s\n", filepath);
 
     // open zip file
-    uf = unzOpen(filepath);
+    if(!(uf = unzOpen(filepath)))
+        Com_Error("KF_LoadZipFile: Unable to find %s", filepath);
 
     // get info on zip file
     if(unzGetGlobalInfo(uf, &gi) != UNZ_OK)
-    {
         return;
-    }
 
     // allocate new pack file
     pack = (kpf_t*)Z_Calloc(sizeof(kpf_t), PU_FILE, 0);
@@ -172,9 +163,7 @@ void KF_LoadZipFile(const char *file)
     for(entries = 1; entries < FILE_MAX_HASH_SIZE; entries <<= 1)
     {
         if(entries > pack->numfiles)
-        {
             break;
-        }
     }
 
     // allocate file/hash list
@@ -301,9 +290,7 @@ static void FCmd_LoadFile(void)
     int size;
 
     if(Cmd_GetArgc() < 2)
-    {
         return;
-    }
 
     size = KF_OpenFileCache(Cmd_GetArgv(1), (byte**)&data, PU_STATIC);
 
@@ -330,9 +317,7 @@ void KF_Init(void)
     Cmd_AddCommand("loadfile", FCmd_LoadFile);
 
     if(!strlen(kf_basepath.string))
-    {
         Cvar_Set(kf_basepath.name, KF_BasePath());
-    }
 
     KF_LoadZipFile("game.kpf");
 }

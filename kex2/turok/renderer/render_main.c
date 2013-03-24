@@ -52,6 +52,8 @@ static double viewMatrix[16];
 static double projMatrix[16];
 static float frustum[6][4];
 
+float rRenderTime = 0.0f;
+
 #define CALCMATRIX(a, b, c, d, e, f, g, h)  \
     (float)(viewMatrix[a] * projMatrix[b] + \
     viewMatrix[c] * projMatrix[d] +         \
@@ -746,16 +748,18 @@ static void R_DrawSkies(void)
 
 void R_DrawFrame(void)
 {
+    rRenderTime += (62.5f * client.runtime);
+
     J_RunObjectEvent(JS_EV_RENDER, "event_PreRender");
     R_SetupClipFrustum();
 
     dglCullFace(GL_BACK);
     dglEnable(GL_DEPTH_TEST);
-    dglDisableClientState(GL_COLOR_ARRAY);
 
     if(showcollision)
         R_DrawCollision();
 
+    dglDisableClientState(GL_COLOR_ARRAY);
     R_DrawStatics();
 
     dglCullFace(GL_FRONT);

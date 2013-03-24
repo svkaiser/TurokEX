@@ -46,9 +46,11 @@ enum
     scsfx_gainfactorstart,
     scsfx_gainfactorend,
     scsfx_gainfactortime,
+    scsfx_gainfactordelay,
     scsfx_freqfactorstart,
     scsfx_freqfactorend,
     scsfx_freqfactortime,
+    scsfx_freqfactordelay,
     scsfx_end
 };
 
@@ -64,9 +66,11 @@ static const sctokens_t sfxtokens[scsfx_end+1] =
     { scsfx_gainfactorstart,    "gainFactorStart"   },
     { scsfx_gainfactorend,      "gainFactorEnd"     },
     { scsfx_gainfactortime,     "gainInterpTime"    },
+    { scsfx_gainfactordelay,    "gainInterpDelay"   },
     { scsfx_freqfactorstart,    "freqFactorStart"   },
     { scsfx_freqfactorend,      "freqFactorEnd"     },
     { scsfx_freqfactortime,     "freqInterpTime"    },
+    { scsfx_freqfactordelay,    "freqInterpDelay"   },
     { -1,                       NULL                }
 };
 
@@ -154,6 +158,11 @@ static void Snd_ParseShaderScript(sndShader_t *snd, scparser_t *parser)
                     scsfx_gainfactortime, parser, false);
                 break;
 
+            case scsfx_gainfactordelay:
+                SC_AssignInteger(sfxtokens, &sfx->gainLerpDelay,
+                    scsfx_gainfactordelay, parser, false);
+                break;
+
             case scsfx_freqfactorstart:
                 SC_AssignFloat(sfxtokens, &sfx->freqLerpStart,
                     scsfx_freqfactorstart, parser, false);
@@ -167,6 +176,11 @@ static void Snd_ParseShaderScript(sndShader_t *snd, scparser_t *parser)
             case scsfx_freqfactortime:
                 SC_AssignInteger(sfxtokens, &sfx->freqLerpTime,
                     scsfx_freqfactortime, parser, false);
+                break;
+
+            case scsfx_freqfactordelay:
+                SC_AssignInteger(sfxtokens, &sfx->freqLerpDelay,
+                    scsfx_freqfactordelay, parser, false);
                 break;
 
             default:
@@ -257,48 +271,28 @@ void Snd_PlayShader(const char *name, gActor_t *actor)
 
     Snd_EnterCriticalSection();
 
-    src = Snd_GetAvailableSource();
-
-    if(src == NULL)
+    for(i = 0; i < shader->numsfx; i++)
     {
-        Snd_ExitCriticalSection();
-        return;
-    }
+        src = Snd_GetAvailableSource();
 
-    src->sfx = &shader->sfx[0];
-    src->actor = actor;
-
-    if(src->sfx->bLerpVol)
-        src->volume = src->sfx->gainLerpStart;
-
-    src->next = NULL;
-
-    if(actor != NULL && client.playerActor != actor)
-    {
-        alSource3f(src->handle, AL_POSITION,
-            actor->origin[0],
-            actor->origin[1],
-            actor->origin[2]);
-    }
-
-    for(i = 1; i < shader->numsfx; i++)
-    {
-        sndSource_t *nextSrc = Snd_GetAvailableSource();
-
-        if(nextSrc == NULL)
+        if(src == NULL)
+        {
+            Snd_ExitCriticalSection();
             return;
+        }
 
-        nextSrc->sfx = &shader->sfx[i];
-        nextSrc->actor = actor;
+        src->sfx = &shader->sfx[i];
+        src->actor = actor;
 
-        if(nextSrc->sfx->bLerpVol)
-            nextSrc->volume = nextSrc->sfx->gainLerpStart;
+        if(src->sfx->bLerpVol)
+            src->volume = src->sfx->gainLerpStart;
 
-        nextSrc->next = NULL;
+        if(src->sfx->bLerpFreq)
+            src->pitch = src->sfx->freqLerpStart;
 
         if(actor != NULL && client.playerActor != actor)
         {
-            alSource3f(nextSrc->handle, AL_POSITION,
+            alSource3f(src->handle, AL_POSITION,
                 actor->origin[0],
                 actor->origin[1],
                 actor->origin[2]);

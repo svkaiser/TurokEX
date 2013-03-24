@@ -51,9 +51,11 @@ typedef struct
     float           gainLerpStart;
     float           gainLerpEnd;
     int             gainLerpTime;
+    int             gainLerpDelay;
     float           freqLerpStart;
     float           freqLerpEnd;
     int             freqLerpTime;
+    int             freqLerpDelay;
 } sfx_t;
 
 typedef struct sndShader_s
@@ -72,9 +74,9 @@ typedef struct sndSource_s
     kbool               playing;
     kbool               looping;
     float               volume;
+    float               pitch;
     sfx_t               *sfx;
     gActor_t            *actor;
-    struct sndSource_s  *next;
 } sndSource_t;
 
 #define SND_MAX_SOURCES 256

@@ -54,12 +54,12 @@ typedef struct
     short volStart;
     short volEnd;
     short volRamp;
-    short u10;
+    short volRampDelay;
     short frequency;
     short freqStart;
     short freqEnd;
     short freqRamp;
-    short u14;
+    short freqRampDelay;
     short u15;
 } soundfx_t;
 
@@ -780,9 +780,11 @@ void SND_StoreSoundShaders(void)
                 Com_Strcat("        gainFactorStart = %f\n", CoerceFloat(sfx->volStart));
                 Com_Strcat("        gainFactorEnd = %f\n", CoerceFloat(sfx->volEnd));
                 Com_Strcat("        gainInterpTime = %i\n", sfx->volRamp);
+                Com_Strcat("        gainInterpDelay = %i\n", sfx->volRampDelay);
                 Com_Strcat("        freqFactorStart = %f\n", ConvertTurokPitchToOAL(sfx->freqStart));
                 Com_Strcat("        freqFactorEnd = %f\n", ConvertTurokPitchToOAL(sfx->freqEnd));
                 Com_Strcat("        freqInterpTime = %i\n", sfx->freqRamp);
+                Com_Strcat("        freqInterpDelay = %i\n", sfx->freqRampDelay);
                 Com_Strcat("    }\n");
                 Com_UpdateDataProgress();
             }

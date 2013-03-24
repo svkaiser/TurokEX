@@ -143,7 +143,7 @@ typedef struct
     float               playtime;
     float               frametime;
     float               blendtime;
-    animflags_t         flags;
+    int                 flags;
 } animstate_t;
 
 typedef struct kmodel_s
@@ -175,6 +175,8 @@ kmodel_t *Mdl_Load(const char *file);
 //
 // MAIN
 //
+
+extern float rRenderTime;
 
 void R_DrawFrame(void);
 void R_FinishFrame(void);

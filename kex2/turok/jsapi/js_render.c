@@ -314,8 +314,15 @@ JS_CLASSOBJECT(Canvas);
 
 JS_PROP_FUNC_GET(Canvas)
 {
+    canvas_t *canvas;
+
+    if(!(canvas = (canvas_t*)JS_GetInstancePrivate(cx, obj, &Canvas_class, NULL)))
+        return JS_FALSE;
+
     switch(JSVAL_TO_INT(id))
     {
+    case 0:
+        return JS_NewDoubleValue(cx, canvas->scale, vp);
     default:
         return JS_TRUE;
     }
@@ -581,6 +588,7 @@ JS_ENDCLASS();
 
 JS_BEGINPROPS(Canvas)
 {
+    { "scale", 0, JSPROP_ENUMERATE|JSPROP_READONLY, NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 

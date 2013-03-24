@@ -206,7 +206,7 @@ typedef struct
     short   args5;
     short   args6;
     byte    u20;
-    byte    u21;
+    byte    ambience;
     byte    u22;
     byte    u23;
 } maparea_t;
@@ -426,6 +426,7 @@ static void ProcessAreas(byte *data)
         if(area->flags & 0x10)      total++;
         if(area->flags & 0x80)      total++;
         if(area->flags & 0x100000)  total++;
+        if(area->ambience > 0 && area->ambience <= 10) total++;
 
         Com_Strcat("    {\n");
         Com_Strcat("        components[%i] =\n", total);
@@ -459,6 +460,62 @@ static void ProcessAreas(byte *data)
             Com_Strcat("                { \"active\" : true,\n");
             Com_Strcat("                \"skyYPlane\" : %f }\n", area->skyheight);
             Com_Strcat("            EndObject\n");
+        }
+
+        switch(area->ambience)
+        {
+        case 1:
+            Com_Strcat("            BeginObject = \"AmbienceJungle\"\n");
+            Com_Strcat("                { \"active\" : true }\n");
+            Com_Strcat("            EndObject\n");
+            break;
+        case 2:
+            Com_Strcat("            BeginObject = \"AmbienceSwamp\"\n");
+            Com_Strcat("                { \"active\" : true }\n");
+            Com_Strcat("            EndObject\n");
+            break;
+        case 3:
+            Com_Strcat("            BeginObject = \"AmbienceCave\"\n");
+            Com_Strcat("                { \"active\" : true }\n");
+            Com_Strcat("            EndObject\n");
+            break;
+        case 4:
+            Com_Strcat("            BeginObject = \"AmbienceCatcomb01\"\n");
+            Com_Strcat("                { \"active\" : true }\n");
+            Com_Strcat("            EndObject\n");
+            break;
+        case 5:
+            Com_Strcat("            BeginObject = \"AmbienceLostLand\"\n");
+            Com_Strcat("                { \"active\" : true }\n");
+            Com_Strcat("            EndObject\n");
+            break;
+        case 6:
+            Com_Strcat("            BeginObject = \"AmbienceCatcomb02\"\n");
+            Com_Strcat("                { \"active\" : true }\n");
+            Com_Strcat("            EndObject\n");
+            break;
+        case 7:
+            Com_Strcat("            BeginObject = \"AmbienceCatcomb01\"\n");
+            Com_Strcat("                { \"active\" : true }\n");
+            Com_Strcat("            EndObject\n");
+            break;
+        case 8:
+            Com_Strcat("            BeginObject = \"AmbienceRuins\"\n");
+            Com_Strcat("                { \"active\" : true }\n");
+            Com_Strcat("            EndObject\n");
+            break;
+        case 9:
+            Com_Strcat("            BeginObject = \"AmbienceValley\"\n");
+            Com_Strcat("                { \"active\" : true }\n");
+            Com_Strcat("            EndObject\n");
+            break;
+        case 10:
+            Com_Strcat("            BeginObject = \"AmbienceVillage\"\n");
+            Com_Strcat("                { \"active\" : true }\n");
+            Com_Strcat("            EndObject\n");
+            break;
+        default:
+            break;
         }
 
         Com_Strcat("            BeginObject = \"ComponentAreaFog\"\n");

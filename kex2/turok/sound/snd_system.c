@@ -59,6 +59,8 @@ static wave_t *wave_hashlist[MAX_HASH];
     vec[1] * SND_METRICS,       \
     vec[2] * SND_METRICS
 
+#define SND_INT2TIME(t) ((float)t * ((1.0f / 60.0f) * 1000.0f))
+
 //
 // Snd_Shutdown
 //
@@ -303,7 +305,7 @@ sndSource_t *Snd_GetAvailableSource(void)
         src->inUse      = true;
         src->playing    = false;
         src->volume     = 1.0f;
-        src->next       = NULL;
+        src->pitch      = 1.0f;
         break;
     }
 
@@ -318,9 +320,10 @@ void Snd_FreeSource(sndSource_t *src)
 {
     src->inUse      = false;
     src->playing    = false;
-    src->next       = NULL;
     src->sfx        = NULL;
     src->actor      = NULL;
+    src->volume     = 1.0f;
+    src->pitch      = 1.0f;
     src->startTime  = 0;
 }
 
@@ -379,7 +382,7 @@ static void Snd_UpdateSources(void)
             if(!sndSrc->playing)
             {
                 float time = (float)sndSrc->startTime +
-                    ((float)sndSrc->sfx->delay * ((1.0f / 60.0f) * 1000.0f));
+                    SND_INT2TIME(sndSrc->sfx->delay);
 
                 if(time > sndTime)
                     continue;
@@ -406,6 +409,7 @@ static void Snd_UpdateSources(void)
                 alSourcePlay(sndSrc->handle);
 
                 sndSrc->playing = true;
+                sndSrc->startTime = sndTime;
             }
             else
             {
@@ -414,21 +418,53 @@ static void Snd_UpdateSources(void)
                 alGetSourcei(sndSrc->handle, AL_SOURCE_STATE, &state);
                 if(state != AL_PLAYING)
                 {
+                    alSourceStop(sndSrc->handle);
                     alSourceUnqueueBuffers(sndSrc->handle, 1, &wave->buffer);
                     Snd_FreeSource(sndSrc);
                 }
                 else
                 {
-                    if(sndSrc->sfx->bLerpVol)
+                    if(sndSrc->sfx->bLerpVol && sndSrc->playing)
                     {
-                        float volLerp = (1.0f / (float)sndSrc->sfx->gainLerpTime) / 32.0f;
-                        sndSrc->volume = (sndSrc->sfx->gainLerpEnd - sndSrc->volume) *
-                            volLerp + sndSrc->volume;
+                        float time = (float)sndSrc->startTime +
+                            SND_INT2TIME(sndSrc->sfx->gainLerpDelay);
 
-                        alSourcef(sndSrc->handle, AL_GAIN,
-                            sndSrc->sfx->gain *
-                            sndSrc->volume *
-                            s_sndvolume.value);
+                        if(time <= sndTime)
+                        {
+                            float volLerp = (1.0f / (float)sndSrc->sfx->gainLerpTime);
+                            sndSrc->volume = (sndSrc->sfx->gainLerpEnd - sndSrc->volume) *
+                                volLerp + sndSrc->volume;
+
+                            if(sndSrc->volume > 1)
+                                sndSrc->volume = 1;
+                            if(sndSrc->volume < 0.01f)
+                            {
+                                alSourceStop(sndSrc->handle);
+                                alSourceUnqueueBuffers(sndSrc->handle, 1, &wave->buffer);
+                                Snd_FreeSource(sndSrc);
+                                continue;
+                            }
+
+                            alSourcef(sndSrc->handle, AL_GAIN,
+                                sndSrc->sfx->gain *
+                                sndSrc->volume *
+                                s_sndvolume.value);
+                        }
+                    }
+
+                    if(sndSrc->sfx->bLerpFreq && sndSrc->playing && s_pitchshift.value)
+                    {
+                        float time = (float)sndSrc->startTime +
+                            SND_INT2TIME(sndSrc->sfx->freqLerpDelay);
+
+                        if(time <= sndTime)
+                        {
+                            float freqLerp = (1.0f / (float)sndSrc->sfx->freqLerpTime);
+                            sndSrc->pitch = (sndSrc->sfx->freqLerpEnd - sndSrc->pitch) *
+                                freqLerp + sndSrc->pitch;
+
+                            alSourcef(sndSrc->handle, AL_PITCH, sndSrc->pitch);
+                        }
                     }
                 }
             }
@@ -572,7 +608,6 @@ void Snd_Init(void)
         sndSrc->playing     = false;
         sndSrc->sfx         = NULL;
         sndSrc->volume      = 1.0f;
-        sndSrc->next        = NULL;
 
         alSourcei(handle, AL_LOOPING, AL_FALSE);
         alSourcei(sndSrc->handle, AL_SOURCE_RELATIVE, AL_TRUE);

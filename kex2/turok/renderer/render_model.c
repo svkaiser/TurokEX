@@ -33,6 +33,7 @@
 #include "render.h"
 #include "mathlib.h"
 
+CVAR(r_interpanims, 1);
 static kmodel_t *mdl_hashlist[MAX_HASH];
 
 enum
@@ -806,9 +807,6 @@ void Mdl_UpdateAnimState(animstate_t *astate)
 
     if(astate->time <= client.tics)
     {
-        // TODO - TEMP
-        astate->playtime += client.runtime;
-
         astate->deltatime = 0;
         astate->time = (float)client.tics + astate->frametime;
 
@@ -856,11 +854,14 @@ void Mdl_UpdateAnimState(animstate_t *astate)
         blend = (astate->flags & ANF_BLEND) ?
             astate->blendtime : astate->frametime;
 
-        astate->deltatime += (1/blend);
-
-        // TODO - TEMP
-        astate->playtime += client.runtime;
+        if(r_interpanims.value)
+            astate->deltatime += (1/blend);
+        else
+            astate->deltatime = 1;
     }
+
+    // TODO - TEMP
+    astate->playtime += client.runtime;
 }
 
 //
@@ -998,4 +999,5 @@ static void FCmd_LoadTestModel(void)
 void Mdl_Init(void)
 {
     Cmd_AddCommand("loadmodel", FCmd_LoadTestModel);
+    Cvar_Register(&r_interpanims);
 }
