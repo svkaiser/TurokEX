@@ -9,14 +9,6 @@ Sys.dependsOn('scripts/framework/Weapon.js');
 
 GrenadeLauncher = class.extends(Weapon, function()
 {
-    //------------------------------------------------------------------------
-    // CONSTANTS
-    //------------------------------------------------------------------------
-    
-    //------------------------------------------------------------------------
-    // VARS
-    //------------------------------------------------------------------------
-    
     this.modelfile      = "models/mdl650/mdl650.kmesh";
     this.model          = Sys.loadModel(this.modelfile);
     
@@ -33,9 +25,29 @@ GrenadeLauncher = class.extends(Weapon, function()
     
     this.state          = WS_READY;
     
+    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
+});
+
+class.properties(GrenadeLauncher,
+{
     //------------------------------------------------------------------------
-    // INITIALIZATION
+    // VARS
     //------------------------------------------------------------------------
     
-    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
+    readySound : 'sounds/shaders/ready_grenade_launcher.ksnd',
+    
+    //------------------------------------------------------------------------
+    // FUNCTIONS
+    //------------------------------------------------------------------------
+    
+    checkAttack : function()
+    {
+        if(this.super.prototype.checkAttack.bind(this)())
+        {
+            Snd.play('sounds/shaders/grenade_launch.ksnd');
+            return true;
+        }
+        
+        return false;
+    }
 });

@@ -532,18 +532,24 @@ JS_FASTNATIVE_BEGIN(Canvas, drawString)
     canvas_t *canvas;
     JSString *str;
     char *bytes;
+    JSBool center;
     jsdouble x, y;
     jsval *v = JS_ARGV(cx, vp);
 
     if(argc < 3)
         return JS_FALSE;
 
+    center = JS_FALSE;
+
     JS_THISCANVAS();
     JS_GETSTRING(str, bytes, v, 0);
     JS_GETNUMBER(x, v, 1);
     JS_GETNUMBER(y, v, 2);
 
-    Canvas_DrawString(canvas, bytes, (float)x, (float)y);
+    if(argc >= 3)
+        JS_GETBOOL(center, v, 3);
+
+    Canvas_DrawString(canvas, bytes, (float)x, (float)y, center);
     JS_free(cx, bytes);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
@@ -555,18 +561,24 @@ JS_FASTNATIVE_BEGIN(Canvas, drawFixedString)
     canvas_t *canvas;
     JSString *str;
     char *bytes;
+    JSBool center;
     jsdouble x, y;
     jsval *v = JS_ARGV(cx, vp);
 
     if(argc < 3)
         return JS_FALSE;
 
+    center = JS_FALSE;
+
     JS_THISCANVAS();
     JS_GETSTRING(str, bytes, v, 0);
     JS_GETNUMBER(x, v, 1);
     JS_GETNUMBER(y, v, 2);
 
-    Canvas_DrawFixedString(canvas, bytes, (float)x, (float)y);
+    if(argc >= 3)
+        JS_GETBOOL(center, v, 3);
+
+    Canvas_DrawFixedString(canvas, bytes, (float)x, (float)y, center);
     JS_free(cx, bytes);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);

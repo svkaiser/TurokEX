@@ -5,7 +5,9 @@
 //
 //-----------------------------------------------------------------------------
 
-ComponentAreaWater = class.extendStatic(Component);
+Sys.dependsOn('scripts/framework/ComponentArea.js');
+
+ComponentAreaWater = class.extendStatic(ComponentArea);
 
 class.properties(ComponentAreaWater,
 {

@@ -1,37 +1,38 @@
 //-----------------------------------------------------------------------------
 //
-// TurokPickupWeapon.js
+// ComponentAreaAmbience.js
 // DESCRIPTION:
 //
 //-----------------------------------------------------------------------------
 
-TurokPickupWeapon = class.extendStatic(TurokPickup);
+ComponentAreaAmbience = class.extendStatic(ComponentArea);
 
-class.properties(TurokPickupWeapon,
+class.properties(ComponentAreaAmbience,
 {
     //------------------------------------------------------------------------
     // VARS
     //------------------------------------------------------------------------
     
+    randFactor : 0,
+    counter : 0,
+    sounds : null,
     active : true,
-    weapon_id : 0,
-    message : "Weapon",
-    pickupSnd : 'sounds/shaders/generic_1_bullet_pickup.ksnd',
     
     //------------------------------------------------------------------------
     // FUNCTIONS
     //------------------------------------------------------------------------
     
-    onTouch : function(instigator)
+    onLocalTick : function()
     {
-        var player = instigator.components.ComponentTurokPlayer;
+        if(this.sounds == null || this.sounds.length <= 0)
+            return;
+            
+        this.counter++;
         
-        if(player == null)
+        if(this.counter % 60 != 0)
             return;
         
-        player.giveWeapon(this.weapon_id);
-        TurokPickup.prototype.onTouch.bind(this)(instigator);
-    },
-    
-    start : function() { }
+        if(Sys.rand(100) < this.randFactor)
+            Snd.play(this.sounds[Sys.rand(this.sounds.length)]);
+    }
 });

@@ -11,13 +11,26 @@ CameraPlayer = class.extends(Camera);
 
 class.properties(CameraPlayer,
 {
+    //------------------------------------------------------------------------
+    // VARS
+    //------------------------------------------------------------------------
+    
+    viewoffset : 0.0,
+    
+    //------------------------------------------------------------------------
+    // FUNCTIONS
+    //------------------------------------------------------------------------
+    
     tick : function()
     {
         var ctrl            = Client.localPlayer.controller;
         var pmove           = Client.localPlayer.prediction;
         
+        if(this.viewoffset != ctrl.view_y)
+            this.viewoffset = Math.lerp(this.viewoffset, ctrl.view_y, 0.125);
+        
         this.origin.x       = pmove.origin.x;
-        this.origin.y       = pmove.origin.y + ctrl.view_y + ctrl.center_y;
+        this.origin.y       = pmove.origin.y + this.viewoffset + ctrl.center_y;
         this.origin.z       = pmove.origin.z;
         
         this.angles.yaw     = pmove.angles.yaw;
@@ -46,7 +59,7 @@ class.properties(CameraPlayer,
                 (ctrl.view_y + ctrl.center_y)+1)
         {
             // calculate bobbing
-            var d = Math.abs(pmove.accel.z) * 0.06;
+            var d = Math.abs(pmove.accel.z * pmove.frametime) * 0.06;
             
             if(d > VIEWBOB_EPISILON)
             {

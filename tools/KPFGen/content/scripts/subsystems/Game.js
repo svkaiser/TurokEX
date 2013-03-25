@@ -19,6 +19,7 @@ Game = class.extendNative(NGame, function()
     this.event_BeginLevel = function()
     {
         var pStart = null;
+        var playerComponent = null;
         
         for(var i = 0, actor = Level.getActor(i); actor != null; actor = Level.getActor(i++))
         {
@@ -27,10 +28,14 @@ Game = class.extendNative(NGame, function()
             {
                 if(components[p].playerID !== undefined)
                 {
+                    playerComponent = components[p];
                     pStart = actor;
                     break;
                 }
             }
+            
+            if(pStart != null)
+                break;
         }
         
         if(pStart == null)
@@ -39,15 +44,24 @@ Game = class.extendNative(NGame, function()
             return;
         }
         
+        // tell the client that we're possessing this actor
+        Client.playerActor = pStart;
+        
         // setup local player
         var lp      = Client.localPlayer;
+        var ctrl    = class.find(playerComponent.controller);
+        
+        if(ctrl == null)
+            Sys.error('Missing controller class (' + playerComponent.controller + ') not found');
+        
+        lp.controller = new ctrl();
+        
         var c       = lp.controller;
         var angles  = pStart.angles;
         
         c.origin.copy(pStart.origin);
         
         c.owner             = pStart;
-        //c.origin            = pStart.origin;
         c.angles.yaw        = angles.yaw;
         c.angles.pitch      = angles.pitch;
         c.angles.roll       = angles.roll;
@@ -72,13 +86,13 @@ Game = class.extendNative(NGame, function()
             
             if(svcl.state != SVC_STATE_INACTIVE)
             {
+                svcl.controller = new ctrl();
                 var c = svcl.controller;
                 
                 c.origin.copy(pStart.origin);
                 
                 svcl.state              = SVC_STATE_INGAME;
                 c.owner                 = pStart;
-                //c.origin                = pStart.origin;
                 c.angles.yaw            = angles.yaw;
                 c.angles.pitch          = angles.pitch;
                 c.angles.roll           = angles.roll;

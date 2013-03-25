@@ -9,14 +9,6 @@ Sys.dependsOn('scripts/framework/Weapon.js');
 
 Knife = class.extends(Weapon, function()
 {
-    //------------------------------------------------------------------------
-    // CONSTANTS
-    //------------------------------------------------------------------------
-    
-    //------------------------------------------------------------------------
-    // VARS
-    //------------------------------------------------------------------------
-    
     this.bOwned         = true;
     
     this.modelfile      = "models/mdl653/mdl653.kmesh";
@@ -37,11 +29,16 @@ Knife = class.extends(Weapon, function()
     
     this.state          = WS_READY;
     
+    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
+});
+
+class.properties(Knife,
+{
     //------------------------------------------------------------------------
     // FUNCTIONS
     //------------------------------------------------------------------------
     
-    this.checkAttack = function()
+    checkAttack : function()
     {
         if(Client.localPlayer.command.getAction('+attack'))
         {
@@ -49,12 +46,21 @@ Knife = class.extends(Weapon, function()
             var r = Sys.rand(100);
             
             if(r <= 33)
+            {
                 fireAnim = this.anim_Fire;
+                Snd.play('sounds/shaders/knife_swish_1.ksnd');
+            }
             else if(r <= 66)
+            {
                 fireAnim = this.anim_FireAlt1;
+                Snd.play('sounds/shaders/knife_swish_2.ksnd');
+            }
             else
+            {
                 fireAnim = this.anim_FireAlt2;
-                
+                Snd.play('sounds/shaders/knife_swish_3.ksnd');
+            }
+
             this.animState.blendAnim(fireAnim,
                 this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
 
@@ -64,10 +70,4 @@ Knife = class.extends(Weapon, function()
         
         return false;
     }
-    
-    //------------------------------------------------------------------------
-    // INITIALIZATION
-    //------------------------------------------------------------------------
-    
-    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
 });

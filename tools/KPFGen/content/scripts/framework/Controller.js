@@ -87,17 +87,17 @@ class.properties(Controller,
     
     accelX : function(speed, acceleration)
     {
-        this.accel.x = this.lerp(this.accel.x, speed * this.frametime, acceleration);
+        this.accel.x = this.lerp(this.accel.x, speed, acceleration);
     },
     
     accelY : function(speed, acceleration)
     {
-        this.accel.y = this.lerp(this.accel.y, speed * this.frametime, acceleration);
+        this.accel.y = this.lerp(this.accel.y, speed, acceleration);
     },
     
     accelZ : function(speed, acceleration)
     {
-        this.accel.z = this.lerp(this.accel.z, speed * this.frametime, acceleration);
+        this.accel.z = this.lerp(this.accel.z, speed, acceleration);
     },
     
     deAccelX : function(deacceleration)
@@ -118,7 +118,7 @@ class.properties(Controller,
     gravity : function(amount)
     {
         if((this.origin.y - this.plane.distance(this.origin)) > 0.01)
-            this.velocity.y -= ((amount * this.frametime) * this.frametime);
+            this.velocity.y -= (amount * this.frametime);
     },
     
     hitFloor : function()
@@ -131,11 +131,11 @@ class.properties(Controller,
             
             if(c.plane.flags & 64)
             {
-                dist = c.plane.heightDistance(c.origin) - 61.44;
+                dist = c.plane.heightDistance(c.origin);
                 
-                if((c.origin.y + c.velocity.y) > dist)
+                if((dist - c.origin.y) < 61.44)
                 {
-                    c.origin.y = dist;
+                    c.origin.y = dist - 61.44;
                     c.velocity.y = 0;
                 }
             }
@@ -154,13 +154,7 @@ class.properties(Controller,
     
     beginMovement : function()
     {
-        Physics.move(
-            this.origin,
-            this.velocity,
-            this.plane,
-            this.owner,
-            this.angles.yaw);
-            
+        Physics.move(this);
         this.hitFloor();
     }
 });

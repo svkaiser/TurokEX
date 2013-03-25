@@ -29,10 +29,13 @@ LocalPlayer = class.extends(Player, function()
     this.latency        = new Array(NETBACKUPS);
     this.move_diff      = new Vector();
     this.oldMoves       = new Array(NETBACKUPS);
-    //this.oldCommands  = new Array(NETBACKUPS);
+    this.oldCommands    = new Array(NETBACKUPS);
     
-    for(var i = 0; i < this.oldMoves.length; i++)
+    for(var i = 0; i < NETBACKUPS; i++)
+    {
         this.oldMoves[i] = new Vector();
+        this.oldCommands[i] = new Command();
+    }
     
     //------------------------------------------------------------------------
     // FUNCTIONS
@@ -95,7 +98,8 @@ LocalPlayer = class.extends(Player, function()
                 command.heldtime[i] = 0;
         }
         
-        this.controller.updateCommandAngles(command);
+        if(this.controller)
+            this.controller.updateCommandAngles(command);
         
         command.timestamp = Sys.time();
         command.frametime = Sys.deltatime();
@@ -103,9 +107,15 @@ LocalPlayer = class.extends(Player, function()
     
     this.tick = function()
     {
-        this.prediction.clientMove(this);
-        this.controller.updateView();
-        this.viewCamera.tick();
         this.console.tick();
+        
+        if(this.controller == null)
+            return;
+        
+        this.prediction.clientMove(this);
+        this.viewCamera.tick();
+        
+        for(var component in this.controller.plane.area)
+            this.controller.plane.area[component].onLocalTick();
     }
 });

@@ -9,14 +9,6 @@ Sys.dependsOn('scripts/framework/Weapon.js');
 
 Pistol = class.extends(Weapon, function()
 {
-    //------------------------------------------------------------------------
-    // CONSTANTS
-    //------------------------------------------------------------------------
-    
-    //------------------------------------------------------------------------
-    // VARS
-    //------------------------------------------------------------------------
-    
     this.modelfile      = "models/mdl663/mdl663.kmesh";
     this.model          = Sys.loadModel(this.modelfile);
     
@@ -33,9 +25,29 @@ Pistol = class.extends(Weapon, function()
     
     this.state          = WS_READY;
     
+    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
+});
+
+class.properties(Pistol,
+{
     //------------------------------------------------------------------------
-    // INITIALIZATION
+    // VARS
     //------------------------------------------------------------------------
     
-    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
+    readySound : 'sounds/shaders/ready_pistol.ksnd',
+    
+    //------------------------------------------------------------------------
+    // FUNCTIONS
+    //------------------------------------------------------------------------
+    
+    checkAttack : function()
+    {
+        if(this.super.prototype.checkAttack.bind(this)())
+        {
+            Snd.play('sounds/shaders/pistol_shot.ksnd');
+            return true;
+        }
+        
+        return false;
+    }
 });

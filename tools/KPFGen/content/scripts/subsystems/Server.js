@@ -36,7 +36,7 @@ Server = class.extendNative(NServer, function()
             
             if(this.clients[i].state == SVC_STATE_INACTIVE)
             {
-                this.clients[i].create(ev);
+                this.clients[i].create(ev, i);
                 PacketManager.send(PacketEventClientInfo,
                     this.clients[i].peer,
                     this.clients[i].clientID);
@@ -122,7 +122,7 @@ Server = class.extendNative(NServer, function()
     // COMMANDS
     //------------------------------------------------------------------------
     
-    this.noClip = function()
+    this.cmdNoClip = function()
     {
         var svcl = arguments[1];
         
@@ -131,7 +131,12 @@ Server = class.extendNative(NServer, function()
         if(svcl.state == SVC_STATE_INGAME)
         {
             if(controller.bNoClip == false)
+            {
+                controller.bFlying = false;
                 controller.bNoClip = true;
+                // TODO - TEMP
+                Sys.print('NoClip enabled');
+            }
             else
             {
                 var nPlane = Level.findPlane(controller.origin);
@@ -150,6 +155,47 @@ Server = class.extendNative(NServer, function()
                 Client.localPlayer.controller.owner.plane = nPlane.toIndex();
                 
                 controller.bNoClip = false;
+                // TODO - TEMP
+                Sys.print('NoClip Disabled');
+            }
+        }
+    }
+    
+    this.cmdFly = function()
+    {
+        var svcl = arguments[1];
+        
+        var controller = svcl.controller;
+            
+        if(svcl.state == SVC_STATE_INGAME)
+        {
+            if(controller.bFlying == false)
+            {
+                controller.bNoClip = false;
+                controller.bFlying = true;
+                // TODO - TEMP
+                Sys.print('You feel lightweight');
+            }
+            else
+            {
+                var nPlane = Level.findPlane(controller.origin);
+                
+                if(nPlane == null)
+                    return;
+                
+                controller.plane = nPlane;
+                svcl.prediction.plane = nPlane;
+                controller.owner.plane = nPlane.toIndex();
+                
+                // TODO - TEMP
+                nPlane = Level.findPlane(Client.localPlayer.controller.origin);
+                Client.localPlayer.controller.plane = nPlane;
+                Client.localPlayer.prediction.plane = nPlane;
+                Client.localPlayer.controller.owner.plane = nPlane.toIndex();
+                
+                controller.bFlying = false;
+                // TODO - TEMP
+                Sys.print('Gravity pulls you down');
             }
         }
     }
@@ -158,9 +204,8 @@ Server = class.extendNative(NServer, function()
     // INITIALIZATION
     //------------------------------------------------------------------------
     
-    Sys.addCommand('noclip', this.noClip);
-    
-    this.addMessageEvent(this.noClip, 'noclip');
+    this.addMessageEvent(this.cmdNoClip, 'noclip');
+    this.addMessageEvent(this.cmdFly, 'fly');
     
     PacketManager.add(PacketEventClientInfo);
     PacketManager.add(PacketEventUpdateClient);

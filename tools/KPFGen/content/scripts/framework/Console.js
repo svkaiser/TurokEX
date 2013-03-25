@@ -369,16 +369,16 @@ Console = new (class.define(function()
         this.canvas.setDrawColor(255, 255, 255);
         this.canvas.setFont(FontArial);
         this.canvas.setDrawAlpha(255);
-        this.canvas.drawString('> ', 0, h-15);
+        this.canvas.drawString('> ', 0, h-15, false);
         
         if(this.bShowPrompt)
         {
             this.canvas.drawString('_', 16 +
-                FontArial.stringWidth(this.typeStr, 1.0, this.typeStrPos), h-15);
+                FontArial.stringWidth(this.typeStr, 1.0, this.typeStrPos), h-15, false);
         }
         
         if(this.typeStr.length > 0)
-            this.canvas.drawString(this.typeStr, 16, h-15, true);
+            this.canvas.drawString(this.typeStr, 16, h-15, false);
             
         if(this.scrollBackStr.length > 0)
         {
@@ -389,7 +389,7 @@ Console = new (class.define(function()
                 if(scy < 0)
                     break;
                 
-                this.canvas.drawString(this.scrollBackStr[i], 0, scy);
+                this.canvas.drawString(this.scrollBackStr[i], 0, scy, false);
                 scy -= 16;
             }
         }

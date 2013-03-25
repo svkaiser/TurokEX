@@ -5,7 +5,7 @@
 //
 //-----------------------------------------------------------------------------
 
-ComponentAreaSky = class.extendStatic(Component);
+ComponentAreaSky = class.extendStatic(ComponentArea);
 
 class.properties(ComponentAreaSky,
 {

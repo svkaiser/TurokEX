@@ -9,14 +9,6 @@ Sys.dependsOn('scripts/framework/Weapon.js');
 
 PulseRifle = class.extends(Weapon, function()
 {
-    //------------------------------------------------------------------------
-    // CONSTANTS
-    //------------------------------------------------------------------------
-    
-    //------------------------------------------------------------------------
-    // VARS
-    //------------------------------------------------------------------------
-    
     this.modelfile      = "models/mdl655/mdl655.kmesh";
     this.model          = Sys.loadModel(this.modelfile);
     
@@ -33,26 +25,43 @@ PulseRifle = class.extends(Weapon, function()
     
     this.state          = WS_READY;
     
-    this.checkAttack = function()
+    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
+});
+
+class.properties(PulseRifle,
+{
+    //------------------------------------------------------------------------
+    // FUNCTIONS
+    //------------------------------------------------------------------------
+    
+    checkAttack : function()
     {
         if(Client.localPlayer.command.getAction('+attack'))
         {
             this.animState.blendAnim(this.anim_Fire,
                 this.playSpeed, 4.0, NRender.ANIM_LOOP);
+                
+            this.animState.playTime = 0.08;
 
             this.state = WS_FIRING;
             return true;
         }
         
         return false;
-    }
+    },
     
-    this.fire = function()
+    fire : function()
     {
         if(this.checkHoldster())
         {
             this.animState.flags &= ~NRender.ANIM_LOOP;
             return;
+        }
+        
+        if(this.animState.playTime >= 0.16)
+        {
+            this.animState.playTime -= 0.16;
+            Snd.play('sounds/shaders/machine_gun_shot_2.ksnd');
         }
         
         if(!Client.localPlayer.command.getAction('+attack'))
@@ -61,10 +70,4 @@ PulseRifle = class.extends(Weapon, function()
             this.state = WS_READY;
         }
     }
-    
-    //------------------------------------------------------------------------
-    // INITIALIZATION
-    //------------------------------------------------------------------------
-    
-    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
 });

@@ -230,10 +230,10 @@ void CL_ProcessEvents(void)
         //    continue;
         //}
 
-        if(Menu_Responder(ev))
-        {
-            continue;
-        }
+        //if(Menu_Responder(ev))
+        //{
+        //    continue;
+        //}
 
         // TODO - TEMP
         eventtail = (--eventtail)&(MAXEVENTS-1);

@@ -7,10 +7,28 @@
 
 Sys.dependsOn('scripts/framework/Hud.js');
 Sys.dependsOn('scripts/framework/FontHud.js');
+Sys.dependsOn('scripts/turokgame/HudMessage.js');
 
 TurokHud = class.extends(Hud, function()
 {
     this.viewport = Render.viewport;
+    this.messages = new Array(8);
+    this.numbers =
+    [
+        'hud/h_num9.tga',
+        'hud/h_num8.tga',
+        'hud/h_num7.tga',
+        'hud/h_num6.tga',
+        'hud/h_num5.tga',
+        'hud/h_num4.tga',
+        'hud/h_num3.tga',
+        'hud/h_num2.tga',
+        'hud/h_num1.tga',
+        'hud/h_num0.tga'
+    ];
+    
+    for(var i = 0; i < 8; i++)
+        this.messages[i] = new HudMessage();
 });
 
 class.properties(TurokHud,
@@ -19,13 +37,22 @@ class.properties(TurokHud,
     // VARS
     //------------------------------------------------------------------------
     
-    opacity     : 192,
+    opacity     : 255,
     bFlash      : false,
     flashAlpha  : 128,
     flash_r     : 0,
     flash_g     : 44,
     flash_b     : 148,
     viewport    : null,
+    numbers     : null,
+    messages    : null,
+    strCounter  : 0,
+    text_r1     : 180,
+    text_r2     : 77,
+    text_g1     : 180,
+    text_g2     : 63,
+    text_b1     : 124,
+    text_b2     : 42,
     
     //------------------------------------------------------------------------
     // FUNCTIONS
@@ -49,7 +76,9 @@ class.properties(TurokHud,
             this.flash_b = 148;
         }
     },
+    
     onTick : function() { },
+    
     onDraw : function()
     {
         var controller = Client.localPlayer.controller;
@@ -95,19 +124,116 @@ class.properties(TurokHud,
         this.canvas.drawFixedTile('hud/h_coin.tga', 286, 10);
         
         // numbers
-        this.canvas.setDrawScale(0.325);
-        this.canvas.drawFixedString(player.lives, 10 + 30, 10 + 32);
+        this.drawNumber(player.lives, 10 + 30, 10 + 32);
+        this.drawNumber(player.health, 36, 215);
         
         var lf_x = 286 - 17;
         
         if(player.lifeForces < 10)
             lf_x += 9;
             
-        this.canvas.drawFixedString(player.lifeForces, lf_x, 10 + 8);
-        this.canvas.setDrawScale(1);
+        this.drawNumber(player.lifeForces, lf_x, 10 + 8);
         
+        // messages
+        this.drawMessages();
+        
+        this.canvas.setDrawScale(1);
         GL.setBlend(0);
     },
+    
+    setStringColor : function(r1, g1, b1, r2, g2, b2)
+    {
+        this.text_r1 = r1;
+        this.text_g1 = g1;
+        this.text_b1 = b1;
+        this.text_r2 = r2;
+        this.text_g2 = g2;
+        this.text_b2 = b2;
+    },
+    
+    drawString : function(text, x, y, bCenter)
+    {
+        if(typeof text !== 'string')
+            return;
+        
+        this.canvas.setVertexColor(0, this.text_r1>>2, this.text_g1>>2, this.text_b1>>2);
+        this.canvas.setVertexColor(1, this.text_r1>>2, this.text_g1>>2, this.text_b1>>2);
+        this.canvas.setVertexColor(2, this.text_r2>>2, this.text_g2>>2, this.text_b2>>2);
+        this.canvas.setVertexColor(3, this.text_r2>>2, this.text_g2>>2, this.text_b2>>2);
+     
+        var offset = 6 * this.canvas.scale;
+        if(offset <= 0)
+            offset = 1;
+        
+        this.canvas.drawFixedString(text.toUpperCase(), x+offset, y+offset, bCenter);
+        
+        this.canvas.setVertexColor(0, this.text_r1, this.text_g1, this.text_b1);
+        this.canvas.setVertexColor(1, this.text_r1, this.text_g1, this.text_b1);
+        this.canvas.setVertexColor(2, this.text_r2, this.text_g2, this.text_b2);
+        this.canvas.setVertexColor(3, this.text_r2, this.text_g2, this.text_b2);
+        
+        this.canvas.drawFixedString(text.toUpperCase(), x, y, bCenter);
+    },
+    
+    notify : function(text)
+    {
+        this.messages[this.strCounter].addText(text);
+        this.strCounter = (this.strCounter + 1) & 7;
+    },
+    
+    drawMessages : function()
+    {
+        this.setStringColor(180, 180, 124, 77, 63, 42);
+        
+        var cnt = this.strCounter;
+        var y = 48;
+        
+        for(var i = 0; i < 8; i++)
+        {
+            var msg = this.messages[cnt];
+            msg.update();
+            
+            if(msg.state != 0)
+            {
+                this.canvas.setDrawAlpha(msg.alpha);
+                this.canvas.setDrawScale(msg.scale * 0.5);
+                this.drawString(msg.text, 160, y, true);
+            }
+            
+            cnt = (cnt + 1) & 7;
+            y += 18;
+        }
+    },
+    
+    drawNumber : function(value, x, y)
+    {
+        if(typeof value !== 'number')
+            return;
+        
+        var str = value.toString();
+        var pos = x;
+        
+        for(var i = 0; i < str.length; i++)
+        {
+            var ch = str.charAt(i);
+            
+            if(ch === '-')
+            {
+                this.canvas.drawFixedTile('hud/h_minus.tga', pos, y);
+                pos += 9;
+                continue;
+            }
+            
+            var n = 57 - ch.charCodeAt();
+            
+            if(n > 9 || n < 0)
+                continue;
+                
+            this.canvas.drawFixedTile(this.numbers[n], pos, y);
+            pos += 9;
+        }
+    },
+    
     start : function()
     {
         Hud.prototype.start.bind(this)();

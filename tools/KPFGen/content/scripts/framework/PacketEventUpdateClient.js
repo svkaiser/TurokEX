@@ -20,6 +20,7 @@ PacketEventUpdateClient = class.extends(PacketEvent, function()
         packet.writeVector(svcl.prediction.velocity);
         packet.write32(svcl.prediction.plane.toIndex());
         packet.write8(svcl.controller.bNoClip);
+        packet.write8(svcl.controller.bFlying);
         packet.write32(svcl.netsequence.ingoing);
         packet.write32(svcl.netsequence.outgoing);
         
@@ -43,6 +44,7 @@ PacketEventUpdateClient = class.extends(PacketEvent, function()
         var plane = Plane.fromIndex(packet.read32());
         
         lp.controller.bNoClip = packet.read8();
+        lp.controller.bFlying = packet.read8();
         lp.netsequence.acks = packet.read32();
         lp.netsequence.inGoing = packet.read32();
         
@@ -57,5 +59,8 @@ PacketEventUpdateClient = class.extends(PacketEvent, function()
             lp.prediction.origin.copy(oldOrigin);
             
         //Sys.print(oldOrigin.toString() + ' ' + origin.toString());
+        
+        lp.controller.owner.origin = lp.prediction.origin;
+        lp.controller.owner.updateTransform();
     }
 });

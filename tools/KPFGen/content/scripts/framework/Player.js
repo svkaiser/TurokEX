@@ -30,7 +30,7 @@ Player = class.define(function()
     this.name           = "Player";
     this.command        = new Command();
     this.prediction     = new PredictionMove();
-    this.controller     = new ControllerPlayer();
+    this.controller     = null;
     this.clientID       = 0;
     this.peer           = null;
     

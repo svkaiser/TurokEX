@@ -240,7 +240,9 @@ void Canvas_DrawTile(canvas_t *canvas, texture_t *texture,
                      float x, float y, float w, float h);
 void Canvas_DrawFixedTile(canvas_t *canvas, texture_t *texture,
                      float x, float y);
-void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y);
-void Canvas_DrawFixedString(canvas_t *canvas, const char *string, float x, float y);
+void Canvas_DrawString(canvas_t *canvas, const char *string,
+                       float x, float y, kbool center);
+void Canvas_DrawFixedString(canvas_t *canvas, const char *string,
+                            float x, float y, kbool center);
 
 #endif

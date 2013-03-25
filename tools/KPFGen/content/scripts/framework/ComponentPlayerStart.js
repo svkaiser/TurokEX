@@ -22,5 +22,6 @@ class.properties(ComponentPlayerStart,
     playerID    : 0,
     hudClass    : "Hud",
     playerHud   : null,
-    active      : true
+    active      : true,
+    controller  : "Controller"
 });

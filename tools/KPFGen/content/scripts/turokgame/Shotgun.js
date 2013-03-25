@@ -9,14 +9,6 @@ Sys.dependsOn('scripts/framework/Weapon.js');
 
 Shotgun = class.extends(Weapon, function()
 {
-    //------------------------------------------------------------------------
-    // CONSTANTS
-    //------------------------------------------------------------------------
-    
-    //------------------------------------------------------------------------
-    // VARS
-    //------------------------------------------------------------------------
-    
     this.modelfile      = "models/mdl669/mdl669.kmesh";
     this.model          = Sys.loadModel(this.modelfile);
     
@@ -33,9 +25,46 @@ Shotgun = class.extends(Weapon, function()
     
     this.state          = WS_READY;
     
+    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
+});
+
+class.properties(Shotgun,
+{
     //------------------------------------------------------------------------
-    // INITIALIZATION
+    // VARS
     //------------------------------------------------------------------------
     
-    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
+    bReload : false,
+    readySound : 'sounds/shaders/ready_shotgun.ksnd',
+    
+    //------------------------------------------------------------------------
+    // FUNCTIONS
+    //------------------------------------------------------------------------
+    
+    checkAttack : function()
+    {
+        if(this.super.prototype.checkAttack.bind(this)())
+        {
+            Snd.play('sounds/shaders/riot_shotgun_shot.ksnd');
+            return true;
+        }
+        
+        return false;
+    },
+    
+    fire : function()
+    {
+        if(this.animState.playTime >= 0.5)
+        {
+            if(!this.bReload)
+            {
+                this.bReload = true;
+                Snd.play('sounds/shaders/ready_shotgun.ksnd');
+            }
+        }
+        else
+            this.bReload = false;
+        
+        this.super.prototype.fire.bind(this)();
+    }
 });

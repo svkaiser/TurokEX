@@ -9,14 +9,6 @@ Sys.dependsOn('scripts/framework/Weapon.js');
 
 Chronoscepter = class.extends(Weapon, function()
 {
-    //------------------------------------------------------------------------
-    // CONSTANTS
-    //------------------------------------------------------------------------
-    
-    //------------------------------------------------------------------------
-    // VARS
-    //------------------------------------------------------------------------
-    
     this.modelfile      = "models/mdl645/mdl645.kmesh";
     this.model          = Sys.loadModel(this.modelfile);
     
@@ -32,10 +24,6 @@ Chronoscepter = class.extends(Weapon, function()
     this.anim_SwapOut   = Sys.loadAnimation(this.model, "anim07");
     
     this.state          = WS_READY;
-    
-    //------------------------------------------------------------------------
-    // INITIALIZATION
-    //------------------------------------------------------------------------
     
     this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
 });

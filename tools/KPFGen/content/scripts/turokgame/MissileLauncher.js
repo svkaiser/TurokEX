@@ -9,14 +9,6 @@ Sys.dependsOn('scripts/framework/Weapon.js');
 
 MissileLauncher = class.extends(Weapon, function()
 {
-    //------------------------------------------------------------------------
-    // CONSTANTS
-    //------------------------------------------------------------------------
-    
-    //------------------------------------------------------------------------
-    // VARS
-    //------------------------------------------------------------------------
-    
     this.modelfile      = "models/mdl666/mdl666.kmesh";
     this.model          = Sys.loadModel(this.modelfile);
     
@@ -33,9 +25,30 @@ MissileLauncher = class.extends(Weapon, function()
     
     this.state          = WS_READY;
     
+    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
+});
+
+class.properties(MissileLauncher,
+{
     //------------------------------------------------------------------------
-    // INITIALIZATION
+    // VARS
     //------------------------------------------------------------------------
     
-    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
+    readySound : 'sounds/shaders/ready_missile_launcher.ksnd',
+    
+    //------------------------------------------------------------------------
+    // FUNCTIONS
+    //------------------------------------------------------------------------
+    
+    checkAttack : function()
+    {
+        if(this.super.prototype.checkAttack.bind(this)())
+        {
+            Snd.play('sounds/shaders/missile_launch.ksnd');
+            Snd.play('sounds/shaders/reload_missile_launcher.ksnd');
+            return true;
+        }
+        
+        return false;
+    }
 });

@@ -14,42 +14,40 @@ const WS_HOLDSTER       = 5;
 
 Weapon = class.define(function()
 {
-    //------------------------------------------------------------------------
-    // CONSTANTS
-    //------------------------------------------------------------------------
-    
-    const WEAPONTURN_MAX        = 0.08;
-    const WEAPONTURN_EPSILON    = 0.001;
-    
+    this.origin         = new Vector(0, 0, -275.456);
+    this.scale          = new Vector();
+    this.angles         = { yaw : 0, pitch : 0, roll : 0 };
+    this.animState      = new AnimState();
+});
+
+class.properties(Weapon,
+{
     //------------------------------------------------------------------------
     // VARS
     //------------------------------------------------------------------------
     
-    this.origin         = new Vector(0, 0, -275.456);
-    this.scale          = new Vector();
-    this.rotation       = new Quaternion(0, 0, 0, 1);
-    this.angles         = { yaw : 0, pitch : 0, roll : 0 };
-    this.animState      = new AnimState();
+    origin          : null,
+    scale           : null,
+    angles          : null,
+    animState       : null,
+    anim_Idle       : null,
+    anim_Walk       : null,
+    anim_Run        : null,
+    anim_Fire       : null,
+    anim_SwapIn     : null,
+    anim_SwapOut    : null,
     
-    this.anim_Idle      = null;
-    this.anim_Walk      = null;
-    this.anim_Run       = null;
-    this.anim_Fire      = null;
-    this.anim_SwapIn    = null;
-    this.anim_SwapOut   = null;
-    
-    this.state          = WS_DEACTIVATED;
-    
-    this.playSpeed      = 4.0;
-    this.thudOffset     = 0.0;
-    
-    this.bOwned         = false;
+    state           : WS_DEACTIVATED,
+    playSpeed       : 4.0,
+    thudOffset      : 0.0,
+    bOwned          : false,
+    readySound      : "",
     
     //------------------------------------------------------------------------
     // FUNCTIONS
     //------------------------------------------------------------------------
     
-    this.checkHoldster = function()
+    checkHoldster : function()
     {
         if(Client.localPlayer.controller.state == STATE_MOVE_CLIMB &&
             this.state != WS_HOLDSTER)
@@ -63,17 +61,17 @@ Weapon = class.define(function()
         }
 
         return false;
-    }
+    },
     
-    this.change = function()
+    change : function()
     {
         this.animState.blendAnim(this.anim_SwapOut,
             this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
 
         this.state = WS_SWAPOUT;
-    }
+    },
     
-    this.checkAttack = function()
+    checkAttack : function()
     {
         if(Client.localPlayer.command.getAction('+attack'))
         {
@@ -85,9 +83,9 @@ Weapon = class.define(function()
         }
         
         return false;
-    }
+    },
     
-    this.checkWeaponChange = function()
+    checkWeaponChange : function()
     {
         if(Client.localPlayer.command.getAction('+nextweap') &&
             !Client.localPlayer.command.getActionHeldTime('+nextweap'))
@@ -114,9 +112,9 @@ Weapon = class.define(function()
         }
         
         return false;
-    }
+    },
     
-    this.readyAnim = function()
+    readyAnim : function()
     {
         if(this.animState.flags & NRender.ANIM_BLEND)
             return;
@@ -138,9 +136,9 @@ Weapon = class.define(function()
             this.animState.blendAnim(this.anim_Idle,
                 this.playSpeed, 8.0, NRender.ANIM_LOOP);
         }
-    }
+    },
     
-    this.ready = function()
+    ready : function()
     {
         if(this.checkHoldster())
             return;
@@ -152,9 +150,9 @@ Weapon = class.define(function()
             return;
             
         this.readyAnim();
-    }
+    },
     
-    this.fire = function()
+    fire : function()
     {
         if(this.checkHoldster())
         {
@@ -167,9 +165,9 @@ Weapon = class.define(function()
             this.readyAnim();
             this.state = WS_READY;
         }
-    }
+    },
     
-    this.holdster = function()
+    holdster : function()
     {
         if(Client.localPlayer.controller.state != STATE_MOVE_CLIMB)
         {
@@ -178,9 +176,9 @@ Weapon = class.define(function()
 
             this.state = WS_SWAPIN;
         }
-    }
+    },
     
-    this.swapOut = function()
+    swapOut : function()
     {
         if(this.checkHoldster())
             return;
@@ -199,14 +197,15 @@ Weapon = class.define(function()
             
             var newWpn = tPlayer.activeWeapon;
             
+            Snd.play(newWpn.readySound);
             newWpn.animState.setAnim(newWpn.anim_SwapIn,
                 newWpn.playSpeed, NRender.ANIM_NOINTERRUPT);
 
             newWpn.state = WS_SWAPIN;
         }
-    }
+    },
     
-    this.swapIn = function()
+    swapIn : function()
     {
         if(this.checkHoldster())
             return;
@@ -219,10 +218,13 @@ Weapon = class.define(function()
             this.readyAnim();
             this.state = WS_READY;
         }
-    }
-
-    this.tick = function()
+    },
+    
+    tick : function()
     {
+        const WEAPONTURN_MAX        = 0.08;
+        const WEAPONTURN_EPSILON    = 0.001;
+    
         this.angles.yaw = (this.angles.yaw -
             (Client.localPlayer.command.mouse_x * 0.1)) * 0.9;
             
@@ -273,13 +275,13 @@ Weapon = class.define(function()
 
         if(this.state != WS_DEACTIVATED)
             this.animState.update();
-    }
+    },
     
-    this.draw = function()
+    draw : function()
     {
         if(this.model == null)
             return;
-            
+
         Matrix.setProjection(45, 32);
         Matrix.setModelView();
         
@@ -295,21 +297,16 @@ Weapon = class.define(function()
         var pitch = new Quaternion(this.angles.pitch, 1, 0, 0);
         
         var pmove = Client.localPlayer.prediction;
-        var aim;
         
         // lean weapon if strafing
         if(Client.localPlayer.controller.state != STATE_MOVE_SWIM)
         {
-            var roll = new Quaternion(pmove.angles.roll, 0, 1, 0);
-            aim = Quaternion.multiply(Quaternion.multiply(yaw, roll), pitch);
-        }
-        else
-        {
-            aim = Quaternion.multiply(pitch, yaw);
+            var roll = new Quaternion(pmove.angles.roll*1.5, 0, 1, 0);
+            this.model.setNodeRotation(0, roll);
         }
         
         var mtx_rot = new Matrix();
-        mtx_rot.setRotation(aim);
+        mtx_rot.setRotation(Quaternion.multiply(pitch, yaw));
         mtx_transform.applyVector(this.origin);
         
         var mtx_final = Matrix.multiply(mtx_rot, mtx_transform);
@@ -318,11 +315,13 @@ Weapon = class.define(function()
         {
             // add a little vertical force to weapon if jumping or falling
             offset = (pmove.origin.y - pmove.plane.distance(pmove.origin));
+            
+            var velocity = pmove.velocity.y * pmove.frametime;
 
-            if(!(offset < 0.2) && (pmove.velocity.y < 0.2 || pmove.velocity.y > 0.2))
+            if(!(offset < 0.2) && (velocity < 0.2 || velocity > 0.2))
             {
-                offset = pmove.velocity.y;
-                if(pmove.velocity.y > 0)
+                offset = velocity;
+                if(velocity > 0)
                 {
                     // cut back offset a little if jumping
                     offset *= 0.35;

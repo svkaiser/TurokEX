@@ -28,9 +28,7 @@ Client = class.extendNative(NClient, function()
     // VARS
     //------------------------------------------------------------------------
     
-    this.localPlayer    = new LocalPlayer();
-    this.responders     = new Array();
-    this.packetEvents   = new Array();
+    this.localPlayer = new LocalPlayer();
     
     //------------------------------------------------------------------------
     // FUNCTIONS
@@ -74,13 +72,11 @@ Client = class.extendNative(NClient, function()
         {
         case Net.connect:
             Sys.print('connected to host');
-            this.state = this.STATE_CONNECTED;
             this.localPlayer.resetNetSequence();
             break;
             
         case Net.disconnect:
             Sys.print('disconnected from host');
-            this.state = this.STATE_DISCONNECTED;
             break;
             
         case Net.packet:

@@ -86,7 +86,7 @@ ControllerPlayer = class.extends(Controller, function()
     const CLIMB_FACEANGLE           = 40.0;
     const CLIMB_YAWLERP             = 0.084;
     const CLIMB_BOBANGLE            = 0.33;
-    const CLIMB_BOBSPEED            = 0.0125;
+    const CLIMB_BOBSPEED            = 0.025;
     const CLIMB_BOBWINDOWN          = 0.035;
     
     const CLIMB_LEAP_AMNT           = 353.28;
@@ -104,6 +104,7 @@ ControllerPlayer = class.extends(Controller, function()
     this.mouse_y                    = 0.0;
     this.bCrawling                  = false;                    // moving at half the view height and speed
     this.bNoClip                    = false;                    // free movement/clipping
+    this.bFlying                    = false;
     
     // TODO
     this.center_y                   = 0;
@@ -292,19 +293,11 @@ ControllerPlayer = class.extends(Controller, function()
         if(this.bCrawling)
             return;
         
-        this.velocity.y = JUMP_VELOCITY * this.frametime;
-    }
-    
-    // TODO
-    this.updateView = function()
-    {
-        if(this.bCrawling)
-        {
-            this.view_y = this.lerp(this.view_y, 3.84, 0.125);
-            return;
-        }
+        this.velocity.y = JUMP_VELOCITY;
         
-        this.view_y = this.lerp(this.view_y, 30.72, 0.125);
+        // TODO - determine if client or server
+        if(this == Client.localPlayer.controller)
+            Snd.play('sounds/shaders/generic_21_turok_jump.ksnd');
     }
     
     this.checkCrawlSpace = function()
@@ -318,14 +311,6 @@ ControllerPlayer = class.extends(Controller, function()
                 this.accel.x *= (1 / t);
                 this.accel.z *= (1 / t);
             }
-        }
-        
-        if(this.plane.distance(this.origin) - this.origin.y <= CRAWL_FLOORHEIGHT)
-        {
-            if(this.plane.area.ComponentAreaCrawl)
-                this.bCrawling = true;
-            else
-                this.bCrawling = false;
         }
     }
     
@@ -385,6 +370,10 @@ ControllerPlayer = class.extends(Controller, function()
                 {
                     return false;
                 }
+                
+                var dist = this.getClimbDistance(this.plane);
+                if(dist > 4.096 || dist <= -4.096)
+                    return false;
             }
             
             this.velocity.clear();
@@ -411,11 +400,8 @@ ControllerPlayer = class.extends(Controller, function()
         var plane = this.plane;
         var dist = this.getClimbDistance(plane);
         
-        if(dist < 0)
-        {
-            this.origin.x = this.origin.x - (plane.normal.x * dist);
-            this.origin.z = this.origin.z - (plane.normal.z * dist);
-        }
+        this.velocity.x = -(plane.normal.x * dist) * 40.96;
+        this.velocity.z = -(plane.normal.z * dist) * 40.96;
     }
     
     this.canClimbLeap = function()
@@ -427,12 +413,10 @@ ControllerPlayer = class.extends(Controller, function()
         {
             this.jump();
             
-            var an = this.angles.yaw + (Math.PI * 2);
+            var an = this.angles.yaw;
             
-            this.accel.x -=  Math.sin(an) * this.frametime * CLIMB_LEAP_AMNT;
-            this.accel.y = 0;
-            this.accel.z -=  Math.cos(an) * this.frametime * CLIMB_LEAP_AMNT;
-            this.velocity.clear();
+            this.accel.x =  Math.sin(an) * CLIMB_LEAP_AMNT;
+            this.accel.z =  Math.cos(an) * CLIMB_LEAP_AMNT;
             this.state = STATE_MOVE_AIR;
             
             return true;
@@ -448,15 +432,20 @@ ControllerPlayer = class.extends(Controller, function()
         if(p != null && p.area.ComponentAreaWater)
         {
             this.waterheight = p.area.ComponentAreaWater.waterYPlane;
-            if(this.origin.y + this.center_y >= this.waterheight)
-            {
-                if(this.origin.y < this.waterheight)
-                    return WL_BETWEEN;
-                else
-                    return WL_OVER;
-            }
             
-            return WL_UNDER;
+            if(((this.origin.y - this.center_y) - this.plane.distance(this.origin)) +
+                (this.waterheight - this.origin.y) >= this.center_y)
+            {
+                if(this.origin.y + this.center_y >= this.waterheight)
+                {
+                    if(this.origin.y < this.waterheight)
+                        return WL_BETWEEN;
+                    else
+                        return WL_OVER;
+                }
+                
+                return WL_UNDER;
+            }
         }
 
         return WL_INVALID;
@@ -464,10 +453,25 @@ ControllerPlayer = class.extends(Controller, function()
     
     this.inWater = function()
     {
+        var oldLevel = this.waterlevel;
         this.waterlevel = this.checkWater();
+        
+        if(oldLevel == WL_UNDER && this.waterlevel == WL_BETWEEN)
+        {
+            // TODO - determine if client or server
+            if(this == Client.localPlayer.controller)
+                Snd.play('sounds/shaders/generic_16_turok_small_water_gasp.ksnd');
+        }
         
         if(this.waterlevel == WL_INVALID || this.waterlevel == WL_OVER)
             return false;
+        
+        if(this.waterlevel == WL_UNDER && oldLevel != WL_UNDER)
+        {
+            // TODO - determine if client or server
+            if(this == Client.localPlayer.controller)
+                Snd.play('sounds/shaders/water_splash_1.ksnd');
+        }
         
         if(this.state != STATE_MOVE_SWIM)
         {
@@ -502,7 +506,7 @@ ControllerPlayer = class.extends(Controller, function()
             
             // must be standing on ground or walking off a ledge
             if(origin.y - plane.distance(origin) <= JUMP_GROUNDEPISILON ||
-                (velocity.y < 0 && velocity.y > -(JUMP_VELOCITY * this.frametime)))
+                (velocity.y < 0 && velocity.y > -JUMP_VELOCITY))
             {
                 this.jump();
                 return true;
@@ -566,7 +570,16 @@ ControllerPlayer = class.extends(Controller, function()
             this.movetime < this.timestamp)
         {
             this.movetime = SWIM_MOVETIME + this.timestamp;
-            this.accel.z = SWIM_THRUSTSPEED * this.frametime;
+            this.accel.z = SWIM_THRUSTSPEED;
+            
+            // TODO - determine if client or server
+            if(this == Client.localPlayer.controller)
+            {
+                if(this.waterlevel == WL_UNDER)
+                    Snd.play('sounds/shaders/underwater_swim_2.ksnd');
+                else
+                    Snd.play('sounds/shaders/water_splash_2.ksnd');
+            }
         }
     }
     
@@ -617,6 +630,9 @@ ControllerPlayer = class.extends(Controller, function()
     {
         if(this.bLerping)
             return;
+            
+        if(this.frametime == 0.0)
+            return;
         
         if(this.waterlevel == WL_UNDER &&
             (this.velocity.y < 0.125 && this.velocity.y > -0.125))
@@ -629,7 +645,7 @@ ControllerPlayer = class.extends(Controller, function()
                 sink = 2.0;
             
             this.velocity.y =
-                this.lerp(this.velocity.y, sink * 4, -0.0035);
+                this.lerp(this.velocity.y, (sink * 4) / this.frametime, -0.0035);
         }
     }
     
@@ -654,7 +670,22 @@ ControllerPlayer = class.extends(Controller, function()
             
         this.accelerate(this.speed[STATE_MOVE_NOCLIP]);
         this.deAccelY(0.5);
-        this.origin.add(this.velocity);
+        this.origin.x += (this.velocity.x * this.frametime);
+        this.origin.y += (this.velocity.y * this.frametime);
+        this.origin.z += (this.velocity.z * this.frametime);
+        this.velocity.clear();
+    }
+    
+    this.flyMove = function()
+    {
+        this.setDirection(
+            this.angles.pitch,
+            this.angles.yaw,
+            0);
+            
+        this.accelerate(this.speed[STATE_MOVE_NOCLIP]);
+        this.deAccelY(0.5);
+        this.super.prototype.beginMovement.bind(this)();
         this.velocity.clear();
     }
     
@@ -710,9 +741,21 @@ ControllerPlayer = class.extends(Controller, function()
             this.velocity.clear();
             
             if(this.bRollDir == true)
+            {
+                // TODO - determine if client or server
+                if(this == Client.localPlayer.controller)
+                    Snd.play('sounds/shaders/generic_23_turok_climb_1.ksnd');
+                    
                 this.bRollDir = false;
+            }
             else
+            {
+                // TODO - determine if client or server
+                if(this == Client.localPlayer.controller)
+                    Snd.play('sounds/shaders/generic_24_turok_climb_2.ksnd');
+                    
                 this.bRollDir = true;
+            }
         }
         
         var speed = this.speed[STATE_MOVE_CLIMB];
@@ -745,15 +788,10 @@ ControllerPlayer = class.extends(Controller, function()
         this.velocity.add(Vector.gScale(this.forward, this.accel.z));
         this.velocity.y = this.accel.y;
         
-        Physics.move(
-            this.origin,
-            this.velocity,
-            this.plane,
-            this.owner,
-            this.angles.yaw);
+        this.lerpToPlane();
+        Physics.move(this);
             
         this.applyFriction(MOVE_FRICTION);
-        this.lerpToPlane();
         this.velocity.y = 0;
     }
     
@@ -761,8 +799,11 @@ ControllerPlayer = class.extends(Controller, function()
     {
         var pitch = this.angles.pitch;
         
-        if(this.waterlevel == WL_BETWEEN && pitch < Angle.degToRad(45))
-            pitch = 0;
+        if(this.waterlevel == WL_BETWEEN)
+        {
+            if(pitch < Angle.degToRad(45))
+                pitch = 0;
+        }
         
         this.setDirection(
             pitch,
@@ -796,9 +837,34 @@ ControllerPlayer = class.extends(Controller, function()
                 this.jump();
         }
         
+        if(this.accel.unit3() >= 3)
+        {
+            if(!(Sys.ticks() % 100))
+            {
+                // TODO - determine if client or server
+                if(this == Client.localPlayer.controller)
+                {
+                    if(this.waterlevel == WL_UNDER)
+                        Snd.play('sounds/shaders/underwater_swim_1.ksnd');
+                    else
+                        Snd.play('sounds/shaders/water_splash_3.ksnd');
+                }
+            }
+        }
+        
+        if(this.waterlevel == WL_BETWEEN)
+        { 
+            if(this.velocity.y < 0 && this.velocity.y > -250.0)
+            {
+                this.accel.y = 0;
+                this.velocity.y = 0;
+            }
+        }
+        
         this.lerpToSurface();
         this.sink();
         this.super.prototype.beginMovement.bind(this)();
+        
         this.applyFriction(MOVE_FRICTION);
         
         if(this.waterlevel == WL_UNDER)
@@ -847,6 +913,14 @@ class.properties(ControllerPlayer,
             return;
         }
         
+        if(this.bFlying == true)
+        {
+            this.flyMove();
+            return;
+        }
+        
+        var area = this.plane.area;
+        
         if(this.inWater())
         {
             this.state = STATE_MOVE_SWIM;
@@ -882,6 +956,17 @@ class.properties(ControllerPlayer,
                 this.swimMove();
                 break;
         }
+        
+        if(area != this.plane.area)
+        {
+            var component;
+            
+            for(component in area)
+                area[component].onExit(this);
+            
+            for(component in this.plane.area)
+                this.plane.area[component].onEnter(this);
+        }
     },
     
     // play 'oof' sound and thump the view height if the player
@@ -892,17 +977,29 @@ class.properties(ControllerPlayer,
         const FALL_THRESHOLD_STOPSPEED  = 480;
         const FALL_THUMPFACTOR          = 0.75;
     
-        var y = this.velocity.y;
+        var y = this.velocity.y * this.frametime;
         
         if(this.plane != null && !this.plane.area.ComponentAreaClimb)
             this.super.prototype.hitFloor.bind(this)();
+            
+        var localController = Client.localPlayer.controller;
+        
+        if(this.origin.y - this.plane.distance(this.origin) <= 0.1024 &&
+            y <= -(1024 * this.frametime))
+        {
+            // TODO - determine if client or server
+            if(this == localController)
+                Snd.play('sounds/shaders/generic_22_turok_land.ksnd');
+        }
         
         if(this.velocity.y == 0 && y <= -(FALL_THRESHOLD_THUMP * this.frametime))
         {
             if(y <= -(FALL_THRESHOLD_STOPSPEED * this.frametime))
                 this.accel.clear();
             
-            this.view_y *= FALL_THUMPFACTOR;
+            if(this == localController)
+                Client.localPlayer.viewCamera.viewoffset =
+                    (localController.owner.viewHeight * 0.5);
         }
     }
 });

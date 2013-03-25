@@ -40,6 +40,11 @@ PredictionMove = class.define(function()
         this.angles.yaw     = controller.angles.yaw;
         this.angles.pitch   = controller.angles.pitch;
         this.angles.roll    = controller.angles.roll;
+        
+        // TODO - TEMP!!!
+        var rot = controller.owner.rotation;
+        rot.setRotation(this.angles.yaw, 0, 1, 0);
+        controller.owner.rotation = rot;
     }
     
     this.clientMove = function(p)

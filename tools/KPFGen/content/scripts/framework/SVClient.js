@@ -22,16 +22,18 @@ class.properties(SVClient,
     //------------------------------------------------------------------------
     
     state : SVC_STATE_INACTIVE,
+    playerID : 0,
     
     //------------------------------------------------------------------------
     // FUNCTIONS
     //------------------------------------------------------------------------
     
-    create : function(ev)
+    create : function(ev, id)
     {
         this.state = SVC_STATE_ACTIVE;
         this.peer = ev.peer;
         this.clientID = ev.peer.connectID;
+        this.playerID = id;
         
         this.resetNetSequence();
     }

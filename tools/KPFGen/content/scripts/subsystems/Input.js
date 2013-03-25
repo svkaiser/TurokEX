@@ -61,27 +61,4 @@ Input = class.extendNative(NInput, function()
         var ch = c - this.keyToAscii('a');
         this.shiftkey[c] = this.keyToAscii('A') + ch;
     }
-    
-    this.add(0, '+attack');
-    this.add(0, '-attack');
-    this.add(1, '+forward');
-    this.add(1, '-forward');
-    this.add(2, '+back');
-    this.add(2, '-back');
-    this.add(3, '+left');
-    this.add(3, '-left');
-    this.add(4, '+right');
-    this.add(4, '-right');
-    this.add(5, '+strafeleft');
-    this.add(5, '-strafeleft');
-    this.add(6, '+straferight');
-    this.add(6, '-straferight');
-    this.add(7, '+run');
-    this.add(7, '-run');
-    this.add(8, '+jump');
-    this.add(8, '-jump');
-    this.add(11, '+nextweap');
-    this.add(11, '-nextweap');
-    this.add(12, '+prevweap');
-    this.add(12, '-prevweap');
 });

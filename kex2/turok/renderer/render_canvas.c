@@ -157,7 +157,8 @@ void Canvas_DrawFixedTile(canvas_t *canvas, texture_t *texture,
 // Canvas_DrawString
 //
 
-void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y)
+void Canvas_DrawString(canvas_t *canvas, const char *string,
+                       float x, float y, kbool center)
 {
     float width;
     float height;
@@ -176,6 +177,9 @@ void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y)
 
     if(canvas->scale <= 0.01f)
         canvas->scale = 1;
+
+    if(center == true)
+        x -= Font_StringWidth(canvas->font, string, canvas->scale, 0) * 0.5f;
 
     width       = (float)canvas->font->width;
     height      = (float)canvas->font->height;
@@ -305,7 +309,7 @@ void Canvas_DrawString(canvas_t *canvas, const char *string, float x, float y)
 // Canvas_DrawFixedString
 //
 
-void Canvas_DrawFixedString(canvas_t *canvas, const char *string, float x, float y)
+void Canvas_DrawFixedString(canvas_t *canvas, const char *string, float x, float y, kbool center)
 {
     float ratiox;
     float ratioy;
@@ -320,6 +324,6 @@ void Canvas_DrawFixedString(canvas_t *canvas, const char *string, float x, float
 
     oldScale = canvas->scale;
     canvas->scale /= ratiox;
-    Canvas_DrawString(canvas, string, rx, ry);
+    Canvas_DrawString(canvas, string, rx, ry, center);
     canvas->scale = oldScale;
 }

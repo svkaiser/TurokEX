@@ -9,14 +9,6 @@ Sys.dependsOn('scripts/framework/Weapon.js');
 
 Rifle = class.extends(Weapon, function()
 {
-    //------------------------------------------------------------------------
-    // CONSTANTS
-    //------------------------------------------------------------------------
-    
-    //------------------------------------------------------------------------
-    // VARS
-    //------------------------------------------------------------------------
-    
     this.modelfile      = "models/mdl665/mdl665.kmesh";
     this.model          = Sys.loadModel(this.modelfile);
     
@@ -33,9 +25,64 @@ Rifle = class.extends(Weapon, function()
     
     this.state          = WS_READY;
     
+    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
+});
+
+class.properties(Rifle,
+{
     //------------------------------------------------------------------------
-    // INITIALIZATION
+    // VARS
     //------------------------------------------------------------------------
     
-    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
+    bShotsFired : [false, false, false],
+    
+    //------------------------------------------------------------------------
+    // FUNCTIONS
+    //------------------------------------------------------------------------
+    
+    fire : function()
+    {
+        if(this.checkHoldster())
+        {
+            this.animState.flags &= ~NRender.ANIM_LOOP;
+            return;
+        }
+        
+        if(this.animState.playTime >= 0.0)
+        {
+            if(!this.bShotsFired[0])
+            {
+                this.bShotsFired[0] = true;
+                Snd.play('sounds/shaders/rifle_shot.ksnd');
+            }
+        }
+        
+        if(this.animState.playTime >= 0.1)
+        {
+            if(!this.bShotsFired[1])
+            {
+                this.bShotsFired[1] = true;
+                Snd.play('sounds/shaders/rifle_shot.ksnd');
+            }
+        }
+        
+        if(this.animState.playTime >= 0.2)
+        {
+            if(!this.bShotsFired[2])
+            {
+                this.bShotsFired[2] = true;
+                Snd.play('sounds/shaders/rifle_shot.ksnd');
+            }
+        }
+        
+        if(this.animState.flags & NRender.ANIM_STOPPED)
+        {
+            this.readyAnim();
+            this.state = WS_READY;
+            
+            this.bShotsFired[0] = false;
+            this.bShotsFired[1] = false;
+            this.bShotsFired[2] = false;
+        }
+    }
 });

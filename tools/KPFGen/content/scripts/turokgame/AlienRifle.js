@@ -9,14 +9,6 @@ Sys.dependsOn('scripts/framework/Weapon.js');
 
 AlienRifle = class.extends(Weapon, function()
 {
-    //------------------------------------------------------------------------
-    // CONSTANTS
-    //------------------------------------------------------------------------
-    
-    //------------------------------------------------------------------------
-    // VARS
-    //------------------------------------------------------------------------
-    
     this.modelfile      = "models/mdl652/mdl652.kmesh";
     this.model          = Sys.loadModel(this.modelfile);
     
@@ -33,9 +25,29 @@ AlienRifle = class.extends(Weapon, function()
     
     this.state          = WS_READY;
     
+    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
+});
+
+class.properties(AlienRifle,
+{
     //------------------------------------------------------------------------
-    // INITIALIZATION
+    // VARS
     //------------------------------------------------------------------------
     
-    this.animState.setAnim(this.anim_Idle, this.playSpeed, NRender.ANIM_LOOP);
+    readySound : 'sounds/shaders/ready_tek_weapon_1.ksnd',
+    
+    //------------------------------------------------------------------------
+    // FUNCTIONS
+    //------------------------------------------------------------------------
+    
+    checkAttack : function()
+    {
+        if(this.super.prototype.checkAttack.bind(this)())
+        {
+            Snd.play('sounds/shaders/tek_weapon_1.ksnd');
+            return true;
+        }
+        
+        return false;
+    }
 });

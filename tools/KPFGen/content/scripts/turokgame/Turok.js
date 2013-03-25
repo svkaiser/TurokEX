@@ -8,6 +8,7 @@
 // components
 Sys.runScript('scripts/turokgame/ComponentTurokPlayer.js');
 Sys.runScript('scripts/turokgame/TurokPickup.js');
+Sys.runScript('scripts/turokgame/ComponentAreaAmbience.js');
 Sys.runScript('scripts/turokgame/TurokPickupLifeForce.js');
 Sys.runScript('scripts/turokgame/TurokPickupWeapon.js');
 Sys.runScript('scripts/turokgame/TurokPickupWeaponPistol.js');
@@ -21,6 +22,17 @@ Sys.runScript('scripts/turokgame/TurokPickupWeaponAlienRifle.js');
 Sys.runScript('scripts/turokgame/TurokPickupWeaponRocketLauncher.js');
 Sys.runScript('scripts/turokgame/TurokPickupWeaponAccelerator.js');
 Sys.runScript('scripts/turokgame/TurokPickupWeaponFusion.js');
+
+// ambience
+Sys.runScript('scripts/turokgame/AmbienceJungle.js');
+Sys.runScript('scripts/turokgame/AmbienceSwamp.js');
+Sys.runScript('scripts/turokgame/AmbienceCatcomb01.js');
+Sys.runScript('scripts/turokgame/AmbienceCatcomb02.js');
+Sys.runScript('scripts/turokgame/AmbienceCave.js');
+Sys.runScript('scripts/turokgame/AmbienceRuins.js');
+Sys.runScript('scripts/turokgame/AmbienceLostLand.js');
+Sys.runScript('scripts/turokgame/AmbienceValley.js');
+Sys.runScript('scripts/turokgame/AmbienceVillage.js');
 
 // features
 Sys.runScript('scripts/turokgame/TurokHud.js');
@@ -45,13 +57,38 @@ Sys.runScript('scripts/turokgame/Shotgun.js');
 Sys.runScript('scripts/turokgame/PacketEventRequestWeapon.js');
 Sys.runScript('scripts/turokgame/PacketEventChangeWeapon.js');
 
+// cvars
+Sys.addCvar('g_wpnautoswitch', '1');
+
+// input
+Input.add(0, '+attack');
+Input.add(0, '-attack');
+Input.add(1, '+forward');
+Input.add(1, '-forward');
+Input.add(2, '+back');
+Input.add(2, '-back');
+Input.add(3, '+left');
+Input.add(3, '-left');
+Input.add(4, '+right');
+Input.add(4, '-right');
+Input.add(5, '+strafeleft');
+Input.add(5, '-strafeleft');
+Input.add(6, '+straferight');
+Input.add(6, '-straferight');
+Input.add(7, '+run');
+Input.add(7, '-run');
+Input.add(8, '+jump');
+Input.add(8, '-jump');
+Input.add(11, '+nextweap');
+Input.add(11, '-nextweap');
+Input.add(12, '+prevweap');
+Input.add(12, '-prevweap');
+
 // initialize game
 Game.event_GameInitialized = function()
 {
     PacketManager.add(PacketEventRequestWeapon);
     PacketManager.add(PacketEventChangeWeapon);
-    
-    Sys.addCvar('g_wpnautoswitch', '1');
     
     Game.giveAll = function()
     {

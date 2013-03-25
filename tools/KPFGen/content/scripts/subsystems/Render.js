@@ -7,8 +7,6 @@
 
 Render = class.extendNative(NRender, function()
 {
-    const FOG_LERP_SPEED = 0.025;
-    
     //------------------------------------------------------------------------
     // VARS
     //------------------------------------------------------------------------
@@ -21,60 +19,45 @@ Render = class.extendNative(NRender, function()
     // FUNCTIONS
     //------------------------------------------------------------------------
     
-    this.setupFog = function()
+    this.event_PreRender = function()
     {
-        var plane = Client.localPlayer.prediction.plane;
+        var lp = Client.localPlayer;
         
-        if(plane == null ||
-            Sys.getCvar('r_fog') <= 0)
+        if(lp.controller == null)
         {
             this.clearViewPort(0.25, 0.25, 0.25);
             return;
         }
-        
-        var area = plane.area;
-        
-        if(area == null)
+            
+        if(lp.viewCamera == null ||
+            lp.viewCamera == undefined)
             return;
         
-        var areafog = area.ComponentAreaFog;
+        var plane = lp.prediction.plane;
         
-        if(areafog)
+        if(plane == null)
+            this.clearViewPort(0.25, 0.25, 0.25);
+        else
         {
-            this.fogColor[0] = Math.lerp(this.fogColor[0], (areafog.fog_Color_r / 255.0), FOG_LERP_SPEED);
-            this.fogColor[1] = Math.lerp(this.fogColor[1], (areafog.fog_Color_g / 255.0), FOG_LERP_SPEED);
-            this.fogColor[2] = Math.lerp(this.fogColor[2], (areafog.fog_Color_b / 255.0), FOG_LERP_SPEED);
-            this.fogColor[3] = 1;
-            
-            this.clearViewPort(
-                this.fogColor[0],
-                this.fogColor[1],
-                this.fogColor[2]);
-            
-            this.fogFar = Math.lerp(this.fogFar, areafog.fog_Far, FOG_LERP_SPEED);
-            this.fogNear = this.fogFar * 0.5;
-            
-            GL.enable(GL.FOG);
-            GL.fog(GL.FOG_COORD_SRC, GL.FRAGMENT_DEPTH);
-            GL.fog(GL.FOG_COLOR, this.fogColor);
-            GL.fog(GL.FOG_START, this.fogNear);
-            GL.fog(GL.FOG_END, this.fogFar);
+            for(var component in lp.controller.plane.area)
+                lp.controller.plane.area[component].onPreRender();
         }
-    }
-    
-    this.event_PreRender = function()
-    {
-        if(Client.localPlayer.viewCamera == null ||
-            Client.localPlayer.viewCamera == undefined)
-            return;
         
-        this.setupFog();
-        Client.localPlayer.viewCamera.draw();
+        lp.viewCamera.draw();
     }
     
     this.event_OnRender = function()
     {
         var lp = Client.localPlayer;
+        
+        if(lp.controller == null)
+            return;
+            
+        if(lp.controller.plane != null)
+        {
+            for(var component in lp.controller.plane.area)
+                lp.controller.plane.area[component].onRender();
+        }
         
         if(lp.controller.owner)
         {
@@ -96,7 +79,7 @@ Render = class.extendNative(NRender, function()
         
         var lp = Client.localPlayer;
         
-        if(lp.controller.owner)
+        if(lp.controller && lp.controller.owner)
         {
             var components = lp.controller.owner.components;
             for(var p in components)
