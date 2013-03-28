@@ -156,6 +156,7 @@ void Actor_ComponentFunc(const char *function)
     if(!gLevel.loaded)
         return;
 
+    // TODO - MOVE PICKUPS TO LINKED LIST
     for(i = 0; i < gLevel.numGridBounds; i++)
     {
         gridBounds_t *gb = &gLevel.gridBounds[i];
@@ -171,6 +172,24 @@ void Actor_ComponentFunc(const char *function)
             Actor_CallEvent(actor, function, NULL);
         }
     }
+}
+
+//
+// Actor_SetTarget
+//
+
+void Actor_SetTarget(gActor_t **self, gActor_t *target)
+{
+    // If there was a target already, decrease its refcount
+    if(*self)
+    {
+        Z_Touch(*self); // validate pointer
+        (*self)->refcount--;
+    }
+
+    // Set new target and if non-NULL, increase its counter
+    if((*self = target))
+        target->refcount++;
 }
 
 //

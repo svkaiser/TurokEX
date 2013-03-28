@@ -280,10 +280,239 @@ static const sctokens_t mapareatokens[scarea_end+1] =
 };
 
 //
-// Map_ParseActorBlock
+// Map_AddActor
 //
 
-static void Map_ParseActorBlock(scparser_t *parser, int count, gActor_t **actorList)
+void Map_AddActor(gLevel_t *level, gActor_t *actor)
+{
+    level->actorRoot.prev->next = actor;
+    actor->next = &level->actorRoot;
+    actor->prev = level->actorRoot.prev;
+    level->actorRoot.prev = actor;
+}
+
+//
+// Map_RemoveActor
+//
+
+void Map_RemoveActor(gLevel_t *level, gActor_t* actor)
+{
+    gActor_t* next;
+
+    if(actor->refcount > 0)
+        return;
+
+    /* Remove from main actor list */
+    next = level->actorRover->next;
+
+    /* Note that level->actorRover is guaranteed to point to us,
+    * and since we're freeing our memory, we had better change that. So
+    * point it to actor->prev, so the iterator will correctly move on to
+    * actor->prev->next = actor->next */
+    (next->prev = level->actorRover = actor->prev)->next = next;
+    Z_Free(actor);
+}
+
+//
+// Map_ParseActor
+//
+
+static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
+{
+    int numComponents = 0;
+    int numTexSwaps = 0;
+    int j;
+
+    Vec_Set3(actor->scale, 1, 1, 1);
+
+    // read into nested actor block
+    SC_ExpectNextToken(TK_LBRACK);
+    SC_Find();
+
+    while(parser->tokentype != TK_RBRACK)
+    {
+        switch(SC_GetIDForToken(mapactortokens, parser->token))
+        {
+        case scactor_name:
+            SC_AssignString(mapactortokens, actor->name,
+                scactor_name, parser, false);
+            break;
+
+        case scactor_mesh:
+            SC_ExpectNextToken(TK_EQUAL);
+            SC_GetString();
+            actor->model = Mdl_Load(parser->stringToken);
+            break;
+
+        case scactor_bounds:
+            SC_ExpectNextToken(TK_EQUAL);
+            SC_ExpectNextToken(TK_LBRACK);
+            actor->bbox.min[0] = (float)SC_GetFloat();
+            actor->bbox.min[1] = (float)SC_GetFloat();
+            actor->bbox.min[2] = (float)SC_GetFloat();
+            actor->bbox.max[0] = (float)SC_GetFloat();
+            actor->bbox.max[1] = (float)SC_GetFloat();
+            actor->bbox.max[2] = (float)SC_GetFloat();
+            SC_ExpectNextToken(TK_RBRACK);
+            break;
+
+        case scactor_textureSwaps:
+            SC_ExpectNextToken(TK_LSQBRACK);
+            numTexSwaps = SC_GetNumber();
+            if(numTexSwaps > 0)
+            {
+                actor->textureSwaps = (char**)Z_Calloc(sizeof(char*) *
+                    numTexSwaps, PU_ACTOR, NULL);
+            }
+            else
+            {
+                actor->textureSwaps = NULL;
+            }
+            SC_ExpectNextToken(TK_RSQBRACK);
+            SC_ExpectNextToken(TK_EQUAL);
+            SC_ExpectNextToken(TK_LBRACK);
+            for(j = 0; j < numTexSwaps; j++)
+            {
+                SC_GetString();
+                actor->textureSwaps[j] = Z_Strdup(parser->stringToken, PU_ACTOR, NULL);
+            }
+            SC_ExpectNextToken(TK_RBRACK);
+            break;
+
+        case scactor_components:
+            SC_ExpectNextToken(TK_LSQBRACK);
+            numComponents = SC_GetNumber();
+            SC_ExpectNextToken(TK_RSQBRACK);
+            SC_ExpectNextToken(TK_EQUAL);
+            SC_ExpectNextToken(TK_LBRACK);
+            JParse_Start(parser, &actor->components, numComponents);
+            SC_ExpectNextToken(TK_RBRACK);
+            break;
+
+        case scactor_bCollision:
+            SC_AssignInteger(mapactortokens, &actor->bCollision,
+                scactor_bCollision, parser, false);
+            break;
+
+        case scactor_bStatic:
+            SC_AssignInteger(mapactortokens, &actor->bStatic,
+                scactor_bStatic, parser, false);
+            break;
+
+        case scactor_bTouch:
+            SC_AssignInteger(mapactortokens, &actor->bTouch,
+                scactor_bTouch, parser, false);
+            break;
+
+        case scactor_bOrientOnSlope:
+            SC_AssignInteger(mapactortokens, &actor->bOrientOnSlope,
+                scactor_bOrientOnSlope, parser, false);
+            break;
+
+        case scactor_plane:
+            SC_AssignInteger(mapactortokens, &actor->plane,
+                scactor_plane, parser, false);
+            break;
+
+        case scactor_origin:
+            SC_AssignVector(mapactortokens, actor->origin,
+                scactor_origin, parser, false);
+            break;
+
+        case scactor_scale:
+            SC_AssignVector(mapactortokens, actor->scale,
+                scactor_scale, parser, false);
+            break;
+
+        case scactor_angles:
+            SC_AssignVector(mapactortokens, actor->angles,
+                scactor_angles, parser, false);
+            break;
+
+        case scactor_rotation:
+            SC_ExpectNextToken(TK_EQUAL);
+            SC_ExpectNextToken(TK_LBRACK);
+
+            actor->rotation[0] = (float)SC_GetFloat();
+            actor->rotation[1] = (float)SC_GetFloat();
+            actor->rotation[2] = (float)SC_GetFloat();
+            actor->rotation[3] = (float)SC_GetFloat();
+
+            SC_ExpectNextToken(TK_RBRACK);
+            break;
+
+        case scactor_radius:
+            SC_AssignFloat(mapactortokens, &actor->radius,
+                scactor_radius, parser, false);
+            break;
+
+        case scactor_height:
+            SC_AssignFloat(mapactortokens, &actor->height,
+                scactor_height, parser, false);
+            break;
+
+        case scactor_centerheight:
+            SC_AssignFloat(mapactortokens, &actor->centerHeight,
+                scactor_centerheight, parser, false);
+            break;
+
+        case scactor_viewheight:
+            SC_AssignFloat(mapactortokens, &actor->viewHeight,
+                scactor_viewheight, parser, false);
+            break;
+
+        default:
+            if(parser->tokentype == TK_IDENIFIER)
+            {
+                SC_Error("Map_ParseActor: Unknown token: %s\n",
+                    parser->token);
+            }
+            break;
+        }
+
+        SC_Find();
+    }
+}
+
+//
+// Map_ParseLevelActorBlock
+//
+
+static void Map_ParseLevelActorBlock(scparser_t *parser, gLevel_t *level)
+{
+    int i;
+    int count;
+
+    SC_ExpectNextToken(TK_EQUAL);
+    SC_ExpectNextToken(TK_LBRACK);
+
+    count = level->numActors;
+
+    if(count <= 0)
+    {
+        SC_ExpectNextToken(TK_RBRACK);
+        return;
+    }
+
+    level->actorRoot.next = level->actorRoot.prev = &level->actorRoot;
+
+    for(i = 0; i < count; i++)
+    {
+        gActor_t *actor = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
+        Map_AddActor(level, actor);
+
+        Map_ParseActor(parser, actor);
+        Actor_Setup(actor);
+    }
+
+    SC_ExpectNextToken(TK_RBRACK);
+}
+
+//
+// Map_ParseStaticActorBlock
+//
+
+static void Map_ParseStaticActorBlock(scparser_t *parser, int count, gActor_t **actorList)
 {
     int i;
 
@@ -300,161 +529,9 @@ static void Map_ParseActorBlock(scparser_t *parser, int count, gActor_t **actorL
 
     for(i = 0; i < count; i++)
     {
-        int numComponents = 0;
-        int numTexSwaps = 0;
-        int j;
         gActor_t *actor = &(*actorList)[i];
         
-        Vec_Set3(actor->scale, 1, 1, 1);
-
-        // read into nested actor block
-        SC_ExpectNextToken(TK_LBRACK);
-        SC_Find();
-
-        while(parser->tokentype != TK_RBRACK)
-        {
-            switch(SC_GetIDForToken(mapactortokens, parser->token))
-            {
-            case scactor_name:
-                SC_AssignString(mapactortokens, actor->name,
-                    scactor_name, parser, false);
-                break;
-
-            case scactor_mesh:
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_GetString();
-                actor->model = Mdl_Load(parser->stringToken);
-                break;
-
-            case scactor_bounds:
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_ExpectNextToken(TK_LBRACK);
-                actor->bbox.min[0] = (float)SC_GetFloat();
-                actor->bbox.min[1] = (float)SC_GetFloat();
-                actor->bbox.min[2] = (float)SC_GetFloat();
-                actor->bbox.max[0] = (float)SC_GetFloat();
-                actor->bbox.max[1] = (float)SC_GetFloat();
-                actor->bbox.max[2] = (float)SC_GetFloat();
-                SC_ExpectNextToken(TK_RBRACK);
-                break;
-
-            case scactor_textureSwaps:
-                SC_ExpectNextToken(TK_LSQBRACK);
-                numTexSwaps = SC_GetNumber();
-                if(numTexSwaps > 0)
-                {
-                    actor->textureSwaps = (char**)Z_Calloc(sizeof(char*) *
-                        numTexSwaps, PU_ACTOR, NULL);
-                }
-                else
-                {
-                    actor->textureSwaps = NULL;
-                }
-                SC_ExpectNextToken(TK_RSQBRACK);
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_ExpectNextToken(TK_LBRACK);
-                for(j = 0; j < numTexSwaps; j++)
-                {
-                    SC_GetString();
-                    actor->textureSwaps[j] = Z_Strdup(parser->stringToken, PU_ACTOR, NULL);
-                }
-                SC_ExpectNextToken(TK_RBRACK);
-                break;
-
-            case scactor_components:
-                SC_ExpectNextToken(TK_LSQBRACK);
-                numComponents = SC_GetNumber();
-                SC_ExpectNextToken(TK_RSQBRACK);
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_ExpectNextToken(TK_LBRACK);
-                JParse_Start(parser, &actor->components, numComponents);
-                SC_ExpectNextToken(TK_RBRACK);
-                break;
-
-            case scactor_bCollision:
-                SC_AssignInteger(mapactortokens, &actor->bCollision,
-                    scactor_bCollision, parser, false);
-                break;
-
-            case scactor_bStatic:
-                SC_AssignInteger(mapactortokens, &actor->bStatic,
-                    scactor_bStatic, parser, false);
-                break;
-
-            case scactor_bTouch:
-                SC_AssignInteger(mapactortokens, &actor->bTouch,
-                    scactor_bTouch, parser, false);
-                break;
-
-            case scactor_bOrientOnSlope:
-                SC_AssignInteger(mapactortokens, &actor->bOrientOnSlope,
-                    scactor_bOrientOnSlope, parser, false);
-                break;
-
-            case scactor_plane:
-                SC_AssignInteger(mapactortokens, &actor->plane,
-                    scactor_plane, parser, false);
-                break;
-
-            case scactor_origin:
-                SC_AssignVector(mapactortokens, actor->origin,
-                    scactor_origin, parser, false);
-                break;
-
-            case scactor_scale:
-                SC_AssignVector(mapactortokens, actor->scale,
-                    scactor_scale, parser, false);
-                break;
-
-            case scactor_angles:
-                SC_AssignVector(mapactortokens, actor->angles,
-                    scactor_angles, parser, false);
-                break;
-
-            case scactor_rotation:
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_ExpectNextToken(TK_LBRACK);
-
-                actor->rotation[0] = (float)SC_GetFloat();
-                actor->rotation[1] = (float)SC_GetFloat();
-                actor->rotation[2] = (float)SC_GetFloat();
-                actor->rotation[3] = (float)SC_GetFloat();
-
-                SC_ExpectNextToken(TK_RBRACK);
-                break;
-
-            case scactor_radius:
-                SC_AssignFloat(mapactortokens, &actor->radius,
-                    scactor_radius, parser, false);
-                break;
-
-            case scactor_height:
-                SC_AssignFloat(mapactortokens, &actor->height,
-                    scactor_height, parser, false);
-                break;
-
-            case scactor_centerheight:
-                SC_AssignFloat(mapactortokens, &actor->centerHeight,
-                    scactor_centerheight, parser, false);
-                break;
-
-            case scactor_viewheight:
-                SC_AssignFloat(mapactortokens, &actor->viewHeight,
-                    scactor_viewheight, parser, false);
-                break;
-
-            default:
-                if(parser->tokentype == TK_IDENIFIER)
-                {
-                    SC_Error("Map_ParseActorBlock: Unknown token: %s\n",
-                        parser->token);
-                }
-                break;
-            }
-
-            SC_Find();
-        }
-
+        Map_ParseActor(parser, actor);
         Actor_Setup(actor);
     }
 
@@ -502,7 +579,7 @@ static void Map_ParseGridSectionBlock(scparser_t *parser)
                 SC_ExpectNextToken(TK_LSQBRACK);
                 gridbound->numStatics = SC_GetNumber();
                 SC_ExpectNextToken(TK_RSQBRACK);
-                Map_ParseActorBlock(parser, gridbound->numStatics,
+                Map_ParseStaticActorBlock(parser, gridbound->numStatics,
                     &gridbound->statics);
                 break;
 
@@ -612,7 +689,7 @@ static void Map_ParseLevelScript(scparser_t *parser)
                     SC_ExpectNextToken(TK_LSQBRACK);
                     gLevel.numActors = SC_GetNumber();
                     SC_ExpectNextToken(TK_RSQBRACK);
-                    Map_ParseActorBlock(parser, gLevel.numActors, &gLevel.gActors);
+                    Map_ParseLevelActorBlock(parser, &gLevel);
                     break;
 
                 case scmap_gridbounds:
@@ -859,13 +936,42 @@ void Map_Load(int map)
 
 static void FCmd_LoadTestMap(void)
 {
-     int map;
+    int map;
 
     if(Cmd_GetArgc() < 2)
         return;
 
     map = atoi(Cmd_GetArgv(1));
     Map_Load(map);
+}
+
+//
+// FCmd_SpawnActor
+//
+
+static void FCmd_SpawnActor(void)
+{
+    vec3_t origin;
+    gActor_t *actor;
+
+    if(Cmd_GetArgc() <= 0)
+        return;
+
+    origin[0] = (float)atof(Cmd_GetArgv(1));
+    origin[1] = (float)atof(Cmd_GetArgv(2));
+    origin[2] = (float)atof(Cmd_GetArgv(3));
+
+    actor = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
+
+    Vec_Copy3(actor->origin, origin);
+    Vec_Set3(actor->scale, 1, 1, 1);
+    actor->model = Mdl_Load("models/default.kmesh");
+    Vec_Set3(actor->bbox.min, -32, -32, -32);
+    Vec_Set3(actor->bbox.max, 32, 32, 32);
+    actor->bStatic = true;
+    actor->plane = -1;
+    Map_AddActor(&gLevel, actor);
+    Actor_Setup(actor);
 }
 
 //
@@ -878,5 +984,6 @@ void Map_Init(void)
     memset(&gLevel, 0, sizeof(gLevel_t));
 
     Cmd_AddCommand("loadmap", FCmd_LoadTestMap);
+    Cmd_AddCommand("spawnactor", FCmd_SpawnActor);
 }
 

@@ -371,7 +371,8 @@ typedef struct
     unsigned int    numGridBounds;
     unsigned int    numplanes;
     unsigned int    numAreas;
-    gActor_t        *gActors;
+    gActor_t        actorRoot;
+    gActor_t        *actorRover;
     plane_t         *planes;
     gridBounds_t    *gridBounds;
     gArea_t         *areas;

@@ -102,17 +102,25 @@ JS_FASTNATIVE_BEGIN(Level, findPlane)
 JS_FASTNATIVE_BEGIN(Level, getActor)
 {
     unsigned int index;
+    unsigned int i = 0;
 
     JS_CHECKARGS(1);
     JS_GETINTEGER(index, 0);
 
-    if(index >= gLevel.numActors)
+    for(gLevel.actorRover = gLevel.actorRoot.next;
+        gLevel.actorRover != &gLevel.actorRoot;
+        gLevel.actorRover = gLevel.actorRover->next)
     {
-        JS_SET_RVAL(cx, vp, JSVAL_NULL);
-        return JS_TRUE;
+        if(i == index)
+        {
+            JS_NEWOBJECT_SETPRIVATE(gLevel.actorRover, &GameActor_class);
+            return JS_TRUE;
+        }
+
+        i++;
     }
 
-    JS_NEWOBJECT_SETPRIVATE(&gLevel.gActors[index], &GameActor_class);
+    JS_SET_RVAL(cx, vp, JSVAL_NULL);
     return JS_TRUE;
 }
 

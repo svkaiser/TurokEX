@@ -792,6 +792,49 @@ void Mdl_BlendAnimStates(animstate_t *astate, anim_t *anim,
     }
 }
 
+//
+// Mdl_NextAnimFrame
+//
+
+static void Mdl_NextAnimFrame(animstate_t *astate)
+{
+    if(astate->flags & ANF_BLEND)
+    {
+        astate->prevtrack.anim = NULL;
+        astate->flags &= ~ANF_BLEND;
+    }
+
+    if(++astate->track.frame >=
+        (int)astate->track.anim->numframes)
+    {
+        astate->track.frame = 1;
+    }
+
+    if(++astate->track.nextframe >=
+        (int)astate->track.anim->numframes)
+    {
+        astate->track.nextframe = 1;
+        astate->deltatime = 0;
+
+        if(!(astate->flags & ANF_LOOP))
+        {
+            astate->flags |= ANF_STOPPED;
+            astate->flags &= ~ANF_NOINTERRUPT;
+
+            astate->playtime = 0;
+
+            if(astate->track.anim->next != NULL)
+            {
+                Mdl_BlendAnimStates(
+                    astate,
+                    astate->track.anim->next,
+                    astate->track.anim->nextanimspeed,
+                    astate->track.anim->nextblend,
+                    astate->track.anim->nextanimflag);
+            }
+        }
+    }
+}
 
 //
 // Mdl_UpdateAnimState
@@ -799,68 +842,30 @@ void Mdl_BlendAnimStates(animstate_t *astate, anim_t *anim,
 
 void Mdl_UpdateAnimState(animstate_t *astate)
 {
+    float blend;
+
     if(astate->flags & ANF_STOPPED)
         return;
 
     if(astate->track.anim == NULL)
         return;
 
-    if(astate->time <= client.tics)
-    {
-        astate->deltatime = 0;
-        astate->time = (float)client.tics + astate->frametime;
-
-        if(astate->flags & ANF_BLEND)
-        {
-            astate->prevtrack.anim = NULL;
-            astate->blendtime = 0;
-            astate->flags &= ~ANF_BLEND;
-        }
-
-        if(++astate->track.frame >=
-            (int)astate->track.anim->numframes)
-        {
-            astate->track.frame = 1;
-        }
-
-        if(++astate->track.nextframe >=
-            (int)astate->track.anim->numframes)
-        {
-            astate->track.nextframe = 1;
-
-            if(!(astate->flags & ANF_LOOP))
-            {
-                astate->flags |= ANF_STOPPED;
-                astate->flags &= ~ANF_NOINTERRUPT;
-
-                astate->playtime = 0;
-
-                if(astate->track.anim->next != NULL)
-                {
-                    Mdl_BlendAnimStates(
-                        astate,
-                        astate->track.anim->next,
-                        astate->track.anim->nextanimspeed,
-                        astate->track.anim->nextblend,
-                        astate->track.anim->nextanimflag);
-                }
-            }
-        }
-    }
-    else
-    {
-        float blend;
-
-        blend = (astate->flags & ANF_BLEND) ?
+    blend = (astate->flags & ANF_BLEND) ?
             astate->blendtime : astate->frametime;
 
-        if(r_interpanims.value)
-            astate->deltatime += (1/blend);
-        else
-            astate->deltatime = 1;
+    astate->deltatime += ((client.runtime*60)/blend);
+
+    if(astate->deltatime > 1)
+    {
+        astate->time = (float)client.tics + astate->frametime;
+
+        while(astate->deltatime > 1)
+        {
+            astate->deltatime = astate->deltatime - 1;
+            Mdl_NextAnimFrame(astate);
+        }
     }
 
-    // TODO - TEMP
     astate->playtime += client.runtime;
 }
 

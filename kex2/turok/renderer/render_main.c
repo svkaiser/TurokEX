@@ -453,7 +453,6 @@ static void R_MorphModel(morphmodel_t *morph)
 
 void R_DrawActors(void)
 {
-    unsigned int i;
     mtx_t mtx;
 
     if(!gLevel.loaded)
@@ -461,9 +460,11 @@ void R_DrawActors(void)
 
     Mtx_IdentityY(mtx, DEG2RAD(-90));
 
-    for(i = 0; i < gLevel.numActors; i++)
+    for(gLevel.actorRover = gLevel.actorRoot.next;
+        gLevel.actorRover != &gLevel.actorRoot;
+        gLevel.actorRover = gLevel.actorRover->next)
     {
-        gActor_t *actor = &gLevel.gActors[i];
+        gActor_t *actor = gLevel.actorRover;
         bbox_t box;
 
         if(actor->bHidden)

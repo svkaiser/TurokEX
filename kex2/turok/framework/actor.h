@@ -52,9 +52,13 @@ typedef struct gActor_s
     mtx_t               matrix;
     gObject_t           *components;
 	gObject_t			*iterator;
+    int                 refcount;
+    struct gActor_s     *prev;
+    struct gActor_s     *next;
 } gActor_t;
 
 void Actor_Setup(gActor_t *actor);
+void Actor_SetTarget(gActor_t **self, gActor_t *target);
 void Actor_UpdateTransform(gActor_t *actor);
 void Actor_CallEvent(gActor_t *actor, const char *function, gActor_t *instigator);
 void Actor_ComponentFunc(const char *function);
