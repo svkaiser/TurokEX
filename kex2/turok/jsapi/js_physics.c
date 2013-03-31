@@ -94,6 +94,69 @@ JS_FASTNATIVE_BEGIN(Physics, move)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(Physics, rayTrace)
+{
+    JSObject *obj1;
+    JSObject *obj2;
+    JSObject *plObj;
+    JSObject *rObject;
+    JSObject *hplObject;
+    JSObject *hvObject;
+    jsdouble distance;
+    jsval fracval;
+    vec3_t start;
+    vec3_t forward;
+    vec3_t end;
+    plane_t *plane;
+    trace_t trace;
+
+    JS_CHECKARGS(4);
+    JS_GETOBJECT(obj1, v, 0);
+    JS_GETVECTOR2(obj1, start);
+    JS_GETOBJECT(obj2, v, 1);
+    JS_GETVECTOR2(obj2, forward);
+    JS_GETNUMBER(distance, v, 2);
+    JS_GETOBJECT(plObj, v, 3);
+    JS_GET_PRIVATE_DATA(plObj, &Plane_class, plane_t, plane);
+
+    // TODO - TEMP
+    start[1] += 30.72f;
+    Vec_Scale(forward, forward, (float)distance);
+    Vec_Add(end, start, forward);
+    trace = Trace(start, end, plane, NULL, 0);
+
+    trace.frac = 1 + trace.frac;
+
+    if(!(rObject = JS_NewObject(cx, NULL, NULL, NULL)))
+        return JS_TRUE;
+
+    if(!(hplObject = JS_NewObject(cx, &Plane_class, NULL, NULL)))
+        return JS_FALSE;
+    if(!(JS_SetPrivate(cx, hplObject, trace.hitpl)))
+        return JS_FALSE;
+    if(!JS_NewDoubleValue(cx, trace.frac, &fracval))
+        return JS_FALSE;
+
+    // TODO - TEMP
+    Cmd_ExecuteCommand(kva("spawnactor %f %f %f", trace.hitvec[0], trace.hitvec[1], trace.hitvec[2]));
+
+    if(!(hvObject = JS_NewObject(cx, &Vector_class, NULL, NULL)))
+        return JS_FALSE;
+
+    JS_SETVECTOR(hvObject, trace.hitvec);
+
+    JS_AddRoot(cx, &rObject);
+    JS_DefineProperty(cx, rObject, "hitPlane",
+        OBJECT_TO_JSVAL(hplObject), NULL, NULL, JSPROP_ENUMERATE);
+    JS_DefineProperty(cx, rObject, "fraction", fracval, NULL, NULL, JSPROP_ENUMERATE);
+    JS_DefineProperty(cx, rObject, "hitVector",
+        OBJECT_TO_JSVAL(hvObject), NULL, NULL, JSPROP_ENUMERATE);
+    JS_RemoveRoot(cx, &rObject);
+
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(rObject));
+    return JS_TRUE;
+}
+
 JS_BEGINCLASS(Physics)
     0,                                          // flags
     JS_PropertyStub,                            // addProperty
@@ -120,5 +183,6 @@ JS_BEGINCONST(Physics)
 JS_BEGINFUNCS(Physics)
 {
     JS_FASTNATIVE(Physics, move,  1),
+    JS_FASTNATIVE(Physics, rayTrace,  4),
     JS_FS_END
 };

@@ -183,6 +183,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\fx.c"
+				>
+			</File>
+			<File
 				RelativePath="..\src\levels.c"
 				>
 			</File>

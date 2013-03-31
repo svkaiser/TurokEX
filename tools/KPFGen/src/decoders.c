@@ -319,7 +319,7 @@ void DC_DecodeData(byte *a1, byte *a2, int a3)
     }
 }
 
-int DC_LookupSndFXIndex(int *a1, int a2, int a3)
+int DC_LookupDataIndex(int *a1, int a2, int a3)
 {
     int result; // eax@2
     int v4; // edx@2
@@ -345,6 +345,62 @@ int DC_LookupSndFXIndex(int *a1, int a2, int a3)
 
     if ( a1[result] != a3 )
         result = -1;
+
+    return result;
+}
+
+signed int DC_LookupParticleFX(byte *a1, int a2, int id, int *a4, int *a5)
+{
+    int v5; // eax@1
+    signed int result; // eax@2
+    int v7; // ecx@3
+    byte *v8; // edx@4
+    int v9; // ebp@6
+    int v10; // eax@7
+    byte *v11; // ecx@8
+
+    v5 = DC_LookupDataIndex((int*)a1, a2, id);
+    if ( v5 == -1 )
+    {
+        result = 0;
+    }
+    else
+    {
+        v7 = v5 - 1;
+        if ( v5 )
+        {
+            v8 = &a1[4 * v7];
+            do
+            {
+                if(*(_DWORD *)v8 != id)
+                    break;
+
+                v9 = v7--;
+                v8 -= 4;
+
+            } while ( v9 );
+        }
+
+        v10 = v5 + 1;
+        *a4 = v7 + 1;
+
+        if(v10 < a2)
+        {
+            v11 = &a1[4 * v10];
+            do
+            {
+                if(*(_DWORD *)v11 != id)
+                    break;
+                
+                ++v10;
+                v11 += 4;
+
+            } while ( v10 < a2 );
+        }
+        
+        *a5 = v10 - 1;
+        result = 1;
+    }
 
     return result;
 }

@@ -40,6 +40,7 @@ void SND_StoreSounds(void);
 void SND_StoreSoundShaders(void);
 void MDL_StoreModels(void);
 void LV_StoreLevels(void);
+void FX_StoreParticleEffects(void);
 
 #define MAX_ARGS 256
 char	*ArgBuffer[MAX_ARGS+1];
@@ -56,7 +57,7 @@ HWND        hwndDataBar = NULL;
 
 #ifdef _WIN32
 
-#define TOTALSTEPS	4800
+#define TOTALSTEPS	5174
 
 dboolean __stdcall LoadingDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -148,6 +149,7 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
         "PC Turok Cart File (.dat) \0*.dat\0All Files (*.*)\0*.*\0",
         "Locate CARTFILE.DAT");
     SND_StoreSoundShaders();
+    FX_StoreParticleEffects();
     TX_StoreTextures();
     MDL_StoreModels();
     LV_StoreLevels();

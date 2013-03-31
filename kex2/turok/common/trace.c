@@ -131,13 +131,19 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
 static kbool Trace_Objects(trace_t *trace)
 {
     unsigned int i;
+    vec3_t pos;
+
+    if(trace->actor)
+        Vec_Lerp3(pos, trace->frac, trace->end, trace->start);
+    else
+        Vec_Copy3(pos, trace->hitvec);
 
     for(i = 0; i < gLevel.numGridBounds; i++)
     {
         gridBounds_t *grid = &gLevel.gridBounds[i];
 
-        if((trace->end[0] > grid->minx && trace->end[0] < grid->maxx) &&
-            (trace->end[2] > grid->minz && trace->end[2] < grid->maxz))
+        if((pos[0] > grid->minx && pos[0] < grid->maxx) &&
+            (pos[2] > grid->minz && pos[2] < grid->maxz))
         {
             unsigned int j;
 
@@ -148,16 +154,16 @@ static kbool Trace_Objects(trace_t *trace)
                 if(!actor->bCollision && !actor->bTouch)
                     continue;
 
-                if(actor->bTouch)
+                if(actor->bTouch && trace->actor)
                 {
-                    if(Vec_Length3(trace->end, actor->origin) < trace->width)
+                    if(Vec_Length3(pos, actor->origin) < trace->width)
                         Actor_OnTouchEvent(actor, trace->actor);
                 }
 
                 if(actor->bCollision)
                 {
-                    if(trace->end[1] > actor->origin[1] + actor->height ||
-                    trace->end[1] + trace->offset < actor->origin[1])
+                    if(pos[1] > actor->origin[1] + actor->height ||
+                        pos[1] + trace->offset < actor->origin[1])
                     {
                         continue;
                     }
@@ -197,6 +203,76 @@ static kbool Trace_CheckPlaneHeight(trace_t *trace, plane_t *pl)
 }
 
 //
+// Trace_GetEdgeIntersect
+//
+
+static void Trace_GetEdgeIntersect(trace_t *trace, vec3_t vp1, vec3_t vp2)
+{
+    float x = vp1[0] - vp2[0];
+    float z = vp2[2] - vp1[2];
+    float d;
+    vec3_t normal;
+    vec3_t dir;
+    vec3_t spot;
+
+    Vec_Set3(normal, z, 0, x);
+    Vec_Normalize3(normal);
+    Vec_Sub(dir, trace->end, trace->start);
+    Vec_Normalize3(dir);
+
+    d = Vec_Dot(normal, dir);
+
+    if(d != 0)
+    {
+        Vec_Scale(spot, dir, Vec_Length3(trace->end, trace->start) -
+            (Vec_Dot(trace->end, normal) - Vec_Dot(vp1, normal)) / d);
+
+        Vec_Add(trace->hitvec, trace->start, spot);
+    }
+}
+
+//
+// Trace_GetPlaneIntersect
+//
+
+static kbool Trace_GetPlaneIntersect(trace_t *trace, plane_t *plane)
+{
+    float d;
+    int i;
+
+    if(plane == NULL)
+        return false;
+
+    for(i = 0; i < 3; i++)
+    {
+        d = Vec_Dot(trace->end, plane->normal) -
+            Vec_Dot(plane->points[i], plane->normal);
+
+        if(d < 0)
+        {
+            vec3_t dir;
+            vec3_t spot;
+            float vd;
+        
+            Vec_Sub(dir, trace->end, trace->start);
+            Vec_Normalize3(dir);
+
+            vd = Vec_Dot(plane->normal, dir);
+
+            if(vd != 0)
+            {
+                Vec_Scale(spot, dir,
+                Vec_Length3(trace->end, trace->start) - d / vd);
+                Vec_Add(trace->hitvec, trace->start, spot);
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+//
 // Trace_Plane
 //
 // Check if the ray intersected with plane
@@ -209,17 +285,13 @@ static kbool Trace_Plane(trace_t *trace, plane_t *pl)
     float dend;
 
     if(!Trace_CheckPlaneHeight(trace, pl))
-    {
         return false;
-    }
 
     if(!Plane_IsAWall(pl))
     {
         // ignore if the plane isn't steep enough
         if(pl->normal[1] > EPSILON_FLOOR)
-        {
             return false;
-        }
     }
 
     d       = Vec_Dot(pl->points[0], pl->normal);
@@ -276,6 +348,9 @@ static kbool Trace_PlaneEdge(trace_t *trace, vec3_t vp1, vec3_t vp2)
         if(d < trace->frac)
         {
             trace->frac = d;
+
+            if(!trace->actor)
+                Trace_GetEdgeIntersect(trace, vp1, vp2);
             return true;
         }
     }
@@ -333,6 +408,9 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
         // above ceiling height
         return NULL;
     }
+
+    if(!trace->actor)
+        return link;
 
     if(Plane_IsAWall(p))
     {
@@ -399,6 +477,54 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
 }
 
 //
+// Trace_CheckBulletRay
+//
+
+static kbool Trace_CheckBulletRay(trace_t *trace, plane_t *plane)
+{
+    if(Trace_GetPlaneIntersect(trace, plane))
+    {
+        kbool ok = true;
+        vec3_t oldvec;
+        int i;
+
+        Vec_Copy3(oldvec, trace->end);
+        Vec_Copy3(trace->end, trace->hitvec);
+
+        trace->frac = 0;
+
+        // check if the bullet can go beyond the plane
+        for(i = 0; i < 3; i++)
+        {
+            vec3_t vp1;
+            vec3_t vp2;
+
+            Vec_Copy3(vp1, plane->points[i]);
+            Vec_Copy3(vp2, plane->points[(i + 1) % 3]);
+
+            if(Trace_PlaneEdge(trace, vp1, vp2))
+            {
+                // went over or past the plane
+                ok = false;
+                break;
+            }
+        }
+
+        Vec_Copy3(trace->end, oldvec);
+
+        if(ok)
+        {
+            trace->type = TRT_SLOPE;
+            trace->hitpl = plane;
+            Vec_Copy3(trace->normal, plane->normal);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+//
 // Trace_TraversePlanes
 //
 
@@ -408,12 +534,18 @@ void Trace_TraversePlanes(plane_t *plane, trace_t *trace)
     plane_t *pl;
 
     if(plane == NULL)
-    {
         return;
-    }
 
     // we've entered a new plane
     trace->pl = plane;
+
+    // TODO
+    // bullet-trace detection for floors
+    if(!Plane_IsAWall(plane) && !trace->actor)
+    {
+        if(Trace_CheckBulletRay(trace, plane))
+            return;
+    }
 
     pl = NULL;
     trace->frac = 0;
@@ -436,12 +568,10 @@ void Trace_TraversePlanes(plane_t *plane, trace_t *trace)
             {
                 // treat it as a solid wall
                 Trace_GetEdgeNormal(trace, vp1, vp2);
-                return;
             }
             else if(trace->type == TRT_INTERACT)
             {
                 trace->pl = pl;
-                return;
             }
         }
     }
@@ -452,10 +582,13 @@ void Trace_TraversePlanes(plane_t *plane, trace_t *trace)
         if(Plane_IsAWall(pl))
         {
             // trace it to see if its valid or not
-            if(Trace_Plane(trace, pl))
+            if(!trace->actor)
             {
-                return;
+                if(Trace_CheckBulletRay(trace, pl))
+                    return;
             }
+            else if(Trace_Plane(trace, pl))
+                return;
         }
 
         trace->type = TRT_NOHIT;
@@ -477,6 +610,7 @@ trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
 
     Vec_Copy3(trace.start, start);
     Vec_Copy3(trace.end, end);
+    Vec_Copy3(trace.hitvec, start);
     Vec_Set3(trace.normal, 0, 0, 0);
 
     trace.pl        = plane;
@@ -484,40 +618,43 @@ trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
     trace.frac      = 0;
     trace.type      = TRT_NOHIT;
     trace.width     = actor ? actor->radius : 71.68f;
-    trace.offset    = actor ? actor->centerHeight : 20.48f;
+    trace.offset    = actor ? actor->centerHeight : 0;
     trace.yaw       = yaw;
     trace.actor     = actor;
+    trace.dist      = 0;
 
     if(!Trace_Objects(&trace))
     {
-        // try to trace something as early as possible
-        if(!Trace_Plane(&trace, trace.pl))
+        if(actor == NULL)
+            Trace_TraversePlanes(plane, &trace);
+        else
         {
-            int i;
-
-            // look for edges in the initial plane that can be collided with
-            for(i = 0; i < 3; i++)
+            // try to trace something as early as possible
+            if(!Trace_Plane(&trace, trace.pl))
             {
-                vec3_t vp1;
-                vec3_t vp2;
+                int i;
 
-                if(plane->link[i] != NULL)
-                    continue;
-
-                Vec_Copy3(vp1, plane->points[i]);
-                Vec_Copy3(vp2, plane->points[(i + 1) % 3]);
-
-                // check to see if an edge was crossed
-                if(Trace_PlaneEdge(&trace, vp1, vp2))
+                // look for edges in the initial plane that can be collided with
+                for(i = 0; i < 3; i++)
                 {
-                    Trace_GetEdgeNormal(&trace, vp1, vp2);
-                    break;
-                }
-            }
+                    vec3_t vp1;
+                    vec3_t vp2;
 
-            // start traversing into other planes if we couldn't trace anything
-            if(trace.type == TRT_NOHIT)
-                Trace_TraversePlanes(plane, &trace);
+                    if(plane->link[i] != NULL)
+                        continue;
+
+                    Vec_Copy3(vp1, plane->points[i]);
+                    Vec_Copy3(vp2, plane->points[(i + 1) % 3]);
+
+                    // check to see if an edge was crossed
+                    if(Trace_PlaneEdge(&trace, vp1, vp2))
+                        Trace_GetEdgeNormal(&trace, vp1, vp2);
+                }
+
+                // start traversing into other planes if we couldn't trace anything
+                if(trace.type == TRT_NOHIT)
+                    Trace_TraversePlanes(plane, &trace);
+            }
         }
     }
 

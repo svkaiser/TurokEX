@@ -752,7 +752,7 @@ void SND_StoreSoundShaders(void)
 
     for(i = 0; i < 1000; i++)
     {
-        int id = DC_LookupSndFXIndex(ptr + 2, ptr[1], i);
+        int id = DC_LookupDataIndex(ptr + 2, ptr[1], i);
 
         if(id != -1)
         {

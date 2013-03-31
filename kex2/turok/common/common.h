@@ -249,8 +249,10 @@ typedef struct
     float       yaw;
     plane_t     *pl;
     plane_t     *hitpl;
+    vec3_t      hitvec;
     vec3_t      normal;
     float       frac;
+    float       dist;
     gActor_t    *actor;
     tracetype_e type;
 } trace_t;

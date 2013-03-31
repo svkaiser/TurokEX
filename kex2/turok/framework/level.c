@@ -964,7 +964,7 @@ static void FCmd_SpawnActor(void)
     actor = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
 
     Vec_Copy3(actor->origin, origin);
-    Vec_Set3(actor->scale, 1, 1, 1);
+    Vec_Set3(actor->scale, 0.25f, 0.25f, 0.25f);
     actor->model = Mdl_Load("models/default.kmesh");
     Vec_Set3(actor->bbox.min, -32, -32, -32);
     Vec_Set3(actor->bbox.max, 32, 32, 32);
