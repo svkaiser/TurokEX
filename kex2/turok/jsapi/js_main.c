@@ -1082,7 +1082,7 @@ void J_Init(void)
     JS_INITCLASS(AnimState, 0);
     JS_INITCLASS(Canvas, 0);
     JS_INITCLASS(Font, 0);
-    //JS_INITCLASS(Controller, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(AController, 0);
     JS_INITCLASS_NOCONSTRUCTOR(NetEvent, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Packet, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Peer, 0);

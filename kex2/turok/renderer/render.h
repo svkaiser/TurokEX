@@ -186,6 +186,18 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
                         char **textures, int variant, animstate_t *animstate);
 
 //
+// FX
+//
+
+void R_DrawFX(void);
+
+//
+// CAMERA
+//
+
+void R_RenderCameraView(void);
+
+//
 // DEBUG
 //
 

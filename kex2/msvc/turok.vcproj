@@ -364,6 +364,10 @@
 				Name="renderer"
 				>
 				<File
+					RelativePath="..\turok\renderer\render_camera.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\render_canvas.c"
 					>
 				</File>
@@ -373,6 +377,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\render_font.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\render_fx.c"
 					>
 				</File>
 				<File
@@ -408,6 +416,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\framework\fx.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\game.c"
 					>
 				</File>
@@ -417,6 +429,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\physics.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\player.c"
 					>
 				</File>
 			</Filter>
@@ -677,11 +693,19 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\framework\fx.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\game.h"
 					>
 				</File>
 				<File
 					RelativePath="..\turok\framework\level.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\player.h"
 					>
 				</File>
 			</Filter>

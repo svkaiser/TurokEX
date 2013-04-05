@@ -177,7 +177,7 @@ void Img_LoadTGA(const char *name, byte **output, int *width, int *height, kbool
                             *data_r++ = Img_GetRGBGamma(p[*rover].b);
                             *data_r++ = Img_GetRGBGamma(p[*rover].g);
                             *data_r++ = Img_GetRGBGamma(p[*rover].r);
-                            *data_r++ = masked ? Img_GetRGBGamma(p[*rover].a) : 0xff;
+                            *data_r++ = masked ? p[*rover].a : 0xff;
                             rover++;
                         }
                     }

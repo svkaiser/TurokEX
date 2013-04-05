@@ -126,5 +126,8 @@ void V_SetupScreen(void);
 //
 void Con_Printf(rcolor clr, const char *s);
 char *Con_GetLastBuffer(void);
+void Con_Ticker(void);
+void Con_Drawer(void);
+kbool Con_ProcessConsoleInput(event_t *ev);
 
 #endif

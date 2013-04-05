@@ -35,6 +35,7 @@
 #include "zone.h"
 #include "game.h"
 #include "js.h"
+#include "fx.h"
 
 CVAR_EXTERNAL(cl_fov);
 CVAR(r_fog, 1);
@@ -766,6 +767,8 @@ void R_DrawFrame(void)
     dglCullFace(GL_FRONT);
     R_DrawActors();
 
+    R_DrawFX();
+
     J_RunObjectEvent(JS_EV_RENDER, "event_OnRender");
 
     dglEnableClientState(GL_COLOR_ARRAY);
@@ -784,6 +787,8 @@ void R_DrawFrame(void)
     GL_SetState(GLSTATE_ALPHATEST, false);
     GL_SetState(GLSTATE_TEXGEN_S, false);
     GL_SetState(GLSTATE_TEXGEN_T, false);
+
+    GL_SetOrtho();
 
     J_RunObjectEvent(JS_EV_RENDER, "event_PostRender");
 
@@ -865,4 +870,5 @@ void R_Init(void)
     Cvar_Register(&r_fog);
 
     Mdl_Init();
+    FX_Init();
 }

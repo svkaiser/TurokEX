@@ -30,6 +30,8 @@
 #include "zone.h"
 #include "script.h"
 
+CVAR_EXTERNAL(developer);
+
 //#define SC_DEBUG
 
 scparser_t *sc_parsers[MAX_NESTED_PARSERS];
@@ -184,7 +186,15 @@ scparser_t *SC_Open(const char* name)
     // push out a new parser
     SC_PushParser();
 
-    sc_parser->buffsize = KF_OpenFileCache(name, &sc_parser->buffer, PU_STATIC);
+    if(developer.value)
+    {
+        sc_parser->buffsize = KF_ReadTextFile(name, &sc_parser->buffer);
+
+        if(sc_parser->buffsize <= 0)
+            sc_parser->buffsize = KF_OpenFileCache(name, &sc_parser->buffer, PU_STATIC);
+    }
+    else
+        sc_parser->buffsize = KF_OpenFileCache(name, &sc_parser->buffer, PU_STATIC);
     
     if(sc_parser->buffsize <= 0)
     {

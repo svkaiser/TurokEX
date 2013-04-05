@@ -29,29 +29,38 @@
 #include "common.h"
 #include "controller.h"
 
-JS_CLASSOBJECT(Controller);
+JS_CLASSOBJECT(AController);
 
-JS_PROP_FUNC_GET(Controller)
+JS_PROP_FUNC_GET(AController)
 {
     aController_t *ctrl;
 
-    if(!(ctrl = (aController_t*)JS_GetInstancePrivate(cx, obj, &Controller_class, NULL)))
+    if(!(ctrl = (aController_t*)JS_GetInstancePrivate(cx, obj, &AController_class, NULL)))
+        return JS_TRUE;
+
+    switch(JSVAL_TO_INT(id))
+    {
+    case 9:
+        return JS_NewDoubleValue(cx, ctrl->timeStamp, vp);
+
+    default:
+        return JS_TRUE;
+    }
+
+    return JS_TRUE;
+}
+
+JS_PROP_FUNC_SET(AController)
+{
+    aController_t *ctrl;
+
+    if(!(ctrl = (aController_t*)JS_GetInstancePrivate(cx, obj, &AController_class, NULL)))
         return JS_TRUE;
 
     return JS_TRUE;
 }
 
-JS_PROP_FUNC_SET(Controller)
-{
-    aController_t *ctrl;
-
-    if(!(ctrl = (aController_t*)JS_GetInstancePrivate(cx, obj, &Controller_class, NULL)))
-        return JS_TRUE;
-
-    return JS_TRUE;
-}
-
-JS_FINALIZE_FUNC(Controller)
+JS_FINALIZE_FUNC(AController)
 {
     aController_t *ctrl;
 
@@ -59,56 +68,56 @@ JS_FINALIZE_FUNC(Controller)
         JS_free(cx, ctrl);
 }
 
-JS_FASTNATIVE_BEGIN(Controller, move)
+JS_FASTNATIVE_BEGIN(AController, move)
 {
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-JS_FASTNATIVE_BEGIN(Controller, setMoveDirection)
+JS_FASTNATIVE_BEGIN(AController, setMoveDirection)
 {
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-JS_FASTNATIVE_BEGIN(Controller, applyFriction)
+JS_FASTNATIVE_BEGIN(AController, applyFriction)
 {
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-JS_FASTNATIVE_BEGIN(Controller, applyVerticalFriction)
+JS_FASTNATIVE_BEGIN(AController, applyVerticalFriction)
 {
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-JS_FASTNATIVE_BEGIN(Controller, accelerate)
+JS_FASTNATIVE_BEGIN(AController, accelerate)
 {
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-JS_FASTNATIVE_BEGIN(Controller, applyGravity)
+JS_FASTNATIVE_BEGIN(AController, applyGravity)
 {
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
 
-JS_BEGINCLASS(Controller)
-    0,                                          // flags
+JS_BEGINCLASS(AController)
+    JSCLASS_HAS_PRIVATE,                        // flags
     JS_PropertyStub,                            // addProperty
     JS_PropertyStub,                            // delProperty
-    Controller_getProperty,                     // getProperty
-    Controller_setProperty,                     // setProperty
+    AController_getProperty,                    // getProperty
+    AController_setProperty,                    // setProperty
     JS_EnumerateStub,                           // enumerate
     JS_ResolveStub,                             // resolve
     JS_ConvertStub,                             // convert
-    Controller_finalize,                        // finalize
+    AController_finalize,                       // finalize
     JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
 JS_ENDCLASS();
 
-JS_BEGINPROPS(Controller)
+JS_BEGINPROPS(AController)
 {
     { "owner",      0,  JSPROP_ENUMERATE, NULL, NULL },
     { "velocity",   1,  JSPROP_ENUMERATE, NULL, NULL },
@@ -124,37 +133,23 @@ JS_BEGINPROPS(Controller)
     { NULL, 0, 0, NULL, NULL }
 };
 
-JS_BEGINCONST(Controller)
+JS_BEGINCONST(AController)
 {
     { 0, 0, 0, { 0, 0, 0 } }
 };
 
-JS_BEGINFUNCS(Controller)
+JS_BEGINFUNCS(AController)
 {
-    JS_FASTNATIVE(Controller, move, 0),
-    JS_FASTNATIVE(Controller, setMoveDirection, 3),
-    JS_FASTNATIVE(Controller, applyFriction, 1),
-    JS_FASTNATIVE(Controller, applyVerticalFriction, 1),
-    JS_FASTNATIVE(Controller, accelerate, 3),
-    JS_FASTNATIVE(Controller, applyGravity, 1),
+    JS_FASTNATIVE(AController, move, 0),
+    JS_FASTNATIVE(AController, setMoveDirection, 3),
+    JS_FASTNATIVE(AController, applyFriction, 1),
+    JS_FASTNATIVE(AController, applyVerticalFriction, 1),
+    JS_FASTNATIVE(AController, accelerate, 3),
+    JS_FASTNATIVE(AController, applyGravity, 1),
     JS_FS_END
 };
 
-JS_BEGINSTATICFUNCS(Controller)
+JS_BEGINSTATICFUNCS(AController)
 {
     JS_FS_END
 };
-
-JS_CONSTRUCTOR(Controller)
-{
-    aController_t *ctrl;
-
-    ctrl = (aController_t*)JS_malloc(cx, sizeof(animstate_t));
-    if(ctrl == NULL)
-        return JS_FALSE;
-
-    memset(ctrl, 0, sizeof(aController_t));
-
-    JS_NEWOBJECT_SETPRIVATE(ctrl, &Controller_class);
-    return JS_TRUE;
-}

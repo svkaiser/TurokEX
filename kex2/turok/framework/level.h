@@ -360,6 +360,7 @@ typedef struct
 typedef struct
 {
     gObject_t       *components;
+    gObject_t       *iterator;
 } gArea_t;
 
 typedef struct
@@ -392,6 +393,7 @@ extern kmap_t *g_currentmap;
 int Obj_GetClassType(object_t *obj);
 area_t *Map_GetArea(plane_t *plane);
 plane_t *Map_FindClosestPlane(vec3_t coord);
+void Map_AddActor(gLevel_t *level, gActor_t *actor);
 void Map_Load(int map);
 void Map_Init(void);
 

@@ -174,7 +174,8 @@ void Cmd_AddCommand(const char *name, cmd_t function);
 void Cmd_AddCommandObject(const char *name, void *object);
 void Cmd_Init(void);
 
-#define NETBACKUPS  64
+#define NETBACKUPS      64
+#define MAX_PLAYERS     8
 
 typedef struct
 {
@@ -188,6 +189,8 @@ typedef struct
     fint_t  angle[2];
     fint_t  mouse[2];
     fint_t  msec;
+    fint_t  timestamp;
+    fint_t  frametime;
     byte    buttons[MAXACTIONS];
     byte    heldtime[MAXACTIONS];
 } ticcmd_t;

@@ -27,6 +27,7 @@
 #include "kernel.h"
 #include "actor.h"
 #include "game.h"
+#include "player.h"
 
 #define MAXEVENTS 64
 
@@ -55,6 +56,7 @@ typedef struct
     kbool           local;
     int             tics;
     gActor_t        *playerActor;
+    localPlayer_t   *player;
 } client_t;
 
 extern client_t client;

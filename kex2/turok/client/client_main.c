@@ -92,6 +92,37 @@ void CL_Shutdown(void)
 }
 
 //
+// CL_ProcessServerPackets
+//
+
+void CL_ProcessServerPackets(ENetPacket *packet, ENetEvent *cev)
+{
+    int type = 0;
+
+    Packet_Read8(packet, &type);
+
+    switch(type)
+    {
+    case sp_ping:
+        Com_Printf("Recieved acknowledgement from server\n");
+        break;
+
+    case sp_clientinfo:
+        Packet_Read8(packet, &client.client_id);
+        client.player->info.id = client.client_id;
+        client.state = CL_STATE_READY;
+        Com_DPrintf("CL_ReadClientInfo: ID is %i\n", client.client_id);
+        break;
+
+    default:
+        Com_Warning("Recieved unknown packet type: %i\n", type);
+        break;
+    }
+
+    enet_packet_destroy(cev->packet);
+}
+
+//
 // CL_Connect
 //
 
@@ -129,10 +160,15 @@ static void CL_CheckHostMsg(void)
         {
         case ENET_EVENT_TYPE_CONNECT:
             client.state = CL_STATE_CONNECTED;
+            P_ResetNetSeq(&client.player->info);
             break;
 
         case ENET_EVENT_TYPE_DISCONNECT:
             client.state = CL_STATE_DISCONNECTED;
+            break;
+
+        case ENET_EVENT_TYPE_RECEIVE:
+            //CL_ProcessServerPackets(cev.packet, &cev);
             break;
         }
 
@@ -171,36 +207,6 @@ static void CL_DrawDebug(void)
 }
 
 //
-// CL_Ticker
-//
-
-static void CL_Ticker(void)
-{
-    Menu_Ticker();
-
-    //TEMP
-    G_ClientThink();
-    Snd_UpdateListener();
-
-    client.tics++;
-}
-
-//
-// CL_Drawer
-//
-
-static void CL_Drawer(void)
-{
-    R_DrawFrame();
-
-    CL_DrawDebug();
-
-    Menu_Drawer();
-
-    R_FinishFrame();
-}
-
-//
 // CL_Run
 //
 
@@ -211,9 +217,7 @@ void CL_Run(int msec)
     curtime += msec;
 
     if(curtime < (1000 / (int)cl_maxfps.value))
-    {
         return;
-    }
 
     client.runtime = (float)curtime / 1000.0f;
     client.time += curtime;
@@ -222,11 +226,54 @@ void CL_Run(int msec)
 
     CL_CheckHostMsg();
 
+    IN_PollInput();
+
+    CL_ProcessEvents();
+
     J_RunObjectEvent(JS_EV_CLIENT, "tick");
 
-    CL_Drawer();
+    // P_BuildCommands();
 
-    CL_Ticker();
+    // P_LocalPlayerTick();
+
+    R_DrawFrame();
+
+    CL_DrawDebug();
+
+    Menu_Drawer();
+
+    Con_Drawer();
+
+    R_FinishFrame();
+
+    Menu_Ticker();
+
+    Con_Ticker();
+
+    //TEMP
+    G_ClientThink();
+
+    Snd_UpdateListener();
+
+    client.tics++;
+}
+
+//
+// CL_MessageServer
+//
+
+void CL_MessageServer(char *string)
+{
+    ENetPacket *packet;
+
+    if(!(packet = Packet_New()))
+    {
+        return;
+    }
+
+    Packet_Write8(packet, cp_msgserver);
+    Packet_WriteString(packet, string);
+    Packet_Send(packet, client.peer);
 }
 
 //
@@ -236,6 +283,41 @@ void CL_Run(int msec)
 static void FCmd_ShowClientTime(void)
 {
     bDebugTime ^= 1;
+}
+
+//
+// FCmd_Say
+//
+
+static void FCmd_Say(void)
+{
+    ENetPacket *packet;
+
+    if(Cmd_GetArgc() < 2)
+    {
+        return;
+    }
+
+    if(!(packet = Packet_New()))
+        return;
+
+    Packet_Write8(packet, cp_say);
+    Packet_WriteString(packet, Cmd_GetArgv(1));
+    Packet_Send(packet, client.peer);
+}
+
+//
+// FCmd_MsgServer
+//
+
+static void FCmd_MsgServer(void)
+{
+    if(Cmd_GetArgc() < 2)
+    {
+        return;
+    }
+
+    CL_MessageServer(Cmd_GetArgv(1));
 }
 
 //
@@ -265,6 +347,7 @@ void CL_Init(void)
     client.state = CL_STATE_UNINITIALIZED;
     client.local = (Com_CheckParam("-client") == 0);
     client.playerActor = NULL;
+    client.player = &localPlayer;
 
     Cvar_Register(&cl_name);
     Cvar_Register(&cl_fov);
@@ -279,4 +362,6 @@ void CL_Init(void)
     Cvar_Register(&cl_port);
 
     Cmd_AddCommand("debugclienttime", FCmd_ShowClientTime);
+    //Cmd_AddCommand("say", FCmd_Say);
+    //Cmd_AddCommand("msgserver", FCmd_MsgServer);
 }

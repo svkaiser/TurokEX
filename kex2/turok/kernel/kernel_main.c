@@ -39,6 +39,7 @@
 #include "game.h"
 #include "js.h"
 #include "type.h"
+#include "fx.h"
 
 CVAR(developer, 0);
 CVAR(fixedtime, 0);
@@ -62,6 +63,7 @@ void Sys_Shutdown(void)
 
     J_Shutdown();
     Snd_Shutdown();
+    FX_Shutdown();
     Tex_Shutdown();
     R_Shutdown();
     G_Shutdown();

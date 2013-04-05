@@ -51,7 +51,7 @@ typedef struct gActor_s
     float               viewHeight;
     mtx_t               matrix;
     gObject_t           *components;
-	gObject_t			*iterator;
+	gObject_t           *iterator;
     int                 refcount;
     struct gActor_s     *prev;
     struct gActor_s     *next;

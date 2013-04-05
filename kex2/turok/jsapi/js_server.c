@@ -190,7 +190,7 @@ JS_BEGINPROPS(NServer)
 
 JS_BEGINCONST(NServer)
 {
-    { MAXCLIENTS,           "MAXCLIENTS",           0, { 0, 0, 0 } },
+    { MAX_PLAYERS,          "MAXCLIENTS",           0, { 0, 0, 0 } },
     { SV_STATE_UNAVAILABLE, "STATE_UNAVAILABLE",    0, { 0, 0, 0 } },
     { SV_STATE_BUSY,        "STATE_BUSY",           0, { 0, 0, 0 } },
     { SV_STATE_ACTIVE,      "STATE_ACTIVE",         0, { 0, 0, 0 } },

@@ -348,6 +348,7 @@ kbool fcmp(float f1, float f2)
 // kva
 //
 
+// TODO - this seems really dodgy as fuck...
 char *kva(char *str, ...)
 {
     va_list v;

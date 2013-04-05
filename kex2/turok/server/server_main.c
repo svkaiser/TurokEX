@@ -44,9 +44,9 @@ CVAR_CMD(sv_maxpeers, 1)
     {
         cvar->value = 1;
     }
-    else if(cvar->value > MAXCLIENTS)
+    else if(cvar->value > MAX_PLAYERS)
     {
-        cvar->value = (float)MAXCLIENTS;
+        cvar->value = (float)MAX_PLAYERS;
     }
 }
 
@@ -54,7 +54,7 @@ CVAR(sv_hostname, defaulthost);
 CVAR(sv_inwidth, 0);
 CVAR(sv_outwidth, 0);
 
-svclient_t svclients[MAXCLIENTS];
+svclient_t svclients[MAX_PLAYERS];
 server_t server;
 
 //

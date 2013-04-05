@@ -27,8 +27,7 @@
 #include "client.h"
 #include "actor.h"
 #include "game.h"
-
-#define MAXCLIENTS  8
+#include "player.h"
 
 typedef enum
 {
@@ -71,7 +70,7 @@ typedef struct
     int             tics;
 } server_t;
 
-extern svclient_t svclients[MAXCLIENTS];
+extern svclient_t svclients[MAX_PLAYERS];
 extern server_t server;
 
 //

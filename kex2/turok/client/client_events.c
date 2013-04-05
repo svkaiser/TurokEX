@@ -225,23 +225,14 @@ void CL_ProcessEvents(void)
         if(ev == oldev)
             return;
 
-        //if(Con_Responder(ev))
-        //{
-        //    continue;
-        //}
-
-        //if(Menu_Responder(ev))
-        //{
-        //    continue;
-        //}
+        if(Con_ProcessConsoleInput(ev))
+            continue;
 
         // TODO - TEMP
         eventtail = (--eventtail)&(MAXEVENTS-1);
         J_RunObjectEvent(JS_EV_CLIENT, "_tempResponder");
-        //CL_Responder(ev);
+        // P_Responder(ev);
 
         oldev = ev;
     }
 }
-
-

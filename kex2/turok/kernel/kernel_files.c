@@ -252,11 +252,13 @@ int KF_OpenFileCache(const char *filename, byte **data, int tag)
 
 int KF_ReadTextFile(const char *name, byte **buffer)
 {
+    static char filepath[1024];
     FILE *fp;
 
     errno = 0;
-    
-    if((fp = fopen(kva("%s\\%s", kf_basepath.string, name), "rb")))
+
+    sprintf(filepath, "%s\\%s", kf_basepath.string, name);
+    if((fp = fopen(filepath, "rb")))
     {
         size_t length;
 

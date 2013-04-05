@@ -241,7 +241,7 @@ sndShader_t *Snd_LoadShader(const char *name)
         if(!(parser = SC_Open(name)))
             return NULL;
 
-        snd = (sndShader_t*)Z_Calloc(sizeof(sndShader_t), PU_SOUND, 0);
+        snd = (sndShader_t*)Z_Calloc(sizeof(sndShader_t), PU_STATIC, 0);
         strncpy(snd->name, name, MAX_FILEPATH);
 
         Snd_ParseShaderScript(snd, parser);

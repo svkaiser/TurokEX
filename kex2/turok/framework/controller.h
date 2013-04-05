@@ -23,12 +23,13 @@
 #ifndef _CONTROLLER_H_
 #define _CONTROLLER_H_
 
-#include "render.h"
+#include "actor.h"
 #include "level.h"
 
 typedef struct
 {
     gActor_t    *owner;
+    vec3_t      origin;
     vec3_t      velocity;
     vec3_t      forward;
     vec3_t      right;
