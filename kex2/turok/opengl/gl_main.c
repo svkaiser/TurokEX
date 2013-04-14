@@ -341,6 +341,9 @@ void GL_SetState(int bit, kbool enable)
     case GLSTATE_TEXGEN_T:
         TOGGLEGLBIT(GLSTATE_TEXGEN_T, GL_TEXTURE_GEN_T);
         break;
+    case GLSTATE_DEPTHTEST:
+        TOGGLEGLBIT(GLSTATE_DEPTHTEST, GL_DEPTH_TEST);
+        break;
     default:
         Com_Warning("GL_SetState: unknown bit flag: %i\n", bit);
         break;
@@ -558,7 +561,7 @@ void GL_Init(void)
     dglClearDepth(1.0f);
     dglDisable(GL_TEXTURE_2D);
     dglEnable(GL_CULL_FACE);
-    dglEnable(GL_NORMALIZE);
+    dglDisable(GL_NORMALIZE);
     dglCullFace(GL_FRONT);
     dglShadeModel(GL_SMOOTH);
     dglHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);

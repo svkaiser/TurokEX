@@ -33,6 +33,7 @@
 #include "actor.h"
 #include "client.h"
 #include "level.h"
+#include "sound.h"
 
 fx_t fxRoot;
 fx_t *fxRover;
@@ -52,6 +53,8 @@ enum
     scvfx_bBlood,
     scvfx_bAddOffset,
     scvfx_bScaleLerp,
+    scvfx_bNoDirection,
+    scvfx_bLocalAxis,
     scvfx_mass,
     scvfx_translation_global_randomscale,
     scvfx_translation_randomscale,
@@ -59,7 +62,7 @@ enum
     scvfx_gravity,
     scvfx_gravity_randomscale,
     scvfx_friction,
-    scvfx_friction_randomscale,
+    scvfx_animFriction,
     scvfx_scale,
     scvfx_scale_randomscale,
     scvfx_scaledest,
@@ -92,6 +95,9 @@ enum
     scvfx_fadein_time,
     scvfx_fadeout_time,
     scvfx_animtype,
+    scvfx_onHitSurface,
+    scvfx_onExpire,
+    scvfx_onTick,
     scvfx_end
 };
 
@@ -113,7 +119,7 @@ static const sctokens_t vfxtokens[scvfx_end+1] =
     { scvfx_gravity,                        "gravity"                           },
     { scvfx_gravity_randomscale,            "gravity_randomscale"               },
     { scvfx_friction,                       "friction"                          },
-    { scvfx_friction_randomscale,           "friction_randomscale"              },
+    { scvfx_animFriction,                   "animFriction"                      },
     { scvfx_scale,                          "scale"                             },
     { scvfx_scale_randomscale,              "scale_randomscale"                 },
     { scvfx_scaledest,                      "scale_dest"                        },
@@ -146,6 +152,11 @@ static const sctokens_t vfxtokens[scvfx_end+1] =
     { scvfx_fadein_time,                    "fadein_time"                       },
     { scvfx_fadeout_time,                   "fadeout_time"                      },
     { scvfx_animtype,                       "animtype"                          },
+    { scvfx_onHitSurface,                   "onHitSurface"                      },
+    { scvfx_onExpire,                       "onExpire"                          },
+    { scvfx_onTick,                         "onTick"                            },
+    { scvfx_bNoDirection,                   "bNoDirection"                      },
+    { scvfx_bLocalAxis,                     "bLocalAxis"                        },
     { -1,                                   NULL                                }
 };
 
@@ -234,6 +245,8 @@ static void Fx_ParseScript(fxfile_t *fx, scparser_t *parser)
             CHECK_INT(bBlood);
             CHECK_INT(bAddOffset);
             CHECK_INT(bScaleLerp);
+            CHECK_INT(bNoDirection);
+            CHECK_INT(bLocalAxis);
             CHECK_INT(animspeed);
             CHECK_INT(color1_randomscale);
             CHECK_INT(color2_randomscale);
@@ -246,12 +259,13 @@ static void Fx_ParseScript(fxfile_t *fx, scparser_t *parser)
             CHECK_FLOAT(screen_offset_x, screen_offset_x);
             CHECK_FLOAT(screen_offset_y, screen_offset_y);
             CHECK_FLOAT(restart, restart);
+            CHECK_FLOAT(friction, friction);
+            CHECK_FLOAT(animFriction, animFriction);
 
             CHECK_VFXINT(instances);
             CHECK_VFXINT(lifetime);
 
             CHECK_VFXFLOAT(gravity);
-            CHECK_VFXFLOAT(friction);
             CHECK_VFXFLOAT(scale);
             CHECK_VFXFLOAT(scaledest);
             CHECK_VFXFLOAT(forward);
@@ -314,6 +328,8 @@ static void Fx_ParseScript(fxfile_t *fx, scparser_t *parser)
                     info->onplane = VFX_DESTROY;
                 else if(!strcmp(sc_parser->token, "reflect"))
                     info->onplane = VFX_REFLECT;
+                else if(!strcmp(sc_parser->token, "bounce"))
+                    info->onplane = VFX_BOUNCE;
                 else
                     info->onplane = VFX_DEFAULT;
                 break;
@@ -324,11 +340,11 @@ static void Fx_ParseScript(fxfile_t *fx, scparser_t *parser)
                 if(!strcmp(sc_parser->token, "flat"))
                     info->drawtype = VFX_DRAWFLAT;
                 else if(!strcmp(sc_parser->token, "decal"))
-                    info->onplane = VFX_DRAWDECAL;
+                    info->drawtype = VFX_DRAWDECAL;
                 else if(!strcmp(sc_parser->token, "billboard"))
-                    info->onplane = VFX_DRAWSPRITE;
+                    info->drawtype = VFX_DRAWSPRITE;
                 else
-                    info->onplane = VFX_DRAWDEFAULT;
+                    info->drawtype = VFX_DRAWDEFAULT;
                 break;
 
             case scvfx_animtype:
@@ -342,6 +358,93 @@ static void Fx_ParseScript(fxfile_t *fx, scparser_t *parser)
                     info->animtype = VFX_ANIMSINWAVE;
                 else
                     info->animtype = VFX_ANIMDEFAULT;
+                break;
+
+            case scvfx_onHitSurface:
+                SC_ExpectNextToken(TK_LBRACK);
+                while(1)
+                {
+                    SC_Find();
+                    if(!strcmp(sc_parser->token, "fx"))
+                    {
+                        SC_ExpectNextToken(TK_EQUAL);
+                        SC_GetString();
+                        info->hitFX = Z_Strndup(parser->stringToken,
+                            MAX_FILEPATH, PU_STATIC, 0);
+                    }
+                    else if(!strcmp(sc_parser->token, "sound"))
+                    {
+                        SC_ExpectNextToken(TK_EQUAL);
+                        SC_GetString();
+                        info->hitSnd = Z_Strndup(parser->stringToken,
+                            MAX_FILEPATH, PU_STATIC, 0);
+                    }
+                    else if(sc_parser->tokentype == TK_RBRACK)
+                        break;
+                    else
+                    {
+                        SC_Error("Fx_ParseScript: Unknown token: %s\n",
+                            parser->token);
+                    }
+                }
+                break;
+
+            case scvfx_onExpire:
+                SC_ExpectNextToken(TK_LBRACK);
+                while(1)
+                {
+                    SC_Find();
+                    if(!strcmp(sc_parser->token, "fx"))
+                    {
+                        SC_ExpectNextToken(TK_EQUAL);
+                        SC_GetString();
+                        info->expireFX = Z_Strndup(parser->stringToken,
+                            MAX_FILEPATH, PU_STATIC, 0);
+                    }
+                    else if(!strcmp(sc_parser->token, "sound"))
+                    {
+                        SC_ExpectNextToken(TK_EQUAL);
+                        SC_GetString();
+                        info->expireSnd = Z_Strndup(parser->stringToken,
+                            MAX_FILEPATH, PU_STATIC, 0);
+                    }
+                    else if(sc_parser->tokentype == TK_RBRACK)
+                        break;
+                    else
+                    {
+                        SC_Error("Fx_ParseScript: Unknown token: %s\n",
+                            parser->token);
+                    }
+                }
+                break;
+
+            case scvfx_onTick:
+                SC_ExpectNextToken(TK_LBRACK);
+                while(1)
+                {
+                    SC_Find();
+                    if(!strcmp(sc_parser->token, "fx"))
+                    {
+                        SC_ExpectNextToken(TK_EQUAL);
+                        SC_GetString();
+                        info->tickFX = Z_Strndup(parser->stringToken,
+                            MAX_FILEPATH, PU_STATIC, 0);
+                    }
+                    else if(!strcmp(sc_parser->token, "sound"))
+                    {
+                        SC_ExpectNextToken(TK_EQUAL);
+                        SC_GetString();
+                        info->tickSnd = Z_Strndup(parser->stringToken,
+                            MAX_FILEPATH, PU_STATIC, 0);
+                    }
+                    else if(sc_parser->tokentype == TK_RBRACK)
+                        break;
+                    else
+                    {
+                        SC_Error("Fx_ParseScript: Unknown token: %s\n",
+                            parser->token);
+                    }
+                }
                 break;
 
             default:
@@ -456,10 +559,66 @@ static void FX_SetTranslationZ(vec3_t out, vec3_t vector, float r)
 }
 
 //
+// FX_DestroyEvent
+//
+
+static void FX_DestroyEvent(fx_t *fx)
+{
+    fx_t *nfx = NULL;
+
+    fx->lifetime = 0;
+
+    // TODO
+    if(fx->info->hitFX != NULL)
+    {
+        fx_t *nfx = FX_Spawn(fx->info->hitFX, NULL, fx->origin,
+            fx->origin, fx->rotation, fx->plane);
+    }
+
+    if(fx->info->hitSnd != NULL)
+        Snd_PlayShader(fx->info->hitSnd, (gActor_t*)nfx);
+}
+
+//
+// FX_Sort
+//
+
+static void FX_Sort()
+{
+    fx_t *rfx1;
+    fx_t *rfx2;
+
+    for(rfx1 = fxRoot.next; rfx1 != &fxRoot; rfx1 = rfx1->next)
+    {
+        for(rfx2 = fxRoot.next; rfx2 != &fxRoot; rfx2 = rfx2->next)
+        {
+            if(rfx1 == rfx2)
+                continue;
+
+            if(rfx1->dist > rfx2->dist)
+            {
+                fx_t *prev = rfx1->prev;
+                fx_t *next = rfx1->next;
+
+                prev->next = next;
+                next->prev = prev;
+
+                prev = rfx2->prev;
+                prev->next = rfx1;
+                rfx1->prev = prev;
+                rfx1->next = rfx2;
+                rfx2->prev = rfx1;
+                break;
+            }
+        }
+    }
+}
+
+//
 // FX_Link
 //
 
-void FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
+fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
                 vec3_t dest, vec4_t rotation, plane_t *plane)
 {
     unsigned int i;
@@ -470,7 +629,7 @@ void FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
     vec3_t translation;
 
     if(!(fxfile = FX_Load(name)))
-        return;
+        return NULL;
 
     for(i = 0; i < fxfile->numfx; i++)
     {
@@ -483,7 +642,11 @@ void FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
         fx->prev = fxRoot.prev;
         fxRoot.prev = fx;
 
-        Mtx_ApplyRotation(rotation, fx->matrix);
+        if(info->bNoDirection)
+            Mtx_Identity(fx->matrix);
+        else
+            Mtx_ApplyRotation(rotation, fx->matrix);
+
         fx->file = fxfile;
         fx->info = info;
         fx->plane = plane;
@@ -528,8 +691,6 @@ void FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
         if(info->gravity.rand != 0)
             fx->gravity += FX_Rand(info->gravity.rand);
 
-        fx->friction = info->friction.value;
-
         //
         // process translation
         //
@@ -556,8 +717,21 @@ void FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
         }
 
         Vec_Scale(fx->translation, translation, fx->forward);
-        if(info->bAddOffset)
-            Vec_Add(fx->translation, fx->translation, origin);
+        if(!info->bAddOffset)
+        {
+            // TODO
+            //Vec_Add(fx->translation, fx->translation, origin);
+        }
+        else
+        {
+            vec3_t dir;
+
+            dir[0] = fx->rotation[0];
+            dir[1] = fx->rotation[1];
+            dir[2] = fx->rotation[2];
+
+            Vec_Add(fx->translation, fx->translation, dir);
+        }
 
         //
         // process offsets
@@ -587,6 +761,227 @@ void FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
         fx->color2[1] = info->color2[1];
         fx->color2[2] = info->color2[2];
         fx->color2[3] = info->fadein_time == 0 ? 0xff : 0;
+
+        fx->dist = Vec_Length3(fx->origin, client.player->actor->origin);
+    }
+
+    return fx;
+}
+
+//
+// FX_Ticker
+//
+
+void FX_Ticker(void)
+{
+    float time;
+    float mstime;
+
+    if(client.runtime <= 0)
+        return;
+
+    mstime = ((1.0f/60.0f) / client.runtime) * 1000.0f;
+    time = (client.runtime * mstime) * client.runtime;
+
+    FX_Sort();
+
+    for(fxRover = fxRoot.next; fxRover != &fxRoot; fxRover = fxRover->next)
+    {
+        fx_t *fx;
+        fxinfo_t *fxinfo;
+        int lifetime;
+        int alpha;
+        vec3_t dest;
+
+        if(fxRover == NULL)
+            continue;
+
+        fx = fxRover;
+        fxinfo = fx->info;
+
+        if(fxinfo->tickFX != NULL)
+        {
+            FX_Spawn(fxinfo->tickFX, NULL, fx->origin,
+                fx->origin, fx->rotation, fx->plane);
+        }
+
+        if(fxinfo->tickSnd != NULL)
+            Snd_PlayShader(fxinfo->tickSnd, NULL);
+
+        if(fx->bAnimate)
+        {
+            if(fx->frametime < client.time && fxinfo->numTextures > 1)
+            {
+                if(fx->frame + 1 == fxinfo->numTextures)
+                {
+                    switch(fxinfo->animtype)
+                    {
+                    case VFX_ANIMONETIME:
+                        fx->bAnimate = false;
+                        break;
+
+                    case VFX_ANIMLOOP:
+                        fx->frame = 0;
+                        fx->frametime = client.time + fxinfo->animspeed;
+                        break;
+
+                    default:
+                        FX_Kill(fx);
+                        continue;
+                    }
+                }
+                else
+                {
+                    fx->frametime = client.time + fxinfo->animspeed;
+                    fx->frame++;
+                }
+            }
+        }
+
+        fx->rotation_offset += (fx->rotation_speed * time);
+
+        if(!fxinfo->bScaleLerp)
+        {
+            float sdest = (fx->scale * fx->scale_dest);
+
+            if(sdest > 4096)
+                sdest = 4096;
+
+            fx->scale = (sdest - fx->scale) * time + fx->scale;
+        }
+        else
+        {
+            float sdest = fx->scale - fx->scale_dest * (time * -10.24f);
+
+            if(sdest > 4096)
+                fx->scale = 4096;
+            else
+                fx->scale = sdest;
+        }
+
+        lifetime = (fxinfo->lifetime.value - (int)fx->lifetime);
+
+        alpha = fx->color1[3];
+
+        if(lifetime < fxinfo->fadein_time)
+        {
+            alpha += (255 / (fxinfo->fadein_time + 1)) >> 1;
+
+            if(alpha > 0xff)
+                alpha = 0xff;
+        }
+
+        if(fx->lifetime < fxinfo->fadeout_time)
+        {
+            alpha = (int)(255 * fx->lifetime / (fxinfo->fadeout_time + 1));
+
+            if(alpha < 0)
+                alpha = 0;
+        }
+
+        fx->color1[3] = alpha;
+        fx->color2[3] = alpha;
+
+        Vec_Scale(dest, fx->translation, client.runtime);
+
+        if(Vec_Unit3(dest) >= 0.001f)
+        {
+            trace_t trace;
+            float dist;
+
+            Vec_Add(dest, dest, fx->origin);
+            trace = Trace(fx->origin, dest, fx->plane, NULL, 0);
+            fx->plane = trace.pl;
+
+            switch(trace.type)
+            {
+            case TRT_SLOPE:
+                if(!Plane_IsAWall(trace.hitpl))
+                {
+                    Vec_Copy3(fx->origin, dest);
+                    break;
+                }
+            case TRT_WALL:
+            case TRT_EDGE:
+                // TODO
+                if(fx->info->onplane == VFX_BOUNCE)
+                {
+                    if(Plane_IsAWall(trace.hitpl) || trace.type == TRT_EDGE)
+                    {
+                        G_ClipVelocity(fx->translation, fx->translation,
+                            trace.normal, (1 + fxinfo->mass));
+                    }
+                }
+                if(fxinfo->onplane == VFX_DESTROY)
+                    FX_DestroyEvent(fx);
+                break;
+            case TRT_NOHIT:
+                Vec_Copy3(fx->origin, dest);
+                break;
+            }
+            
+            dist = fx->origin[1] - Plane_GetDistance(fx->plane, fx->origin);
+
+            if(dist <= 0.512f)
+            {
+                if(fxinfo->bStopAnimOnImpact)
+                    fx->bAnimate = false;
+
+                if(fxinfo->onplane == VFX_BOUNCE)
+                {
+                    float d = Vec_Unit3(fx->translation);
+
+                    if(d >= 1.05f)
+                    {
+                        float bounce = (1 + fxinfo->mass);
+
+                        if(d < 16.8f && fxinfo->mass < 1.0f)
+                            bounce = 0.2f;
+
+                        G_ClipVelocity(fx->translation, fx->translation,
+                            fx->plane->normal, bounce);
+                    }
+                    else
+                        Vec_Set3(fx->translation, 0, 0, 0);
+
+                    G_ApplyFriction(fx->translation, 1 - fxinfo->friction, false);
+                }
+                else if(fxinfo->onplane == VFX_DESTROY)
+                {
+                    
+                    fx->origin[1] = fx->origin[1] - dist + 0.01f;
+                    FX_DestroyEvent(fx);
+                }
+            }
+            else
+            {
+                if(fxinfo->bStopAnimOnImpact)
+                    fx->bAnimate = true;
+            }
+            
+            fx->translation[1] += (fx->gravity * client.runtime);
+
+            if(dist < 0.01f)
+                fx->origin[1] = fx->origin[1] - dist + 0.01f;
+        }
+
+        fx->dist = Vec_Length3(fx->origin, client.player->actor->origin);
+        fx->lifetime -= time;
+
+        if(fx->lifetime < 0)
+        {
+            // TODO
+            if(fxinfo->expireFX != NULL)
+            {
+                fx_t *nfx = FX_Spawn(fxinfo->expireFX, NULL, fx->origin,
+                    fx->origin, fx->rotation, fx->plane);
+
+                if(nfx != NULL)
+                    Snd_PlayShader(fxinfo->expireSnd, (gActor_t*)nfx);
+            }
+
+            FX_Kill(fx);
+        }
     }
 }
 
@@ -658,8 +1053,8 @@ fxfile_t *FX_Load(const char *name)
 
 static void FCmd_SpawnFX(void)
 {
-    vec4_t rot;
     plane_t *plane;
+    vec3_t vec;
 
     if(Cmd_GetArgc() < 2)
         return;
@@ -670,13 +1065,16 @@ static void FCmd_SpawnFX(void)
     if(!(plane = Map_FindClosestPlane(client.playerActor->origin)))
         return;
 
-    Vec_Set4(rot, 0, 0, 0, 1);
+    Vec_Set3(vec,
+        client.playerActor->rotation[0],
+        client.playerActor->rotation[1],
+        client.playerActor->rotation[2]);
 
     FX_Spawn(Cmd_GetArgv(1),
         client.playerActor,
+        vec,
         client.playerActor->origin,
-        client.playerActor->origin,
-        rot, plane);
+        client.playerActor->rotation, plane);
 }
 
 //

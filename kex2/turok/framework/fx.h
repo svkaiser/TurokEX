@@ -61,7 +61,8 @@ enum
 {
     VFX_DEFAULT,
     VFX_DESTROY,
-    VFX_REFLECT
+    VFX_REFLECT,
+    VFX_BOUNCE
 };
 
 typedef struct
@@ -75,11 +76,15 @@ typedef struct
     kbool               bAddOffset;
     kbool               bDepthBuffer;
     kbool               bScaleLerp;
+    kbool               bNoDirection;
+    kbool               bLocalAxis;
+    kbool               bClientSpace;
     float               mass;
     float               translation_randomscale;
     fxvector_t          translation;
     fxfloat_t           gravity;
-    fxfloat_t           friction;
+    float               friction;
+    float               animFriction;
     fxfloat_t           scale;
     fxfloat_t           scaledest;
     fxfloat_t           forward;
@@ -105,6 +110,12 @@ typedef struct
     int                 saturation_randomscale;
     int                 fadein_time;
     int                 fadeout_time;
+    char                *hitFX;
+    char                *hitSnd;
+    char                *tickFX;
+    char                *tickSnd;
+    char                *expireFX;
+    char                *expireSnd;
 } fxinfo_t;
 
 typedef struct fxfile_s
@@ -118,12 +129,11 @@ typedef struct fxfile_s
 typedef struct fx_s
 {
     vec3_t              origin;
+    vec4_t              rotation;
     vec3_t              translation;
     vec3_t              offset;
-    vec4_t              rotation;
     fxinfo_t            *info;
     float               gravity;
-    float               friction;
     float               scale;
     float               scale_dest;
     float               forward;
@@ -141,6 +151,7 @@ typedef struct fx_s
     plane_t             *plane;
     mtx_t               matrix;
     fxfile_t            *file;
+    float               dist;
     struct fx_s         *prev;
     struct fx_s         *next;
 } fx_t;
@@ -150,10 +161,11 @@ extern fx_t *fxRover;
 
 void FX_Init(void);
 void FX_Kill(fx_t *fx);
+void FX_Ticker(void);
 fxfile_t *FX_Load(const char *name);
 void FX_ClearLinks(void);
 void FX_Shutdown(void);
-void FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
-                vec3_t dest, vec4_t rotation, plane_t *plane);
+fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t axis,
+                vec3_t origin, vec4_t rotation, plane_t *plane);
 
 #endif

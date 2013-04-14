@@ -102,7 +102,9 @@ JS_FASTNATIVE_BEGIN(Physics, rayTrace)
     JSObject *rObject;
     JSObject *hplObject;
     JSObject *hvObject;
-    jsdouble distance;
+    int steps;
+    int length;
+    int dist;
     jsval fracval;
     vec3_t start;
     vec3_t forward;
@@ -110,20 +112,36 @@ JS_FASTNATIVE_BEGIN(Physics, rayTrace)
     plane_t *plane;
     trace_t trace;
 
-    JS_CHECKARGS(4);
+    JS_CHECKARGS(5);
     JS_GETOBJECT(obj1, v, 0);
     JS_GETVECTOR2(obj1, start);
     JS_GETOBJECT(obj2, v, 1);
     JS_GETVECTOR2(obj2, forward);
-    JS_GETNUMBER(distance, v, 2);
-    JS_GETOBJECT(plObj, v, 3);
+    JS_GETINTEGER(steps, 2);
+    JS_GETINTEGER(length, 3);
+    JS_GETOBJECT(plObj, v, 4);
     JS_GET_PRIVATE_DATA(plObj, &Plane_class, plane_t, plane);
 
     // TODO - TEMP
     start[1] += 30.72f;
-    Vec_Scale(forward, forward, (float)distance);
-    Vec_Add(end, start, forward);
-    trace = Trace(start, end, plane, NULL, 0);
+    dist = 0;
+
+    while(dist < (steps * length))
+    {
+        vec3_t fwd;
+
+        dist += length;
+
+        Vec_Copy3(fwd, forward);
+        Vec_Scale(fwd, fwd, (float)length);
+        Vec_Add(end, start, fwd);
+        trace = Trace(start, end, plane, NULL, 0);
+
+        if(trace.type != TRT_NOHIT)
+            break;
+
+        Vec_Copy3(start, end);
+    }
 
     trace.frac = 1 + trace.frac;
 
@@ -183,6 +201,6 @@ JS_BEGINCONST(Physics)
 JS_BEGINFUNCS(Physics)
 {
     JS_FASTNATIVE(Physics, move,  1),
-    JS_FASTNATIVE(Physics, rayTrace,  4),
+    JS_FASTNATIVE(Physics, rayTrace,  5),
     JS_FS_END
 };

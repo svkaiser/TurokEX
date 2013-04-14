@@ -230,8 +230,8 @@ void CL_ProcessEvents(void)
 
         // TODO - TEMP
         eventtail = (--eventtail)&(MAXEVENTS-1);
-        J_RunObjectEvent(JS_EV_CLIENT, "_tempResponder");
-        // P_Responder(ev);
+        //J_RunObjectEvent(JS_EV_CLIENT, "_tempResponder");
+        P_Responder(CL_GetEvent());
 
         oldev = ev;
     }

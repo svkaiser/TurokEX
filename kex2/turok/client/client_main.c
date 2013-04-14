@@ -36,6 +36,7 @@
 #include "mathlib.h"
 #include "js.h"
 #include "sound.h"
+#include "fx.h"
 
 client_t client;
 
@@ -55,9 +56,7 @@ CVAR(cl_port, 58304);
 CVAR_CMD(cl_maxfps, 60)
 {
     if(cvar->value <= 0)
-    {
         cvar->value = 1;
-    }
 }
 
 CVAR_EXTERNAL(developer);
@@ -134,6 +133,7 @@ void CL_Connect(const char *address)
     enet_address_set_host(&addr, address);
     addr.port = (int)cl_port.value;
     client.peer = enet_host_connect(client.host, &addr, 2, 0);
+    client.player->info.peer = client.peer;
     enet_address_get_host_ip(&addr, ip, 32);
     Com_Printf("Connecting to %s:%u...\n", ip, addr.port);
 
@@ -168,12 +168,12 @@ static void CL_CheckHostMsg(void)
             break;
 
         case ENET_EVENT_TYPE_RECEIVE:
-            //CL_ProcessServerPackets(cev.packet, &cev);
+            CL_ProcessServerPackets(cev.packet, &cev);
             break;
         }
 
         client.netEvent = cev;
-        J_RunObjectEvent(JS_EV_CLIENT, "netUpdate");
+        //J_RunObjectEvent(JS_EV_CLIENT, "netUpdate");
     }
 }
 
@@ -230,11 +230,20 @@ void CL_Run(int msec)
 
     CL_ProcessEvents();
 
-    J_RunObjectEvent(JS_EV_CLIENT, "tick");
+    //J_RunObjectEvent(JS_EV_CLIENT, "tick");
 
-    // P_BuildCommands();
+    P_BuildCommands();
 
-    // P_LocalPlayerTick();
+    P_LocalPlayerTick();
+
+    Menu_Ticker();
+
+    Con_Ticker();
+
+    FX_Ticker();
+
+    //TEMP
+    G_ClientThink();
 
     R_DrawFrame();
 
@@ -245,13 +254,6 @@ void CL_Run(int msec)
     Con_Drawer();
 
     R_FinishFrame();
-
-    Menu_Ticker();
-
-    Con_Ticker();
-
-    //TEMP
-    G_ClientThink();
 
     Snd_UpdateListener();
 
@@ -267,9 +269,7 @@ void CL_MessageServer(char *string)
     ENetPacket *packet;
 
     if(!(packet = Packet_New()))
-    {
         return;
-    }
 
     Packet_Write8(packet, cp_msgserver);
     Packet_WriteString(packet, string);
@@ -286,6 +286,21 @@ static void FCmd_ShowClientTime(void)
 }
 
 //
+// FCmd_Ping
+//
+
+static void FCmd_Ping(void)
+{
+    ENetPacket *packet;
+
+    if(!(packet = Packet_New()))
+        return;
+
+    Packet_Write8(packet, cp_ping);
+    Packet_Send(packet, client.peer);
+}
+
+//
 // FCmd_Say
 //
 
@@ -294,9 +309,7 @@ static void FCmd_Say(void)
     ENetPacket *packet;
 
     if(Cmd_GetArgc() < 2)
-    {
         return;
-    }
 
     if(!(packet = Packet_New()))
         return;
@@ -313,9 +326,7 @@ static void FCmd_Say(void)
 static void FCmd_MsgServer(void)
 {
     if(Cmd_GetArgc() < 2)
-    {
         return;
-    }
 
     CL_MessageServer(Cmd_GetArgv(1));
 }
@@ -362,6 +373,7 @@ void CL_Init(void)
     Cvar_Register(&cl_port);
 
     Cmd_AddCommand("debugclienttime", FCmd_ShowClientTime);
-    //Cmd_AddCommand("say", FCmd_Say);
-    //Cmd_AddCommand("msgserver", FCmd_MsgServer);
+    Cmd_AddCommand("ping", FCmd_Ping);
+    Cmd_AddCommand("say", FCmd_Say);
+    Cmd_AddCommand("msgserver", FCmd_MsgServer);
 }

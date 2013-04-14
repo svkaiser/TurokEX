@@ -141,6 +141,93 @@ void R_DrawCollision(void)
 }
 
 //
+// R_DrawPlaneNormals
+//
+
+void R_DrawPlaneNormals(void)
+{
+    unsigned int i;
+
+    if(!gLevel.loaded)
+        return;
+
+    GL_SetState(GLSTATE_TEXTURE0, false);
+    GL_SetState(GLSTATE_CULL, false);
+    GL_SetState(GLSTATE_BLEND, true);
+
+    dglDepthRange(0.0f, 0.0f);
+    dglLineWidth(2.0f);
+
+    for(i = 0; i < gLevel.numplanes; i++)
+    {
+        float x, y, z;
+
+        plane_t *p = &gLevel.planes[i];
+
+        x = (p->points[0][0] + p->points[1][0] + p->points[2][0]) / 3;
+        y = (p->points[0][1] + p->points[1][1] + p->points[2][1]) / 3;
+        z = (p->points[0][2] + p->points[1][2] + p->points[2][2]) / 3;
+
+        dglBegin(GL_LINES);
+        dglColor4ub(0, 32, 255, 255);
+        dglVertex3f(x, y, z);
+        dglColor4ub(0, 255, 0, 255);
+        dglVertex3f(
+            x + (16 * p->normal[0]),
+            y + (16 * p->normal[1]),
+            z + (16 * p->normal[2]));
+        dglEnd();
+    }
+
+    dglLineWidth(1.0f);
+    dglDepthRange(0.0f, 1.0f);
+
+    GL_SetState(GLSTATE_TEXTURE0, true);
+    GL_SetState(GLSTATE_CULL, true);
+    GL_SetState(GLSTATE_BLEND, false);
+}
+
+//
+// R_DrawRadius
+//
+
+void R_DrawRadius(float x, float y, float z, float radius, float height)
+{
+    float an;
+    int i;
+
+    GL_SetState(GLSTATE_TEXTURE0, false);
+    GL_SetState(GLSTATE_CULL, false);
+    GL_SetState(GLSTATE_BLEND, true);
+
+    an = DEG2RAD(360 / 32);
+
+    dglBegin(GL_LINES);
+    dglColor4ub(255, 128, 128, 255);
+
+    for(i = 0; i < 32; i++)
+    {
+        float s1 = (float)sin(an * i);
+        float c1 = (float)cos(an * i);
+        float s2 = (float)sin(an * ((i+1)%31));
+        float c2 = (float)cos(an * ((i+1)%31));
+
+        dglVertex3f(x + (radius * s1), y, z + (radius * c1));
+        dglVertex3f(x + (radius * s1), y + height, z + (radius * c1));
+        dglVertex3f(x + (radius * s1), y, z + (radius * c1));
+        dglVertex3f(x + (radius * s2), y, z + (radius * c2));
+        dglVertex3f(x + (radius * s1), y + height, z + (radius * c1));
+        dglVertex3f(x + (radius * s2), y + height, z + (radius * c2));
+    }
+
+    dglEnd();
+
+    GL_SetState(GLSTATE_TEXTURE0, true);
+    GL_SetState(GLSTATE_CULL, true);
+    GL_SetState(GLSTATE_BLEND, false);
+}
+
+//
 // R_DrawBoundingBox
 //
 
@@ -196,5 +283,37 @@ void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b)
     GL_SetState(GLSTATE_BLEND, false);
 
     //dglDisable(GL_DEPTH_TEST);
+}
+
+//
+// R_DrawOrigin
+//
+
+void R_DrawOrigin(vec3_t origin, float size)
+{
+    GL_SetState(GLSTATE_TEXTURE0, false);
+
+    dglDepthRange(0.0f, 0.0f);
+    dglLineWidth(2.0f);
+    dglBegin(GL_LINES);
+
+    // x
+    dglColor4ub(255, 0, 0, 255);
+    dglVertex3f(origin[0], origin[1], origin[2]);
+    dglVertex3f(origin[0] + size, origin[1], origin[2]);
+    // y
+    dglColor4ub(0, 255, 0, 255);
+    dglVertex3f(origin[0], origin[1], origin[2]);
+    dglVertex3f(origin[0], origin[1] + size, origin[2]);
+    // z
+    dglColor4ub(0, 0, 255, 255);
+    dglVertex3f(origin[0], origin[1], origin[2]);
+    dglVertex3f(origin[0], origin[1], origin[2] + size);
+
+    dglEnd();
+    dglLineWidth(1.0f);
+    dglDepthRange(0.0f, 1.0f);
+
+    GL_SetState(GLSTATE_TEXTURE0, true);
 }
 

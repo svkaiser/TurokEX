@@ -257,12 +257,11 @@ sndShader_t *Snd_LoadShader(const char *name)
 }
 
 //
-// Snd_PlayShader
+// Snd_PlayShaderDirect
 //
 
-void Snd_PlayShader(const char *name, gActor_t *actor)
+void Snd_PlayShaderDirect(sndShader_t *shader, gActor_t *actor)
 {
-    sndShader_t *shader = Snd_LoadShader(name);
     sndSource_t *src;
     unsigned int i;
 
@@ -300,4 +299,18 @@ void Snd_PlayShader(const char *name, gActor_t *actor)
     }
 
     Snd_ExitCriticalSection();
+}
+
+//
+// Snd_PlayShader
+//
+
+void Snd_PlayShader(const char *name, gActor_t *actor)
+{
+    sndShader_t *shader = Snd_LoadShader(name);
+
+    if(shader == NULL)
+        return;
+
+    Snd_PlayShaderDirect(shader, actor);
 }

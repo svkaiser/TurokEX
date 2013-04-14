@@ -28,15 +28,15 @@
 
 typedef struct gActor_s
 {
+    vec3_t              origin;
+    vec4_t              rotation;
+    vec3_t              scale;
     kbool               bOrientOnSlope;
     kbool               bStatic;
     kbool               bCollision;
     kbool               bTouch;
     kbool               bClientOnly;
     kbool               bHidden;
-    vec3_t              origin;
-    vec3_t              scale;
-    vec4_t              rotation;
     bbox_t              bbox;
     kmodel_t            *model;
     animstate_t         animState;

@@ -29,13 +29,14 @@
 #include "common.h"
 #include "zone.h"
 #include "kernel.h"
+#include "js_class.h"
 
 CVAR_EXTERNAL(kf_basepath);
 
 #define JS_RUNTIME_HEAP_SIZE 128L * 1024L * 1024L
 #define JS_STACK_CHUNK_SIZE  8192
 
-static js_scrobj_t *js_scrobj_list[MAX_HASH];
+static js_scrobj_t  *js_scrobj_list[MAX_HASH];
 static JSRuntime    *js_runtime     = NULL;
 static js_scrobj_t  *js_rootscript  = NULL;
 
@@ -156,7 +157,7 @@ static void J_Error(JSContext *cx, const char *message, JSErrorReport *report)
     }
     else
     {
-        Com_CPrintf(COLOR_RED, "%s\n", buf);
+        Com_Error("%s\n", buf);
     }
 }
 
@@ -1076,13 +1077,14 @@ void J_Init(void)
     JS_DEFINEOBJECT(Physics);
     JS_DEFINEOBJECT(Level);
     JS_DEFINEOBJECT(Snd);
+    JS_DEFINEOBJECT(ClientPlayer);
     JS_INITCLASS(Vector, 3);
     JS_INITCLASS(Quaternion, 4);
     JS_INITCLASS(Matrix, 0);
     JS_INITCLASS(AnimState, 0);
     JS_INITCLASS(Canvas, 0);
     JS_INITCLASS(Font, 0);
-    JS_INITCLASS_NOCONSTRUCTOR(AController, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(WorldState, 0);
     JS_INITCLASS_NOCONSTRUCTOR(NetEvent, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Packet, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Peer, 0);
@@ -1094,6 +1096,7 @@ void J_Init(void)
     JS_INITCLASS_NOCONSTRUCTOR(GameActor, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Component, 0);
     JS_INITCLASS_NOCONSTRUCTOR(InputEvent, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(Command, 0);
 
     if(!(js_rootscript = J_LoadScript("scripts/main.js")))
         Com_Error("J_Init: Unable to load main.js");
@@ -1110,6 +1113,7 @@ void J_Init(void)
     JPool_Initialize(&objPoolInputEvent, 8, &InputEvent_class);
 
     J_ExecScriptObj(js_rootscript);
+    JClass_InitObject();
 
     Cmd_AddCommand("js", FCmd_JS);
     Cmd_AddCommand("jsfile", FCmd_JSFile);

@@ -149,8 +149,8 @@ int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
         "PC Turok Cart File (.dat) \0*.dat\0All Files (*.*)\0*.*\0",
         "Locate CARTFILE.DAT");
     SND_StoreSoundShaders();
-    FX_StoreParticleEffects();
     TX_StoreTextures();
+    FX_StoreParticleEffects();
     MDL_StoreModels();
     LV_StoreLevels();
     Com_CloseCartFile();

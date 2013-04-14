@@ -198,14 +198,12 @@ scparser_t *SC_Open(const char* name)
     
     if(sc_parser->buffsize <= 0)
     {
-        if(SC_GetNestedFilename())
-        {
+        SC_PopParser();
+        return NULL;
+        /*if(SC_GetNestedFilename())
             Com_Error("%s : %s not found", SC_GetNestedFilename(), name);
-        }
         else
-        {
-            Com_Error("%s not found", name);
-        }
+            Com_Error("%s not found", name);*/
     }
 
     SC_PushNestedFilename(name);

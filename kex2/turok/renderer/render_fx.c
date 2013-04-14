@@ -39,12 +39,12 @@ void R_DrawFX(void)
     if(client.playerActor == NULL)
         return;
 
-    GL_SetState(GLSTATE_CULL, true);
     GL_SetState(GLSTATE_BLEND, true);
     GL_SetState(GLSTATE_ALPHATEST, true);
     GL_SetState(GLSTATE_TEXGEN_S, false);
     GL_SetState(GLSTATE_TEXGEN_T, false);
 
+    dglAlphaFunc(GL_GEQUAL, 0.01f);
     dglEnableClientState(GL_COLOR_ARRAY);
 
     for(fxRover = fxRoot.next; fxRover != &fxRoot; fxRover = fxRover->next)
@@ -55,8 +55,9 @@ void R_DrawFX(void)
         mtx_t finalmtx;
         fx_t *fx;
         float scale;
-        int lifetime;
-        int alpha;
+        float w;
+        float h;
+        float y;
         fxinfo_t *fxinfo;
         texture_t *texture;
 
@@ -66,99 +67,69 @@ void R_DrawFX(void)
         fx = fxRover;
         fxinfo = fx->info;
 
-        if(fxinfo->bOffsetFromFloor)
-        {
-            float dist = Plane_GetDistance(fx->plane, fx->origin) + 3.42f;
-
-            if(dist >= fx->origin[1])
-                fx->origin[1] = dist;
-        }
-
         scale = fx->scale * 0.01f;
 
-        Mtx_IdentityZ(scalemtx, fx->rotation_offset + DEG2RAD(90));
+        Mtx_IdentityZ(scalemtx, fx->rotation_offset + DEG2RAD(180));
         Mtx_Scale(scalemtx, scale, scale, scale);
 
         switch(fxinfo->drawtype)
         {
         case VFX_DRAWFLAT:
+        case VFX_DRAWDECAL:
             Mtx_IdentityY(mtx, DEG2RAD(90));
+            GL_SetState(GLSTATE_CULL, false);
             break;
         default:
-            Mtx_ApplyRotation(client.playerActor->rotation, mtx);
+            {
+                Mtx_ApplyRotation(client.playerActor->rotation, mtx);
+                GL_SetState(GLSTATE_CULL, true);
+            }
             break;
         }
 
         texture = fx->textures[fx->frame];
 
+        y = fx->origin[1];
+
+        if(fxinfo->bOffsetFromFloor)
+        {
+            float dist = Plane_GetDistance(fx->plane, fx->origin) + 3.42f;
+
+            if(dist >= fx->origin[1])
+                y = dist;
+        }
+
         Mtx_MultiplyRotation(finalmtx, scalemtx, mtx);
-        Mtx_AddTranslation(finalmtx, fx->origin[0],
-            fx->origin[1] + texture->origheight, fx->origin[2]);
+        Mtx_AddTranslation(finalmtx, fx->origin[0], y, fx->origin[2]);
 
         dglPushMatrix();
         dglMultMatrixf(finalmtx);
 
-        GL_Vertex(-(float)texture->origwidth, -(float)texture->height,
-            0, 0, 0, 0, 0, 0, fx->color1[0], fx->color1[1], fx->color1[2], fx->color1[3]);
-        GL_Vertex((float)texture->origwidth, -(float)texture->height,
-            0, 1, 0, 0, 0, 0, fx->color1[0], fx->color1[1], fx->color1[2], fx->color1[3]);
-        GL_Vertex(-(float)texture->origwidth, (float)texture->height,
-            0, 0, 1, 0, 0, 0, fx->color1[0], fx->color1[1], fx->color1[2], fx->color1[3]);
-        GL_Vertex((float)texture->origwidth, (float)texture->height,
-            0, 1, 1, 0, 0, 0, fx->color1[0], fx->color1[1], fx->color1[2], fx->color1[3]);
+        w = (float)texture->origwidth;
+        h = (float)texture->height;
+
+        GL_Vertex(-w, -h, 0, 0, 1, 0, 0, 0,
+            fx->color1[0], fx->color1[1], fx->color1[2], fx->color1[3]);
+        GL_Vertex(w, -h, 0, 1, 1, 0, 0, 0,
+            fx->color1[0], fx->color1[1], fx->color1[2], fx->color1[3]);
+        GL_Vertex(-w, h, 0, 0, 0, 0, 0, 0,
+            fx->color1[0], fx->color1[1], fx->color1[2], fx->color1[3]);
+        GL_Vertex(w, h, 0, 1, 0, 0, 0, 0,
+            fx->color1[0], fx->color1[1], fx->color1[2], fx->color1[3]);
 
         GL_Triangle(0, 1, 2);
         GL_Triangle(2, 1, 3);
+
+        GL_SetState(GLSTATE_DEPTHTEST, fxinfo->bDepthBuffer);
 
         GL_BindTexture(texture);
         GL_DrawElements2();
         dglPopMatrix();
 
-        if(fx->bAnimate)
-        {
-            if(fx->frametime < client.time && fxinfo->numTextures > 1)
-            {
-                fx->frametime = client.time + fxinfo->animspeed;
-                fx->frame = (fx->frame + 1) % (fxinfo->numTextures - 1);
-
-                if((fx->frame + 1) == (fxinfo->numTextures-1) &&
-                    fxinfo->animtype == VFX_ANIMONETIME)
-                {
-                    fx->bAnimate = false;
-                }
-            }
-        }
-
-        fx->scale = ((fx->scale * fx->scale_dest) - fx->scale) *
-            (2 * client.runtime) + fx->scale;
-
-        lifetime = (fxinfo->lifetime.value - (int)fx->lifetime);
-
-        alpha = fx->color1[3];
-
-        if(lifetime < fxinfo->fadein_time)
-        {
-            alpha += (255 / (fxinfo->fadein_time + 1)) >> 2;
-
-            if(alpha > 0xff)
-                alpha = 0xff;
-        }
-
-        if(fx->lifetime < fxinfo->fadeout_time)
-        {
-            alpha = (int)(255 * fx->lifetime / (fxinfo->fadeout_time + 1));
-
-            if(alpha < 0)
-                alpha = 0;
-        }
-
-        fx->color1[3] = alpha;
-        fx->color2[3] = alpha;
-
-        fx->lifetime -= (client.runtime * 16);
-        if(fx->lifetime < 0)
-            FX_Kill(fx);
+        if(showorigin)
+            R_DrawOrigin(fx->origin, 8.0f);
     }
 
+    GL_SetState(GLSTATE_DEPTHTEST, true);
     dglDisableClientState(GL_COLOR_ARRAY);
 }

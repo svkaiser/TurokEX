@@ -27,6 +27,7 @@
 #include "js.h"
 #include "js_shared.h"
 #include "common.h"
+#include "js_class.h"
 #include "script.h"
 #include "zone.h"
 
@@ -69,8 +70,6 @@ kbool JParse_BeginObject(scparser_t *parser, gObject_t *object)
     jsval val;
     JSContext *cx;
     gObject_t *cObject;
-    gObject_t *classObj;
-    gObject_t *classCreate;
     gObject_t *fObject;
     gObject_t *newObject;
     char *json;
@@ -99,24 +98,8 @@ kbool JParse_BeginObject(scparser_t *parser, gObject_t *object)
     if(!JS_ValueToObject(cx, val, &cObject))
         return false;
 
-    // get class creation function
-    if(!JS_GetProperty(cx, js_gobject, "class", &val))
-        return false;
-    if(!JS_ValueToObject(cx, val, &classObj))
-        return false;
-    if(!JS_GetProperty(cx, classObj, "create", &val))
-        return false;
-    if(!JS_ValueToObject(cx, val, &classCreate))
-        return false;
-
-    argv = OBJECT_TO_JSVAL(cObject);
-
     // construct class object
-    if(!JS_CallFunctionValue(cx, classObj, OBJECT_TO_JSVAL(classCreate), 1, &argv, &rval))
-        return false;
-    if(!JSVAL_IS_OBJECT(rval))
-        return false;
-    if(!JS_ValueToObject(cx, rval, &newObject))
+    if(!(newObject = classObj.create(cObject)))
         return false;
 
     // add new object as property

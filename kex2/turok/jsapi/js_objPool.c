@@ -101,11 +101,17 @@ void JPool_ReleaseObjects(jsObjectPool_t *jsPool)
         {
             jsval argv;
             jsval rval;
+            JSObject *obj;
 
             if(!JS_CallFunctionName(js_context, jsPool->objects,
                 "pop", 0, &argv, &rval))
                 continue;
+
             argv = rval;
+
+            JS_ValueToObject(js_context, rval, &obj);
+            JS_SetPrivate(js_context, obj, NULL);
+
             if(!JS_CallFunctionName(js_context, jsPool->pool,
                 "push", 1, &argv, &rval))
                 continue;

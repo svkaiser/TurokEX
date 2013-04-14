@@ -326,6 +326,22 @@ typedef struct plane_s
 
 typedef struct
 {
+    vec3_t              origin;
+    vec3_t              velocity;
+    vec3_t              forward;
+    vec3_t              right;
+    vec3_t              up;
+    vec3_t              accel;
+    vec3_t              angles;
+    float               moveTime;
+    float               frameTime;
+    float               timeStamp;
+    plane_t             *plane;
+    gActor_t            *actor;
+} worldState_t;
+
+typedef struct
+{
     unsigned int        nummapactors;
     unsigned int        numinstances;
     unsigned int        numgridbounds;

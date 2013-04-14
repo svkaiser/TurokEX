@@ -464,6 +464,10 @@
 				Name="jsapi"
 				>
 				<File
+					RelativePath="..\turok\jsapi\js_class.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\jsapi\js_main.c"
 					>
 				</File>
@@ -503,10 +507,6 @@
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_controller.c"
-						>
-					</File>
-					<File
 						RelativePath="..\turok\jsapi\js_game.c"
 						>
 					</File>
@@ -536,6 +536,10 @@
 					</File>
 					<File
 						RelativePath="..\turok\jsapi\js_plane.c"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\jsapi\js_player.c"
 						>
 					</File>
 					<File
@@ -722,6 +726,10 @@
 				>
 				<File
 					RelativePath="..\turok\jsapi\js.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\jsapi\js_class.h"
 					>
 				</File>
 				<File

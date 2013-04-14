@@ -38,7 +38,7 @@ typedef struct
 typedef struct
 {
     playerInfo_t    info;
-    aController_t   controller;
+    worldState_t    worldState;
     gActor_t        *actor;
     gActor_t        *camera;
     int             latency[NETBACKUPS];
@@ -51,7 +51,7 @@ typedef struct
 typedef struct
 {
     playerInfo_t    info;
-    aController_t   controller;
+    worldState_t    worldState;
     gActor_t        *actor;
     gObject_t       *playerObject;
     int             state;
@@ -62,8 +62,11 @@ extern netPlayer_t netPlayers[MAX_PLAYERS];
 
 void P_ResetNetSeq(playerInfo_t *info);
 void P_RunCommand(ENetEvent *sev, ENetPacket *packet);
+void P_NewPlayerConnected(ENetEvent *sev);
+netPlayer_t *P_GetNetPlayer(ENetPeer *peer);
 void P_SpawnLocalPlayer(void);
 void P_BuildCommands(void);
+void P_LocalPlayerEvent(const char *eventName);
 void P_LocalPlayerTick(void);
 kbool P_Responder(event_t *ev);
 

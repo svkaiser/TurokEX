@@ -482,6 +482,9 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
 
 static kbool Trace_CheckBulletRay(trace_t *trace, plane_t *plane)
 {
+    if(!Trace_CheckPlaneHeight(trace, plane))
+        return false;
+
     if(Trace_GetPlaneIntersect(trace, plane))
     {
         kbool ok = true;
@@ -539,7 +542,6 @@ void Trace_TraversePlanes(plane_t *plane, trace_t *trace)
     // we've entered a new plane
     trace->pl = plane;
 
-    // TODO
     // bullet-trace detection for floors
     if(!Plane_IsAWall(plane) && !trace->actor)
     {

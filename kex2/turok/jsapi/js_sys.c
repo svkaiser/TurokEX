@@ -31,6 +31,7 @@
 #include "client.h"
 #include "zone.h"
 #include "gl.h"
+#include "fx.h"
 
 JS_CLASSOBJECT(Sys);
 
@@ -431,6 +432,47 @@ JS_FASTNATIVE_BEGIN(Sys, readTextFile)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(Sys, spawnFx)
+{
+    JSString *str;
+    char *bytes;
+    gActor_t *actor;
+    JSObject *actorobj;
+    JSObject *dirobj;
+    JSObject *destobj;
+    JSObject *rotobj;
+    JSObject *plobj;
+    vec3_t dir;
+    vec3_t dest;
+    vec4_t rot;
+    plane_t *plane;
+
+    JS_CHECKARGS(6);
+
+    JS_GETSTRING(str, bytes, v, 0);
+    JS_GETOBJECT(actorobj, v, 1);
+    JS_GETOBJECT(dirobj, v, 2);
+    JS_GETOBJECT(destobj, v, 3);
+    JS_GETOBJECT(rotobj, v, 4);
+    JS_GETOBJECT(plobj, v, 5);
+
+    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, actorobj, &GameActor_class, NULL)))
+        actor = NULL;
+
+    if(!(plane = (plane_t*)JS_GetInstancePrivate(cx, plobj, &Plane_class, NULL)))
+        plane = NULL;
+
+    JS_GETVECTOR2(dirobj, dir);
+    JS_GETVECTOR2(destobj, dest);
+    JS_GETQUATERNION2(rotobj, rot);
+
+    FX_Spawn(bytes, actor, dir, dest, rot, plane);
+    JS_free(cx, bytes);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+   return JS_TRUE;
+}
+
 JS_FASTNATIVE_BEGIN(Sys, GC)
 {
    JS_GC(cx);
@@ -494,6 +536,7 @@ JS_BEGINFUNCS(Sys)
     JS_FASTNATIVE(Sys, loadModel, 1),
     JS_FASTNATIVE(Sys, loadAnimation, 2),
     JS_FASTNATIVE(Sys, readTextFile, 1),
+    JS_FASTNATIVE(Sys, spawnFx, 6),
     JS_FASTNATIVE(Sys, GC, 0),
     JS_FASTNATIVE(Sys, maybeGC, 0),
     JS_FS_END

@@ -44,8 +44,10 @@ typedef struct
 
 void Ctrl_SetDirection(aController_t *ctrl,
                        float yaw, float pitch, float roll);
-void Ctrl_ApplyFriction(aController_t *ctrl, float friction, kbool effectY);
+void Ctrl_ApplyFriction(aController_t *ctrl, float friction);
+void Ctrl_ApplyVerticalFriction(aController_t *ctrl, float friction);
 void Ctrl_Accelerate(aController_t *ctrl, float speed, float accel, int v);
+float Ctrl_Lerp(aController_t *ctrl, float cur, float next, float time);
 void Ctrl_ApplyGravity(aController_t *ctrl, float gravity);
 
 #endif

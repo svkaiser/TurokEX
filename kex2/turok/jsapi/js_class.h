@@ -1,7 +1,7 @@
 // Emacs style mode select   -*- C++ -*- 
 //-----------------------------------------------------------------------------
 //
-// Copyright(C) 2007-2012 Samuel Villarreal
+// Copyright(C) 2012 Samuel Villarreal
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -20,35 +20,22 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __GAME_H__
-#define __GAME_H__
+#ifndef _JSCLASS_H_
+#define _JSCLASS_H_
 
-#include "client.h"
-#include "actor.h"
+#include "js.h"
 
-#define ONPLANE_EPSILON     0.512f
-#define VELOCITY_EPSILON    0.0001f
-#define SLOPE_THRESHOLD     25.0f
-
-enum
+typedef struct
 {
-    WL_INVALID  = 0,
-    WL_OVER     = 1,
-    WL_BETWEEN  = 2,
-    WL_UNDER    = 3
-};
+    gObject_t *(*find)(const char*);
+    gObject_t *(*create)(gObject_t*);
+    gObject_t *object;
+    gObject_t *findObj;
+    gObject_t *createObj;
+} classObject_t;
 
-void G_ClipVelocity(vec3_t out, vec3_t velocity, vec3_t normal, float fudge);
-void G_CheckObjectStep(vec3_t origin, vec3_t velocity, plane_t *plane);
-int G_CheckWaterLevel(vec3_t origin, float centeroffs, plane_t *plane);
-void G_ApplyFriction(vec3_t velocity, float friction, kbool effectY);
-void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
-                    gActor_t *actor, float yaw, trace_t *t);
+extern classObject_t classObj;
 
-void G_Shutdown(void);
-void G_Ticker(void);
-void G_ClientThink(void);
-void G_Init(void);
+void JClass_InitObject(void);
 
 #endif
-

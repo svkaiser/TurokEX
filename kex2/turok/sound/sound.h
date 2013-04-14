@@ -86,6 +86,7 @@ extern unsigned long sndTime;
 
 sndShader_t *Snd_LoadShader(const char *name);
 void Snd_PlayShader(const char *name, gActor_t *actor);
+void Snd_PlayShaderDirect(sndShader_t *shader, gActor_t *actor);
 
 void Snd_Shutdown(void);
 void Snd_Init(void);

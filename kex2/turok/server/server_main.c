@@ -184,46 +184,6 @@ void SV_CreateHost(void)
 }
 
 //
-// SV_ReadTiccmd
-//
-
-static void SV_ReadTiccmd(ENetEvent *sev, ENetPacket *packet)
-{
-    int tmp = 0;
-    int numactions;
-    int i;
-    ticcmd_t cmd;
-    svclient_t *svcl;
-
-    memset(&cmd, 0, sizeof(ticcmd_t));
-
-    Packet_Read32(packet, &tmp);
-    cmd.angle[0].i = tmp;
-    Packet_Read32(packet, &tmp);
-    cmd.angle[1].i = tmp;
-    Packet_Read32(packet, &tmp);
-    cmd.msec.i = tmp;
-
-    Packet_Read32(packet, &numactions);
-
-    for(i = 0; i < numactions; i++)
-    {
-        int btn = 0;
-
-        Packet_Read8(packet, &btn);
-        cmd.buttons[btn] = true;
-        Packet_Read8(packet, &tmp);
-        cmd.heldtime[btn] = tmp;
-    }
-
-    svcl = &svclients[SV_GetPlayerID(sev->peer)];
-    memcpy(&svcl->cmd, &cmd, sizeof(ticcmd_t));
-
-    Packet_Read32(packet, &svcl->ns.acks);
-    Packet_Read32(packet, &svcl->ns.ingoing);
-}
-
-//
 // SV_ClientCommand
 //
 
@@ -259,7 +219,7 @@ void SV_ProcessClientPackets(ENetPacket *packet, ENetEvent *sev)
         break;
 
     case cp_cmd:
-        SV_ReadTiccmd(sev, packet);
+        P_RunCommand(sev, packet);
         break;
 
     case cp_msgserver:
@@ -306,12 +266,12 @@ static void SV_ReadPackets(void)
     {
         server.netEvent = sev;
 
-        J_RunObjectEvent(JS_EV_SERVER, "netUpdate");
+        //J_RunObjectEvent(JS_EV_SERVER, "netUpdate");
 
-        /*switch(sev.type)
+        switch(sev.type)
         {
             case ENET_EVENT_TYPE_CONNECT:
-                SV_AddClient(&sev);
+                P_NewPlayerConnected(&sev);
                 break;
             case ENET_EVENT_TYPE_DISCONNECT:
                 {
@@ -322,7 +282,7 @@ static void SV_ReadPackets(void)
             case ENET_EVENT_TYPE_RECEIVE:
                 SV_ProcessClientPackets(sev.packet, &sev);
                 break;
-        }*/
+        }
     }
 }
 
@@ -360,7 +320,7 @@ void SV_Run(int msec)
 
     SV_ReadPackets();
 
-    J_RunObjectEvent(JS_EV_SERVER, "update");
+    //J_RunObjectEvent(JS_EV_SERVER, "update");
 
     //SV_SendClientMessages();
 

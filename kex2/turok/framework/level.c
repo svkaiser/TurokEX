@@ -927,7 +927,9 @@ void Map_Load(int map)
 
     gLevel.loaded = true;
 
-    J_RunObjectEvent(JS_EV_GAME, "event_BeginLevel");
+    //J_RunObjectEvent(JS_EV_GAME, "event_BeginLevel");
+    P_SpawnLocalPlayer();
+    client.state = CL_STATE_INGAME;
 }
 
 //

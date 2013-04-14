@@ -186,6 +186,7 @@ JS_BEGINCONST(NClient)
     { CL_STATE_CONNECTED,       "STATE_CONNECTED",      0, { 0, 0, 0 } },
     { CL_STATE_DISCONNECTED,    "STATE_DISCONNECTED",   0, { 0, 0, 0 } },
     { CL_STATE_READY,           "STATE_READY",          0, { 0, 0, 0 } },
+    { CL_STATE_INGAME,          "STATE_INGAME",         0, { 0, 0 ,0 } },
     { 0, 0, 0, { 0, 0, 0 } }
 };
 

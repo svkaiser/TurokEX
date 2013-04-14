@@ -53,7 +53,7 @@ unsigned long sndTime = 0;
 
 static wave_t *wave_hashlist[MAX_HASH];
 
-#define SND_METRICS 0.01f
+#define SND_METRICS 0.0075f
 #define SND_VECTOR2METRICS(vec) \
     vec[0] * SND_METRICS,       \
     vec[1] * SND_METRICS,       \
@@ -325,6 +325,8 @@ void Snd_FreeSource(sndSource_t *src)
     src->volume     = 1.0f;
     src->pitch      = 1.0f;
     src->startTime  = 0;
+
+    alSource3f(src->handle, AL_POSITION, 0, 0, 0);
 }
 
 //

@@ -43,6 +43,9 @@ CVAR(r_fog, 1);
 static kbool showcollision = false;
 static kbool showbbox = false;
 static kbool showgrid = false;
+static kbool showpnmls = false;
+static kbool showradius = false;
+
 static float grid_high_y = 0;
 static float grid_low_y = 0;
 
@@ -54,6 +57,7 @@ static double projMatrix[16];
 static float frustum[6][4];
 
 float rRenderTime = 0.0f;
+kbool showorigin = false;
 
 #define CALCMATRIX(a, b, c, d, e, f, g, h)  \
     (float)(viewMatrix[a] * projMatrix[b] + \
@@ -500,6 +504,13 @@ void R_DrawActors(void)
 
         if(showbbox)
             R_DrawBoundingBox(box, 255, 0, 0);
+        if(showorigin && client.playerActor != actor)
+            R_DrawOrigin(actor->origin, 32.0f);
+        if(showradius && actor->bCollision && client.playerActor != actor)
+        {
+            R_DrawRadius(actor->origin[0], actor->origin[1], actor->origin[2],
+                actor->radius, actor->height);
+        }
     }
 }
 
@@ -577,6 +588,11 @@ void R_DrawStatics(void)
                     R_DrawBoundingBox(box, 0, 255, 0);
                 else
                     R_DrawBoundingBox(box, 255, 255, 0);
+            }
+            if(showradius && actor->bCollision)
+            {
+                R_DrawRadius(actor->origin[0], actor->origin[1], actor->origin[2],
+                    actor->radius, actor->height);
             }
         }
     }
@@ -752,11 +768,15 @@ void R_DrawFrame(void)
 {
     rRenderTime += (62.5f * client.runtime);
 
-    J_RunObjectEvent(JS_EV_RENDER, "event_PreRender");
+    P_LocalPlayerEvent("onPreRender");
+    R_RenderCameraView();
     R_SetupClipFrustum();
 
     dglCullFace(GL_BACK);
-    dglEnable(GL_DEPTH_TEST);
+    GL_SetState(GLSTATE_DEPTHTEST, true);
+
+    if(showpnmls)
+        R_DrawPlaneNormals();
 
     if(showcollision)
         R_DrawCollision();
@@ -765,11 +785,11 @@ void R_DrawFrame(void)
     R_DrawStatics();
 
     dglCullFace(GL_FRONT);
-    R_DrawActors();
 
+    R_DrawActors();
     R_DrawFX();
 
-    J_RunObjectEvent(JS_EV_RENDER, "event_OnRender");
+    P_LocalPlayerEvent("onRender");
 
     dglEnableClientState(GL_COLOR_ARRAY);
     dglAlphaFunc(GL_GEQUAL, 0.01f);
@@ -779,8 +799,7 @@ void R_DrawFrame(void)
     if(!showcollision)
         dglDisable(GL_FOG);
 
-    dglDisable(GL_DEPTH_TEST);
-
+    GL_SetState(GLSTATE_DEPTHTEST, false);
     GL_SetState(GLSTATE_CULL, true);
     GL_SetState(GLSTATE_TEXTURE0, true);
     GL_SetState(GLSTATE_BLEND, false);
@@ -790,7 +809,7 @@ void R_DrawFrame(void)
 
     GL_SetOrtho();
 
-    J_RunObjectEvent(JS_EV_RENDER, "event_PostRender");
+    P_LocalPlayerEvent("onPostRender");
 
     R_MorphModel(&morphmodels[0]);
     R_MorphModel(&morphmodels[1]);
@@ -849,6 +868,42 @@ static void FCmd_ShowGrid(void)
 }
 
 //
+// FCmd_ShowOrigin
+//
+
+static void FCmd_ShowOrigin(void)
+{
+    if(Cmd_GetArgc() < 1)
+        return;
+
+    showorigin ^= 1;
+}
+
+//
+// FCmd_ShowPlaneNormals
+//
+
+static void FCmd_ShowPlaneNormals(void)
+{
+    if(Cmd_GetArgc() < 1)
+        return;
+
+    showpnmls ^= 1;
+}
+
+//
+// FCmd_ShowRadius
+//
+
+static void FCmd_ShowRadius(void)
+{
+    if(Cmd_GetArgc() < 1)
+        return;
+
+    showradius ^= 1;
+}
+
+//
 // R_Shutdown
 //
 
@@ -866,6 +921,9 @@ void R_Init(void)
     Cmd_AddCommand("showcollision", FCmd_ShowCollision);
     Cmd_AddCommand("showbbox", FCmd_ShowBoundingBox);
     Cmd_AddCommand("showgrid", FCmd_ShowGrid);
+    Cmd_AddCommand("showorigin", FCmd_ShowOrigin);
+    Cmd_AddCommand("showpnmls", FCmd_ShowPlaneNormals);
+    Cmd_AddCommand("showradius", FCmd_ShowRadius);
 
     Cvar_Register(&r_fog);
 

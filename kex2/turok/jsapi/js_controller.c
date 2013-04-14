@@ -40,8 +40,58 @@ JS_PROP_FUNC_GET(AController)
 
     switch(JSVAL_TO_INT(id))
     {
+    case 0:
+        JS_NEWOBJECTPOOL(ctrl->owner, GameActor);
+        return JS_TRUE;
+
+    case 1:
+        JS_NEWVECTOR2(ctrl->origin);
+        return JS_TRUE;
+
+    case 2:
+        JS_NEWVECTOR2(ctrl->velocity);
+        return JS_TRUE;
+
+    case 3:
+        JS_NEWVECTOR2(ctrl->forward);
+        return JS_TRUE;
+
+    case 4:
+        JS_NEWVECTOR2(ctrl->right);
+        return JS_TRUE;
+
+    case 5:
+        JS_NEWVECTOR2(ctrl->up);
+        return JS_TRUE;
+
+    case 6:
+        JS_NEWVECTOR2(ctrl->accel);
+        return JS_TRUE;
+
+    case 7:
+        return JS_NewDoubleValue(cx, ctrl->angles[0], vp);
+
+    case 8:
+        return JS_NewDoubleValue(cx, ctrl->angles[1], vp);
+
     case 9:
+        return JS_NewDoubleValue(cx, ctrl->angles[2], vp);
+
+    case 10:
+        return JS_NewDoubleValue(cx, ctrl->moveTime, vp);
+
+    case 11:
+        return JS_NewDoubleValue(cx, ctrl->frameTime, vp);
+
+    case 12:
         return JS_NewDoubleValue(cx, ctrl->timeStamp, vp);
+
+    case 13:
+        if(ctrl->plane == NULL)
+            JS_SET_RVAL(cx, vp, JSVAL_NULL);
+        else
+            JS_NEWOBJECTPOOL(ctrl->plane, Plane);
+        return JS_TRUE;
 
     default:
         return JS_TRUE;
@@ -53,55 +103,69 @@ JS_PROP_FUNC_GET(AController)
 JS_PROP_FUNC_SET(AController)
 {
     aController_t *ctrl;
+    jsdouble dval;
+    JSObject *object;
 
     if(!(ctrl = (aController_t*)JS_GetInstancePrivate(cx, obj, &AController_class, NULL)))
         return JS_TRUE;
+
+    switch(JSVAL_TO_INT(id))
+    {
+    case 1:
+        JS_GETOBJECT(object, vp, 0);
+        JS_GETVECTOR2(object, ctrl->origin);
+        return JS_TRUE;
+
+    case 2:
+        JS_GETOBJECT(object, vp, 0);
+        JS_GETVECTOR2(object, ctrl->velocity);
+        return JS_TRUE;
+
+    case 3:
+        JS_GETOBJECT(object, vp, 0);
+        JS_GETVECTOR2(object, ctrl->forward);
+        return JS_TRUE;
+
+    case 4:
+        JS_GETOBJECT(object, vp, 0);
+        JS_GETVECTOR2(object, ctrl->right);
+        return JS_TRUE;
+
+    case 5:
+        JS_GETOBJECT(object, vp, 0);
+        JS_GETVECTOR2(object, ctrl->up);
+        return JS_TRUE;
+
+    case 6:
+        JS_GETOBJECT(object, vp, 0);
+        JS_GETVECTOR2(object, ctrl->accel);
+        return JS_TRUE;
+
+    case 7:
+        JS_GETNUMBER(dval, vp, 0);
+        ctrl->angles[0] = (float)dval;
+        return JS_TRUE;
+
+    case 8:
+        JS_GETNUMBER(dval, vp, 0);
+        ctrl->angles[1] = (float)dval;
+        return JS_TRUE;
+
+    case 9:
+        JS_GETNUMBER(dval, vp, 0);
+        ctrl->angles[2] = (float)dval;
+        return JS_TRUE;
+    }
 
     return JS_TRUE;
 }
 
 JS_FINALIZE_FUNC(AController)
 {
-    aController_t *ctrl;
+    /*aController_t *ctrl;
 
     if(ctrl = (aController_t*)JS_GetPrivate(cx, obj))
-        JS_free(cx, ctrl);
-}
-
-JS_FASTNATIVE_BEGIN(AController, move)
-{
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
-JS_FASTNATIVE_BEGIN(AController, setMoveDirection)
-{
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
-JS_FASTNATIVE_BEGIN(AController, applyFriction)
-{
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
-JS_FASTNATIVE_BEGIN(AController, applyVerticalFriction)
-{
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
-JS_FASTNATIVE_BEGIN(AController, accelerate)
-{
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
-JS_FASTNATIVE_BEGIN(AController, applyGravity)
-{
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
+        JS_free(cx, ctrl);*/
 }
 
 JS_BEGINCLASS(AController)
@@ -120,16 +184,19 @@ JS_ENDCLASS();
 JS_BEGINPROPS(AController)
 {
     { "owner",      0,  JSPROP_ENUMERATE, NULL, NULL },
-    { "velocity",   1,  JSPROP_ENUMERATE, NULL, NULL },
-    { "forward",    2,  JSPROP_ENUMERATE, NULL, NULL },
-    { "right",      3,  JSPROP_ENUMERATE, NULL, NULL },
-    { "up",         4,  JSPROP_ENUMERATE, NULL, NULL },
-    { "accel",      5,  JSPROP_ENUMERATE, NULL, NULL },
-    { "angles",     6,  JSPROP_ENUMERATE, NULL, NULL },
-    { "moveTime",   7,  JSPROP_ENUMERATE, NULL, NULL },
-    { "frameTime",  8,  JSPROP_ENUMERATE, NULL, NULL },
-    { "timeStamp",  9,  JSPROP_ENUMERATE, NULL, NULL },
-    { "plane",      10, JSPROP_ENUMERATE, NULL, NULL },
+    { "origin",     1,  JSPROP_ENUMERATE, NULL, NULL },
+    { "velocity",   2,  JSPROP_ENUMERATE, NULL, NULL },
+    { "forward",    3,  JSPROP_ENUMERATE, NULL, NULL },
+    { "right",      4,  JSPROP_ENUMERATE, NULL, NULL },
+    { "up",         5,  JSPROP_ENUMERATE, NULL, NULL },
+    { "accel",      6,  JSPROP_ENUMERATE, NULL, NULL },
+    { "yaw",        7,  JSPROP_ENUMERATE, NULL, NULL },
+    { "pitch",      8,  JSPROP_ENUMERATE, NULL, NULL },
+    { "roll",       9,  JSPROP_ENUMERATE, NULL, NULL },
+    { "moveTime",   10, JSPROP_ENUMERATE, NULL, NULL },
+    { "frameTime",  11, JSPROP_ENUMERATE, NULL, NULL },
+    { "timeStamp",  12, JSPROP_ENUMERATE, NULL, NULL },
+    { "plane",      13, JSPROP_ENUMERATE, NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 
@@ -140,12 +207,6 @@ JS_BEGINCONST(AController)
 
 JS_BEGINFUNCS(AController)
 {
-    JS_FASTNATIVE(AController, move, 0),
-    JS_FASTNATIVE(AController, setMoveDirection, 3),
-    JS_FASTNATIVE(AController, applyFriction, 1),
-    JS_FASTNATIVE(AController, applyVerticalFriction, 1),
-    JS_FASTNATIVE(AController, accelerate, 3),
-    JS_FASTNATIVE(AController, applyGravity, 1),
     JS_FS_END
 };
 

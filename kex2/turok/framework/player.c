@@ -57,9 +57,6 @@ void P_ResetNetSeq(playerInfo_t *info)
 
 kbool P_Responder(event_t *ev)
 {
-    if(client.state != CL_STATE_READY)
-        return false;
-
     if(Con_ProcessConsoleInput(ev))
         return true;
 
@@ -90,6 +87,63 @@ kbool P_Responder(event_t *ev)
 }
 
 //
+// P_GetNetPlayer
+//
+
+netPlayer_t *P_GetNetPlayer(ENetPeer *peer)
+{
+    unsigned int i;
+    
+    for(i = 0; i < server.maxclients; i++)
+    {
+        if(netPlayers[i].state == SVC_STATE_INACTIVE)
+            continue;
+
+        if(peer->connectID == netPlayers[i].info.id)
+            return &netPlayers[i];
+    }
+
+   return &netPlayers[0];
+}
+
+//
+// P_NewPlayerConnected
+//
+
+void P_NewPlayerConnected(ENetEvent *sev)
+{
+    unsigned int i;
+
+    for(i = 0; i < server.maxclients; i++)
+    {
+        if(netPlayers[i].state == SVC_STATE_INACTIVE)
+        {
+            playerInfo_t *info = &netPlayers[i].info;
+            ENetPacket *packet;
+
+            netPlayers[i].state = SVC_STATE_ACTIVE;
+            info->peer = sev->peer;
+            info->id = sev->peer->connectID;
+            P_ResetNetSeq(info);
+            memset(&info->cmd, 0, sizeof(ticcmd_t));
+
+            if(!(packet = Packet_New()))
+                return;
+
+            Com_Printf("%s connected...\n",
+                SV_GetPeerAddress(sev));
+
+            Packet_Write8(packet, sp_clientinfo);
+            Packet_Write8(packet, info->id);
+            Packet_Send(packet, info->peer);
+            return;
+        }
+    }
+
+    SV_SendMsg(sev, sm_full);
+}
+
+//
 // P_BuildCommands
 //
 
@@ -101,6 +155,9 @@ void P_BuildCommands(void)
     control_t *ctrl;
     int numactions;
     int i;
+
+    if(client.state != CL_STATE_INGAME)
+        return;
 
     pinfo = &localPlayer.info;
     cmd = &pinfo->cmd;
@@ -125,9 +182,16 @@ void P_BuildCommands(void)
 
     cmd->timestamp.i = client.time;
     cmd->frametime.f = client.runtime;
+    cmd->mouse[0].f = ctrl->mousex;
+    cmd->mouse[1].f = ctrl->mousey;
+
+    ctrl->mousex = 0;
+    ctrl->mousey = 0;
 
     if(!(packet = Packet_New()))
         return;
+
+    Packet_Write8(packet, cp_cmd);
 
     numactions = 0;
 
@@ -137,8 +201,8 @@ void P_BuildCommands(void)
             numactions++;
     }
 
-    Packet_Write32(packet, cmd->angle[0].i);
-    Packet_Write32(packet, cmd->angle[1].i);
+    Packet_Write32(packet, cmd->mouse[0].i);
+    Packet_Write32(packet, cmd->mouse[1].i);
     Packet_Write32(packet, cmd->timestamp.i);
     Packet_Write32(packet, cmd->frametime.i);
     Packet_Write32(packet, numactions);
@@ -157,7 +221,6 @@ void P_BuildCommands(void)
 
     pinfo->netseq.outgoing++;
 
-    Packet_Write8(packet, cp_cmd);
     Packet_Send(packet, pinfo->peer);
 }
 
@@ -175,8 +238,8 @@ void P_RunCommand(ENetEvent *sev, ENetPacket *packet)
     netplayer = &netPlayers[SV_GetPlayerID(sev->peer)];
     cmd = &netplayer->info.cmd;
 
-    Packet_Read32(packet, &cmd->angle[0].i);
-    Packet_Read32(packet, &cmd->angle[1].i);
+    Packet_Read32(packet, &cmd->mouse[0].i);
+    Packet_Read32(packet, &cmd->mouse[1].i);
     Packet_Read32(packet, &cmd->timestamp.i);
     Packet_Read32(packet, &cmd->frametime.i);
 
@@ -200,44 +263,65 @@ void P_RunCommand(ENetEvent *sev, ENetPacket *packet)
 }
 
 //
-// P_LocalPlayerTick
+// P_LocalPlayerEvent
 //
 
-void P_LocalPlayerTick(void)
+void P_LocalPlayerEvent(const char *eventName)
 {
-    aController_t *ctrl;
-    playerInfo_t *info;
-    int current;
     gObject_t *function;
     JSContext *cx;
     jsval val;
     jsval rval;
 
-    if(client.state != CL_STATE_READY)
+    if(client.state != CL_STATE_INGAME)
         return;
-
-    ctrl = &localPlayer.controller;
-    info = &localPlayer.info;
-
-    ctrl->timeStamp = info->cmd.timestamp.f;
-    ctrl->frameTime = info->cmd.frametime.f;
 
     cx = js_context;
 
-    if(!JS_GetProperty(cx, localPlayer.playerObject, "onLocalTick", &val))
+    if(!JS_GetProperty(cx, localPlayer.playerObject, eventName, &val))
         return;
     if(!JS_ValueToObject(cx, val, &function))
         return;
 
     JS_CallFunctionValue(cx, localPlayer.playerObject,
         OBJECT_TO_JSVAL(function), 0, NULL, &rval);
+}
+
+//
+// P_LocalPlayerTick
+//
+
+void P_LocalPlayerTick(void)
+{
+    worldState_t *ws;
+    playerInfo_t *info;
+    int current;
+
+    if(client.state != CL_STATE_INGAME)
+        return;
+
+    ws = &localPlayer.worldState;
+    info = &localPlayer.info;
+
+    ws->timeStamp = (float)info->cmd.timestamp.i;
+    ws->frameTime = info->cmd.frametime.f;
+
+    // update controller in case movement was corrected by server
+    Vec_Copy3(ws->origin, localPlayer.actor->origin);
+
+    P_LocalPlayerEvent("onLocalTick");
 
     // TODO - AREA/LOCALTICK
 
     current = (info->netseq.outgoing-1) & (NETBACKUPS-1);
-    Vec_Copy3(localPlayer.oldMoves[current], ctrl->origin);
+    Vec_Copy3(localPlayer.oldMoves[current], ws->origin);
     localPlayer.oldCmds[current] = info->cmd;
     localPlayer.latency[current] = client.time;
+    localPlayer.actor->plane = (ws->plane - gLevel.planes);
+
+    Vec_Copy3(localPlayer.actor->origin, ws->origin);
+    Vec_Copy3(localPlayer.actor->angles, ws->angles);
+    Actor_UpdateTransform(localPlayer.actor);
 }
 
 //
@@ -250,10 +334,10 @@ void P_SpawnLocalPlayer(void)
     jsval val;
     JSScopeProperty *sprop;
     int playerID;
-    gActor_t *pStart;
     gActor_t *camera;
+    gActor_t *pStart;
     gObject_t *pObject;
-    aController_t *ctrl;
+    worldState_t *ws;
 
     playerID = -1;
     pStart = NULL;
@@ -318,13 +402,16 @@ void P_SpawnLocalPlayer(void)
     localPlayer.actor = pStart;
     localPlayer.playerObject = pObject;
 
-    ctrl = &localPlayer.controller;
+    ws = &localPlayer.worldState;
 
-    Vec_Copy3(ctrl->origin, pStart->origin);
-    Vec_Copy3(ctrl->angles, pStart->angles);
+    Vec_Copy3(ws->origin, pStart->origin);
+    Vec_Copy3(ws->angles, pStart->angles);
+    Vec_Set3(ws->velocity, 0, 0, 0);
+    Vec_Set3(ws->accel, 0, 0, 0);
+    ws->actor = localPlayer.actor;
 
     if(pStart->plane != -1)
-        ctrl->plane = &gLevel.planes[pStart->plane];
+        ws->plane = &gLevel.planes[pStart->plane];
 
     // spawn an actor to be used for the camera
     camera = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
@@ -333,9 +420,12 @@ void P_SpawnLocalPlayer(void)
     camera->bTouch = false;
     camera->bClientOnly = true;
     camera->plane = -1;
+    strcpy(camera->name, "Camera");
     Vec_Copy3(camera->origin, pStart->origin);
     Vec_Copy3(camera->angles, pStart->angles);
     Vec_Copy4(camera->rotation, pStart->rotation);
     Map_AddActor(&gLevel, camera);
     localPlayer.camera = camera;
+
+    client.player = &localPlayer;
 }

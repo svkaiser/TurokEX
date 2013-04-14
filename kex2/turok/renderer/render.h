@@ -177,6 +177,7 @@ kmodel_t *Mdl_Load(const char *file);
 //
 
 extern float rRenderTime;
+extern kbool showorigin;
 
 void R_DrawFrame(void);
 void R_FinishFrame(void);
@@ -202,7 +203,10 @@ void R_RenderCameraView(void);
 //
 
 void R_DrawCollision(void);
+void R_DrawPlaneNormals(void);
+void R_DrawRadius(float x, float y, float z, float radius, float height);
 void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b);
+void R_DrawOrigin(vec3_t origin, float size);
 
 //
 // FONT

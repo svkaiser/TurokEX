@@ -94,7 +94,7 @@ typedef struct
     byte a;
 } dPalette_t;
 
-static void ConvertPalette(dPalette_t* palette, word* data, int indexes)
+static void ConvertPalette(dPalette_t* palette, word* data, int indexes, dboolean fxTexture)
 {
     int i;
     short val;
@@ -108,10 +108,25 @@ static void ConvertPalette(dPalette_t* palette, word* data, int indexes)
         val = Com_Swap16(val);
         
         // Unpack and expand to 8bpp, then flip from BGR to RGB.
-        palette[i].r = (val & 0x003E) << 2;
-        palette[i].g = (val & 0x07C0) >> 3;
-        palette[i].b = (val & 0xF800) >> 8;
-        palette[i].a = (val & 0x0001) ? 0xff : 0;
+        
+
+        if(fxTexture)
+        {
+            /*palette[i].r = (val & 0xF800) >> 8;
+            palette[i].g = (val & 0xF800) >> 8;
+            palette[i].b = (val & 0xF800) >> 8;*/
+            palette[i].r = (val & 0x003E) << 2;
+            palette[i].g = (val & 0x07C0) >> 3;
+            palette[i].b = (val & 0xF800) >> 8;
+            palette[i].a = (val & 0x00FF);
+        }
+        else
+        {
+            palette[i].r = (val & 0x003E) << 2;
+            palette[i].g = (val & 0x07C0) >> 3;
+            palette[i].b = (val & 0xF800) >> 8;
+            palette[i].a = (val & 0x0001) ? 0xFF : 0;
+        }
     }
 }
 
@@ -187,19 +202,8 @@ void AddTexture(byte *data, int size, const char *path)
                     CHUNK_PALDATA_OFFSET(0), &palsize);
             }
 
-            ConvertPalette(pal, (word*)paldata, (palsize / 2));
-
-            if(tex->flags & 0x2)
-            {
-                int j;
-
-                for(j = 0; j < 16; j++)
-                {
-                    pal[j].r = (j * 0x10);
-                    pal[j].g = (j * 0x10);
-                    pal[j].b = (j * 0x10);
-                }
-            }
+            ConvertPalette(pal, (word*)paldata,
+                (palsize / 2), (tex->flags & 0x2));
         }
 
         Com_WriteMem8(rover, tga.infolen);

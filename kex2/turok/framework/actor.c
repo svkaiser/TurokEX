@@ -68,11 +68,23 @@ void Actor_OnTouchEvent(gActor_t *actor, gActor_t *instigator)
 
 void Actor_UpdateTransform(gActor_t *actor)
 {
+    if(!actor->bStatic)
+    {
+        vec4_t yaw;
+        vec4_t pitch;
+
+        Vec_SetQuaternion(yaw, actor->angles[0], 0, 1, 0);
+        Vec_SetQuaternion(pitch, actor->angles[1], 1, 0, 0);
+        Vec_MultQuaternion(actor->rotation, pitch, yaw);
+    }
+
     Mtx_ApplyRotation(actor->rotation, actor->matrix);
+
     Mtx_Scale(actor->matrix,
         actor->scale[0],
         actor->scale[1],
         actor->scale[2]);
+
     Mtx_AddTranslation(actor->matrix,
         actor->origin[0],
         actor->origin[1],

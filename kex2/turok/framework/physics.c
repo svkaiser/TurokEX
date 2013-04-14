@@ -36,7 +36,7 @@
 // G_ClipVelocity
 //
 
-static void G_ClipVelocity(vec3_t out, vec3_t velocity, vec3_t normal, float fudge)
+void G_ClipVelocity(vec3_t out, vec3_t velocity, vec3_t normal, float fudge)
 {
     float d;
     vec3_t n;
@@ -47,9 +47,7 @@ static void G_ClipVelocity(vec3_t out, vec3_t velocity, vec3_t normal, float fud
     d = Vec_Unit3(out);
 
     if(d != 0)
-    {
         Vec_Scale(out, out, Vec_Unit3(velocity) / d);
-    }
 }
 
 //

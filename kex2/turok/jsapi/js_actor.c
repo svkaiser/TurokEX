@@ -69,7 +69,7 @@ JS_PROP_FUNC_GET(GameActor)
         return JS_TRUE;
 
     case 7:
-        JS_INSTQUATERNION(js_objGameActor, vp, actor->rotation);
+        JS_NEWQUATERNION(actor->rotation);
         return JS_TRUE;
 
     case 8:
@@ -155,6 +155,15 @@ JS_PROP_FUNC_GET(GameActor)
         JS_RETURNBOOLEAN(vp, actor->bHidden);
         return JS_TRUE;
 
+    case 19:
+        return JS_NewDoubleValue(cx, actor->angles[0], vp);
+
+    case 20:
+        return JS_NewDoubleValue(cx, actor->angles[1], vp);
+
+    case 21:
+        return JS_NewDoubleValue(cx, actor->angles[2], vp);
+
     default:
         return JS_TRUE;
     }
@@ -166,6 +175,7 @@ JS_PROP_FUNC_SET(GameActor)
 {
     gActor_t *actor;
     JSObject *object;
+    jsdouble dval;
 
     if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, obj, &GameActor_class, NULL)))
         return JS_TRUE;
@@ -199,8 +209,33 @@ JS_PROP_FUNC_SET(GameActor)
         actor->plane = JSVAL_TO_INT(*vp);
         return JS_TRUE;
 
+    case 14:
+        JS_GETNUMBER(dval, vp, 0);
+        actor->centerHeight = (float)dval;
+        return JS_TRUE;
+
+    case 15:
+        JS_GETNUMBER(dval, vp, 0);
+        actor->viewHeight = (float)dval;
+        return JS_TRUE;
+
     case 18:
         JS_GETBOOL(actor->bHidden, vp, 0);
+        return JS_TRUE;
+
+    case 19:
+        JS_GETNUMBER(dval, vp, 0);
+        actor->angles[0] = (float)dval;
+        return JS_TRUE;
+
+    case 20:
+        JS_GETNUMBER(dval, vp, 0);
+        actor->angles[1] = (float)dval;
+        return JS_TRUE;
+
+    case 21:
+        JS_GETNUMBER(dval, vp, 0);
+        actor->angles[2] = (float)dval;
         return JS_TRUE;
 
     default:
@@ -261,6 +296,9 @@ JS_BEGINPROPS(GameActor)
     { "matrix",         16, JSPROP_ENUMERATE, NULL, NULL },
     { "components",     17, JSPROP_ENUMERATE, NULL, NULL },
     { "bHidden",        18, JSPROP_ENUMERATE, NULL, NULL },
+    { "yaw",            19, JSPROP_ENUMERATE, NULL, NULL },
+    { "pitch",          20, JSPROP_ENUMERATE, NULL, NULL },
+    { "roll",           21, JSPROP_ENUMERATE, NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 

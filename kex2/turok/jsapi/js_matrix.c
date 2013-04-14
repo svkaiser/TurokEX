@@ -471,13 +471,13 @@ static JSBool matrix_multRotations(JSContext *cx, JSObject *obj, uintN argc,
 // matrix_fromQuaternion
 //
 
-static JSBool matrix_fromQuaternion(JSContext *cx, JSObject *obj, uintN argc,
-                           jsval *argv, jsval *rval)
+JS_FASTNATIVE_BEGIN(Matrix, fromQuaternion)
 {
     JSObject *nobj;
+    JSObject *rotobj;
     jsval *v;
     mtx_t *outmtx = NULL;
-    vec4_t *rot = NULL;
+    vec4_t rot;
 
     if(argc <= 0)
         return JS_FALSE;
@@ -485,12 +485,13 @@ static JSBool matrix_fromQuaternion(JSContext *cx, JSObject *obj, uintN argc,
     if(!(nobj = JS_NewObject(cx, &Matrix_class, NULL, NULL)))
         return JS_FALSE;
 
-    v = JS_ARGV(cx, argv);
+    v = JS_ARGV(cx, vp);
 
-    JS_GETQUATERNION(rot, v, -2);
+    JS_GETOBJECT(rotobj, v, 0);
+    JS_GETQUATERNION2(rotobj, rot);
 
     outmtx = (mtx_t*)JS_malloc(cx, sizeof(mtx_t));
-    Mtx_ApplyRotation(*rot, *outmtx);
+    Mtx_ApplyRotation(rot, *outmtx);
 
     if(!(JS_SetPrivate(cx, nobj, outmtx)))
     {
@@ -498,7 +499,7 @@ static JSBool matrix_fromQuaternion(JSContext *cx, JSObject *obj, uintN argc,
         return JS_FALSE;
     }
 
-    JS_SET_RVAL(cx, rval, OBJECT_TO_JSVAL(nobj));
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));
     return JS_TRUE;
 }
 
@@ -564,7 +565,7 @@ JSFunctionSpec Matrix_functions_static[] =
     JS_FS("setModelView",   matrix_modelview,       0, 0, 0),
     JS_FS("multiply",       matrix_multiply,        2, 0, 0),
     JS_FS("multRotations",  matrix_multRotations,   2, 0, 0),
-    JS_FS("fromQuaternion", matrix_fromQuaternion,  1, 0, 0),
+    JS_FASTNATIVE(Matrix, fromQuaternion, 1),
     JS_FS_END
 };
 

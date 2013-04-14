@@ -65,7 +65,7 @@ void Ctrl_SetDirection(aController_t *ctrl,
 // Ctrl_ApplyFriction
 //
 
-void Ctrl_ApplyFriction(aController_t *ctrl, float friction, kbool effectY)
+void Ctrl_ApplyFriction(aController_t *ctrl, float friction)
 {
     float speed;
 
@@ -86,9 +86,30 @@ void Ctrl_ApplyFriction(aController_t *ctrl, float friction, kbool effectY)
         // de-accelerate velocity
         ctrl->velocity[0] = ctrl->velocity[0] * clipspeed;
         ctrl->velocity[2] = ctrl->velocity[2] * clipspeed;
+    }
+}
 
-        if(effectY)
-            ctrl->velocity[1] = ctrl->velocity[1] * clipspeed;
+//
+// Ctrl_ApplyVerticalFriction
+//
+
+void Ctrl_ApplyVerticalFriction(aController_t *ctrl, float friction)
+{
+    float speed;
+
+    speed = ctrl->velocity[1];
+
+    if(speed < VELOCITY_EPSILON)
+        ctrl->velocity[1] = 0;
+    else
+    {
+        float clipspeed = speed - (speed * friction);
+
+        if(clipspeed < 0) clipspeed = 0;
+        clipspeed /= speed;
+
+        // de-accelerate velocity
+        ctrl->velocity[1] = ctrl->velocity[1] * clipspeed;
     }
 }
 
@@ -116,6 +137,19 @@ void Ctrl_Accelerate(aController_t *ctrl, float speed, float accel, int v)
 }
 
 //
+// Ctrl_Lerp
+//
+
+float Ctrl_Lerp(aController_t *ctrl, float cur, float next, float time)
+{
+    float t = (time * (60 * ctrl->frameTime));
+    if(t > 1)
+        return next;
+    
+    return (next - cur) * t + cur;
+}
+
+//
 // Ctrl_ApplyGravity
 //
 
@@ -125,5 +159,5 @@ void Ctrl_ApplyGravity(aController_t *ctrl, float gravity)
     gActor_t *actor = ctrl->owner;
 
     if((actor->origin[1] - Plane_GetDistance(plane, actor->origin)) > 0.01f)
-        actor->origin[1] -= ((gravity * ctrl->frameTime) * ctrl->frameTime);
+        actor->origin[1] -= (gravity * ctrl->frameTime);
 }

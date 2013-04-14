@@ -61,7 +61,7 @@ void R_RenderCameraView(void)
     // setup modelview matrix
     dglMatrixMode(GL_MODELVIEW);
     Mtx_Identity(mtx);
-    Vec_SetQuaternion(yaw, camera->angles[0], 0, 1, 0);
+    Vec_SetQuaternion(yaw, -camera->angles[0] + M_PI, 0, 1, 0);
     Vec_SetQuaternion(pitch, camera->angles[1], 1, 0, 0);
     Vec_SetQuaternion(roll, camera->angles[2], 0,
         (float)sin(camera->angles[1]), (float)cos(camera->angles[1]));

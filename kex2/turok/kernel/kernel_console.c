@@ -62,6 +62,8 @@ kbool Con_ProcessConsoleInput(event_t *ev)
         return false;
     if(!JS_ValueToObject(cx, val, &cObject))
         return false;
+    if(cObject == NULL)
+        return false;
     if(!JS_GetProperty(cx, cObject, "processInput", &val))
         return false;
     if(!JS_ValueToObject(cx, val, &function))
@@ -97,6 +99,8 @@ void Con_Ticker(void)
         return;
     if(!JS_ValueToObject(cx, val, &cObject))
         return;
+    if(cObject == NULL)
+        return;
     if(!JS_GetProperty(cx, cObject, "tick", &val))
         return;
     if(!JS_ValueToObject(cx, val, &function))
@@ -122,6 +126,8 @@ void Con_Drawer(void)
     if(!JS_GetProperty(cx, js_gobject, "Console", &val))
         return;
     if(!JS_ValueToObject(cx, val, &cObject))
+        return;
+    if(cObject == NULL)
         return;
     if(!JS_GetProperty(cx, cObject, "draw", &val))
         return;
@@ -176,6 +182,8 @@ void Con_Printf(rcolor clr, const char *s)
     if(!JS_GetProperty(cx, js_gobject, "Console", &val))
         return;
     if(!JS_ValueToObject(cx, val, &cObject))
+        return;
+    if(cObject == NULL)
         return;
     if(!JS_GetProperty(cx, cObject, "print", &val))
         return;

@@ -41,7 +41,8 @@ typedef enum
     CL_STATE_CONNECTING,
     CL_STATE_CONNECTED,
     CL_STATE_DISCONNECTED,
-    CL_STATE_READY
+    CL_STATE_READY,
+    CL_STATE_INGAME
 } client_state_e;
 
 typedef struct
