@@ -45,7 +45,8 @@ class.properties(Shotgun,
     {
         if(this.super.prototype.checkAttack.bind(this)())
         {
-            Snd.play('sounds/shaders/riot_shotgun_shot.ksnd');
+            this.spawnFx('fx/muzzle_shotgun.kfx', -6.656, -2.7648, 15.696);
+            ClientPlayer.component.aShotgunAttack();
             return true;
         }
         
@@ -59,6 +60,7 @@ class.properties(Shotgun,
             if(!this.bReload)
             {
                 this.bReload = true;
+                this.spawnFx('fx/shotshell.kfx', -11.26, -8.19, 20.736);
                 Snd.play('sounds/shaders/ready_shotgun.ksnd');
             }
         }

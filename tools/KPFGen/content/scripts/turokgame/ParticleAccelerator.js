@@ -78,7 +78,7 @@ class.properties(ParticleAccelerator,
         if(this.bCharging)
             return true;
         
-        if(Client.localPlayer.command.getAction('+attack'))
+        if(ClientPlayer.command.getAction('+attack'))
         {
             this.animState.blendAnim(this.anim_Charge,
                 this.playSpeed, 125.0, NRender.ANIM_LOOP);
@@ -99,7 +99,7 @@ class.properties(ParticleAccelerator,
             return;
         }
         
-        if(Client.localPlayer.command.getActionHeldTime('+attack') > 0 && this.bCharging)
+        if(ClientPlayer.command.getActionHeldTime('+attack') > 0 && this.bCharging)
             return;
         else
         {

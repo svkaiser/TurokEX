@@ -45,6 +45,19 @@ class.properties(GrenadeLauncher,
         if(this.super.prototype.checkAttack.bind(this)())
         {
             Snd.play('sounds/shaders/grenade_launch.ksnd');
+            
+            // TODO
+            var actor = ClientPlayer.actor;
+
+            var mtx = Matrix.fromQuaternion(actor.rotation);
+            mtx.addTranslation(
+                ClientPlayer.camera.origin.x,
+                ClientPlayer.camera.origin.y,
+                ClientPlayer.camera.origin.z);
+
+            this.spawnFx('fx/projectile_grenade.kfx', -18.432, -5.12, -25.6);  
+            this.spawnFx('fx/muzzle_grenade_launcher.kfx', -10.35, -2.048, 18.432);
+                
             return true;
         }
         

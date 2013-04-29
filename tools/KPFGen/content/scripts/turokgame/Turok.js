@@ -7,8 +7,11 @@
 
 // components
 Sys.runScript('scripts/turokgame/ComponentTurokPlayer.js');
+Sys.runScript('scripts/turokgame/ComponentTurokAI.js');
 Sys.runScript('scripts/turokgame/TurokPickup.js');
 Sys.runScript('scripts/turokgame/ComponentAreaAmbience.js');
+
+// pickup components
 Sys.runScript('scripts/turokgame/TurokPickupLifeForce.js');
 Sys.runScript('scripts/turokgame/TurokPickupWeapon.js');
 Sys.runScript('scripts/turokgame/TurokPickupWeaponPistol.js');
@@ -22,6 +25,37 @@ Sys.runScript('scripts/turokgame/TurokPickupWeaponAlienRifle.js');
 Sys.runScript('scripts/turokgame/TurokPickupWeaponRocketLauncher.js');
 Sys.runScript('scripts/turokgame/TurokPickupWeaponAccelerator.js');
 Sys.runScript('scripts/turokgame/TurokPickupWeaponFusion.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmo.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoArrows.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoCell.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoCellLarge.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoCharges.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoClip.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoClipBox.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoExpShells.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoExpShellsBox.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoGrenades.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoGrenadesBox.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoMiniGun.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoRockets.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoShells.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoShellsBox.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoTekArrows.js');
+Sys.runScript('scripts/turokgame/TurokPickupAmmoTekArrowsPack.js');
+Sys.runScript('scripts/turokgame/TurokPickupArmor.js');
+Sys.runScript('scripts/turokgame/TurokPickupBackpack.js');
+Sys.runScript('scripts/turokgame/TurokPickupHealth.js');
+Sys.runScript('scripts/turokgame/TurokPickupFullHealth.js');
+Sys.runScript('scripts/turokgame/TurokPickupHealthMedium.js');
+Sys.runScript('scripts/turokgame/TurokPickupHealthLarge.js');
+Sys.runScript('scripts/turokgame/TurokPickupHealthSmall.js');
+Sys.runScript('scripts/turokgame/TurokPickupHealthUltra.js');
+Sys.runScript('scripts/turokgame/TurokPickupMortalWound.js');
+Sys.runScript('scripts/turokgame/TurokPickupSpiritual.js');
+
+// AI components
+Sys.runScript('scripts/turokgame/TurokAIGrunt.js');
+Sys.runScript('scripts/turokgame/TurokAIFish.js');
 
 // ambience
 Sys.runScript('scripts/turokgame/AmbienceJungle.js');
@@ -34,8 +68,14 @@ Sys.runScript('scripts/turokgame/AmbienceLostLand.js');
 Sys.runScript('scripts/turokgame/AmbienceValley.js');
 Sys.runScript('scripts/turokgame/AmbienceVillage.js');
 
-// features
+// hud
 Sys.runScript('scripts/turokgame/TurokHud.js');
+
+// shot traces
+Sys.runScript('scripts/turokgame/ShotTrace.js');
+Sys.runScript('scripts/turokgame/ShotTracePlayerPistol.js');
+Sys.runScript('scripts/turokgame/ShotTracePlayerShotgun.js');
+Sys.runScript('scripts/turokgame/ShotTracePlayerRifle.js');
 
 // weapons
 Sys.runScript('scripts/turokgame/AlienRifle.js');
@@ -53,12 +93,27 @@ Sys.runScript('scripts/turokgame/PulseRifle.js');
 Sys.runScript('scripts/turokgame/Rifle.js');
 Sys.runScript('scripts/turokgame/Shotgun.js');
 
+// ammo
+Sys.runScript('scripts/turokgame/Ammo.js');
+Sys.runScript('scripts/turokgame/AmmoArrow.js');
+Sys.runScript('scripts/turokgame/AmmoCell.js');
+Sys.runScript('scripts/turokgame/AmmoCharge.js');
+Sys.runScript('scripts/turokgame/AmmoClip.js');
+Sys.runScript('scripts/turokgame/AmmoExpShell.js');
+Sys.runScript('scripts/turokgame/AmmoGrenade.js');
+Sys.runScript('scripts/turokgame/AmmoMini.js');
+Sys.runScript('scripts/turokgame/AmmoRocket.js');
+Sys.runScript('scripts/turokgame/AmmoShell.js');
+Sys.runScript('scripts/turokgame/AmmoTekArrow.js');
+
 // packet events
 Sys.runScript('scripts/turokgame/PacketEventRequestWeapon.js');
 Sys.runScript('scripts/turokgame/PacketEventChangeWeapon.js');
 
 // cvars
 Sys.addCvar('g_wpnautoswitch', '1');
+Sys.addCvar('g_displayplayerinfo', '0');
+Sys.addCvar('g_weaponbobbing', '0');
 
 // input
 Input.add(0, '+attack');
@@ -85,10 +140,10 @@ Input.add(12, '+prevweap');
 Input.add(12, '-prevweap');
 
 // initialize game
-Game.event_GameInitialized = function()
+/*Game.event_GameInitialized = function()
 {
-    PacketManager.add(PacketEventRequestWeapon);
-    PacketManager.add(PacketEventChangeWeapon);
+    //PacketManager.add(PacketEventRequestWeapon);
+    //PacketManager.add(PacketEventChangeWeapon);
     
     Game.giveAll = function()
     {
@@ -109,4 +164,4 @@ Game.event_GameInitialized = function()
     }
     
     Server.addMessageEvent(Game.giveAll, 'giveall');
-}
+}*/

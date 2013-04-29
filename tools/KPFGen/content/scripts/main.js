@@ -15,12 +15,22 @@ Sys.runScript('scripts/base/Math.js');
 Sys.runScript('scripts/base/Array.js');
 
 Sys.runScript('scripts/subsystems/Input.js');
-Sys.runScript('scripts/subsystems/Client.js');
-Sys.runScript('scripts/subsystems/Server.js');
 Sys.runScript('scripts/subsystems/Render.js');
-Sys.runScript('scripts/subsystems/Game.js');
+
+Sys.runScript('scripts/framework/Controller.js');
+Sys.runScript('scripts/framework/ControllerPlayer.js');
+Sys.runScript('scripts/framework/PacketManager.js');
+Sys.runScript('scripts/framework/Console.js');
 
 // TEMP
+const EV_KEYDOWN                = 0;
+const EV_KEYUP                  = 1;
+const EV_MOUSE                  = 2;
+const EV_MOUSEDOWN              = 3;
+const EV_MOUSEUP                = 4;
+const EV_MOUSEWHEEL             = 5;
+const EV_GAMEPAD                = 6;
+
 Sys.runScript('scripts/framework/ComponentPlayerStart.js');
 Sys.runScript('scripts/framework/ComponentAreaFog.js');
 Sys.runScript('scripts/framework/ComponentAreaWater.js');

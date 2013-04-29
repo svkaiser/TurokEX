@@ -120,6 +120,8 @@ static void Map_ParseCollisionPlanes(scparser_t *parser,
 
         Plane_GetNormal(pl->normal, pl);
         Vec_Normalize3(pl->normal);
+        Plane_GetCeilingNormal(pl->ceilingNormal, pl);
+        Vec_Normalize3(pl->ceilingNormal);
     }
 
     SC_ExpectNextToken(TK_RBRACK);
@@ -310,7 +312,7 @@ void Map_RemoveActor(gLevel_t *level, gActor_t* actor)
     * point it to actor->prev, so the iterator will correctly move on to
     * actor->prev->next = actor->next */
     (next->prev = level->actorRover = actor->prev)->next = next;
-    Z_Free(actor);
+    Actor_Remove(actor);
 }
 
 //
@@ -353,6 +355,8 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
             actor->bbox.max[0] = (float)SC_GetFloat();
             actor->bbox.max[1] = (float)SC_GetFloat();
             actor->bbox.max[2] = (float)SC_GetFloat();
+            Vec_Sub(actor->bbox.dim,
+                actor->bbox.max, actor->bbox.min);
             SC_ExpectNextToken(TK_RBRACK);
             break;
 
@@ -953,27 +957,21 @@ static void FCmd_LoadTestMap(void)
 
 static void FCmd_SpawnActor(void)
 {
-    vec3_t origin;
+    float x;
+    float y;
+    float z;
+    char *name;
     gActor_t *actor;
 
     if(Cmd_GetArgc() <= 0)
         return;
 
-    origin[0] = (float)atof(Cmd_GetArgv(1));
-    origin[1] = (float)atof(Cmd_GetArgv(2));
-    origin[2] = (float)atof(Cmd_GetArgv(3));
+    name    = Cmd_GetArgv(1);
+    x       = (float)atof(Cmd_GetArgv(2));
+    y       = (float)atof(Cmd_GetArgv(3));
+    z       = (float)atof(Cmd_GetArgv(4));
 
-    actor = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
-
-    Vec_Copy3(actor->origin, origin);
-    Vec_Set3(actor->scale, 0.25f, 0.25f, 0.25f);
-    actor->model = Mdl_Load("models/default.kmesh");
-    Vec_Set3(actor->bbox.min, -32, -32, -32);
-    Vec_Set3(actor->bbox.max, 32, 32, 32);
-    actor->bStatic = true;
-    actor->plane = -1;
-    Map_AddActor(&gLevel, actor);
-    Actor_Setup(actor);
+    actor = Actor_Spawn(name, x, y, z, client.player->actor->angles[0], 0, -1);
 }
 
 //

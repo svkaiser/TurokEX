@@ -24,7 +24,7 @@ Server = class.extendNative(NServer, function()
     // FUNCTIONS
     //------------------------------------------------------------------------
     
-    this.addSVClient = function(ev)
+    /*this.addSVClient = function(ev)
     {
         for(var i = 0; i < this.clients.length; i++)
         {
@@ -208,5 +208,5 @@ Server = class.extendNative(NServer, function()
     this.addMessageEvent(this.cmdFly, 'fly');
     
     PacketManager.add(PacketEventClientInfo);
-    PacketManager.add(PacketEventUpdateClient);
+    PacketManager.add(PacketEventUpdateClient);*/
 });

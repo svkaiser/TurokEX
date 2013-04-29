@@ -240,7 +240,8 @@ static JSBool plane_toIndex(JSContext *cx, uintN argc, jsval *vp)
     plane_t *plane = NULL;
 
     JS_THISPLANE(plane, vp);
-    return JS_NewDoubleValue(cx, (jsdouble)(plane - gLevel.planes), vp);
+    JS_SET_RVAL(cx, vp, INT_TO_JSVAL(plane - gLevel.planes));
+    return JS_TRUE;
 }
 
 //

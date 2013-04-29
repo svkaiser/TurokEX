@@ -44,6 +44,7 @@ class.properties(MissileLauncher,
     {
         if(this.super.prototype.checkAttack.bind(this)())
         {
+            this.spawnFx('fx/projectile_rocket.kfx', -4.096, -14.336, -25.6);
             Snd.play('sounds/shaders/missile_launch.ksnd');
             Snd.play('sounds/shaders/reload_missile_launcher.ksnd');
             return true;

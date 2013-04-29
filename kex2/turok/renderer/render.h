@@ -104,7 +104,8 @@ typedef enum
     ANF_BLEND       = 1,
     ANF_LOOP        = 2,
     ANF_STOPPED     = 4,
-    ANF_NOINTERRUPT = 8
+    ANF_NOINTERRUPT = 8,
+    ANF_ROOTMOTION  = 16
 } animflags_t;
 
 typedef struct anim_s
@@ -144,6 +145,7 @@ typedef struct
     float               frametime;
     float               blendtime;
     int                 flags;
+    vec3_t              rootMotion;
 } animstate_t;
 
 typedef struct kmodel_s

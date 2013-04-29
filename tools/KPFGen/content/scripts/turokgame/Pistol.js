@@ -13,7 +13,7 @@ Pistol = class.extends(Weapon, function()
     this.model          = Sys.loadModel(this.modelfile);
     
     this.origin.x       = -160.42698;
-    this.origin.y       = -184.32036;
+    this.origin.y       = -184.32036-16;
     this.origin.z       = -16.04216;
     
     this.anim_Idle      = Sys.loadAnimation(this.model, "anim00");
@@ -42,9 +42,16 @@ class.properties(Pistol,
     
     checkAttack : function()
     {
-        if(this.super.prototype.checkAttack.bind(this)())
+        if(ClientPlayer.command.getAction('+attack'))
         {
-            Snd.play('sounds/shaders/pistol_shot.ksnd');
+            this.spawnFx('fx/muzzle_pistol.kfx', -6.656, -3.2, 15.696);
+            this.spawnFx('fx/bulletshell.kfx', -10.24, -10.24, 15.648);
+            
+            this.animState.blendAnim(this.anim_Fire,
+                this.playSpeed, 6.0, NRender.ANIM_NOINTERRUPT);
+            
+            ClientPlayer.component.aPistolAttack();
+            this.state = WS_FIRING;
             return true;
         }
         

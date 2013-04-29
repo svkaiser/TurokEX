@@ -57,7 +57,7 @@ void G_Ticker(void)
         g_currentmap->time = (float)g_currentmap->tics * 0.1f;
     }
 
-    Actor_ComponentFunc("onTick");
+    Actor_Tick();
 }
 
 //
@@ -66,7 +66,7 @@ void G_Ticker(void)
 
 void G_ClientThink(void)
 {
-    Actor_ComponentFunc("onLocalTick");
+    Actor_LocalTick();
 }
 
 //

@@ -48,7 +48,7 @@ class.properties(Bow,
         if(this.bAiming)
             return true;
         
-        if(Client.localPlayer.command.getAction('+attack'))
+        if(ClientPlayer.command.getAction('+attack'))
         {
             Snd.play('sounds/shaders/bow_stretch.ksnd');
             this.animState.blendAnim(this.anim_Aim,
@@ -70,7 +70,7 @@ class.properties(Bow,
             return;
         }
         
-        if(Client.localPlayer.command.getActionHeldTime('+attack') > 0 && this.bAiming)
+        if(ClientPlayer.command.getActionHeldTime('+attack') > 0 && this.bAiming)
             return;
         else
         {

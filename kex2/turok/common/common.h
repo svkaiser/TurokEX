@@ -249,18 +249,20 @@ typedef struct
     vec3_t      end;
     float       offset;
     float       width;
-    float       yaw;
+    kbool       bFullTrace;
     plane_t     *pl;
     plane_t     *hitpl;
     vec3_t      hitvec;
+    gActor_t    *hitActor;
     vec3_t      normal;
     float       frac;
     float       dist;
     gActor_t    *actor;
+    gActor_t    *source;
     tracetype_e type;
 } trace_t;
 
 trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
-              gActor_t *actor, float yaw);
+              gActor_t *actor, gActor_t *source, kbool bFullTrace);
 
 #endif

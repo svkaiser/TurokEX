@@ -38,7 +38,7 @@
 fx_t fxRoot;
 fx_t *fxRover;
 
-#define FX_RANDVAL() (float)(rand() % 20000 - 10000) * 0.0001f
+#define FX_RANDVAL() (float)((rand() % 20000) - 10000) * 0.0001f
 
 static fxfile_t *fx_hashlist[MAX_HASH];
 
@@ -559,6 +559,20 @@ static void FX_SetTranslationZ(vec3_t out, vec3_t vector, float r)
 }
 
 //
+// FX_SpawnChild
+//
+
+static fx_t *FX_SpawnChild(fx_t *parent, const char *file)
+{
+    vec4_t rot;
+
+    Vec_ToQuaternion(rot, parent->translation);
+
+    return FX_Spawn(file, NULL, parent->translation,
+        parent->origin, rot, parent->plane);
+}
+
+//
 // FX_DestroyEvent
 //
 
@@ -570,10 +584,7 @@ static void FX_DestroyEvent(fx_t *fx)
 
     // TODO
     if(fx->info->hitFX != NULL)
-    {
-        fx_t *nfx = FX_Spawn(fx->info->hitFX, NULL, fx->origin,
-            fx->origin, fx->rotation, fx->plane);
-    }
+        nfx = FX_SpawnChild(fx, fx->info->hitFX);
 
     if(fx->info->hitSnd != NULL)
         Snd_PlayShader(fx->info->hitSnd, (gActor_t*)nfx);
@@ -651,6 +662,7 @@ fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
         fx->info = info;
         fx->plane = plane;
         fx->frame = 0;
+        fx->source = source;
         fx->bAnimate = info->numTextures > 1 ? true : false;
         fx->frametime = client.time + info->animspeed;
         fx->textures = (texture_t**)Z_Calloc(sizeof(texture_t*) *
@@ -717,21 +729,9 @@ fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
         }
 
         Vec_Scale(fx->translation, translation, fx->forward);
-        if(!info->bAddOffset)
-        {
-            // TODO
-            //Vec_Add(fx->translation, fx->translation, origin);
-        }
-        else
-        {
-            vec3_t dir;
 
-            dir[0] = fx->rotation[0];
-            dir[1] = fx->rotation[1];
-            dir[2] = fx->rotation[2];
-
-            Vec_Add(fx->translation, fx->translation, dir);
-        }
+        if(info->bAddOffset)
+            Vec_Add(fx->translation, fx->translation, origin);
 
         //
         // process offsets
@@ -769,6 +769,133 @@ fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
 }
 
 //
+// FX_Move
+// Moves a particle towards its destination.
+// Handle any clipping if needed
+//
+
+static void FX_Move(fx_t *fx, vec3_t dest)
+{
+    trace_t trace;
+    float dist;
+    fxinfo_t *fxinfo;
+
+    if(fx->plane == NULL)
+        return;
+    
+    fxinfo = fx->info;
+
+    Vec_Add(dest, dest, fx->origin);
+    trace = Trace(fx->origin, dest, fx->plane, NULL, fx->source, true);
+    fx->plane = trace.pl;
+
+    switch(trace.type)
+    {
+    case TRT_WALL:
+    case TRT_EDGE:
+        switch(fx->info->onplane)
+        {
+        case VFX_BOUNCE:
+            G_ClipVelocity(fx->translation, fx->translation,
+                trace.normal, (1 + fxinfo->mass));
+            break;
+        case VFX_DESTROY:
+            FX_DestroyEvent(fx);
+            break;
+        default:
+            break;
+        }
+        break;
+    case TRT_OBJECT:
+        switch(fx->info->ontouch)
+        {
+        case VFX_BOUNCE:
+            G_ClipVelocity(fx->translation, fx->translation,
+                trace.normal, (1 + fxinfo->mass));
+            break;
+        case VFX_DESTROY:
+            FX_DestroyEvent(fx);
+            break;
+        default:
+            break;
+        }
+        break;
+    case TRT_NOHIT:
+    case TRT_SLOPE:
+        Vec_Copy3(fx->origin, dest);
+        break;
+    }
+
+    dist = fx->origin[1] -
+        (Plane_GetDistance(fx->plane, fx->origin) +
+        (fxinfo->bOffsetFromFloor ? 3.42f : 0));
+
+    if(dist <= 0.512f)
+    {
+        float d;
+
+        if(fxinfo->bStopAnimOnImpact)
+            fx->bAnimate = false;
+
+        switch(fxinfo->onplane)
+        {
+        case VFX_BOUNCE:
+            d = Vec_Unit3(fx->translation);
+            if(d >= 1.05f)
+            {
+                float bounce = (1 + fxinfo->mass);
+
+                if(d < 16.8f && fxinfo->mass < 1.0f)
+                    bounce = 0.2f;
+
+                G_ClipVelocity(fx->translation, fx->translation,
+                    fx->plane->normal, bounce);
+            }
+            else
+                Vec_Set3(fx->translation, 0, 0, 0);
+
+            // apply friction when sliding on the floor
+            G_ApplyFriction(fx->translation, 1 - fxinfo->friction, false);
+            break;
+        case VFX_DESTROY:
+            fx->origin[1] = fx->origin[1] - dist + 0.01f;
+            FX_DestroyEvent(fx);
+            break;
+        default:
+            break;
+        }
+    }
+
+    fx->translation[1] += (fx->gravity * client.runtime);
+
+    if(dist < 0.01f)
+        fx->origin[1] = fx->origin[1] - dist + 0.01f;
+
+    // clip against ceiling as well
+    if(fx->plane->flags & CLF_CHECKHEIGHT)
+    {
+        dist = Plane_GetHeight(fx->plane, fx->origin);
+
+        if((dist - fx->origin[1]) < 1.024f)
+        {
+            switch(fxinfo->onplane)
+            {
+            case VFX_BOUNCE:
+                G_ClipVelocity(fx->translation, fx->translation,
+                    fx->plane->ceilingNormal, (1 + fxinfo->mass));
+                break;
+            case VFX_DESTROY:
+                fx->origin[1] = dist - 1.024f;
+                FX_DestroyEvent(fx);
+                break;
+            default:
+                break;
+            }
+        }
+    }
+}
+
+//
 // FX_Ticker
 //
 
@@ -800,10 +927,7 @@ void FX_Ticker(void)
         fxinfo = fx->info;
 
         if(fxinfo->tickFX != NULL)
-        {
-            FX_Spawn(fxinfo->tickFX, NULL, fx->origin,
-                fx->origin, fx->rotation, fx->plane);
-        }
+            FX_SpawnChild(fx, fxinfo->tickFX);
 
         if(fxinfo->tickSnd != NULL)
             Snd_PlayShader(fxinfo->tickSnd, NULL);
@@ -885,100 +1009,20 @@ void FX_Ticker(void)
         Vec_Scale(dest, fx->translation, client.runtime);
 
         if(Vec_Unit3(dest) >= 0.001f)
-        {
-            trace_t trace;
-            float dist;
-
-            Vec_Add(dest, dest, fx->origin);
-            trace = Trace(fx->origin, dest, fx->plane, NULL, 0);
-            fx->plane = trace.pl;
-
-            switch(trace.type)
-            {
-            case TRT_SLOPE:
-                if(!Plane_IsAWall(trace.hitpl))
-                {
-                    Vec_Copy3(fx->origin, dest);
-                    break;
-                }
-            case TRT_WALL:
-            case TRT_EDGE:
-                // TODO
-                if(fx->info->onplane == VFX_BOUNCE)
-                {
-                    if(Plane_IsAWall(trace.hitpl) || trace.type == TRT_EDGE)
-                    {
-                        G_ClipVelocity(fx->translation, fx->translation,
-                            trace.normal, (1 + fxinfo->mass));
-                    }
-                }
-                if(fxinfo->onplane == VFX_DESTROY)
-                    FX_DestroyEvent(fx);
-                break;
-            case TRT_NOHIT:
-                Vec_Copy3(fx->origin, dest);
-                break;
-            }
-            
-            dist = fx->origin[1] - Plane_GetDistance(fx->plane, fx->origin);
-
-            if(dist <= 0.512f)
-            {
-                if(fxinfo->bStopAnimOnImpact)
-                    fx->bAnimate = false;
-
-                if(fxinfo->onplane == VFX_BOUNCE)
-                {
-                    float d = Vec_Unit3(fx->translation);
-
-                    if(d >= 1.05f)
-                    {
-                        float bounce = (1 + fxinfo->mass);
-
-                        if(d < 16.8f && fxinfo->mass < 1.0f)
-                            bounce = 0.2f;
-
-                        G_ClipVelocity(fx->translation, fx->translation,
-                            fx->plane->normal, bounce);
-                    }
-                    else
-                        Vec_Set3(fx->translation, 0, 0, 0);
-
-                    G_ApplyFriction(fx->translation, 1 - fxinfo->friction, false);
-                }
-                else if(fxinfo->onplane == VFX_DESTROY)
-                {
-                    
-                    fx->origin[1] = fx->origin[1] - dist + 0.01f;
-                    FX_DestroyEvent(fx);
-                }
-            }
-            else
-            {
-                if(fxinfo->bStopAnimOnImpact)
-                    fx->bAnimate = true;
-            }
-            
-            fx->translation[1] += (fx->gravity * client.runtime);
-
-            if(dist < 0.01f)
-                fx->origin[1] = fx->origin[1] - dist + 0.01f;
-        }
+            FX_Move(fx, dest);
 
         fx->dist = Vec_Length3(fx->origin, client.player->actor->origin);
         fx->lifetime -= time;
 
         if(fx->lifetime < 0)
         {
-            // TODO
-            if(fxinfo->expireFX != NULL)
-            {
-                fx_t *nfx = FX_Spawn(fxinfo->expireFX, NULL, fx->origin,
-                    fx->origin, fx->rotation, fx->plane);
+            fx_t *nfx = NULL;
 
-                if(nfx != NULL)
-                    Snd_PlayShader(fxinfo->expireSnd, (gActor_t*)nfx);
-            }
+            if(fxinfo->expireFX != NULL)
+                nfx = FX_SpawnChild(fx, fxinfo->expireFX); 
+
+            if(fxinfo->expireSnd != NULL)
+                Snd_PlayShader(fxinfo->expireSnd, (gActor_t*)nfx);
 
             FX_Kill(fx);
         }

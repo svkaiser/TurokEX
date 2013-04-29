@@ -387,6 +387,21 @@ JS_FASTNATIVE_BEGIN(Vector, toYaw)
     return JS_NewDoubleValue(cx, Ang_VectorToAngle(vector), vp);
 }
 
+JS_FASTNATIVE_BEGIN(Vector, toQuaternion)
+{
+    JSObject *obj;
+    vec3_t thisvec;
+    vec4_t rot;
+
+    JS_CHECKARGS(0);
+    obj = JS_THIS_OBJECT(cx, vp);
+    JS_GETVECTOR2(obj, thisvec);
+    Vec_ToQuaternion(rot, thisvec);
+
+    JS_NEWQUATERNIONPOOL(rot);
+    return JS_TRUE;
+}
+
 JS_FASTNATIVE_BEGIN(Vector, cross)
 {
     vec3_t outvec;
@@ -512,6 +527,25 @@ JS_FASTNATIVE_BEGIN(Vector, toWorld)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(Vector, applyRotation)
+{
+    JSObject *obj;
+    vec3_t outvec;
+    vec3_t vec;
+    vec4_t rot;
+
+    JS_CHECKARGS(2);
+    JS_GETOBJECT(obj, v, 0);
+    JS_GETVECTOR2(obj, vec);
+    JS_GETOBJECT(obj, v, 1);
+    JS_GETQUATERNION2(obj, rot);
+
+    Vec_ApplyQuaternion(outvec, vec, rot);
+
+    JS_NEWVECTORPOOL(outvec);
+    return JS_TRUE;
+}
+
 JS_BEGINCLASS(Vector)
     JSCLASS_HAS_PRIVATE |
     JSCLASS_HAS_RESERVED_SLOTS(6),              // flags
@@ -536,30 +570,32 @@ JS_BEGINPROPS(Vector)
 
 JS_BEGINFUNCS(Vector)
 {
-    JS_FASTNATIVE(Vector, copy,         1),
-    JS_FASTNATIVE(Vector, clear,        0),
-    JS_FASTNATIVE(Vector, add,          1),
-    JS_FASTNATIVE(Vector, sub,          1),
-    JS_FASTNATIVE(Vector, multiply,     1),
-    JS_FASTNATIVE(Vector, normalize,    0),
-    JS_FASTNATIVE(Vector, lerp,         2),
-    JS_FASTNATIVE(Vector, scale,        1),
-    JS_FASTNATIVE(Vector, toString,     0),
-    JS_FASTNATIVE(Vector, unit2,        0),
-    JS_FASTNATIVE(Vector, unit3,        0),
-    JS_FASTNATIVE(Vector, toYaw,        0),
+    JS_FASTNATIVE(Vector, copy,             1),
+    JS_FASTNATIVE(Vector, clear,            0),
+    JS_FASTNATIVE(Vector, add,              1),
+    JS_FASTNATIVE(Vector, sub,              1),
+    JS_FASTNATIVE(Vector, multiply,         1),
+    JS_FASTNATIVE(Vector, normalize,        0),
+    JS_FASTNATIVE(Vector, lerp,             2),
+    JS_FASTNATIVE(Vector, scale,            1),
+    JS_FASTNATIVE(Vector, toString,         0),
+    JS_FASTNATIVE(Vector, unit2,            0),
+    JS_FASTNATIVE(Vector, unit3,            0),
+    JS_FASTNATIVE(Vector, toYaw,            0),
+    JS_FASTNATIVE(Vector, toQuaternion,     0),
     JS_FS_END
 };
 
 JS_BEGINSTATICFUNCS(Vector)
 {
-    JS_FASTNATIVE(Vector, cross,        2),
-    JS_FASTNATIVE(Vector, dot,          2),
-    JS_FASTNATIVE(Vector, gScale,       2),
-    JS_FASTNATIVE(Vector, length2,      2),
-    JS_FASTNATIVE(Vector, length3,      2),
-    JS_FASTNATIVE(Vector, pointToAxis,  2),
-    JS_FASTNATIVE(Vector, toWorld,      2),
+    JS_FASTNATIVE(Vector, cross,            2),
+    JS_FASTNATIVE(Vector, dot,              2),
+    JS_FASTNATIVE(Vector, gScale,           2),
+    JS_FASTNATIVE(Vector, length2,          2),
+    JS_FASTNATIVE(Vector, length3,          2),
+    JS_FASTNATIVE(Vector, pointToAxis,      2),
+    JS_FASTNATIVE(Vector, toWorld,          2),
+    JS_FASTNATIVE(Vector, applyRotation,    2),
     JS_FS_END
 };
 

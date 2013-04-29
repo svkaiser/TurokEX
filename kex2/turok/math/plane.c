@@ -51,15 +51,29 @@ void Plane_GetNormal(vec3_t normal, plane_t *plane)
 {
     vec3_t vp1;
     vec3_t vp2;
-    vec3_t vn;
 
     Vec_Sub(vp1, plane->points[1], plane->points[0]);
     Vec_Sub(vp2, plane->points[2], plane->points[1]);
-    Vec_Cross(vn, vp1, vp2);
+    Vec_Cross(normal, vp1, vp2);
+}
 
-    normal[0] = vn[0];
-    normal[1] = vn[1];
-    normal[2] = vn[2];
+//
+// Plane_GetCeilingNormal
+//
+
+void Plane_GetCeilingNormal(vec3_t normal, plane_t *plane)
+{
+    vec3_t vec1;
+    vec3_t vec2;
+
+    vec1[0] = plane->points[1][0] - plane->points[0][0];
+    vec1[1] = plane->height[1] - plane->height[0];
+    vec1[2] = plane->points[1][2] - plane->points[0][2];
+    vec2[0] = plane->points[2][0] - plane->points[1][0];
+    vec2[1] = plane->height[2] - plane->height[1];
+    vec2[2] = plane->points[2][2] - plane->points[1][2];
+
+    Vec_Cross(normal, vec2, vec1);
 }
 
 //
@@ -129,7 +143,7 @@ float Plane_GetHeight(plane_t *plane, vec3_t pos)
     
     if(plane)
     {
-        Plane_GetNormal(normal, plane);
+        Plane_GetCeilingNormal(normal, plane);
 
         if(normal[1] == 0.0f)
         {

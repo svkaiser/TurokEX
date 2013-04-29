@@ -54,6 +54,7 @@ float Ang_AlignPitchToVector(vec3_t vec)
 float Ang_AlignYawToVector(float angle, vec3_t v1, vec3_t v2)
 {
     float d;
+    float v;
     float s;
     float c;
     float x;
@@ -63,24 +64,22 @@ float Ang_AlignYawToVector(float angle, vec3_t v1, vec3_t v2)
     x = v1[0] - v2[0];
     z = v1[2] - v2[2];
 
-    d = (float)sqrt(x * x + z * z);
+    d = x * x + z * z;
 
     if(d == 0.0f)
-    {
         return 0.0f;
-    }
 
     s = -(float)sin(angle);
     c = -(float)cos(angle);
 
-    an = (c * z + s * x) / d;
+    v = (c * z + s * x);
+    an = v / (float)sqrt(d);
+
     if(an >  1.0f) an =  1.0f;
     if(an < -1.0f) an = -1.0f;
 
     if(x >= 0)
-    {
         return -(float)acos(an);
-    }
 
     return (float)acos(an);
 }
@@ -97,9 +96,7 @@ float Ang_VectorToAngle(vec3_t vec)
     d = vec[0] * vec[0] + vec[2] * vec[2];
 
     if(d == 0.0f)
-    {
         return 0.0f;
-    }
 
     an = -(vec[2] / (float)sqrt(d));
 

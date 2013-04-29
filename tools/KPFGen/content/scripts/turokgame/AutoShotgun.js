@@ -45,8 +45,8 @@ class.properties(AutoShotgun,
     
     tick : function()
     {
-        if(this.spinAngle < 0)
-            this.spinAngle += 0.03;
+        if(this.spinAngle > 0)
+            this.spinAngle -= 0.03;
         else
             this.spinAngle = 0;
         
@@ -58,15 +58,18 @@ class.properties(AutoShotgun,
     
     checkAttack : function()
     {
-        if(Client.localPlayer.command.getAction('+attack'))
+        if(ClientPlayer.command.getAction('+attack'))
         {
-            Snd.play('sounds/shaders/auto_shotgun_shot.ksnd');
+            this.spawnFx('fx/muzzle_shotgun.kfx', -6.144, -1.9456, 15.696);
+            this.spawnFx('fx/shotshell.kfx', -14.336, -12.288, 20.736);
+            ClientPlayer.component.aAutoShotgunAttack();
+            
             this.animState.blendAnim(this.anim_Fire,
-                this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
+                this.playSpeed, 6.0, NRender.ANIM_NOINTERRUPT);
 
             this.bReload = false;
             this.state = WS_FIRING;
-            this.spinAngle = Angle.degToRad(-36);
+            this.spinAngle = Angle.degToRad(36);
             return true;
         }
         

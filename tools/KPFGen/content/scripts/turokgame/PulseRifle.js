@@ -36,7 +36,7 @@ class.properties(PulseRifle,
     
     checkAttack : function()
     {
-        if(Client.localPlayer.command.getAction('+attack'))
+        if(ClientPlayer.command.getAction('+attack'))
         {
             this.animState.blendAnim(this.anim_Fire,
                 this.playSpeed, 4.0, NRender.ANIM_LOOP);
@@ -61,10 +61,11 @@ class.properties(PulseRifle,
         if(this.animState.playTime >= 0.16)
         {
             this.animState.playTime -= 0.16;
+            this.spawnFx('fx/projectile_pulseshot.kfx', -20.48, -12.8, -96);
             Snd.play('sounds/shaders/machine_gun_shot_2.ksnd');
         }
         
-        if(!Client.localPlayer.command.getAction('+attack'))
+        if(!ClientPlayer.command.getAction('+attack'))
         {
             this.readyAnim();
             this.state = WS_READY;

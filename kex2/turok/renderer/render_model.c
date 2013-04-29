@@ -815,13 +815,12 @@ static void Mdl_NextAnimFrame(animstate_t *astate)
     {
         astate->track.nextframe = 1;
         astate->deltatime = 0;
+        astate->playtime = 0;
 
         if(!(astate->flags & ANF_LOOP))
         {
             astate->flags |= ANF_STOPPED;
             astate->flags &= ~ANF_NOINTERRUPT;
-
-            astate->playtime = 0;
 
             if(astate->track.anim->next != NULL)
             {

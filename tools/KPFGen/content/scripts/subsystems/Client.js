@@ -35,7 +35,7 @@ Client = class.extendNative(NClient, function()
     //------------------------------------------------------------------------
     
     // TODO - temporarily called by native code
-    this._tempResponder = function()
+    /*this._tempResponder = function()
     {
         if(this.state != this.STATE_READY)
             return;
@@ -87,8 +87,6 @@ Client = class.extendNative(NClient, function()
     
     this.tick = function()
     {
-        Input.process();
-        
         this.buildCommand();
         
         this.sendCommand();
@@ -125,6 +123,6 @@ Client = class.extendNative(NClient, function()
     PacketManager.add(PacketEventCommand);
     PacketManager.add(PacketEventMsgServer);
     
-    Sys.addCommand('ping', this.ping);
-    Sys.addCommand('msgserver', this.msgServer);
+    //Sys.addCommand('ping', this.ping);
+    Sys.addCommand('msgserver', this.msgServer);*/
 });

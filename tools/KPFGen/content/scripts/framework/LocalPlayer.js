@@ -34,7 +34,7 @@ LocalPlayer = class.extends(Player, function()
     for(var i = 0; i < NETBACKUPS; i++)
     {
         this.oldMoves[i] = new Vector();
-        this.oldCommands[i] = new Command();
+        //this.oldCommands[i] = new Command();
     }
     
     //------------------------------------------------------------------------
@@ -44,13 +44,11 @@ LocalPlayer = class.extends(Player, function()
     // TODO - temporarily called by native code
     this.processInput = function(ev)
     {
-        if(this.console.processInput(ev))
-            return;
-        
         switch(ev.type)
         {
         case EV_MOUSE:
-            this.controller.mouseMove(ev.data2, ev.data3);
+            if(this.controller != null)
+                this.controller.mouseMove(ev.data2, ev.data3);
             break;
 
         case EV_KEYDOWN:
@@ -107,8 +105,6 @@ LocalPlayer = class.extends(Player, function()
     
     this.tick = function()
     {
-        this.console.tick();
-        
         if(this.controller == null)
             return;
         

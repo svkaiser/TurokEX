@@ -8,12 +8,6 @@
 //-----------------------------------------------------------------------------
 
 Sys.dependsOn('scripts/framework/PacketEvent.js');
-Sys.dependsOn('scripts/framework/PacketEventClientInfo.js');
-Sys.dependsOn('scripts/framework/PacketEventCommand.js');
-Sys.dependsOn('scripts/framework/PacketEventPing.js');
-Sys.dependsOn('scripts/framework/PacketEventSay.js');
-Sys.dependsOn('scripts/framework/PacketEventUpdateClient.js');
-Sys.dependsOn('scripts/framework/PacketEventMsgServer.js');
 
 PacketManager = new function()
 {

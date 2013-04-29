@@ -59,9 +59,9 @@ class.properties(Minigun,
     
     checkAttack : function()
     {
-        if(Client.localPlayer.command.getAction('+attack'))
+        if(ClientPlayer.command.getAction('+attack'))
         {
-            Snd.play('sounds/shaders/mini_gun_whir.ksnd', Client.playerActor);
+            Snd.play('sounds/shaders/mini_gun_whir.ksnd', ClientPlayer.actor);
             this.animState.blendAnim(this.anim_Fire,
                 this.playSpeed, 4.0, NRender.ANIM_LOOP);
 
@@ -83,10 +83,13 @@ class.properties(Minigun,
         if(this.animState.playTime >= 0.11)
         {
             this.animState.playTime -= 0.11;
+            // TODO
+            this.spawnFx('fx/fx_037.kfx', -4.608, -3.1744, 14.848);
+            this.spawnFx('fx/bulletshell.kfx', -10.24, -10.24, 13.82);
             Snd.play('sounds/shaders/mini_gun_shot.ksnd');
         }
         
-        if(!Client.localPlayer.command.getAction('+attack'))
+        if(!ClientPlayer.command.getAction('+attack'))
         {
             Snd.play('sounds/shaders/minigun_stop.ksnd');
             this.readyAnim();

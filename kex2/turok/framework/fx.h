@@ -151,6 +151,7 @@ typedef struct fx_s
     plane_t             *plane;
     mtx_t               matrix;
     fxfile_t            *file;
+    gActor_t            *source;
     float               dist;
     struct fx_s         *prev;
     struct fx_s         *next;

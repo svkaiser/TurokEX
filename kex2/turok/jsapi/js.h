@@ -61,6 +61,8 @@ void J_ExecBuffer(char *buffer);
 void J_Shutdown(void);
 void J_Init(void);
 
+unsigned int J_GetGCTime(void);
+
 // temp
 void J_SpawnPlayer_temp(float *origin, float yaw, float pitch,
                         int planeid, int client);

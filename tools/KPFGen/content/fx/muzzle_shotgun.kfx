@@ -1,0 +1,128 @@
+fx[2] =
+{
+    {
+        bFadeout = 1
+        bStopAnimOnImpact = 0
+        bOffsetFromFloor = 0
+        bTextureWrapMirror = 0
+        bDepthBuffer = 0
+        bScaleLerp = 1
+        bLensFlares = 0
+        bBlood = 0
+        bAddOffset = 0
+        bNoDirection = 0
+        bLocalAxis = 0
+        mass = 0.000000
+        translation_global_randomscale = 0.000000
+        translation_randomscale = { 0.000000 0.000000 0.000000 }
+        translation = { 0.000000 0.000000 1.000000 }
+        gravity = 0.000000
+        gravity_randomscale = 0.000000
+        friction = 0.000000
+        animFriction = 0.000000
+        scale = 12.250000
+        scale_randomscale = 0.000000
+        scale_dest = 0.597656
+        scale_dest_randomscale = 0.000000
+        forward_speed = 0.000000
+        forward_speed_randomscale = 0.000000
+        offset_random = { 0.000000 0.000000 0.000000 }
+        rotation_offset = 0.000000
+        rotation_offset_randomscale = 0.000000
+        rotation_speed = 0.000000
+        rotation_speed_randomscale = 0.000000
+        screen_offset_x = 0.000000
+        screen_offset_y = 0.000000
+        offset = { -1.996 -2.046875 12.001 }
+        textures[14] =
+        {
+            "textures/tex0877_00.tga"
+            "textures/tex0877_01.tga"
+            "textures/tex0877_02.tga"
+            "textures/tex0877_03.tga"
+            "textures/tex0877_04.tga"
+            "textures/tex0877_05.tga"
+            "textures/tex0877_06.tga"
+            "textures/tex0877_07.tga"
+            "textures/tex0877_08.tga"
+            "textures/tex0877_09.tga"
+            "textures/tex0877_10.tga"
+            "textures/tex0877_11.tga"
+            "textures/tex0877_12.tga"
+            "textures/tex0877_13.tga"
+        }
+        instances = 1
+        instances_randomscale = 0
+        lifetime = 8
+        lifetime_randomscale = 0
+        restart = 0
+        animspeed = 30
+        color1 = [255 255 255]
+        color2 = [255 255 255]
+        color1_randomscale = 0
+        color2_randomscale = 0
+        saturation_randomscale = 0
+        fadein_time = 0
+        fadeout_time = 10
+        ontouch = default
+        onplane = destroy
+        drawtype = default
+        animtype = default
+    }
+    {
+        bFadeout = 0
+        bStopAnimOnImpact = 0
+        bOffsetFromFloor = 0
+        bTextureWrapMirror = 0
+        bDepthBuffer = 0
+        bScaleLerp = 0
+        bLensFlares = 0
+        bBlood = 0
+        bAddOffset = 0
+        bNoDirection = 0
+        bLocalAxis = 0
+        mass = 0.000000
+        translation_global_randomscale = 0.000000
+        translation_randomscale = { 0.000000 0.000000 0.000000 }
+        translation = { 0.000000 0.000000 1.000000 }
+        gravity = 0.000000
+        gravity_randomscale = 0.000000
+        friction = 0.000000
+        animFriction = 0.000000
+        scale = 14.312500
+        scale_randomscale = 0.000000
+        scale_dest = 1.000000
+        scale_dest_randomscale = 0.000000
+        forward_speed = 0.000000
+        forward_speed_randomscale = 0.000000
+        offset_random = { 0.000000 0.000000 0.000000 }
+        rotation_offset = 0.000000
+        rotation_offset_randomscale = 0.000000
+        rotation_speed = 0.000000
+        rotation_speed_randomscale = 0.000000
+        screen_offset_x = 0.000000
+        screen_offset_y = 0.000000
+        offset = { -0.714844 -1.226563 0.000000 }
+        textures[1] =
+        {
+            "textures/tex0953_00.tga"
+        }
+        instances = 1
+        instances_randomscale = 0
+        lifetime = 1
+        lifetime_randomscale = 0
+        restart = 0
+        animspeed = 20
+        color1 = [255 255 255]
+        color2 = [255 255 179]
+        color1_randomscale = 0
+        color2_randomscale = 0
+        saturation_randomscale = 0
+        fadein_time = 0
+        fadeout_time = 0
+        ontouch = default
+        onplane = default
+        drawtype = default
+        // animtype = unknown_4
+    }
+}

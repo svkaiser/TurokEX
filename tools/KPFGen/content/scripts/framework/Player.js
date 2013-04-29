@@ -28,7 +28,7 @@ Player = class.define(function()
     //------------------------------------------------------------------------
     
     this.name           = "Player";
-    this.command        = new Command();
+    //this.command        = new Command();
     this.prediction     = new PredictionMove();
     this.controller     = null;
     this.clientID       = 0;

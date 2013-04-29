@@ -64,74 +64,6 @@ static void G_SlideOnCrease(vec3_t out, vec3_t velocity, vec3_t v1, vec3_t v2)
 }
 
 //
-// G_CheckObjectStep
-//
-// Very basic check to see if origin can stand on top
-// of an object
-//
-
-void G_CheckObjectStep(vec3_t origin, vec3_t velocity, plane_t *plane)
-{
-    blockobj_t *obj;
-
-    if(plane == NULL)
-        return;
-
-    // go through the list
-    for(obj = plane->blocklist.next; obj != &plane->blocklist; obj = obj->next)
-    {
-        float height; 
-
-        height = obj->object->origin[1] + obj->object->height;
-
-        // allow upwards movement in case actor gets stuck inside object
-        if(Vec_Length2(origin, obj->object->origin) < obj->object->width &&
-            velocity[1] <= 0)
-        {
-            if(origin[1] >= height && origin[1] + velocity[1] < height)
-            {
-                origin[1] = height;
-                velocity[1] = 0;
-                return;
-            }
-        }
-    }
-}
-
-//
-// G_CheckWaterLevel
-//
-
-int G_CheckWaterLevel(vec3_t origin, float centeroffs, plane_t *plane)
-{
-    if(plane != NULL)
-    {
-        if(plane->flags & CLF_WATER)
-        {
-            area_t *area = Map_GetArea(plane);
-
-            if(origin[1] + centeroffs >= area->waterplane)
-            {
-                if(origin[1] < area->waterplane)
-                {
-                    return WL_BETWEEN;
-                }
-                else
-                {
-                    return WL_OVER;
-                }
-            }
-            else
-            {
-                return WL_UNDER;
-            }
-        }
-    }
-
-    return WL_INVALID;
-}
-
-//
 // G_ApplyFriction
 //
 
@@ -171,7 +103,7 @@ void G_ApplyFriction(vec3_t velocity, float friction, kbool effectY)
 //
 
 void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
-                    gActor_t *actor, float yaw, trace_t *t)
+                    gActor_t *actor, trace_t *t)
 {
     trace_t trace;
     vec3_t start;
@@ -198,7 +130,7 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
         Vec_Add(end, start, vel);
 
         // get trace results
-        trace = Trace(start, end, *plane, actor, yaw);
+        trace = Trace(start, end, *plane, actor, NULL, false);
 
         if(t) *t = trace;
         *plane = trace.pl;
@@ -224,6 +156,9 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
 
                 // slide along this plane
                 G_ClipVelocity(vel, vel, normals[hits], 1);
+
+                if(trace.type == TRT_OBJECT)
+                    break;
 
                 // try bumping against another plane
                 for(j = 0; j < moves; j++)
@@ -253,12 +188,14 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
         // force a deadstop if clipped velocity is against
         // the original velocity or if exceeded max amount of
         // attempted moves (don't count against objects hit)
-        if(Vec_Dot(vel, velocity) <= 0 ||
-            (trace.type != TRT_OBJECT && i == (TRYMOVE_COUNT - 1)))
+        if(trace.type != TRT_OBJECT)
         {
-            velocity[0] = 0;
-            velocity[2] = 0;
-            break;
+            if(Vec_Dot(vel, velocity) <= 0 || i == (TRYMOVE_COUNT - 1))
+            {
+                velocity[0] = 0;
+                velocity[2] = 0;
+                break;
+            }
         }
 
         // update velocity and try another move
@@ -271,5 +208,34 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
     {
         velocity[0] = 0;
         velocity[2] = 0;
+    }
+
+    Vec_Add(origin, origin, velocity);
+
+    if(actor)
+    {
+        float dist;
+
+        dist = origin[1] - Plane_GetDistance(*plane, origin);
+        if(dist <= 0.512f)
+        {
+            origin[1] = origin[1] - dist;
+            G_ClipVelocity(velocity, velocity, (*plane)->normal, 1);
+
+            if(velocity[1] > 0)
+                velocity[1] = 0;
+        }
+
+        if((*plane)->flags & CLF_CHECKHEIGHT)
+        {
+            float offset = actor->centerHeight + actor->viewHeight;
+
+            dist = Plane_GetHeight(*plane, origin);
+            if((dist - (origin[1] + offset) < 1.024f))
+            {
+                G_ClipVelocity(velocity, velocity, (*plane)->ceilingNormal, 1);
+                origin[1] = dist - (1.024f + offset);
+            }
+        }
     }
 }

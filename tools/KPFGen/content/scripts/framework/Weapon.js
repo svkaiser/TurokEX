@@ -49,7 +49,7 @@ class.properties(Weapon,
     
     checkHoldster : function()
     {
-        if(Client.localPlayer.controller.state == STATE_MOVE_CLIMB &&
+        if(ClientPlayer.component.controller.state == STATE_MOVE_CLIMB &&
             this.state != WS_HOLDSTER)
         {
             this.animState.blendAnim(this.anim_SwapOut,
@@ -73,7 +73,7 @@ class.properties(Weapon,
     
     checkAttack : function()
     {
-        if(Client.localPlayer.command.getAction('+attack'))
+        if(ClientPlayer.command.getAction('+attack'))
         {
             this.animState.blendAnim(this.anim_Fire,
                 this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
@@ -87,27 +87,17 @@ class.properties(Weapon,
     
     checkWeaponChange : function()
     {
-        if(Client.localPlayer.command.getAction('+nextweap') &&
-            !Client.localPlayer.command.getActionHeldTime('+nextweap'))
+        if(ClientPlayer.command.getAction('+nextweap') &&
+            ClientPlayer.command.getActionHeldTime('+nextweap') == 0)
         {
-            var tPlayer = Client.localPlayer.controller.owner.components.ComponentTurokPlayer;
-            
-            if(tPlayer == undefined)
-                return;
-            
-            tPlayer.cycleNextWeapon();
+            ClientPlayer.component.cycleNextWeapon();
             return true;
         }
         
-        if(Client.localPlayer.command.getAction('+prevweap') &&
-            !Client.localPlayer.command.getActionHeldTime('+prevweap'))
+        if(ClientPlayer.command.getAction('+prevweap') &&
+            ClientPlayer.command.getActionHeldTime('+prevweap') == 0)
         {
-            var tPlayer = Client.localPlayer.controller.owner.components.ComponentTurokPlayer;
-            
-            if(tPlayer == undefined)
-                return;
-            
-            tPlayer.cyclePrevWeapon();
+            ClientPlayer.component.cyclePrevWeapon();
             return true;
         }
         
@@ -118,8 +108,15 @@ class.properties(Weapon,
     {
         if(this.animState.flags & NRender.ANIM_BLEND)
             return;
+            
+        if(Sys.getCvar('g_weaponbobbing') > 0)
+        {
+            this.animState.blendAnim(this.anim_Idle,
+                this.playSpeed, 8.0, NRender.ANIM_LOOP);
+            return;
+        }
         
-        var d = Client.localPlayer.prediction.accel.unit2();
+        var d = ClientPlayer.worldState.accel.unit2();
         
         if(d >= 1.35)
         {
@@ -169,7 +166,7 @@ class.properties(Weapon,
     
     holdster : function()
     {
-        if(Client.localPlayer.controller.state != STATE_MOVE_CLIMB)
+        if(ClientPlayer.component.controller.state != STATE_MOVE_CLIMB)
         {
             this.animState.setAnim(this.anim_SwapIn,
                 this.playSpeed, NRender.ANIM_NOINTERRUPT);
@@ -188,14 +185,9 @@ class.properties(Weapon,
             
         if(this.animState.flags & NRender.ANIM_STOPPED)
         {
-            var tPlayer = Client.localPlayer.controller.owner.components.ComponentTurokPlayer;
+            ClientPlayer.component.setNewWeapon();
             
-            if(tPlayer == undefined)
-                return;
-                
-            tPlayer.setNewWeapon();
-            
-            var newWpn = tPlayer.activeWeapon;
+            var newWpn = ClientPlayer.component.activeWeapon;
             
             Snd.play(newWpn.readySound);
             newWpn.animState.setAnim(newWpn.anim_SwapIn,
@@ -226,7 +218,7 @@ class.properties(Weapon,
         const WEAPONTURN_EPSILON    = 0.001;
     
         this.angles.yaw = (this.angles.yaw -
-            (Client.localPlayer.command.mouse_x * 0.1)) * 0.9;
+            (ClientPlayer.command.mouse_x * 0.00175)) * 0.9;
             
         if(this.angles.yaw >  WEAPONTURN_MAX) this.angles.yaw =  WEAPONTURN_MAX;
         if(this.angles.yaw < -WEAPONTURN_MAX) this.angles.yaw = -WEAPONTURN_MAX;
@@ -237,7 +229,7 @@ class.properties(Weapon,
         }
         
         this.angles.pitch = (this.angles.pitch -
-            (Client.localPlayer.command.mouse_y * 0.1)) * 0.9;
+            (ClientPlayer.command.mouse_y * 0.00175)) * 0.9;
             
         if(this.angles.pitch >  WEAPONTURN_MAX) this.angles.pitch =  WEAPONTURN_MAX;
         if(this.angles.pitch < -WEAPONTURN_MAX) this.angles.pitch = -WEAPONTURN_MAX;
@@ -296,12 +288,13 @@ class.properties(Weapon,
         var yaw = new Quaternion(this.angles.yaw, 0, 0, 1);
         var pitch = new Quaternion(this.angles.pitch, 1, 0, 0);
         
-        var pmove = Client.localPlayer.prediction;
+        var wstate = ClientPlayer.worldState;
+        var controller = ClientPlayer.component.controller;
         
         // lean weapon if strafing
-        if(Client.localPlayer.controller.state != STATE_MOVE_SWIM)
+        if(controller != null && controller.state != STATE_MOVE_SWIM)
         {
-            var roll = new Quaternion(pmove.angles.roll*1.5, 0, 1, 0);
+            var roll = new Quaternion(wstate.roll*1.5, 0, 1, 0);
             this.model.setNodeRotation(0, roll);
         }
         
@@ -311,12 +304,12 @@ class.properties(Weapon,
         
         var mtx_final = Matrix.multiply(mtx_rot, mtx_transform);
         
-        if(pmove.plane != null)
+        if(wstate.plane != null)
         {
             // add a little vertical force to weapon if jumping or falling
-            offset = (pmove.origin.y - pmove.plane.distance(pmove.origin));
+            offset = (wstate.origin.y - wstate.plane.distance(wstate.origin));
             
-            var velocity = pmove.velocity.y * pmove.frametime;
+            var velocity = wstate.velocity.y * wstate.frameTime;
 
             if(!(offset < 0.2) && (velocity < 0.2 || velocity > 0.2))
             {
@@ -333,11 +326,60 @@ class.properties(Weapon,
             }
             
             this.thudOffset = Math.lerp(this.thudOffset, offset, 0.25);
-            mtx_final.addTranslation(0, this.thudOffset, 0);
+            
+            if(Sys.getCvar('g_weaponbobbing') > 0)
+            {
+                var bob_xz = 0;
+                var bob_y = 0;
+                
+                var actor = ClientPlayer.actor;
+            
+                if(controller.state == STATE_MOVE_WALK &&
+                    (wstate.origin.y + wstate.velocity.y) - wstate.plane.distance(wstate.origin) <
+                    (actor.viewHeight + actor.centerHeight)+1)
+                {
+                    const WEPBOB_EPISILON  = 0.001;
+                    const WEPBOB_MAXSWAY   = Angle.degToRad(22.5);
+                    const WEPBOB_FREQ      = 0.007;
+                    const WEPBOB_FREQY     = 0.014;
+                    const WEPBOB_ANGLE     = 8;
+                    
+                    var d = Math.abs(wstate.accel.z * wstate.frameTime) * 0.06;
+                    
+                    if(d > WEPBOB_EPISILON)
+                    {
+                        if(d > WEPBOB_MAXSWAY)
+                            d = WEPBOB_MAXSWAY;
+                        
+                        bob_xz = Math.sin(Sys.time() * WEPBOB_FREQ) * WEPBOB_ANGLE * d;
+                        bob_y = Math.sin(Sys.time() * WEPBOB_FREQY) * WEPBOB_ANGLE * d;
+                    }
+                }
+                
+                mtx_final.addTranslation(bob_xz, this.thudOffset + bob_y, bob_xz);
+            }
+            else
+                mtx_final.addTranslation(0, this.thudOffset, 0);
         }
         
         mtx_final.load();
         
         Render.drawModel(this.model, this.animState);
+    },
+    
+    spawnFx : function(fx, x, y, z)
+    {
+        var actor = ClientPlayer.actor;
+
+        var mtx = Matrix.fromQuaternion(actor.rotation);
+        mtx.addTranslation(
+            ClientPlayer.camera.origin.x,
+            ClientPlayer.camera.origin.y,
+            ClientPlayer.camera.origin.z);
+
+        Sys.spawnFx(fx, actor,
+            Vector.toWorld(new Vector(x, y, z), mtx),
+            actor.rotation,
+            Plane.fromIndex(actor.plane));
     }
 });

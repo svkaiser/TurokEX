@@ -40,19 +40,19 @@ class.properties(Knife,
     
     checkAttack : function()
     {
-        if(Client.localPlayer.command.getAction('+attack'))
+        if(ClientPlayer.command.getAction('+attack'))
         {
             var fireAnim;
             var r = Sys.rand(100);
             
-            if(r <= 33)
-            {
-                fireAnim = this.anim_Fire;
-                Snd.play('sounds/shaders/knife_swish_1.ksnd');
-            }
-            else if(r <= 66)
+            if(r <= 32)
             {
                 fireAnim = this.anim_FireAlt1;
+                Snd.play('sounds/shaders/knife_swish_1.ksnd');
+            }
+            else if(r <= 65)
+            {
+                fireAnim = this.anim_Fire;
                 Snd.play('sounds/shaders/knife_swish_2.ksnd');
             }
             else

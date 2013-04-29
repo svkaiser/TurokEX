@@ -38,8 +38,9 @@ typedef float           mtx_t[16];
 
 typedef struct
 {
-    vec3_t min;
-    vec3_t max;
+    vec3_t  min;
+    vec3_t  max;
+    vec3_t  dim;
 } bbox_t;
 
 typedef union

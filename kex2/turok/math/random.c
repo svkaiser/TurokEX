@@ -77,6 +77,6 @@ float Random_Float(void)
 
 float Random_CFloat(void)
 {
-    return 2.0f * (Random_Float() * 0.5f);
+    return (float)(Random_Max(20000) - 10000) * 0.0001f;
 }
 

@@ -12,7 +12,18 @@ Math.lerp = function(cur, next, time)
     return (next - cur) * t + cur;
 }
 
-Math.qNormalize = function(rot)
+// localized randomization function for
+// use on client-side only
+// (Sys.rand should be server/game specific)
+Math.crandom = function(max)
+{
+    if(max == 0)
+        return 0;
+    
+    return Math.round(Math.random() * max);
+}
+
+/*Math.qNormalize = function(rot)
 {
     var d = Math.sqrt(rot.x * rot.x + rot.y * rot.y + rot.z * rot.z + rot.w * rot.w);
 
@@ -23,4 +34,4 @@ Math.qNormalize = function(rot)
         rot.z = rot.z * 1.0 / d;
         rot.w = rot.w * 1.0 / d;
     }
-}
+}*/

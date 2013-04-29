@@ -186,18 +186,18 @@ void FX_GetName(int index, char *name)
     case 29:
         sprintf(name, "fx/steppuff2.kfx");
         break;
-    case 30:
+    /*case 30:
         sprintf(name, "fx/muzzle_rifle.kfx");
-        break;
+        break;*/
     case 32:
         sprintf(name, "fx/muzzle_grenade_launcher.kfx");
         break;
-    case 38:
+    /*case 38:
         sprintf(name, "fx/muzzle_pistol.kfx");
         break;
     case 39:
         sprintf(name, "fx/muzzle_shotgun.kfx");
-        break;
+        break;*/
     case 43:
         sprintf(name, "fx/projectile_flame.kfx");
         break;
@@ -288,6 +288,9 @@ void FX_GetName(int index, char *name)
     case 201:
         sprintf(name, "fx/projectile_particleshot_5.kfx");
         break;
+    case 229:
+        sprintf(name, "fx/projectile_hummer_bullet_1.kfx");
+        break;
     case 230:
         sprintf(name, "fx/projectile_trex_rockets.kfx");
         break;
@@ -362,6 +365,9 @@ void FX_StoreParticleEffects(void)
     fxevents = (fxevent_t*)(events + 8);
 
     PK_AddFolder("fx/");
+    StoreExternalFile("fx/muzzle_pistol.kfx", "fx/muzzle_pistol.kfx");
+    StoreExternalFile("fx/muzzle_rifle.kfx", "fx/muzzle_rifle.kfx");
+    StoreExternalFile("fx/muzzle_shotgun.kfx", "fx/muzzle_shotgun.kfx");
 
     for(i = 0, j = 0; i < count; i++)
     {

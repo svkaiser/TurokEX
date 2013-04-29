@@ -194,11 +194,12 @@ static void CL_DrawDebug(void)
         Draw_Text(32, 112,  COLOR_GREEN, 1, "tics: %i", client.tics);
         Draw_Text(32, 128, COLOR_GREEN, 1, "max msecs: %f",
             (1000.0f / cl_maxfps.value) / 1000.0f);
+        Draw_Text(32, 144, COLOR_GREEN, 1, "GC time: %i\n", J_GetGCTime());
         /*Draw_Text(32, 144, COLOR_GREEN, 1, "server time: %i",
             client.st.tics - (client.st.time/100));
         Draw_Text(32, 160, COLOR_GREEN, 1, "latency: %i",
             client.time - client.latency[client.ns.acks & (NETBACKUPS-1)]);*/
-        Draw_Text(32, 144, COLOR_WHITE, 1, Con_GetLastBuffer());
+        Draw_Text(32, 160, COLOR_WHITE, 1, Con_GetLastBuffer());
         return;
     }
 
@@ -229,8 +230,6 @@ void CL_Run(int msec)
     IN_PollInput();
 
     CL_ProcessEvents();
-
-    //J_RunObjectEvent(JS_EV_CLIENT, "tick");
 
     P_BuildCommands();
 

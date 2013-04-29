@@ -135,7 +135,8 @@ enum animstate_enum
     ANS_FLAGS,
     ANS_TIME,
     ANS_FRAMETIME,
-    ANS_PLAYTIME
+    ANS_PLAYTIME,
+    ANS_ROOTMOTION
 };
 
 JS_CLASSOBJECT(AnimState);
@@ -161,6 +162,10 @@ JS_PROP_FUNC_GET(AnimState)
 
     case ANS_PLAYTIME:
         return JS_NewDoubleValue(cx, animstate->playtime, vp);
+
+    case ANS_ROOTMOTION:
+        JS_NEWVECTORPOOL(animstate->rootMotion);
+        return JS_TRUE;
 
     default:
         return JS_TRUE;
@@ -277,7 +282,8 @@ JS_BEGINPROPS(AnimState)
     { "flags",      ANS_FLAGS,      JSPROP_ENUMERATE,                   NULL, NULL },
     { "time",       ANS_TIME,       JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
     { "frameTime",  ANS_FRAMETIME,  JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
-    { "playTime",   ANS_PLAYTIME,   JSPROP_ENUMERATE,   NULL, NULL },
+    { "playTime",   ANS_PLAYTIME,   JSPROP_ENUMERATE,                   NULL, NULL },
+    { "rootMotion", ANS_ROOTMOTION, JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 

@@ -32,7 +32,7 @@ class.properties(ComponentAreaAmbience,
         if(this.counter % 60 != 0)
             return;
         
-        if(Sys.rand(100) < this.randFactor)
-            Snd.play(this.sounds[Sys.rand(this.sounds.length)]);
+        if(Math.crandom(100) < this.randFactor)
+            Snd.play(this.sounds[Math.crandom(this.sounds.length)]);
     }
 });

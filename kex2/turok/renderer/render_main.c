@@ -347,6 +347,21 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
             Vec_Slerp(rot, delta, rot_cur, rot_next);
             Vec_Lerp3(pos, delta, pos_cur, pos_next);
 
+            if(animstate->flags & ANF_ROOTMOTION && nodenum == 0)
+            {
+                if(nextframe >= frame && animstate->frametime > 0)
+                {
+                    animstate->rootMotion[0] = t2[0] - t1[0];
+                    animstate->rootMotion[1] = t1[2] - t2[2];
+                    animstate->rootMotion[2] = t1[1] - t2[1];
+
+                    Vec_Scale(animstate->rootMotion, animstate->rootMotion,
+                        (60.0f / animstate->frametime));
+                }
+
+                Vec_Set3(pos, 0, 0, pos[2]);
+            }
+
             Vec_Copy4(rCur, rot);
             Vec_MultQuaternion(rot, rCur, node->offset_r);
 
@@ -477,6 +492,7 @@ void R_DrawActors(void)
 
         Vec_Copy3(box.min, actor->bbox.min);
         Vec_Copy3(box.max, actor->bbox.max);
+        Vec_Copy3(box.dim, actor->bbox.dim);
 
         box.min[0] += actor->origin[0];
         box.min[1] += actor->origin[1];
@@ -505,8 +521,17 @@ void R_DrawActors(void)
         if(showbbox)
             R_DrawBoundingBox(box, 255, 0, 0);
         if(showorigin && client.playerActor != actor)
-            R_DrawOrigin(actor->origin, 32.0f);
-        if(showradius && actor->bCollision && client.playerActor != actor)
+        {
+            vec3_t vec;
+
+            Vec_Set3(vec, 0, 0, 0);
+
+            dglPushMatrix();
+            dglMultMatrixf(actor->matrix);
+            R_DrawOrigin(vec, 32.0f);
+            dglPopMatrix();
+        }
+        if(showradius && client.playerActor != actor)
         {
             R_DrawRadius(actor->origin[0], actor->origin[1], actor->origin[2],
                 actor->radius, actor->height);

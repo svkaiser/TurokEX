@@ -43,6 +43,8 @@ typedef enum
     SVC_STATE_INGAME
 } svclient_state_e;
 
+#define SERVER_RUNTIME  16
+
 //
 // svclient - server-side client controller
 // may contain non-persistent player/client data.

@@ -26,6 +26,19 @@
 #include "render.h"
 #include "level.h"
 
+typedef struct
+{
+    int                 type;
+    char                name[32];
+    union
+    {
+        int     i;
+        float   f;
+        void    *p;
+        char    *c;
+    } val;
+} propKey_t;
+
 typedef struct gActor_s
 {
     vec3_t              origin;
@@ -38,10 +51,6 @@ typedef struct gActor_s
     kbool               bClientOnly;
     kbool               bHidden;
     bbox_t              bbox;
-    kmodel_t            *model;
-    animstate_t         animState;
-    int                 variant;
-    char                **textureSwaps;
     float               angles[3];
     char                name[64];
     int                 plane;
@@ -50,19 +59,44 @@ typedef struct gActor_s
     float               centerHeight;
     float               viewHeight;
     mtx_t               matrix;
+    mtx_t               rotMtx;
     gObject_t           *components;
 	gObject_t           *iterator;
     int                 refcount;
+    propKey_t           *properties;
+    int                 numProperties;
+    kmodel_t            *model;
+    animstate_t         animState;
+    int                 variant;
+    char                **textureSwaps;
+    float               timestamp;
     struct gActor_s     *prev;
     struct gActor_s     *next;
 } gActor_t;
+
+typedef struct gActorTemplate_s
+{
+    char                    name[MAX_FILEPATH];
+    gActor_t                actor;
+    char                    **components;
+    unsigned int            numComponents;
+    struct gActorTemplate_s *next;
+} gActorTemplate_t;
 
 void Actor_Setup(gActor_t *actor);
 void Actor_SetTarget(gActor_t **self, gActor_t *target);
 void Actor_UpdateTransform(gActor_t *actor);
 void Actor_CallEvent(gActor_t *actor, const char *function, gActor_t *instigator);
-void Actor_ComponentFunc(const char *function);
+void Actor_LocalTick(void);
+void Actor_Tick(void);
 kbool Actor_HasComponent(gActor_t *actor, const char *component);
 void Actor_OnTouchEvent(gActor_t *actor, gActor_t *instigator);
+void Actor_AddIntegerProperty(gActor_t *actor, const char *name, int id, int value);
+void Actor_AddFloatProperty(gActor_t *actor, const char *name, int id, float value);
+void Actor_AddDataProperty(gActor_t *actor, const char *name, int id, void *value);
+void Actor_AddStringProperty(gActor_t *actor, const char *name, int id, char *value);
+void Actor_Remove(gActor_t *actor);
+gActor_t *Actor_Spawn(const char *classname, float x, float y, float z,
+                      float yaw, float pitch, int plane);
 
 #endif

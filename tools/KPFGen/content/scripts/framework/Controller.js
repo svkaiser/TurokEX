@@ -27,8 +27,12 @@ class.properties(Controller,
     movetime    : 0,
     timestamp   : 0.0,
     frametime   : 0.0,
+    center_y    : 0.0,
+    view_y      : 0.0,
     plane       : null,
     owner       : null,
+    command     : null,     // player's command object is copied here
+    local       : false,    // is this controller handled by server or client?
     
     //------------------------------------------------------------------------
     // FUNCTIONS
@@ -56,6 +60,36 @@ class.properties(Controller,
         this.up.z = cr * sp * cy + -sr * -sy;
     },
     
+    updateFromWorldState : function(worldState, command)
+    {
+        this.origin         = worldState.origin;
+        this.velocity       = worldState.velocity;
+        this.accel          = worldState.accel;
+        this.timestamp      = worldState.timeStamp;
+        this.frametime      = worldState.frameTime;
+        this.plane          = worldState.plane;
+        this.angles.yaw     = worldState.yaw;
+        this.angles.pitch   = worldState.pitch;
+        this.angles.roll    = worldState.roll;
+        this.owner          = worldState.actor;
+        this.center_y       = this.owner.centerHeight;
+        this.view_y         = this.owner.viewHeight;
+        this.command        = command;
+    },
+    
+    updateWorldState : function(worldState)
+    {
+        worldState.origin       = this.origin;
+        worldState.velocity     = this.velocity;
+        worldState.accel        = this.accel;
+        worldState.timeStamp    = this.timestamp;
+        worldState.frameTime    = this.frametime;
+        worldState.plane        = this.plane;
+        worldState.yaw          = this.angles.yaw;
+        worldState.pitch        = this.angles.pitch;
+        worldState.roll         = this.angles.roll;
+    },
+    
     applyFriction : function(friction)
     {
         var speed = this.velocity.unit3();
@@ -74,6 +108,23 @@ class.properties(Controller,
             
             this.velocity.x = this.velocity.x * clipspeed;
             this.velocity.z = this.velocity.z * clipspeed;
+        }
+    },
+    
+    applyVerticalFriction : function(friction)
+    {
+        var speed = this.velocity.y;
+        
+        if(speed < 0.0001)
+            this.velocity.y = 0;
+        else
+        {
+            var clipspeed = speed - (speed * friction);
+            
+            if(clipspeed < 0) clipspeed = 0;
+                clipspeed /= speed;
+            
+            this.velocity.y = this.velocity.y * clipspeed;
         }
     },
     
@@ -119,6 +170,15 @@ class.properties(Controller,
     {
         if((this.origin.y - this.plane.distance(this.origin)) > 0.01)
             this.velocity.y -= (amount * this.frametime);
+    },
+    
+    onGround : function()
+    {
+        if(this.plane == null)
+            return false;
+        
+        return (this.origin.y -
+            this.plane.distance(this.origin) <= 0.512);
     },
     
     hitFloor : function()

@@ -81,8 +81,8 @@ class.properties(TurokHud,
     
     onDraw : function()
     {
-        var controller = Client.localPlayer.controller;
-        var player = controller.owner.components.ComponentTurokPlayer;
+        var controller = ClientPlayer.component.controller;
+        var player = ClientPlayer.component;
         
         GL.setBlend(1);
         
@@ -138,6 +138,26 @@ class.properties(TurokHud,
         this.drawMessages();
         
         this.canvas.setDrawScale(1);
+        
+        // debug stats
+        if(Sys.getCvar('g_displayplayerinfo'))
+        {
+            var pmove = ClientPlayer.worldState;
+            
+            this.canvas.setFont(FontArial);
+            this.canvas.setDrawColor(255, 255, 0);
+            this.canvas.setDrawAlpha(255);
+            this.canvas.drawString('---Player Info---', 32, 160, false);
+            this.canvas.setDrawColor(0, 255, 0);
+            this.canvas.drawString('origin: ' + pmove.origin.toString(), 32, 176, false);
+            this.canvas.drawString('acceleration: ' + pmove.accel.toString(), 32, 192, false);
+            this.canvas.drawString('velocity: ' + pmove.velocity.toString(), 32, 208, false);
+            this.canvas.drawString('plane: ' + pmove.plane.toIndex(), 32, 224, false);
+            this.canvas.drawString('yaw: ' + pmove.yaw, 32, 240, false);
+            this.canvas.drawString('pitch: ' + pmove.pitch, 32, 256, false);
+            this.canvas.drawString('roll: ' + pmove.roll, 32, 272, false);
+        }
+        
         GL.setBlend(0);
     },
     

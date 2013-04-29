@@ -164,6 +164,25 @@ JS_PROP_FUNC_GET(GameActor)
     case 21:
         return JS_NewDoubleValue(cx, actor->angles[2], vp);
 
+    case 22:
+        {
+            JSObject *vobj;
+            
+            if(!(vobj = JPool_GetFree(&objPoolAnimState, &AnimState_class)) ||
+                !(JS_SetPrivate(cx, vobj, &actor->animState)))
+                return JS_FALSE;
+            
+            JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(vobj));
+            return JS_TRUE;
+        }
+
+    case 23:
+        return JS_NewDoubleValue(cx, actor->timestamp, vp);
+
+    case 24:
+        JS_NEWOBJECT_SETPRIVATE(actor->model, &Model_class);
+        return JS_TRUE;
+
     default:
         return JS_TRUE;
     }
@@ -262,6 +281,197 @@ JS_FASTNATIVE_BEGIN(GameActor, updateTransform)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(GameActor, addKey)
+{
+    JSObject *thisObj;
+    gActor_t *actor;
+    int id;
+    JSString *str;
+    char *bytes;
+
+    JS_CHECKARGS(3);
+    thisObj = JS_THIS_OBJECT(cx, vp);
+
+    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
+        return JS_FALSE;
+
+    JS_GETSTRING(str, bytes, v, 0);
+    JS_GETINTEGER(id, 1);
+
+    if(JSVAL_IS_INT(v[2]))
+    {
+        int value;
+        JS_GETINTEGER(value, 2);
+        Actor_AddIntegerProperty(actor, bytes, id, value);
+    }
+    else if(JSVAL_IS_DOUBLE(v[2]))
+    {
+        jsdouble value;
+        JS_GETNUMBER(value, v, 2);
+        Actor_AddFloatProperty(actor, bytes, id, (float)value);
+    }
+    else if(JSVAL_IS_STRING(v[2]))
+    {
+        JSString *s;
+        char *sb;
+        JS_GETSTRING(s, sb, v, 2);
+        Actor_AddStringProperty(actor, bytes, id, sb);
+    }
+
+    JS_free(cx, bytes);
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GameActor, getKey)
+{
+    JSObject *thisObj;
+    gActor_t *actor;
+    propKey_t *key;
+
+    JS_CHECKARGS(1);
+    thisObj = JS_THIS_OBJECT(cx, vp);
+
+    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
+        return JS_FALSE;
+
+    key = NULL;
+
+    if(JSVAL_IS_INT(v[0]))
+    {
+        int value;
+        JS_GETINTEGER(value, 0);
+        key = &actor->properties[value];
+    }
+    else if(JSVAL_IS_STRING(v[0]))
+    {
+        JSString *str;
+        char *bytes;
+        JS_GETSTRING(str, bytes, v, 0);
+        // TODO
+        JS_free(cx, bytes);
+    }
+
+    if(key != NULL)
+    {
+        switch(key->type)
+        {
+        case 0:
+            JS_SET_RVAL(cx, vp, INT_TO_JSVAL(key->val.i));
+            return JS_TRUE;
+        case 1:
+            JS_NewDoubleValue(cx, key->val.f, vp);
+            return JS_TRUE;
+        case 2:
+            JS_RETURNSTRING(vp, key->val.c);
+            return JS_TRUE;
+        }
+    }
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GameActor, setKey)
+{
+    JSObject *thisObj;
+    gActor_t *actor;
+    propKey_t *key;
+
+    JS_CHECKARGS(2);
+    thisObj = JS_THIS_OBJECT(cx, vp);
+
+    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
+        return JS_FALSE;
+
+    key = NULL;
+
+    if(JSVAL_IS_INT(v[0]))
+    {
+        int value;
+        JS_GETINTEGER(value, 0);
+        key = &actor->properties[value];
+    }
+    else if(JSVAL_IS_STRING(v[0]))
+    {
+        JSString *str;
+        char *bytes;
+        JS_GETSTRING(str, bytes, v, 0);
+        // TODO
+        JS_free(cx, bytes);
+    }
+
+    if(key != NULL)
+    {
+        int ival;
+        jsdouble fval;
+
+        switch(key->type)
+        {
+        case 0:
+            JS_GETINTEGER(ival, 1);
+            key->val.i = ival;
+            break;
+        case 1:
+            JS_GETNUMBER(fval, v, 1);
+            key->val.f = (float)fval;
+            break;
+        }
+    }
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GameActor, spawn)
+{
+    JSString *str;
+    char *bytes;
+    jsdouble x;
+    jsdouble y;
+    jsdouble z;
+    jsdouble yaw;
+    jsdouble pitch;
+    plane_t *plane;
+    gActor_t *actor;
+
+    JS_CHECKARGS(7);
+    JS_GETSTRING(str, bytes, v, 0);
+    JS_GETNUMBER(x, v, 1);
+    JS_GETNUMBER(y, v, 2);
+    JS_GETNUMBER(z, v, 3);
+    JS_GETNUMBER(yaw, v, 4);
+    JS_GETNUMBER(pitch, v, 5);
+    
+    if(!JSVAL_IS_NULL(v[6]))
+    {
+        JSObject *plObj;
+
+        JS_GETOBJECT(plObj, v, 6);
+        JS_GET_PRIVATE_DATA(plObj, &Plane_class, plane_t, plane);
+    }
+    else
+    {
+        vec3_t org;
+
+        Vec_Set3(org, (float)x, (float)y, (float)z);
+        plane = Map_FindClosestPlane(org);
+    }
+
+    actor = Actor_Spawn(bytes,
+        (float)x,
+        (float)y,
+        (float)z,
+        (float)yaw,
+        (float)pitch,
+        plane == NULL ? -1 : plane - gLevel.planes);
+
+    JS_free(cx, bytes);
+
+    JS_NEWOBJECT_SETPRIVATE(actor, &GameActor_class);
+    return JS_TRUE;
+}
+
 JS_BEGINCLASS(GameActor)
     JSCLASS_HAS_PRIVATE,                        // flags
     JS_PropertyStub,                            // addProperty
@@ -299,6 +509,9 @@ JS_BEGINPROPS(GameActor)
     { "yaw",            19, JSPROP_ENUMERATE, NULL, NULL },
     { "pitch",          20, JSPROP_ENUMERATE, NULL, NULL },
     { "roll",           21, JSPROP_ENUMERATE, NULL, NULL },
+    { "animState",      22, JSPROP_ENUMERATE, NULL, NULL },
+    { "timeStamp",      23, JSPROP_ENUMERATE, NULL, NULL },
+    { "model",          24, JSPROP_ENUMERATE, NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 
@@ -310,10 +523,14 @@ JS_BEGINCONST(GameActor)
 JS_BEGINFUNCS(GameActor)
 {
     JS_FASTNATIVE(GameActor, updateTransform, 0),
+    JS_FASTNATIVE(GameActor, addKey, 3),
+    JS_FASTNATIVE(GameActor, getKey, 1),
+    JS_FASTNATIVE(GameActor, setKey, 2),
     JS_FS_END
 };
 
 JS_BEGINSTATICFUNCS(GameActor)
 {
+    JS_FASTNATIVE(GameActor, spawn, 7),
     JS_FS_END
 };

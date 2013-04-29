@@ -7,7 +7,7 @@
 
 const MAXACTIONS = 256; // TODO - hardcoded limit. do not change
 
-Command = class.define(function()
+/*Command = class.define(function()
 {
     //------------------------------------------------------------------------
     // VARS
@@ -41,4 +41,4 @@ Command = class.define(function()
         for(var i = 0; i < MAXACTIONS; i++)
             this.buttons[i] = false;
     }
-});
+});*/

@@ -44,6 +44,7 @@ class.properties(AlienRifle,
     {
         if(this.super.prototype.checkAttack.bind(this)())
         {
+            this.spawnFx('fx/projectile_tekshot.kfx', -4.096, -14.336, -25.6);
             Snd.play('sounds/shaders/tek_weapon_1.ksnd');
             return true;
         }

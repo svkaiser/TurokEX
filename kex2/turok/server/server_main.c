@@ -294,17 +294,19 @@ static void SV_Ticker(void)
 {
     if(server.runtime < server.time)
     {
-        if(server.time - server.runtime > 100)
-            server.runtime = server.time - 100;
+        if(server.time - server.runtime > SERVER_RUNTIME)
+            server.runtime = server.time - SERVER_RUNTIME;
 
         return;
     }
 
     server.tics++;
-    server.time = server.tics * 100;
+    server.time = server.tics * SERVER_RUNTIME;
 
-    //J_RunObjectEvent(JS_EV_SERVER, "tick");
     G_Ticker();
+
+    if(server.time < server.runtime)
+        server.runtime = server.time;
 }
 
 //
@@ -319,10 +321,6 @@ void SV_Run(int msec)
     server.runtime += msec;
 
     SV_ReadPackets();
-
-    //J_RunObjectEvent(JS_EV_SERVER, "update");
-
-    //SV_SendClientMessages();
 
     SV_Ticker();
 }

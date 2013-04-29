@@ -29,118 +29,91 @@
 #include "common.h"
 #include "mathlib.h"
 
-JSObject *js_objAngle;
+JS_CLASSOBJECT(Angle);
 
-//
-// angle_clamp
-//
-
-static JSBool angle_clamp(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+JS_FASTNATIVE_BEGIN(Angle, clamp)
 {
     jsdouble x;
     float an;
 
-    if(argc <= 0)
-        return JS_FALSE;
-
-    JS_GETNUMBER(x, argv, 0);
+    JS_CHECKARGS(1);
+    JS_GETNUMBER(x, v, 0);
     an = (float)x;
     Ang_Clamp(&an);
-
-    return JS_NewDoubleValue(cx, an, rval);
+    return JS_NewDoubleValue(cx, an, vp);
 }
 
-//
-// angle_invert
-//
-
-static JSBool angle_invertClamp(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+JS_FASTNATIVE_BEGIN(Angle, invertClamp)
 {
     jsdouble x;
 
-    if(argc <= 0)
-        return JS_FALSE;
-
-    JS_GETNUMBER(x, argv, 0);
-
-    return JS_NewDoubleValue(cx, Ang_ClampInvert((float)x), rval);
+    JS_CHECKARGS(1);
+    JS_GETNUMBER(x, v, 0);
+    return JS_NewDoubleValue(cx, Ang_ClampInvert((float)x), vp);
 }
 
-//
-// angle_invertSums
-//
-
-static JSBool angle_invertClampSum(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+JS_FASTNATIVE_BEGIN(Angle, invertClampSum)
 {
     jsdouble x1;
     jsdouble x2;
 
-    if(argc <= 0)
-        return JS_FALSE;
-
-    JS_GETNUMBER(x1, argv, 0);
-    JS_GETNUMBER(x2, argv, 1);
-
-    return JS_NewDoubleValue(cx, Ang_ClampInvertSums((float)x1, (float)x2), rval);
+    JS_CHECKARGS(2);
+    JS_GETNUMBER(x1, v, 0);
+    JS_GETNUMBER(x2, v, 1);
+    return JS_NewDoubleValue(cx, Ang_ClampInvertSums((float)x1, (float)x2), vp);
 }
 
-//
-// angle_diff
-//
-
-static JSBool angle_diff(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+JS_FASTNATIVE_BEGIN(Angle, diff)
 {
     jsdouble x1;
     jsdouble x2;
 
-    if(argc <= 0)
-        return JS_FALSE;
-
-    JS_GETNUMBER(x1, argv, 0);
-    JS_GETNUMBER(x2, argv, 1);
-
-    return JS_NewDoubleValue(cx, Ang_Diff((float)x1, (float)x2), rval);
+    JS_CHECKARGS(2);
+    JS_GETNUMBER(x1, v, 0);
+    JS_GETNUMBER(x2, v, 1);
+    return JS_NewDoubleValue(cx, Ang_Diff((float)x1, (float)x2), vp);
 }
 
-//
-// angle_radToDeg
-//
-
-static JSBool angle_radToDeg(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+JS_FASTNATIVE_BEGIN(Angle, radToDeg)
 {
     jsdouble x;
 
-    if(argc <= 0)
-        return JS_FALSE;
-
-    JS_GETNUMBER(x, argv, 0);
-
-    return JS_NewDoubleValue(cx, RAD2DEG((float)x), rval);
+    JS_CHECKARGS(1);
+    JS_GETNUMBER(x, v, 0);
+    return JS_NewDoubleValue(cx, RAD2DEG((float)x), vp);
 }
 
-//
-// angle_degToRad
-//
-
-static JSBool angle_degToRad(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+JS_FASTNATIVE_BEGIN(Angle, degToRad)
 {
     jsdouble x;
 
-    if(argc <= 0)
-        return JS_FALSE;
-
-    JS_GETNUMBER(x, argv, 0);
-
-    return JS_NewDoubleValue(cx, DEG2RAD((float)x), rval);
+    JS_CHECKARGS(1);
+    JS_GETNUMBER(x, v, 0);
+    return JS_NewDoubleValue(cx, DEG2RAD((float)x), vp);
 }
 
-//
-// system_class
-//
-
-JSClass Angle_class =
+JS_FASTNATIVE_BEGIN(Angle, alignYawToDirection)
 {
-    "Angle",                                    // name
+    jsdouble an;
+    float yaw;
+    vec3_t vec1;
+    vec3_t vec2;
+    JSObject *obj;
+
+    JS_CHECKARGS(3);
+    JS_GETNUMBER(an, v, 0);
+    JS_GETOBJECT(obj, v, 1);
+    JS_GETVECTOR2(obj, vec1);
+    JS_GETOBJECT(obj, v, 2);
+    JS_GETVECTOR2(obj, vec2);
+
+    yaw = Ang_AlignYawToVector((float)an, vec1, vec2);
+    Ang_Clamp(&yaw);
+
+    return JS_NewDoubleValue(cx, yaw, vp);
+}
+
+JS_BEGINCLASS(Angle)
     0,                                          // flags
     JS_PropertyStub,                            // addProperty
     JS_PropertyStub,                            // delProperty
@@ -151,37 +124,26 @@ JSClass Angle_class =
     JS_ConvertStub,                             // convert
     JS_FinalizeStub,                            // finalize
     JSCLASS_NO_OPTIONAL_MEMBERS                 // getObjectOps etc.
-};
+JS_ENDCLASS();
 
-//
-// Angle_props
-//
-
-JSPropertySpec Angle_props[] =
+JS_BEGINPROPS(Angle)
 {
     { NULL, 0, 0, NULL, NULL }
 };
 
-//
-// Angle_const
-//
-
-JSConstDoubleSpec Angle_const[] =
+JS_BEGINCONST(Angle)
 {
     { 0, 0, 0, { 0, 0, 0 } }
 };
 
-//
-// Angle_functions
-//
-
-JSFunctionSpec Angle_functions[] =
+JS_BEGINFUNCS(Angle)
 {
-    JS_FS("clamp",          angle_clamp,            1, 0, 0),
-    JS_FS("invertClamp",    angle_invertClamp,      1, 0, 0),
-    JS_FS("invertClampSum", angle_invertClampSum,   2, 0, 0),
-    JS_FS("diff",           angle_diff,             2, 0, 0),
-    JS_FS("radToDeg",       angle_radToDeg,         1, 0, 0),
-    JS_FS("degToRad",       angle_degToRad,         1, 0, 0),
+    JS_FASTNATIVE(Angle, clamp, 1),
+    JS_FASTNATIVE(Angle, invertClamp, 1),
+    JS_FASTNATIVE(Angle, invertClampSum, 2),
+    JS_FASTNATIVE(Angle, diff, 2),
+    JS_FASTNATIVE(Angle, radToDeg, 1),
+    JS_FASTNATIVE(Angle, degToRad, 1),
+    JS_FASTNATIVE(Angle, alignYawToDirection, 3),
     JS_FS_END
 };

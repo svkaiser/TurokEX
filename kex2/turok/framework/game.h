@@ -30,20 +30,10 @@
 #define VELOCITY_EPSILON    0.0001f
 #define SLOPE_THRESHOLD     25.0f
 
-enum
-{
-    WL_INVALID  = 0,
-    WL_OVER     = 1,
-    WL_BETWEEN  = 2,
-    WL_UNDER    = 3
-};
-
 void G_ClipVelocity(vec3_t out, vec3_t velocity, vec3_t normal, float fudge);
-void G_CheckObjectStep(vec3_t origin, vec3_t velocity, plane_t *plane);
-int G_CheckWaterLevel(vec3_t origin, float centeroffs, plane_t *plane);
 void G_ApplyFriction(vec3_t velocity, float friction, kbool effectY);
 void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
-                    gActor_t *actor, float yaw, trace_t *t);
+                    gActor_t *actor, trace_t *t);
 
 void G_Shutdown(void);
 void G_Ticker(void);

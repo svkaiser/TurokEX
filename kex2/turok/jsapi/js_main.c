@@ -40,6 +40,8 @@ static js_scrobj_t  *js_scrobj_list[MAX_HASH];
 static JSRuntime    *js_runtime     = NULL;
 static js_scrobj_t  *js_rootscript  = NULL;
 
+static unsigned int js_GCTime = 0;
+
 JSContext   *js_context = NULL;
 JSObject    *js_gobject = NULL;
 
@@ -782,15 +784,23 @@ void J_CompileAndRunScript(const char *name)
 }
 
 //
+// J_GetGCTime
+//
+
+unsigned int J_GetGCTime(void)
+{
+    return js_GCTime;
+}
+
+//
 // J_GarbageCollect
 //
 
 CVAR_EXTERNAL(cl_maxfps);
 CVAR_EXTERNAL(developer);
+
 void J_GarbageCollect(void)
 {
-    int ms;
-
     JPool_ReleaseObjects(&objPoolVector);
     JPool_ReleaseObjects(&objPoolQuaternion);
     JPool_ReleaseObjects(&objPoolPlane);
@@ -803,16 +813,16 @@ void J_GarbageCollect(void)
     JPool_ReleaseObjects(&objPoolInputEvent);
 
     if(developer.value)
-        ms = Sys_GetMilliseconds();
+        js_GCTime = Sys_GetMilliseconds();
 
     JS_MaybeGC(js_context);
 
     if(developer.value)
     {
-        ms = Sys_GetMilliseconds() - ms;
-        if(ms > (int)(((1.0f / cl_maxfps.value) * 1000) / 4))
+        js_GCTime = Sys_GetMilliseconds() - js_GCTime;
+        if(js_GCTime > (unsigned int)(((1.0f / cl_maxfps.value) * 1000) / 4))
         {
-            Com_DPrintf("GC hitch: %ims\n", ms);
+            Com_DPrintf("GC hitch: %ims\n", js_GCTime);
         }
     }
 }

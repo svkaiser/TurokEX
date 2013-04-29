@@ -250,6 +250,34 @@ void Vec_TransformToWorld(mtx_t m, vec3_t vec, vec3_t out)
 }
 
 //
+// Vec_ApplyQuaternion
+//
+
+void Vec_ApplyQuaternion(vec3_t out, vec3_t vec, vec4_t rot)
+{
+    float xx = rot[0] * rot[0];
+    float yx = rot[1] * rot[0];
+    float zx = rot[2] * rot[0];
+    float wx = rot[3] * rot[0];
+    float yy = rot[1] * rot[1];
+    float zy = rot[2] * rot[1];
+    float wy = rot[3] * rot[1];
+    float zz = rot[2] * rot[2];
+    float wz = rot[3] * rot[2];
+    float ww = rot[3] * rot[3];
+
+    out[0] = ((yx + yx) - (wz + wz)) * vec[1] +
+        ((wy + wy + zx + zx)) * vec[2] +
+        (((ww + xx) - yy) - zz) * vec[0];
+    out[1] = ((yy + (ww - xx)) - zz) * vec[1] +
+        ((zy + zy) - (wx + wx)) * vec[2] +
+        ((wz + wz) + (yx + yx)) * vec[0];
+    out[2] = ((wx + wx) + (zy + zy)) * vec[1] +
+        (((ww - xx) - yy) + zz) * vec[2] +
+        ((zx + zx) - (wy + wy)) * vec[0];
+}
+
+//
 // Vec_Lerp3
 //
 
@@ -366,6 +394,36 @@ void Vec_QuaternionToAxis(float *angle, vec3_t vec3, vec4_t vec4)
         vec3[1] = 0;
         vec3[2] = 0;
     }
+}
+
+//
+// Vec_ToQuaternion
+//
+
+void Vec_ToQuaternion(vec4_t out, vec3_t vec)
+{
+    float d;
+    float an;
+    vec3_t scv;
+    vec3_t fwd;
+    vec3_t cp;
+
+    d = Vec_Unit3(vec);
+
+    if(d == 0)
+    {
+        Vec_Set4(out, 0, 0, 0, 1);
+        return;
+    }
+
+    Vec_Set3(fwd, 0, 0, 1);
+    Vec_Scale(scv, vec, 1 / d);
+    Vec_Cross(cp, fwd, scv);
+    Vec_Normalize3(cp);
+
+    an = (float)acos(scv[2]);
+
+    Vec_SetQuaternion(out, an, cp[0], cp[1], cp[2]);
 }
 
 //

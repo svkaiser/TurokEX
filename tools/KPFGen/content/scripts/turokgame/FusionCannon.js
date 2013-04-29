@@ -35,6 +35,7 @@ class.properties(FusionCannon,
     //------------------------------------------------------------------------
     
     readySound : 'sounds/shaders/ready_tek_weapon_2.ksnd',
+    bFired : false,
     
     //------------------------------------------------------------------------
     // FUNCTIONS
@@ -49,5 +50,21 @@ class.properties(FusionCannon,
         }
         
         return false;
+    },
+    
+    fire : function()
+    {
+        if(this.animState.playTime >= 1.1333)
+        {
+            if(!this.bFired)
+            {
+                this.bFired = true;
+                this.spawnFx('fx/projectile_fusionshot.kfx', -4.096, -14.336, -25.6);
+            }
+        }
+        else
+            this.bFired = false;
+        
+        this.super.prototype.fire.bind(this)();
     }
 });

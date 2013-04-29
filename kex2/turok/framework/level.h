@@ -320,6 +320,7 @@ typedef struct plane_s
     vec3_t              points[3];
     float               height[3];
     vec3_t              normal;
+    vec3_t              ceilingNormal;
     blockobj_t          blocklist;
     struct plane_s      *link[3];
 } plane_t;

@@ -21,7 +21,8 @@ Render = class.extendNative(NRender, function()
     
     this.event_PreRender = function()
     {
-        var lp = Client.localPlayer;
+        this.clearViewPort(0.25, 0.25, 0.25);
+        /*var lp = Client.localPlayer;
         
         if(lp.controller == null)
         {
@@ -43,12 +44,12 @@ Render = class.extendNative(NRender, function()
                 lp.controller.plane.area[component].onPreRender();
         }
         
-        lp.viewCamera.draw();
+        lp.viewCamera.draw();*/
     }
     
     this.event_OnRender = function()
     {
-        var lp = Client.localPlayer;
+        /*var lp = Client.localPlayer;
         
         if(lp.controller == null)
             return;
@@ -70,14 +71,12 @@ Render = class.extendNative(NRender, function()
                 weapon.tick();
                 weapon.draw();
             }
-        }
+        }*/
     }
     
     this.event_PostRender = function()
     {
-        this.setOrtho();
-        
-        var lp = Client.localPlayer;
+        /*var lp = Client.localPlayer;
         
         if(lp.controller && lp.controller.owner)
         {
@@ -90,8 +89,6 @@ Render = class.extendNative(NRender, function()
                     break;
                 }
             }
-        }
-        
-        lp.console.draw();
+        }*/
     }
 });

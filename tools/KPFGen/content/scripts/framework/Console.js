@@ -92,7 +92,7 @@ Console = new (class.define(function()
         this.scrollBackStr.push(text);
     }
     
-    Sys.event_OutputText = function(text)
+    this.print = function(text)
     {
         var curText;
         var strLength = 0;
@@ -113,7 +113,7 @@ Console = new (class.define(function()
             if(arguments[1])
                 outText = '<color=' + arguments[1] + '>' + outText + '</color>';
                 
-            Console.outputTextLine(outText);
+            this.outputTextLine(outText);
             
             curText = curText.substr(lineLength + 1, curText.length);
             strLength -= (lineLength + 1);

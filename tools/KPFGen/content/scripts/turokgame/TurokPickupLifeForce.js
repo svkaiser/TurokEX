@@ -32,8 +32,9 @@ class.properties(TurokPickupLifeForce,
             return;
         
         player.lifeForces += this.amount;
-        if(player.lifeForces > MAX_LIFEFORCES)
+        if(player.lifeForces >= MAX_LIFEFORCES)
         {
+            Snd.play('sounds/shaders/generic_234.ksnd', this.parent.owner);
             player.lives++;
             if(player.lives > MAX_LIVES)
                 player.lives = MAX_LIVES;

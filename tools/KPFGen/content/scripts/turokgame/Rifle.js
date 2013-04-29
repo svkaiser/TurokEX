@@ -53,7 +53,9 @@ class.properties(Rifle,
             if(!this.bShotsFired[0])
             {
                 this.bShotsFired[0] = true;
-                Snd.play('sounds/shaders/rifle_shot.ksnd');
+                this.spawnFx('fx/muzzle_rifle.kfx', -5.12, -3.584, 15.696);
+                this.spawnFx('fx/bulletshell.kfx', -10.24, -10.24, 13.82);
+                ClientPlayer.component.aRifleAttack();
             }
         }
         
@@ -62,7 +64,9 @@ class.properties(Rifle,
             if(!this.bShotsFired[1])
             {
                 this.bShotsFired[1] = true;
-                Snd.play('sounds/shaders/rifle_shot.ksnd');
+                this.spawnFx('fx/muzzle_rifle.kfx', -5.12, -3.584, 15.696);
+                this.spawnFx('fx/bulletshell.kfx', -10.24, -10.24, 13.82);
+                ClientPlayer.component.aRifleAttack();
             }
         }
         
@@ -71,7 +75,9 @@ class.properties(Rifle,
             if(!this.bShotsFired[2])
             {
                 this.bShotsFired[2] = true;
-                Snd.play('sounds/shaders/rifle_shot.ksnd');
+                this.spawnFx('fx/muzzle_rifle.kfx', -5.12, -3.584, 15.696);
+                this.spawnFx('fx/bulletshell.kfx', -10.24, -10.24, 13.82);
+                ClientPlayer.component.aRifleAttack();
             }
         }
         

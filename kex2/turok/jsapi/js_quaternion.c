@@ -180,6 +180,23 @@ JS_FASTNATIVE_BEGIN(Quaternion, pointTo)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(Quaternion, getAxis)
+{
+    vec4_t rot;
+    vec3_t out;
+    JSObject *obj;
+    float an;
+
+    JS_CHECKARGS(1);
+    JS_GETOBJECT(obj, v, 0);
+    JS_GETQUATERNION2(obj, rot);
+
+    Vec_QuaternionToAxis(&an, out, rot);
+
+    JS_NEWVECTORPOOL(out);
+    return JS_TRUE;
+}
+
 JS_BEGINCLASS(Quaternion)
     0,                                          // flags
     JS_PropertyStub,                            // addProperty
@@ -214,6 +231,7 @@ JS_BEGINSTATICFUNCS(Quaternion)
 {
     JS_FASTNATIVE(Quaternion, multiply, 2),
     JS_FASTNATIVE(Quaternion, pointTo, 2),
+    JS_FASTNATIVE(Quaternion, getAxis, 1),
     JS_FS_END
 };
 

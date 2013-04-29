@@ -32,6 +32,7 @@
 #include "zone.h"
 #include "gl.h"
 #include "fx.h"
+#include "sound.h"
 
 JS_CLASSOBJECT(Sys);
 
@@ -446,28 +447,57 @@ JS_FASTNATIVE_BEGIN(Sys, spawnFx)
     vec3_t dest;
     vec4_t rot;
     plane_t *plane;
+    fx_t *fx;
+    jsval *v;
 
-    JS_CHECKARGS(6);
+    if(argc < 5 || argc > 7)
+        return JS_FALSE;
+
+    v = JS_ARGV(cx, vp);
+    actor = NULL;
 
     JS_GETSTRING(str, bytes, v, 0);
-    JS_GETOBJECT(actorobj, v, 1);
-    JS_GETOBJECT(dirobj, v, 2);
-    JS_GETOBJECT(destobj, v, 3);
-    JS_GETOBJECT(rotobj, v, 4);
-    JS_GETOBJECT(plobj, v, 5);
 
-    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, actorobj, &GameActor_class, NULL)))
-        actor = NULL;
+    if(!JSVAL_IS_NULL(v[1]))
+    {
+        JS_GETOBJECT(actorobj, v, 1);
+        if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, actorobj, &GameActor_class, NULL)))
+            actor = NULL;
+    }
+
+    JS_GETOBJECT(destobj, v, 2);
+    JS_GETOBJECT(rotobj, v, 3);
+    JS_GETOBJECT(plobj, v, 4);
+
+    JS_GETVECTOR2(destobj, dest);
+    JS_GETQUATERNION2(rotobj, rot);
 
     if(!(plane = (plane_t*)JS_GetInstancePrivate(cx, plobj, &Plane_class, NULL)))
         plane = NULL;
 
-    JS_GETVECTOR2(dirobj, dir);
-    JS_GETVECTOR2(destobj, dest);
-    JS_GETQUATERNION2(rotobj, rot);
+    Vec_Set3(dir, 0, 0, 0);
 
-    FX_Spawn(bytes, actor, dir, dest, rot, plane);
+    if(argc >= 6)
+    {
+        if(!JSVAL_IS_NULL(v[5]))
+        {
+            JS_GETOBJECT(dirobj, v, 5);
+            JS_GETVECTOR2(dirobj, dir);
+        }
+    }
+
+    fx = FX_Spawn(bytes, actor, dir, dest, rot, plane);
     JS_free(cx, bytes);
+
+    if(argc == 7)
+    {
+        JSString *str;
+        char *bytes;
+
+        JS_GETSTRING(str, bytes, v, 6);
+        Snd_PlayShader(bytes, (gActor_t*)fx);
+        JS_free(cx, bytes);
+    }
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
    return JS_TRUE;
@@ -536,7 +566,7 @@ JS_BEGINFUNCS(Sys)
     JS_FASTNATIVE(Sys, loadModel, 1),
     JS_FASTNATIVE(Sys, loadAnimation, 2),
     JS_FASTNATIVE(Sys, readTextFile, 1),
-    JS_FASTNATIVE(Sys, spawnFx, 6),
+    JS_FASTNATIVE(Sys, spawnFx, 7),
     JS_FASTNATIVE(Sys, GC, 0),
     JS_FASTNATIVE(Sys, maybeGC, 0),
     JS_FS_END

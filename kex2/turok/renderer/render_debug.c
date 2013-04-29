@@ -164,6 +164,9 @@ void R_DrawPlaneNormals(void)
 
         plane_t *p = &gLevel.planes[i];
 
+        if(!R_FrustumTestPlane(p))
+            continue;
+
         x = (p->points[0][0] + p->points[1][0] + p->points[2][0]) / 3;
         y = (p->points[0][1] + p->points[1][1] + p->points[2][1]) / 3;
         z = (p->points[0][2] + p->points[1][2] + p->points[2][2]) / 3;
@@ -177,6 +180,21 @@ void R_DrawPlaneNormals(void)
             y + (16 * p->normal[1]),
             z + (16 * p->normal[2]));
         dglEnd();
+
+        if(p->flags & CLF_CHECKHEIGHT)
+        {
+            y = (p->height[0] + p->height[1] + p->height[2]) / 3;
+
+            dglBegin(GL_LINES);
+            dglColor4ub(255, 128, 128, 255);
+            dglVertex3f(x, y, z);
+            dglColor4ub(255, 255, 0, 255);
+            dglVertex3f(
+                x + (16 * p->ceilingNormal[0]),
+                y + (16 * p->ceilingNormal[1]),
+                z + (16 * p->ceilingNormal[2]));
+            dglEnd();
+        }
     }
 
     dglLineWidth(1.0f);
@@ -239,7 +257,6 @@ void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b)
     if(!R_FrustumTestBox(bbox))
         return;
 
-    //dglEnable(GL_DEPTH_TEST);
     GL_SetState(GLSTATE_TEXTURE0, false);
     GL_SetState(GLSTATE_CULL, false);
     GL_SetState(GLSTATE_BLEND, true);
@@ -281,8 +298,6 @@ void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b)
     GL_SetState(GLSTATE_TEXTURE0, true);
     GL_SetState(GLSTATE_CULL, true);
     GL_SetState(GLSTATE_BLEND, false);
-
-    //dglDisable(GL_DEPTH_TEST);
 }
 
 //
