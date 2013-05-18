@@ -1,22 +1,22 @@
 //-----------------------------------------------------------------------------
 //
-// ShotTracePlayerRifle.js
+// AnimalBoar.js
 // DESCRIPTION:
 //
 //-----------------------------------------------------------------------------
 
-ShotTracePlayerRifle = class.extends(ShotTrace);
+AnimalBoar = class.extendStatic(TurokAIAnimal, function()
+{
+    TurokAIAnimal.prototype.constructor.bind(this)();
+});
 
-class.properties(ShotTracePlayerRifle,
+class.properties(AnimalBoar,
 {
     //------------------------------------------------------------------------
     // VARS
     //------------------------------------------------------------------------
     
-    left        : 0.0,
-    up          : 0.0,
-    spray       : 0.035,
-    hitFx       : "fx/fx_011.kfx",
-    hitSnd      : "sounds/shaders/bullet_impact_3.ksnd",
-    damageClass : DamagePistolShot
+    activeDistance  : 716.8,
+    health          : 30,
+    fleeLoopFrame   : 23,
 });

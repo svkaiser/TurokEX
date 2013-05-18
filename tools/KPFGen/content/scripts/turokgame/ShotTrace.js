@@ -13,11 +13,12 @@ class.properties(ShotTrace,
     // VARS
     //------------------------------------------------------------------------
     
-    left    : 0.0,
-    up      : 0.0,
-    spray   : 0.0,
-    hitFx   : "",
-    hitSnd  : "",
+    left        : 0.0,
+    up          : 0.0,
+    spray       : 0.0,
+    hitFx       : "",
+    hitSnd      : "",
+    damageClass : Damage,
     
     //------------------------------------------------------------------------
     // FUNCTIONS
@@ -39,15 +40,7 @@ class.properties(ShotTrace,
                 actor.rotation, t.hitPlane, null, this.hitSnd);
                 
             if(t.hitActor != null)
-            {
-                for(var i in t.hitActor.components)
-                {
-                    var component = t.hitActor.components[i];
-                    
-                    if(component.onDamage)
-                        component.onDamage(actor);
-                }
-            }
+                this.damageClass.prototype.inflict(t.hitActor, actor);
         }
     }
 });

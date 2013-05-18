@@ -15,5 +15,5 @@ class.properties(AmmoShell,
     
     max         : 20,
     maxBackpack : 40,
-    hudIcon     : "h_a_shells1.tga"
+    hudIcon     : "hud/h_a_shells1.tga"
 });

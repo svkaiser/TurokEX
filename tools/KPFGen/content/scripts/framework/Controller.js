@@ -168,6 +168,9 @@ class.properties(Controller,
     
     gravity : function(amount)
     {
+        if(this.plane == null)
+            return;
+            
         if((this.origin.y - this.plane.distance(this.origin)) > 0.01)
             this.velocity.y -= (amount * this.frametime);
     },

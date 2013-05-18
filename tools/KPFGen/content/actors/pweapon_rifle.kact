@@ -1,0 +1,9 @@
+{
+    mesh = "models/mdl665/mdl665.kmesh"
+    bounds = { -64 -64 -64 64 64 64 }
+    scale = { 1 1 1 }
+    components[1] =
+    {
+        "WeaponRifle"
+    }
+}

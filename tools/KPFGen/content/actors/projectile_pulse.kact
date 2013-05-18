@@ -1,0 +1,17 @@
+{
+    bounds = { -32 -32 -32 32 32 32 }
+    bCollision = 0
+    bStatic = 0
+    bHidden = 0
+    bOrientOnSlope = 0
+    bTouch = 0
+    radius = 32
+    height = 32
+    centerheight = 16
+    viewheight = 0
+    scale = { 0.05 0.05 0.05 }
+    components[1] =
+    {
+        "ComponentProjectile"
+    }
+}

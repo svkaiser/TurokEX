@@ -1,0 +1,16 @@
+{
+    bounds = { -11.618531 -0.000807 -13.995358 13.564240 24.504747 33.576096 }
+    bCollision = 0
+    bStatic = 0
+    bOrientOnSlope = 1
+    radius = 40.959999
+    height = 71.680000
+    centerheight = 40.959999
+    viewheight = 30.719999
+    mesh = "models/mdl373/mdl373.kmesh"
+    scale = { 0.625000 0.625000 0.625000 }
+    components[1] =
+    {
+        "TurokAIFish"
+    }
+}

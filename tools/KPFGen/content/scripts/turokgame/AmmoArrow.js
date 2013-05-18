@@ -16,5 +16,5 @@ class.properties(AmmoArrow,
     initial     : 30,
     max         : 30,
     maxBackpack : 30,
-    hudIcon     : "h_a_arrow1.tga"
+    hudIcon     : "hud/h_a_arrow1.tga"
 });

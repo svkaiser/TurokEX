@@ -1,0 +1,16 @@
+{
+    bounds = { -79.481621 -153.385345 -89.338776 95.567413 3455.857178 88.684303 }
+    bCollision = 1
+    bStatic = 0
+    bOrientOnSlope = 1
+    radius = 40.959999
+    height = 71.680000
+    centerheight = 40.959999
+    viewheight = 30.719999
+    mesh = "models/mdl391/mdl391.kmesh"
+    scale = { 0.500000 0.500000 0.500000 }
+    components[1] =
+    {
+        "TurokAIGrunt"
+    }
+}

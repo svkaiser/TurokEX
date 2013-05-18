@@ -1,0 +1,9 @@
+{
+    mesh = "models/mdl653/mdl653.kmesh"
+    bounds = { -64 -64 -64 64 64 64 }
+    scale = { 1 1 1 }
+    components[1] =
+    {
+        "WeaponKnife"
+    }
+}

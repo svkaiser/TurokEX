@@ -15,5 +15,5 @@ class.properties(AmmoCharge,
     
     max         : 2,
     maxBackpack : 3,
-    hudIcon     : "h_a_power.tga"
+    hudIcon     : "hud/h_a_power.tga"
 });

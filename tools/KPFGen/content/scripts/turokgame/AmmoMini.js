@@ -15,5 +15,5 @@ class.properties(AmmoMini,
     
     max         : 125,
     maxBackpack : 125,
-    hudIcon     : "h_a_mags.tga"
+    hudIcon     : "hud/h_a_mags.tga"
 });

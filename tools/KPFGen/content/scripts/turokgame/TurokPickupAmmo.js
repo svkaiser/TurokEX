@@ -30,7 +30,7 @@ class.properties(TurokPickupAmmo,
         if(player == null)
             return;
         
-        player.giveAmmo(this.id, this.amount);
+        player.ammo[this.id].give(player, this.amount);
         TurokPickup.prototype.onTouch.bind(this)(instigator);
     }
 });

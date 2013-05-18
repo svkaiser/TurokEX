@@ -15,5 +15,5 @@ class.properties(AmmoGrenade,
     
     max         : 20,
     maxBackpack : 30,
-    hudIcon     : "h_a_grenades.tga"
+    hudIcon     : "hud/h_a_grenades.tga"
 });

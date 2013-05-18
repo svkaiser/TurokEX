@@ -117,15 +117,64 @@ class.properties(TurokHud,
         this.canvas.setTextureTile(0, 1, 0, 1);
         this.canvas.setDrawScale(0.5);
         
-        // icons
+        // health
         this.canvas.drawFixedTile('hud/h_plaque1.tga', 32.95, 210);
         this.canvas.drawFixedTile('hud/h_health.tga', 12, 210);
-        this.canvas.drawFixedTile('hud/h_turok.tga', 10, 10);
-        this.canvas.drawFixedTile('hud/h_coin.tga', 286, 10);
-        
-        // numbers
-        this.drawNumber(player.lives, 10 + 30, 10 + 32);
         this.drawNumber(player.health, 36, 215);
+        
+        // lives
+        this.canvas.drawFixedTile('hud/h_turok.tga', 10, 10);
+        this.drawNumber(player.lives, 10 + 30, 10 + 32);
+        
+        // ammo
+        if(player.activeWeaponID != WP_KNIFE)
+        {
+            var ammo_id = 0;
+            var am_icon_x = 82;
+            
+            this.canvas.drawFixedTile('hud/h_plaque1.tga', 100, 210);
+            
+            switch(player.activeWeaponID)
+            {
+            case WP_BOW:
+                ammo_id = AM_ARROWS;
+                break;
+                
+            case WP_PISTOL:
+            case WP_RIFLE:
+            case WP_MINIGUN:
+                am_icon_x = 86;
+                ammo_id = AM_CLIPS;
+                break;
+                
+            case WP_SHOTGUN:
+            case WP_AUTOSHOTGUN:
+                am_icon_x = 79;
+                ammo_id = AM_SHELLS;
+                break;
+                
+            case WP_PULSERIFLE:
+            case WP_ALIENRIFLE:
+                ammo_id = AM_CELLS;
+                break;
+                
+            case WP_GRENADE_L:
+                am_icon_x = 79;
+                ammo_id = AM_GRENADES;
+                break;
+                
+            case WP_ROCKET_L:
+                am_icon_x = 82;
+                ammo_id = AM_ROCKETS;
+                break;
+            }
+            
+            this.drawNumber(player.ammo[ammo_id].amount, 102, 215);
+            this.canvas.drawFixedTile(player.ammo[ammo_id].hudIcon, am_icon_x, 210);
+        }
+        
+        // life forces
+        this.canvas.drawFixedTile('hud/h_coin.tga', 286, 10);
         
         var lf_x = 286 - 17;
         

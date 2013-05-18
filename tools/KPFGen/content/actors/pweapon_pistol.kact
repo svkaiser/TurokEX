@@ -1,0 +1,9 @@
+{
+    mesh = "models/mdl663/mdl663.kmesh"
+    bounds = { -64 -64 -64 64 64 64 }
+    scale = { 1 1 1 }
+    components[1] =
+    {
+        "WeaponPistol"
+    }
+}

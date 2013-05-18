@@ -19,7 +19,7 @@ Sys.runScript('scripts/subsystems/Render.js');
 
 Sys.runScript('scripts/framework/Controller.js');
 Sys.runScript('scripts/framework/ControllerPlayer.js');
-Sys.runScript('scripts/framework/PacketManager.js');
+//Sys.runScript('scripts/framework/PacketManager.js');
 Sys.runScript('scripts/framework/Console.js');
 
 // TEMP

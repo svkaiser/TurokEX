@@ -28,26 +28,11 @@ class.properties(TurokAIGrunt,
     anim_STurn180   : null,
     anim_Death1     : null,
     state           : GRUNT_STATE_IDLE,
-    destAngle       : 0.0,
-    lookAngle       : 0.0,
-    bTurning        : false,
     health          : 14,
     
     //------------------------------------------------------------------------
     // FUNCTIONS
     //------------------------------------------------------------------------
-    
-    anglesToTarget : function(torg, aorg)
-    {
-        return Angle.invertClampSum(this.controller.angles.yaw,
-            Vector.pointToAxis(torg, aorg).toYaw());
-    },
-    
-    changeYaw : function(time)
-    {
-        this.controller.angles.yaw = Angle.clamp(this.controller.angles.yaw +
-            (this.destAngle * time));
-    },
     
     think : function(actor)
     {
@@ -203,8 +188,8 @@ class.properties(TurokAIGrunt,
         
         c.gravity(c.mass);
         c.beginMovement();
-        c.updateActor(actor);
         c.applyFriction(c.friction);
+        c.updateActor(actor);
     },
     
     onLocalTick : function()

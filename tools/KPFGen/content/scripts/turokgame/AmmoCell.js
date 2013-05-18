@@ -15,5 +15,5 @@ class.properties(AmmoCell,
     
     max         : 100,
     maxBackpack : 100,
-    hudIcon     : "h_a_cell.tga"
+    hudIcon     : "hud/h_a_cell.tga"
 });

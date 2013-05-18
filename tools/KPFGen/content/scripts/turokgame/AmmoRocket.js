@@ -15,5 +15,5 @@ class.properties(AmmoRocket,
     
     max         : 6,
     maxBackpack : 12,
-    hudIcon     : "h_a_missiles.tga"
+    hudIcon     : "hud/h_a_missiles.tga"
 });

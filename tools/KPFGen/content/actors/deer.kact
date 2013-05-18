@@ -1,0 +1,16 @@
+{
+    mesh = "models/mdl325/mdl325.kmesh"
+    bounds = { -35.96 -0.0 -82.618 46.809 151.806 60.062 }
+    bCollision = 1
+    bStatic = 0
+    bOrientOnSlope = 1
+    scale = { 0.5 0.5 0.5 }
+    radius = 40.96
+    height = 71.68
+    centerheight = 40.96
+    viewheight = 30.72
+    components[1] =
+    {
+        "AnimalDeer"
+    }
+}

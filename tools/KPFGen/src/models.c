@@ -854,13 +854,13 @@ static void ProcessMovement(byte *data, int frames)
 
     for(i = 0; i < count; i++)
     {
+        byte *cmpdata = data + 8 + (size * i);
+
         Com_Strcat("        { // %i\n", i);
+
         if(encoded)
         {
             byte *tables[3];
-            byte *cmpdata;
-
-            cmpdata = data + 8 + (size * i);
 
             tables[0] = (byte *)predtable + 0 * size;
             tables[1] = (byte *)predtable + 2 * size;
@@ -899,6 +899,15 @@ static void ProcessMovement(byte *data, int frames)
         }
         else
         {
+            float *xyz = (float*)(cmpdata + 20);
+
+            int j;
+
+            for(j = 0; j < frames; j++, xyz += 3)
+            {
+                Com_Strcat("            { %f %f %f }\n",
+                    xyz[0], xyz[1], xyz[2]);
+            }
         }
 
         Com_Strcat("        }\n");

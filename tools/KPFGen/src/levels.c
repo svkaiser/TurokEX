@@ -29,6 +29,7 @@
 #include "decoders.h"
 #include "zone.h"
 
+extern const char *sndfxnames[];
 void AddTexture(byte *data, int size, const char *path);
 
 #define M_PI                        3.1415926535897932384626433832795
@@ -111,6 +112,178 @@ void AddTexture(byte *data, int size, const char *path);
 #define CHUNK_INSTGROUP_COUNT       0
 #define CHUNK_INSTGROUP_OFFSET(x)   (4 + (x * 4))
 
+typedef enum
+{
+    OT_TUROK = 0,
+
+    OT_AI_RAPTOR = 1,
+    OT_AI_GRUNT = 2,
+    OT_AI_DINOSAUR1 = 4,
+    OT_AI_RIDER = 5,
+    OT_AI_SANDWORM = 8,
+    OT_AI_STALKER = 9,
+    OT_AI_ALIEN = 10,
+    OT_AI_PURLIN = 11,
+    OT_AI_MECH = 12,
+    OT_AI_FISH = 14,
+    OT_AI_SEWERCRAB = 15,
+    OT_AI_KILLERPLANT = 16,
+    OT_AI_UNKNOWN1 = 19,
+    OT_AI_ANIMAL = 20,
+    OT_AI_INSECT = 21,
+    OT_AI_TURRET = 2001,
+
+    OT_AIBOSS_MANTIS = 1000,
+    OT_AIBOSS_TREX = 1001,
+    OT_AIBOSS_CAMPAINGER = 1002,
+    OT_AIBOSS_HUNTER = 1003,
+    OT_AIBOSS_HUMMER = 1004,
+
+    OT_DYNAMIC_DOOR = 300,
+    OT_DYNAMIC_GENERIC = 301,
+    OT_DYNAMIC_MANTISSTATUE = 302,
+    OT_DYNAMIC_LIFT = 303,
+    OT_DYNAMIC_UNKNOWN1 = 304,
+    OT_DYNAMIC_MANTISWALL = 305,
+    OT_DYNAMIC_LASERWALL = 308,
+    OT_DYNAMIC_DESTROYABLE = 309,
+    OT_DYNAMIC_MOVER = 310,
+    OT_DYNAMIC_UNKNOWN2 = 311,
+    OT_DYNAMIC_LOGO = 313,
+    OT_DYNAMIC_TECHLIGHT = 314,
+    OT_DYNAMIC_UNKNOWN3 = 316,
+    OT_DYNAMIC_PORTAL = 317,
+    OT_DYNAMIC_GATEKEYPANEL = 318,
+    OT_DYNAMIC_WATER1 = 319,
+    OT_DYNAMIC_WATER2 = 320,
+    OT_DYNAMIC_PORTALGATE = 321,
+    OT_DYNAMIC_ARROW = 322,
+    OT_DYNAMIC_MANTISKEY = 323,
+    OT_DYNAMIC_UNKNOWN4 = 324,
+    OT_DYNAMIC_KEYPLAQUE = 325,
+    OT_DYNAMIC_TEXTUREANIMATE = 327,
+    OT_DYNAMIC_UNKNOWN5 = 328,
+    OT_DYNAMIC_CUSTOM = 329,
+    OT_DYNAMIC_UNKNOWN6 = 330,
+    OT_DYNAMIC_TECHDOOR = 331,
+
+    OT_UNKNOWN = 200,
+    
+    OT_GIB_ALIEN3 = 701,
+    OT_GIB_STALKER4 = 702,
+    OT_GIB_ALIEN2 = 703,
+    OT_GIB_ALIEN1 = 704,
+    OT_GIB_STALKER3 = 705,
+    OT_GIB_STALKER5 = 706,
+    OT_GIB_STALKER2 = 707,
+    OT_GIB_STALKER1 = 708,
+
+    OT_WEAPON_KNIFE = 100,
+    OT_WEAPON_BOW = 102,
+    OT_WEAPON_PISTOL = 103,
+    OT_WEAPON_RIFLE = 104,
+    OT_WEAPON_PULSERIFLE = 105,
+    OT_WEAPON_SHOTGUN = 106,
+    OT_WEAPON_ASHOTGUN = 107,
+    OT_WEAPON_MINIGUN = 108,
+    OT_WEAPON_GRENADE = 109,
+    OT_WEAPON_ALIENGUN = 110,
+    OT_WEAPON_CANNON = 111,
+    OT_WEAPON_MISSILE = 112,
+    OT_WEAPON_ACCELERATOR = 113,
+    OT_WEAPON_CHRONO = 114,
+    
+    OT_PICKUP_SMALLHEALTH = 400,
+    OT_PICKUP_HEALTH = 402,
+    OT_PICKUP_FULLHEALTH = 403,
+    OT_PICKUP_ULTRAHEALTH = 404,
+    OT_PICKUP_MASK = 405,
+    OT_PICKUP_BACKPACK = 406,
+    OT_PICKUP_SPIRIT = 407,
+    OT_PICKUP_PISTOL = 409,
+    OT_PICKUP_ASSAULTRIFLE = 410,
+    OT_PICKUP_SHOTGUN = 411,
+    OT_PICKUP_ASHOTGUN = 412,
+    OT_PICKUP_MINIGUN = 413,
+    OT_PICKUP_GRENADELAUNCHER = 414,
+    OT_PICKUP_PULSERIFLE = 415,
+    OT_PICKUP_ALIENWEAPON = 416,
+    OT_PICKUP_ROCKETLAUNCHER = 417,
+    OT_PICKUP_ACCELERATOR = 418,
+    OT_PICKUP_CANNON = 419,
+    OT_PICKUP_QUIVER2 = 420,
+    OT_PICKUP_ARROWS = 421,
+    OT_PICKUP_QUIVER1 = 422,
+    OT_PICKUP_CLIP = 423,
+    OT_PICKUP_CLIPBOX = 424,
+    OT_PICKUP_SHELLS = 425,
+    OT_PICKUP_SHELLBOX = 426,
+    OT_PICKUP_EXPSHELLS = 427,
+    OT_PICKUP_EXPSHELLBOX = 428,
+    OT_PICKUP_MINIGUNAMMO = 429,
+    OT_PICKUP_GRENADE = 430,
+    OT_PICKUP_GRENADEBOX = 431,
+    OT_PICKUP_SMALLCELL = 432,
+    OT_PICKUP_CELL = 433,
+    OT_PICKUP_ROCKET = 434,
+    OT_PICKUP_FUSIONCELL = 436,
+    OT_PICKUP_ARMOR = 437,
+    OT_PICKUP_COIN1 = 438,
+    OT_PICKUP_COIN10 = 439,
+    OT_PICKUP_KEY1 = 440,
+    OT_PICKUP_KEY2 = 441,
+    OT_PICKUP_KEY3 = 442,
+    OT_PICKUP_KEY4 = 443,
+    OT_PICKUP_KEY5 = 444,
+    OT_PICKUP_KEY6 = 445,
+    OT_PICKUP_FINALKEY1 = 446,
+    OT_PICKUP_CHRONOPIECE1 = 447,
+    OT_PICKUP_FINALKEY2 = 449,
+    OT_PICKUP_CHRONOPIECE2 = 450,
+    OT_PICKUP_CHRONOPIECE3 = 451,
+    OT_PICKUP_CHRONOPIECE4 = 452,
+    OT_PICKUP_CHRONOPIECE5 = 453,
+    OT_PICKUP_CHRONOPIECE6 = 454,
+    OT_PICKUP_CHRONOPIECE7 = 455,
+    OT_PICKUP_CHRONOPIECE8 = 456,
+
+    OT_MINIPORTAL = 600,
+    OT_WATER = 800,
+
+} objecttype_t;
+
+typedef enum
+{
+    AAF_WATER           = 0x1,
+    AAF_UNKNOWN2        = 0x2,
+    AAF_UNKNOWN4        = 0x4,
+    AAF_UNKNOWN8        = 0x8,
+    AAF_CLIMB           = 0x10,
+    AAF_ONESIDED        = 0x20,
+    AAF_REVERB          = 0x40,
+    AAF_CRAWL           = 0x80,
+    AAF_UNKNOWN100      = 0x100,
+    AAF_TOUCH           = 0x200,
+    AAF_UNKNOWN400      = 0x400,
+    AAF_UNKNOWN800      = 0x800,
+    AAF_UNKNOWN1000     = 0x1000,
+    AAF_UNKNOWN2000     = 0x2000,
+    AAF_DEATHPIT        = 0x4000,
+    AAF_UNKNOWN8000     = 0x8000,
+    AAF_EVENT           = 0x10000,
+    AAF_REPEATABLE      = 0x20000,
+    AAF_TELEPORT        = 0x40000,
+    AAF_DAMAGE          = 0x80000,
+    AAF_DRAWSKY         = 0x100000,
+    AAF_WARP            = 0x200000,
+    AAF_UNKNOWN400000   = 0x400000,
+    AAF_UNKNOWN800000   = 0x800000,
+    AAF_UNKNOWN1000000  = 0x1000000,
+    AAF_UNKNOWN2000000  = 0x2000000,
+    AAF_CHECKPOINT      = 0x4000000,
+    AAF_SAVEGAME        = 0x8000000
+} areaflags_t;
+
 static byte *leveldata;
 static byte *attribdata;
 static short *typedata;
@@ -151,8 +324,9 @@ typedef struct
     short u22;
     char variant1;
     char texture;
-    short variant2;
-    short u25;
+    char variant2;
+    byte u25a;
+    short u25b;
     short u26;
     short u27;
     int flags;
@@ -310,8 +484,8 @@ static short GetObjectType(int index)
 
 static dboolean IsAPickup(int model)
 {
-    return (GetObjectType(model) >= 400 &&
-            GetObjectType(model) <= 456);
+    return (GetObjectType(model) >= OT_PICKUP_SMALLHEALTH &&
+            GetObjectType(model) <= OT_PICKUP_CHRONOPIECE8);
 }
 
 //
@@ -422,17 +596,19 @@ static void ProcessAreas(byte *data)
 
         total = 1;
 
-        if(area->flags & 0x1)       total++;
-        if(area->flags & 0x10)      total++;
-        if(area->flags & 0x80)      total++;
-        if(area->flags & 0x100000)  total++;
+        if(area->flags & AAF_WATER)     total++;
+        if(area->flags & AAF_CLIMB)     total++;
+        if(area->flags & AAF_CRAWL)     total++;
+        if(area->flags & AAF_EVENT)     total++;
+        if(area->flags & AAF_DAMAGE)    total++;
+        if(area->flags & AAF_DRAWSKY)   total++;
         if(area->ambience > 0 && area->ambience <= 10) total++;
 
         Com_Strcat("    {\n");
         Com_Strcat("        components[%i] =\n", total);
         Com_Strcat("        {\n");
 
-        if(area->flags & 0x1)
+        if(area->flags & AAF_WATER)
         {
             Com_Strcat("            BeginObject = \"ComponentAreaWater\"\n");
             Com_Strcat("                { \"active\" : true,\n");
@@ -440,21 +616,74 @@ static void ProcessAreas(byte *data)
             Com_Strcat("            EndObject\n");
         }
 
-        if(area->flags & 0x10)
+        if(area->flags & AAF_CLIMB)
         {
             Com_Strcat("            BeginObject = \"ComponentAreaClimb\"\n");
             Com_Strcat("                { \"active\" : true }\n");
             Com_Strcat("            EndObject\n");
         }
 
-        if(area->flags & 0x80)
+        if(area->flags & AAF_CRAWL)
         {
             Com_Strcat("            BeginObject = \"ComponentAreaCrawl\"\n");
             Com_Strcat("                { \"active\" : true }\n");
             Com_Strcat("            EndObject\n");
         }
 
-        if(area->flags & 0x100000)
+        if(area->flags & AAF_EVENT)
+        {
+            if(area->args4 <= 8)
+            {
+                Com_Strcat("            BeginObject = \"ComponentAreaMessage\"\n");
+                Com_Strcat("                { \"active\" : true,\n");
+                switch(area->args4)
+                {
+                case 2:
+                    Com_Strcat("                \"message\" : [\"access to level 2\", \"the jungle\"]");
+                    break;
+                case 3:
+                    Com_Strcat("                \"message\" : [\"access to level 3\", \"the ancient city\"]");
+                    break;
+                case 4:
+                    Com_Strcat("                \"message\" : [\"access to level 4\", \"the ruins\"]");
+                    break;
+                case 5:
+                    Com_Strcat("                \"message\" : [\"access to level 5\", \"the catacombs\"]");
+                    break;
+                case 6:
+                    Com_Strcat("                \"message\" : [\"access to level 6\", \"the treetop village\"]");
+                    break;
+                case 7:
+                    Com_Strcat("                \"message\" : [\"access to level 7\", \"the lost land\"]");
+                    break;
+                case 8:
+                    Com_Strcat("                \"message\" : [\"access to level 8\", \"the final confrontation\"]");
+                    break;
+                }
+                Com_Strcat(" }\n            EndObject\n");
+            }
+            else
+            {
+                Com_Strcat("            BeginObject = \"ComponentAreaTrigger\"\n");
+                Com_Strcat("                { \"active\" : true,\n");
+                if(area->args2 > 0)
+                {
+                    Com_Strcat("                \"triggerSnd\" : \"%s\",\n",
+                        sndfxnames[area->args2]);
+                }
+                Com_Strcat("                \"targetID\" : %i }\n", area->args4);
+                Com_Strcat("            EndObject\n");
+            }
+        }
+
+        if(area->flags & AAF_DAMAGE)
+        {
+            Com_Strcat("            BeginObject = \"ComponentAreaDamage\"\n");
+            Com_Strcat("                { \"active\" : true }\n");
+            Com_Strcat("            EndObject\n");
+        }
+
+        if(area->flags & AAF_DRAWSKY)
         {
             Com_Strcat("            BeginObject = \"ComponentAreaSky\"\n");
             Com_Strcat("                { \"active\" : true,\n");
@@ -597,22 +826,86 @@ static void ProcessActors(byte *data)
     for(i = 0; i < count; i++)
     {
         mapactor_t *actor = (mapactor_t*)(data + 8 + (i * size));
+        attribute_t *attr = GetAttribute(actor->attribute);
 
         Com_Strcat("    {\n");
 
         Com_Strcat("        name = \"Actor_%i\"\n", actorTally++);
         
-        if(actor->type == 0)
+        switch(actor->type)
         {
+        case OT_TUROK:
             Com_Strcat("        components[1] =\n");
             Com_Strcat("        {\n");
             Com_Strcat("            BeginObject = \"ComponentTurokPlayer\"\n");
-            Com_Strcat("                {\n");
-			Com_Strcat("                    \"playerID\" : 0,\n");
-			Com_Strcat("                    \"hudClass\" : \"TurokHud\"\n");
-			Com_Strcat("                }\n");
+            Com_Strcat("            {\n");
+			Com_Strcat("                \"playerID\" : 0\n");
+			Com_Strcat("            }\n");
             Com_Strcat("            EndObject\n");
             Com_Strcat("        }\n");
+            break;
+        case OT_AI_ANIMAL:
+            switch(actor->model)
+            {
+            case 442:
+                Com_Strcat("        components[1] =\n");
+                Com_Strcat("        {\n");
+                Com_Strcat("            BeginObject = \"ScriptedMonkey\"\n");
+                Com_Strcat("            {\n");
+                Com_Strcat("                \"active\" : 1,\n");
+			    Com_Strcat("            }\n");
+                Com_Strcat("            EndObject\n");
+                Com_Strcat("        }\n");
+                break;
+            case 471:
+                Com_Strcat("        components[1] =\n");
+                Com_Strcat("        {\n");
+                Com_Strcat("            BeginObject = \"ScriptedBird\"\n");
+                Com_Strcat("            {\n");
+                Com_Strcat("                \"active\" : 1,\n");
+			    Com_Strcat("            }\n");
+                Com_Strcat("            EndObject\n");
+                Com_Strcat("        }\n");
+                break;
+            default:
+                Com_Strcat("        components[1] =\n");
+                Com_Strcat("        {\n");
+                Com_Strcat("            BeginObject = \"ComponentScriptedActor\"\n");
+                Com_Strcat("            {\n");
+                Com_Strcat("                \"active\" : 1,\n");
+                Com_Strcat("                \"triggerAnimation\" : \"anim01\"\n");
+			    Com_Strcat("            }\n");
+                Com_Strcat("            EndObject\n");
+                Com_Strcat("        }\n");
+                break;
+            }
+            break;
+        case OT_DYNAMIC_MOVER:
+            Com_Strcat("        components[1] =\n");
+            Com_Strcat("        {\n");
+            Com_Strcat("            BeginObject = \"ComponentPillarMover\"\n");
+            Com_Strcat("            {\n");
+            Com_Strcat("                \"moveSpeed\" : %i,\n", attr->u22);
+            Com_Strcat("                \"moveAmount\" : %i,\n", attr->variant2);
+            if(attr->target >= 0)
+            {
+                Com_Strcat("                \"moveSound\" : \"%s\"\n",
+                    sndfxnames[attr->target]);
+            }
+			Com_Strcat("            }\n");
+            Com_Strcat("            EndObject\n");
+            Com_Strcat("        }\n");
+            break;
+        case OT_DYNAMIC_DOOR:
+            Com_Strcat("        components[1] =\n");
+            Com_Strcat("        {\n");
+            Com_Strcat("            BeginObject = \"ScriptedPressurePlate\"\n");
+            Com_Strcat("            {\n");
+            Com_Strcat("                \"active\" : 1\n");
+			Com_Strcat("            }\n");
+            Com_Strcat("            EndObject\n");
+            Com_Strcat("        }\n");
+            break;
         }
 
         Com_Strcat("        mesh = \"models/mdl%03d/mdl%03d.kmesh\"\n",
@@ -626,7 +919,7 @@ static void ProcessActors(byte *data)
             mdlboxes[actor->model][5]);
 
         Com_Strcat("        bCollision = %i\n",
-            GetAttribute(actor->attribute)->blockflags & 1);
+            attr->blockflags & 1);
         Com_Strcat("        bStatic = 0\n");
 
         if(actor->flags & 1)
@@ -641,10 +934,11 @@ static void ProcessActors(byte *data)
             actor->scale[0], actor->scale[1], actor->scale[2]);
         Com_Strcat("        angles = { %f 0.0 0.0 }\n",
             ((((-(float)actor->angle / 180.0f) * M_RAD) + M_PI) / M_RAD) * M_RAD);
-        Com_Strcat("        radius = %f\n", GetAttribute(actor->attribute)->width);
-        Com_Strcat("        height = %f\n", GetAttribute(actor->attribute)->height);
-        Com_Strcat("        centerheight = %f\n", GetAttribute(actor->attribute)->meleerange);
-        Com_Strcat("        viewheight = %f\n", GetAttribute(actor->attribute)->viewheight);
+        Com_Strcat("        radius = %f\n", attr->width);
+        Com_Strcat("        height = %f\n", attr->height);
+        Com_Strcat("        targetID = %i\n", attr->tid);
+        Com_Strcat("        centerheight = %f\n", attr->meleerange);
+        Com_Strcat("        viewheight = %f\n", attr->viewheight);
 
         Com_Strcat("    }\n");
 
@@ -789,6 +1083,7 @@ static void ProcessInstances(byte *data)
         Com_Strcat("                bCollision = 0\n");
         Com_Strcat("                angles = { %f 0 0 }\n",
             (mapinst->angle * ANGLE_LEVELOBJECT) * M_RAD);
+        Com_Strcat("                plane = %i\n", mapinst->plane);
         Com_Strcat("                radius = %f\n", mapinst->bboxsize);
         Com_Strcat("                height = %f\n", mapinst->bboxsize);
         Com_Strcat("                mesh = \"models/mdl%03d/mdl%03d.kmesh\"\n",
@@ -804,230 +1099,230 @@ static void ProcessInstances(byte *data)
             Com_Strcat("                {\n");
             switch(GetObjectType(mapinst->model))
             {
-            case 400:
+            case OT_PICKUP_SMALLHEALTH:
                 Com_Strcat("                    BeginObject = \"TurokPickupHealthSmall\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 401:
+            case OT_PICKUP_SMALLHEALTH+1:
                 Com_Strcat("                    BeginObject = \"TurokPickupHealthMedium\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 402:
+            case OT_PICKUP_HEALTH:
                 Com_Strcat("                    BeginObject = \"TurokPickupHealthLarge\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 403:
+            case OT_PICKUP_FULLHEALTH:
                 Com_Strcat("                    BeginObject = \"TurokPickupFullHealth\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 404:
+            case OT_PICKUP_ULTRAHEALTH:
                 Com_Strcat("                    BeginObject = \"TurokPickupHealthUltra\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 405:
+            case OT_PICKUP_MASK:
                 Com_Strcat("                    BeginObject = \"TurokPickupMortalWound\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 406:
+            case OT_PICKUP_BACKPACK:
                 Com_Strcat("                    BeginObject = \"TurokPickupBackpack\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 407:
+            case OT_PICKUP_SPIRIT:
                 Com_Strcat("                    BeginObject = \"TurokPickupSpiritual\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 409:
+            case OT_PICKUP_PISTOL:
                 Com_Strcat("                    BeginObject = \"TurokPickupWeaponPistol\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 410:
+            case OT_PICKUP_ASSAULTRIFLE:
                 Com_Strcat("                    BeginObject = \"TurokPickupWeaponRifle\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 415:
+            case OT_PICKUP_PULSERIFLE:
                 Com_Strcat("                    BeginObject = \"TurokPickupWeaponPulseRifle\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 411:
+            case OT_PICKUP_SHOTGUN:
                 Com_Strcat("                    BeginObject = \"TurokPickupWeaponShotgun\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 412:
+            case OT_PICKUP_ASHOTGUN:
                 Com_Strcat("                    BeginObject = \"TurokPickupWeaponRiotgun\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 413:
+            case OT_PICKUP_MINIGUN:
                 Com_Strcat("                    BeginObject = \"TurokPickupWeaponMinigun\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 414:
+            case OT_PICKUP_GRENADELAUNCHER:
                 Com_Strcat("                    BeginObject = \"TurokPickupWeaponGrenadeLauncher\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 416:
+            case OT_PICKUP_ALIENWEAPON:
                 Com_Strcat("                    BeginObject = \"TurokPickupWeaponAlienRifle\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 417:
+            case OT_PICKUP_ROCKETLAUNCHER:
                 Com_Strcat("                    BeginObject = \"TurokPickupWeaponRocketLauncher\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 418:
+            case OT_PICKUP_ACCELERATOR:
                 Com_Strcat("                    BeginObject = \"TurokPickupWeaponAccelerator\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 419:
+            case OT_PICKUP_CANNON:
                 Com_Strcat("                    BeginObject = \"TurokPickupWeaponFusion\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 420:
+            case OT_PICKUP_QUIVER2:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoArrows\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 421:
+            case OT_PICKUP_ARROWS:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoTekArrows\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 422:
+            case OT_PICKUP_QUIVER1:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoTekArrowsPack\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 423:
+            case OT_PICKUP_CLIP:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoClip\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 424:
+            case OT_PICKUP_CLIPBOX:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoClipBox\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 425:
+            case OT_PICKUP_SHELLS:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoShells\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 426:
+            case OT_PICKUP_SHELLBOX:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoShellsBox\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 427:
+            case OT_PICKUP_EXPSHELLS:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoExpShells\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 428:
+            case OT_PICKUP_EXPSHELLBOX:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoExpShellsBox\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 429:
+            case OT_PICKUP_MINIGUNAMMO:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoMiniGun\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 430:
+            case OT_PICKUP_GRENADE:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoGrenades\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 431:
+            case OT_PICKUP_GRENADEBOX:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoGrenadesBox\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 432:
+            case OT_PICKUP_SMALLCELL:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoCell\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 433:
+            case OT_PICKUP_CELL:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoCellLarge\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 434:
+            case OT_PICKUP_ROCKET:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoRockets\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 436:
+            case OT_PICKUP_FUSIONCELL:
                 Com_Strcat("                    BeginObject = \"TurokPickupAmmoCharges\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 437:
+            case OT_PICKUP_ARMOR:
                 Com_Strcat("                    BeginObject = \"TurokPickupArmor\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 438:
+            case OT_PICKUP_COIN1:
                 Com_Strcat("                    BeginObject = \"TurokPickupLifeForce\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true,\n");
                 Com_Strcat("                        \"amount\" : 1\n");
                 Com_Strcat("                    }\n");
                 break;
-            case 439:
+            case OT_PICKUP_COIN10:
                 Com_Strcat("                    BeginObject = \"TurokPickupLifeForce\"\n");
                 Com_Strcat("                    {\n");
                 Com_Strcat("                        \"active\" : true,\n");

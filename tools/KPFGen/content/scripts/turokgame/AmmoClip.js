@@ -15,5 +15,5 @@ class.properties(AmmoClip,
     
     max         : 100,
     maxBackpack : 200,
-    hudIcon     : "h_a_clip.tga"
+    hudIcon     : "hud/h_a_clip.tga"
 });

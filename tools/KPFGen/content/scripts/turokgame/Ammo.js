@@ -16,7 +16,6 @@ class.properties(Ammo,
     initial     : 0,
     max         : 0,
     maxBackpack : 0,
-    consumeAmt  : 1,
     amount      : 0,
     hudIcon     : "",
     
@@ -40,9 +39,9 @@ class.properties(Ammo,
         }
     },
     
-    use : function()
+    use : function(amt)
     {
-        this.amount -= this.consumeAmt;
+        this.amount -= amt;
         if(this.amount < 0)
             this.amount = 0;
     }

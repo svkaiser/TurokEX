@@ -1,0 +1,17 @@
+{
+    bounds = { -292.367523 -1.130797 -289.016998 279.837036 790.389343 283.929413 }
+    bCollision = 1
+    bStatic = 0
+    bOrientOnSlope = 1
+    radius = 71.680000
+    height = 64.512001
+    centerheight = 20.480000
+    viewheight = 30.719999
+    mesh = "models/mdl622/mdl622.kmesh"
+    scale = { 0.200000 0.200000 0.200000 }
+    //$playerID = <int>0
+    components[1] =
+    {
+        "ComponentTurokPlayer"
+    }
+}

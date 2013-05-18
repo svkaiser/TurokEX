@@ -9,7 +9,9 @@
 Sys.runScript('scripts/turokgame/ComponentTurokPlayer.js');
 Sys.runScript('scripts/turokgame/ComponentTurokAI.js');
 Sys.runScript('scripts/turokgame/TurokPickup.js');
-Sys.runScript('scripts/turokgame/ComponentAreaAmbience.js');
+Sys.runScript('scripts/turokgame/ComponentScriptedActor.js');
+Sys.runScript('scripts/turokgame/ComponentPillarMover.js');
+Sys.runScript('scripts/turokgame/ComponentEmitter.js');
 
 // pickup components
 Sys.runScript('scripts/turokgame/TurokPickupLifeForce.js');
@@ -53,9 +55,32 @@ Sys.runScript('scripts/turokgame/TurokPickupHealthUltra.js');
 Sys.runScript('scripts/turokgame/TurokPickupMortalWound.js');
 Sys.runScript('scripts/turokgame/TurokPickupSpiritual.js');
 
+// hud
+Sys.runScript('scripts/turokgame/TurokHud.js');
+
 // AI components
 Sys.runScript('scripts/turokgame/TurokAIGrunt.js');
 Sys.runScript('scripts/turokgame/TurokAIFish.js');
+Sys.runScript('scripts/turokgame/TurokAIAnimal.js');
+
+// animals
+Sys.runScript('scripts/turokgame/AnimalDeer.js');
+Sys.runScript('scripts/turokgame/AnimalBoar.js');
+
+// damage classes
+Sys.runScript('scripts/turokgame/Damage.js');
+
+// projectile components
+Sys.runScript('scripts/turokgame/ComponentProjectile.js');
+
+// projectile spawners
+Sys.runScript('scripts/turokgame/ProjectileSpawner.js');
+
+// area components
+Sys.runScript('scripts/turokgame/ComponentAreaDamage.js');
+Sys.runScript('scripts/turokgame/ComponentAreaMessage.js');
+Sys.runScript('scripts/turokgame/ComponentAreaAmbience.js');
+Sys.runScript('scripts/turokgame/ComponentAreaTrigger.js');
 
 // ambience
 Sys.runScript('scripts/turokgame/AmbienceJungle.js');
@@ -68,9 +93,6 @@ Sys.runScript('scripts/turokgame/AmbienceLostLand.js');
 Sys.runScript('scripts/turokgame/AmbienceValley.js');
 Sys.runScript('scripts/turokgame/AmbienceVillage.js');
 
-// hud
-Sys.runScript('scripts/turokgame/TurokHud.js');
-
 // shot traces
 Sys.runScript('scripts/turokgame/ShotTrace.js');
 Sys.runScript('scripts/turokgame/ShotTracePlayerPistol.js');
@@ -78,20 +100,7 @@ Sys.runScript('scripts/turokgame/ShotTracePlayerShotgun.js');
 Sys.runScript('scripts/turokgame/ShotTracePlayerRifle.js');
 
 // weapons
-Sys.runScript('scripts/turokgame/AlienRifle.js');
-Sys.runScript('scripts/turokgame/AutoShotgun.js');
-Sys.runScript('scripts/turokgame/Bow.js');
-Sys.runScript('scripts/turokgame/Chronoscepter.js');
-Sys.runScript('scripts/turokgame/FusionCannon.js');
-Sys.runScript('scripts/turokgame/GrenadeLauncher.js');
-Sys.runScript('scripts/turokgame/Knife.js');
-Sys.runScript('scripts/turokgame/Minigun.js');
-Sys.runScript('scripts/turokgame/MissileLauncher.js');
-Sys.runScript('scripts/turokgame/ParticleAccelerator.js');
-Sys.runScript('scripts/turokgame/Pistol.js');
-Sys.runScript('scripts/turokgame/PulseRifle.js');
-Sys.runScript('scripts/turokgame/Rifle.js');
-Sys.runScript('scripts/turokgame/Shotgun.js');
+Sys.runScript('scripts/turokgame/ComponentPlayerWeapon.js');
 
 // ammo
 Sys.runScript('scripts/turokgame/Ammo.js');
@@ -107,8 +116,8 @@ Sys.runScript('scripts/turokgame/AmmoShell.js');
 Sys.runScript('scripts/turokgame/AmmoTekArrow.js');
 
 // packet events
-Sys.runScript('scripts/turokgame/PacketEventRequestWeapon.js');
-Sys.runScript('scripts/turokgame/PacketEventChangeWeapon.js');
+//Sys.runScript('scripts/turokgame/PacketEventRequestWeapon.js');
+//Sys.runScript('scripts/turokgame/PacketEventChangeWeapon.js');
 
 // cvars
 Sys.addCvar('g_wpnautoswitch', '1');
@@ -138,30 +147,3 @@ Input.add(11, '+nextweap');
 Input.add(11, '-nextweap');
 Input.add(12, '+prevweap');
 Input.add(12, '-prevweap');
-
-// initialize game
-/*Game.event_GameInitialized = function()
-{
-    //PacketManager.add(PacketEventRequestWeapon);
-    //PacketManager.add(PacketEventChangeWeapon);
-    
-    Game.giveAll = function()
-    {
-        var svcl = arguments[1];
-        
-        if(svcl.state == SVC_STATE_INGAME)
-        {
-            var tPlayer = svcl.controller.owner.components.ComponentTurokPlayer;
-            
-            if(tPlayer == undefined)
-                return;
-                
-            for(var i = 0; i < tPlayer.weapons.length; i++)
-                tPlayer.weapons[i].bOwned = true;
-                
-            Sys.print('Lots of Goodies!');
-        }
-    }
-    
-    Server.addMessageEvent(Game.giveAll, 'giveall');
-}*/

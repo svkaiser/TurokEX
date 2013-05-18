@@ -1,0 +1,14 @@
+{
+    scale = { 0.35 0.35 0.35 }
+    bStatic = 0
+    bCollision = 0
+    radius = 53.010265
+    height = 53.010265
+    mesh = "models/mdl386/mdl386.kmesh"
+    bounds = { -53.010265 -53.010265 -53.010265 53.010265 53.010265 53.010265 }
+    bTouch = 1
+    components[1] =
+    {
+        "TurokPickupHealthSmall"
+    }
+}
