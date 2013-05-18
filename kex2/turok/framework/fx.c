@@ -565,11 +565,45 @@ static void FX_SetTranslationZ(vec3_t out, vec3_t vector, float r)
 static fx_t *FX_SpawnChild(fx_t *parent, const char *file)
 {
     vec4_t rot;
+    vec3_t origin;
+    fxinfo_t *info;
 
     Vec_ToQuaternion(rot, parent->translation);
+    Vec_Copy3(origin, parent->origin);
 
-    return FX_Spawn(file, NULL, parent->translation,
-        parent->origin, rot, parent->plane);
+    info = parent->info;
+
+    if(info->screen_offset_x != 0 || info->screen_offset_y != 0)
+    {
+        mtx_t mtx1;
+        mtx_t mtx3;
+        mtx_t mtx4;
+        vec3_t svec;
+        vec3_t nvec;
+        vec3_t org;
+
+        Vec_Set3(svec, -info->screen_offset_x, -info->screen_offset_y, 0);
+        Mtx_IdentityZ(mtx1, parent->rotation_offset + DEG2RAD(180));
+        Vec_TransformToWorld(mtx1, svec, nvec);
+
+        switch(info->drawtype)
+        {
+        case VFX_DRAWFLAT:
+        case VFX_DRAWDECAL:
+            Mtx_IdentityY(mtx3, DEG2RAD(90));
+            break;
+        default:
+            Mtx_ApplyRotation(client.playerActor->rotation, mtx3);
+            break;
+        }
+
+        Mtx_MultiplyRotation(mtx4, mtx1, mtx3);
+        Vec_TransformToWorld(mtx4, nvec, org);
+        Vec_Add(origin, origin, org);
+    }
+
+    return FX_Spawn(file, parent->source, parent->translation,
+        origin, rot, parent->plane);
 }
 
 //
@@ -832,27 +866,14 @@ static void FX_Move(fx_t *fx, vec3_t dest)
 
     if(dist <= 0.512f)
     {
-        float d;
-
         if(fxinfo->bStopAnimOnImpact)
             fx->bAnimate = false;
 
         switch(fxinfo->onplane)
         {
         case VFX_BOUNCE:
-            d = Vec_Unit3(fx->translation);
-            if(d >= 1.05f)
-            {
-                float bounce = (1 + fxinfo->mass);
-
-                if(d < 16.8f && fxinfo->mass < 1.0f)
-                    bounce = 0.2f;
-
-                G_ClipVelocity(fx->translation, fx->translation,
-                    fx->plane->normal, bounce);
-            }
-            else
-                Vec_Set3(fx->translation, 0, 0, 0);
+            G_ApplyBounceVelocity(fx->translation,
+                fx->plane->normal, fxinfo->mass);
 
             // apply friction when sliding on the floor
             G_ApplyFriction(fx->translation, 1 - fxinfo->friction, false);
@@ -881,8 +902,8 @@ static void FX_Move(fx_t *fx, vec3_t dest)
             switch(fxinfo->onplane)
             {
             case VFX_BOUNCE:
-                G_ClipVelocity(fx->translation, fx->translation,
-                    fx->plane->ceilingNormal, (1 + fxinfo->mass));
+                G_ApplyBounceVelocity(fx->translation,
+                    fx->plane->ceilingNormal, fxinfo->mass);
                 break;
             case VFX_DESTROY:
                 fx->origin[1] = dist - 1.024f;
@@ -926,6 +947,12 @@ void FX_Ticker(void)
         fx = fxRover;
         fxinfo = fx->info;
 
+        if(fx->bStale)
+        {
+            FX_Kill(fx);
+            continue;
+        }
+
         if(fxinfo->tickFX != NULL)
             FX_SpawnChild(fx, fxinfo->tickFX);
 
@@ -950,7 +977,7 @@ void FX_Ticker(void)
                         break;
 
                     default:
-                        FX_Kill(fx);
+                        fx->bStale = true;
                         continue;
                     }
                 }
@@ -1011,10 +1038,21 @@ void FX_Ticker(void)
         if(Vec_Unit3(dest) >= 0.001f)
             FX_Move(fx, dest);
 
+        if(fx->source && fx->bAttachToSource)
+        {
+            vec3_t worldvec;
+
+            Vec_Copy3(fx->origin, fx->source->origin);
+
+            // TODO - HANDLE CLIPPING IF OUTSIDE OF WORLD
+            Vec_ApplyQuaternion(worldvec, fx->offset, fx->source->rotation);
+            Vec_Add(fx->origin, fx->origin, worldvec);
+        }
+
         fx->dist = Vec_Length3(fx->origin, client.player->actor->origin);
         fx->lifetime -= time;
 
-        if(fx->lifetime < 0)
+        if(fx->lifetime < 0 || (fx->source && fx->source->bStale))
         {
             fx_t *nfx = NULL;
 
@@ -1024,7 +1062,7 @@ void FX_Ticker(void)
             if(fxinfo->expireSnd != NULL)
                 Snd_PlayShader(fxinfo->expireSnd, (gActor_t*)nfx);
 
-            FX_Kill(fx);
+            fx->bStale = true;
         }
     }
 }
@@ -1036,6 +1074,9 @@ void FX_Ticker(void)
 void FX_Kill(fx_t *fx)
 {
     fx_t* next;
+
+    if(fx->refcount > 0)
+        return;
 
     /* Remove from main fx list */
     next = fxRover->next;

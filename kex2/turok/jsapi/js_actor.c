@@ -183,6 +183,19 @@ JS_PROP_FUNC_GET(GameActor)
         JS_NEWOBJECT_SETPRIVATE(actor->model, &Model_class);
         return JS_TRUE;
 
+    case 25:
+        if(actor->owner)
+        {
+            JS_NEWOBJECT_SETPRIVATE(actor->owner, &GameActor_class);
+        }
+        else
+            JS_SET_RVAL(cx, vp, JSVAL_NULL);
+        return JS_TRUE;
+
+    case 26:
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(actor->targetID));
+        return JS_TRUE;
+
     default:
         return JS_TRUE;
     }
@@ -193,6 +206,7 @@ JS_PROP_FUNC_GET(GameActor)
 JS_PROP_FUNC_SET(GameActor)
 {
     gActor_t *actor;
+    gActor_t *pActor;
     JSObject *object;
     jsdouble dval;
 
@@ -255,6 +269,20 @@ JS_PROP_FUNC_SET(GameActor)
     case 21:
         JS_GETNUMBER(dval, vp, 0);
         actor->angles[2] = (float)dval;
+        return JS_TRUE;
+
+    case 25:
+        JS_GETOBJECT(object, vp, 0);
+        if(!(pActor = (gActor_t*)JS_GetInstancePrivate(cx, object,
+            &GameActor_class, NULL)))
+        {
+            return JS_FALSE;
+        }
+        actor->owner = pActor;
+        return JS_TRUE;
+
+    case 26:
+        actor->targetID = JSVAL_TO_INT(*vp);
         return JS_TRUE;
 
     default:
@@ -423,6 +451,35 @@ JS_FASTNATIVE_BEGIN(GameActor, setKey)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(GameActor, setBounds)
+{
+    JSObject *thisObj;
+    gActor_t *actor;
+    jsdouble b[6];
+
+    JS_CHECKARGS(6);
+
+    thisObj = JS_THIS_OBJECT(cx, vp);
+    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
+        return JS_FALSE;
+
+    JS_GETNUMBER(b[0], v, 0);
+    JS_GETNUMBER(b[1], v, 1);
+    JS_GETNUMBER(b[2], v, 2);
+    JS_GETNUMBER(b[3], v, 3);
+    JS_GETNUMBER(b[4], v, 4);
+    JS_GETNUMBER(b[5], v, 5);
+
+    Vec_Set3(actor->bbox.min, (float)b[0], (float)b[1], (float)b[2]);
+    Vec_Set3(actor->bbox.max, (float)b[3], (float)b[4], (float)b[5]);
+
+    Vec_Copy3(actor->bbox.omin, actor->bbox.min);
+    Vec_Copy3(actor->bbox.omax, actor->bbox.max);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
 JS_FASTNATIVE_BEGIN(GameActor, spawn)
 {
     JSString *str;
@@ -451,12 +508,7 @@ JS_FASTNATIVE_BEGIN(GameActor, spawn)
         JS_GET_PRIVATE_DATA(plObj, &Plane_class, plane_t, plane);
     }
     else
-    {
-        vec3_t org;
-
-        Vec_Set3(org, (float)x, (float)y, (float)z);
-        plane = Map_FindClosestPlane(org);
-    }
+        plane = NULL;
 
     actor = Actor_Spawn(bytes,
         (float)x,
@@ -469,6 +521,40 @@ JS_FASTNATIVE_BEGIN(GameActor, spawn)
     JS_free(cx, bytes);
 
     JS_NEWOBJECT_SETPRIVATE(actor, &GameActor_class);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GameActor, remove)
+{
+    JSObject *obj;
+    gActor_t *actor;
+
+    JS_CHECKARGS(1);
+    JS_GETOBJECT(obj, v, 0);
+    JS_GET_PRIVATE_DATA(obj, &GameActor_class, gActor_t, actor);
+
+    actor->bStale = true;
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GameActor, compare)
+{
+    JSObject *obj;
+    gActor_t *actor1;
+    gActor_t *actor2;
+    JSBool ok;
+
+    JS_CHECKARGS(2);
+    JS_GETOBJECT(obj, v, 0);
+    JS_GET_PRIVATE_DATA(obj, &GameActor_class, gActor_t, actor1);
+    JS_GETOBJECT(obj, v, 1);
+    JS_GET_PRIVATE_DATA(obj, &GameActor_class, gActor_t, actor2);
+
+    ok = (actor1 == actor2);
+
+    JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(ok));
     return JS_TRUE;
 }
 
@@ -512,6 +598,8 @@ JS_BEGINPROPS(GameActor)
     { "animState",      22, JSPROP_ENUMERATE, NULL, NULL },
     { "timeStamp",      23, JSPROP_ENUMERATE, NULL, NULL },
     { "model",          24, JSPROP_ENUMERATE, NULL, NULL },
+    { "owner",          25, JSPROP_ENUMERATE, NULL, NULL },
+    { "targetID",       26, JSPROP_ENUMERATE, NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 
@@ -526,11 +614,14 @@ JS_BEGINFUNCS(GameActor)
     JS_FASTNATIVE(GameActor, addKey, 3),
     JS_FASTNATIVE(GameActor, getKey, 1),
     JS_FASTNATIVE(GameActor, setKey, 2),
+    JS_FASTNATIVE(GameActor, setBounds, 6),
     JS_FS_END
 };
 
 JS_BEGINSTATICFUNCS(GameActor)
 {
     JS_FASTNATIVE(GameActor, spawn, 7),
+    JS_FASTNATIVE(GameActor, remove, 1),
+    JS_FASTNATIVE(GameActor, compare, 2),
     JS_FS_END
 };

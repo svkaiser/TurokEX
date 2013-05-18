@@ -53,18 +53,12 @@ enum
 };
 
 void J_GarbageCollect(void);
-void J_CallClassFunction(int type, const char *function, char **args, int nargs);
 void J_CallObject(void *object, char **args, int nargs);
-void J_RunObjectEvent(int type, const char *function);
 void J_CompileAndRunScript(const char *name);
 void J_ExecBuffer(char *buffer);
 void J_Shutdown(void);
 void J_Init(void);
 
 unsigned int J_GetGCTime(void);
-
-// temp
-void J_SpawnPlayer_temp(float *origin, float yaw, float pitch,
-                        int planeid, int client);
 
 #endif

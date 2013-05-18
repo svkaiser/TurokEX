@@ -263,7 +263,8 @@ void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b)
 
     dglColor4ub(r, g, b, 255);
 
-    dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    if(!bWireframe)
+        dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     dglBegin(GL_POLYGON);
     dglVertex3d(bbox.min[0], bbox.min[1], bbox.min[2]);
@@ -293,7 +294,8 @@ void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b)
     dglVertex3d(bbox.max[0], bbox.min[1], bbox.max[2]);
     dglEnd();
     
-    dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    if(!bWireframe)
+        dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     GL_SetState(GLSTATE_TEXTURE0, true);
     GL_SetState(GLSTATE_CULL, true);

@@ -39,6 +39,9 @@
 static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
 {
     vec3_t dir;
+    vec3_t tdir;
+    vec3_t ndir;
+    float vu;
     float px;
     float pz;
     float cx;
@@ -50,69 +53,66 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
     float len;
 
     Vec_Sub(dir, trace->end, trace->start);
+    Vec_Copy3(tdir, dir);
     Vec_Normalize3(dir);
+    Vec_Copy3(ndir, dir);
+
+    vu = Vec_Unit3(tdir);
+
     cx = objpos[0] - trace->start[0];
     cz = objpos[2] - trace->start[2];
-    icv1 = dir[0] * dir[0] + dir[2] * dir[2];
-    icv2 = cx * dir[0] + cz * dir[2];
+    icv1 = tdir[0] * tdir[0] + tdir[2] * tdir[2];
+    icv2 = cx * tdir[0] + cz * tdir[2];
+
+    if(icv1 == 0)
+        return false;
+
+    if(icv2 < 0)
+        return false;
 
     vd = icv2 / icv1;
 
     if(vd < 0) vd = 0;
     if(vd > 1) vd = 1;
 
-    px = ((dir[0] * vd) + trace->start[0]) - objpos[0];
-    pz = ((dir[2] * vd) + trace->start[2]) - objpos[2];
+    px = ((tdir[0] * vd) + trace->start[0]) - objpos[0];
+    pz = ((tdir[2] * vd) + trace->start[2]) - objpos[2];
 
     len = radius * radius - (px * px + pz * pz);
+
+    if(Vec_Length2(trace->start, objpos) < radius)
+        len = 1;
 
     if(len > 0)
     {
         vec3_t lerp;
         vec3_t n;
-        vec3_t vec;
         float f;
 
         f = (px * dir[0] + pz * dir[2]) - (float)sqrt(len) * vd;
 
         Vec_Lerp3(lerp, f, trace->start, objpos);
         Vec_Set3(n,
-            lerp[0] - objpos[0],
+            lerp[0] - trace->end[0],
             0,
-            lerp[2] - objpos[2]);
+            lerp[2] - trace->end[2]);
 
-        Vec_Sub(dir, objpos, trace->end);
+        Vec_Sub(dir, objpos, trace->start);
+        Vec_Normalize3(dir);
         d = Vec_Dot(n, dir);
 
-        // ugly hack: for player movement, we only care if we're checking
-        // if the collision occured in front of the object. for bullet shots
-        // we want to check both sides of the object that was hit.
-        // this is needed because the bullet shot can potentially fail,
-        // which can result in going right through the object
-
-        if(d < 0 || (trace->bFullTrace && d != 0))
+        if(d != 0)
         {
-            Vec_Sub(vec, lerp, trace->start);
-
-            trace->frac = 1.0f / (Vec_Dot(n, vec) / d);
+            trace->frac = (px * dir[0] + pz * dir[2]) / d;
 
             Vec_Normalize3(n);
             Vec_Copy3(trace->normal, n);
 
+            // TODO
             // get the intersect vector for bullet shots
             if(trace->bFullTrace)
-            {
-                vec3_t spot;
-            
-                Vec_Sub(dir, trace->end, trace->start);
-                Vec_Normalize3(dir);
-
-                vd = Vec_Dot(trace->end, n) - Vec_Dot(objpos, n);
-                len = Vec_Length3(trace->end, trace->start);
-
-                Vec_Scale(spot, dir, (len - vd / d) - radius);
-                Vec_Add(trace->hitvec, trace->start, spot);
-            }
+                Vec_Lerp3(trace->hitvec, (1 + trace->frac),
+                trace->start, trace->end);
 
             return true;
         }
@@ -186,6 +186,9 @@ static kbool Trace_Objects(trace_t *trace)
         if(actor == trace->actor || actor == trace->source)
             continue;
 
+        if(trace->actor && trace->actor->owner == actor)
+            continue;
+
         if(actor->bCollision)
         {
             if(pos[1] > actor->origin[1] + actor->height ||
@@ -214,7 +217,7 @@ static kbool Trace_CheckPlaneHeight(trace_t *trace, plane_t *pl)
 {
     if(Plane_IsAWall(pl))
     {
-        float y = trace->end[1] + 1.024f;
+        float y = trace->end[1] + 16.384f;
 
         if( y > pl->points[0][1] &&
             y > pl->points[1][1] &&
@@ -287,7 +290,7 @@ static kbool Trace_GetPlaneIntersect(trace_t *trace, plane_t *plane)
             if(vd != 0)
             {
                 Vec_Scale(spot, dir,
-                Vec_Length3(trace->end, trace->start) - d / vd);
+                    Vec_Length3(trace->end, trace->start) - d / vd);
                 Vec_Add(trace->hitvec, trace->start, spot);
                 return true;
             }
@@ -492,6 +495,7 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
             if(Trace_CheckPlaneHeight(trace, link) &&
                 Plane_IsFacing(link, Ang_VectorToAngle(dir)))
             {
+                trace->hitpl = link;
                 return NULL;
             }
         }
@@ -628,7 +632,6 @@ void Trace_TraversePlanes(plane_t *plane, trace_t *trace)
 //
 // Trace
 //
-//
 
 trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
               gActor_t *actor, gActor_t *source, kbool bFullTrace)
@@ -645,7 +648,7 @@ trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
     trace.hitActor      = NULL;
     trace.frac          = 0;
     trace.type          = TRT_NOHIT;
-    trace.width         = actor ? actor->radius : 71.68f;
+    trace.width         = actor ? actor->radius : 32.0f;
     trace.offset        = actor ? actor->centerHeight : 0;
     trace.bFullTrace    = bFullTrace;
     trace.actor         = actor;

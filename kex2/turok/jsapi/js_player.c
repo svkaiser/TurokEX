@@ -49,7 +49,8 @@ JS_PROP_FUNC_GET(ClientPlayer)
         return JS_TRUE;
 
     case 1:
-        JS_NEWOBJECTPOOL(client.player->actor, GameActor);
+        //JS_NEWOBJECTPOOL(client.player->actor, GameActor);
+        JS_NEWOBJECT_SETPRIVATE(client.player->actor, &GameActor_class);
         return JS_TRUE;
 
     case 2:

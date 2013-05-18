@@ -39,6 +39,7 @@ CVAR(v_windowed, 1);
 CVAR(v_vsync, 1);
 CVAR(v_depthsize, 24);
 CVAR(v_buffersize, 32);
+CVAR(v_stencilsize, 24);
 
 //
 // V_SetupScreen
@@ -91,6 +92,13 @@ void V_SetupScreen(void)
     {
         Cvar_SetValue(v_depthsize.name, 24);
     }
+
+    if(v_stencilsize.value != 8 &&
+        v_stencilsize.value != 16 &&
+        v_stencilsize.value != 24)
+    {
+        Cvar_SetValue(v_stencilsize.name, 24);
+    }
     
     if(v_buffersize.value != 8 &&
         v_buffersize.value != 16 &&
@@ -113,4 +121,5 @@ void V_Init(void)
     Cvar_Register(&v_vsync);
     Cvar_Register(&v_depthsize);
     Cvar_Register(&v_buffersize);
+    Cvar_Register(&v_stencilsize);
 }

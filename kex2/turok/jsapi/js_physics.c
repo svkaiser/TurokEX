@@ -29,6 +29,68 @@
 #include "common.h"
 #include "game.h"
 
+static JSBool ReturnTraceResults(JSContext *cx, jsval *vp, trace_t *trace)
+{
+    JSObject *rObject;
+    JSObject *hvObject;
+    JSObject *hnObject;
+    JSObject *haObject;
+    JSObject *hplObject;
+    jsval fracval;
+    jsval haval;
+
+    if(trace->type == TRT_NOHIT)
+    {
+        JS_SET_RVAL(cx, vp, JSVAL_NULL);
+        return JS_TRUE;
+    }
+
+    trace->frac = 1 + trace->frac;
+
+    if(!(rObject = JS_NewObject(cx, NULL, NULL, NULL)))
+        return JS_TRUE;
+    if(!(hplObject = JS_NewObject(cx, &Plane_class, NULL, NULL)))
+        return JS_FALSE;
+    if(!(JS_SetPrivate(cx, hplObject, trace->hitpl)))
+        return JS_FALSE;
+    if(!JS_NewDoubleValue(cx, trace->frac, &fracval))
+        return JS_FALSE;
+    if(!(hvObject = JPool_GetFree(&objPoolVector, &Vector_class)))
+        return JS_FALSE;
+    if(!(hnObject = JPool_GetFree(&objPoolVector, &Vector_class)))
+        return JS_FALSE;
+
+    JS_SETVECTOR(hvObject, trace->hitvec);
+    JS_SETVECTOR(hnObject, trace->normal);
+
+    JS_AddRoot(cx, &rObject);
+    JS_DefineProperty(cx, rObject, "hitPlane",
+        OBJECT_TO_JSVAL(hplObject), NULL, NULL, JSPROP_ENUMERATE);
+    JS_DefineProperty(cx, rObject, "fraction", fracval, NULL, NULL, JSPROP_ENUMERATE);
+    JS_DefineProperty(cx, rObject, "hitVector",
+        OBJECT_TO_JSVAL(hvObject), NULL, NULL, JSPROP_ENUMERATE);
+    JS_DefineProperty(cx, rObject, "hitNormal",
+        OBJECT_TO_JSVAL(hnObject), NULL, NULL, JSPROP_ENUMERATE);
+    JS_DefineProperty(cx, rObject, "hitType",
+        INT_TO_JSVAL(trace->type), NULL, NULL, JSPROP_ENUMERATE);
+
+    haval = JSVAL_NULL;
+    if(trace->hitActor != NULL)
+    {
+        if((haObject = JPool_GetFree(&objPoolGameActor, &GameActor_class)) &&
+            JS_SetPrivate(cx, haObject, trace->hitActor))
+        {
+            haval = OBJECT_TO_JSVAL(haObject);
+        }
+    }
+    JS_DefineProperty(cx, rObject, "hitActor", haval,
+        NULL, NULL, JSPROP_ENUMERATE);
+    JS_RemoveRoot(cx, &rObject);
+
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(rObject));
+    return JS_TRUE;
+}
+
 JS_CLASSOBJECT(Physics);
 
 JS_FASTNATIVE_BEGIN(Physics, move)
@@ -45,12 +107,24 @@ JS_FASTNATIVE_BEGIN(Physics, move)
     JSObject *objActor;
     JSObject *objAngles;
     JSObject *ctrlObject;
+    trace_t traceResult;
+    JSBool getResults;
+    JSBool hitOk;
+    jsval *v;
 
-    JS_CHECKARGS(1);
+    v = JS_ARGV(cx, vp);
+
+    if(argc > 2 || argc <= 0)
+        return JS_FALSE;
 
     plane = NULL;
+    hitOk = JS_FALSE;
+    getResults = JS_FALSE;
 
     JS_GETOBJECT(ctrlObject, v, 0);
+
+    if(argc == 2)
+        JS_GETBOOL(getResults, v, 1);
 
     JS_GET_PROPERTY_OBJECT(ctrlObject, "origin", objOrig);
     JS_GET_PROPERTY_OBJECT(ctrlObject, "velocity", objVel);
@@ -77,7 +151,7 @@ JS_FASTNATIVE_BEGIN(Physics, move)
     Vec_Copy3(velocity2, velocity);
     Vec_Scale(velocity2, velocity2, (float)frametime);
 
-    G_ClipMovement(origin, velocity2, &plane, actor, NULL);
+    hitOk = G_ClipMovement(origin, velocity2, &plane, actor, &traceResult);
 
     //Vec_Add(origin, origin, velocity2);
     if(frametime != 0)
@@ -93,7 +167,10 @@ JS_FASTNATIVE_BEGIN(Physics, move)
     if(objPlane != NULL)
         JS_SetPrivate(cx, objPlane, plane);
 
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    if(getResults == JS_TRUE)
+        return ReturnTraceResults(cx, vp, &traceResult);
+
+    JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(hitOk));
     return JS_TRUE;
 }
 
@@ -103,15 +180,9 @@ JS_FASTNATIVE_BEGIN(Physics, rayTrace)
     JSObject *obj1;
     JSObject *obj2;
     JSObject *plObj;
-    JSObject *rObject;
-    JSObject *hplObject;
-    JSObject *hvObject;
-    JSObject *hnObject;
-    JSObject *haObject;
     int steps;
     int length;
     int dist;
-    jsval fracval;
     vec3_t start;
     vec3_t forward;
     vec3_t end;
@@ -119,7 +190,6 @@ JS_FASTNATIVE_BEGIN(Physics, rayTrace)
     plane_t *plane;
     plane_t *pl;
     trace_t trace;
-    jsval haval;
 
     v = JS_ARGV(cx, vp);
 
@@ -168,53 +238,79 @@ JS_FASTNATIVE_BEGIN(Physics, rayTrace)
         Vec_Copy3(start, end);
     }
 
-    if(trace.type == TRT_NOHIT)
+    return ReturnTraceResults(cx, vp, &trace);
+}
+
+JS_FASTNATIVE_BEGIN(Physics, tryMove)
+{
+    vec3_t origin;
+    vec3_t dest;
+    plane_t *plane;
+    gActor_t *actor;
+    JSObject *objOrg;
+    JSObject *objDst;
+    JSObject *objAct;
+    JSObject *objPln;
+    kbool moveok;
+
+    JS_CHECKARGS(4);
+    JS_GETOBJECT(objAct, v, 0);
+    JS_GET_PRIVATE_DATA(objAct, &GameActor_class, gActor_t, actor);
+    JS_GETOBJECT(objOrg, v, 1);
+    JS_GETVECTOR2(objOrg, origin);
+    JS_GETOBJECT(objDst, v, 2);
+    JS_GETVECTOR2(objDst, dest);
+
+    if(JSVAL_IS_NULL(v[3]))
     {
-        JS_SET_RVAL(cx, vp, JSVAL_NULL);
+        JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(JS_FALSE));
         return JS_TRUE;
     }
 
-    trace.frac = 1 + trace.frac;
+    JS_GETOBJECT(objPln, v, 3);
+    JS_GET_PRIVATE_DATA(objPln, &Plane_class, plane_t, plane);
 
-    if(!(rObject = JS_NewObject(cx, NULL, NULL, NULL)))
-        return JS_TRUE;
-    if(!(hplObject = JS_NewObject(cx, &Plane_class, NULL, NULL)))
-        return JS_FALSE;
-    if(!(JS_SetPrivate(cx, hplObject, trace.hitpl)))
-        return JS_FALSE;
-    if(!JS_NewDoubleValue(cx, trace.frac, &fracval))
-        return JS_FALSE;
-    if(!(hvObject = JPool_GetFree(&objPoolVector, &Vector_class)))
-        return JS_FALSE;
-    if(!(hnObject = JPool_GetFree(&objPoolVector, &Vector_class)))
-        return JS_FALSE;
+    moveok = G_TryMove(actor, origin, dest, &plane);
 
-    JS_SETVECTOR(hvObject, trace.hitvec);
-    JS_SETVECTOR(hnObject, trace.normal);
+    JS_SetPrivate(cx, objPln, plane);
+    JS_SETVECTOR(objDst, dest);
 
-    JS_AddRoot(cx, &rObject);
-    JS_DefineProperty(cx, rObject, "hitPlane",
-        OBJECT_TO_JSVAL(hplObject), NULL, NULL, JSPROP_ENUMERATE);
-    JS_DefineProperty(cx, rObject, "fraction", fracval, NULL, NULL, JSPROP_ENUMERATE);
-    JS_DefineProperty(cx, rObject, "hitVector",
-        OBJECT_TO_JSVAL(hvObject), NULL, NULL, JSPROP_ENUMERATE);
-    JS_DefineProperty(cx, rObject, "hitNormal",
-        OBJECT_TO_JSVAL(hnObject), NULL, NULL, JSPROP_ENUMERATE);
+    JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(moveok));
+    return JS_TRUE;
+}
 
-    haval = JSVAL_NULL;
-    if(trace.hitActor != NULL)
+JS_FASTNATIVE_BEGIN(Physics, checkPosition)
+{
+    vec3_t origin;
+    vec3_t dest;
+    plane_t *plane;
+    gActor_t *actor;
+    JSObject *objOrg;
+    JSObject *objDst;
+    JSObject *objAct;
+    JSObject *objPln;
+    trace_t trace;
+
+    JS_CHECKARGS(4);
+    JS_GETOBJECT(objAct, v, 0);
+    JS_GET_PRIVATE_DATA(objAct, &GameActor_class, gActor_t, actor);
+    JS_GETOBJECT(objOrg, v, 1);
+    JS_GETVECTOR2(objOrg, origin);
+    JS_GETOBJECT(objDst, v, 2);
+    JS_GETVECTOR2(objDst, dest);
+
+    if(JSVAL_IS_NULL(v[3]))
     {
-        if((haObject = JPool_GetFree(&objPoolGameActor, &GameActor_class)) &&
-            JS_SetPrivate(cx, haObject, trace.hitActor))
-        {
-            haval = OBJECT_TO_JSVAL(haObject);
-        }
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(TRT_STUCK));
+        return JS_TRUE;
     }
-    JS_DefineProperty(cx, rObject, "hitActor", haval,
-        NULL, NULL, JSPROP_ENUMERATE);
-    JS_RemoveRoot(cx, &rObject);
 
-    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(rObject));
+    JS_GETOBJECT(objPln, v, 3);
+    JS_GET_PRIVATE_DATA(objPln, &Plane_class, plane_t, plane);
+
+    trace = Trace(origin, dest, plane, NULL, actor, false);
+
+    JS_SET_RVAL(cx, vp, INT_TO_JSVAL(trace.type));
     return JS_TRUE;
 }
 
@@ -238,12 +334,20 @@ JS_BEGINPROPS(Physics)
 
 JS_BEGINCONST(Physics)
 {
+    JS_DEFINE_CONST(TRT_NOHIT,          TRT_NOHIT),
+    JS_DEFINE_CONST(TRT_SURFACE,        TRT_SLOPE),
+    JS_DEFINE_CONST(TRT_WALLSURFACE,    TRT_WALL),
+    JS_DEFINE_CONST(TRT_WALL,           TRT_EDGE),
+    JS_DEFINE_CONST(TRT_ACTOR,          TRT_OBJECT),
+    JS_DEFINE_CONST(TRT_STUCK,          TRT_STUCK),
     { 0, 0, 0, { 0, 0, 0 } }
 };
 
 JS_BEGINFUNCS(Physics)
 {
-    JS_FASTNATIVE(Physics, move,  1),
+    JS_FASTNATIVE(Physics, move,  2),
     JS_FASTNATIVE(Physics, rayTrace,  6),
+    JS_FASTNATIVE(Physics, tryMove, 4),
+    JS_FASTNATIVE(Physics, checkPosition, 4),
     JS_FS_END
 };

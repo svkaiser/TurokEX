@@ -37,6 +37,7 @@
 #include "js.h"
 #include "sound.h"
 #include "fx.h"
+#include "zone.h"
 
 client_t client;
 
@@ -186,7 +187,7 @@ static void CL_DrawDebug(void)
     if(bDebugTime)
     {
         Draw_Text(32, 16,  COLOR_GREEN, 1, "-------------------");
-        Draw_Text(32, 32,  COLOR_GREEN, 1, "   client debug");
+        Draw_Text(32, 32,  COLOR_YELLOW, 1, "   client debug");
         Draw_Text(32, 48,  COLOR_GREEN, 1, "-------------------");
         Draw_Text(32, 64,  COLOR_GREEN, 1, "FPS: %i", (int)(1000.0f / (client.runtime * 1000.0f)));
         Draw_Text(32, 80,  COLOR_GREEN, 1, "runtime: %f", client.runtime);
@@ -200,11 +201,15 @@ static void CL_DrawDebug(void)
         Draw_Text(32, 160, COLOR_GREEN, 1, "latency: %i",
             client.time - client.latency[client.ns.acks & (NETBACKUPS-1)]);*/
         Draw_Text(32, 160, COLOR_WHITE, 1, Con_GetLastBuffer());
+        Actor_DrawDebugStats();
         return;
     }
 
     if(developer.value)
+    {
         Draw_Text(32, 32, COLOR_WHITE, 1, Con_GetLastBuffer());
+        Z_PrintStats();
+    }
 }
 
 //

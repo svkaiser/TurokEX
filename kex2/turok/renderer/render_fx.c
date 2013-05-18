@@ -45,7 +45,9 @@ void R_DrawFX(void)
     GL_SetState(GLSTATE_TEXGEN_T, false);
 
     dglAlphaFunc(GL_GEQUAL, 0.01f);
-    dglEnableClientState(GL_COLOR_ARRAY);
+
+    if(!bWireframe)
+        dglEnableClientState(GL_COLOR_ARRAY);
 
     for(fxRover = fxRoot.next; fxRover != &fxRoot; fxRover = fxRover->next)
     {
@@ -67,9 +69,21 @@ void R_DrawFX(void)
         fx = fxRover;
         fxinfo = fx->info;
 
+        if(fx->bStale)
+            continue;
+
         scale = fx->scale * 0.01f;
 
         Mtx_IdentityZ(scalemtx, fx->rotation_offset + DEG2RAD(180));
+
+        if(fxinfo->screen_offset_x != 0 || fxinfo->screen_offset_y != 0)
+        {
+            vec3_t svec;
+
+            Vec_Set3(svec, fxinfo->screen_offset_x, fxinfo->screen_offset_y, 0);
+            Mtx_ApplyVector(scalemtx, svec);
+        }
+
         Mtx_Scale(scalemtx, scale, scale, scale);
 
         switch(fxinfo->drawtype)
@@ -122,7 +136,14 @@ void R_DrawFX(void)
 
         GL_SetState(GLSTATE_DEPTHTEST, fxinfo->bDepthBuffer);
 
-        GL_BindTexture(texture);
+        if(bWireframe)
+        {
+            GL_BindTextureName("textures/white.tga");
+            dglColor4ub(192, 0, 0, 255);
+        }
+        else
+            GL_BindTexture(texture);
+
         GL_DrawElements2();
         dglPopMatrix();
 
@@ -131,5 +152,7 @@ void R_DrawFX(void)
     }
 
     GL_SetState(GLSTATE_DEPTHTEST, true);
-    dglDisableClientState(GL_COLOR_ARRAY);
+
+    if(!bWireframe)
+        dglDisableClientState(GL_COLOR_ARRAY);
 }

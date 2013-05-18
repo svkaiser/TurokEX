@@ -131,6 +131,8 @@ typedef struct fx_s
     vec3_t              origin;
     vec4_t              rotation;
     vec3_t              translation;
+    int                 refcount;
+    kbool               bStale;
     vec3_t              offset;
     fxinfo_t            *info;
     float               gravity;
@@ -143,6 +145,7 @@ typedef struct fx_s
     float               lifetime;
     float               restart;
     kbool               bAnimate;
+    kbool               bAttachToSource;
     byte                color1[4];
     byte                color2[4];
     texture_t           **textures;

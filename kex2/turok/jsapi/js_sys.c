@@ -450,7 +450,7 @@ JS_FASTNATIVE_BEGIN(Sys, spawnFx)
     fx_t *fx;
     jsval *v;
 
-    if(argc < 5 || argc > 7)
+    if(argc < 5 || argc > 8)
         return JS_FALSE;
 
     v = JS_ARGV(cx, vp);
@@ -467,13 +467,18 @@ JS_FASTNATIVE_BEGIN(Sys, spawnFx)
 
     JS_GETOBJECT(destobj, v, 2);
     JS_GETOBJECT(rotobj, v, 3);
-    JS_GETOBJECT(plobj, v, 4);
+
+    plane = NULL;
+
+    if(!JSVAL_IS_NULL(v[4]))
+    {
+        JS_GETOBJECT(plobj, v, 4);
+        if(!(plane = (plane_t*)JS_GetInstancePrivate(cx, plobj, &Plane_class, NULL)))
+            plane = NULL;
+    }
 
     JS_GETVECTOR2(destobj, dest);
     JS_GETQUATERNION2(rotobj, rot);
-
-    if(!(plane = (plane_t*)JS_GetInstancePrivate(cx, plobj, &Plane_class, NULL)))
-        plane = NULL;
 
     Vec_Set3(dir, 0, 0, 0);
 
@@ -497,6 +502,11 @@ JS_FASTNATIVE_BEGIN(Sys, spawnFx)
         JS_GETSTRING(str, bytes, v, 6);
         Snd_PlayShader(bytes, (gActor_t*)fx);
         JS_free(cx, bytes);
+    }
+
+    if(argc == 8)
+    {
+        JS_GETBOOL(fx->bAttachToSource, v, 7);
     }
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
@@ -566,7 +576,7 @@ JS_BEGINFUNCS(Sys)
     JS_FASTNATIVE(Sys, loadModel, 1),
     JS_FASTNATIVE(Sys, loadAnimation, 2),
     JS_FASTNATIVE(Sys, readTextFile, 1),
-    JS_FASTNATIVE(Sys, spawnFx, 7),
+    JS_FASTNATIVE(Sys, spawnFx, 8),
     JS_FASTNATIVE(Sys, GC, 0),
     JS_FASTNATIVE(Sys, maybeGC, 0),
     JS_FS_END

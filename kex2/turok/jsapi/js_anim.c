@@ -51,10 +51,10 @@ JS_PROP_FUNC_GET(Animation)
 
 JS_FINALIZE_FUNC(Animation)
 {
-    anim_t *anim;
+    //anim_t *anim;
 
-    if(anim = (anim_t*)JS_GetPrivate(cx, obj))
-        JS_free(cx, anim);
+    //if(anim = (anim_t*)JS_GetPrivate(cx, obj))
+        //JS_free(cx, anim);
 }
 
 JS_FASTNATIVE_BEGIN(Animation, nextAnim)
@@ -136,7 +136,8 @@ enum animstate_enum
     ANS_TIME,
     ANS_FRAMETIME,
     ANS_PLAYTIME,
-    ANS_ROOTMOTION
+    ANS_ROOTMOTION,
+    ANS_RESTARTFRAME
 };
 
 JS_CLASSOBJECT(AnimState);
@@ -167,6 +168,10 @@ JS_PROP_FUNC_GET(AnimState)
         JS_NEWVECTORPOOL(animstate->rootMotion);
         return JS_TRUE;
 
+    case ANS_RESTARTFRAME:
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(animstate->restartframe));
+        return JS_TRUE;
+
     default:
         return JS_TRUE;
     }
@@ -193,6 +198,13 @@ JS_PROP_FUNC_SET(AnimState)
         JS_GETNUMBER(val, vp, 0);
         animstate->playtime = (float)val;
         break;
+
+    case ANS_RESTARTFRAME:
+        JS_CHECKINTEGER(0);
+        animstate->restartframe = JSVAL_TO_INT(JS_ARG(0));
+        if(animstate->restartframe >= animstate->track.anim->numframes)
+            animstate->restartframe = animstate->track.anim->numframes-1;
+        break;
     }
 
     return JS_TRUE;
@@ -200,10 +212,10 @@ JS_PROP_FUNC_SET(AnimState)
 
 JS_FINALIZE_FUNC(AnimState)
 {
-    animstate_t *animstate;
+    /*animstate_t *animstate;
 
     if(animstate = (animstate_t*)JS_GetPrivate(cx, obj))
-        JS_free(cx, animstate);
+        JS_free(cx, animstate);*/
 }
 
 JS_FASTNATIVE_BEGIN(AnimState, setAnim)
@@ -279,11 +291,12 @@ JS_ENDCLASS();
 
 JS_BEGINPROPS(AnimState)
 {
-    { "flags",      ANS_FLAGS,      JSPROP_ENUMERATE,                   NULL, NULL },
-    { "time",       ANS_TIME,       JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
-    { "frameTime",  ANS_FRAMETIME,  JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
-    { "playTime",   ANS_PLAYTIME,   JSPROP_ENUMERATE,                   NULL, NULL },
-    { "rootMotion", ANS_ROOTMOTION, JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "flags",          ANS_FLAGS,          JSPROP_ENUMERATE,                   NULL, NULL },
+    { "time",           ANS_TIME,           JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "frameTime",      ANS_FRAMETIME,      JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "playTime",       ANS_PLAYTIME,       JSPROP_ENUMERATE,                   NULL, NULL },
+    { "rootMotion",     ANS_ROOTMOTION,     JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "restartFrame",   ANS_RESTARTFRAME,   JSPROP_ENUMERATE,                   NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 

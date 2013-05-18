@@ -240,7 +240,8 @@ typedef enum
     TRT_WALL        = 2,
     TRT_EDGE        = 3,
     TRT_OBJECT      = 4,
-    TRT_INTERACT    = 5
+    TRT_INTERACT    = 5,
+    TRT_STUCK       = 6
 } tracetype_e;
 
 typedef struct

@@ -586,6 +586,26 @@ JS_FASTNATIVE_BEGIN(Canvas, drawFixedString)
     return JS_TRUE;
 }
 
+void Canvas_DrawActor(canvas_t *canvas, gActor_t *actor);
+
+JS_FASTNATIVE_BEGIN(Canvas, drawActor)
+{
+    canvas_t *canvas;
+    JSObject *obj;
+    gActor_t *actor;
+
+    JS_CHECKARGS(1);
+
+    JS_THISCANVAS();
+    JS_GETOBJECT(obj, v, 0);
+    JS_GET_PRIVATE_DATA(obj, &GameActor_class, gActor_t, actor);
+
+    Canvas_DrawActor(canvas, actor);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
 JS_BEGINCLASS(Canvas)
     JSCLASS_HAS_PRIVATE,                        // flags
     JS_PropertyStub,                            // addProperty
@@ -622,6 +642,7 @@ JS_BEGINFUNCS(Canvas)
     JS_FASTNATIVE(Canvas, drawFixedTile, 3),
     JS_FASTNATIVE(Canvas, drawString, 3),
     JS_FASTNATIVE(Canvas, drawFixedString, 3),
+    JS_FASTNATIVE(Canvas, drawActor, 1),
     JS_FS_END
 };
 

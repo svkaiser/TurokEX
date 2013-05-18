@@ -252,15 +252,21 @@ JS_FASTNATIVE_BEGIN(Plane, fromIndex)
 {
     plane_t *plane = NULL;
     jsval *v;
-    jsdouble n;
+    int n;
 
     if(argc != 1)
         return JS_FALSE;
 
     v = JS_ARGV(cx, vp);
 
-    JS_GETNUMBER(n, v, 0);
-    plane = &gLevel.planes[(int)n];
+    JS_GETINTEGER(n, 0);
+    if(n <= -1)
+    {
+        JS_SET_RVAL(cx, vp, JSVAL_NULL);
+        return JS_TRUE;
+    }
+
+    plane = &gLevel.planes[n];
 
     JS_INSTPLANE(vp, plane);
     return JS_TRUE;

@@ -105,7 +105,8 @@ typedef enum
     ANF_LOOP        = 2,
     ANF_STOPPED     = 4,
     ANF_NOINTERRUPT = 8,
-    ANF_ROOTMOTION  = 16
+    ANF_ROOTMOTION  = 16,
+    ANF_PAUSED      = 32
 } animflags_t;
 
 typedef struct anim_s
@@ -146,6 +147,7 @@ typedef struct
     float               blendtime;
     int                 flags;
     vec3_t              rootMotion;
+    unsigned int        restartframe;
 } animstate_t;
 
 typedef struct kmodel_s
@@ -180,6 +182,7 @@ kmodel_t *Mdl_Load(const char *file);
 
 extern float rRenderTime;
 extern kbool showorigin;
+extern kbool bWireframe;
 
 void R_DrawFrame(void);
 void R_FinishFrame(void);

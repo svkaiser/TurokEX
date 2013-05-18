@@ -94,8 +94,8 @@ JS_FASTNATIVE_BEGIN(Level, findPlane)
 
     if(plane != NULL)
     {
-        JS_NEWOBJECTPOOL(plane, Plane);
-        //JS_INSTPLANE(vp, plane);
+        //JS_NEWOBJECTPOOL(plane, Plane);
+        JS_INSTPLANE(vp, plane);
     }
     else
     {
@@ -105,28 +105,130 @@ JS_FASTNATIVE_BEGIN(Level, findPlane)
     return JS_TRUE;
 }
 
-JS_FASTNATIVE_BEGIN(Level, getActor)
+JS_FASTNATIVE_BEGIN(Level, findActor)
 {
-    unsigned int index;
-    unsigned int i = 0;
+    JSObject *obj;
+    jsval rval;
+    int index;
+    unsigned int tid;
 
     JS_CHECKARGS(1);
-    JS_GETINTEGER(index, 0);
+    JS_GETINTEGER(tid, 0);
+
+    obj = NULL;
+    index = 0;
 
     for(gLevel.actorRover = gLevel.actorRoot.next;
         gLevel.actorRover != &gLevel.actorRoot;
         gLevel.actorRover = gLevel.actorRover->next)
     {
-        if(i == index)
+        if(gLevel.actorRover->targetID == tid)
         {
-            JS_NEWOBJECT_SETPRIVATE(gLevel.actorRover, &GameActor_class);
-            return JS_TRUE;
-        }
+            JSObject *aObj;
 
-        i++;
+            if(obj == NULL)
+                obj = JS_NewArrayObject(cx, 1, NULL);
+
+            aObj = JPool_GetFree(&objPoolGameActor, &GameActor_class);
+
+            if(!JS_SetPrivate(cx, aObj, gLevel.actorRover))
+                return JS_FALSE;
+
+            JS_DefineElement(cx, obj, index++, OBJECT_TO_JSVAL(aObj),
+                NULL, NULL, JSPROP_ENUMERATE);
+        }
     }
 
-    JS_SET_RVAL(cx, vp, JSVAL_NULL);
+    if(obj == NULL)
+        rval = JSVAL_NULL;
+    else
+        rval = OBJECT_TO_JSVAL(obj);
+
+    JS_SET_RVAL(cx, vp, rval);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Level, spawnActor)
+{
+    JSString *str;
+    char *bytes;
+    jsdouble x;
+    jsdouble y;
+    jsdouble z;
+    jsdouble yaw;
+    jsdouble pitch;
+    plane_t *plane;
+    gActor_t *actor;
+
+    JS_CHECKARGS(7);
+    JS_GETSTRING(str, bytes, v, 0);
+    JS_GETNUMBER(x, v, 1);
+    JS_GETNUMBER(y, v, 2);
+    JS_GETNUMBER(z, v, 3);
+    JS_GETNUMBER(yaw, v, 4);
+    JS_GETNUMBER(pitch, v, 5);
+    
+    if(!JSVAL_IS_NULL(v[6]))
+    {
+        JSObject *plObj;
+
+        JS_GETOBJECT(plObj, v, 6);
+        JS_GET_PRIVATE_DATA(plObj, &Plane_class, plane_t, plane);
+    }
+    else
+    {
+        vec3_t org;
+
+        Vec_Set3(org, (float)x, (float)y, (float)z);
+        plane = Map_FindClosestPlane(org);
+    }
+
+    actor = Map_SpawnActor(bytes,
+        (float)x,
+        (float)y,
+        (float)z,
+        (float)yaw,
+        (float)pitch,
+        plane == NULL ? -1 : plane - gLevel.planes);
+
+    JS_free(cx, bytes);
+
+    JS_NEWOBJECT_SETPRIVATE(actor, &GameActor_class);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Level, changeFloorHeight)
+{
+    jsdouble height;
+    plane_t *plane;
+
+    JS_CHECKARGS(2);
+
+    if(JSVAL_IS_INT(v[0]))
+    {
+        int plane_id;
+
+        JS_GETINTEGER(plane_id, 0);
+
+        if(plane_id == -1)
+            return JS_TRUE;
+
+        plane = &gLevel.planes[plane_id];
+    }
+    else
+    {
+        JSObject *plObj;
+
+        JS_GETOBJECT(plObj, v, 0);
+        JS_GET_PRIVATE_DATA(plObj, &Plane_class, plane_t, plane);
+    }
+
+    if(plane == NULL)
+        return JS_TRUE;
+
+    JS_GETNUMBER(height, v, 1);
+
+    Map_TraverseChangePlaneHeight(plane, (float)height, plane->area_id);
     return JS_TRUE;
 }
 
@@ -161,7 +263,9 @@ JS_BEGINCONST(Level)
 JS_BEGINFUNCS(Level)
 {
     JS_FASTNATIVE(Level, findPlane, 1),
-    JS_FASTNATIVE(Level, getActor, 1),
+    JS_FASTNATIVE(Level, findActor, 1),
+    JS_FASTNATIVE(Level, spawnActor, 7),
+    JS_FASTNATIVE(Level, changeFloorHeight, 2),
     JS_FS_END
 };
 

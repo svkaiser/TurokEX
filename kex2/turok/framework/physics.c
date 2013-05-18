@@ -64,6 +64,20 @@ static void G_SlideOnCrease(vec3_t out, vec3_t velocity, vec3_t v1, vec3_t v2)
 }
 
 //
+// G_ApplyGravity
+//
+
+void G_ApplyGravity(vec3_t origin, vec3_t velocity, plane_t *plane,
+                    float mass, float timeDelta)
+{
+    if(plane == NULL)
+        return;
+
+    if(origin[1] - Plane_GetDistance(plane, origin) > 0.01f)
+        velocity[1] -= (mass * timeDelta);
+}
+
+//
 // G_ApplyFriction
 //
 
@@ -95,6 +109,43 @@ void G_ApplyFriction(vec3_t velocity, float friction, kbool effectY)
 }
 
 //
+// G_ApplyBounceVelocity
+//
+
+void G_ApplyBounceVelocity(vec3_t velocity, vec3_t reflection, float amount)
+{
+    float d = Vec_Unit3(velocity);
+
+    if(d >= 1.05f)
+    {
+        float bounce = (1 + amount);
+
+        if(d < 16.8f && amount < 1.0f)
+            bounce = 0.2f;
+
+        G_ClipVelocity(velocity, velocity, reflection, bounce);
+    }
+}
+
+//
+// G_TryMove
+//
+
+kbool G_TryMove(gActor_t *source, vec3_t origin, vec3_t dest, plane_t **plane)
+{
+    plane_t *newPlane = NULL;
+    trace_t trace;
+
+    trace = Trace(origin, dest, *plane, NULL, source, true);
+    *plane = trace.pl;
+
+    if(trace.type != TRT_NOHIT)
+        Vec_Copy3(dest, trace.hitvec);
+
+    return Plane_PointInRange(*plane, dest[0], dest[2]);
+}
+
+//
 // G_ClipMovement
 //
 // Trace against surrounding planes and slide
@@ -102,7 +153,7 @@ void G_ApplyFriction(vec3_t velocity, float friction, kbool effectY)
 // along the way
 //
 
-void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
+kbool G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
                     gActor_t *actor, trace_t *t)
 {
     trace_t trace;
@@ -113,9 +164,24 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
     int moves;
     int i;
     int hits;
+    kbool hitOk;
 
     if(*plane == NULL)
-        return;
+    {
+        if(t)
+        {
+            t->type = TRT_STUCK;
+            t->hitpl = NULL;
+            t->pl = NULL;
+            Vec_Copy3(t->hitvec, origin);
+            Vec_Copy3(t->normal, end);
+            Vec_Normalize3(t->normal);
+        }
+
+        return true;
+    }
+
+    hitOk = false;
 
     if(t) memset(t, 0, sizeof(trace_t));
 
@@ -132,9 +198,9 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
         // get trace results
         trace = Trace(start, end, *plane, actor, NULL, false);
 
-        if(t) *t = trace;
         *plane = trace.pl;
 
+        // TODO
         if(trace.type == TRT_INTERACT || trace.pl->flags & CLF_CLIMB)
             break;
 
@@ -143,6 +209,31 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
             // went the entire distance
             break;
         }
+
+        if(t)
+        {
+            if(trace.hitpl)
+                t->hitpl = trace.hitpl;
+
+            if(trace.hitActor)
+                t->hitActor = trace.hitActor;
+
+            Vec_Copy3(t->hitvec, end);
+
+            if(trace.type != TRT_NOHIT)
+            {
+                Vec_Copy3(t->normal, trace.normal);
+                t->type = trace.type;
+                Vec_Lerp3(t->hitvec, (1 + trace.frac), start, end);
+            }
+
+            if(trace.frac != 0)
+                t->frac = trace.frac;
+
+            t->pl = trace.pl;
+        }
+
+        hitOk = true;
 
         Vec_Copy3(normals[moves++], trace.normal);
 
@@ -153,12 +244,15 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
             {
                 int j;
                 int k;
+                float b;
+
+                if(trace.type != TRT_OBJECT)
+                    b = 1 - (1 + trace.frac) + 0.01f;
+                else
+                    b = 1;
 
                 // slide along this plane
-                G_ClipVelocity(vel, vel, normals[hits], 1);
-
-                if(trace.type == TRT_OBJECT)
-                    break;
+                G_ClipVelocity(vel, vel, normals[hits], b);
 
                 // try bumping against another plane
                 for(j = 0; j < moves; j++)
@@ -177,7 +271,7 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
                             {
                                 // force a dead stop
                                 Vec_Set3(velocity, 0, 0, 0);
-                                return;
+                                return true;
                             }
                         }
                     }
@@ -206,26 +300,67 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
     Vec_Add(end, origin, velocity);
     if(!Plane_PointInRange(*plane, end[0], end[2]))
     {
+        if(t)
+        {
+            t->type = TRT_STUCK;
+            t->hitpl = *plane;
+            t->pl = *plane;
+            Vec_Copy3(t->hitvec, origin);
+            Vec_Copy3(t->normal, end);
+            Vec_Normalize3(t->normal);
+        }
+
+        hitOk = true;
         velocity[0] = 0;
         velocity[2] = 0;
     }
 
+    // advance position
     Vec_Add(origin, origin, velocity);
 
+    // clip origin/velocity for ceiling and floors
     if(actor)
     {
         float dist;
 
+        // test the floor and adjust height
         dist = origin[1] - Plane_GetDistance(*plane, origin);
         if(dist <= 0.512f)
         {
             origin[1] = origin[1] - dist;
+
+            if(t)
+            {
+                float d;
+
+                t->hitpl = *plane;
+                t->pl = *plane;
+                Vec_Copy3(t->hitvec, start);
+                Vec_Copy3(t->normal, (*plane)->normal);
+                t->type = TRT_SLOPE;
+
+                d = Vec_Dot(start, (*plane)->normal) -
+                    Vec_Dot((*plane)->points[0], (*plane)->normal);
+
+                if(d > 0)
+                {
+                    vec3_t dir;
+
+                    Vec_Copy3(dir, velocity);
+                    Vec_Normalize3(dir);
+                    Vec_Scale(dir, dir, d - 3.42f);
+                    Vec_Add(t->hitvec, start, dir);
+                }
+            }
+
+            hitOk = true;
             G_ClipVelocity(velocity, velocity, (*plane)->normal, 1);
 
             if(velocity[1] > 0)
                 velocity[1] = 0;
         }
 
+        // test the ceiling and adjust height
         if((*plane)->flags & CLF_CHECKHEIGHT)
         {
             float offset = actor->centerHeight + actor->viewHeight;
@@ -233,9 +368,22 @@ void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
             dist = Plane_GetHeight(*plane, origin);
             if((dist - (origin[1] + offset) < 1.024f))
             {
-                G_ClipVelocity(velocity, velocity, (*plane)->ceilingNormal, 1);
                 origin[1] = dist - (1.024f + offset);
+
+                if(t)
+                {
+                    t->hitpl = *plane;
+                    t->pl = *plane;
+                    Vec_Copy3(t->hitvec, start);
+                    Vec_Copy3(t->normal, (*plane)->ceilingNormal);
+                    t->type = TRT_SLOPE;
+                }
+
+                hitOk = true;
+                G_ClipVelocity(velocity, velocity, (*plane)->ceilingNormal, 1);
             }
         }
     }
+
+    return hitOk;
 }

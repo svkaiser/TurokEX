@@ -38,6 +38,8 @@
 #include "server.h"
 
 static gActorTemplate_t *actorTemplateList[MAX_HASH];
+static int numActors = 0;
+static int numStaleActors = 0;
 
 enum
 {
@@ -47,6 +49,7 @@ enum
     scactor_bCollision,
     scactor_bStatic,
     scactor_bTouch,
+    scactor_bHidden,
     scactor_bOrientOnSlope,
     scactor_scale,
     scactor_radius,
@@ -64,6 +67,7 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_bCollision,       "bCollision"        },
     { scactor_bStatic,          "bStatic"           },
     { scactor_bTouch,           "bTouch"            },
+    { scactor_bHidden,          "bHidden"           },
     { scactor_bOrientOnSlope,   "bOrientOnSlope"    },
     { scactor_scale,            "scale"             },
     { scactor_radius,           "radius"            },
@@ -107,8 +111,6 @@ static void Actor_ParseTemplate(scparser_t *parser, gActorTemplate_t *ac)
             ac->actor.bbox.max[0] = (float)SC_GetFloat();
             ac->actor.bbox.max[1] = (float)SC_GetFloat();
             ac->actor.bbox.max[2] = (float)SC_GetFloat();
-            Vec_Sub(ac->actor.bbox.dim,
-                ac->actor.bbox.max, ac->actor.bbox.min);
             SC_ExpectNextToken(TK_RBRACK);
             break;
 
@@ -145,6 +147,11 @@ static void Actor_ParseTemplate(scparser_t *parser, gActorTemplate_t *ac)
         case scactor_bTouch:
             SC_AssignInteger(mapactortokens, &ac->actor.bTouch,
                 scactor_bTouch, parser, false);
+            break;
+
+        case scactor_bHidden:
+            SC_AssignInteger(mapactortokens, &ac->actor.bHidden,
+                scactor_bHidden, parser, false);
             break;
 
         case scactor_bOrientOnSlope:
@@ -220,6 +227,57 @@ void Actor_OnTouchEvent(gActor_t *actor, gActor_t *instigator)
 }
 
 //
+// Actor_TransformBBox
+//
+
+static void Actor_TransformBBox(gActor_t *actor)
+{
+    bbox_t box;
+    vec3_t c;
+    vec3_t h;
+    vec3_t ct;
+    vec3_t ht;
+    mtx_t m;
+
+    Vec_Copy3(box.min, actor->bbox.omin);
+    Vec_Copy3(box.max, actor->bbox.omax);
+
+    Mtx_Copy(m, actor->rotMtx);
+
+    c[0] = (box.min[0] + box.max[0]) * 0.5f;
+    c[1] = (box.min[1] + box.max[1]) * 0.5f;
+    c[2] = (box.min[2] + box.max[2]) * 0.5f;
+
+    Vec_Sub(h, box.max, c);
+
+    Vec_TransformToWorld(m, c, ct);
+
+    ct[0] = -ct[0];
+    ct[2] = -ct[2];
+
+    m[ 0] = (float)fabs(m[ 0]);
+    m[ 1] = (float)fabs(m[ 1]);
+    m[ 2] = (float)fabs(m[ 2]);
+    m[ 4] = (float)fabs(m[ 4]);
+    m[ 5] = (float)fabs(m[ 5]);
+    m[ 6] = (float)fabs(m[ 6]);
+    m[ 8] = (float)fabs(m[ 8]);
+    m[ 9] = (float)fabs(m[ 9]);
+    m[10] = (float)fabs(m[10]);
+    m[12] = 0;
+    m[13] = 0;
+    m[14] = 0;
+
+    Vec_TransformToWorld(m, h, ht);
+
+    Vec_Sub(box.min, ct, ht);
+    Vec_Add(box.max, ct, ht);
+
+    Vec_Copy3(actor->bbox.min, box.min);
+    Vec_Copy3(actor->bbox.max, box.max);
+}
+
+//
 // Actor_UpdateTransform
 //
 
@@ -229,13 +287,30 @@ void Actor_UpdateTransform(gActor_t *actor)
     {
         vec4_t yaw;
         vec4_t pitch;
+        vec4_t roll;
+        vec4_t rot;
 
         Ang_Clamp(&actor->angles[0]);
         Ang_Clamp(&actor->angles[1]);
 
         Vec_SetQuaternion(yaw, actor->angles[0], 0, 1, 0);
         Vec_SetQuaternion(pitch, actor->angles[1], 1, 0, 0);
-        Vec_MultQuaternion(actor->rotation, pitch, yaw);
+        Vec_SetQuaternion(roll, actor->angles[2], 0, 0, 1);
+        Vec_MultQuaternion(rot, yaw, roll);
+        Vec_MultQuaternion(actor->rotation, pitch, rot);
+
+        if(actor->plane != -1 && actor->bOrientOnSlope &&
+            client.playerActor != actor /*TODO*/)
+        {
+            vec4_t rot;
+            plane_t *plane = &gLevel.planes[actor->plane];
+
+            if(!Plane_IsAWall(plane))
+            {
+                Plane_GetRotation(rot, plane);
+                Vec_AdjustQuaternion(actor->rotation, rot, actor->angles[0] + M_PI);
+            }
+        }
     }
 
     Mtx_ApplyRotation(actor->rotation, actor->matrix);
@@ -250,6 +325,9 @@ void Actor_UpdateTransform(gActor_t *actor)
         actor->origin[0],
         actor->origin[1],
         actor->origin[2]);
+
+    if(!actor->bStatic)
+        Actor_TransformBBox(actor);
 }
 
 //
@@ -378,21 +456,28 @@ void Actor_Tick(void)
         gLevel.actorRover = gLevel.actorRover->next)
     {
         gActor_t *actor = gLevel.actorRover;
+        numActors++;
 
         if(actor->bStatic)
             continue;
-
-        actor->timestamp = ((float)server.runtime -
-            actor->timestamp) / 1000.0f;
 
         // TODO
         if(client.playerActor == actor)
             continue;
 
+        actor->timestamp = ((float)server.runtime -
+            actor->timestamp) / 1000.0f;
+
         if(actor->components)
             Actor_CallEvent(actor, "onTick", NULL);
 
         actor->timestamp = (float)server.runtime;
+
+        if(actor->bStale)
+        {
+            numStaleActors++;
+            Map_RemoveActor(&gLevel, actor);
+        }
     }
 }
 
@@ -459,7 +544,8 @@ void Actor_CopyProperties(gActor_t *actor, gActor_t *gTemplate)
 
     Vec_Copy3(actor->bbox.min, gTemplate->bbox.min);
     Vec_Copy3(actor->bbox.max, gTemplate->bbox.max);
-    Vec_Copy3(actor->bbox.dim, gTemplate->bbox.dim);
+    Vec_Copy3(actor->bbox.omin, gTemplate->bbox.min);
+    Vec_Copy3(actor->bbox.omax, gTemplate->bbox.max);
     Vec_Copy3(actor->scale, gTemplate->scale);
 }
 
@@ -577,7 +663,6 @@ gActor_t *Actor_Spawn(const char *classname, float x, float y, float z,
     }
 
     actor = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
-    Map_AddActor(&gLevel, actor);
     Actor_CopyProperties(actor, &at->actor);
 
     if(at->numComponents > 0)
@@ -593,15 +678,7 @@ gActor_t *Actor_Spawn(const char *classname, float x, float y, float z,
     Vec_Set3(actor->origin, x, y, z);
     actor->angles[0] = yaw;
     actor->angles[1] = pitch;
-
-    // TODO
-    if(plane == -1)
-    {
-        plane_t *p = Map_FindClosestPlane(actor->origin);
-        actor->plane = (p != NULL) ? p - gLevel.planes : -1;
-    }
-    else
-        actor->plane = plane;
+    actor->plane = plane;
 
     Actor_Setup(actor);
     return actor;
@@ -706,24 +783,12 @@ void Actor_Setup(gActor_t *actor)
     }
 
     Vec_Normalize4(actor->rotation);
+
+    if(actor->model && (anim = Mdl_GetAnim(actor->model, "anim00")))
+        Mdl_SetAnimState(&actor->animState, anim, 4, ANF_PAUSED);
+
     Actor_UpdateTransform(actor);
-
-    if((anim = Mdl_GetAnim(actor->model, "anim00")))
-    {
-        Mdl_SetAnimState(&actor->animState, anim, 4, ANF_LOOP|ANF_ROOTMOTION);
-        Vec_SetQuaternion(actor->rotation, -actor->angles[0], 0, 1, 0);
-
-        if(actor->plane != -1)
-        {
-            vec4_t rot;
-            plane_t *plane = &gLevel.planes[actor->plane];
-
-            Plane_GetRotation(rot, plane);
-            Vec_AdjustQuaternion(actor->rotation, rot, -actor->angles[0] + M_PI);
-        }
-
-        Actor_UpdateTransform(actor);
-    }
+    actor->timestamp = (float)server.runtime;
 
     if(actor->components == NULL)
         return;
@@ -745,5 +810,18 @@ void Actor_Setup(gActor_t *actor)
     JS_SetPropertyAttributes(cx, actor->components, "owner", 0, &found);
 
     Actor_CallEvent(actor, "onReady", NULL);
+}
+
+//
+// Actor_DrawDebugStats
+//
+
+void Actor_DrawDebugStats(void)
+{
+    Draw_Text(32, 192, COLOR_GREEN, 1, "num actors: %i", numActors);
+    Draw_Text(32, 208, COLOR_GREEN, 1, "num stale actors: %i", numStaleActors);
+
+    numActors = 0;
+    numStaleActors = 0;
 }
 

@@ -24,6 +24,7 @@
 //
 //-----------------------------------------------------------------------------
 
+#include "common.h"
 #include <math.h>
 #include "mathlib.h"
 
@@ -80,6 +81,15 @@ void Vec_Set4(vec4_t vec, float x, float y, float z, float w)
 kbool Vec_Compare3(vec3_t v1, vec3_t v2)
 {
     return (v1[0] == v2[0] && v1[1] == v2[1] && v1[2] == v2[2]);
+}
+
+//
+// Vec_ToString
+//
+
+char *Vec_ToString(vec3_t vec)
+{
+    return kva("%f %f %f", vec[0], vec[1], vec[2]);
 }
 
 //

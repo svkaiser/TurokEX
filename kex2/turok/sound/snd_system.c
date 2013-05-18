@@ -321,11 +321,11 @@ void Snd_FreeSource(sndSource_t *src)
     src->inUse      = false;
     src->playing    = false;
     src->sfx        = NULL;
-    src->actor      = NULL;
     src->volume     = 1.0f;
     src->pitch      = 1.0f;
     src->startTime  = 0;
 
+    Actor_SetTarget(&src->actor, NULL);
     alSource3f(src->handle, AL_POSITION, 0, 0, 0);
 }
 

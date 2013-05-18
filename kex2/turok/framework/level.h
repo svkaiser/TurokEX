@@ -321,7 +321,6 @@ typedef struct plane_s
     float               height[3];
     vec3_t              normal;
     vec3_t              ceilingNormal;
-    blockobj_t          blocklist;
     struct plane_s      *link[3];
 } plane_t;
 
@@ -410,7 +409,11 @@ extern kmap_t *g_currentmap;
 int Obj_GetClassType(object_t *obj);
 area_t *Map_GetArea(plane_t *plane);
 plane_t *Map_FindClosestPlane(vec3_t coord);
+gActor_t *Map_SpawnActor(const char *classname, float x, float y, float z,
+                         float yaw, float pitch, int plane);
 void Map_AddActor(gLevel_t *level, gActor_t *actor);
+void Map_RemoveActor(gLevel_t *level, gActor_t* actor);
+void Map_TraverseChangePlaneHeight(plane_t *plane, float destHeight, int area_id);
 void Map_Load(int map);
 void Map_Init(void);
 

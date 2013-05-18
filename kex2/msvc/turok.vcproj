@@ -391,6 +391,10 @@
 					RelativePath="..\turok\renderer\render_model.c"
 					>
 				</File>
+				<File
+					RelativePath="..\turok\renderer\render_shadows.c"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="menu"

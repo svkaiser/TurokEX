@@ -98,6 +98,7 @@ void    (Z_Touch)(void *ptr, const char *, int);
 
 int Z_TagUsage(int tag);
 int Z_FreeMemory(void);
+void Z_PrintStats(void);
 
 #endif
 

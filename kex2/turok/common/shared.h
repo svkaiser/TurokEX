@@ -40,7 +40,8 @@ typedef struct
 {
     vec3_t  min;
     vec3_t  max;
-    vec3_t  dim;
+    vec3_t  omin;
+    vec3_t  omax;
 } bbox_t;
 
 typedef union

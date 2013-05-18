@@ -126,24 +126,39 @@ static void Z_RemoveBlock(memblock_t *block)
 }
 
 //
+// Z_PrintStats
+//
+
+static kbool bShowZStats = false;
+void Z_PrintStats(void)
+{
+    if(bShowZStats == false)
+        return;
+
+    Draw_Text(32, 64, COLOR_YELLOW, 1, "\n---------------- Zone Stats ----------------\n");
+    Draw_Text(32, 80, COLOR_GREEN, 1, "Mem Allocated: %ikb\n", Z_FreeMemory() >> 10);
+    Draw_Text(32, 96, COLOR_GREEN, 1, "Static: %ikb\n", Z_TagUsage(PU_STATIC) >> 10);
+    Draw_Text(32, 112, COLOR_GREEN, 1, "Auto: %ikb\n", Z_TagUsage(PU_AUTO) >> 10);
+    Draw_Text(32, 128, COLOR_GREEN, 1, "File: %ikb\n", Z_TagUsage(PU_FILE) >> 10);
+    Draw_Text(32, 144, COLOR_GREEN, 1, "Texture: %ikb\n", Z_TagUsage(PU_TEXTURE) >> 10);
+    Draw_Text(32, 160, COLOR_GREEN, 1, "Model: %ikb\n", Z_TagUsage(PU_MODEL) >> 10);
+    Draw_Text(32, 176, COLOR_GREEN, 1, "Level: %ikb\n", Z_TagUsage(PU_LEVEL) >> 10);
+    Draw_Text(32, 192, COLOR_GREEN, 1, "Actors: %ikb\n", Z_TagUsage(PU_ACTOR) >> 10);
+    Draw_Text(32, 208, COLOR_GREEN, 1, "Sound: %ikb\n", Z_TagUsage(PU_SOUND) >> 10);
+    Draw_Text(32, 224, COLOR_GREEN, 1, "Cache: %ikb\n", Z_TagUsage(PU_CACHE) >> 10);
+    Draw_Text(32, 240, COLOR_GREEN, 1, "Script: %ikb\n", Z_TagUsage(PU_JSOBJ) >> 10);
+}
+
+//
 // FCmd_ZoneStats
 //
 
 static void FCmd_ZoneStats(void)
 {
-    Com_CPrintf(COLOR_CYAN, "\n---------------- Zone Stats ----------------\n");
-    Com_CPrintf(COLOR_GREEN, "Mem Allocated: %ikb\n", Z_FreeMemory() >> 10);
-    Com_CPrintf(COLOR_GREEN, "Static: %ikb\n", Z_TagUsage(PU_STATIC) >> 10);
-    Com_CPrintf(COLOR_GREEN, "Auto: %ikb\n", Z_TagUsage(PU_AUTO) >> 10);
-    Com_CPrintf(COLOR_GREEN, "File: %ikb\n", Z_TagUsage(PU_FILE) >> 10);
-    Com_CPrintf(COLOR_GREEN, "Texture: %ikb\n", Z_TagUsage(PU_TEXTURE) >> 10);
-    Com_CPrintf(COLOR_GREEN, "Model: %ikb\n", Z_TagUsage(PU_MODEL) >> 10);
-    Com_CPrintf(COLOR_GREEN, "Level: %ikb\n", Z_TagUsage(PU_LEVEL) >> 10);
-    Com_CPrintf(COLOR_GREEN, "Actors: %ikb\n", Z_TagUsage(PU_ACTOR) >> 10);
-    Com_CPrintf(COLOR_GREEN, "Sound: %ikb\n", Z_TagUsage(PU_SOUND) >> 10);
-    Com_CPrintf(COLOR_GREEN, "Cache: %ikb\n", Z_TagUsage(PU_CACHE) >> 10);
-    Com_CPrintf(COLOR_GREEN, "Script: %ikb\n", Z_TagUsage(PU_JSOBJ) >> 10);
-    Com_Printf("\n");
+    if(Cmd_GetArgc() < 1)
+        return;
+
+    bShowZStats ^= 1;
 }
 
 //

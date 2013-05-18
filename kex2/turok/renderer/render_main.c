@@ -46,6 +46,8 @@ static kbool showgrid = false;
 static kbool showpnmls = false;
 static kbool showradius = false;
 
+kbool bWireframe = false;
+
 static float grid_high_y = 0;
 static float grid_low_y = 0;
 
@@ -253,24 +255,32 @@ void R_DrawSection(mdlsection_t *section, char *texture)
     tex = Tex_CacheTextureFile(texturepath, GL_REPEAT,
         section->flags & MDF_MASKED);
 
-    if(tex)
+    if(!bWireframe)
     {
-        GL_SetState(GLSTATE_TEXTURE0, true);
-        GL_BindTexture(tex);
+        if(tex)
+        {
+            GL_SetState(GLSTATE_TEXTURE0, true);
+            GL_BindTexture(tex);
+        }
+        else
+        {
+            GL_SetState(GLSTATE_TEXTURE0, false);
+            color = section->color1;
+        }
+
+        if(section->flags & MDF_TRANSPARENT1)
+        {
+            color = color & 0xffffff;
+            color |= (160 << 24);
+        }
+
+        dglColor4ubv((byte*)&color);
     }
     else
     {
-        GL_SetState(GLSTATE_TEXTURE0, false);
-        color = section->color1;
+        GL_SetState(GLSTATE_TEXTURE0, true);
+        GL_BindTextureName("textures/white.tga");
     }
-
-    if(section->flags & MDF_TRANSPARENT1)
-    {
-        color = color & 0xffffff;
-        color |= (160 << 24);
-    }
-
-    dglColor4ubv((byte*)&color);
 
     dglDrawElements(GL_TRIANGLES, section->numtris, GL_UNSIGNED_SHORT, section->tris);
 }
@@ -479,6 +489,7 @@ void R_DrawActors(void)
         return;
 
     Mtx_IdentityY(mtx, DEG2RAD(-90));
+    Mtx_Scale(mtx, -1, 1, 1);
 
     for(gLevel.actorRover = gLevel.actorRoot.next;
         gLevel.actorRover != &gLevel.actorRoot;
@@ -492,30 +503,32 @@ void R_DrawActors(void)
 
         Vec_Copy3(box.min, actor->bbox.min);
         Vec_Copy3(box.max, actor->bbox.max);
-        Vec_Copy3(box.dim, actor->bbox.dim);
-
-        box.min[0] += actor->origin[0];
-        box.min[1] += actor->origin[1];
-        box.min[2] += actor->origin[2];
-        box.max[0] += actor->origin[0];
-        box.max[1] += actor->origin[1];
-        box.max[2] += actor->origin[2];
+        Vec_Mult(box.min, box.min, actor->scale);
+        Vec_Mult(box.max, box.max, actor->scale);
+        Vec_Add(box.min, box.min, actor->origin);
+        Vec_Add(box.max, box.max, actor->origin);
 
         if(client.playerActor != actor)
         {
             if(!R_FrustumTestBox(box))
                 continue;
 
-            dglPushMatrix();
-            dglMultMatrixf(actor->matrix);
-            dglPushMatrix();
-            dglMultMatrixf(mtx);
+            if(actor->model)
+            {
+                dglPushMatrix();
+                dglMultMatrixf(actor->matrix);
+                dglPushMatrix();
+                dglMultMatrixf(mtx);
 
-            R_TraverseDrawNode(actor->model, &actor->model->nodes[0],
-                actor->textureSwaps, actor->variant, &actor->animState);
+                if(bWireframe)
+                    dglColor4ub(192, 192, 192, 255);
 
-            dglPopMatrix();
-            dglPopMatrix();
+                R_TraverseDrawNode(actor->model, &actor->model->nodes[0],
+                    actor->textureSwaps, actor->variant, &actor->animState);
+
+                dglPopMatrix();
+                dglPopMatrix();
+            }
         }
 
         if(showbbox)
@@ -601,6 +614,14 @@ void R_DrawStatics(void)
 
             dglPushMatrix();
             dglMultMatrixf(actor->matrix);
+
+            if(bWireframe)
+            {
+                if(!actor->bTouch)
+                    dglColor4ub(0, 224, 224, 255);
+                else
+                    dglColor4ub(224, 224, 0, 255);
+            }
 
             R_TraverseDrawNode(actor->model, &actor->model->nodes[0],
                 actor->textureSwaps, actor->variant, NULL);
@@ -807,11 +828,14 @@ void R_DrawFrame(void)
         R_DrawCollision();
 
     dglDisableClientState(GL_COLOR_ARRAY);
+
+    if(bWireframe)
+        dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
     R_DrawStatics();
+    R_DrawActors();
 
     dglCullFace(GL_FRONT);
-
-    R_DrawActors();
     R_DrawFX();
 
     P_LocalPlayerEvent("onRender");
@@ -823,6 +847,9 @@ void R_DrawFrame(void)
 
     if(!showcollision)
         dglDisable(GL_FOG);
+
+    if(bWireframe)
+        dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     GL_SetState(GLSTATE_DEPTHTEST, false);
     GL_SetState(GLSTATE_CULL, true);
@@ -929,6 +956,18 @@ static void FCmd_ShowRadius(void)
 }
 
 //
+// FCmd_ShowWireframe
+//
+
+static void FCmd_ShowWireFrame(void)
+{
+    if(Cmd_GetArgc() < 1)
+        return;
+
+    bWireframe ^= 1;
+}
+
+//
 // R_Shutdown
 //
 
@@ -949,6 +988,7 @@ void R_Init(void)
     Cmd_AddCommand("showorigin", FCmd_ShowOrigin);
     Cmd_AddCommand("showpnmls", FCmd_ShowPlaneNormals);
     Cmd_AddCommand("showradius", FCmd_ShowRadius);
+    Cmd_AddCommand("drawwireframe", FCmd_ShowWireFrame);
 
     Cvar_Register(&r_fog);
 

@@ -168,8 +168,6 @@ void Kernel_Run(void)
     Sys_ShowConsole(0);
 #endif
 
-    J_RunObjectEvent(JS_EV_GAME, "event_GameInitialized");
-
     while(1)
     {
         do

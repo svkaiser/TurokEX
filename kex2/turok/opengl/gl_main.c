@@ -57,6 +57,7 @@ CVAR_EXTERNAL(gl_gamma);
 CVAR_EXTERNAL(v_vsync);
 CVAR_EXTERNAL(v_depthsize);
 CVAR_EXTERNAL(v_buffersize);
+CVAR_EXTERNAL(v_stencilsize);
 
 int	ViewWindowX = 0;
 int	ViewWindowY = 0;
@@ -204,6 +205,53 @@ byte* GL_GetScreenBuffer(int x, int y, int width, int height)
     Z_Free(buffer);
 
     return data;
+}
+
+//
+// GL_ScreenToTexture
+//
+
+dtexture GL_ScreenToTexture(void)
+{
+    dtexture id;
+    int width;
+    int height;
+    
+    dglGenTextures(1, &id);
+    dglBindTexture(GL_TEXTURE_2D, id);
+    
+    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, DGL_CLAMP);
+    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, DGL_CLAMP);
+    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    
+    width = Tex_PadDims(video_width);
+    height = Tex_PadDims(video_height);
+
+    dglTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGB8,
+        width,
+        height,
+        0,
+        GL_RGB,
+        GL_UNSIGNED_BYTE,
+        0
+        );
+
+    dglCopyTexSubImage2D(
+        GL_TEXTURE_2D,
+        0,
+        0,
+        0,
+        0,
+        0,
+        width,
+        height
+        );
+    
+    return id;
 }
 
 //
@@ -412,7 +460,7 @@ void GL_SetTextureUnit(int unit, kbool enable)
 void GL_ClearView(float *clear)
 {
     dglClearColor(clear[0], clear[1], clear[2], clear[3]);
-    dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     dglViewport(ViewWindowX, ViewWindowY, ViewWidth, ViewHeight);
     dglScissor(ViewWindowX, ViewWindowY, ViewWidth, ViewHeight);
 }
@@ -526,7 +574,6 @@ void GL_Init(void)
     SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 0);
     SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 0);
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 0);
     SDL_GL_SetAttribute(SDL_GL_ACCUM_RED_SIZE, 0);
     SDL_GL_SetAttribute(SDL_GL_ACCUM_GREEN_SIZE, 0);
     SDL_GL_SetAttribute(SDL_GL_ACCUM_BLUE_SIZE, 0);
@@ -534,6 +581,7 @@ void GL_Init(void)
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, (int)v_buffersize.value);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, (int)v_depthsize.value);
+    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, (int)v_stencilsize.value);
     SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, (int)v_vsync.value);
     
     flags |= SDL_OPENGL;
@@ -559,6 +607,7 @@ void GL_Init(void)
 
     dglViewport(0, 0, video_width, video_height);
     dglClearDepth(1.0f);
+    dglClearStencil(0);
     dglDisable(GL_TEXTURE_2D);
     dglEnable(GL_CULL_FACE);
     dglDisable(GL_NORMALIZE);

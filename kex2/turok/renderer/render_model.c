@@ -765,6 +765,7 @@ void Mdl_SetAnimState(animstate_t *astate, anim_t *anim,
     astate->prevtrack.nextframe     = 0;
     astate->track.anim              = anim;
     astate->prevtrack.anim          = NULL;
+    astate->restartframe            = 1;
 }
 
 
@@ -789,6 +790,7 @@ void Mdl_BlendAnimStates(animstate_t *astate, anim_t *anim,
         astate->deltatime               = 0;
         astate->prevtrack.anim          = astate->track.anim;
         astate->track.anim              = anim;
+        astate->restartframe            = 1;
     }
 }
 
@@ -807,13 +809,13 @@ static void Mdl_NextAnimFrame(animstate_t *astate)
     if(++astate->track.frame >=
         (int)astate->track.anim->numframes)
     {
-        astate->track.frame = 1;
+        astate->track.frame = astate->restartframe;
     }
 
     if(++astate->track.nextframe >=
         (int)astate->track.anim->numframes)
     {
-        astate->track.nextframe = 1;
+        astate->track.nextframe = astate->restartframe;
         astate->deltatime = 0;
         astate->playtime = 0;
 
@@ -843,7 +845,7 @@ void Mdl_UpdateAnimState(animstate_t *astate)
 {
     float blend;
 
-    if(astate->flags & ANF_STOPPED)
+    if(astate->flags & (ANF_STOPPED|ANF_PAUSED))
         return;
 
     if(astate->track.anim == NULL)

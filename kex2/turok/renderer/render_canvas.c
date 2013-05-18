@@ -27,6 +27,7 @@
 #include "SDL_opengl.h"
 #include "common.h"
 #include "gl.h"
+#include "actor.h"
 #include "render.h"
 
 //
@@ -326,4 +327,57 @@ void Canvas_DrawFixedString(canvas_t *canvas, const char *string, float x, float
     canvas->scale /= ratiox;
     Canvas_DrawString(canvas, string, rx, ry, center);
     canvas->scale = oldScale;
+}
+
+//
+// Canvas_DrawActor
+//
+
+void Canvas_DrawActor(canvas_t *canvas, gActor_t *actor)
+{
+    mtx_t mtx;
+
+    if(actor->bHidden)
+        return;
+
+    Actor_UpdateTransform(actor);
+
+    // setup projection matrix
+    dglMatrixMode(GL_PROJECTION);
+    dglLoadIdentity();
+    Mtx_ViewFrustum(video_width, video_height, 45, 32);
+
+    // setup modelview matrix
+    dglMatrixMode(GL_MODELVIEW);
+    dglLoadIdentity();
+    Mtx_IdentityY(mtx, DEG2RAD(-90));
+
+    if(actor->model)
+    {
+        dglPushMatrix();
+        dglMultMatrixf(actor->matrix);
+        dglPushMatrix();
+        dglMultMatrixf(mtx);
+
+        if(bWireframe)
+            dglColor4ub(192, 192, 192, 255);
+
+        R_TraverseDrawNode(actor->model, &actor->model->nodes[0],
+            actor->textureSwaps, actor->variant, &actor->animState);
+
+        dglPopMatrix();
+        dglPopMatrix();
+    }
+
+    if(showorigin)
+    {
+        vec3_t vec;
+
+        Vec_Set3(vec, 0, 0, 0);
+
+        dglPushMatrix();
+        dglMultMatrixf(actor->matrix);
+        R_DrawOrigin(vec, 32.0f);
+        dglPopMatrix();
+    }
 }

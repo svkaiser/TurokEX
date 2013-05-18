@@ -50,11 +50,9 @@ typedef struct js_scrobj_s
 } js_scrobj_t;
 
 jsval J_GetObjectElement(JSContext *cx, JSObject *object, jsint index);
-jsval J_CallFunctionOnObject(JSContext *cx, JSObject *object, const char *function);
 jsuint J_AllocFloatArray(JSContext *cx, JSObject *object, float **arr, JSBool fixed);
 jsuint J_AllocWordArray(JSContext *cx, JSObject *object, word **arr, JSBool fixed);
 jsuint J_AllocByteArray(JSContext *cx, JSObject *object, byte **arr, JSBool fixed);
-char *J_GetObjectClassName(JSObject *object);
 
 js_scrobj_t *J_FindScript(const char *name);
 js_scrobj_t *J_LoadScript(const char *name);

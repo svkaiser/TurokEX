@@ -319,9 +319,14 @@ void P_LocalPlayerTick(void)
     localPlayer.latency[current] = client.time;
     localPlayer.actor->plane = (ws->plane - gLevel.planes);
 
+    Ang_Clamp(&ws->angles[0]);
+    Ang_Clamp(&ws->angles[1]);
+    Ang_Clamp(&ws->angles[2]);
+
     Vec_Copy3(localPlayer.actor->origin, ws->origin);
     Vec_Copy3(localPlayer.actor->angles, ws->angles);
     Actor_UpdateTransform(localPlayer.actor);
+    Actor_UpdateTransform(localPlayer.camera);
 }
 
 //
@@ -418,9 +423,11 @@ void P_SpawnLocalPlayer(void)
     camera->bCollision = false;
     camera->bHidden = true;
     camera->bTouch = false;
+    camera->bStatic = false;
     camera->bClientOnly = true;
     camera->plane = -1;
     strcpy(camera->name, "Camera");
+    Vec_Set3(camera->scale, 1, 1, 1);
     Vec_Copy3(camera->origin, pStart->origin);
     Vec_Copy3(camera->angles, pStart->angles);
     Vec_Copy4(camera->rotation, pStart->rotation);

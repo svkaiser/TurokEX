@@ -99,9 +99,6 @@ static void Map_ParseCollisionPlanes(scparser_t *parser,
         pl->area_id = SC_GetNumber();
         pl->flags = SC_GetNumber();
 
-        pl->blocklist.next =
-        pl->blocklist.prev = &pl->blocklist;
-
         for(p = 0; p < 3; p++)
         {
             int index = SC_GetNumber();
@@ -217,6 +214,7 @@ enum
     scactor_textureSwaps,
     scactor_components,
     scactor_bCollision,
+    scactor_bHidden,
     scactor_bStatic,
     scactor_bTouch,
     scactor_bOrientOnSlope,
@@ -229,6 +227,7 @@ enum
     scactor_height,
     scactor_centerheight,
     scactor_viewheight,
+    scactor_targetID,
     scactor_end
 };
 
@@ -240,6 +239,7 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_textureSwaps,     "textureSwaps"      },
     { scactor_components,       "components"        },
     { scactor_bCollision,       "bCollision"        },
+    { scactor_bHidden,          "bHidden"           },
     { scactor_bStatic,          "bStatic"           },
     { scactor_bTouch,           "bTouch"            },
     { scactor_bOrientOnSlope,   "bOrientOnSlope"    },
@@ -252,6 +252,7 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_height,           "height"            },
     { scactor_centerheight,     "centerheight"      },
     { scactor_viewheight,       "viewheight"        },
+    { scactor_targetID,         "targetID"          },
     { -1,                       NULL                }
 };
 
@@ -280,6 +281,31 @@ static const sctokens_t mapareatokens[scarea_end+1] =
     { scarea_components,    "components"    },
     { -1,                   NULL            }
 };
+
+//
+// Map_SpawnActor
+// Spawns a actor into the level. If successful, actor is then linked
+// into the map's actorlist
+//
+
+gActor_t *Map_SpawnActor(const char *classname, float x, float y, float z,
+                         float yaw, float pitch, int plane)
+{
+    gActor_t *actor = NULL;
+    
+    if((actor = Actor_Spawn(classname, x, y, z, yaw, pitch, plane)))
+        Map_AddActor(&gLevel, actor);
+
+    if(plane == -1 && actor != NULL)
+    {
+        plane_t *p = Map_FindClosestPlane(actor->origin);
+
+        if(p != NULL)
+            actor->plane = p - gLevel.planes;
+    }
+
+    return actor;
+}
 
 //
 // Map_AddActor
@@ -355,8 +381,8 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
             actor->bbox.max[0] = (float)SC_GetFloat();
             actor->bbox.max[1] = (float)SC_GetFloat();
             actor->bbox.max[2] = (float)SC_GetFloat();
-            Vec_Sub(actor->bbox.dim,
-                actor->bbox.max, actor->bbox.min);
+            Vec_Copy3(actor->bbox.omin, actor->bbox.min);
+            Vec_Copy3(actor->bbox.omax, actor->bbox.max);
             SC_ExpectNextToken(TK_RBRACK);
             break;
 
@@ -396,6 +422,11 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
         case scactor_bCollision:
             SC_AssignInteger(mapactortokens, &actor->bCollision,
                 scactor_bCollision, parser, false);
+            break;
+
+        case scactor_bHidden:
+            SC_AssignInteger(mapactortokens, &actor->bHidden,
+                scactor_bHidden, parser, false);
             break;
 
         case scactor_bStatic:
@@ -465,6 +496,10 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
                 scactor_viewheight, parser, false);
             break;
 
+        case scactor_targetID:
+            SC_AssignInteger(mapactortokens, &actor->targetID,
+                scactor_targetID, parser, false);
+
         default:
             if(parser->tokentype == TK_IDENIFIER)
             {
@@ -504,8 +539,9 @@ static void Map_ParseLevelActorBlock(scparser_t *parser, gLevel_t *level)
     {
         gActor_t *actor = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
         Map_AddActor(level, actor);
-
         Map_ParseActor(parser, actor);
+
+        actor->angles[0] = -actor->angles[0];
         Actor_Setup(actor);
     }
 
@@ -773,21 +809,6 @@ int Obj_GetClassType(object_t *obj)
 }
 
 //
-// Map_LinkObjToBlocklist
-//
-
-void Map_LinkObjToBlocklist(object_t *obj, plane_t *plane)
-{
-    blockobj_t *blockobj = (blockobj_t*)Z_Calloc(sizeof(blockobj_t), PU_LEVEL, 0);
-
-    blockobj->object = obj;
-    plane->blocklist.prev->next = blockobj;
-    blockobj->next = &plane->blocklist;
-    blockobj->prev = plane->blocklist.prev;
-    plane->blocklist.prev = blockobj;
-}
-
-//
 // Map_CheckObjectPlaneRange
 //
 // Returns true if the object's radius crosses
@@ -899,6 +920,103 @@ plane_t *Map_FindClosestPlane(vec3_t coord)
 }
 
 //
+// TraverseAdjacentPlanesToHeight
+//
+// TODO: Plane vertex points are stored in a seperate
+// array but in kex2, each vertex point is independent.
+// In order to properly drag all neighboring points along
+// with the moving plane, a more extensive search for
+// matching points is needed
+//
+
+static void TraverseAdjacentPlanesToHeight(plane_t *plane, plane_t *parent,
+                                               float destHeight, float match)
+{
+    int i;
+
+    for(i = 0; i < 3; i++)
+    {
+        if(plane->points[i][1] == match)
+        {
+            int j;
+
+            plane->points[i][1] = destHeight;
+
+            for(j = 0; j < 3; j++)
+            {
+                if(!plane->link[j])
+                    continue;
+
+                if(plane->link[j] == parent)
+                    continue;
+
+                TraverseAdjacentPlanesToHeight(plane->link[j],
+                    parent, destHeight, match);
+            }
+        }
+    }
+}
+
+//
+// Map_TraverseChangePlaneHeight
+//
+// Takes all points of the affected plane and updates
+// the vertical height. All planes that matches the area id
+// is traversed. Adjacent planes with unmatched area ids are
+// checked for matching points with the affected plane
+//
+
+void Map_TraverseChangePlaneHeight(plane_t *plane, float destHeight, int area_id)
+{
+    plane_t * p;
+
+    if(plane == NULL)
+        return;
+
+    p = plane;
+
+    while(p->area_id == area_id)
+    {
+        int i;
+
+        if(p->points[0][1] == destHeight &&
+            p->points[1][1] == destHeight &&
+            p->points[2][1] == destHeight)
+        {
+            break;
+        }
+
+        for(i = 0; i < 3; i++)
+        {
+            if(p->link[i] && p->link[i]->area_id != area_id)
+            {
+                int j;
+
+                for(j = 0; j < 3; j++)
+                {
+                    TraverseAdjacentPlanesToHeight(p->link[i], p,
+                        destHeight, p->points[j][1]);
+                }
+            }
+        }
+
+        for(i = 0; i < 3; i++)
+            p->points[i][1] = destHeight;
+
+        if(p->link[0])
+            Map_TraverseChangePlaneHeight(p->link[0], destHeight, area_id);
+
+        if(p->link[1])
+            Map_TraverseChangePlaneHeight(p->link[1], destHeight, area_id);
+
+        if(!p->link[2])
+            break;
+
+        p = p->link[2];
+    }
+}
+
+//
 // Map_Load
 //
 
@@ -971,7 +1089,7 @@ static void FCmd_SpawnActor(void)
     y       = (float)atof(Cmd_GetArgv(3));
     z       = (float)atof(Cmd_GetArgv(4));
 
-    actor = Actor_Spawn(name, x, y, z, client.player->actor->angles[0], 0, -1);
+    actor = Map_SpawnActor(name, x, y, z, client.player->actor->angles[0], 0, -1);
 }
 
 //

@@ -101,6 +101,7 @@ typedef struct texture_s
 void Tex_Init(void);
 void Tex_Shutdown(void);
 kbool Tex_IsDefault(texture_t *tex);
+int Tex_PadDims(int n);
 texture_t *Tex_Alloc(const char *name, byte *data,
                      int width, int height, int clampmode);
 texture_t *Tex_Find(const char *name);
@@ -128,6 +129,7 @@ void GL_DrawElements2(void);
 void GL_ClearView(float *clear);
 void GL_Register(void);
 void GL_Init(void);
+dtexture GL_ScreenToTexture(void);
 
 //
 // DRAW

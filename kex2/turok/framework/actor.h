@@ -39,40 +39,82 @@ typedef struct
     } val;
 } propKey_t;
 
+enum
+{
+    AC_BASE,
+    AC_PROP,
+    AC_CHARACTER,
+    AC_FX
+};
+
+#define DEFINE_ACTOR_PROPERTIES()           \
+    vec3_t              origin;             \
+    vec4_t              rotation;           \
+    vec3_t              velocity;           \
+    int                 refcount;           \
+    kbool               bStale;             \
+    kbool               bOrientOnSlope;     \
+    kbool               bStatic;            \
+    kbool               bCollision;         \
+    kbool               bTouch;             \
+    kbool               bClientOnly;        \
+    kbool               bHidden;            \
+    bbox_t              bbox;               \
+    float               angles[3];          \
+    char                name[64];           \
+    int                 plane;              \
+    float               radius;             \
+    float               height;             \
+    float               centerHeight;       \
+    float               viewHeight;         \
+    float               friction;           \
+    float               airfriction;        \
+    float               mass;               \
+    float               bounceDamp;         \
+    unsigned int        targetID;           \
+    mtx_t               matrix;             \
+    mtx_t               rotMtx;             \
+    gObject_t           *components;        \
+	gObject_t           *iterator;          \
+    propKey_t           *properties;        \
+    int                 numProperties;      \
+    int                 classtype;          \
+    struct gActor_s     *owner;             \
+    struct gActor_s     *prev;              \
+    struct gActor_s     *next
+
 typedef struct gActor_s
 {
-    vec3_t              origin;
-    vec4_t              rotation;
+    DEFINE_ACTOR_PROPERTIES();
     vec3_t              scale;
-    kbool               bOrientOnSlope;
-    kbool               bStatic;
-    kbool               bCollision;
-    kbool               bTouch;
-    kbool               bClientOnly;
-    kbool               bHidden;
-    bbox_t              bbox;
-    float               angles[3];
-    char                name[64];
-    int                 plane;
-    float               radius;
-    float               height;
-    float               centerHeight;
-    float               viewHeight;
-    mtx_t               matrix;
-    mtx_t               rotMtx;
-    gObject_t           *components;
-	gObject_t           *iterator;
-    int                 refcount;
-    propKey_t           *properties;
-    int                 numProperties;
     kmodel_t            *model;
     animstate_t         animState;
     int                 variant;
     char                **textureSwaps;
     float               timestamp;
-    struct gActor_s     *prev;
-    struct gActor_s     *next;
 } gActor_t;
+
+#if 0
+typedef struct gProp_s
+{
+    DEFINE_ACTOR_PROPERTIES();
+    vec3_t              scale;
+    kmodel_t            *model;
+    char                **textureSwaps;
+    float               timestamp;
+} gProp_t;
+
+typedef struct gCharacter_s
+{
+    DEFINE_ACTOR_PROPERTIES();
+    vec3_t              scale;
+    kmodel_t            *model;
+    char                ***textureSwaps;
+    float               timestamp;
+    animstate_t         animState;
+    int                 variant;
+} gCharacter_t;
+#endif
 
 typedef struct gActorTemplate_s
 {
@@ -95,6 +137,7 @@ void Actor_AddIntegerProperty(gActor_t *actor, const char *name, int id, int val
 void Actor_AddFloatProperty(gActor_t *actor, const char *name, int id, float value);
 void Actor_AddDataProperty(gActor_t *actor, const char *name, int id, void *value);
 void Actor_AddStringProperty(gActor_t *actor, const char *name, int id, char *value);
+void Actor_DrawDebugStats(void);
 void Actor_Remove(gActor_t *actor);
 gActor_t *Actor_Spawn(const char *classname, float x, float y, float z,
                       float yaw, float pitch, int plane);

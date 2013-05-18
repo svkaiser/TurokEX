@@ -281,7 +281,7 @@ void Snd_PlayShaderDirect(sndShader_t *shader, gActor_t *actor)
         }
 
         src->sfx = &shader->sfx[i];
-        src->actor = actor;
+        Actor_SetTarget(&src->actor, actor);
 
         if(src->sfx->bLerpVol)
             src->volume = src->sfx->gainLerpStart;

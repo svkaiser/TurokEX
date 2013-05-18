@@ -32,7 +32,9 @@
 
 void G_ClipVelocity(vec3_t out, vec3_t velocity, vec3_t normal, float fudge);
 void G_ApplyFriction(vec3_t velocity, float friction, kbool effectY);
-void G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
+void G_ApplyBounceVelocity(vec3_t velocity, vec3_t reflection, float amount);
+kbool G_TryMove(gActor_t *source, vec3_t origin, vec3_t dest, plane_t **plane);
+kbool G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
                     gActor_t *actor, trace_t *t);
 
 void G_Shutdown(void);
