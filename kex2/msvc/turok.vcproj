@@ -420,6 +420,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\framework\debug.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\fx.c"
 					>
 				</File>
@@ -698,6 +702,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\controller.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\debug.h"
 					>
 				</File>
 				<File

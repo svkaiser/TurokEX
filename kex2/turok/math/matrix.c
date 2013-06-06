@@ -427,6 +427,65 @@ void Mtx_MultiplyRotation(mtx_t out, mtx_t m1, mtx_t m2)
 }
 
 //
+// Mtx_Invert
+//
+
+void Mtx_Invert(mtx_t out, mtx_t in)
+{
+    float d;
+
+    d = in[ 0] * in[10] * in[ 5] -
+        in[ 0] * in[ 9] * in[ 6] -
+        in[ 1] * in[ 4] * in[10] +
+        in[ 2] * in[ 4] * in[ 9] +
+        in[ 1] * in[ 6] * in[ 8] -
+        in[ 2] * in[ 5] * in[ 8];
+
+    if(d != 0.0f)
+    {
+        float d2 = (1.0f / d);
+
+        out[ 0] = (  in[10] * in[ 5] - in[ 9] * in[ 6]) * d2;
+        out[ 1] = -((in[ 1] * in[10] - in[ 2] * in[ 9]) * d2);
+        out[ 2] = (  in[ 1] * in[ 6] - in[ 2] * in[ 5]) * d2;
+        out[ 3] = 0;
+        out[ 4] = (  in[ 6] * in[ 8] - in[ 4] * in[10]) * d2;
+        out[ 5] = (  in[ 0] * in[10] - in[ 2] * in[ 8]) * d2;
+        out[ 6] = -((in[ 0] * in[ 6] - in[ 2] * in[ 4]) * d2);
+        out[ 7] = 0;
+        out[ 8] = -((in[ 5] * in[ 8] - in[ 4] * in[ 9]) * d2);
+        out[ 9] = (  in[ 1] * in[ 8] - in[ 0] * in[ 9]) * d2;
+        out[10] = -((in[ 1] * in[ 4] - in[ 0] * in[ 5]) * d2);
+        out[11] = 0;
+        out[12] = (
+            ( in[13] * in[10] - in[14] * in[ 9]) * in[ 4]
+            + in[14] * in[ 5] * in[ 8]
+            - in[13] * in[ 6] * in[ 8]
+            - in[12] * in[10] * in[ 5]
+            + in[12] * in[ 9] * in[ 6]) * d2;
+        out[13] = (
+              in[ 0] * in[14] * in[ 9]
+            - in[ 0] * in[13] * in[10]
+            - in[14] * in[ 1] * in[ 8]
+            + in[13] * in[ 2] * in[ 8]
+            + in[12] * in[ 1] * in[10]
+            - in[12] * in[ 2] * in[ 9]) * d2;
+        out[14] = -(
+            ( in[ 0] * in[14] * in[ 5]
+            - in[ 0] * in[13] * in[ 6]
+            - in[14] * in[ 1] * in[ 4]
+            + in[13] * in[ 2] * in[ 4]
+            + in[12] * in[ 1] * in[ 6]
+            - in[12] * in[ 2] * in[ 5]) * d2);
+        out[15] = 1.0f;
+    }
+    else
+    {
+        Mtx_Copy(out, in);
+    }
+}
+
+//
 // Mtx_ApplyVector
 //
 

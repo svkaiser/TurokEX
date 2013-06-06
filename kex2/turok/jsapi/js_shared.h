@@ -125,18 +125,24 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 #define JS_DEFINE_CONST(name, val)   \
     { val, #name, 0, { 0, 0, 0 } }
 
+#define JS_WARNING()                                                \
+{                                                                   \
+    JS_ReportWarning(cx, "Function returned false\n");              \
+    return JS_FALSE;                                                \
+}
+
 #define JS_GET_PROPERTY_OBJECT(obj, prop, outObj)                   \
 {                                                                   \
     jsval val;                                                      \
     JSBool b;                                                       \
     if(!JS_HasProperty(cx, obj, prop, &b))                          \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
     if(!b)                                                          \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
     if(!JS_GetProperty(cx, obj, prop, &val))                        \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
     if(!JS_ValueToObject(cx, val, &outObj))                         \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
 }
 
 #define JS_GET_PROPERTY_NUMBER(obj, prop, outnum)                   \
@@ -144,15 +150,15 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
     jsval val;                                                      \
     JSBool b;                                                       \
     if(!JS_HasProperty(cx, obj, prop, &b))                          \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
     if(!b)                                                          \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
     if(!JS_GetProperty(cx, obj, prop, &val))                        \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
     if(JSVAL_IS_NULL(val))                                          \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
     if(!JS_ValueToNumber(cx, val, &outnum))                         \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
 }
 
 #define JS_GET_PROPERTY_BOOL(obj, prop, outBool)                    \
@@ -160,28 +166,28 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
     jsval val;                                                      \
     JSBool b;                                                       \
     if(!JS_HasProperty(cx, obj, prop, &b))                          \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
     if(!b)                                                          \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
     if(!JS_GetProperty(cx, obj, prop, &val))                        \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
     if(JSVAL_IS_NULL(val))                                          \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
     if(!JS_ValueToBoolean(cx, val, &outBool))                       \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
 }
 
 #define JS_GET_PRIVATE_DATA(obj, class, size, out)                  \
     if(!(out = (size*)JS_GetInstancePrivate(cx, obj, class, NULL))) \
-        return JS_FALSE
+        JS_WARNING();
 
 #define JS_GETQUATERNION(vec, v, a)                                                 \
 {                                                                                   \
-    JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) return JS_FALSE;         \
-    if(JSVAL_IS_NULL(v[a])) return JS_FALSE;                                        \
-    if(!(JS_InstanceOf(cx, vobj, &Quaternion_class, NULL))) return JS_FALSE;        \
+    JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) JS_WARNING();            \
+    if(JSVAL_IS_NULL(v[a])) JS_WARNING();                                           \
+    if(!(JS_InstanceOf(cx, vobj, &Quaternion_class, NULL))) JS_WARNING();           \
     if(!(vec = (vec4_t*)JS_GetInstancePrivate(cx, vobj, &Quaternion_class, NULL)))  \
-        return JS_FALSE;                                                            \
+        JS_WARNING();                                                               \
 }
 
 #define JS_GETVECTOR2(obj, vec)                     \
@@ -227,7 +233,7 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 {                                                                   \
     JSObject *vobj;                                                 \
     if(!(vobj = JS_NewObject(cx, &Vector_class, NULL, NULL)))       \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
     JS_SETVECTOR(vobj, vec);                                        \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(vobj));                     \
 }
@@ -236,7 +242,7 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 {                                                                   \
     JSObject *vobj;                                                 \
     if(!(vobj = JPool_GetFree(&objPoolVector, &Vector_class)))      \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
     JS_SETVECTOR(vobj, vec);                                        \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(vobj));                     \
 }
@@ -246,21 +252,21 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
     jsval xval, yval, zval, wval;                   \
     jsdouble x, y, z, w;                            \
     if(!JS_GetProperty(cx, obj, "x", &xval))        \
-        return JS_FALSE;                            \
+        JS_WARNING();                               \
     if(!JS_GetProperty(cx, obj, "y", &yval))        \
-        return JS_FALSE;                            \
+        JS_WARNING();                               \
     if(!JS_GetProperty(cx, obj, "z", &zval))        \
-        return JS_FALSE;                            \
+        JS_WARNING();                               \
     if(!JS_GetProperty(cx, obj, "w", &wval))        \
-        return JS_FALSE;                            \
+        JS_WARNING();                               \
     if(!JS_ValueToNumber(cx, xval, &x))             \
-        return JS_FALSE;                            \
+        JS_WARNING();                               \
     if(!JS_ValueToNumber(cx, yval, &y))             \
-        return JS_FALSE;                            \
+        JS_WARNING();                               \
     if(!JS_ValueToNumber(cx, zval, &z))             \
-        return JS_FALSE;                            \
+        JS_WARNING();                               \
     if(!JS_ValueToNumber(cx, wval, &w))             \
-        return JS_FALSE;                            \
+        JS_WARNING();                               \
     vec[0] = (float)x;                              \
     vec[1] = (float)y;                              \
     vec[2] = (float)z;                              \
@@ -271,28 +277,28 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 {                                                       \
     jsval val;                                          \
     if(!JS_NewDoubleValue(cx, rot[0], &val))            \
-        return JS_FALSE;                                \
+        JS_WARNING();                                   \
     if(!JS_SetProperty(cx, obj, "x", &val))             \
-        return JS_FALSE;                                \
+        JS_WARNING();                                   \
     if(!JS_NewDoubleValue(cx, rot[1], &val))            \
-        return JS_FALSE;                                \
+        JS_WARNING();                                   \
     if(!JS_SetProperty(cx, obj, "y", &val))             \
-        return JS_FALSE;                                \
+        JS_WARNING();                                   \
     if(!JS_NewDoubleValue(cx, rot[2], &val))            \
-        return JS_FALSE;                                \
+        JS_WARNING();                                   \
     if(!JS_SetProperty(cx, obj, "z", &val))             \
-        return JS_FALSE;                                \
+        JS_WARNING();                                   \
     if(!JS_NewDoubleValue(cx, rot[3], &val))            \
-        return JS_FALSE;                                \
+        JS_WARNING();                                   \
     if(!JS_SetProperty(cx, obj, "w", &val))             \
-        return JS_FALSE;                                \
+        JS_WARNING();                                   \
 }
 
 #define JS_NEWQUATERNION(rot)                                       \
 {                                                                   \
     JSObject *vobj;                                                 \
     if(!(vobj = JS_NewObject(cx, &Quaternion_class, NULL, NULL)))   \
-        return JS_FALSE;                                            \
+        JS_WARNING();                                               \
     JS_SETQUATERNION(vobj, rot);                                    \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(vobj));                     \
 }
@@ -301,18 +307,18 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 {                                                                       \
     JSObject *vobj;                                                     \
     if(!(vobj = JPool_GetFree(&objPoolQuaternion, &Quaternion_class)))  \
-        return JS_FALSE;                                                \
+        JS_WARNING();                                                   \
     JS_SETQUATERNION(vobj, rot);                                        \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(vobj));                         \
 }
 
 #define JS_GETMATRIX(mtx, v, a)                                                     \
 {                                                                                   \
-    JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) return JS_FALSE;         \
-    if(JSVAL_IS_NULL(v[a])) return JS_FALSE;                                        \
-    if(!(JS_InstanceOf(cx, vobj, &Matrix_class, NULL))) return JS_FALSE;            \
+    JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) JS_WARNING();            \
+    if(JSVAL_IS_NULL(v[a])) JS_WARNING();                                           \
+    if(!(JS_InstanceOf(cx, vobj, &Matrix_class, NULL))) JS_WARNING();               \
     if(!(mtx = (mtx_t*)JS_GetInstancePrivate(cx, vobj, &Matrix_class, NULL)))       \
-        return JS_FALSE;                                                            \
+        JS_WARNING();                                                               \
 }
 
 #define JS_GETNETEVENT(obj) JS_GET_PRIVATE_DATA(obj, &NetEvent_class, ENetEvent, ev)
@@ -322,16 +328,16 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 
 #define JS_CHECKNUMBER(a)                                                           \
     if(!JSVAL_IS_INT(v[a]) && !JSVAL_IS_DOUBLE(v[a]))                               \
-        return JS_FALSE
+        JS_WARNING();
 
 #define JS_GETNUMBER(val, v, a)                                                     \
     if(JSVAL_IS_NULL(v[a]))                                                         \
-        return JS_FALSE;                                                            \
+        JS_WARNING();                                                               \
     JS_ValueToNumber(cx, v[a], &val)
 
 #define JS_CHECKINTEGER(a)                                                          \
     if(!JSVAL_IS_INT(v[a]))                                                         \
-        return JS_FALSE
+        JS_WARNING();
 
 #define JS_GETINTEGER(val, a)                                                       \
     JS_CHECKINTEGER(a);                                                             \
@@ -340,17 +346,17 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 #define JS_GETBOOL(val, v, a)                                                       \
     JS_ValueToBoolean(cx, v[a], &val);                                              \
     if(JSVAL_IS_NULL(v[a]))                                                         \
-        return JS_FALSE
+        JS_WARNING();
 
 #define JS_GETOBJECT(val, v, a)                                                     \
     JS_ValueToObject(cx, v[a], &val);                                               \
     if(JSVAL_IS_NULL(v[a]))                                                         \
-        return JS_FALSE
+        JS_WARNING();
 
 #define JS_GETSTRING(str, bytes, v, a)                                              \
     if(!(str = JS_ValueToString(cx, v[a])) ||                                       \
         !(bytes = JS_EncodeString(cx, str)))                                        \
-        return JS_FALSE
+        JS_WARNING();
 
 #define JS_THISVECTOR(vec)                                                          \
 {                                                                                   \
@@ -361,20 +367,20 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 #define JS_THISMATRIX(mtx, v)                                                       \
     if(!(mtx = (mtx_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),             \
         &Matrix_class, NULL)))                                                      \
-        return JS_FALSE
+        JS_WARNING();
 
 #define JS_THISPLANE(pl, v)                                                         \
     if(!(pl = (plane_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),            \
         &Plane_class, NULL)))                                                       \
-        return JS_FALSE
+        JS_WARNING();
 
 #define JS_INSTVECTOR(c, vp, vec)                                                   \
 {                                                                                   \
     JSObject *nobj;                                                                 \
     if(!(nobj = JS_NewObject(cx, &Vector_class, NULL, c)))                          \
-        return JS_FALSE;                                                            \
+        JS_WARNING();                                                               \
     if(!(JS_SetPrivate(cx, nobj, vec)))                                             \
-        return JS_FALSE;                                                            \
+        JS_WARNING();                                                               \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));                                     \
 }
 
@@ -382,9 +388,9 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 {                                                                                   \
     JSObject *nobj;                                                                 \
     if(!(nobj = JS_NewObject(cx, &Quaternion_class, NULL, c)))                      \
-        return JS_FALSE;                                                            \
+        JS_WARNING();                                                               \
     if(!(JS_SetPrivate(cx, nobj, rot)))                                             \
-        return JS_FALSE;                                                            \
+        JS_WARNING();                                                               \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));                                     \
 }
 
@@ -392,9 +398,9 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 {                                                                                   \
     JSObject *nobj;                                                                 \
     if(!(nobj = JS_NewObject(cx, &Plane_class, NULL, NULL)))                        \
-        return JS_FALSE;                                                            \
+        JS_WARNING();                                                               \
     if(!(JS_SetPrivate(cx, nobj, pl)))                                              \
-        return JS_FALSE;                                                            \
+        JS_WARNING();                                                               \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));                                     \
 }
 
@@ -404,7 +410,7 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
     if(!(object = JS_NewObject(cx, class, NULL, NULL)) ||                           \
         !(JS_SetPrivate(cx, object, data)))                                         \
     {                                                                               \
-        return JS_FALSE;                                                            \
+        JS_WARNING();                                                               \
     }                                                                               \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(object));                                   \
 }
@@ -415,14 +421,14 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
     if(!(object = JPool_GetFree(&objPool ##class, &class ## _class)) ||             \
         !(JS_SetPrivate(cx, object, data)))                                         \
     {                                                                               \
-        return JS_FALSE;                                                            \
+        JS_WARNING();                                                               \
     }                                                                               \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(object));                                   \
 }
 
 #define JS_CHECKARGS(n)                                                             \
     jsval *v = JS_ARGV(cx, vp);                                                     \
-    if(argc != n) return JS_FALSE
+    if(argc != n) JS_WARNING();
 
 #define JS_ARG(a) v[a]
 

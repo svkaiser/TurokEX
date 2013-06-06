@@ -38,10 +38,12 @@
 #include "sound.h"
 #include "fx.h"
 #include "zone.h"
+#include "debug.h"
 
 client_t client;
 
 static kbool bDebugTime;
+static int clientFPS;
 
 CVAR(cl_name, player);
 CVAR(cl_fov, 74);
@@ -202,6 +204,8 @@ static void CL_DrawDebug(void)
             client.time - client.latency[client.ns.acks & (NETBACKUPS-1)]);*/
         Draw_Text(32, 160, COLOR_WHITE, 1, Con_GetLastBuffer());
         Actor_DrawDebugStats();
+        Draw_Text(32, 224,  COLOR_GREEN, 1, "level tick: %i", gLevel.tics);
+        Draw_Text(32, 240,  COLOR_GREEN, 1, "level time: %f", gLevel.time);
         return;
     }
 
@@ -228,6 +232,8 @@ void CL_Run(int msec)
     client.runtime = (float)curtime / 1000.0f;
     client.time += curtime;
 
+    clientFPS = (int)(1000.0f / (client.runtime * 1000.0f));
+
     curtime = 0;
 
     CL_CheckHostMsg();
@@ -251,6 +257,8 @@ void CL_Run(int msec)
 
     R_DrawFrame();
 
+    Debug_DrawStats();
+
     CL_DrawDebug();
 
     Menu_Drawer();
@@ -260,6 +268,8 @@ void CL_Run(int msec)
     R_FinishFrame();
 
     Snd_UpdateListener();
+
+    Debug_UpdateStatFrame();
 
     client.tics++;
 }
@@ -380,4 +390,9 @@ void CL_Init(void)
     Cmd_AddCommand("ping", FCmd_Ping);
     Cmd_AddCommand("say", FCmd_Say);
     Cmd_AddCommand("msgserver", FCmd_MsgServer);
+
+    Debug_RegisterPerfStatVar((float*)&clientFPS, "FPS", false);
+    Debug_RegisterPerfStatVar(&client.runtime, "Runtime", true);
+    Debug_RegisterPerfStatVar((float*)&client.time, "Client Time", false);
+    Debug_RegisterPerfStatVar((float*)&client.tics, "Client Ticks", false);
 }

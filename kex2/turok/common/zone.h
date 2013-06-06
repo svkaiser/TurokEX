@@ -96,6 +96,7 @@ void    (Z_Touch)(void *ptr, const char *, int);
 
 #define strdup(s)           (Z_Strdup) (s, PU_STATIC,0,__FILE__,__LINE__)
 
+void Z_CleanupTag(int tag);
 int Z_TagUsage(int tag);
 int Z_FreeMemory(void);
 void Z_PrintStats(void);

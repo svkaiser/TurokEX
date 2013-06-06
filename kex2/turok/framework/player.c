@@ -266,7 +266,7 @@ void P_RunCommand(ENetEvent *sev, ENetPacket *packet)
 // P_LocalPlayerEvent
 //
 
-void P_LocalPlayerEvent(const char *eventName)
+int P_LocalPlayerEvent(const char *eventName)
 {
     gObject_t *function;
     JSContext *cx;
@@ -274,17 +274,76 @@ void P_LocalPlayerEvent(const char *eventName)
     jsval rval;
 
     if(client.state != CL_STATE_INGAME)
-        return;
+        return 0;
 
     cx = js_context;
 
     if(!JS_GetProperty(cx, localPlayer.playerObject, eventName, &val))
+        return 0;
+    if(!JS_ValueToObject(cx, val, &function))
+        return 0;
+
+    JS_CallFunctionValue(cx, localPlayer.playerObject,
+        OBJECT_TO_JSVAL(function), 0, NULL, &rval);
+
+    return rval;
+}
+
+//
+// P_SaveLocalComponentData
+//
+
+void P_SaveLocalComponentData(void)
+{
+    jsval val;
+
+    val = (jsval)P_LocalPlayerEvent("serialize");
+
+    if(val == 0)
+        return;
+
+    if(JSVAL_IS_STRING(val))
+    {
+        JSString *str;
+
+        if(str = JS_ValueToString(js_context, val))
+        {
+            // free the old string
+            if(localPlayer.info.jsonData != NULL)
+                JS_free(js_context, localPlayer.info.jsonData);
+
+            localPlayer.info.jsonData = JS_EncodeString(js_context, str);
+        }
+    }
+}
+
+//
+// P_RestoreLocalComponentData
+//
+
+void P_RestoreLocalComponentData(void)
+{
+    gObject_t *function;
+    JSContext *cx;
+    jsval val;
+    jsval rval;
+
+    if(localPlayer.info.jsonData == NULL)
+        return;
+
+    cx = js_context;
+
+    if(!JS_GetProperty(cx, localPlayer.playerObject, "deSerialize", &val))
         return;
     if(!JS_ValueToObject(cx, val, &function))
         return;
 
+    val = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, localPlayer.info.jsonData));
+
     JS_CallFunctionValue(cx, localPlayer.playerObject,
-        OBJECT_TO_JSVAL(function), 0, NULL, &rval);
+        OBJECT_TO_JSVAL(function), 1, &val, &rval);
+
+    return;
 }
 
 //
@@ -418,14 +477,28 @@ void P_SpawnLocalPlayer(void)
     if(pStart->plane != -1)
         ws->plane = &gLevel.planes[pStart->plane];
 
+    // de-serialize data if it exists
+    P_RestoreLocalComponentData();
+
+    // update actor position if the world state was
+    // modified in any way
+    Vec_Copy3(pStart->origin, ws->origin);
+    Vec_Copy3(pStart->angles, ws->angles);
+
+    if(ws->plane != NULL)
+        pStart->plane = (ws->plane-gLevel.planes);
+    else
+        pStart->plane = -1;
+
     // spawn an actor to be used for the camera
-    camera = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
+    camera = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_LEVEL, NULL);
     camera->bCollision = false;
     camera->bHidden = true;
     camera->bTouch = false;
     camera->bStatic = false;
     camera->bClientOnly = true;
     camera->plane = -1;
+    camera->owner = localPlayer.actor;
     strcpy(camera->name, "Camera");
     Vec_Set3(camera->scale, 1, 1, 1);
     Vec_Copy3(camera->origin, pStart->origin);
@@ -436,3 +509,4 @@ void P_SpawnLocalPlayer(void)
 
     client.player = &localPlayer;
 }
+

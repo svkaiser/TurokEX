@@ -40,6 +40,7 @@
 #include "js.h"
 #include "type.h"
 #include "fx.h"
+#include "debug.h"
 
 CVAR(developer, 0);
 CVAR(fixedtime, 0);
@@ -215,6 +216,8 @@ void Kernel_Main(int argc, char **argv)
     Com_Printf("Lexer System Initialized\n");
     Key_Init();
     Com_Printf("Key System Initialized\n");
+    Debug_Init();
+    Com_Printf("Debug System Initialized\n");
     KF_Init();
     Com_Printf("File System Initialized\n");
     Snd_Init();

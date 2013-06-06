@@ -200,10 +200,6 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
 
         *plane = trace.pl;
 
-        // TODO
-        if(trace.type == TRT_INTERACT || trace.pl->flags & CLF_CLIMB)
-            break;
-
         if(trace.type == TRT_NOHIT)
         {
             // went the entire distance
@@ -327,7 +323,25 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
         dist = origin[1] - Plane_GetDistance(*plane, origin);
         if(dist <= 0.512f)
         {
-            origin[1] = origin[1] - dist;
+            if(!((*plane)->flags & CLF_CLIMB))
+                origin[1] = origin[1] - dist;
+            else
+            {
+                float d;
+
+                d = Vec_Dot(origin, (*plane)->normal) -
+                    Vec_Dot((*plane)->points[0], (*plane)->normal);
+
+                if(d > 0)
+                {
+                    vec3_t dir;
+
+                    Vec_Copy3(dir, origin);
+                    Vec_Normalize3(dir);
+                    Vec_Scale(dir, dir, d);
+                    Vec_Sub(origin, origin, dir);
+                }
+            }
 
             if(t)
             {

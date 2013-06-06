@@ -384,6 +384,7 @@ typedef struct
     kbool           (*load)(const char*);
     kbool           (*tick)(void);
     kbool           loaded;
+    kbool           bReadyUnload;
     unsigned int    numActors;
     unsigned int    numGridBounds;
     unsigned int    numplanes;
@@ -394,6 +395,7 @@ typedef struct
     gridBounds_t    *gridBounds;
     gArea_t         *areas;
     int             mapID;
+    int             nextMap;
     char            name[64];
     int             tics;
     float           time;
@@ -414,7 +416,9 @@ gActor_t *Map_SpawnActor(const char *classname, float x, float y, float z,
 void Map_AddActor(gLevel_t *level, gActor_t *actor);
 void Map_RemoveActor(gLevel_t *level, gActor_t* actor);
 void Map_TraverseChangePlaneHeight(plane_t *plane, float destHeight, int area_id);
+void Map_Tick(void);
 void Map_Load(int map);
+void Map_Unload(void);
 void Map_Init(void);
 
 #endif

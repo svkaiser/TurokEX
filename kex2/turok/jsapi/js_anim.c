@@ -159,7 +159,8 @@ JS_PROP_FUNC_GET(AnimState)
         return JS_NewDoubleValue(cx, animstate->time, vp);
 
     case ANS_FRAMETIME:
-        return JS_NewDoubleValue(cx, animstate->frametime, vp);
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(animstate->track.frame));
+        return JS_TRUE;
 
     case ANS_PLAYTIME:
         return JS_NewDoubleValue(cx, animstate->playtime, vp);
@@ -293,7 +294,7 @@ JS_BEGINPROPS(AnimState)
 {
     { "flags",          ANS_FLAGS,          JSPROP_ENUMERATE,                   NULL, NULL },
     { "time",           ANS_TIME,           JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
-    { "frameTime",      ANS_FRAMETIME,      JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "frame",          ANS_FRAMETIME,      JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
     { "playTime",       ANS_PLAYTIME,       JSPROP_ENUMERATE,                   NULL, NULL },
     { "rootMotion",     ANS_ROOTMOTION,     JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
     { "restartFrame",   ANS_RESTARTFRAME,   JSPROP_ENUMERATE,                   NULL, NULL },

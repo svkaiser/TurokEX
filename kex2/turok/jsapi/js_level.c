@@ -232,6 +232,20 @@ JS_FASTNATIVE_BEGIN(Level, changeFloorHeight)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(Level, changeMap)
+{
+    int map;
+
+    JS_CHECKARGS(1);
+    JS_GETINTEGER(map, 0);
+
+    gLevel.bReadyUnload = true;
+    gLevel.nextMap = map;
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
 JS_BEGINCLASS(Level)
     0,                                          // flags
     JS_PropertyStub,                            // addProperty
@@ -247,11 +261,11 @@ JS_ENDCLASS();
 
 JS_BEGINPROPS(Level)
 {
-    { "mapID",  0,  JSPROP_ENUMERATE, NULL, NULL },
-    { "name",   1,  JSPROP_ENUMERATE, NULL, NULL },
-    { "tics",   2,  JSPROP_ENUMERATE, NULL, NULL },
-    { "time",   3,  JSPROP_ENUMERATE, NULL, NULL },
-    { "loaded", 4,  JSPROP_ENUMERATE, NULL, NULL },
+    { "mapID",  0,  JSPROP_ENUMERATE|JSPROP_READONLY, NULL, NULL },
+    { "name",   1,  JSPROP_ENUMERATE|JSPROP_READONLY, NULL, NULL },
+    { "tics",   2,  JSPROP_ENUMERATE|JSPROP_READONLY, NULL, NULL },
+    { "time",   3,  JSPROP_ENUMERATE|JSPROP_READONLY, NULL, NULL },
+    { "loaded", 4,  JSPROP_ENUMERATE|JSPROP_READONLY, NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 
@@ -266,6 +280,7 @@ JS_BEGINFUNCS(Level)
     JS_FASTNATIVE(Level, findActor, 1),
     JS_FASTNATIVE(Level, spawnActor, 7),
     JS_FASTNATIVE(Level, changeFloorHeight, 2),
+    JS_FASTNATIVE(Level, changeMap, 1),
     JS_FS_END
 };
 
@@ -418,8 +433,11 @@ JS_PROP_FUNC_SET(WorldState)
         return JS_TRUE;
 
     case 12:
-        JS_GETOBJECT(object, vp, 0);
-        JS_GET_PRIVATE_DATA(object, &Plane_class, plane_t, ws->plane);
+        if(!JSVAL_IS_NULL(*vp))
+        {
+            JS_GETOBJECT(object, vp, 0);
+            JS_GET_PRIVATE_DATA(object, &Plane_class, plane_t, ws->plane);
+        }
         return JS_TRUE;
     }
 

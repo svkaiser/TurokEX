@@ -79,7 +79,7 @@ typedef struct sndSource_s
     gActor_t            *actor;
 } sndSource_t;
 
-#define SND_MAX_SOURCES 256
+#define SND_MAX_SOURCES 64
 
 extern sndSource_t sndSources[SND_MAX_SOURCES];
 extern unsigned long sndTime;
@@ -97,5 +97,6 @@ wave_t *Snd_CacheWaveFile(const char *name);
 sndSource_t *Snd_GetAvailableSource(void);
 void Snd_FreeSource(sndSource_t *src);
 void Snd_UpdateListener(void);
+void Snd_StopAll(void);
 
 #endif

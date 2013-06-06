@@ -59,6 +59,7 @@ enum
     kbool               bTouch;             \
     kbool               bClientOnly;        \
     kbool               bHidden;            \
+    kbool               bNoDropOff;         \
     bbox_t              bbox;               \
     float               angles[3];          \
     char                name[64];           \
@@ -71,6 +72,7 @@ enum
     float               airfriction;        \
     float               mass;               \
     float               bounceDamp;         \
+    float               cullDistance;       \
     unsigned int        targetID;           \
     mtx_t               matrix;             \
     mtx_t               rotMtx;             \
@@ -78,7 +80,7 @@ enum
 	gObject_t           *iterator;          \
     propKey_t           *properties;        \
     int                 numProperties;      \
-    int                 classtype;          \
+    int                 drawtype;           \
     struct gActor_s     *owner;             \
     struct gActor_s     *prev;              \
     struct gActor_s     *next
@@ -139,6 +141,7 @@ void Actor_AddDataProperty(gActor_t *actor, const char *name, int id, void *valu
 void Actor_AddStringProperty(gActor_t *actor, const char *name, int id, char *value);
 void Actor_DrawDebugStats(void);
 void Actor_Remove(gActor_t *actor);
+void Actor_ClearData(gActor_t *actor);
 gActor_t *Actor_Spawn(const char *classname, float x, float y, float z,
                       float yaw, float pitch, int plane);
 

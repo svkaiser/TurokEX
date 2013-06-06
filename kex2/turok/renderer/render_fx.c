@@ -105,7 +105,7 @@ void R_DrawFX(void)
 
         y = fx->origin[1];
 
-        if(fxinfo->bOffsetFromFloor)
+        if(fxinfo->bOffsetFromFloor && fx->plane != NULL)
         {
             float dist = Plane_GetDistance(fx->plane, fx->origin) + 3.42f;
 

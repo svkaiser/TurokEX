@@ -33,6 +33,7 @@ typedef struct
     ticcmd_t        cmd;
     ENetPeer        *peer;
     int             id;
+    char            *jsonData;
 } playerInfo_t;
 
 typedef struct
@@ -66,7 +67,8 @@ void P_NewPlayerConnected(ENetEvent *sev);
 netPlayer_t *P_GetNetPlayer(ENetPeer *peer);
 void P_SpawnLocalPlayer(void);
 void P_BuildCommands(void);
-void P_LocalPlayerEvent(const char *eventName);
+int P_LocalPlayerEvent(const char *eventName);
+void P_SaveLocalComponentData(void);
 void P_LocalPlayerTick(void);
 kbool P_Responder(event_t *ev);
 

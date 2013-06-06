@@ -28,7 +28,7 @@
 #include "mathlib.h"
 #include "actor.h"
 
-#define EPSILON_FLOOR 0.7f
+#define EPSILON_FLOOR 0.5f
 
 //
 // Trace_Object
@@ -188,6 +188,13 @@ static kbool Trace_Objects(trace_t *trace)
 
         if(trace->actor && trace->actor->owner == actor)
             continue;
+
+        if(actor->bTouch && trace->actor &&
+            trace->actor->components)
+        {
+            if(Vec_Length3(pos, actor->origin) < trace->width)
+                Actor_OnTouchEvent(actor, trace->actor);
+        }
 
         if(actor->bCollision)
         {
@@ -458,10 +465,20 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
         if(!Plane_IsAWall(p))
         {
             vec3_t dir;
+            float dist1 = Plane_GetDistance(link, trace->end);
+            float dist2 = Plane_GetDistance(p, trace->start);
 
-            if(Plane_GetDistance(link, trace->end) <=
-                Plane_GetDistance(p, trace->start))
+            if(dist1 <= dist2)
             {
+                if(!Trace_CheckPlaneHeight(trace, link))
+                {
+                    if(trace->actor && trace->actor->bNoDropOff)
+                        return NULL;
+
+                    if(trace->source && trace->source->bNoDropOff)
+                        return NULL;
+                }
+
                 // able to step off into this plane
                 return link;
             }

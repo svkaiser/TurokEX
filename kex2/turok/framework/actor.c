@@ -420,7 +420,9 @@ void Actor_LocalTick(void)
             if(actor->bStatic)
                 continue;
 
-            Actor_CallEvent(actor, "onLocalTick", NULL);
+            // TODO
+            if(Vec_Length3(client.player->camera->origin, actor->origin) < 2048.0f)
+                Actor_CallEvent(actor, "onLocalTick", NULL);
         }
     }
 
@@ -433,11 +435,13 @@ void Actor_LocalTick(void)
         if(actor->bStatic)
             continue;
 
+        Mdl_UpdateAnimState(&actor->animState);
+
         // TODO
         if(client.playerActor == actor)
             continue;
 
-        if(actor->components) 
+        if(actor->components)
             Actor_CallEvent(actor, "onLocalTick", NULL);
     }
 }
@@ -489,10 +493,7 @@ void Actor_SetTarget(gActor_t **self, gActor_t *target)
 {
     // If there was a target already, decrease its refcount
     if(*self)
-    {
-        Z_Touch(*self); // validate pointer
         (*self)->refcount--;
-    }
 
     // Set new target and if non-NULL, increase its counter
     if((*self = target))
@@ -745,10 +746,10 @@ void Actor_AddDataProperty(gActor_t *actor, const char *name, int id, void *valu
 }
 
 //
-// Actor_Remove
+// Actor_ClearData
 //
 
-void Actor_Remove(gActor_t *actor)
+void Actor_ClearData(gActor_t *actor)
 {
     if(actor->iterator)
         JS_RemoveRoot(js_context, &actor->iterator);
@@ -758,7 +759,15 @@ void Actor_Remove(gActor_t *actor)
 
     if(actor->properties && actor->numProperties > 0)
         Z_Free(actor->properties);
+}
 
+//
+// Actor_Remove
+//
+
+void Actor_Remove(gActor_t *actor)
+{
+    Actor_ClearData(actor);
     Z_Free(actor);
 }
 

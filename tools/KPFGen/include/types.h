@@ -42,6 +42,12 @@ typedef unsigned short  word;
 typedef unsigned long   dword;
 typedef float           bbox[6];
 
+typedef union
+{
+    int     i;
+    float   f;
+} fint_t;
+
 #ifdef _WIN32
 
 #define DIR_SEPARATOR '\\'

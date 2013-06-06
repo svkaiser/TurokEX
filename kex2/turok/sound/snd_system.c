@@ -53,7 +53,7 @@ unsigned long sndTime = 0;
 
 static wave_t *wave_hashlist[MAX_HASH];
 
-#define SND_METRICS 0.0075f
+#define SND_METRICS 0.0035f
 #define SND_VECTOR2METRICS(vec) \
     vec[0] * SND_METRICS,       \
     vec[1] * SND_METRICS,       \
@@ -357,6 +357,21 @@ void Snd_UpdateListener(void)
             SND_VECTOR2METRICS(client.playerActor->origin));
 
         Snd_ExitCriticalSection();
+    }
+}
+
+//
+// Snd_StopAll
+//
+
+void Snd_StopAll(void)
+{
+    int i;
+
+    for(i = 0; i < nSndSources; i++)
+    {
+        sndSource_t *sndSrc = &sndSources[i];
+        alSourceStop(sndSrc->handle);
     }
 }
 

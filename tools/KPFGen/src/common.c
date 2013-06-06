@@ -33,8 +33,9 @@
 #define ASCII_SLASH		47
 #define ASCII_BACKSLASH 92
 
-static unsigned long com_fileoffset = 0;
+unsigned long com_fileoffset = 0;
 static FILE *com_file = NULL;
+static FILE *com_bufferFile = NULL;
 
 byte *cartfile = NULL;
 
@@ -405,6 +406,79 @@ void Com_Write32(int value)
     Com_Write8((value >> 8) & 0xff);
     Com_Write8((value >> 16) & 0xff);
     Com_Write8((value >> 24) & 0xff);
+}
+
+//
+// Com_WriteBuffer8
+//
+
+void Com_WriteBuffer8(byte *buffer, byte value)
+{
+    buffer[com_fileoffset] = value;
+    com_fileoffset++;
+}
+
+//
+// Com_WriteBuffer16
+//
+
+void Com_WriteBuffer16(byte *buffer, short value)
+{
+    Com_WriteBuffer8(buffer, value & 0xff);
+    Com_WriteBuffer8(buffer, (value >> 8) & 0xff);
+}
+
+//
+// Com_WriteBuffer32
+//
+
+void Com_WriteBuffer32(byte *buffer, int value)
+{
+    Com_WriteBuffer8(buffer, value & 0xff);
+    Com_WriteBuffer8(buffer, (value >> 8) & 0xff);
+    Com_WriteBuffer8(buffer, (value >> 16) & 0xff);
+    Com_WriteBuffer8(buffer, (value >> 24) & 0xff);
+}
+
+//
+// Com_WriteBufferFloat
+//
+
+void Com_WriteBufferFloat(byte *buffer, float i)
+{
+    fint_t fi;
+
+    fi.f = i;
+    Com_WriteBuffer32(buffer, fi.i);
+}
+
+//
+// Com_WriteBufferString
+//
+
+void Com_WriteBufferString(byte *buffer, char *string)
+{
+    unsigned int i;
+
+    Com_WriteBuffer16(buffer, strlen(string)+1);
+
+    for(i = 0; i < strlen(string); i++)
+        Com_WriteBuffer8(buffer, string[i]);
+
+    Com_WriteBuffer8(buffer, 0);
+}
+
+//
+// Com_WriteBufferPad4
+//
+
+void Com_WriteBufferPad4(byte *buffer)
+{
+    unsigned int i;
+
+    for(i = 0; i < (com_fileoffset & 3); i++)
+        Com_WriteBuffer8(buffer, 0);
+
 }
 
 //

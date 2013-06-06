@@ -814,12 +814,16 @@ static void FX_Move(fx_t *fx, vec3_t dest)
     float dist;
     fxinfo_t *fxinfo;
 
+    Vec_Add(dest, dest, fx->origin);
+
     if(fx->plane == NULL)
+    {
+        Vec_Copy3(fx->origin, dest);
         return;
+    }
     
     fxinfo = fx->info;
 
-    Vec_Add(dest, dest, fx->origin);
     trace = Trace(fx->origin, dest, fx->plane, NULL, fx->source, true);
     fx->plane = trace.pl;
 
@@ -923,13 +927,11 @@ static void FX_Move(fx_t *fx, vec3_t dest)
 void FX_Ticker(void)
 {
     float time;
-    float mstime;
 
     if(client.runtime <= 0)
         return;
 
-    mstime = ((1.0f/60.0f) / client.runtime) * 1000.0f;
-    time = (client.runtime * mstime) * client.runtime;
+    time = 15 * client.runtime;
 
     FX_Sort();
 

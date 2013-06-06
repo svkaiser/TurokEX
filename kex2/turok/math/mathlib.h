@@ -83,6 +83,7 @@ void  Mtx_IdentityY(mtx_t m, float angle);
 void  Mtx_IdentityZ(mtx_t m, float angle);
 void  Mtx_Multiply(mtx_t out, mtx_t m1, mtx_t m2);
 void  Mtx_MultiplyRotation(mtx_t out, mtx_t m1, mtx_t m2);
+void  Mtx_Invert(mtx_t out, mtx_t in);
 void  Mtx_ApplyVector(mtx_t m, vec3_t vec);
 void  Mtx_ApplyCoordinates(mtx_t m, vec3_t src, vec3_t out);
 void  Mtx_SetFromAxis(mtx_t m, float angle, float x, float y, float z);

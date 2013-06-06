@@ -30,6 +30,7 @@
 #include "zone.h"
 #include "kernel.h"
 #include "js_class.h"
+#include "debug.h"
 
 CVAR_EXTERNAL(kf_basepath);
 
@@ -888,5 +889,7 @@ void J_Init(void)
 #if 0
     Cmd_AddCommand("jslog", FCmd_LogJS);
 #endif
+
+    Debug_RegisterPerfStatVar((float*)&js_GCTime, "Script GC Time", false);
 }
 

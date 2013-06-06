@@ -1,7 +1,7 @@
 // Emacs style mode select   -*- C++ -*- 
 //-----------------------------------------------------------------------------
 //
-// Copyright(C) 2012 Samuel Villarreal
+// Copyright(C) 2007-2012 Samuel Villarreal
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -19,57 +19,14 @@
 // 02111-1307, USA.
 //
 //-----------------------------------------------------------------------------
-//
-// DESCRIPTION: Main game code
-//
-//-----------------------------------------------------------------------------
 
-#include "common.h"
-#include "client.h"
-#include "server.h"
-#include "kernel.h"
-#include "mathlib.h"
-#include "level.h"
-#include "zone.h"
-#include "game.h"
-#include "packet.h"
-#include "js.h"
+#ifndef __DEBUG_H__
+#define __DEBUG_H__
 
-//
-// G_Shutdown
-//
+void Debug_RegisterPerfStatVar(float *value, const char *name, kbool bFloat);
+void Debug_UpdateStatFrame(void);
+void Debug_DrawStats(void);
+void Debug_Init(void);
 
-void G_Shutdown(void)
-{
-    Z_FreeTags(PU_LEVEL, PU_LEVEL);
-    Z_FreeTags(PU_ACTOR, PU_ACTOR);
-}
-
-//
-// G_Ticker
-//
-
-void G_Ticker(void)
-{
-    Actor_Tick();
-    Map_Tick();
-}
-
-//
-// G_ClientThink
-//
-
-void G_ClientThink(void)
-{
-    Actor_LocalTick();
-}
-
-//
-// G_Init
-//
-
-void G_Init(void)
-{
-    Map_Init();
-}
+#endif
 

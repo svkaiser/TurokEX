@@ -196,6 +196,14 @@ JS_PROP_FUNC_GET(GameActor)
         JS_SET_RVAL(cx, vp, INT_TO_JSVAL(actor->targetID));
         return JS_TRUE;
 
+    case 27:
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(actor->variant));
+        return JS_TRUE;
+
+    case 28:
+        JS_RETURNBOOLEAN(vp, actor->bNoDropOff);
+        return JS_TRUE;
+
     default:
         return JS_TRUE;
     }
@@ -272,17 +280,32 @@ JS_PROP_FUNC_SET(GameActor)
         return JS_TRUE;
 
     case 25:
-        JS_GETOBJECT(object, vp, 0);
-        if(!(pActor = (gActor_t*)JS_GetInstancePrivate(cx, object,
-            &GameActor_class, NULL)))
+        if(!JSVAL_IS_NULL(*vp))
         {
-            return JS_FALSE;
+            JS_GETOBJECT(object, vp, 0);
+            if(!(pActor = (gActor_t*)JS_GetInstancePrivate(cx, object,
+                &GameActor_class, NULL)))
+            {
+                return JS_FALSE;
+            }
+            actor->owner = pActor;
+            return JS_TRUE;
         }
-        actor->owner = pActor;
+
+        actor->owner = NULL;
+
         return JS_TRUE;
 
     case 26:
         actor->targetID = JSVAL_TO_INT(*vp);
+        return JS_TRUE;
+
+    case 27:
+        actor->variant = JSVAL_TO_INT(*vp);
+        return JS_TRUE;
+
+    case 28:
+        JS_GETBOOL(actor->bNoDropOff, vp, 0);
         return JS_TRUE;
 
     default:
@@ -480,6 +503,60 @@ JS_FASTNATIVE_BEGIN(GameActor, setBounds)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(GameActor, setAnim)
+{
+    JSObject *thisObj;
+    gActor_t *actor;
+    JSString *str;
+    char *bytes;
+    jsdouble speed;
+
+    JS_CHECKARGS(3);
+
+    thisObj = JS_THIS_OBJECT(cx, vp);
+    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
+        return JS_FALSE;
+
+    JS_GETSTRING(str, bytes, v, 0);
+    JS_GETNUMBER(speed, v, 1);
+    JS_CHECKINTEGER(2);
+
+    Mdl_SetAnimState(&actor->animState, Mdl_GetAnim(actor->model, bytes),
+        (float)speed, JSVAL_TO_INT(JS_ARG(2)));
+
+    JS_free(cx, bytes);
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GameActor, blendAnim)
+{
+    JSObject *thisObj;
+    gActor_t *actor;
+    JSString *str;
+    char *bytes;
+    jsdouble speed;
+    jsdouble blendtime;
+
+    JS_CHECKARGS(4);
+
+    thisObj = JS_THIS_OBJECT(cx, vp);
+    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
+        return JS_FALSE;
+
+    JS_GETSTRING(str, bytes, v, 0);
+    JS_GETNUMBER(speed, v, 1);
+    JS_GETNUMBER(blendtime, v, 2);
+    JS_CHECKINTEGER(3);
+
+    Mdl_BlendAnimStates(&actor->animState, Mdl_GetAnim(actor->model, bytes),
+        (float)speed, (float)blendtime, JSVAL_TO_INT(JS_ARG(3)));
+
+    JS_free(cx, bytes);
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
 JS_FASTNATIVE_BEGIN(GameActor, spawn)
 {
     JSString *str;
@@ -600,6 +677,8 @@ JS_BEGINPROPS(GameActor)
     { "model",          24, JSPROP_ENUMERATE, NULL, NULL },
     { "owner",          25, JSPROP_ENUMERATE, NULL, NULL },
     { "targetID",       26, JSPROP_ENUMERATE, NULL, NULL },
+    { "modelVariant",   27, JSPROP_ENUMERATE, NULL, NULL },
+    { "bNoDropOff",     28, JSPROP_ENUMERATE, NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 
@@ -615,6 +694,8 @@ JS_BEGINFUNCS(GameActor)
     JS_FASTNATIVE(GameActor, getKey, 1),
     JS_FASTNATIVE(GameActor, setKey, 2),
     JS_FASTNATIVE(GameActor, setBounds, 6),
+    JS_FASTNATIVE(GameActor, setAnim, 3),
+    JS_FASTNATIVE(GameActor, blendAnim, 4),
     JS_FS_END
 };
 

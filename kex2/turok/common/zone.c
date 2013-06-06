@@ -41,6 +41,7 @@ struct memblock_s
     int id; // = ZONEID
     int tag;
     int size;
+    int ms;
     void **user;
     memblock_t *prev;
     memblock_t *next;
@@ -305,6 +306,7 @@ void *(Z_Malloc)(int size, int tag, void *user, const char *file, int line)
     newblock->id = ZONEID;
     newblock->user = user;
     newblock->size = size;
+    newblock->ms = Sys_GetMilliseconds();
     
     Z_InsertBlock(newblock);
     
@@ -508,6 +510,7 @@ void (Z_Touch)(void *ptr, const char *file, int line)
     if(block->id != ZONEID)
         Com_Error("Z_Touch: touched a pointer without ZONEID (%s:%d)", file, line);
 
+    block->ms = Sys_GetMilliseconds();
 #ifdef ZONEFILE
     Z_LogPrintf("* Z_Touch(ptr=%p, file=%s:%d)\n", ptr, file, line);
 #endif
@@ -618,6 +621,34 @@ void (Z_ChangeTag)(void *ptr, int tag, const char *file, int line)
     Z_LogPrintf("* Z_ChangeTag(ptr=%p, tag=%d, file=%s:%d)\n",
         ptr, tag, file, line);
 #endif
+}
+
+//
+// Z_CleanupTag
+//
+
+void Z_CleanupTag(int tag)
+{
+    memblock_t *block;
+
+    if(tag < 0 || tag >= PU_MAX)
+        Com_Error("Z_CleanupTag: tag out of range: %i", tag);
+
+    for(block = allocated_blocks[tag]; block != NULL; block = block->next)
+    {
+        if(Sys_GetMilliseconds() - block->ms > 10000)
+        {
+            memblock_t *next_block = block->prev;
+
+            Z_RemoveBlock(block);
+            free(block);
+
+            block = next_block;
+
+            if(block == NULL)
+                break;
+        }
+    }
 }
 
 //

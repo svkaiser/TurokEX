@@ -26,6 +26,7 @@
 void StoreExternalFile(const char *name, const char *store);
 
 extern byte *cartfile;
+extern unsigned long com_fileoffset;
 
 void Com_Printf(char* s, ...);
 void Com_Error(char *fmt, ...);
@@ -45,6 +46,12 @@ int Com_Read32(byte* buffer);
 void Com_Write8(byte value);
 void Com_Write16(short value);
 void Com_Write32(int value);
+void Com_WriteBuffer8(byte *buffer, byte value);
+void Com_WriteBuffer16(byte *buffer, short value);
+void Com_WriteBuffer32(byte *buffer, int value);
+void Com_WriteBufferFloat(byte *buffer, float i);
+void Com_WriteBufferString(byte *buffer, char *string);
+void Com_WriteBufferPad4(byte *buffer);
 void Com_FPrintf(char* s, ...);
 void Com_StripExt(char *name);
 void Com_StripPath(char *name);

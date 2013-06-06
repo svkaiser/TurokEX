@@ -776,22 +776,22 @@ void Mdl_SetAnimState(animstate_t *astate, anim_t *anim,
 void Mdl_BlendAnimStates(animstate_t *astate, anim_t *anim,
                          float time, float blendtime, animflags_t flags)
 {
-    if(anim != astate->track.anim)
-    {
-        astate->flags                   = flags | ANF_BLEND;
-        astate->prevtrack.frame         = astate->track.frame;
-        astate->prevtrack.nextframe     = astate->track.nextframe;
-        astate->track.frame             = 1;
-        astate->track.nextframe         = 2;
-        astate->time                    = (float)client.tics + blendtime;
-        astate->playtime                = 0;
-        astate->frametime               = time;
-        astate->blendtime               = blendtime;
-        astate->deltatime               = 0;
-        astate->prevtrack.anim          = astate->track.anim;
-        astate->track.anim              = anim;
-        astate->restartframe            = 1;
-    }
+    if(anim == astate->track.anim && astate->flags & ANF_NOINTERRUPT)
+        return;
+
+    astate->flags                   = flags | ANF_BLEND;
+    astate->prevtrack.frame         = astate->track.frame;
+    astate->prevtrack.nextframe     = astate->track.nextframe;
+    astate->track.frame             = 1;
+    astate->track.nextframe         = 2;
+    astate->time                    = (float)client.tics + blendtime;
+    astate->playtime                = 0;
+    astate->frametime               = time;
+    astate->blendtime               = blendtime;
+    astate->deltatime               = 0;
+    astate->prevtrack.anim          = astate->track.anim;
+    astate->track.anim              = anim;
+    astate->restartframe            = 1;
 }
 
 //

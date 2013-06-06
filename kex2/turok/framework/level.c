@@ -34,6 +34,8 @@
 #include "server.h"
 #include "js.h"
 #include "js_parse.h"
+#include "js_shared.h"
+#include "sound.h"
 
 gLevel_t gLevel;
 
@@ -69,13 +71,17 @@ static void Map_ParseCollisionPlanes(scparser_t *parser,
 
     if(gLevel.numplanes <= 0)
     {
+#if 0
         SC_Error("numplanes is 0 or hasn't been set yet");
+#endif
         return;
     }
 
     if(numpoints <= 0)
     {
+#if 0
         SC_Error("numpoints is 0 or hasn't been set yet");
+#endif
         return;
     }
 
@@ -158,8 +164,11 @@ static void Map_ParseNavScript(scparser_t *parser)
                     break;
 
                 case scnav_points:
-                    SC_AssignArray(navtokens, AT_FLOAT, &points, numpoints * 4,
-                        scnav_points, parser, false, PU_LEVEL);
+                    if((numpoints * 4) > 0)
+                    {
+                        SC_AssignArray(navtokens, AT_FLOAT, &points, numpoints * 4,
+                            scnav_points, parser, false, PU_LEVEL);
+                    }
                     break;
 
                 case scnav_leafs:
@@ -940,6 +949,9 @@ static void TraverseAdjacentPlanesToHeight(plane_t *plane, plane_t *parent,
         {
             int j;
 
+            if(plane->points[i][1] == destHeight)
+                continue;
+
             plane->points[i][1] = destHeight;
 
             for(j = 0; j < 3; j++)
@@ -1017,12 +1029,36 @@ void Map_TraverseChangePlaneHeight(plane_t *plane, float destHeight, int area_id
 }
 
 //
+// Map_Tick
+//
+
+void Map_Tick(void)
+{
+    if(gLevel.loaded == false)
+    {
+        if(gLevel.nextMap >= 0)
+            Map_Load(gLevel.nextMap);
+
+        return;
+    }
+
+    gLevel.tics++;
+    gLevel.time = gLevel.tics * (1.0f / 60.0f); // TODO - TEMP
+
+    if(gLevel.bReadyUnload)
+        Map_Unload();
+}
+
+//
 // Map_Load
 //
 
 void Map_Load(int map)
 {
     scparser_t *parser;
+
+    if(client.state < CL_STATE_READY)
+        return;
 
     // TODO
     if(gLevel.loaded == true)
@@ -1033,6 +1069,7 @@ void Map_Load(int map)
     gLevel.loaded       = false;
     gLevel.numplanes    = 0;
     gLevel.planes       = NULL;
+    gLevel.bReadyUnload = false;
 
     if(parser = SC_Open(kva("maps/map%02d/map%02d.kcm", map, map)))
     {
@@ -1047,11 +1084,73 @@ void Map_Load(int map)
     Map_ParseLevelScript(parser);
     SC_Close();
 
+    gLevel.nextMap = -1;
     gLevel.loaded = true;
 
-    //J_RunObjectEvent(JS_EV_GAME, "event_BeginLevel");
     P_SpawnLocalPlayer();
     client.state = CL_STATE_INGAME;
+}
+
+//
+// Map_Unload
+//
+
+void Map_Unload(void)
+{
+    unsigned int i;
+
+    Snd_StopAll();
+
+    P_SaveLocalComponentData();
+
+    gLevel.loaded = false;
+    client.state = CL_STATE_CHANGINGLEVEL;
+
+    // remove all actors
+    for(gLevel.actorRover = gLevel.actorRoot.next;
+        gLevel.actorRover != &gLevel.actorRoot;
+        gLevel.actorRover = gLevel.actorRover->next)
+    {
+        gLevel.actorRover->refcount = 0;
+        Map_RemoveActor(&gLevel, gLevel.actorRover);
+    }
+
+    // remove all non-static actors in grid bounds
+    for(i = 0; i < gLevel.numGridBounds; i++)
+    {
+        gridBounds_t *gb = &gLevel.gridBounds[i];
+        unsigned int j;
+
+        for(j = 0; j < gb->numStatics; j++)
+        {
+            gActor_t *actor = &gb->statics[j];
+
+            if(actor->bStatic)
+                continue;
+
+            Actor_ClearData(actor);
+        }
+
+        Z_Free(gb->statics);
+    }
+
+    // unroot all script objects in areas
+    for(i = 0; i < gLevel.numAreas; i++)
+    {
+        gArea_t *area = &gLevel.areas[i];
+
+        if(area->components)
+            JS_RemoveRoot(js_context, &area->iterator);
+
+        if(area->components)
+            JS_RemoveRoot(js_context, &area->components);
+    }
+
+    // purge all level and actor allocations
+    Z_FreeTags(PU_LEVEL, PU_LEVEL);
+    Z_FreeTags(PU_ACTOR, PU_ACTOR);
+
+    JS_GC(js_context);
 }
 
 //
@@ -1067,6 +1166,18 @@ static void FCmd_LoadTestMap(void)
 
     map = atoi(Cmd_GetArgv(1));
     Map_Load(map);
+}
+
+//
+// FCmd_UnloadMap
+//
+
+static void FCmd_UnloadMap(void)
+{
+    if(Cmd_GetArgc() < 1)
+        return;
+
+    gLevel.bReadyUnload = true;
 }
 
 //
@@ -1101,7 +1212,10 @@ void Map_Init(void)
     memset(kmaps, 0, sizeof(kmap_t) * MAXMAPS);
     memset(&gLevel, 0, sizeof(gLevel_t));
 
+    gLevel.nextMap = -1;
+
     Cmd_AddCommand("loadmap", FCmd_LoadTestMap);
+    Cmd_AddCommand("unloadmap", FCmd_UnloadMap);
     Cmd_AddCommand("spawnactor", FCmd_SpawnActor);
 }
 

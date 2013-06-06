@@ -258,13 +258,10 @@ void R_DrawSection(mdlsection_t *section, char *texture)
     if(!bWireframe)
     {
         if(tex)
-        {
-            GL_SetState(GLSTATE_TEXTURE0, true);
             GL_BindTexture(tex);
-        }
         else
         {
-            GL_SetState(GLSTATE_TEXTURE0, false);
+            GL_BindTextureName("textures/white.tga");
             color = section->color1;
         }
 
@@ -277,10 +274,7 @@ void R_DrawSection(mdlsection_t *section, char *texture)
         dglColor4ubv((byte*)&color);
     }
     else
-    {
-        GL_SetState(GLSTATE_TEXTURE0, true);
         GL_BindTextureName("textures/white.tga");
-    }
 
     dglDrawElements(GL_TRIANGLES, section->numtris, GL_UNSIGNED_SHORT, section->tris);
 }
@@ -361,9 +355,18 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
             {
                 if(nextframe >= frame && animstate->frametime > 0)
                 {
-                    animstate->rootMotion[0] = t2[0] - t1[0];
-                    animstate->rootMotion[1] = t1[2] - t2[2];
-                    animstate->rootMotion[2] = t1[1] - t2[1];
+                    mtx_t mtx;
+                    vec3_t tmp;
+
+                    // TODO
+                    Mtx_IdentityY(mtx, DEG2RAD(-90));
+                    Mtx_Scale(mtx, -1, 1, 1);
+
+                    tmp[0] = t2[0] - t1[0];
+                    tmp[1] = t2[1] - t1[1];
+                    tmp[2] = t2[2] - t1[2];
+
+                    Vec_TransformToWorld(mtx, tmp, animstate->rootMotion);
 
                     Vec_Scale(animstate->rootMotion, animstate->rootMotion,
                         (60.0f / animstate->frametime));
@@ -383,9 +386,14 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
 
     if(node->nummeshes > 0)
     {
-        for(i = 0; i < node->meshes[variant].numsections; i++)
+        unsigned int var = variant;
+
+        if(var >= node->nummeshes)
+            var = 0;
+
+        for(i = 0; i < node->meshes[var].numsections; i++)
         {
-            mdlsection_t *section = &node->meshes[variant].sections[i];
+            mdlsection_t *section = &node->meshes[var].sections[i];
             char *texturepath = NULL;
 
             if(textures != NULL)
@@ -501,6 +509,9 @@ void R_DrawActors(void)
         if(actor->bHidden)
             continue;
 
+        if(Vec_Length3(client.player->camera->origin, actor->origin) >= 2048.0f)
+            continue;
+
         Vec_Copy3(box.min, actor->bbox.min);
         Vec_Copy3(box.max, actor->bbox.max);
         Vec_Mult(box.min, box.min, actor->scale);
@@ -508,7 +519,7 @@ void R_DrawActors(void)
         Vec_Add(box.min, box.min, actor->origin);
         Vec_Add(box.max, box.max, actor->origin);
 
-        if(client.playerActor != actor)
+        if(actor != client.player->camera->owner)
         {
             if(!R_FrustumTestBox(box))
                 continue;
@@ -518,7 +529,10 @@ void R_DrawActors(void)
                 dglPushMatrix();
                 dglMultMatrixf(actor->matrix);
                 dglPushMatrix();
-                dglMultMatrixf(mtx);
+
+                // TODO - find a better solution for this
+                if(!actor->bTouch)
+                    dglMultMatrixf(mtx);
 
                 if(bWireframe)
                     dglColor4ub(192, 192, 192, 255);
@@ -532,7 +546,13 @@ void R_DrawActors(void)
         }
 
         if(showbbox)
-            R_DrawBoundingBox(box, 255, 0, 0);
+        {
+            if(actor->bTouch)
+                R_DrawBoundingBox(box, 0, 255, 0);
+            else
+                R_DrawBoundingBox(box, 255, 0, 0);
+        }
+
         if(showorigin && client.playerActor != actor)
         {
             vec3_t vec;
@@ -588,6 +608,9 @@ void R_DrawStatics(void)
             bbox_t box;
 
             if(actor->bHidden || showcollision)
+                continue;
+
+            if(Vec_Length3(client.player->camera->origin, actor->origin) >= 2048.0f)
                 continue;
 
             Vec_Copy3(box.min, actor->bbox.min);
