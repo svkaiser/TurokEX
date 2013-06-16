@@ -728,7 +728,8 @@ static void ProcessProperties(byte *data, int index)
     Com_Strcat("animsets =\n{\n");
     for(i = 0; i < animcount; i++)
     {
-        Com_Strcat("    { \"anim%02d\" \"%smdl%03d/mdl%03d_%02d.kanim\" }\n",
+        Com_Strcat("    { %i \"anim%02d\" \"%smdl%03d/mdl%03d_%02d.kanim\" }\n",
+            Com_GetCartOffset(types, CHUNK_INFO_OFFSET(i), 0),
             i, GetModelNamespace(0), index, index, i);
     }
     Com_Strcat("}\n\n");
@@ -754,25 +755,6 @@ static void ProcessProperties(byte *data, int index)
         mdlboxes[index][5] = fbbox[5];
     }
 
-    Com_Strcat("    types =\n    {");
-    if(typecount <= 0)
-    {
-        Com_Strcat("\n        0 ");
-    }
-    else
-    {
-        for(i = 0; i < typecount; i++)
-        {
-            if((i % 4) == 0)
-            {
-                Com_Strcat("\n        ");
-            }
-
-            Com_Strcat("%i ",
-                Com_GetCartOffset(types, CHUNK_INFO_OFFSET(i), 0));
-        }
-    }
-    Com_Strcat("\n    }\n\n");
     Com_Strcat("}\n\n");
 }
 
@@ -1053,7 +1035,7 @@ static void ProcessAnimation(byte *data, int index)
     }
     Com_Strcat("\n    }\n\n");
 
-    ProcessActions(Com_GetCartData(data, CHUNK_ANIMROOT_ACTIONS, 0));
+    //ProcessActions(Com_GetCartData(data, CHUNK_ANIMROOT_ACTIONS, 0));
 
     Com_Strcat("    initialtranslation = // [vx vy vz]\n");
     Com_Strcat("    {\n");

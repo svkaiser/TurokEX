@@ -47,9 +47,9 @@ static JSBool ReturnTraceResults(JSContext *cx, jsval *vp, trace_t *trace)
 
     trace->frac = 1 + trace->frac;
 
-    if(!(rObject = JS_NewObject(cx, NULL, NULL, NULL)))
+    if(!(rObject = J_NewObjectEx(cx, NULL, NULL, NULL)))
         return JS_TRUE;
-    if(!(hplObject = JS_NewObject(cx, &Plane_class, NULL, NULL)))
+    if(!(hplObject = J_NewObjectEx(cx, &Plane_class, NULL, NULL)))
         return JS_FALSE;
     if(!(JS_SetPrivate(cx, hplObject, trace->hitpl)))
         return JS_FALSE;
@@ -97,7 +97,6 @@ JS_FASTNATIVE_BEGIN(Physics, move)
 {
     vec3_t origin;
     vec3_t velocity;
-    vec3_t velocity2;
     plane_t *plane;
     gActor_t *actor;
     jsdouble frametime;
@@ -148,18 +147,7 @@ JS_FASTNATIVE_BEGIN(Physics, move)
     if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, objActor, &GameActor_class, NULL)))
         return JS_FALSE;
 
-    Vec_Copy3(velocity2, velocity);
-    Vec_Scale(velocity2, velocity2, (float)frametime);
-
-    hitOk = G_ClipMovement(origin, velocity2, &plane, actor, &traceResult);
-
-    //Vec_Add(origin, origin, velocity2);
-    if(frametime != 0)
-    {
-        velocity[0] = velocity2[0] / (float)frametime;
-        velocity[1] = velocity2[1] / (float)frametime;
-        velocity[2] = velocity2[2] / (float)frametime;
-    }
+    hitOk = G_ClipMovement(origin, velocity, (float)frametime, &plane, actor, &traceResult);
 
     JS_SETVECTOR(objOrig, origin);
     JS_SETVECTOR(objVel, velocity);
@@ -340,6 +328,11 @@ JS_BEGINCONST(Physics)
     JS_DEFINE_CONST(TRT_WALL,           TRT_EDGE),
     JS_DEFINE_CONST(TRT_ACTOR,          TRT_OBJECT),
     JS_DEFINE_CONST(TRT_STUCK,          TRT_STUCK),
+    JS_DEFINE_CONST(PT_NONE,            PT_NONE),
+    JS_DEFINE_CONST(PT_DEFAULT,         PT_DEFAULT),
+    JS_DEFINE_CONST(PT_FX,              PT_FX),
+    JS_DEFINE_CONST(PT_SWIMMING,        PT_SWIMMING),
+    JS_DEFINE_CONST(PT_CLIMBING,        PT_CLIMBING),
     { 0, 0, 0, { 0, 0, 0 } }
 };
 

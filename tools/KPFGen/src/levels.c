@@ -999,6 +999,7 @@ static void ProcessActors(byte *data)
     {
         mapactor_t *actor = (mapactor_t*)(data + 8 + (i * size));
         attribute_t *attr = GetAttribute(actor->attribute);
+        int variant = abs(attr->variant1);
 
 #ifdef FORMAT_BINARY
         *kmapInfo.actorStride[i] = com_fileoffset;
@@ -1034,6 +1035,11 @@ static void ProcessActors(byte *data)
             Com_Strcat("            {\n");
             if(attr->target > 0)
                 Com_Strcat("                \"targetID\" : %i,\n", attr->target);
+            if(variant == 10 || variant == 11)
+            {
+                Com_Strcat("                \"bRangeAttack\" : true,\n");
+                Com_Strcat("                \"rangeType\" : 1,\n");
+            }
             Com_Strcat("                \"active\" : 1\n");
 			Com_Strcat("            }\n");
             Com_Strcat("            EndObject\n");
@@ -1246,6 +1252,7 @@ static void ProcessActors(byte *data)
         Com_Strcat("        targetID = %i\n", attr->tid);
         Com_Strcat("        centerheight = %f\n", attr->meleerange);
         Com_Strcat("        viewheight = %f\n", attr->viewheight);
+        Com_Strcat("        modelVariant = %i\n", variant);
 
         Com_Strcat("    }\n");
 #else

@@ -39,84 +39,61 @@ typedef struct
     } val;
 } propKey_t;
 
-enum
+typedef enum
 {
-    AC_BASE,
-    AC_PROP,
-    AC_CHARACTER,
-    AC_FX
-};
-
-#define DEFINE_ACTOR_PROPERTIES()           \
-    vec3_t              origin;             \
-    vec4_t              rotation;           \
-    vec3_t              velocity;           \
-    int                 refcount;           \
-    kbool               bStale;             \
-    kbool               bOrientOnSlope;     \
-    kbool               bStatic;            \
-    kbool               bCollision;         \
-    kbool               bTouch;             \
-    kbool               bClientOnly;        \
-    kbool               bHidden;            \
-    kbool               bNoDropOff;         \
-    bbox_t              bbox;               \
-    float               angles[3];          \
-    char                name[64];           \
-    int                 plane;              \
-    float               radius;             \
-    float               height;             \
-    float               centerHeight;       \
-    float               viewHeight;         \
-    float               friction;           \
-    float               airfriction;        \
-    float               mass;               \
-    float               bounceDamp;         \
-    float               cullDistance;       \
-    unsigned int        targetID;           \
-    mtx_t               matrix;             \
-    mtx_t               rotMtx;             \
-    gObject_t           *components;        \
-	gObject_t           *iterator;          \
-    propKey_t           *properties;        \
-    int                 numProperties;      \
-    int                 drawtype;           \
-    struct gActor_s     *owner;             \
-    struct gActor_s     *prev;              \
-    struct gActor_s     *next
+    AC_AI       = 1,
+    AC_MESH     = 2,
+    AC_FX       = 4,
+    AC_PLAYER   = 8
+} actorClassFlags_e;
 
 typedef struct gActor_s
 {
-    DEFINE_ACTOR_PROPERTIES();
+    vec3_t              origin;
+    vec4_t              rotation;
+    vec3_t              velocity;
+    int                 refcount;
+    kbool               bStale;
+    kbool               bOrientOnSlope;
+    kbool               bStatic;
+    kbool               bCollision;
+    kbool               bTouch;
+    kbool               bClientOnly;
+    kbool               bHidden;
+    kbool               bNoDropOff;
+    bbox_t              bbox;
+    float               angles[3];
+    char                name[64];
+    int                 plane;
+    float               radius;
+    float               height;
+    float               centerHeight;
+    float               viewHeight;
+    float               friction;
+    float               airfriction;
+    float               mass;
+    float               bounceDamp;
+    float               cullDistance;
+    unsigned int        targetID;
+    mtx_t               matrix;
+    mtx_t               rotMtx;
+    gObject_t           *components;
+	gObject_t           *iterator;
+    propKey_t           *properties;
+    int                 numProperties;
+    int                 classFlags;
+    struct gActor_s     *owner;
+    struct gActor_s     *prev;
+    struct gActor_s     *next;
     vec3_t              scale;
     kmodel_t            *model;
     animstate_t         animState;
     int                 variant;
     char                **textureSwaps;
     float               timestamp;
+    int                 physics;
+    struct ai_s         *ai;
 } gActor_t;
-
-#if 0
-typedef struct gProp_s
-{
-    DEFINE_ACTOR_PROPERTIES();
-    vec3_t              scale;
-    kmodel_t            *model;
-    char                **textureSwaps;
-    float               timestamp;
-} gProp_t;
-
-typedef struct gCharacter_s
-{
-    DEFINE_ACTOR_PROPERTIES();
-    vec3_t              scale;
-    kmodel_t            *model;
-    char                ***textureSwaps;
-    float               timestamp;
-    animstate_t         animState;
-    int                 variant;
-} gCharacter_t;
-#endif
 
 typedef struct gActorTemplate_s
 {

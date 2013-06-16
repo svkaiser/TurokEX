@@ -27,8 +27,36 @@
 #include "shared.h"
 #include "js_objPool.h"
 
+//#define JS_LOGNEWOBJECTS
+
+///////////////////////////////////////////////////////////////////////////////////
+// GLOBALS
+///////////////////////////////////////////////////////////////////////////////////
+
 extern JSContext    *js_context;
 extern JSObject     *js_gobject;
+
+typedef struct js_scrobj_s
+{
+    char name[MAX_FILEPATH];
+    JSScript *script;
+    JSObject *obj;
+    struct js_scrobj_s *next;
+} js_scrobj_t;
+
+js_scrobj_t *J_FindScript(const char *name);
+js_scrobj_t *J_LoadScript(const char *name);
+void J_ExecScriptObj(js_scrobj_t *scobj);
+
+#define JS_WARNING()                                                \
+{                                                                   \
+    JS_ReportWarning(cx, "Function returned false\n");              \
+    return JS_FALSE;                                                \
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+// OBJECT POOLS
+///////////////////////////////////////////////////////////////////////////////////
 
 extern jsObjectPool_t objPoolVector;
 extern jsObjectPool_t objPoolQuaternion;
@@ -41,22 +69,30 @@ extern jsObjectPool_t objPoolGameActor;
 extern jsObjectPool_t objPoolPlane;
 extern jsObjectPool_t objPoolInputEvent;
 
-typedef struct js_scrobj_s
-{
-    char name[MAX_FILEPATH];
-    JSScript *script;
-    JSObject *obj;
-    struct js_scrobj_s *next;
-} js_scrobj_t;
+///////////////////////////////////////////////////////////////////////////////////
+// ARRAY UTILITIES
+///////////////////////////////////////////////////////////////////////////////////
 
 jsval J_GetObjectElement(JSContext *cx, JSObject *object, jsint index);
 jsuint J_AllocFloatArray(JSContext *cx, JSObject *object, float **arr, JSBool fixed);
 jsuint J_AllocWordArray(JSContext *cx, JSObject *object, word **arr, JSBool fixed);
 jsuint J_AllocByteArray(JSContext *cx, JSObject *object, byte **arr, JSBool fixed);
 
-js_scrobj_t *J_FindScript(const char *name);
-js_scrobj_t *J_LoadScript(const char *name);
-void J_ExecScriptObj(js_scrobj_t *scobj);
+///////////////////////////////////////////////////////////////////////////////////
+// OBJECT EX
+///////////////////////////////////////////////////////////////////////////////////
+
+#ifdef JS_LOGNEWOBJECTS
+JSObject *J_NewObjectLog(JSContext *cx, JSClass *clasp,
+                        JSObject *proto, JSObject *parent, char *file, int line);
+#define J_NewObjectEx(cx,clasp,proto,parent) J_NewObjectLog(cx,clasp,proto,parent,__FILE__,__LINE__)
+#else
+#define J_NewObjectEx(cx,clasp,proto,parent) JS_NewObject(cx,clasp,proto,parent)
+#endif
+
+///////////////////////////////////////////////////////////////////////////////////
+// CLASS INITIALIZATION MACROS
+///////////////////////////////////////////////////////////////////////////////////
 
 #define JS_DEFINEOBJECT(name)                                                       \
     js_obj ##name = J_AddObject(&name ## _class, name ## _functions,                \
@@ -125,11 +161,47 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 #define JS_DEFINE_CONST(name, val)   \
     { val, #name, 0, { 0, 0, 0 } }
 
-#define JS_WARNING()                                                \
-{                                                                   \
-    JS_ReportWarning(cx, "Function returned false\n");              \
-    return JS_FALSE;                                                \
-}
+///////////////////////////////////////////////////////////////////////////////////
+// CLASS OBJECTS
+///////////////////////////////////////////////////////////////////////////////////
+
+JS_EXTERNOBJECT(Sys);
+JS_EXTERNOBJECT(NInput);
+JS_EXTERNOBJECT(GL);
+JS_EXTERNOBJECT(Net);
+JS_EXTERNOBJECT(NClient);
+JS_EXTERNOBJECT(NServer);
+JS_EXTERNOBJECT(NRender);
+JS_EXTERNOBJECT(NGame);
+JS_EXTERNOBJECT(Angle);
+JS_EXTERNOBJECT(Physics);
+JS_EXTERNOBJECT(Level);
+JS_EXTERNCLASS(Vector);
+JS_EXTERNCLASS(Quaternion);
+JS_EXTERNCLASS(Matrix);
+JS_EXTERNCLASS(AnimState);
+JS_EXTERNCLASS(Canvas);
+JS_EXTERNCLASS(Font);
+JS_EXTERNCLASS(WorldState);
+JS_EXTERNOBJECT(Snd);
+JS_EXTERNOBJECT(ClientPlayer);
+JS_EXTERNCLASS_NOCONSTRUCTOR(NetEvent);
+JS_EXTERNCLASS_NOCONSTRUCTOR(Packet);
+JS_EXTERNCLASS_NOCONSTRUCTOR(Peer);
+JS_EXTERNCLASS_NOCONSTRUCTOR(Host);
+JS_EXTERNCLASS_NOCONSTRUCTOR(Model);
+JS_EXTERNCLASS_NOCONSTRUCTOR(Animation);
+JS_EXTERNCLASS_NOCONSTRUCTOR(Texture);
+JS_EXTERNCLASS_NOCONSTRUCTOR(Plane);
+JS_EXTERNCLASS_NOCONSTRUCTOR(GameActor);
+JS_EXTERNCLASS_NOCONSTRUCTOR(AI);
+JS_EXTERNCLASS_NOCONSTRUCTOR(Component);
+JS_EXTERNCLASS_NOCONSTRUCTOR(InputEvent);
+JS_EXTERNCLASS_NOCONSTRUCTOR(Command);
+
+///////////////////////////////////////////////////////////////////////////////////
+// PROPERTY MACROS
+///////////////////////////////////////////////////////////////////////////////////
 
 #define JS_GET_PROPERTY_OBJECT(obj, prop, outObj)                   \
 {                                                                   \
@@ -177,17 +249,32 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
         JS_WARNING();                                               \
 }
 
+///////////////////////////////////////////////////////////////////////////////////
+// PRIVATE DATA MACROS
+///////////////////////////////////////////////////////////////////////////////////
+
 #define JS_GET_PRIVATE_DATA(obj, class, size, out)                  \
     if(!(out = (size*)JS_GetInstancePrivate(cx, obj, class, NULL))) \
         JS_WARNING();
 
-#define JS_GETQUATERNION(vec, v, a)                                                 \
+///////////////////////////////////////////////////////////////////////////////////
+// VECTOR MACROS
+///////////////////////////////////////////////////////////////////////////////////
+
+#define JS_THISVECTOR(vec)                                                          \
 {                                                                                   \
-    JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) JS_WARNING();            \
-    if(JSVAL_IS_NULL(v[a])) JS_WARNING();                                           \
-    if(!(JS_InstanceOf(cx, vobj, &Quaternion_class, NULL))) JS_WARNING();           \
-    if(!(vec = (vec4_t*)JS_GetInstancePrivate(cx, vobj, &Quaternion_class, NULL)))  \
+    JSObject *obj = JS_THIS_OBJECT(cx, vp);                                         \
+    JS_GETVECTOR2(obj, vec);                                                        \
+}
+
+#define JS_INSTVECTOR(c, vp, vec)                                                   \
+{                                                                                   \
+    JSObject *nobj;                                                                 \
+    if(!(nobj = J_NewObjectEx(cx, &Vector_class, NULL, c)))                         \
         JS_WARNING();                                                               \
+    if(!(JS_SetPrivate(cx, nobj, vec)))                                             \
+        JS_WARNING();                                                               \
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));                                     \
 }
 
 #define JS_GETVECTOR2(obj, vec)                     \
@@ -232,7 +319,7 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 #define JS_NEWVECTOR2(vec)                                          \
 {                                                                   \
     JSObject *vobj;                                                 \
-    if(!(vobj = JS_NewObject(cx, &Vector_class, NULL, NULL)))       \
+    if(!(vobj = J_NewObjectEx(cx, &Vector_class, NULL, NULL)))      \
         JS_WARNING();                                               \
     JS_SETVECTOR(vobj, vec);                                        \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(vobj));                     \
@@ -245,6 +332,29 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
         JS_WARNING();                                               \
     JS_SETVECTOR(vobj, vec);                                        \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(vobj));                     \
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+// QUATERNION MACROS
+///////////////////////////////////////////////////////////////////////////////////
+
+#define JS_GETQUATERNION(vec, v, a)                                                 \
+{                                                                                   \
+    JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) JS_WARNING();            \
+    if(JSVAL_IS_NULL(v[a])) JS_WARNING();                                           \
+    if(!(JS_InstanceOf(cx, vobj, &Quaternion_class, NULL))) JS_WARNING();           \
+    if(!(vec = (vec4_t*)JS_GetInstancePrivate(cx, vobj, &Quaternion_class, NULL)))  \
+        JS_WARNING();                                                               \
+}
+
+#define JS_INSTQUATERNION(c, vp, rot)                                               \
+{                                                                                   \
+    JSObject *nobj;                                                                 \
+    if(!(nobj = J_NewObjectEx(cx, &Quaternion_class, NULL, c)))                     \
+        JS_WARNING();                                                               \
+    if(!(JS_SetPrivate(cx, nobj, rot)))                                             \
+        JS_WARNING();                                                               \
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));                                     \
 }
 
 #define JS_GETQUATERNION2(obj, vec)                 \
@@ -297,7 +407,7 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 #define JS_NEWQUATERNION(rot)                                       \
 {                                                                   \
     JSObject *vobj;                                                 \
-    if(!(vobj = JS_NewObject(cx, &Quaternion_class, NULL, NULL)))   \
+    if(!(vobj = J_NewObjectEx(cx, &Quaternion_class, NULL, NULL)))  \
         JS_WARNING();                                               \
     JS_SETQUATERNION(vobj, rot);                                    \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(vobj));                     \
@@ -312,6 +422,10 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(vobj));                         \
 }
 
+///////////////////////////////////////////////////////////////////////////////////
+// MATRIX MACROS
+///////////////////////////////////////////////////////////////////////////////////
+
 #define JS_GETMATRIX(mtx, v, a)                                                     \
 {                                                                                   \
     JSObject *vobj; if(!JS_ValueToObject(cx, v[a], &vobj)) JS_WARNING();            \
@@ -321,10 +435,48 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
         JS_WARNING();                                                               \
 }
 
+#define JS_THISMATRIX(mtx, v)                                                       \
+    if(!(mtx = (mtx_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),             \
+        &Matrix_class, NULL)))                                                      \
+        JS_WARNING();
+
+///////////////////////////////////////////////////////////////////////////////////
+// NET MACROS
+///////////////////////////////////////////////////////////////////////////////////
+
 #define JS_GETNETEVENT(obj) JS_GET_PRIVATE_DATA(obj, &NetEvent_class, ENetEvent, ev)
 #define JS_GETNETPEER(obj)  JS_GET_PRIVATE_DATA(obj, &Peer_class, ENetPeer, peer)
 #define JS_GETPACKET(obj)   JS_GET_PRIVATE_DATA(obj, &Packet_class, ENetPacket, packet)
 #define JS_GETHOST(obj)     JS_GET_PRIVATE_DATA(obj, &Host_class, ENetHost, host)
+
+///////////////////////////////////////////////////////////////////////////////////
+// PLANE MACROS
+///////////////////////////////////////////////////////////////////////////////////
+
+#define JS_THISPLANE(pl, v)                                                         \
+    if(!(pl = (plane_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),            \
+        &Plane_class, NULL)))                                                       \
+        JS_WARNING();
+
+#define JS_INSTPLANE(vp, pl)                                                        \
+{                                                                                   \
+    JSObject *nobj;                                                                 \
+    if(!(nobj = J_NewObjectEx(cx, &Plane_class, NULL, NULL)))                       \
+        JS_WARNING();                                                               \
+    if(!(JS_SetPrivate(cx, nobj, pl)))                                              \
+        JS_WARNING();                                                               \
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));                                     \
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+// MISC MACROS
+///////////////////////////////////////////////////////////////////////////////////
+
+#define JS_ARG(a) v[a]
+
+#define JS_CHECKARGS(n)                                                             \
+    jsval *v = JS_ARGV(cx, vp);                                                     \
+    if(argc != n) JS_WARNING();
 
 #define JS_CHECKNUMBER(a)                                                           \
     if(!JSVAL_IS_INT(v[a]) && !JSVAL_IS_DOUBLE(v[a]))                               \
@@ -358,56 +510,14 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
         !(bytes = JS_EncodeString(cx, str)))                                        \
         JS_WARNING();
 
-#define JS_THISVECTOR(vec)                                                          \
-{                                                                                   \
-    JSObject *obj = JS_THIS_OBJECT(cx, vp);                                         \
-    JS_GETVECTOR2(obj, vec);                                                        \
-}
-
-#define JS_THISMATRIX(mtx, v)                                                       \
-    if(!(mtx = (mtx_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),             \
-        &Matrix_class, NULL)))                                                      \
-        JS_WARNING();
-
-#define JS_THISPLANE(pl, v)                                                         \
-    if(!(pl = (plane_t*)JS_GetInstancePrivate(cx, JS_THIS_OBJECT(cx, v),            \
-        &Plane_class, NULL)))                                                       \
-        JS_WARNING();
-
-#define JS_INSTVECTOR(c, vp, vec)                                                   \
-{                                                                                   \
-    JSObject *nobj;                                                                 \
-    if(!(nobj = JS_NewObject(cx, &Vector_class, NULL, c)))                          \
-        JS_WARNING();                                                               \
-    if(!(JS_SetPrivate(cx, nobj, vec)))                                             \
-        JS_WARNING();                                                               \
-    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));                                     \
-}
-
-#define JS_INSTQUATERNION(c, vp, rot)                                               \
-{                                                                                   \
-    JSObject *nobj;                                                                 \
-    if(!(nobj = JS_NewObject(cx, &Quaternion_class, NULL, c)))                      \
-        JS_WARNING();                                                               \
-    if(!(JS_SetPrivate(cx, nobj, rot)))                                             \
-        JS_WARNING();                                                               \
-    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));                                     \
-}
-
-#define JS_INSTPLANE(vp, pl)                                                        \
-{                                                                                   \
-    JSObject *nobj;                                                                 \
-    if(!(nobj = JS_NewObject(cx, &Plane_class, NULL, NULL)))                        \
-        JS_WARNING();                                                               \
-    if(!(JS_SetPrivate(cx, nobj, pl)))                                              \
-        JS_WARNING();                                                               \
-    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(nobj));                                     \
-}
+///////////////////////////////////////////////////////////////////////////////////
+// OBJECT CREATION MACROS
+///////////////////////////////////////////////////////////////////////////////////
 
 #define JS_NEWOBJECT_SETPRIVATE(data, class)                                        \
 {                                                                                   \
     JSObject *object;                                                               \
-    if(!(object = JS_NewObject(cx, class, NULL, NULL)) ||                           \
+    if(!(object = J_NewObjectEx(cx, class, NULL, NULL)) ||                          \
         !(JS_SetPrivate(cx, object, data)))                                         \
     {                                                                               \
         JS_WARNING();                                                               \
@@ -426,11 +536,9 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(object));                                   \
 }
 
-#define JS_CHECKARGS(n)                                                             \
-    jsval *v = JS_ARGV(cx, vp);                                                     \
-    if(argc != n) JS_WARNING();
-
-#define JS_ARG(a) v[a]
+///////////////////////////////////////////////////////////////////////////////////
+// VALUE RETURN MACROS
+///////////////////////////////////////////////////////////////////////////////////
 
 #define JS_RETURNOBJECT(vp)                                                         \
     JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(JS_THIS_OBJECT(cx, vp)))
@@ -441,38 +549,46 @@ void J_ExecScriptObj(js_scrobj_t *scobj);
 #define JS_RETURNBOOLEAN(vp, boolean)                                               \
     JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(boolean))
 
-JS_EXTERNOBJECT(Sys);
-JS_EXTERNOBJECT(NInput);
-JS_EXTERNOBJECT(GL);
-JS_EXTERNOBJECT(Net);
-JS_EXTERNOBJECT(NClient);
-JS_EXTERNOBJECT(NServer);
-JS_EXTERNOBJECT(NRender);
-JS_EXTERNOBJECT(NGame);
-JS_EXTERNOBJECT(Angle);
-JS_EXTERNOBJECT(Physics);
-JS_EXTERNOBJECT(Level);
-JS_EXTERNCLASS(Vector);
-JS_EXTERNCLASS(Quaternion);
-JS_EXTERNCLASS(Matrix);
-JS_EXTERNCLASS(AnimState);
-JS_EXTERNCLASS(Canvas);
-JS_EXTERNCLASS(Font);
-JS_EXTERNCLASS(WorldState);
-JS_EXTERNOBJECT(Snd);
-JS_EXTERNOBJECT(ClientPlayer);
-JS_EXTERNCLASS_NOCONSTRUCTOR(NetEvent);
-JS_EXTERNCLASS_NOCONSTRUCTOR(Packet);
-JS_EXTERNCLASS_NOCONSTRUCTOR(Peer);
-JS_EXTERNCLASS_NOCONSTRUCTOR(Host);
-JS_EXTERNCLASS_NOCONSTRUCTOR(Model);
-JS_EXTERNCLASS_NOCONSTRUCTOR(Animation);
-JS_EXTERNCLASS_NOCONSTRUCTOR(Texture);
-JS_EXTERNCLASS_NOCONSTRUCTOR(Plane);
-JS_EXTERNCLASS_NOCONSTRUCTOR(GameActor);
-JS_EXTERNCLASS_NOCONSTRUCTOR(Component);
-JS_EXTERNCLASS_NOCONSTRUCTOR(InputEvent);
-JS_EXTERNCLASS_NOCONSTRUCTOR(Command);
+///////////////////////////////////////////////////////////////////////////////////
+// ITERATOR MACROS
+///////////////////////////////////////////////////////////////////////////////////
+
+#define JS_ITERATOR_START(actor, val)                                               \
+    {                                                                               \
+        JSScopeProperty *sprop;                                                     \
+        JS_GetReservedSlot(js_context, actor->iterator, 0, &val);                   \
+        sprop = (JSScopeProperty*)JS_GetPrivate(js_context, actor->iterator)
+
+#define JS_ITERATOR_LOOP(actor, val, prop)                                          \
+        {                                                                           \
+            jsid id;                                                                \
+            while(JS_NextProperty(js_context, actor->iterator, &id))                \
+            {                                                                       \
+                jsval vp;                                                           \
+                kbool found;                                                        \
+                gObject_t *obj;                                                     \
+                gObject_t *component;                                               \
+                if(id == JSVAL_VOID)                                                \
+                    break;                                                          \
+                if(!JS_GetMethodById(js_context, actor->components, id, &obj, &vp)) \
+                    continue;                                                       \
+                if(!JS_ValueToObject(js_context, vp, &component))                   \
+                    continue;                                                       \
+                if(component == NULL)                                               \
+                    continue;                                                       \
+                if(!JS_HasProperty(js_context, component, prop, &found))            \
+                    continue;                                                       \
+                if(!found)                                                          \
+                    continue;                                                       \
+                if(!JS_GetProperty(js_context, component, prop, &vp))               \
+                    continue
+
+#define JS_ITERATOR_END(actor, val)                                                 \
+            }                                                                       \
+        }                                                                           \
+        JS_SetReservedSlot(js_context, actor->iterator, 0, val);                    \
+        JS_SetPrivate(js_context, actor->iterator, sprop);                          \
+    }
 
 #endif
 

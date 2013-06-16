@@ -215,6 +215,23 @@ JSObject *J_AddObject(JSClass *class,
     return newobj;
 }
 
+
+//
+// J_NewObjectLog
+//
+#ifdef JS_LOGNEWOBJECTS
+JSObject *J_NewObjectLog(JSContext *cx, JSClass *clasp, JSObject *proto, JSObject *parent,
+                        char *file, int line)
+{
+    const char *name = clasp ? clasp->name : "Object";
+
+    if(!JS_ReportWarning(cx, "New Object(%s) called at:\n%s : %i\n", name, file, line))
+        Com_Printf("New Object(%s): %s : %i\n", name, file, line);
+
+    return JS_NewObject(cx, clasp, proto, parent);
+}
+#endif
+
 //
 // J_CallObject
 //
@@ -574,6 +591,10 @@ void J_GarbageCollect(void)
 
     JS_MaybeGC(js_context);
 
+#ifdef JS_LOGNEWOBJECTS
+    Com_Printf("Garbage Collect...\n\n");
+#endif
+
     if(developer.value)
     {
         js_GCTime = Sys_GetMilliseconds() - js_GCTime;
@@ -861,6 +882,7 @@ void J_Init(void)
     JS_INITCLASS_NOCONSTRUCTOR(Texture, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Plane, 0);
     JS_INITCLASS_NOCONSTRUCTOR(GameActor, 0);
+    JS_INITCLASS_NOCONSTRUCTOR(AI, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Component, 0);
     JS_INITCLASS_NOCONSTRUCTOR(InputEvent, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Command, 0);

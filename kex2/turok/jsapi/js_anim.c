@@ -57,39 +57,6 @@ JS_FINALIZE_FUNC(Animation)
         //JS_free(cx, anim);
 }
 
-JS_FASTNATIVE_BEGIN(Animation, nextAnim)
-{
-    JSObject *object;
-    anim_t *thisanim;
-    anim_t *anim;
-    jsdouble nextblend;
-    jsdouble nextspeed;
-
-    JS_CHECKARGS(4);
-    JS_GET_PRIVATE_DATA(JS_THIS_OBJECT(cx, vp), &Animation_class,
-        anim_t, thisanim);
-
-    anim = NULL;
-
-    if(!JSVAL_IS_NULL(v[0]))
-    {
-        JS_GETOBJECT(object, v, 0);
-        JS_GET_PRIVATE_DATA(object, &Animation_class, anim_t, anim);
-    }
-
-    JS_GETNUMBER(nextblend, v, 1);
-    JS_GETNUMBER(nextspeed, v, 2);
-    JS_CHECKINTEGER(3);
-
-    thisanim->next              = anim;
-    thisanim->nextblend         = (float)nextblend;
-    thisanim->nextanimspeed     = (float)nextspeed;
-    thisanim->nextanimflag      = JSVAL_TO_INT(JS_ARG(3));
-
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
 JS_BEGINCLASS(Animation)
     JSCLASS_HAS_PRIVATE,                        // flags
     JS_PropertyStub,                            // addProperty
@@ -115,7 +82,6 @@ JS_BEGINCONST(Animation)
 
 JS_BEGINFUNCS(Animation)
 {
-    JS_FASTNATIVE(Animation, nextAnim, 4),
     JS_FS_END
 };
 
@@ -137,7 +103,8 @@ enum animstate_enum
     ANS_FRAMETIME,
     ANS_PLAYTIME,
     ANS_ROOTMOTION,
-    ANS_RESTARTFRAME
+    ANS_RESTARTFRAME,
+    ANS_ANIMID,
 };
 
 JS_CLASSOBJECT(AnimState);
@@ -173,6 +140,10 @@ JS_PROP_FUNC_GET(AnimState)
         JS_SET_RVAL(cx, vp, INT_TO_JSVAL(animstate->restartframe));
         return JS_TRUE;
 
+    case ANS_ANIMID:
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(animstate->track.anim->animID));
+        return JS_TRUE;
+
     default:
         return JS_TRUE;
     }
@@ -193,6 +164,11 @@ JS_PROP_FUNC_SET(AnimState)
     case ANS_FLAGS:
         JS_CHECKINTEGER(0);
         animstate->flags = JSVAL_TO_INT(JS_ARG(0));
+        break;
+
+    case ANS_FRAMETIME:
+        JS_GETNUMBER(val, vp, 0);
+        animstate->frametime = (float)val;
         break;
 
     case ANS_PLAYTIME:
@@ -294,10 +270,11 @@ JS_BEGINPROPS(AnimState)
 {
     { "flags",          ANS_FLAGS,          JSPROP_ENUMERATE,                   NULL, NULL },
     { "time",           ANS_TIME,           JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
-    { "frame",          ANS_FRAMETIME,      JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
+    { "frame",          ANS_FRAMETIME,      JSPROP_ENUMERATE,                   NULL, NULL },
     { "playTime",       ANS_PLAYTIME,       JSPROP_ENUMERATE,                   NULL, NULL },
     { "rootMotion",     ANS_ROOTMOTION,     JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
     { "restartFrame",   ANS_RESTARTFRAME,   JSPROP_ENUMERATE,                   NULL, NULL },
+    { "animID",         ANS_ANIMID,         JSPROP_ENUMERATE|JSPROP_READONLY,   NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 

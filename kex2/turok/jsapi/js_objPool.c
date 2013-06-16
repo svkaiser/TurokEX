@@ -79,7 +79,7 @@ JSObject *JPool_GetFree(jsObjectPool_t *jsPool, JSClass *class)
         return object;
     }
 
-    if(!(object = JS_NewObject(js_context, class, NULL, NULL)))
+    if(!(object = J_NewObjectEx(js_context, class, NULL, NULL)))
         return NULL;
 
     return object;

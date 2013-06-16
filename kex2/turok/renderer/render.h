@@ -106,7 +106,8 @@ typedef enum
     ANF_STOPPED     = 4,
     ANF_NOINTERRUPT = 8,
     ANF_ROOTMOTION  = 16,
-    ANF_PAUSED      = 32
+    ANF_PAUSED      = 32,
+    ANF_CROSSFADE   = 64
 } animflags_t;
 
 typedef struct anim_s
@@ -123,10 +124,7 @@ typedef struct anim_s
     frameset_t          *frameset;
     frameset_t          initial;
     action_t            *actions;
-    struct anim_s       *next;
-    float               nextblend;
-    float               nextanimspeed;
-    animflags_t         nextanimflag;
+    int                 animID;
 } anim_t;
 
 typedef struct
@@ -138,8 +136,17 @@ typedef struct
 
 typedef struct
 {
+    anim_t              *anim;
+    int                 frame;
+    int                 nextframe;
+    int                 flags;
+} oldtrack_t;
+
+typedef struct
+{
     animtrack_t         track;
     animtrack_t         prevtrack;
+    oldtrack_t          oldtrack;
     float               time;
     float               deltatime;
     float               playtime;
@@ -172,6 +179,7 @@ void Mdl_SetAnimState(animstate_t *astate, anim_t *anim,
                       float time, animflags_t flags);
 
 anim_t *Mdl_GetAnim(kmodel_t *model, const char *name);
+anim_t *Mdl_GetAnimFromID(kmodel_t *model, int id);
 
 kmodel_t *Mdl_Find(const char *name);
 kmodel_t *Mdl_Load(const char *file);

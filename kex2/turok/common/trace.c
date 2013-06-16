@@ -40,7 +40,6 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
 {
     vec3_t dir;
     vec3_t tdir;
-    vec3_t ndir;
     float vu;
     float px;
     float pz;
@@ -52,10 +51,9 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
     float icv2;
     float len;
 
+    // get directional vector
     Vec_Sub(dir, trace->end, trace->start);
     Vec_Copy3(tdir, dir);
-    Vec_Normalize3(dir);
-    Vec_Copy3(ndir, dir);
 
     vu = Vec_Unit3(tdir);
 
@@ -89,6 +87,9 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
         vec3_t n;
         float f;
 
+        Vec_Normalize3(dir);
+
+        // get result normal from object
         f = (px * dir[0] + pz * dir[2]) - (float)sqrt(len) * vd;
 
         Vec_Lerp3(lerp, f, trace->start, objpos);
@@ -103,6 +104,7 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
 
         if(d != 0)
         {
+            // TODO - inaccurate
             trace->frac = (px * dir[0] + pz * dir[2]) / d;
 
             Vec_Normalize3(n);
@@ -111,8 +113,15 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
             // TODO
             // get the intersect vector for bullet shots
             if(trace->bFullTrace)
-                Vec_Lerp3(trace->hitvec, (1 + trace->frac),
-                trace->start, trace->end);
+            {
+                Vec_Sub(dir, trace->end, trace->start);
+                Vec_Normalize3(dir);
+                Vec_Scale(dir, dir, radius);
+                Vec_Set3(trace->hitvec,
+                    trace->end[0] - dir[0],
+                    trace->end[1],
+                    trace->end[2] - dir[2]);
+            }
 
             return true;
         }
@@ -161,13 +170,17 @@ static kbool Trace_Objects(trace_t *trace)
 
                 if(actor->bCollision)
                 {
+                    float r;
+
                     if(pos[1] > actor->origin[1] + actor->height ||
                         pos[1] + trace->offset < actor->origin[1])
                     {
                         continue;
                     }
 
-                    if(Trace_Object(trace, actor->origin, actor->radius))
+                    r = (actor->radius + trace->width) * 0.5f;
+
+                    if(Trace_Object(trace, actor->origin, r))
                     {
                         trace->type = TRT_OBJECT;
                         trace->hitActor = actor;
@@ -198,13 +211,17 @@ static kbool Trace_Objects(trace_t *trace)
 
         if(actor->bCollision)
         {
+            float r;
+
             if(pos[1] > actor->origin[1] + actor->height ||
                 pos[1] + trace->offset < actor->origin[1])
             {
                 continue;
             }
 
-            if(Trace_Object(trace, actor->origin, actor->radius))
+            r = (actor->radius + trace->width) * 0.5f;
+
+            if(Trace_Object(trace, actor->origin, r))
             {
                 trace->type = TRT_OBJECT;
                 trace->hitActor = actor;
@@ -672,40 +689,40 @@ trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
     trace.source        = source;
     trace.dist          = 0;
 
-    if(!Trace_Objects(&trace))
+    if(actor == NULL)
+        Trace_TraversePlanes(plane, &trace);
+    else
     {
-        if(actor == NULL)
-            Trace_TraversePlanes(plane, &trace);
-        else
+        // try to trace something as early as possible
+        if(!Trace_Plane(&trace, trace.pl))
         {
-            // try to trace something as early as possible
-            if(!Trace_Plane(&trace, trace.pl))
+            int i;
+
+            // look for edges in the initial plane that can be collided with
+            for(i = 0; i < 3; i++)
             {
-                int i;
+                vec3_t vp1;
+                vec3_t vp2;
 
-                // look for edges in the initial plane that can be collided with
-                for(i = 0; i < 3; i++)
-                {
-                    vec3_t vp1;
-                    vec3_t vp2;
+                if(plane->link[i] != NULL)
+                    continue;
 
-                    if(plane->link[i] != NULL)
-                        continue;
+                Vec_Copy3(vp1, plane->points[i]);
+                Vec_Copy3(vp2, plane->points[(i + 1) % 3]);
 
-                    Vec_Copy3(vp1, plane->points[i]);
-                    Vec_Copy3(vp2, plane->points[(i + 1) % 3]);
-
-                    // check to see if an edge was crossed
-                    if(Trace_PlaneEdge(&trace, vp1, vp2))
-                        Trace_GetEdgeNormal(&trace, vp1, vp2);
-                }
-
-                // start traversing into other planes if we couldn't trace anything
-                if(trace.type == TRT_NOHIT)
-                    Trace_TraversePlanes(plane, &trace);
+                // check to see if an edge was crossed
+                if(Trace_PlaneEdge(&trace, vp1, vp2))
+                    Trace_GetEdgeNormal(&trace, vp1, vp2);
             }
+
+            // start traversing into other planes if we couldn't trace anything
+            if(trace.type == TRT_NOHIT)
+                Trace_TraversePlanes(plane, &trace);
         }
     }
+
+    if(trace.type == TRT_NOHIT)
+        Trace_Objects(&trace);
 
     return trace;
 }

@@ -115,16 +115,17 @@ void G_ApplyFriction(vec3_t velocity, float friction, kbool effectY)
 void G_ApplyBounceVelocity(vec3_t velocity, vec3_t reflection, float amount)
 {
     float d = Vec_Unit3(velocity);
+    float bounce = 1.0f;
 
     if(d >= 1.05f)
     {
-        float bounce = (1 + amount);
+        bounce = (1 + amount);
 
         if(d < 16.8f && amount < 1.0f)
             bounce = 0.2f;
-
-        G_ClipVelocity(velocity, velocity, reflection, bounce);
     }
+
+    G_ClipVelocity(velocity, velocity, reflection, bounce);
 }
 
 //
@@ -153,7 +154,7 @@ kbool G_TryMove(gActor_t *source, vec3_t origin, vec3_t dest, plane_t **plane)
 // along the way
 //
 
-kbool G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
+kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time, plane_t **plane,
                     gActor_t *actor, trace_t *t)
 {
     trace_t trace;
@@ -193,7 +194,10 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
     for(i = 0; i < TRYMOVE_COUNT; i++)
     {
         // set end point
-        Vec_Add(end, start, vel);
+        //Vec_Add(end, start, vel);
+        end[0] = start[0] + (vel[0] * time);
+        end[1] = start[1] + (vel[1] * time);
+        end[2] = start[2] + (vel[2] * time);
 
         // get trace results
         trace = Trace(start, end, *plane, actor, NULL, false);
@@ -292,8 +296,10 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
         Vec_Copy3(velocity, vel);
     }
 
+    Vec_Scale(vel, velocity, time);
+
     // stop all movement if not in a valid plane
-    Vec_Add(end, origin, velocity);
+    Vec_Add(end, origin, vel);
     if(!Plane_PointInRange(*plane, end[0], end[2]))
     {
         if(t)
@@ -312,7 +318,7 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
     }
 
     // advance position
-    Vec_Add(origin, origin, velocity);
+    Vec_Add(origin, origin, vel);
 
     // clip origin/velocity for ceiling and floors
     if(actor)

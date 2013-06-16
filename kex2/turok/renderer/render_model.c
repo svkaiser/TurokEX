@@ -447,6 +447,7 @@ static void Mdl_ParseScript(kmodel_t *model, scparser_t *parser)
                         for(i = 0; i < model->numanimations; i++)
                         {
                             SC_ExpectNextToken(TK_LBRACK);
+                            model->anims[i].animID = SC_GetNumber();
                             SC_GetString();
                             model->anims[i].alias = Z_Strdup(parser->stringToken, PU_MODEL, 0);
                             SC_GetString();
@@ -704,18 +705,14 @@ static void Mdl_LoadAnimations(kmodel_t *model)
     unsigned int i;
 
     if(model->anims == NULL || model->numanimations <= 0 || model->numnodes <= 0)
-    {
         return;
-    }
 
     for(i = 0; i < model->numanimations; i++)
     {
         scparser_t *parser;
 
         if(!(parser = SC_Open(model->anims[i].animpath)))
-        {
             continue;
-        }
 
         Mdl_ParseAnimScript(model, &model->anims[i], parser);
         SC_Close();
@@ -731,16 +728,32 @@ anim_t *Mdl_GetAnim(kmodel_t *model, const char *name)
     unsigned int i;
 
     if(model->anims == NULL || model->numanimations <= 0)
-    {
         return NULL;
-    }
 
     for(i = 0; i < model->numanimations; i++)
     {
         if(!strcmp(model->anims[i].alias, name))
-        {
             return &model->anims[i];
-        }
+    }
+
+    return NULL;
+}
+
+//
+// Mdl_GetAnimFromID
+//
+
+anim_t *Mdl_GetAnimFromID(kmodel_t *model, int id)
+{
+    unsigned int i;
+
+    if(model->anims == NULL || model->numanimations <= 0)
+        return NULL;
+
+    for(i = 0; i < model->numanimations; i++)
+    {
+        if(model->anims[i].animID == id)
+            return &model->anims[i];
     }
 
     return NULL;
@@ -776,8 +789,19 @@ void Mdl_SetAnimState(animstate_t *astate, anim_t *anim,
 void Mdl_BlendAnimStates(animstate_t *astate, anim_t *anim,
                          float time, float blendtime, animflags_t flags)
 {
-    if(anim == astate->track.anim && astate->flags & ANF_NOINTERRUPT)
-        return;
+    if(anim == astate->track.anim)
+    {
+        if(astate->flags & (ANF_NOINTERRUPT|ANF_LOOP))
+            return;
+    }
+
+    if(flags & ANF_CROSSFADE)
+    {
+        astate->oldtrack.anim       = astate->track.anim;
+        astate->oldtrack.frame      = astate->track.frame;
+        astate->oldtrack.nextframe  = astate->track.nextframe;
+        astate->oldtrack.flags      = astate->flags;
+    }
 
     astate->flags                   = flags | ANF_BLEND;
     astate->prevtrack.frame         = astate->track.frame;
@@ -822,16 +846,17 @@ static void Mdl_NextAnimFrame(animstate_t *astate)
         if(!(astate->flags & ANF_LOOP))
         {
             astate->flags |= ANF_STOPPED;
-            astate->flags &= ~ANF_NOINTERRUPT;
 
-            if(astate->track.anim->next != NULL)
+            if(astate->flags & ANF_CROSSFADE)
             {
-                Mdl_BlendAnimStates(
-                    astate,
-                    astate->track.anim->next,
-                    astate->track.anim->nextanimspeed,
-                    astate->track.anim->nextblend,
-                    astate->track.anim->nextanimflag);
+                Mdl_BlendAnimStates(astate,
+                    astate->oldtrack.anim,
+                    astate->frametime,
+                    8,
+                    astate->oldtrack.flags);
+
+                astate->track.frame = astate->oldtrack.frame;
+                astate->track.nextframe = astate->oldtrack.nextframe;
             }
         }
     }
@@ -844,6 +869,9 @@ static void Mdl_NextAnimFrame(animstate_t *astate)
 void Mdl_UpdateAnimState(animstate_t *astate)
 {
     float blend;
+
+    if(astate->flags & ANF_LOOP && astate->flags & ANF_STOPPED)
+        astate->flags &= ~ANF_STOPPED;
 
     if(astate->flags & (ANF_STOPPED|ANF_PAUSED))
         return;

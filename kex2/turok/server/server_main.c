@@ -321,7 +321,6 @@ void SV_Run(int msec)
     server.runtime += msec;
 
     SV_ReadPackets();
-
     SV_Ticker();
 }
 

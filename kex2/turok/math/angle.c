@@ -30,6 +30,19 @@
 #define FULLCIRCLE  (M_PI * 2)
 
 //
+// Ang_Round
+//
+
+float Ang_Round(float angle)
+{
+    float an = DEG2RAD((360.0f / 65536.0f) *
+        ((int)(RAD2DEG(angle) * (65536.0f / 360.0f)) & 65535));
+
+    Ang_Clamp(&an);
+    return an;
+}
+
+//
 // Ang_AlignPitchToVector
 //
 

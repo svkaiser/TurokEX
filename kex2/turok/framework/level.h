@@ -399,6 +399,7 @@ typedef struct
     char            name[64];
     int             tics;
     float           time;
+    float           deltaTime;
 } gLevel_t;
 
 extern gLevel_t gLevel;
@@ -407,6 +408,24 @@ extern gLevel_t gLevel;
 
 extern kmap_t kmaps[MAXMAPS];
 extern kmap_t *g_currentmap;
+
+//
+// Map_PlaneToIndex
+//
+
+d_inline int Map_PlaneToIndex(plane_t *plane)
+{
+    return (plane != NULL) ? (plane - gLevel.planes) : -1;
+}
+
+//
+// Map_IndexToPlane
+//
+
+d_inline plane_t *Map_IndexToPlane(int index)
+{
+    return index != -1 ? &gLevel.planes[index] : NULL;
+}
 
 int Obj_GetClassType(object_t *obj);
 area_t *Map_GetArea(plane_t *plane);

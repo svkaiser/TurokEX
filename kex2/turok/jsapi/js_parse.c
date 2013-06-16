@@ -138,7 +138,7 @@ kbool JParse_Start(scparser_t *parser, gObject_t **object, int count)
     int i;
 
     // create a new object that's being parsed
-    *object = JS_NewObject(js_context, &Component_class, NULL, NULL);
+    *object = J_NewObjectEx(js_context, &Component_class, NULL, NULL);
     JS_AddRoot(js_context, &(*object));
 
     for(i = 0; i < count; i++)

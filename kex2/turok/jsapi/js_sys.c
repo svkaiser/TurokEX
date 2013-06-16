@@ -339,7 +339,7 @@ JS_FASTNATIVE_BEGIN(Sys, cacheTexture)
         JS_SET_RVAL(cx, vp, JSVAL_NULL);
     else
     {
-        JSObject *obj = JS_NewObject(cx, &Texture_class, NULL, NULL);
+        JSObject *obj = J_NewObjectEx(cx, &Texture_class, NULL, NULL);
 
         if(obj == NULL)
             return JS_FALSE;

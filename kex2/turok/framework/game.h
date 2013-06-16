@@ -30,11 +30,22 @@
 #define VELOCITY_EPSILON    0.0001f
 #define SLOPE_THRESHOLD     25.0f
 
+typedef enum
+{
+    PT_NONE     = 0,
+    PT_DEFAULT,
+    PT_FX,
+    PT_SWIMMING,
+    PT_CLIMBING
+} physics_type_e;
+
 void G_ClipVelocity(vec3_t out, vec3_t velocity, vec3_t normal, float fudge);
 void G_ApplyFriction(vec3_t velocity, float friction, kbool effectY);
 void G_ApplyBounceVelocity(vec3_t velocity, vec3_t reflection, float amount);
+void G_ApplyGravity(vec3_t origin, vec3_t velocity, plane_t *plane,
+                    float mass, float timeDelta);
 kbool G_TryMove(gActor_t *source, vec3_t origin, vec3_t dest, plane_t **plane);
-kbool G_ClipMovement(vec3_t origin, vec3_t velocity, plane_t **plane,
+kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time, plane_t **plane,
                     gActor_t *actor, trace_t *t);
 
 void G_Shutdown(void);

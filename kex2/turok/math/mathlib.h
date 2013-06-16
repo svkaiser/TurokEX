@@ -96,6 +96,7 @@ void  Mtx_ApplyRotation(vec4_t rot, mtx_t out);
 //
 // ANGLE OPERATIONS
 //
+float Ang_Round(float angle);
 float Ang_AlignPitchToVector(vec3_t vec);
 float Ang_AlignYawToVector(float angle, vec3_t v1, vec3_t v2);
 float Ang_VectorToAngle(vec3_t vec);

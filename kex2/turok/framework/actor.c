@@ -33,6 +33,7 @@
 #include "actor.h"
 #include "script.h"
 #include "level.h"
+#include "ai.h"
 #include "zone.h"
 #include "client.h"
 #include "server.h"
@@ -56,6 +57,7 @@ enum
     scactor_height,
     scactor_centerheight,
     scactor_viewheight,
+    scactor_classFlags,
     scactor_end
 };
 
@@ -74,6 +76,7 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_height,           "height"            },
     { scactor_centerheight,     "centerheight"      },
     { scactor_viewheight,       "viewheight"        },
+    { scactor_classFlags,       "classFlags"        },
     { -1,                       NULL                }
 };
 
@@ -182,6 +185,14 @@ static void Actor_ParseTemplate(scparser_t *parser, gActorTemplate_t *ac)
         case scactor_viewheight:
             SC_AssignFloat(mapactortokens, &ac->actor.viewHeight,
                 scactor_viewheight, parser, false);
+            break;
+
+        case scactor_classFlags:
+            SC_AssignInteger(mapactortokens, &ac->actor.classFlags,
+                scactor_classFlags, parser, false);
+
+            if(ac->actor.classFlags & AC_AI)
+                AI_Spawn(&ac->actor);
             break;
 
         default:
@@ -302,7 +313,6 @@ void Actor_UpdateTransform(gActor_t *actor)
         if(actor->plane != -1 && actor->bOrientOnSlope &&
             client.playerActor != actor /*TODO*/)
         {
-            vec4_t rot;
             plane_t *plane = &gLevel.planes[actor->plane];
 
             if(!Plane_IsAWall(plane))
@@ -336,42 +346,23 @@ void Actor_UpdateTransform(gActor_t *actor)
 
 void Actor_CallEvent(gActor_t *actor, const char *function, gActor_t *instigator)
 {
-    jsid id;
     jsval val;
-    JSScopeProperty *sprop;
 
     if(actor->components == NULL)
         return;
 
-    JS_GetReservedSlot(js_context, actor->iterator, 0, &val);
-    sprop = (JSScopeProperty*)JS_GetPrivate(js_context, actor->iterator);
+#ifdef JS_LOGNEWOBJECTS
+    Com_Printf("\nLogging Event (%s)...\n", function);
+#endif
 
-    while(JS_NextProperty(js_context, actor->iterator, &id))
+    JS_ITERATOR_START(actor, val);
+    JS_ITERATOR_LOOP(actor, val, function);
     {
-        jsval vp;
-        kbool found;
         gObject_t *func;
-        gObject_t *obj;
-        gObject_t *component;
         jsval rval;
         jsval argv = JSVAL_VOID;
         uintN nargs = 0;
 
-        if(id == JSVAL_VOID)
-            break;
-
-        if(!JS_GetMethodById(js_context, actor->components, id, &obj, &vp))
-            continue;
-        if(!JS_ValueToObject(js_context, vp, &component))
-            continue;
-        if(component == NULL)
-            continue;
-        if(!JS_HasProperty(js_context, component, function, &found))
-            continue;
-        if(!found)
-            continue;
-        if(!JS_GetProperty(js_context, component, function, &vp))
-            continue;
         if(!JS_ValueToObject(js_context, vp, &func))
             continue;
         if(!JS_ObjectIsFunction(js_context, func))
@@ -391,9 +382,33 @@ void Actor_CallEvent(gActor_t *actor, const char *function, gActor_t *instigator
 
         JS_CallFunctionName(js_context, component, function, nargs, &argv, &rval);
     }
+    JS_ITERATOR_END(actor, val);
+}
 
-    JS_SetReservedSlot(js_context, actor->iterator, 0, val);
-    JS_SetPrivate(js_context, actor->iterator, sprop);
+//
+// Actor_UpdateMove
+//
+
+static void Actor_UpdateMove(gActor_t *actor)
+{
+    plane_t *plane = Map_IndexToPlane(actor->plane);
+
+    if(actor->animState.flags & ANF_ROOTMOTION &&
+        !(actor->animState.flags & ANF_STOPPED))
+    {
+        vec3_t dir;
+
+        Vec_ApplyQuaternion(dir, actor->animState.rootMotion, actor->rotation);
+        dir[1] = 0;
+        Vec_Scale(dir, dir, 30.0f * actor->timestamp);
+        Vec_Add(actor->velocity, actor->velocity, dir);
+    }
+
+    G_ApplyGravity(actor->origin, actor->velocity, plane, actor->mass, actor->timestamp);
+    G_ClipMovement(actor->origin, actor->velocity, actor->timestamp, &plane, actor, NULL);
+    G_ApplyFriction(actor->velocity, actor->friction, false);
+    
+    actor->plane = Map_PlaneToIndex(plane);
 }
 
 //
@@ -470,12 +485,25 @@ void Actor_Tick(void)
             continue;
 
         actor->timestamp = ((float)server.runtime -
-            actor->timestamp) / 1000.0f;
+            gLevel.deltaTime) / 1000.0f;
+
+        if(actor->timestamp < 0)
+            continue;
 
         if(actor->components)
+        {
             Actor_CallEvent(actor, "onTick", NULL);
+            if(actor->classFlags & AC_AI)
+                AI_Think(actor->ai);
 
-        actor->timestamp = (float)server.runtime;
+            JS_MaybeGC(js_context);
+        }
+
+        if(actor->physics != PT_NONE)
+        {
+            Actor_UpdateMove(actor);
+            Actor_UpdateTransform(actor);
+        }
 
         if(actor->bStale)
         {
@@ -542,6 +570,16 @@ void Actor_CopyProperties(gActor_t *actor, gActor_t *gTemplate)
     actor->radius           = gTemplate->radius;
     actor->height           = gTemplate->height;
     actor->model            = gTemplate->model;
+    actor->classFlags       = gTemplate->classFlags;
+
+    if(actor->classFlags & AC_AI)
+    {
+        AI_Spawn(actor);
+        actor->ai->activeDistance = gTemplate->ai->activeDistance;
+        actor->ai->turnSpeed = gTemplate->ai->turnSpeed;
+        actor->ai->thinkTime = gTemplate->ai->thinkTime;
+        actor->ai->nextThinkTime = gLevel.time + actor->ai->thinkTime;
+    }
 
     Vec_Copy3(actor->bbox.min, gTemplate->bbox.min);
     Vec_Copy3(actor->bbox.max, gTemplate->bbox.max);
@@ -556,7 +594,7 @@ void Actor_CopyProperties(gActor_t *actor, gActor_t *gTemplate)
 
 void Actor_CreateComponent(gActor_t *actor)
 {
-    if(!(actor->components = JS_NewObject(js_context, &Component_class, NULL, NULL)))
+    if(!(actor->components = J_NewObjectEx(js_context, &Component_class, NULL, NULL)))
         return;
 
     JS_AddRoot(js_context, &actor->components);
@@ -664,6 +702,14 @@ gActor_t *Actor_Spawn(const char *classname, float x, float y, float z,
     }
 
     actor = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
+
+    // set default properties
+    actor->physics      = PT_NONE;
+    actor->mass         = 1200;
+    actor->friction     = 1.0f;
+    actor->airfriction  = 1.0f;
+    actor->bounceDamp   = 0.0f;
+
     Actor_CopyProperties(actor, &at->actor);
 
     if(at->numComponents > 0)
@@ -759,6 +805,14 @@ void Actor_ClearData(gActor_t *actor)
 
     if(actor->properties && actor->numProperties > 0)
         Z_Free(actor->properties);
+
+    if(actor->classFlags & AC_AI && actor->ai)
+    {
+        if(actor->ai->object)
+            JS_RemoveRoot(js_context, &actor->ai->object);
+
+        Z_Free(actor->ai);
+    }
 }
 
 //
@@ -809,7 +863,7 @@ void Actor_Setup(gActor_t *actor)
         Com_Error("Static actor (%s) should not contain any components", actor->name);
 
     // create and set owner property
-    ownerObject = JS_NewObject(cx, &GameActor_class, NULL, NULL);
+    ownerObject = J_NewObjectEx(cx, &GameActor_class, NULL, NULL);
 
     if(!JS_SetPrivate(cx, ownerObject, actor))
         return;

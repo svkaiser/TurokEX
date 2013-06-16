@@ -28,6 +28,7 @@
 #include "js_shared.h"
 #include "common.h"
 #include "actor.h"
+#include "ai.h"
 
 JS_CLASSOBJECT(GameActor);
 
@@ -76,7 +77,7 @@ JS_PROP_FUNC_GET(GameActor)
         {
             JSObject *bbox;
 
-            bbox = JS_NewObject(cx, NULL, NULL, NULL);
+            bbox = J_NewObjectEx(cx, NULL, NULL, NULL);
             JS_AddRoot(cx, &bbox);
             JS_DefineProperty(cx, bbox, "min_x",
                 DOUBLE_TO_JSVAL(JS_NewDouble(cx, actor->bbox.min[0])),
@@ -106,7 +107,7 @@ JS_PROP_FUNC_GET(GameActor)
         {
             JSObject *angles;
 
-            angles = JS_NewObject(cx, NULL, NULL, NULL);
+            angles = J_NewObjectEx(cx, NULL, NULL, NULL);
             JS_AddRoot(cx, &angles);
             JS_DefineProperty(cx, angles, "yaw",
                 DOUBLE_TO_JSVAL(JS_NewDouble(cx, actor->angles[0])),
@@ -202,6 +203,22 @@ JS_PROP_FUNC_GET(GameActor)
 
     case 28:
         JS_RETURNBOOLEAN(vp, actor->bNoDropOff);
+        return JS_TRUE;
+
+    case 29:
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(actor->physics));
+        return JS_TRUE;
+
+    case 30:
+        JS_NEWVECTORPOOL(actor->velocity);
+        return JS_TRUE;
+
+    case 31:
+        if(actor->ai == NULL)
+        {
+            JS_WARNING();
+        }
+        JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(actor->ai->object));
         return JS_TRUE;
 
     default:
@@ -306,6 +323,15 @@ JS_PROP_FUNC_SET(GameActor)
 
     case 28:
         JS_GETBOOL(actor->bNoDropOff, vp, 0);
+        return JS_TRUE;
+
+    case 29:
+        actor->physics = JSVAL_TO_INT(*vp);
+        return JS_TRUE;
+
+    case 30:
+        JS_GETOBJECT(object, vp, 0);
+        JS_GETVECTOR2(object, actor->velocity);
         return JS_TRUE;
 
     default:
@@ -507,9 +533,8 @@ JS_FASTNATIVE_BEGIN(GameActor, setAnim)
 {
     JSObject *thisObj;
     gActor_t *actor;
-    JSString *str;
-    char *bytes;
     jsdouble speed;
+    anim_t *anim;
 
     JS_CHECKARGS(3);
 
@@ -517,14 +542,34 @@ JS_FASTNATIVE_BEGIN(GameActor, setAnim)
     if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
         return JS_FALSE;
 
-    JS_GETSTRING(str, bytes, v, 0);
+    anim = NULL;
+
+    if(!JSVAL_IS_STRING(v[0]))
+    {
+        int id;
+
+        JS_GETINTEGER(id, 0);
+        anim = Mdl_GetAnimFromID(actor->model, id);
+    }
+    else
+    {
+        JSString *str;
+        char *bytes;
+
+        JS_GETSTRING(str, bytes, v, 0);
+        anim = Mdl_GetAnim(actor->model, bytes);
+        JS_free(cx, bytes);
+    }
+
+    if(anim == NULL)
+        return JS_TRUE;
+
     JS_GETNUMBER(speed, v, 1);
     JS_CHECKINTEGER(2);
 
-    Mdl_SetAnimState(&actor->animState, Mdl_GetAnim(actor->model, bytes),
+    Mdl_SetAnimState(&actor->animState, anim,
         (float)speed, JSVAL_TO_INT(JS_ARG(2)));
 
-    JS_free(cx, bytes);
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
@@ -533,10 +578,9 @@ JS_FASTNATIVE_BEGIN(GameActor, blendAnim)
 {
     JSObject *thisObj;
     gActor_t *actor;
-    JSString *str;
-    char *bytes;
     jsdouble speed;
     jsdouble blendtime;
+    anim_t *anim;
 
     JS_CHECKARGS(4);
 
@@ -544,15 +588,35 @@ JS_FASTNATIVE_BEGIN(GameActor, blendAnim)
     if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
         return JS_FALSE;
 
-    JS_GETSTRING(str, bytes, v, 0);
+    anim = NULL;
+
+    if(!JSVAL_IS_STRING(v[0]))
+    {
+        int id;
+
+        JS_GETINTEGER(id, 0);
+        anim = Mdl_GetAnimFromID(actor->model, id);
+    }
+    else
+    {
+        JSString *str;
+        char *bytes;
+
+        JS_GETSTRING(str, bytes, v, 0);
+        anim = Mdl_GetAnim(actor->model, bytes);
+        JS_free(cx, bytes);
+    }
+
+    if(anim == NULL)
+        return JS_TRUE;
+
     JS_GETNUMBER(speed, v, 1);
     JS_GETNUMBER(blendtime, v, 2);
     JS_CHECKINTEGER(3);
 
-    Mdl_BlendAnimStates(&actor->animState, Mdl_GetAnim(actor->model, bytes),
+    Mdl_BlendAnimStates(&actor->animState, anim,
         (float)speed, (float)blendtime, JSVAL_TO_INT(JS_ARG(3)));
 
-    JS_free(cx, bytes);
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
 }
@@ -679,6 +743,9 @@ JS_BEGINPROPS(GameActor)
     { "targetID",       26, JSPROP_ENUMERATE, NULL, NULL },
     { "modelVariant",   27, JSPROP_ENUMERATE, NULL, NULL },
     { "bNoDropOff",     28, JSPROP_ENUMERATE, NULL, NULL },
+    { "physics",        29, JSPROP_ENUMERATE, NULL, NULL },
+    { "velocity",       30, JSPROP_ENUMERATE, NULL, NULL },
+    { "ai",             31, JSPROP_ENUMERATE|JSPROP_READONLY, NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 

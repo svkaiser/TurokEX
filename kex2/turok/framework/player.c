@@ -394,9 +394,7 @@ void P_LocalPlayerTick(void)
 
 void P_SpawnLocalPlayer(void)
 {
-    jsid id;
     jsval val;
-    JSScopeProperty *sprop;
     int playerID;
     gActor_t *camera;
     gActor_t *pStart;
@@ -416,41 +414,17 @@ void P_SpawnLocalPlayer(void)
         if(actor->components == NULL)
             continue;
 
-        JS_GetReservedSlot(js_context, actor->iterator, 0, &val);
-        sprop = (JSScopeProperty*)JS_GetPrivate(js_context, actor->iterator);
-
-        while(JS_NextProperty(js_context, actor->iterator, &id))
+        JS_ITERATOR_START(actor, val);
+        JS_ITERATOR_LOOP(actor, val, "playerID");
         {
-            jsval vp;
-            kbool found;
-            gObject_t *obj;
-            gObject_t *component;
-
-            if(id == JSVAL_VOID)
-                break;
-
-            if(!JS_GetMethodById(js_context, actor->components, id, &obj, &vp))
-                continue;
-            if(!JS_ValueToObject(js_context, vp, &component))
-                continue;
-            if(component == NULL)
-                continue;
-            if(!JS_HasProperty(js_context, component, "playerID", &found))
-                continue;
-            if(!found)
-                continue;
-            if(!JS_GetProperty(js_context, component, "playerID", &vp))
-                continue;
             if(!(JSVAL_IS_INT(vp)))
                 continue;
-            
+                
             playerID = INT_TO_JSVAL(vp);
             pObject = component;
             break;
         }
-
-        JS_SetReservedSlot(js_context, actor->iterator, 0, val);
-        JS_SetPrivate(js_context, actor->iterator, sprop);
+        JS_ITERATOR_END(actor, val);
 
         if(playerID != -1)
         {
@@ -489,6 +463,9 @@ void P_SpawnLocalPlayer(void)
         pStart->plane = (ws->plane-gLevel.planes);
     else
         pStart->plane = -1;
+
+    // force-set the player class flag
+    pStart->classFlags |= AC_PLAYER;
 
     // spawn an actor to be used for the camera
     camera = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_LEVEL, NULL);

@@ -343,7 +343,7 @@ void Vec_Slerp(vec4_t out, float movement, vec4_t vec1, vec4_t vec2)
             ms1 = (float)sin((1.0f - movement) * halfcos) * d;
             ms2 = (float)sin(halfcos * movement) * d;
 
-            if(ms2)
+            if(ms2 < 0)
             {
                 Vec_Set4(rdest, -vec2[0], -vec2[1], -vec2[2], -vec2[3]);
             }

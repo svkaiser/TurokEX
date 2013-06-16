@@ -37,6 +37,7 @@
 #include "menu.h"
 #include "script.h"
 #include "game.h"
+#include "as.h"
 #include "js.h"
 #include "type.h"
 #include "fx.h"
@@ -63,6 +64,7 @@ void Sys_Shutdown(void)
     Com_WriteConfigFile();
 
     J_Shutdown();
+    AS_Shutdown();
     Snd_Shutdown();
     FX_Shutdown();
     Tex_Shutdown();
@@ -179,9 +181,7 @@ void Kernel_Run(void)
         while(msec < 1);
 
         if((int)fixedtime.value)
-        {
             msec = (int)fixedtime.value;
-        }
 
         SV_Run(msec);
         CL_Run(msec);
@@ -224,6 +224,8 @@ void Kernel_Main(int argc, char **argv)
     Com_Printf("Sound System Initialized (%s)\n", Snd_GetDeviceName());
     J_Init();
     Com_Printf("Javascript API Initialized\n");
+    AS_Init();
+    Com_Printf("AngelScript Initialized\n");
     SV_Init();
     Com_Printf("Server Initialized\n");
     CL_Init();

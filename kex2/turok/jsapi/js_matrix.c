@@ -409,7 +409,7 @@ static JSBool matrix_multiply(JSContext *cx, JSObject *obj, uintN argc,
     if(argc <= 0)
         return JS_FALSE;
 
-    if(!(nobj = JS_NewObject(cx, &Matrix_class, NULL, NULL)))
+    if(!(nobj = J_NewObjectEx(cx, &Matrix_class, NULL, NULL)))
         return JS_FALSE;
 
     v = JS_ARGV(cx, argv);
@@ -446,7 +446,7 @@ static JSBool matrix_multRotations(JSContext *cx, JSObject *obj, uintN argc,
     if(argc <= 0)
         return JS_FALSE;
 
-    if(!(nobj = JS_NewObject(cx, &Matrix_class, NULL, NULL)))
+    if(!(nobj = J_NewObjectEx(cx, &Matrix_class, NULL, NULL)))
         return JS_FALSE;
 
     v = JS_ARGV(cx, argv);
@@ -482,7 +482,7 @@ JS_FASTNATIVE_BEGIN(Matrix, fromQuaternion)
     if(argc <= 0)
         return JS_FALSE;
 
-    if(!(nobj = JS_NewObject(cx, &Matrix_class, NULL, NULL)))
+    if(!(nobj = J_NewObjectEx(cx, &Matrix_class, NULL, NULL)))
         return JS_FALSE;
 
     v = JS_ARGV(cx, vp);
@@ -579,7 +579,7 @@ JSBool Matrix_construct(JSContext *cx, JSObject *obj, uintN argc,
     JSObject *vobj;
     mtx_t *mtx;
 
-    if(!(vobj = JS_NewObject(cx, &Matrix_class, NULL, NULL)))
+    if(!(vobj = J_NewObjectEx(cx, &Matrix_class, NULL, NULL)))
         return JS_FALSE;
 
     mtx = (mtx_t*)JS_malloc(cx, sizeof(mtx_t));

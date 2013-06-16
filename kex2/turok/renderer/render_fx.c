@@ -95,7 +95,7 @@ void R_DrawFX(void)
             break;
         default:
             {
-                Mtx_ApplyRotation(client.playerActor->rotation, mtx);
+                Mtx_ApplyRotation(client.player->camera->rotation, mtx);
                 GL_SetState(GLSTATE_CULL, true);
             }
             break;

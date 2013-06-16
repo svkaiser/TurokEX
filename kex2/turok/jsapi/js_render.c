@@ -54,7 +54,7 @@ JS_PROP_FUNC_GET(NRender)
         {
             JSObject *obj;
 
-            obj = JS_NewObject(cx, NULL, NULL, NULL);
+            obj = J_NewObjectEx(cx, NULL, NULL, NULL);
 
             JS_AddRoot(cx, &obj);
             JS_DefineProperty(cx, obj, "width",  INT_TO_JSVAL(video_width),
@@ -187,6 +187,7 @@ JS_BEGINCONST(NRender)
     JS_DEFINE_CONST(ANIM_STOPPED,       ANF_STOPPED),
     JS_DEFINE_CONST(ANIM_NOINTERRUPT,   ANF_NOINTERRUPT),
     JS_DEFINE_CONST(ANIM_ROOTMOTION,    ANF_ROOTMOTION),
+    JS_DEFINE_CONST(ANIM_CROSSFADE,     ANF_CROSSFADE),
     { 0, 0, 0, { 0, 0, 0 } }
 };
 

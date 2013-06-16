@@ -237,6 +237,8 @@ enum
     scactor_centerheight,
     scactor_viewheight,
     scactor_targetID,
+    acactor_modelVariant,
+    acactor_classFlags,
     scactor_end
 };
 
@@ -262,6 +264,8 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_centerheight,     "centerheight"      },
     { scactor_viewheight,       "viewheight"        },
     { scactor_targetID,         "targetID"          },
+    { acactor_modelVariant,     "modelVariant"      },
+    { acactor_classFlags,       "classFlags"        },
     { -1,                       NULL                }
 };
 
@@ -508,6 +512,17 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
         case scactor_targetID:
             SC_AssignInteger(mapactortokens, &actor->targetID,
                 scactor_targetID, parser, false);
+            break;
+
+        case acactor_modelVariant:
+            SC_AssignInteger(mapactortokens, &actor->variant,
+                acactor_modelVariant, parser, false);
+            break;
+
+        case acactor_classFlags:
+            SC_AssignInteger(mapactortokens, &actor->classFlags,
+                acactor_classFlags, parser, false);
+            break;
 
         default:
             if(parser->tokentype == TK_IDENIFIER)
@@ -549,6 +564,13 @@ static void Map_ParseLevelActorBlock(scparser_t *parser, gLevel_t *level)
         gActor_t *actor = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
         Map_AddActor(level, actor);
         Map_ParseActor(parser, actor);
+
+        // TODO - TEMP
+        actor->physics      = PT_NONE;
+        actor->mass         = 1200;
+        actor->friction     = 1.0f;
+        actor->airfriction  = 1.0f;
+        actor->bounceDamp   = 0.0f;
 
         actor->angles[0] = -actor->angles[0];
         Actor_Setup(actor);
@@ -1043,7 +1065,8 @@ void Map_Tick(void)
     }
 
     gLevel.tics++;
-    gLevel.time = gLevel.tics * (1.0f / 60.0f); // TODO - TEMP
+    gLevel.time = (float)(gLevel.tics * SERVER_RUNTIME);
+    gLevel.deltaTime = (float)server.runtime;
 
     if(gLevel.bReadyUnload)
         Map_Unload();

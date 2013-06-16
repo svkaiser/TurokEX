@@ -386,7 +386,12 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
 
     if(node->nummeshes > 0)
     {
-        unsigned int var = variant;
+        unsigned int var;
+
+        if(variant >= (int)node->numvariants)
+            var = 0;
+        else
+            var = node->variants[variant];
 
         if(var >= node->nummeshes)
             var = 0;
