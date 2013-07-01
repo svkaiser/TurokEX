@@ -44,6 +44,7 @@ void R_RenderCameraView(void)
     vec4_t rot;
     mtx_t mtx;
     gActor_t *camera;
+    float zfar;
 
     camera = client.player->camera;
 
@@ -56,7 +57,13 @@ void R_RenderCameraView(void)
     // setup projection matrix
     dglMatrixMode(GL_PROJECTION);
     dglLoadIdentity();
-    Mtx_ViewFrustum(video_width, video_height, cl_fov.value, 0.1f);
+
+    // TODO - TEMP
+    zfar = -1;
+    if(dglIsEnabled(GL_FOG))
+        dglGetFloatv(GL_FOG_END, &zfar);
+
+    Mtx_ViewFrustum(video_width, video_height, cl_fov.value, 0.1f, zfar);
 
     // setup modelview matrix
     dglMatrixMode(GL_MODELVIEW);

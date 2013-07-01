@@ -890,11 +890,11 @@ void J_Init(void)
     if(!(js_rootscript = J_LoadScript("scripts/main.js")))
         Com_Error("J_Init: Unable to load main.js");
 
-    JPool_Initialize(&objPoolVector, 128, &Vector_class);
-    JPool_Initialize(&objPoolQuaternion, 128, &Quaternion_class);
+    JPool_Initialize(&objPoolVector, 256, &Vector_class);
+    JPool_Initialize(&objPoolQuaternion, 256, &Quaternion_class);
     JPool_Initialize(&objPoolPlane, 64, &Plane_class);
     JPool_Initialize(&objPoolPacket, 64, &Packet_class);
-    JPool_Initialize(&objPoolAnimState, 32, &AnimState_class);
+    JPool_Initialize(&objPoolAnimState, 128, &AnimState_class);
     JPool_Initialize(&objPoolHost, 32, &Host_class);
     JPool_Initialize(&objPoolPeer, 32, &Peer_class);
     JPool_Initialize(&objPoolNetEvent, 32, &NetEvent_class);

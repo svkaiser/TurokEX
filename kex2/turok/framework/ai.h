@@ -34,7 +34,9 @@ typedef enum
     AIF_FINDACTOR       = 16,
     AIF_FINDPLAYERS     = 32,
     AIF_AVOIDWALLS      = 64,
-    AIF_AVOIDACTORS     = 128
+    AIF_AVOIDACTORS     = 128,
+    AIF_DISABLED        = 256,
+    AIF_LOOKATTARGET    = 512
 } aiFlags_e;
 
 typedef struct ai_s
@@ -46,6 +48,13 @@ typedef struct ai_s
     vec3_t          goalOrigin;
     float           thinkTime;
     float           nextThinkTime;
+    unsigned int    nodeHead;
+    float           headYaw;
+    float           headPitch;
+    float           headTurnSpeed;
+    float           maxHeadAngle;
+    vec3_t          headYawAxis;
+    vec3_t          headPitchAxis;
     gObject_t       *object;
     struct gActor_s *owner;
     struct gActor_s *target;
@@ -54,11 +63,15 @@ typedef struct ai_s
 ai_t *AI_Spawn(gActor_t *actor);
 float AI_GetTargetDistance(ai_t *ai, gActor_t *target);
 float AI_GetYawToTarget(ai_t *ai, gActor_t *target);
+float AI_FindBestAngleToTarget(ai_t *ai, gActor_t *target, float extendRadius);
 kbool AI_CheckPosition(ai_t *ai, vec3_t position, float radius, float angle);
+void AI_FireProjectile(ai_t *ai, const char *fxname, float x, float y, float z,
+                       float maxangle, kbool localToActor);
 void AI_SetIdealYaw(ai_t *ai, float idealYaw, float turnSpeed);
 void AI_Turn(ai_t *ai);
 kbool AI_CanSeeTarget(ai_t *ai, gActor_t *target);
 void AI_FindPlayers(ai_t *ai);
+void AI_ClearTarget(ai_t *ai);
 void AI_Think(ai_t *ai);
 
 #endif

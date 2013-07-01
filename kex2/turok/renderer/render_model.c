@@ -118,6 +118,8 @@ enum
     scanim_actions,
     scanim_initialtranslation,
     scanim_initialrotation,
+    scanim_turninfo,
+    scanim_loopframe,
     scanim_end
 };
 
@@ -135,6 +137,8 @@ static const sctokens_t animtokens[scanim_end+1] =
     { scanim_rotationsets,      "rotationsets"          },
     { scanim_numactions,        "numactions"            },
     { scanim_actions,           "actions"               },
+    { scanim_turninfo,          "turninfo"              },
+    { scanim_loopframe,         "loopframe"             },
     { -1,                       NULL                    }
 };
 
@@ -327,9 +331,6 @@ static void Mdl_ParseNodeBlock(kmodel_t *model, scparser_t *parser)
     {
         mdlnode_t *node = &model->nodes[i];
 
-        Vec_Set3(node->offset_t, 0, 0, 0);
-        Vec_Set4(node->offset_r, 0, 0, 0, 1);
-
         // read into nested node block
         SC_ExpectNextToken(TK_LBRACK);
 
@@ -511,6 +512,11 @@ static void Mdl_ParseAnimScript(kmodel_t *model, anim_t *anim, scparser_t *parse
                     SC_AssignInteger(animtokens, &anim->numframes,
                         scanim_numframes, parser, false);
                     break;
+                    // loop frame
+                case scanim_loopframe:
+                    SC_AssignInteger(animtokens, &anim->loopframe,
+                        scanim_loopframe, parser, false);
+                    break;
                     // action count
                 case scanim_numactions:
                     SC_AssignInteger(animtokens, &anim->numactions,
@@ -631,14 +637,50 @@ static void Mdl_ParseAnimScript(kmodel_t *model, anim_t *anim, scparser_t *parse
                     SC_ExpectNextToken(TK_RBRACK);
                     break;
                     // actions
-                /*case scanim_actions:
+                case scanim_actions:
                     if(anim->numactions <= 0)
                     {
                         SC_Error("numactions is 0 or has not been set yet for %s",
                             anim->alias);
                     }
+                    anim->actions = (action_t*)Z_Calloc(sizeof(action_t) *
+                        anim->numactions, PU_MODEL, 0);
                     SC_ExpectNextToken(TK_EQUAL);
-                    break;*/
+                    SC_ExpectNextToken(TK_LBRACK);
+                    for(i = 0; i < anim->numactions; i++)
+                    {
+                        anim->actions[i].frame = SC_GetNumber();
+                        SC_GetString();
+                        anim->actions[i].function = Z_Strdup(parser->stringToken, PU_MODEL, 0);
+
+                        SC_Find();
+
+                        for(j = 0; j < 4; j++)
+                        {
+                            switch(parser->tokentype)
+                            {
+                            case TK_STRING:
+                                anim->actions[i].argStrings[j] =
+                                Z_Strdup(sc_parser->token, PU_MODEL, 0);
+                                break;
+                            case TK_NUMBER:
+                                anim->actions[i].args[j] = (float)atof(sc_parser->token);
+                                break;
+                            default:
+                                Com_Warning("Mdl_ParseAnimScript: Action Argument #%i ", j);
+                                Com_Warning("is not a number nor a string\n");
+                                Com_Warning("line=%i, pos=%i\n\n", parser->linepos, parser->rowpos);
+                                break;
+                            }
+
+                            if(j >= 3)
+                                break;
+
+                            SC_Find();
+                        }
+                    }
+                    SC_ExpectNextToken(TK_RBRACK);
+                    break;
                     // initial translation frame
                 case scanim_initial_t:
                     SC_ExpectNextToken(TK_EQUAL);
@@ -676,6 +718,15 @@ static void Mdl_ParseAnimScript(kmodel_t *model, anim_t *anim, scparser_t *parse
                         SC_ExpectNextToken(TK_RBRACK);
                     }
 
+                    SC_ExpectNextToken(TK_RBRACK);
+                    break;
+                case scanim_turninfo:
+                    anim->yawOffsets = (float*)Z_Calloc(sizeof(float) *
+                        anim->numframes, PU_MODEL, 0);
+                    SC_ExpectNextToken(TK_EQUAL);
+                    SC_ExpectNextToken(TK_LBRACK);
+                    for(i = 0; i < anim->numframes; i++)
+                        anim->yawOffsets[i] = (float)SC_GetFloat();
                     SC_ExpectNextToken(TK_RBRACK);
                     break;
                 default:
@@ -760,6 +811,26 @@ anim_t *Mdl_GetAnimFromID(kmodel_t *model, int id)
 }
 
 //
+// Mdl_CheckAnimID
+//
+
+kbool Mdl_CheckAnimID(kmodel_t *model, int id)
+{
+    unsigned int i;
+
+    if(model->anims == NULL || model->numanimations <= 0)
+        return false;
+
+    for(i = 0; i < model->numanimations; i++)
+    {
+        if(model->anims[i].animID == id)
+            return true;
+    }
+
+    return false;
+}
+
+//
 // Mdl_SetAnimState
 //
 
@@ -778,7 +849,8 @@ void Mdl_SetAnimState(animstate_t *astate, anim_t *anim,
     astate->prevtrack.nextframe     = 0;
     astate->track.anim              = anim;
     astate->prevtrack.anim          = NULL;
-    astate->restartframe            = 1;
+    astate->restartframe            = anim->loopframe;
+    astate->currentFrame            = 0;
 }
 
 
@@ -789,11 +861,14 @@ void Mdl_SetAnimState(animstate_t *astate, anim_t *anim,
 void Mdl_BlendAnimStates(animstate_t *astate, anim_t *anim,
                          float time, float blendtime, animflags_t flags)
 {
-    if(anim == astate->track.anim)
-    {
-        if(astate->flags & (ANF_NOINTERRUPT|ANF_LOOP))
-            return;
-    }
+    kbool bSameAnim = (anim == astate->track.anim);
+
+    if(astate->flags & ANF_NOINTERRUPT && !(astate->flags & ANF_STOPPED))
+        return;
+
+    if(bSameAnim && !(astate->flags & ANF_STOPPED) &&
+        flags == astate->flags)
+        return;
 
     if(flags & ANF_CROSSFADE)
     {
@@ -803,11 +878,17 @@ void Mdl_BlendAnimStates(animstate_t *astate, anim_t *anim,
         astate->oldtrack.flags      = astate->flags;
     }
 
+    if(bSameAnim)
+    {
+        astate->flags &= ~ANF_STOPPED;
+        return;
+    }
+
     astate->flags                   = flags | ANF_BLEND;
     astate->prevtrack.frame         = astate->track.frame;
     astate->prevtrack.nextframe     = astate->track.nextframe;
-    astate->track.frame             = 1;
-    astate->track.nextframe         = 2;
+    astate->track.frame             = bSameAnim ? anim->loopframe : 1;
+    astate->track.nextframe         = bSameAnim ? (anim->loopframe+1) : 2;
     astate->time                    = (float)client.tics + blendtime;
     astate->playtime                = 0;
     astate->frametime               = time;
@@ -815,7 +896,8 @@ void Mdl_BlendAnimStates(animstate_t *astate, anim_t *anim,
     astate->deltatime               = 0;
     astate->prevtrack.anim          = astate->track.anim;
     astate->track.anim              = anim;
-    astate->restartframe            = 1;
+    astate->restartframe            = anim->loopframe;
+    astate->currentFrame            = 0;
 }
 
 //
@@ -841,10 +923,10 @@ static void Mdl_NextAnimFrame(animstate_t *astate)
     {
         astate->track.nextframe = astate->restartframe;
         astate->deltatime = 0;
-        astate->playtime = 0;
 
         if(!(astate->flags & ANF_LOOP))
         {
+            astate->playtime = 0;
             astate->flags |= ANF_STOPPED;
 
             if(astate->flags & ANF_CROSSFADE)

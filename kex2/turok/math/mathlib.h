@@ -63,13 +63,13 @@ void  Vec_QuaternionToAxis(float *angle, vec3_t vec3, vec4_t vec4);
 void  Vec_ToQuaternion(vec4_t out, vec3_t vec);
 void  Vec_MultQuaternion(vec4_t out, vec4_t q1, vec4_t q2);
 void  Vec_AdjustQuaternion(vec4_t out, vec4_t rot, float angle);
+void  Vec_PointAt(vec3_t org1, vec3_t org2, vec4_t rotation, float maxAngle, vec4_t out);
 void  Vec_PointToAxis(vec3_t out, vec3_t p1, vec3_t p2);
-void  Vec_PointToAngle(vec4_t out, vec3_t p1, vec3_t p2);
 
 //
 // MATRIX OPERATIONS
 //
-void  Mtx_ViewFrustum(int width, int height, float fovy, float znear);
+void  Mtx_ViewFrustum(int width, int height, float fovy, float znear, float zfar);
 void  Mtx_AddTranslation(mtx_t m, float x, float y, float z);
 void  Mtx_SetTranslation(mtx_t m, float x, float y, float z);
 void  Mtx_Scale(mtx_t m, float x, float y, float z);
@@ -123,7 +123,7 @@ float Plane_GetEdgeYaw(plane_t *p, int point);
 float Plane_GetPitch(plane_t *p);
 float Plane_GetSlope(plane_t *plane, float x1, float z1, float x2, float z2);
 void  Plane_GetRotation(vec4_t vec, plane_t *p);
-void  Plane_AdjustRotation(vec4_t out, plane_t *p);
+void  Plane_GetNormalizedRotation(vec4_t out, plane_t *p);
 kbool Plane_PointInRange(plane_t *p, float x, float z);
 
 //

@@ -51,6 +51,7 @@ typedef union
 } fint_t;
 
 typedef struct gclient_s gclient_t;
+typedef struct gActor_s gActor_t;
 typedef struct svclient_s svclient_t;
 typedef struct JSObject gObject_t;
 

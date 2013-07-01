@@ -32,6 +32,7 @@
 #include "client.h"
 #include "zone.h"
 #include "ai.h"
+#include "fx.h"
 
 //
 // AI_Spawn
@@ -46,9 +47,14 @@ ai_t *AI_Spawn(gActor_t *actor)
     actor->ai->owner = actor;
 
     // defaults
-    actor->ai->activeDistance = 2048.0f;
-    actor->ai->turnSpeed = 4.096f;
-    actor->ai->thinkTime = 16;
+    actor->ai->activeDistance   = 1024.0f;
+    actor->ai->turnSpeed        = 4.096f;
+    actor->ai->thinkTime        = 16;
+    actor->ai->headTurnSpeed    = 4.096f;
+    actor->ai->maxHeadAngle     = DEG2RAD(70);
+
+    Vec_Set3(actor->ai->headYawAxis, 0, 1, 0);
+    Vec_Set3(actor->ai->headPitchAxis, 1, 0, 0);
 
     // create AI script object
     actor->ai->object = J_NewObjectEx(js_context, &AI_class, NULL, NULL);
@@ -72,7 +78,7 @@ float AI_GetTargetDistance(ai_t *ai, gActor_t *target)
     actor = ai->owner;
 
     x = actor->origin[0] - target->origin[0];
-    y = (actor->origin[1] + actor->centerHeight) - target->origin[1];
+    y = (actor->origin[1] + actor->centerHeight) - (target->origin[1] + target->centerHeight);
     z = actor->origin[2] - target->origin[2];
 
     return (float)sqrt(x*x+y*y+z*z);
@@ -86,9 +92,88 @@ float AI_GetYawToTarget(ai_t *ai, gActor_t *target)
 {
     vec3_t vec;
 
+    if(!target)
+        return ai->owner->angles[0];
+
     Vec_PointToAxis(vec, target->origin, ai->owner->origin);
     return Ang_Round(Ang_ClampInvertSums(ai->owner->angles[0],
         Ang_VectorToAngle(vec)));
+}
+
+//
+// AI_FindBestAngleToTarget
+//
+
+float AI_FindBestAngleToTarget(ai_t *ai, gActor_t *target, float extendRadius)
+{
+    float angle;
+    vec3_t position;
+    gActor_t *owner;
+
+    owner = ai->owner;
+    angle = AI_GetYawToTarget(ai, target);
+
+    if(!target)
+        return angle;
+
+    Vec_Set3(position,
+        owner->origin[0],
+        owner->origin[1] + (owner->viewHeight * 0.8f),
+        owner->origin[2]);
+
+    if(!AI_CheckPosition(ai, position, extendRadius, owner->angles[0] + angle))
+    {
+        float an;
+        float pAn;
+        int i;
+
+        pAn = M_PI / 8;
+
+        for(i = 0; i < 8; i++)
+        {
+            float dir;
+
+            an = ((i+1) * pAn);
+            dir = an + angle;
+
+            if(AI_CheckPosition(ai, position, extendRadius, owner->angles[0] + dir))
+            {
+                angle = DEG2RAD(15) + dir;
+                Ang_Clamp(&angle);
+                break;
+            }
+
+            dir = angle - an;
+
+            if(AI_CheckPosition(ai, position, extendRadius, owner->angles[0] + dir))
+            {
+                angle = dir - DEG2RAD(15);
+                Ang_Clamp(&angle);
+                break;
+            }
+        }
+    }
+
+    return angle;
+}
+
+//
+// AI_TracePosition
+//
+
+trace_t AI_TracePosition(ai_t *ai, vec3_t position, float radius, float angle)
+{
+    vec3_t dest;
+    plane_t *plane;
+    float s = (float)sin(angle);
+    float c = (float)cos(angle);
+
+    dest[0] = position[0] + (ai->owner->radius * radius * s);
+    dest[1] = position[1];
+    dest[2] = position[2] + (ai->owner->radius * radius * c);
+
+    plane = ai->owner->plane != -1 ? &gLevel.planes[ai->owner->plane] : NULL;
+    return Trace(position, dest, plane, NULL, ai->owner, false);
 }
 
 //
@@ -97,20 +182,52 @@ float AI_GetYawToTarget(ai_t *ai, gActor_t *target)
 
 kbool AI_CheckPosition(ai_t *ai, vec3_t position, float radius, float angle)
 {
-    vec3_t dest;
-    trace_t trace;
-    plane_t *plane;
-    float s = (float)sin(angle + M_PI);
-    float c = (float)cos(angle + M_PI);
+    trace_t trace = AI_TracePosition(ai, position, radius, angle);
+    kbool bHitWall = false;
+    kbool bHitActor = false;
 
-    dest[0] = position[0] + (ai->owner->radius * radius * s);
-    dest[1] = position[1];
-    dest[2] = position[2] + (ai->owner->radius * radius * c);
+    if(ai->flags & AIF_AVOIDWALLS)
+        bHitWall = !(trace.type != TRT_WALL && trace.type != TRT_EDGE);
 
-    plane = ai->owner->plane != -1 ? &gLevel.planes[ai->owner->plane] : NULL;
-    trace = Trace(position, dest, plane, NULL, ai->owner, false);
+    if(ai->flags & AIF_AVOIDACTORS)
+        bHitActor = !(trace.type != TRT_OBJECT);
 
-    return (trace.type != TRT_WALL && trace.type != TRT_EDGE);
+    return !(bHitWall | bHitActor);
+}
+
+//
+// AI_FireProjectile
+//
+
+void AI_FireProjectile(ai_t *ai, const char *fxname, float x, float y, float z,
+                       float maxangle, kbool localToActor)
+{
+    vec4_t frot;
+    vec3_t origin;
+    vec3_t torg;
+    vec3_t tmp;
+    gActor_t *actor;
+    gActor_t *target;
+
+    actor = ai->owner;
+    target = ai->target;
+
+    if(!target)
+        return;
+
+    if(!localToActor)
+        Vec_Set3(origin, x, y, z);
+    else
+        Actor_GetLocalVectors(origin, actor, x, y, z);
+
+    Vec_Copy3(torg, target->origin);
+    torg[1] += 30.72f;
+
+    Vec_PointAt(origin, torg, actor->rotation, maxangle, frot);
+    Vec_Set3(tmp, 0, 0, 0);
+
+    FX_Spawn(fxname, actor, tmp, origin, frot,
+        Map_IndexToPlane(actor->plane));
 }
 
 //
@@ -140,7 +257,6 @@ void AI_Turn(ai_t *ai)
     if(fabs(current - ai->idealYaw) <= 0.001f)
     {
         ai->flags &= ~AIF_TURNING;
-        Actor_CallEvent(ai->owner, "onTurned", NULL);
         return;
     }
 
@@ -185,7 +301,8 @@ kbool AI_CanSeeTarget(ai_t *ai, gActor_t *target)
 
     trace = Trace(pos, dest, plane, NULL, self, true);
 
-    if(trace.hitActor && trace.hitActor == target)
+    if(trace.type == TRT_OBJECT &&
+        trace.hitActor && trace.hitActor == target)
     {
         ai->flags |= AIF_SEETARGET;
         return true;
@@ -193,6 +310,84 @@ kbool AI_CanSeeTarget(ai_t *ai, gActor_t *target)
 
     ai->flags &= ~AIF_SEETARGET;
     return false;
+}
+
+//
+// AI_SetHeadLook
+//
+
+static void AI_SetHeadLook(ai_t *ai)
+{
+    gActor_t *actor;
+    float yan;
+    float current;
+    float speed;
+    float diff;
+    vec4_t roty;
+
+    actor = ai->owner;
+
+    if(!actor->model)
+        return;
+
+    if(ai->nodeHead == 0 || ai->nodeHead >= actor->model->numnodes)
+        return;
+
+    Vec_Set4(roty, 0, 0, 0, 1);
+    yan = 0;
+
+    if(ai->target && (ai->flags & AIF_LOOKATTARGET &&
+        ai->flags & AIF_SEETARGET))
+    {
+        vec3_t p1;
+        vec3_t p2;
+        vec3_t dir;
+        gActor_t *target;
+
+        target = ai->target;
+
+        p2[0] = actor->origin[0];
+        p2[1] = actor->origin[1] + actor->viewHeight;
+        p2[2] = actor->origin[2];
+
+        p1[0] = target->origin[0];
+        p1[1] = target->origin[1] + target->viewHeight;
+        p1[2] = target->origin[2];
+
+        yan = M_PI - (actor->angles[0] - (float)atan2(p2[0] - p1[0], p2[2] - p1[2]));
+        Ang_Clamp(&yan);
+
+        Vec_Sub(dir, p2, p1);
+        Vec_Normalize3(dir);
+
+        if(yan >  ai->maxHeadAngle) yan =  ai->maxHeadAngle;
+        if(yan < -ai->maxHeadAngle) yan = -ai->maxHeadAngle;
+    }
+
+    speed = ai->headTurnSpeed * ai->owner->timestamp;
+
+    current = Ang_Round(ai->headYaw);
+    if(fabs(current - yan) <= 0.001f)
+        ai->headYaw = yan;
+    else
+    {
+        diff = yan - current;
+        Ang_Clamp(&diff);
+
+        if(diff > 0)
+        {
+            if(diff > speed)
+                diff = speed;
+        }
+        else if(diff < -speed)
+            diff = -speed;
+
+        ai->headYaw = Ang_Round(current + diff);
+        Ang_Clamp(&ai->headYaw);
+    }
+
+    Vec_SetQuaternion(actor->nodeOffsets_r[ai->nodeHead],
+        ai->headYaw, ai->headYawAxis[0], ai->headYawAxis[1], ai->headYawAxis[2]);
 }
 
 //
@@ -207,12 +402,27 @@ void AI_FindPlayers(ai_t *ai)
     {
         if(!ai->target)
         {
+            jsval val;
+
             Actor_SetTarget(&ai->target, client.playerActor);
-            Actor_CallEvent(ai->owner, "onTargetFound", ai->target);
+
+            if(Actor_ToVal(ai->target, &val))
+                Actor_CallEvent(ai->owner, "onTargetFound", &val, 1);
         }
 
         ai->flags |= AIF_SEEPLAYER;
     }
+}
+
+//
+// AI_ClearTarget
+//
+
+void AI_ClearTarget(ai_t *ai)
+{
+    Actor_SetTarget(&ai->target, NULL);
+    ai->flags &= ~AIF_SEEPLAYER;
+    ai->flags &= ~AIF_SEETARGET;
 }
 
 //
@@ -222,19 +432,19 @@ void AI_FindPlayers(ai_t *ai)
 void AI_CheckSleepRange(ai_t *ai)
 {
     // TODO - Handle network players
-    if(ai->activeDistance < Vec_Length2(ai->owner->origin,
-        client.playerActor->origin))
+    if(Vec_Length2(ai->owner->origin,
+        client.playerActor->origin) > ai->activeDistance)
     {
         if(!(ai->flags & AIF_DORMANT))
         {
             ai->flags |= AIF_DORMANT;
-            Actor_CallEvent(ai->owner, "onSleep", NULL);
+            Actor_CallEvent(ai->owner, "onSleep", NULL, 0);
         }
         return;
     }
 
     if(ai->flags & AIF_DORMANT)
-        Actor_CallEvent(ai->owner, "onWake", NULL);
+        Actor_CallEvent(ai->owner, "onWake", NULL, 0);
 
     ai->flags &= ~AIF_DORMANT;
 }
@@ -248,6 +458,16 @@ void AI_Think(ai_t *ai)
     if(ai == NULL)
         return;
 
+    if(ai->owner->bStale)
+    {
+        Actor_SetTarget(&ai->owner, NULL);
+        return;
+    }
+
+    if(ai->flags & AIF_DISABLED)
+        return;
+
+    AI_SetHeadLook(ai);
     AI_CheckSleepRange(ai);
 
     if(ai->flags & AIF_TURNING)
@@ -265,5 +485,5 @@ void AI_Think(ai_t *ai)
     if(ai->flags & AIF_FINDPLAYERS)
         AI_FindPlayers(ai);
 
-    Actor_CallEvent(ai->owner, "onThink", NULL);
+    Actor_CallEvent(ai->owner, "onThink", NULL, 0);
 }

@@ -112,7 +112,7 @@ float Plane_GetDistance(plane_t *plane, vec3_t pos)
             dist = (
                 plane->points[0][1] + 
                 plane->points[1][1] +
-                plane->points[2][1]) * 0.3333333432674408f;
+                plane->points[2][1]) * (1.0f/3.0f);
         }
         else
         {
@@ -150,7 +150,7 @@ float Plane_GetHeight(plane_t *plane, vec3_t pos)
             dist = (
                 plane->height[0] +
                 plane->height[1] +
-                plane->height[2]) * 0.3333333432674408f;
+                plane->height[2]) * (1.0f/3.0f);
         }
         else
         {
@@ -250,22 +250,14 @@ float Plane_GetEdgeYaw(plane_t *p, int point)
 
 float Plane_GetPitch(plane_t *p)
 {
-    if(Plane_IsAWall(p))
-    {
-        vec3_t t1;
-        vec3_t n;
-        float an;
+    vec3_t t1;
+    vec3_t n;
 
-        Plane_GetNormal(n, p);
-        Vec_Set3(t1, 0, 1.0f, 0);
-        Vec_Normalize3(n);
+    Plane_GetNormal(n, p);
+    Vec_Set3(t1, 0, 1, 0);
+    Vec_Normalize3(n);
 
-        an = (float)acos(t1[0] * n[0] + t1[1] * n[1] + t1[2] * n[2]);
-
-        return an;
-    }
-
-    return 0.0f;
+    return (float)acos(Vec_Dot(t1, n));
 }
 
 //
@@ -322,31 +314,20 @@ void Plane_GetRotation(vec4_t vec, plane_t *p)
     vec3_t n1;
     vec3_t n2;
     vec3_t cp;
-    float an;
-    float s;
-    float c;
 
     Plane_GetNormal(n1, p);
     Vec_Normalize3(n1);
     Vec_Set3(n2, 0, 1, 0);
     Vec_Cross(cp, n2, n1);
     Vec_Normalize3(cp);
-
-    an = (float)acos(n2[0] * n1[0] + n2[1] * n1[1] + n2[2] * n1[2]) * 0.5f;
-    s = (float)sin(an);
-    c = (float)cos(an);
-
-    vec[0] = cp[0] * s;
-    vec[1] = cp[1] * s;
-    vec[2] = cp[2] * s;
-    vec[3] = c;
+    Vec_SetQuaternion(vec, (float)acos(Vec_Dot(n2, n1)), cp[0], cp[1], cp[2]);
 }
 
 //
-// Plane_AdjustRotation
+// Plane_GetNormalizedRotation
 //
 
-void Plane_AdjustRotation(vec4_t out, plane_t *p)
+void Plane_GetNormalizedRotation(vec4_t out, plane_t *p)
 {
     vec3_t n1;
     vec3_t n2;
@@ -358,7 +339,7 @@ void Plane_AdjustRotation(vec4_t out, plane_t *p)
     Vec_Set3(n2, 0, 1, 0);
     Vec_Cross(cp, n2, n1);
 
-    d = (float)sqrt(cp[0] * cp[0] + cp[1] * cp[1] + cp[2] * cp[2]);
+    d = Vec_Unit3(cp);
 
     if(d == 0.0f)
     {
@@ -366,20 +347,8 @@ void Plane_AdjustRotation(vec4_t out, plane_t *p)
     }
     else
     {
-        float an;
-        float s;
-        float c;
-
         Vec_Scale(cp, cp, 1.0f / d);
-
-        an = (float)acos(n2[0] * n1[0] + n2[1] * n1[1] + n2[2] * n1[2]) * 0.5f;
-        s = (float)sin(an);
-        c = (float)cos(an);
-
-        out[0] = cp[0] * s;
-        out[1] = cp[1] * s;
-        out[2] = cp[2] * s;
-        out[3] = c;
+        Vec_SetQuaternion(out, (float)acos(Vec_Dot(n2, n1)), cp[0], cp[1], cp[2]);
     }
 }
 

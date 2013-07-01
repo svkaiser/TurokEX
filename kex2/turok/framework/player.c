@@ -354,6 +354,7 @@ void P_LocalPlayerTick(void)
 {
     worldState_t *ws;
     playerInfo_t *info;
+    gActor_t *actor;
     int current;
 
     if(client.state != CL_STATE_INGAME)
@@ -361,14 +362,26 @@ void P_LocalPlayerTick(void)
 
     ws = &localPlayer.worldState;
     info = &localPlayer.info;
+    actor = localPlayer.actor;
 
     ws->timeStamp = (float)info->cmd.timestamp.i;
     ws->frameTime = info->cmd.frametime.f;
 
     // update controller in case movement was corrected by server
-    Vec_Copy3(ws->origin, localPlayer.actor->origin);
+    Vec_Copy3(ws->origin, actor->origin);
+    Vec_Add(ws->velocity, ws->velocity, actor->velocity);
+
+    // TODO
+    actor->velocity[1] = 0;
 
     P_LocalPlayerEvent("onLocalTick");
+
+    // TODO - handle actual actor movement/clipping here
+    if(Actor_OnGround(actor))
+    {
+        G_ApplyFriction(actor->velocity, actor->friction, false);
+        actor->velocity[1] = 0;
+    }
 
     // TODO - AREA/LOCALTICK
 
@@ -376,15 +389,15 @@ void P_LocalPlayerTick(void)
     Vec_Copy3(localPlayer.oldMoves[current], ws->origin);
     localPlayer.oldCmds[current] = info->cmd;
     localPlayer.latency[current] = client.time;
-    localPlayer.actor->plane = (ws->plane - gLevel.planes);
+    actor->plane = (ws->plane - gLevel.planes);
 
     Ang_Clamp(&ws->angles[0]);
     Ang_Clamp(&ws->angles[1]);
     Ang_Clamp(&ws->angles[2]);
 
-    Vec_Copy3(localPlayer.actor->origin, ws->origin);
-    Vec_Copy3(localPlayer.actor->angles, ws->angles);
-    Actor_UpdateTransform(localPlayer.actor);
+    Vec_Copy3(actor->origin, ws->origin);
+    Vec_Copy3(actor->angles, ws->angles);
+    Actor_UpdateTransform(actor);
     Actor_UpdateTransform(localPlayer.camera);
 }
 

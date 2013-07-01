@@ -36,11 +36,10 @@
 #include "js_parse.h"
 #include "js_shared.h"
 #include "sound.h"
+#include "ai.h"
+#include "fx.h"
 
 gLevel_t gLevel;
-
-kmap_t kmaps[MAXMAPS];
-kmap_t *g_currentmap = NULL;
 
 enum
 {
@@ -239,6 +238,7 @@ enum
     scactor_targetID,
     acactor_modelVariant,
     acactor_classFlags,
+    acactor_cullDistance,
     scactor_end
 };
 
@@ -266,6 +266,7 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_targetID,         "targetID"          },
     { acactor_modelVariant,     "modelVariant"      },
     { acactor_classFlags,       "classFlags"        },
+    { acactor_cullDistance,     "cullDistance"      },
     { -1,                       NULL                }
 };
 
@@ -522,6 +523,15 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
         case acactor_classFlags:
             SC_AssignInteger(mapactortokens, &actor->classFlags,
                 acactor_classFlags, parser, false);
+
+            if(actor->classFlags & AC_AI)
+                AI_Spawn(actor);
+
+            break;
+
+        case acactor_cullDistance:
+            SC_AssignFloat(mapactortokens, &actor->cullDistance,
+                acactor_cullDistance, parser, false);
             break;
 
         default:
@@ -793,6 +803,7 @@ static void Map_ParseLevelScript(scparser_t *parser)
     }
 }
 
+#if 0
 //
 // Obj_GetClassType
 //
@@ -885,13 +896,15 @@ static kbool Map_CheckObjectPlaneRange(object_t *obj, plane_t *plane)
     return (i == 3);
 }
 
+#endif
+
 //
 // Map_GetArea
 //
 
-area_t *Map_GetArea(plane_t *plane)
+gArea_t *Map_GetArea(plane_t *plane)
 {
-    return &g_currentmap->areas[plane->area_id];
+    return &gLevel.areas[plane->area_id];
 }
 
 //
@@ -1051,6 +1064,145 @@ void Map_TraverseChangePlaneHeight(plane_t *plane, float destHeight, int area_id
 }
 
 //
+// Map_TraverseToggleBlockingPlanes
+//
+
+static void Map_TraverseToggleBlockingPlanes(plane_t *plane, kbool toggle, int area_id)
+{
+    plane_t * p;
+
+    if(plane == NULL)
+        return;
+
+    p = plane;
+
+    while(p->area_id == area_id)
+    {
+        if(toggle)
+        {
+            if(p->flags & CLF_TOGGLE)
+                break;
+
+            p->flags |= CLF_TOGGLE;
+        }
+        else
+        {
+            if(!(p->flags & CLF_TOGGLE))
+                break;
+
+            p->flags &= ~CLF_TOGGLE;
+        }
+
+        if(p->link[0])
+            Map_TraverseToggleBlockingPlanes(p->link[0], toggle, area_id);
+
+        if(p->link[1])
+            Map_TraverseToggleBlockingPlanes(p->link[1], toggle, area_id);
+
+        if(!p->link[2])
+            break;
+
+        p = p->link[2];
+    }
+}
+
+//
+// Map_ToggleBlockingPlanes
+//
+
+void Map_ToggleBlockingPlanes(plane_t *pStart, kbool toggle)
+{
+    if(!pStart)
+        return;
+
+    if(!(pStart->flags & CLF_BLOCK))
+        return;
+
+    Map_TraverseToggleBlockingPlanes(pStart, toggle, pStart->area_id);
+}
+
+//
+// Map_TriggerActors
+//
+
+void Map_TriggerActors(int targetID, int classFilter)
+{
+    gActor_t *actor;
+
+    for(actor = gLevel.actorRoot.next; actor != &gLevel.actorRoot;
+        actor = actor->next)
+    {
+        if(classFilter != 0 && !(actor->classFlags & classFilter))
+            continue;
+        if(actor->bStale)
+            continue;
+        if(actor->targetID != targetID)
+            continue;
+
+        Actor_CallEvent(actor, "onTrigger", NULL, 0);
+    }
+}
+
+//
+// Map_GetActorsInRadius
+//
+
+gObject_t *Map_GetActorsInRadius(float radius, float x, float y, float z, plane_t *plane,
+                                 int classFilter, kbool bTrace)
+{
+    gActor_t *actor;
+    vec3_t org;
+    unsigned int count;
+    gObject_t *arrObj;
+
+    Vec_Set3(org, x, y, z);
+    arrObj = NULL;
+    count = 0;
+
+    for(actor = gLevel.actorRoot.next; actor != &gLevel.actorRoot;
+        actor = actor->next)
+    {
+        jsval val;
+
+        if(!(actor->classFlags & classFilter))
+            continue;
+        if(actor->bHidden || actor->bStale)
+            continue;
+        if(Vec_Length3(org, actor->origin) >= radius)
+            continue;
+
+        if(plane == NULL)
+        {
+            if(!(plane = Map_FindClosestPlane(org)))
+                continue;
+        }
+
+        if(bTrace)
+        {
+            trace_t trace;
+            vec3_t dest;
+
+            Vec_Copy3(dest, actor->origin);
+            dest[1] += actor->centerHeight;
+
+            trace = Trace(org, dest, plane, NULL, NULL, true);
+
+            if(trace.type != TRT_OBJECT ||
+                !trace.hitActor || trace.hitActor != actor)
+                continue;
+        }
+
+        if(arrObj == NULL)
+            arrObj = JS_NewArrayObject(js_context, 0, NULL);
+
+        Actor_ToVal(actor, &val);
+        JS_SetElement(js_context, arrObj, count++, &val);
+    }
+
+    return arrObj;
+}
+
+//
 // Map_Tick
 //
 
@@ -1169,6 +1321,8 @@ void Map_Unload(void)
             JS_RemoveRoot(js_context, &area->components);
     }
 
+    FX_ClearLinks();
+
     // purge all level and actor allocations
     Z_FreeTags(PU_LEVEL, PU_LEVEL);
     Z_FreeTags(PU_ACTOR, PU_ACTOR);
@@ -1232,7 +1386,6 @@ static void FCmd_SpawnActor(void)
 
 void Map_Init(void)
 {
-    memset(kmaps, 0, sizeof(kmap_t) * MAXMAPS);
     memset(&gLevel, 0, sizeof(gLevel_t));
 
     gLevel.nextMap = -1;

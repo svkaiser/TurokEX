@@ -74,7 +74,7 @@
 // Mtx_ViewFrustum
 //
 
-void Mtx_ViewFrustum(int width, int height, float fovy, float znear)
+void Mtx_ViewFrustum(int width, int height, float fovy, float znear, float zfar)
 {
     float left;
     float right;
@@ -101,8 +101,8 @@ void Mtx_ViewFrustum(int width, int height, float fovy, float znear)
     
     m[ 2] = 0;
     m[ 6] = 0;
-    m[10] = -1;
-    m[14] = -2 * znear;
+    m[10] = -(zfar + znear) / (zfar - znear);
+    m[14] = -(2 * zfar * znear) / (zfar - znear);
     
     m[ 3] = 0;
     m[ 7] = 0;

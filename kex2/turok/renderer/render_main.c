@@ -36,15 +36,18 @@
 #include "game.h"
 #include "js.h"
 #include "fx.h"
+#include "ai.h"
 
 CVAR_EXTERNAL(cl_fov);
 CVAR(r_fog, 1);
+CVAR(r_cull, 1);
 
 static kbool showcollision = false;
 static kbool showbbox = false;
 static kbool showgrid = false;
 static kbool showpnmls = false;
 static kbool showradius = false;
+static kbool shownodes = false;
 
 kbool bWireframe = false;
 
@@ -283,8 +286,7 @@ void R_DrawSection(mdlsection_t *section, char *texture)
 // R_TraverseDrawNode
 //
 
-void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
-                          char **textures, int variant, animstate_t *animstate)
+void R_TraverseDrawNode(gActor_t *actor, mdlnode_t *node, animstate_t *animstate)
 {
     unsigned int i;
     mtx_t mtx;
@@ -293,6 +295,9 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
     int frame;
     int nextframe;
     float delta;
+    kmodel_t *model;
+
+    model = actor->model;
 
     if(animstate != NULL)
     {
@@ -376,11 +381,19 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
             }
 
             Vec_Copy4(rCur, rot);
-            Vec_MultQuaternion(rot, rCur, node->offset_r);
+            Vec_MultQuaternion(rot, rCur, actor->nodeOffsets_r[nodenum]);
 
             Mtx_ApplyRotation(rot, mtx);
             Mtx_AddTranslation(mtx, pos[0], pos[1], pos[2]);
             dglMultMatrixf(mtx);
+
+            if(shownodes)
+            {
+                R_DrawOrigin(pos_cur, 4.0f);
+                // restore the color if in wireframe mode
+                if(bWireframe)
+                    dglColor4ub(192, 192, 192, 255);
+            }
         }
     }
 
@@ -388,10 +401,10 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
     {
         unsigned int var;
 
-        if(variant >= (int)node->numvariants)
+        if(actor->variant >= (int)node->numvariants)
             var = 0;
         else
-            var = node->variants[variant];
+            var = node->variants[actor->variant];
 
         if(var >= node->nummeshes)
             var = 0;
@@ -401,10 +414,10 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
             mdlsection_t *section = &node->meshes[var].sections[i];
             char *texturepath = NULL;
 
-            if(textures != NULL)
+            if(actor->textureSwaps != NULL)
             {
-                if(textures[i][0] != '-')
-                    texturepath = textures[i];
+                if(actor->textureSwaps[i][0] != '-')
+                    texturepath = actor->textureSwaps[i];
             }
 
             R_DrawSection(section, texturepath);
@@ -413,8 +426,8 @@ void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
 
     for(i = 0; i < node->numchildren; i++)
     {
-        R_TraverseDrawNode(model,
-            &model->nodes[node->children[i]], textures, variant, animstate);
+        R_TraverseDrawNode(actor,
+            &model->nodes[node->children[i]], animstate);
     }
 
     if(animstate != NULL)
@@ -514,8 +527,12 @@ void R_DrawActors(void)
         if(actor->bHidden)
             continue;
 
-        if(Vec_Length3(client.player->camera->origin, actor->origin) >= 2048.0f)
-            continue;
+        if(r_cull.value && actor->cullDistance != 0)
+        {
+            if(Vec_Length3(client.player->camera->origin,
+                actor->origin) >= actor->cullDistance)
+                continue;
+        }
 
         Vec_Copy3(box.min, actor->bbox.min);
         Vec_Copy3(box.max, actor->bbox.max);
@@ -542,8 +559,7 @@ void R_DrawActors(void)
                 if(bWireframe)
                     dglColor4ub(192, 192, 192, 255);
 
-                R_TraverseDrawNode(actor->model, &actor->model->nodes[0],
-                    actor->textureSwaps, actor->variant, &actor->animState);
+                R_TraverseDrawNode(actor, &actor->model->nodes[0], &actor->animState);
 
                 dglPopMatrix();
                 dglPopMatrix();
@@ -558,21 +574,43 @@ void R_DrawActors(void)
                 R_DrawBoundingBox(box, 255, 0, 0);
         }
 
-        if(showorigin && client.playerActor != actor)
+        if(showorigin && actor != client.player->camera->owner)
         {
             vec3_t vec;
 
-            Vec_Set3(vec, 0, 0, 0);
-
             dglPushMatrix();
             dglMultMatrixf(actor->matrix);
+            Vec_Set3(vec, 0, 0, 0);
             R_DrawOrigin(vec, 32.0f);
+            Vec_Set3(vec, 0, actor->centerHeight+actor->viewHeight, 0);
+            R_DrawOrigin(vec, 16.0f);
             dglPopMatrix();
         }
-        if(showradius && client.playerActor != actor)
+        if(showradius && actor != client.player->camera->owner)
         {
-            R_DrawRadius(actor->origin[0], actor->origin[1], actor->origin[2],
-                actor->radius, actor->height);
+            R_DrawRadius(
+                actor->origin[0],
+                actor->origin[1],
+                actor->origin[2],
+                actor->radius,
+                actor->height,
+                255, 128, 128);
+
+            R_DrawRadius(
+                actor->origin[0],
+                actor->origin[1] + (actor->centerHeight * 0.5f),
+                actor->origin[2],
+                actor->radius * 0.5f,
+                (actor->origin[1] + actor->centerHeight) - actor->origin[1],
+                128, 128, 255);
+
+            R_DrawRadius(
+                actor->origin[0],
+                actor->origin[1] + (actor->viewHeight * 0.5f),
+                actor->origin[2],
+                actor->radius * 0.5f,
+                (actor->origin[1] + actor->viewHeight) - actor->origin[1],
+                128, 255, 128);
         }
     }
 }
@@ -615,8 +653,12 @@ void R_DrawStatics(void)
             if(actor->bHidden || showcollision)
                 continue;
 
-            if(Vec_Length3(client.player->camera->origin, actor->origin) >= 2048.0f)
-                continue;
+            if(r_cull.value && actor->cullDistance != 0)
+            {
+                if(Vec_Length3(client.player->camera->origin,
+                    actor->origin) >= actor->cullDistance)
+                    continue;
+            }
 
             Vec_Copy3(box.min, actor->bbox.min);
             Vec_Copy3(box.max, actor->bbox.max);
@@ -651,8 +693,7 @@ void R_DrawStatics(void)
                     dglColor4ub(224, 224, 0, 255);
             }
 
-            R_TraverseDrawNode(actor->model, &actor->model->nodes[0],
-                actor->textureSwaps, actor->variant, NULL);
+            R_TraverseDrawNode(actor, &actor->model->nodes[0], NULL);
 
             dglPopMatrix();
 
@@ -666,7 +707,7 @@ void R_DrawStatics(void)
             if(showradius && actor->bCollision)
             {
                 R_DrawRadius(actor->origin[0], actor->origin[1], actor->origin[2],
-                    actor->radius, actor->height);
+                    actor->radius, actor->height, 255, 128, 128);
             }
         }
     }
@@ -843,6 +884,10 @@ void R_DrawFrame(void)
     rRenderTime += (62.5f * client.runtime);
 
     P_LocalPlayerEvent("onPreRender");
+
+    if(showcollision)
+        dglDisable(GL_FOG);
+
     R_RenderCameraView();
     R_SetupClipFrustum();
 
@@ -996,6 +1041,18 @@ static void FCmd_ShowWireFrame(void)
 }
 
 //
+// FCmd_ShowNodes
+//
+
+static void FCmd_ShowNodes(void)
+{
+    if(Cmd_GetArgc() < 1)
+        return;
+
+    shownodes ^= 1;
+}
+
+//
 // R_Shutdown
 //
 
@@ -1017,8 +1074,10 @@ void R_Init(void)
     Cmd_AddCommand("showpnmls", FCmd_ShowPlaneNormals);
     Cmd_AddCommand("showradius", FCmd_ShowRadius);
     Cmd_AddCommand("drawwireframe", FCmd_ShowWireFrame);
+    Cmd_AddCommand("shownodes", FCmd_ShowNodes);
 
     Cvar_Register(&r_fog);
+    Cvar_Register(&r_cull);
 
     Mdl_Init();
     FX_Init();

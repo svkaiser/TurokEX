@@ -745,10 +745,8 @@ char SC_GetChar(void)
     sc_parser->rowpos++;
     c = sc_parser->buffer[sc_parser->buffpos++];
 
-    if(c == 127)
-    {
+    if(sc_charcode[c] == CHAR_EOF)
         c = 0;
-    }
 
 #ifdef SC_DEBUG
     SC_DebugPrintf("get char: %i\n", c);

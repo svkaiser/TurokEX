@@ -316,6 +316,15 @@ JS_EXTERNCLASS_NOCONSTRUCTOR(Command);
     JS_SetReservedSlot(cx, obj, 5, INT_TO_JSVAL(fz.i >> 16));       \
 }
 
+#define JS_VECTORTOVAL(vec, val)                                    \
+{                                                                   \
+    JSObject *vobj;                                                 \
+    if(!(vobj = JPool_GetFree(&objPoolVector, &Vector_class)))      \
+        JS_WARNING();                                               \
+    JS_SETVECTOR(vobj, vec);                                        \
+    val = OBJECT_TO_JSVAL(vobj);                                    \
+}
+
 #define JS_NEWVECTOR2(vec)                                          \
 {                                                                   \
     JSObject *vobj;                                                 \

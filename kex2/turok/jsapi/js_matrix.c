@@ -388,7 +388,7 @@ static JSBool matrix_setProjection(JSContext *cx, JSObject *obj, uintN argc,
     dglMatrixMode(GL_PROJECTION);
     dglLoadIdentity();
     Mtx_ViewFrustum(video_width, video_height,
-        (float)fov, (float)znear);
+        (float)fov, (float)znear, -1);
 
     return JS_TRUE;
 }

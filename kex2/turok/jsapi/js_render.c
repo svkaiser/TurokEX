@@ -112,7 +112,7 @@ JS_FASTNATIVE_BEGIN(NRender, setOrtho)
 
 JS_FASTNATIVE_BEGIN(NRender, drawModel)
 {
-    JSObject *object;
+    /*JSObject *object;
     kmodel_t *model;
     animstate_t *animstate;
 
@@ -128,7 +128,7 @@ JS_FASTNATIVE_BEGIN(NRender, drawModel)
         JS_GET_PRIVATE_DATA(object, &AnimState_class, animstate_t, animstate);
     }
 
-    R_TraverseDrawNode(model, &model->nodes[0], NULL, 0, animstate);
+    R_TraverseDrawNode(model, &model->nodes[0], NULL, 0, animstate);*/
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
@@ -208,29 +208,6 @@ JS_BEGINFUNCS(NRender)
 
 JS_CLASSOBJECT(Model);
 
-JS_FASTNATIVE_BEGIN(Model, setNodeRotation)
-{
-    JSObject *thisObj;
-    JSObject *obj;
-    vec4_t rot;
-    int node;
-    kmodel_t *model;
-
-    JS_CHECKARGS(2);
-    thisObj = JS_THIS_OBJECT(cx, vp);
-    JS_CHECKINTEGER(0);
-    node = JSVAL_TO_INT(JS_ARG(0));
-    JS_GET_PRIVATE_DATA(thisObj, &Model_class, kmodel_t, model);
-    JS_GETOBJECT(obj, v, 1);
-    JS_GETQUATERNION2(obj, rot);
-
-    if(node >= 0 && node < (int)model->numnodes)
-        Vec_Copy4(model->nodes[node].offset_r, rot);
-
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
-    return JS_TRUE;
-}
-
 JS_BEGINCLASS(Model)
     JSCLASS_HAS_PRIVATE,                        // flags
     JS_PropertyStub,                            // addProperty
@@ -256,7 +233,6 @@ JS_BEGINCONST(Model)
 
 JS_BEGINFUNCS(Model)
 {
-    JS_FASTNATIVE(Model, setNodeRotation, 2),
     JS_FS_END
 };
 

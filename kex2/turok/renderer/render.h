@@ -47,8 +47,9 @@
 typedef struct
 {
     int                 frame;
-    int                 action;
+    char                *function;
     float               args[4];
+    char                *argStrings[4];
 } action_t;
 
 typedef struct
@@ -95,8 +96,6 @@ typedef struct
     mdlmesh_t           *meshes;
     unsigned int        numchildren;
     word                *children;
-    vec3_t              offset_t;
-    vec4_t              offset_r;
 } mdlnode_t;
 
 typedef enum
@@ -123,7 +122,9 @@ typedef struct anim_s
     animrotation_t      **rotations;
     frameset_t          *frameset;
     frameset_t          initial;
+    unsigned int        loopframe;
     action_t            *actions;
+    float               *yawOffsets;
     int                 animID;
 } anim_t;
 
@@ -147,6 +148,7 @@ typedef struct
     animtrack_t         track;
     animtrack_t         prevtrack;
     oldtrack_t          oldtrack;
+    int                 currentFrame;
     float               time;
     float               deltatime;
     float               playtime;
@@ -180,6 +182,7 @@ void Mdl_SetAnimState(animstate_t *astate, anim_t *anim,
 
 anim_t *Mdl_GetAnim(kmodel_t *model, const char *name);
 anim_t *Mdl_GetAnimFromID(kmodel_t *model, int id);
+kbool Mdl_CheckAnimID(kmodel_t *model, int id);
 
 kmodel_t *Mdl_Find(const char *name);
 kmodel_t *Mdl_Load(const char *file);
@@ -196,8 +199,8 @@ void R_DrawFrame(void);
 void R_FinishFrame(void);
 void R_Shutdown(void);
 void R_Init(void);
-void R_TraverseDrawNode(kmodel_t *model, mdlnode_t *node,
-                        char **textures, int variant, animstate_t *animstate);
+
+void R_TraverseDrawNode(gActor_t *actor, mdlnode_t *node, animstate_t *animstate);
 
 //
 // FX
@@ -217,7 +220,8 @@ void R_RenderCameraView(void);
 
 void R_DrawCollision(void);
 void R_DrawPlaneNormals(void);
-void R_DrawRadius(float x, float y, float z, float radius, float height);
+void R_DrawRadius(float x, float y, float z, float radius, float height,
+                  byte r, byte g, byte b);
 void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b);
 void R_DrawOrigin(vec3_t origin, float size);
 

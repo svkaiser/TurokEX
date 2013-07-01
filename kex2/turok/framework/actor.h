@@ -77,11 +77,15 @@ typedef struct gActor_s
     unsigned int        targetID;
     mtx_t               matrix;
     mtx_t               rotMtx;
+    vec4_t              lerpRotation;
     gObject_t           *components;
 	gObject_t           *iterator;
     propKey_t           *properties;
     int                 numProperties;
     int                 classFlags;
+    unsigned int        surfaceID;
+    vec3_t              *nodeOffsets_t;
+    vec4_t              *nodeOffsets_r;
     struct gActor_s     *owner;
     struct gActor_s     *prev;
     struct gActor_s     *next;
@@ -107,10 +111,16 @@ typedef struct gActorTemplate_s
 void Actor_Setup(gActor_t *actor);
 void Actor_SetTarget(gActor_t **self, gActor_t *target);
 void Actor_UpdateTransform(gActor_t *actor);
-void Actor_CallEvent(gActor_t *actor, const char *function, gActor_t *instigator);
+kbool Actor_CallEvent(gActor_t *actor, const char *function, long *args, unsigned int nargs);
 void Actor_LocalTick(void);
 void Actor_Tick(void);
+kbool Actor_OnGround(gActor_t *actor);
+kbool Actor_ToVal(gActor_t *actor, long *val);
 kbool Actor_HasComponent(gActor_t *actor, const char *component);
+kbool Actor_FXEvent(gActor_t *actor, gActor_t *target, vec3_t fxOrigin, vec3_t fxVelocity,
+                    int plane, action_t *action);
+void Actor_GetLocalVectors(vec3_t out, gActor_t *actor, float x, float y, float z);
+void Actor_SpawnBodyFX(gActor_t *actor, const char *fx, float x, float y, float z);
 void Actor_OnTouchEvent(gActor_t *actor, gActor_t *instigator);
 void Actor_AddIntegerProperty(gActor_t *actor, const char *name, int id, int value);
 void Actor_AddFloatProperty(gActor_t *actor, const char *name, int id, float value);

@@ -28,7 +28,8 @@
 #include "mathlib.h"
 #include "actor.h"
 
-#define EPSILON_FLOOR 0.5f
+#define EPSILON_FLOOR   0.5f
+#define STEPHEIGHT      12.0f
 
 //
 // Trace_Object
@@ -213,7 +214,8 @@ static kbool Trace_Objects(trace_t *trace)
         {
             float r;
 
-            if(pos[1] > actor->origin[1] + actor->height ||
+            if(pos[1] > actor->origin[1] +
+                (actor->centerHeight + actor->viewHeight) ||
                 pos[1] + trace->offset < actor->origin[1])
             {
                 continue;
@@ -461,6 +463,12 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
         return NULL;
     }
 
+    if(link->flags & CLF_BLOCK && !(link->flags & CLF_TOGGLE))
+    {
+        trace->hitpl = link;
+        return NULL;
+    }
+
     if(trace->bFullTrace)
         return link;
 
@@ -487,7 +495,16 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
 
             if(dist1 <= dist2)
             {
-                if(!Trace_CheckPlaneHeight(trace, link))
+                float len = (
+                    link->points[0][1] +
+                    link->points[1][1] +
+                    link->points[2][1]) * (1.0f/3.0f);
+
+                if(len < 0)
+                    len = -len;
+
+                if(!Trace_CheckPlaneHeight(trace, link) && len >= STEPHEIGHT
+                    && !trace->bFullTrace)
                 {
                     if(trace->actor && trace->actor->bNoDropOff)
                         return NULL;

@@ -89,9 +89,9 @@ void R_DrawCollision(void)
             dglColor4ub(0, 255, 255, 80);
         else if(p->flags & CLF_CLIMB)
             dglColor4ub(255, 0, 255, 80);
-        else if(p->flags & CLF_TOGGLEON)
+        else if(p->flags & CLF_TOGGLE)
             dglColor4ub(255, 96, 255, 80);
-        else if(p->flags & CLF_TOGGLEOFF)
+        else if(p->flags & CLF_BLOCK)
             dglColor4ub(32, 8, 4, 80);
         else if(p->flags & CLF_WATER)
             dglColor4ub(128, 96, 255, 80);
@@ -209,7 +209,8 @@ void R_DrawPlaneNormals(void)
 // R_DrawRadius
 //
 
-void R_DrawRadius(float x, float y, float z, float radius, float height)
+void R_DrawRadius(float x, float y, float z, float radius, float height,
+                  byte r, byte g, byte b)
 {
     float an;
     int i;
@@ -221,7 +222,7 @@ void R_DrawRadius(float x, float y, float z, float radius, float height)
     an = DEG2RAD(360 / 32);
 
     dglBegin(GL_LINES);
-    dglColor4ub(255, 128, 128, 255);
+    dglColor4ub(r, g, b, 255);
 
     for(i = 0; i < 32; i++)
     {

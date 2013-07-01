@@ -28,8 +28,8 @@
 typedef enum
 {
     CLF_WATER           = 0x1,
-    CLF_TOGGLEOFF       = 0x2,
-    CLF_TOGGLEON        = 0x4,
+    CLF_BLOCK           = 0x2,
+    CLF_TOGGLE          = 0x4,
     CLF_FRONTNOCLIP     = 0x8,
     CLF_CLIMB           = 0x10,
     CLF_ONESIDED        = 0x20,
@@ -92,21 +92,7 @@ typedef struct
     float               maxz;
 } mapgrid_t;
 
-//
-// OBJECTS
-//
-// An object is usually a piece of geometry which can be
-// anything such as world geometry, items, or characters
-// and can also be used for particle emitters. These make up
-// the majority of a level.
-//
-// Static objects are objects that cannot be modified and can be
-// linked to planes for radial collision detection
-//
-// Dynamic objects can be touchable or shootable and is treated
-// differently for radial collision
-//
-
+#if 0
 typedef enum
 {
     OC_GENERIC  = 0,
@@ -258,64 +244,14 @@ typedef enum
 
 } objecttype_t;
 
-typedef struct
-{
-    vec3_t              origin;
-    vec3_t              scale;
-    bbox_t              box;
-    char                mdlpath[MAX_FILEPATH];
-    vec4_t              rotation;
-    char                **textureswaps;
-    short               tid;
-    short               target;
-    short               variant;
-    short               type;
-    float               width;
-    float               height;
-    float               centerheight;
-    float               viewheight;
-    short               plane_id;
-    byte                flags;
-    blockflags_t        blockflag;
-    mtx_t               matrix;
-} object_t;
-
-//
-// INSTANCES
-//
-// Instances contain groups of both static and dynamic objects
-// TODO: Finish description
-//
-
-typedef struct
-{
-    unsigned int        numstatics;
-    unsigned int        numspecials;
-    object_t            *statics;
-    object_t            *specials;
-} instance_t;
-
-typedef struct
-{
-    rcolor              fog_color;
-    float               fog_far;
-    float               fog_near;
-    float               waterplane;
-    float               skyheight;
-    unsigned int        flags;
-    int                 args[6];
-} area_t;
-
-typedef struct blockobj_s
-{
-    struct blockobj_s   *prev;
-    struct blockobj_s   *next;
-    object_t            *object;
-} blockobj_t;
+#endif
 
 typedef struct plane_s
 {
-    unsigned int        area_id;
+    unsigned short      area_id;
+    unsigned short      fSurfaceID;
+    unsigned short      cSurfaceID;
+    unsigned short      wSurfaceID;
     unsigned int        flags;
     vec3_t              points[3];
     float               height[3];
@@ -342,23 +278,6 @@ typedef struct
 
 typedef struct
 {
-    unsigned int        nummapactors;
-    unsigned int        numinstances;
-    unsigned int        numgridbounds;
-    unsigned int        numareas;
-    unsigned int        numplanes;
-    unsigned int        numzonebounds;
-    instance_t          *instances;
-    mapgrid_t           *gridbounds;
-    area_t              *areas;
-    plane_t             *planes;
-    mapgrid_t           *zones;
-    int                 tics;
-    float               time;
-} kmap_t;
-
-typedef struct
-{
     int             (*length)(void);
     kbool           (*get)(int, gActor_t*);
 } gActorList_t;
@@ -377,12 +296,12 @@ typedef struct
 {
     gObject_t       *components;
     gObject_t       *iterator;
+    float           waterplane;
+    unsigned int    flags;
 } gArea_t;
 
 typedef struct
 {
-    kbool           (*load)(const char*);
-    kbool           (*tick)(void);
     kbool           loaded;
     kbool           bReadyUnload;
     unsigned int    numActors;
@@ -404,11 +323,6 @@ typedef struct
 
 extern gLevel_t gLevel;
 
-#define MAXMAPS     50
-
-extern kmap_t kmaps[MAXMAPS];
-extern kmap_t *g_currentmap;
-
 //
 // Map_PlaneToIndex
 //
@@ -427,14 +341,17 @@ d_inline plane_t *Map_IndexToPlane(int index)
     return index != -1 ? &gLevel.planes[index] : NULL;
 }
 
-int Obj_GetClassType(object_t *obj);
-area_t *Map_GetArea(plane_t *plane);
+gArea_t *Map_GetArea(plane_t *plane);
 plane_t *Map_FindClosestPlane(vec3_t coord);
 gActor_t *Map_SpawnActor(const char *classname, float x, float y, float z,
                          float yaw, float pitch, int plane);
 void Map_AddActor(gLevel_t *level, gActor_t *actor);
 void Map_RemoveActor(gLevel_t *level, gActor_t* actor);
 void Map_TraverseChangePlaneHeight(plane_t *plane, float destHeight, int area_id);
+void Map_ToggleBlockingPlanes(plane_t *pStart, kbool toggle);
+void Map_TriggerActors(int targetID, int classFilter);
+gObject_t *Map_GetActorsInRadius(float radius, float x, float y, float z, plane_t *plane,
+                                 int classFilter, kbool bTrace);
 void Map_Tick(void);
 void Map_Load(int map);
 void Map_Unload(void);

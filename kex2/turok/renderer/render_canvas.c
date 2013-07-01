@@ -345,7 +345,7 @@ void Canvas_DrawActor(canvas_t *canvas, gActor_t *actor)
     // setup projection matrix
     dglMatrixMode(GL_PROJECTION);
     dglLoadIdentity();
-    Mtx_ViewFrustum(video_width, video_height, 45, 32);
+    Mtx_ViewFrustum(video_width, video_height, 45, 32, -1);
 
     // setup modelview matrix
     dglMatrixMode(GL_MODELVIEW);
@@ -362,8 +362,7 @@ void Canvas_DrawActor(canvas_t *canvas, gActor_t *actor)
         if(bWireframe)
             dglColor4ub(192, 192, 192, 255);
 
-        R_TraverseDrawNode(actor->model, &actor->model->nodes[0],
-            actor->textureSwaps, actor->variant, &actor->animState);
+        R_TraverseDrawNode(actor, &actor->model->nodes[0], &actor->animState);
 
         dglPopMatrix();
         dglPopMatrix();

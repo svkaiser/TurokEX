@@ -37,6 +37,10 @@
 #include "zone.h"
 #include "client.h"
 #include "server.h"
+#include "sound.h"
+#include "fx.h"
+
+CVAR_EXTERNAL(developer);
 
 static gActorTemplate_t *actorTemplateList[MAX_HASH];
 static int numActors = 0;
@@ -228,13 +232,16 @@ kbool Actor_HasComponent(gActor_t *actor, const char *component)
 
 void Actor_OnTouchEvent(gActor_t *actor, gActor_t *instigator)
 {
+    jsval val;
+
     if(actor->bStatic)
         return;
-
     if(!actor->bTouch)
         return;
+    if(!Actor_ToVal(instigator, &val))
+        return;
 
-    Actor_CallEvent(actor, "onTouch", instigator);
+    Actor_CallEvent(actor, "onTouch", &val, 1);
 }
 
 //
@@ -289,6 +296,39 @@ static void Actor_TransformBBox(gActor_t *actor)
 }
 
 //
+// Actor_AlignToPlane
+//
+
+static kbool Actor_AlignToPlane(gActor_t *actor)
+{
+    if(!actor->bStatic && actor->physics == PT_DEFAULT &&
+        actor->plane != -1 && actor->bOrientOnSlope &&
+        client.playerActor != actor /*TODO*/)
+    {
+        plane_t *plane = &gLevel.planes[actor->plane];
+        mtx_t m1;
+        mtx_t m2;
+        vec4_t rot;
+
+        if(!Plane_IsAWall(plane))
+            Plane_GetRotation(rot, plane);
+        else
+            Vec_SetQuaternion(rot, Plane_GetYaw(plane) + M_PI, 0, 1, 0);
+
+        Vec_Slerp(actor->lerpRotation, 4.0f * actor->timestamp,
+            actor->lerpRotation, rot);
+
+        Mtx_ApplyRotation(actor->lerpRotation, m1);
+        Mtx_ApplyRotation(actor->rotation, m2);
+        Mtx_MultiplyRotation(actor->matrix, m2, m1);
+
+        return true;
+    }
+
+    return false;
+}
+
+//
 // Actor_UpdateTransform
 //
 
@@ -309,23 +349,12 @@ void Actor_UpdateTransform(gActor_t *actor)
         Vec_SetQuaternion(roll, actor->angles[2], 0, 0, 1);
         Vec_MultQuaternion(rot, yaw, roll);
         Vec_MultQuaternion(actor->rotation, pitch, rot);
-
-        if(actor->plane != -1 && actor->bOrientOnSlope &&
-            client.playerActor != actor /*TODO*/)
-        {
-            plane_t *plane = &gLevel.planes[actor->plane];
-
-            if(!Plane_IsAWall(plane))
-            {
-                Plane_GetRotation(rot, plane);
-                Vec_AdjustQuaternion(actor->rotation, rot, actor->angles[0] + M_PI);
-            }
-        }
     }
 
-    Mtx_ApplyRotation(actor->rotation, actor->matrix);
-    Mtx_Copy(actor->rotMtx, actor->matrix);
+    if(!Actor_AlignToPlane(actor))
+        Mtx_ApplyRotation(actor->rotation, actor->matrix);
 
+    Mtx_Copy(actor->rotMtx, actor->matrix);
     Mtx_Scale(actor->matrix,
         actor->scale[0],
         actor->scale[1],
@@ -341,19 +370,57 @@ void Actor_UpdateTransform(gActor_t *actor)
 }
 
 //
+// Actor_OnGround
+//
+
+kbool Actor_OnGround(gActor_t *actor)
+{
+    return (actor->origin[1] - Plane_GetDistance(Map_IndexToPlane(actor->plane),
+        actor->origin)) <= ONPLANE_EPSILON;
+}
+
+//
+// Actor_ToVal
+//
+
+kbool Actor_ToVal(gActor_t *actor, long *val)
+{
+    gObject_t *aObject;
+
+    if(actor == NULL)
+    {
+        *val = JSVAL_NULL;
+        return true;
+    }
+
+    if(!(aObject = JPool_GetFree(&objPoolGameActor, &GameActor_class)) ||
+        !(JS_SetPrivate(js_context, aObject, actor)))
+    {
+        *val = JSVAL_NULL;
+        return false;
+    }
+
+    *val = (jsval)OBJECT_TO_JSVAL(aObject);
+    return true;
+}
+
+//
 // Actor_CallEvent
 //
 
-void Actor_CallEvent(gActor_t *actor, const char *function, gActor_t *instigator)
+kbool Actor_CallEvent(gActor_t *actor, const char *function, long *args, unsigned int nargs)
 {
     jsval val;
+    kbool ok;
 
     if(actor->components == NULL)
-        return;
+        return true;
 
 #ifdef JS_LOGNEWOBJECTS
     Com_Printf("\nLogging Event (%s)...\n", function);
 #endif
+
+    ok = false;
 
     JS_ITERATOR_START(actor, val);
     JS_ITERATOR_LOOP(actor, val, function);
@@ -361,28 +428,21 @@ void Actor_CallEvent(gActor_t *actor, const char *function, gActor_t *instigator
         gObject_t *func;
         jsval rval;
         jsval argv = JSVAL_VOID;
-        uintN nargs = 0;
 
         if(!JS_ValueToObject(js_context, vp, &func))
             continue;
         if(!JS_ObjectIsFunction(js_context, func))
             continue;
 
-        if(instigator)
-        {
-            gObject_t *aObject;
+        if(args == NULL)
+            args = &argv;
 
-            if(!(aObject = JPool_GetFree(&objPoolGameActor, &GameActor_class)) ||
-                !(JS_SetPrivate(js_context, aObject, instigator)))
-                continue;
-
-            argv = OBJECT_TO_JSVAL(aObject);
-            nargs = 1;
-        }
-
-        JS_CallFunctionName(js_context, component, function, nargs, &argv, &rval);
+        JS_CallFunctionName(js_context, component, function, nargs, args, &rval);
+        ok = true;
     }
     JS_ITERATOR_END(actor, val);
+
+    return ok;
 }
 
 //
@@ -392,23 +452,241 @@ void Actor_CallEvent(gActor_t *actor, const char *function, gActor_t *instigator
 static void Actor_UpdateMove(gActor_t *actor)
 {
     plane_t *plane = Map_IndexToPlane(actor->plane);
+    float time = actor->timestamp;
 
-    if(actor->animState.flags & ANF_ROOTMOTION &&
+    if(Actor_OnGround(actor) && actor->animState.flags & ANF_ROOTMOTION &&
         !(actor->animState.flags & ANF_STOPPED))
     {
         vec3_t dir;
+        float speed;
 
         Vec_ApplyQuaternion(dir, actor->animState.rootMotion, actor->rotation);
         dir[1] = 0;
-        Vec_Scale(dir, dir, 30.0f * actor->timestamp);
+        speed = 35.0f * Vec_Unit3(actor->scale);
+        Vec_Scale(dir, dir, speed * time);
         Vec_Add(actor->velocity, actor->velocity, dir);
     }
 
-    G_ApplyGravity(actor->origin, actor->velocity, plane, actor->mass, actor->timestamp);
-    G_ClipMovement(actor->origin, actor->velocity, actor->timestamp, &plane, actor, NULL);
-    G_ApplyFriction(actor->velocity, actor->friction, false);
+    G_ApplyGravity(actor->origin, actor->velocity, plane, actor->mass, time);
+    G_ClipMovement(actor->origin, actor->velocity, time, &plane, actor, NULL);
+
+    if(Actor_OnGround(actor))
+        G_ApplyFriction(actor->velocity, actor->friction, false);
     
     actor->plane = Map_PlaneToIndex(plane);
+}
+
+//
+// Actor_UpdateModelYaw
+//
+
+static void Actor_UpdateModelYaw(gActor_t *actor)
+{
+    float angle;
+    float time;
+    int frame;
+    animstate_t *astate;
+    anim_t *anim;
+
+    astate = &actor->animState;
+
+    if(!(astate->flags & ANF_ROOTMOTION) ||
+        astate->flags & ANF_STOPPED)
+        return;
+
+    if(astate->frametime <= 0)
+        return;
+
+    if(!(anim = astate->track.anim))
+        return;
+
+    frame = astate->track.frame;
+    angle = M_PI * anim->yawOffsets[frame];
+
+    if(frame > 0)
+        angle -= (M_PI * anim->yawOffsets[frame-1]);
+
+    Ang_Clamp(&angle);
+
+    time = (actor->timestamp * 1000.0f) * (4.0f / astate->frametime);
+    actor->angles[0] -= angle * (actor->timestamp * time);
+}
+
+//
+// Actor_ExecuteFrameActions
+//
+
+static void Actor_ExecuteFrameActions(gActor_t *actor)
+{
+    animstate_t *astate;
+    anim_t *anim;
+    int frame;
+    int i;
+    int j;
+
+    astate = &actor->animState;
+    anim = astate->track.anim;
+
+    if(actor->components == NULL)
+        return;
+    if(astate == NULL)
+        return;
+    if(astate->flags & (ANF_STOPPED|ANF_PAUSED))
+        return;
+    if(anim->actions == NULL || anim->numactions <= 0)
+        return;
+
+    frame = astate->track.frame;
+
+    if(astate->currentFrame == frame)
+        return;
+
+    for(i = astate->currentFrame; i != frame; i++)
+    {
+        if(i == anim->numframes)
+            i = 0;
+
+        for(j = 0; j < (int)anim->numactions; j++)
+        {
+            action_t *action = &astate->track.anim->actions[j];
+            jsval val = 0;
+            kbool ok = false;
+
+            if(action->frame != i)
+                continue;
+
+            if(!strcmp(action->function, "playSound"))
+            {
+                Snd_PlayShader(action->argStrings[0], actor);
+                continue;
+            }
+            else if(!strcmp(action->function, "fx"))
+            {
+                Actor_SpawnBodyFX(actor, action->argStrings[0],
+                    action->args[1], action->args[2], action->args[3]);
+                continue;
+            }
+
+            JS_ITERATOR_START(actor, val);
+            JS_ITERATOR_LOOP(actor, val, action->function);
+            {
+                gObject_t *func;
+                jsval rval;
+                jsval argv[4];
+
+                if(!JS_ValueToObject(js_context, vp, &func))
+                    continue;
+                if(!JS_ObjectIsFunction(js_context, func))
+                    continue;
+
+                JS_NewDoubleValue(js_context, action->args[0], &argv[0]);
+                JS_NewDoubleValue(js_context, action->args[1], &argv[1]);
+                JS_NewDoubleValue(js_context, action->args[2], &argv[2]);
+                JS_NewDoubleValue(js_context, action->args[3], &argv[3]);
+
+#ifdef JS_LOGNEWOBJECTS
+                Com_Printf("\nLogging Event (%s)...\n", action->function);
+#endif
+
+                JS_CallFunctionName(js_context, component, action->function, 4, argv, &rval);
+                ok = true;
+            }
+            JS_ITERATOR_END(actor, val);
+
+            if(developer.value && ok == false)
+            {
+                Com_DPrintf("Actor_ExecuteFrameActions: Couldn't execute \"%s\":%i\n",
+                    action->function, action->frame);
+            }
+        }
+    }
+
+    astate->currentFrame = frame;
+}
+
+//
+// Actor_FXEvent
+//
+
+kbool Actor_FXEvent(gActor_t *actor, gActor_t *target,
+                    vec3_t fxOrigin, vec3_t fxVelocity,
+                    int plane, action_t *action)
+{
+    jsval args[5];
+    kbool ok;
+    JSContext *cx;
+
+    if(!actor)
+        return false;
+
+    if(!Actor_ToVal(target, &args[0]))
+        return false;
+
+    cx = js_context;
+
+    JS_NewDoubleValue(js_context, action->args[0], &args[1]);
+    JS_VECTORTOVAL(fxOrigin, args[2]);
+    JS_VECTORTOVAL(fxVelocity, args[3]);
+    args[4] = INT_TO_JSVAL(plane);
+
+    ok = Actor_CallEvent(actor, action->function, args, 5);
+
+    if(developer.value && !ok)
+    {
+        Com_DPrintf("Actor_FXEvent: Couldn't execute \"%s\"\n",
+            action->function);
+    }
+
+    return true;
+}
+
+//
+// Actor_GetLocalVectors
+//
+
+void Actor_GetLocalVectors(vec3_t out, gActor_t *actor, float x, float y, float z)
+{
+    mtx_t mtx;
+    vec3_t pos;
+    vec3_t tmp;
+
+    Mtx_IdentityY(mtx, DEG2RAD(-90));
+    Mtx_Scale(mtx, -1, 1, 1);
+    Vec_Set3(tmp, x, y, z);
+    Vec_TransformToWorld(mtx, tmp, pos);
+    Vec_TransformToWorld(actor->matrix, pos, out);
+}
+
+//
+// Actor_SpawnBodyFX
+//
+
+void Actor_SpawnBodyFX(gActor_t *actor, const char *fx, float x, float y, float z)
+{
+    plane_t *plane;
+    vec3_t org;
+    vec3_t tmp;
+    vec4_t rot;
+    fx_t *vfx;
+
+    // TODO
+    if(actor->bStatic)
+        return;
+
+    Actor_GetLocalVectors(org, actor, x, y, z);
+    Vec_Set3(tmp, 0, 0, 0);
+
+    plane = Map_IndexToPlane(actor->plane);
+
+    if(plane)
+        Plane_GetRotation(rot, plane);
+    else
+        Vec_Set4(rot, 0, 0, 0, 1);
+
+    if(!(vfx = FX_Spawn(fx, actor, tmp, org, actor->rotation, plane)))
+        return;
+
+    Vec_AdjustQuaternion(vfx->rotation, rot, actor->angles[0] + M_PI);
 }
 
 //
@@ -437,7 +715,7 @@ void Actor_LocalTick(void)
 
             // TODO
             if(Vec_Length3(client.player->camera->origin, actor->origin) < 2048.0f)
-                Actor_CallEvent(actor, "onLocalTick", NULL);
+                Actor_CallEvent(actor, "onLocalTick", NULL, 0);
         }
     }
 
@@ -457,7 +735,7 @@ void Actor_LocalTick(void)
             continue;
 
         if(actor->components)
-            Actor_CallEvent(actor, "onLocalTick", NULL);
+            Actor_CallEvent(actor, "onLocalTick", NULL, 0);
     }
 }
 
@@ -492,16 +770,23 @@ void Actor_Tick(void)
 
         if(actor->components)
         {
-            Actor_CallEvent(actor, "onTick", NULL);
-            if(actor->classFlags & AC_AI)
-                AI_Think(actor->ai);
+            Actor_ExecuteFrameActions(actor);
 
-            JS_MaybeGC(js_context);
+            if(Actor_CallEvent(actor, "onTick", NULL, 0))
+            {
+                if(actor->classFlags & AC_AI)
+                    AI_Think(actor->ai);
+
+                JPool_ReleaseObjects(&objPoolVector);
+                JPool_ReleaseObjects(&objPoolGameActor);
+                JPool_ReleaseObjects(&objPoolAnimState);
+            }
         }
 
         if(actor->physics != PT_NONE)
         {
             Actor_UpdateMove(actor);
+            Actor_UpdateModelYaw(actor);
             Actor_UpdateTransform(actor);
         }
 
@@ -723,6 +1008,9 @@ gActor_t *Actor_Spawn(const char *classname, float x, float y, float z,
     }
 
     Vec_Set3(actor->origin, x, y, z);
+    Vec_Set4(actor->rotation, 0, 0, 0, 1);
+    Vec_Set4(actor->lerpRotation, 0, 0, 0, 1);
+
     actor->angles[0] = yaw;
     actor->angles[1] = pitch;
     actor->plane = plane;
@@ -801,7 +1089,10 @@ void Actor_ClearData(gActor_t *actor)
         JS_RemoveRoot(js_context, &actor->iterator);
 
     if(actor->components)
+    {
+        JS_SetPrivate(js_context, actor->components, NULL);
         JS_RemoveRoot(js_context, &actor->components);
+    }
 
     if(actor->properties && actor->numProperties > 0)
         Z_Free(actor->properties);
@@ -809,7 +1100,10 @@ void Actor_ClearData(gActor_t *actor)
     if(actor->classFlags & AC_AI && actor->ai)
     {
         if(actor->ai->object)
+        {
+            JS_SetPrivate(js_context, actor->ai->object, NULL);
             JS_RemoveRoot(js_context, &actor->ai->object);
+        }
 
         Z_Free(actor->ai);
     }
@@ -848,7 +1142,18 @@ void Actor_Setup(gActor_t *actor)
     Vec_Normalize4(actor->rotation);
 
     if(actor->model && (anim = Mdl_GetAnim(actor->model, "anim00")))
+    {
+        unsigned int i;
+
         Mdl_SetAnimState(&actor->animState, anim, 4, ANF_PAUSED);
+        actor->nodeOffsets_t = (vec3_t*)Z_Calloc(sizeof(vec3_t) *
+            actor->model->numnodes, PU_ACTOR, 0);
+        actor->nodeOffsets_r = (vec4_t*)Z_Calloc(sizeof(vec4_t) *
+            actor->model->numnodes, PU_ACTOR, 0);
+
+        for(i = 0; i < actor->model->numnodes; i++)
+            Vec_Set4(actor->nodeOffsets_r[i], 0, 0, 0, 1);
+    }
 
     Actor_UpdateTransform(actor);
     actor->timestamp = (float)server.runtime;
@@ -872,7 +1177,7 @@ void Actor_Setup(gActor_t *actor)
     JS_SetProperty(cx, actor->components, "owner", &ownerVal);
     JS_SetPropertyAttributes(cx, actor->components, "owner", 0, &found);
 
-    Actor_CallEvent(actor, "onReady", NULL);
+    Actor_CallEvent(actor, "onReady", NULL, 0);
 }
 
 //

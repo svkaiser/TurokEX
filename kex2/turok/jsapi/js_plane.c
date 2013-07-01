@@ -29,8 +29,6 @@
 #include "common.h"
 #include "mathlib.h"
 
-extern JSObject *mapProperties[MAXMAPS];
-
 JSObject *js_objPlane;
 
 enum plane_enum

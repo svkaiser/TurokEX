@@ -79,6 +79,7 @@ typedef struct
     kbool               bNoDirection;
     kbool               bLocalAxis;
     kbool               bClientSpace;
+    kbool               bProjectile;
     float               mass;
     float               translation_randomscale;
     fxvector_t          translation;
@@ -112,10 +113,13 @@ typedef struct
     int                 fadeout_time;
     char                *hitFX;
     char                *hitSnd;
+    action_t            hitAction;
     char                *tickFX;
     char                *tickSnd;
+    action_t            tickAction;
     char                *expireFX;
     char                *expireSnd;
+    action_t            expireAction;
 } fxinfo_t;
 
 typedef struct fxfile_s
@@ -169,7 +173,7 @@ void FX_Ticker(void);
 fxfile_t *FX_Load(const char *name);
 void FX_ClearLinks(void);
 void FX_Shutdown(void);
-fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t axis,
-                vec3_t origin, vec4_t rotation, plane_t *plane);
+fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
+                vec3_t dest, vec4_t rotation, plane_t *plane);
 
 #endif

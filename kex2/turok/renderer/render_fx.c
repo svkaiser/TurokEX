@@ -148,7 +148,26 @@ void R_DrawFX(void)
         dglPopMatrix();
 
         if(showorigin)
-            R_DrawOrigin(fx->origin, 8.0f);
+        {
+            if(sqrt(fx->rotation[0]*fx->rotation[0]+
+                fx->rotation[1]*fx->rotation[1]+
+                fx->rotation[2]*fx->rotation[2]+
+                fx->rotation[3]*fx->rotation[3]) != 0.0f)
+            {
+                mtx_t mtx;
+                vec3_t vec;
+
+                Vec_Set3(vec, 0, 0, 0);
+                Mtx_ApplyRotation(fx->rotation, mtx);
+                Mtx_AddTranslation(mtx, fx->origin[0], fx->origin[1], fx->origin[2]);
+                dglPushMatrix();
+                dglMultMatrixf(mtx);
+                R_DrawOrigin(vec, 8.0f);
+                dglPopMatrix();
+            }
+            else
+                R_DrawOrigin(fx->origin, 8.0f);
+        }
     }
 
     GL_SetState(GLSTATE_DEPTHTEST, true);

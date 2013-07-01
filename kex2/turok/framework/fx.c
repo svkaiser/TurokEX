@@ -30,6 +30,7 @@
 #include "mathlib.h"
 #include "gl.h"
 #include "fx.h"
+#include "ai.h"
 #include "actor.h"
 #include "client.h"
 #include "level.h"
@@ -55,6 +56,7 @@ enum
     scvfx_bScaleLerp,
     scvfx_bNoDirection,
     scvfx_bLocalAxis,
+    scvfx_bProjectile,
     scvfx_mass,
     scvfx_translation_global_randomscale,
     scvfx_translation_randomscale,
@@ -157,6 +159,7 @@ static const sctokens_t vfxtokens[scvfx_end+1] =
     { scvfx_onTick,                         "onTick"                            },
     { scvfx_bNoDirection,                   "bNoDirection"                      },
     { scvfx_bLocalAxis,                     "bLocalAxis"                        },
+    { scvfx_bProjectile,                    "bProjectile"                       },
     { -1,                                   NULL                                }
 };
 
@@ -247,6 +250,7 @@ static void Fx_ParseScript(fxfile_t *fx, scparser_t *parser)
             CHECK_INT(bScaleLerp);
             CHECK_INT(bNoDirection);
             CHECK_INT(bLocalAxis);
+            CHECK_INT(bProjectile);
             CHECK_INT(animspeed);
             CHECK_INT(color1_randomscale);
             CHECK_INT(color2_randomscale);
@@ -379,6 +383,18 @@ static void Fx_ParseScript(fxfile_t *fx, scparser_t *parser)
                         info->hitSnd = Z_Strndup(parser->stringToken,
                             MAX_FILEPATH, PU_STATIC, 0);
                     }
+                    else if(!strcmp(sc_parser->token, "action"))
+                    {
+                        SC_ExpectNextToken(TK_EQUAL);
+                        SC_ExpectNextToken(TK_LBRACK);
+
+                        SC_GetString();
+                        info->hitAction.function = Z_Strdup(parser->stringToken,
+                            PU_STATIC, 0);
+                        info->hitAction.args[0] = (float)SC_GetFloat();
+
+                        SC_ExpectNextToken(TK_RBRACK);
+                    }
                     else if(sc_parser->tokentype == TK_RBRACK)
                         break;
                     else
@@ -407,6 +423,18 @@ static void Fx_ParseScript(fxfile_t *fx, scparser_t *parser)
                         SC_GetString();
                         info->expireSnd = Z_Strndup(parser->stringToken,
                             MAX_FILEPATH, PU_STATIC, 0);
+                    }
+                    else if(!strcmp(sc_parser->token, "action"))
+                    {
+                        SC_ExpectNextToken(TK_EQUAL);
+                        SC_ExpectNextToken(TK_LBRACK);
+
+                        SC_GetString();
+                        info->expireAction.function = Z_Strdup(parser->stringToken,
+                            PU_STATIC, 0);
+                        info->expireAction.args[0] = (float)SC_GetFloat();
+
+                        SC_ExpectNextToken(TK_RBRACK);
                     }
                     else if(sc_parser->tokentype == TK_RBRACK)
                         break;
@@ -437,6 +465,18 @@ static void Fx_ParseScript(fxfile_t *fx, scparser_t *parser)
                         info->tickSnd = Z_Strndup(parser->stringToken,
                             MAX_FILEPATH, PU_STATIC, 0);
                     }
+                    else if(!strcmp(sc_parser->token, "action"))
+                    {
+                        SC_ExpectNextToken(TK_EQUAL);
+                        SC_ExpectNextToken(TK_LBRACK);
+
+                        SC_GetString();
+                        info->tickAction.function = Z_Strdup(parser->stringToken,
+                            PU_STATIC, 0);
+                        info->tickAction.args[0] = (float)SC_GetFloat();
+
+                        SC_ExpectNextToken(TK_RBRACK);
+                    }
                     else if(sc_parser->tokentype == TK_RBRACK)
                         break;
                     else
@@ -455,6 +495,13 @@ static void Fx_ParseScript(fxfile_t *fx, scparser_t *parser)
                 }
                 break;
             }
+
+            if(info->translation.value[0] > 1.0f)  info->translation.value[0] -= 1.0f;
+            if(info->translation.value[0] < -1.0f) info->translation.value[0] += 1.0f;
+            if(info->translation.value[1] > 1.0f)  info->translation.value[1] -= 1.0f;
+            if(info->translation.value[1] < -1.0f) info->translation.value[1] += 1.0f;
+            if(info->translation.value[2] > 1.0f)  info->translation.value[2] -= 1.0f;
+            if(info->translation.value[2] < -1.0f) info->translation.value[2] += 1.0f;
 
             SC_Find();
         }
@@ -610,7 +657,7 @@ static fx_t *FX_SpawnChild(fx_t *parent, const char *file)
 // FX_DestroyEvent
 //
 
-static void FX_DestroyEvent(fx_t *fx)
+static void FX_DestroyEvent(fx_t *fx, gActor_t *hitActor)
 {
     fx_t *nfx = NULL;
 
@@ -622,6 +669,13 @@ static void FX_DestroyEvent(fx_t *fx)
 
     if(fx->info->hitSnd != NULL)
         Snd_PlayShader(fx->info->hitSnd, (gActor_t*)nfx);
+
+    if(fx->info->hitAction.function != NULL && fx->source)
+    {
+        Actor_FXEvent(fx->source, hitActor, fx->origin,
+            fx->translation, Map_PlaneToIndex(fx->plane),
+            &fx->info->hitAction);
+    }
 }
 
 //
@@ -690,7 +744,22 @@ fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
         if(info->bNoDirection)
             Mtx_Identity(fx->matrix);
         else
+        {
+            if(info->bProjectile && source && source->ai)
+            {
+                if(source->ai->target)
+                {
+                    vec3_t torg;
+
+                    Vec_Copy3(torg, source->ai->target->origin);
+                    torg[1] += 30.72f;
+
+                    Vec_PointAt(dest, torg, source->rotation, 0, rotation);
+                }
+            }
+            
             Mtx_ApplyRotation(rotation, fx->matrix);
+        }
 
         fx->file = fxfile;
         fx->info = info;
@@ -741,6 +810,9 @@ fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
         // process translation
         //
         Vec_Copy3(translation, info->translation.value);
+        // TODO - FIXME
+        translation[0] = -translation[0];
+
         FX_SetTranslationX(translation, translation, info->translation.rand[0]);
         FX_SetTranslationY(translation, translation, info->translation.rand[1]);
         FX_SetTranslationZ(translation, translation, info->translation.rand[2]);
@@ -838,7 +910,8 @@ static void FX_Move(fx_t *fx, vec3_t dest)
                 trace.normal, (1 + fxinfo->mass));
             break;
         case VFX_DESTROY:
-            FX_DestroyEvent(fx);
+            Vec_Copy3(fx->origin, trace.hitvec);
+            FX_DestroyEvent(fx, NULL);
             break;
         default:
             break;
@@ -852,9 +925,10 @@ static void FX_Move(fx_t *fx, vec3_t dest)
                 trace.normal, (1 + fxinfo->mass));
             break;
         case VFX_DESTROY:
-            FX_DestroyEvent(fx);
+            FX_DestroyEvent(fx, trace.hitActor);
             break;
         default:
+            Vec_Copy3(fx->origin, dest);
             break;
         }
         break;
@@ -868,7 +942,7 @@ static void FX_Move(fx_t *fx, vec3_t dest)
         (Plane_GetDistance(fx->plane, fx->origin) +
         (fxinfo->bOffsetFromFloor ? 3.42f : 0));
 
-    if(dist <= 0.512f)
+    if(dist <= ONPLANE_EPSILON)
     {
         if(fxinfo->bStopAnimOnImpact)
             fx->bAnimate = false;
@@ -884,7 +958,7 @@ static void FX_Move(fx_t *fx, vec3_t dest)
             break;
         case VFX_DESTROY:
             fx->origin[1] = fx->origin[1] - dist + 0.01f;
-            FX_DestroyEvent(fx);
+            FX_DestroyEvent(fx, NULL);
             break;
         default:
             break;
@@ -911,7 +985,7 @@ static void FX_Move(fx_t *fx, vec3_t dest)
                 break;
             case VFX_DESTROY:
                 fx->origin[1] = dist - 1.024f;
-                FX_DestroyEvent(fx);
+                FX_DestroyEvent(fx, NULL);
                 break;
             default:
                 break;
@@ -958,8 +1032,15 @@ void FX_Ticker(void)
         if(fxinfo->tickFX != NULL)
             FX_SpawnChild(fx, fxinfo->tickFX);
 
-        if(fxinfo->tickSnd != NULL)
-            Snd_PlayShader(fxinfo->tickSnd, NULL);
+        if(fxinfo->tickSnd != NULL && fx->refcount <= 0)
+            Snd_PlayShader(fxinfo->tickSnd, (gActor_t*)fx);
+
+        if(fx->info->tickAction.function != NULL && fx->source)
+        {
+            Actor_FXEvent(fx->source, NULL, fx->origin,
+                fx->translation, Map_PlaneToIndex(fx->plane),
+                &fx->info->tickAction);
+        }
 
         if(fx->bAnimate)
         {
@@ -1056,13 +1137,20 @@ void FX_Ticker(void)
 
         if(fx->lifetime < 0 || (fx->source && fx->source->bStale))
         {
-            fx_t *nfx = NULL;
+            fx_t *efx = NULL;
 
             if(fxinfo->expireFX != NULL)
-                nfx = FX_SpawnChild(fx, fxinfo->expireFX); 
+                efx = FX_SpawnChild(fx, fxinfo->expireFX); 
 
             if(fxinfo->expireSnd != NULL)
-                Snd_PlayShader(fxinfo->expireSnd, (gActor_t*)nfx);
+                Snd_PlayShader(fxinfo->expireSnd, (gActor_t*)efx);
+
+            if(fx->info->expireAction.function != NULL && fx->source)
+            {
+                Actor_FXEvent(fx->source, NULL, fx->origin,
+                    fx->translation, Map_PlaneToIndex(fx->plane),
+                    &fx->info->expireAction);
+            }
 
             fx->bStale = true;
         }

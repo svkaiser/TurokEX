@@ -458,8 +458,8 @@ void Vec_AdjustQuaternion(vec4_t out, vec4_t rot, float angle)
     float s;
     float c;
 
-    s = (float)sin((angle - -M_PI) * 0.5f);
-    c = (float)cos((angle - -M_PI) * 0.5f);
+    s = (float)sin((angle + M_PI) * 0.5f);
+    c = (float)cos((angle + M_PI) * 0.5f);
 
     vec[0] = 0;
     vec[1] = s;
@@ -467,6 +467,35 @@ void Vec_AdjustQuaternion(vec4_t out, vec4_t rot, float angle)
     vec[3] = c;
     
     Vec_MultQuaternion(out, vec, rot);
+}
+
+//
+// Vec_PointAt
+//
+
+void Vec_PointAt(vec3_t org1, vec3_t org2, vec4_t rotation, float maxAngle, vec4_t out)
+{
+    vec3_t axis;
+    vec3_t dir;
+    vec3_t cp;
+    vec4_t prot;
+    float an;
+
+    Vec_Set3(axis, 0, 0, 1);
+    Vec_ApplyQuaternion(dir, axis, rotation);
+
+    Vec_Sub(axis, org2, org1);
+    Vec_Normalize3(axis);
+    Vec_Cross(cp, dir, axis);
+    Vec_Normalize3(cp);
+
+    an = (float)acos(Vec_Dot(axis, dir));
+
+    if(maxAngle != 0 && an >= maxAngle)
+        an = maxAngle;
+
+    Vec_SetQuaternion(prot, an, cp[0], cp[1], cp[2]);
+    Vec_MultQuaternion(out, rotation, prot);
 }
 
 //
@@ -485,24 +514,4 @@ void Vec_PointToAxis(vec3_t out, vec3_t p1, vec3_t p2)
     out[1] = (float)cos(an2);
     out[2] = (float)cos(an1);
 }
-
-//
-// Vec_PointToAngle
-//
-
-void Vec_PointToAngle(vec4_t out, vec3_t p1, vec3_t p2)
-{
-    float an1;
-    float an2;
-    vec4_t q1;
-    vec4_t q2;
-
-    an1 = (float)atan2(p2[0] - p1[0], p2[2] - p1[2]);
-    an2 = (float)atan2(Vec_Length3(p2, p1), p2[1]- p1[1]);
-
-    Vec_SetQuaternion(q1, an1, 0, 1, 0);
-    Vec_SetQuaternion(q2, an2, 0, 0, 1);
-    Vec_MultQuaternion(out, q2, q1);
-}
-
 

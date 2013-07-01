@@ -64,7 +64,8 @@ JS_PROP_FUNC_GET(AI)
     case 6:
         if(ai->owner)
         {
-            JS_NEWOBJECT_SETPRIVATE(ai->owner, &GameActor_class);
+            //JS_NEWOBJECT_SETPRIVATE(ai->owner, &GameActor_class);
+            JS_NEWOBJECTPOOL(ai->owner, GameActor);
         }
         else
             JS_SET_RVAL(cx, vp, JSVAL_NULL);
@@ -73,42 +74,65 @@ JS_PROP_FUNC_GET(AI)
     case 7:
         if(ai->target)
         {
-            JS_NEWOBJECT_SETPRIVATE(ai->target, &GameActor_class);
+            //JS_NEWOBJECT_SETPRIVATE(ai->target, &GameActor_class);
+            JS_NEWOBJECTPOOL(ai->target, GameActor);
         }
         else
             JS_SET_RVAL(cx, vp, JSVAL_NULL);
         return JS_TRUE;
 
     case 8:
-        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_TURNING) == true);
+        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_TURNING) != 0);
         return JS_TRUE;
 
     case 9:
-        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_DORMANT) == true);
+        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_DORMANT) != 0);
         return JS_TRUE;
 
     case 10:
-        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_SEETARGET) == true);
+        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_SEETARGET) != 0);
         return JS_TRUE;
 
     case 11:
-        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_SEEPLAYER) == true);
+        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_SEEPLAYER) != 0);
         return JS_TRUE;
 
     case 12:
-        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_FINDACTOR) == true);
+        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_FINDACTOR) != 0);
         return JS_TRUE;
 
     case 13:
-        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_FINDPLAYERS) == true);
+        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_FINDPLAYERS) != 0);
         return JS_TRUE;
 
     case 14:
-        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_AVOIDWALLS) == true);
+        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_AVOIDWALLS) != 0);
         return JS_TRUE;
 
     case 15:
-        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_AVOIDACTORS) == true);
+        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_AVOIDACTORS) != 0);
+        return JS_TRUE;
+
+    case 16:
+        return JS_NewDoubleValue(cx, ai->idealYaw, vp);
+
+    case 17:
+        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_DISABLED) != 0);
+        return JS_TRUE;
+
+    case 18:
+        JS_RETURNBOOLEAN(vp, (ai->flags & AIF_LOOKATTARGET) != 0);
+        return JS_TRUE;
+
+    case 19:
+        return JS_NewDoubleValue(cx, ai->maxHeadAngle, vp);
+
+    case 20:
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(ai->nodeHead));
+        return JS_TRUE;
+
+    case 21:
+        JS_NEWVECTOR2(ai->headYawAxis);
         return JS_TRUE;
 
     default:
@@ -161,60 +185,95 @@ JS_PROP_FUNC_SET(AI)
             {
                 return JS_FALSE;
             }
-            ai->target = pActor;
+            Actor_SetTarget(&ai->target, pActor);
             return JS_TRUE;
         }
 
-        ai->target = NULL;
-
+        Actor_SetTarget(&ai->target, NULL);
         return JS_TRUE;
 
     case 8:
         JS_GETBOOL(ok, vp, 0);
         if(ok) ai->flags |= AIF_TURNING;
-        else ai->flags &= AIF_TURNING;
+        else if(ai->flags & AIF_TURNING)
+            ai->flags &= ~AIF_TURNING;
         return JS_TRUE;
 
     case 9:
         JS_GETBOOL(ok, vp, 0);
         if(ok) ai->flags |= AIF_DORMANT;
-        else ai->flags &= AIF_DORMANT;
+        else if(ai->flags & AIF_DORMANT)
+            ai->flags &= ~AIF_DORMANT;
         return JS_TRUE;
 
     case 10:
         JS_GETBOOL(ok, vp, 0);
         if(ok) ai->flags |= AIF_SEETARGET;
-        else ai->flags &= AIF_SEETARGET;
+        else if(ai->flags & AIF_SEETARGET)
+            ai->flags &= ~AIF_SEETARGET;
         return JS_TRUE;
 
     case 11:
         JS_GETBOOL(ok, vp, 0);
         if(ok) ai->flags |= AIF_SEEPLAYER;
-        else ai->flags &= AIF_SEEPLAYER;
+        else if(ai->flags & AIF_SEEPLAYER)
+            ai->flags &= ~AIF_SEEPLAYER;
         return JS_TRUE;
 
     case 12:
         JS_GETBOOL(ok, vp, 0);
         if(ok) ai->flags |= AIF_FINDACTOR;
-        else ai->flags &= AIF_FINDACTOR;
+        else if(ai->flags & AIF_FINDACTOR)
+            ai->flags &= ~AIF_FINDACTOR;
         return JS_TRUE;
 
     case 13:
         JS_GETBOOL(ok, vp, 0);
         if(ok) ai->flags |= AIF_FINDPLAYERS;
-        else ai->flags &= AIF_FINDPLAYERS;
+        else if(ai->flags & AIF_FINDPLAYERS)
+            ai->flags &= ~AIF_FINDPLAYERS;
         return JS_TRUE;
 
     case 14:
         JS_GETBOOL(ok, vp, 0);
         if(ok) ai->flags |= AIF_AVOIDWALLS;
-        else ai->flags &= AIF_AVOIDWALLS;
+        else if(ai->flags & AIF_AVOIDWALLS)
+            ai->flags &= ~AIF_AVOIDWALLS;
         return JS_TRUE;
 
     case 15:
         JS_GETBOOL(ok, vp, 0);
         if(ok) ai->flags |= AIF_AVOIDACTORS;
-        else ai->flags &= AIF_AVOIDACTORS;
+        else if(ai->flags & AIF_AVOIDACTORS)
+            ai->flags &= ~AIF_AVOIDACTORS;
+        return JS_TRUE;
+
+    case 17:
+        JS_GETBOOL(ok, vp, 0);
+        if(ok) ai->flags |= AIF_DISABLED;
+        else if(ai->flags & AIF_DISABLED)
+            ai->flags &= ~AIF_DISABLED;
+        return JS_TRUE;
+
+    case 18:
+        JS_GETBOOL(ok, vp, 0);
+        if(ok) ai->flags |= AIF_LOOKATTARGET;
+        else if(ai->flags & AIF_LOOKATTARGET)
+            ai->flags &= ~AIF_LOOKATTARGET;
+        return JS_TRUE;
+
+    case 19:
+        JS_GETNUMBER(dval, vp, 0);
+        ai->maxHeadAngle = (float)dval;
+        return JS_TRUE;
+
+    case 20:
+        ai->nodeHead = JSVAL_TO_INT(*vp);
+        return JS_TRUE;
+
+    case 21:
+        JS_GETOBJECT(object, vp, 0);
+        JS_GETVECTOR2(object, ai->headYawAxis);
         return JS_TRUE;
 
     default:
@@ -380,6 +439,88 @@ JS_FASTNATIVE_BEGIN(AI, canSeeTarget)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(AI, getBestAngleToTarget)
+{
+    jsval *v = JS_ARGV(cx, vp);
+    JSObject *thisObj;
+    float angle;
+    jsdouble radius;
+    ai_t *ai;
+    gActor_t *target;
+
+    if(argc > 2)
+        JS_WARNING();
+
+    thisObj = JS_THIS_OBJECT(cx, vp);
+    if(!(ai = (ai_t*)JS_GetInstancePrivate(cx, thisObj, &AI_class, NULL)))
+        JS_WARNING();
+
+    JS_GETNUMBER(radius, v, 0);
+
+    if(argc == 2)
+    {
+        JSObject *obj;
+        JS_GETOBJECT(obj, v, 1);
+        JS_GET_PRIVATE_DATA(obj, &GameActor_class, gActor_t, target);
+    }
+    else
+        target = ai->target;
+
+    angle = 0.0f;
+
+    if(target != NULL)
+        angle = AI_FindBestAngleToTarget(ai, target, (float)radius);
+
+    return JS_NewDoubleValue(cx, angle, vp);
+}
+
+JS_FASTNATIVE_BEGIN(AI, clearTarget)
+{
+    JSObject *thisObj;
+    ai_t *ai;
+
+    JS_CHECKARGS(0);
+
+    thisObj = JS_THIS_OBJECT(cx, vp);
+    if(!(ai = (ai_t*)JS_GetInstancePrivate(cx, thisObj, &AI_class, NULL)))
+        JS_WARNING();
+
+    AI_ClearTarget(ai);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(AI, fireProjectile)
+{
+    JSObject *thisObj;
+    ai_t *ai;
+    jsdouble x, y, z;
+    jsdouble maxangle;
+    JSBool useLocal;
+    JSString *str;
+    char *bytes;
+
+    JS_CHECKARGS(6);
+
+    thisObj = JS_THIS_OBJECT(cx, vp);
+    if(!(ai = (ai_t*)JS_GetInstancePrivate(cx, thisObj, &AI_class, NULL)))
+        JS_WARNING();
+
+    JS_GETSTRING(str, bytes, v, 0);
+    JS_GETNUMBER(x, v, 1);
+    JS_GETNUMBER(y, v, 2);
+    JS_GETNUMBER(z, v, 3);
+    JS_GETNUMBER(maxangle, v, 4);
+    JS_GETBOOL(useLocal, v, 5);
+
+    AI_FireProjectile(ai, bytes, (float)x, (float)y, (float)z, (float)maxangle, useLocal);
+
+    JS_free(cx, bytes);
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
 JS_BEGINCLASS(AI)
     JSCLASS_HAS_PRIVATE,                        // flags
     JS_PropertyStub,                            // addProperty
@@ -411,6 +552,12 @@ JS_BEGINPROPS(AI)
     { "bFindPlayers",   13, JSPROP_ENUMERATE, NULL, NULL },
     { "bAvoidWalls",    14, JSPROP_ENUMERATE, NULL, NULL },
     { "bAvoidActors",   15, JSPROP_ENUMERATE, NULL, NULL },
+    { "idealYaw",       16, JSPROP_ENUMERATE|JSPROP_READONLY, NULL, NULL },
+    { "bDisabled",      17, JSPROP_ENUMERATE, NULL, NULL },
+    { "bLookAtTarget",  18, JSPROP_ENUMERATE, NULL, NULL },
+    { "maxHeadAngle",   19, JSPROP_ENUMERATE, NULL, NULL },
+    { "nodeHead",       20, JSPROP_ENUMERATE, NULL, NULL },
+    { "headYawAxis",    21, JSPROP_ENUMERATE, NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 
@@ -426,6 +573,9 @@ JS_BEGINFUNCS(AI)
     JS_FASTNATIVE(AI, checkPosition, 3),
     JS_FASTNATIVE(AI, setIdealYaw, 2),
     JS_FASTNATIVE(AI, canSeeTarget, 1),
+    JS_FASTNATIVE(AI, getBestAngleToTarget, 2),
+    JS_FASTNATIVE(AI, clearTarget, 0),
+    JS_FASTNATIVE(AI, fireProjectile, 6),
     JS_FS_END
 };
 

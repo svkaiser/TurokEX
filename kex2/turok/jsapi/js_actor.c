@@ -187,7 +187,8 @@ JS_PROP_FUNC_GET(GameActor)
     case 25:
         if(actor->owner)
         {
-            JS_NEWOBJECT_SETPRIVATE(actor->owner, &GameActor_class);
+            //JS_NEWOBJECT_SETPRIVATE(actor->owner, &GameActor_class);
+            JS_NEWOBJECTPOOL(actor->owner, GameActor);
         }
         else
             JS_SET_RVAL(cx, vp, JSVAL_NULL);
@@ -220,6 +221,12 @@ JS_PROP_FUNC_GET(GameActor)
         }
         JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(actor->ai->object));
         return JS_TRUE;
+
+    case 32:
+        return JS_NewDoubleValue(cx, actor->mass, vp);
+
+    case 33:
+        JS_SET_RVAL(cx, vp, INT_TO_JSVAL(actor->classFlags));
 
     default:
         return JS_TRUE;
@@ -305,12 +312,11 @@ JS_PROP_FUNC_SET(GameActor)
             {
                 return JS_FALSE;
             }
-            actor->owner = pActor;
+            Actor_SetTarget(&actor->owner, pActor);
             return JS_TRUE;
         }
 
-        actor->owner = NULL;
-
+        Actor_SetTarget(&actor->owner, NULL);
         return JS_TRUE;
 
     case 26:
@@ -332,6 +338,11 @@ JS_PROP_FUNC_SET(GameActor)
     case 30:
         JS_GETOBJECT(object, vp, 0);
         JS_GETVECTOR2(object, actor->velocity);
+        return JS_TRUE;
+
+    case 32:
+        JS_GETNUMBER(dval, vp, 0);
+        actor->mass = (float)dval;
         return JS_TRUE;
 
     default:
@@ -621,6 +632,98 @@ JS_FASTNATIVE_BEGIN(GameActor, blendAnim)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(GameActor, checkAnimID)
+{
+    JSObject *thisObj;
+    gActor_t *actor;
+
+    JS_CHECKARGS(1);
+
+    thisObj = JS_THIS_OBJECT(cx, vp);
+    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
+        return JS_FALSE;
+
+    JS_RETURNBOOLEAN(vp, Mdl_CheckAnimID(actor->model, JSVAL_TO_INT(JS_ARG(0))));
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GameActor, spawnFX)
+{
+    JSObject *thisObj;
+    gActor_t *actor;
+    jsdouble x, y, z;
+    JSString *str;
+    char *bytes;
+
+    JS_CHECKARGS(4);
+
+    thisObj = JS_THIS_OBJECT(cx, vp);
+    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
+        return JS_FALSE;
+
+    JS_GETSTRING(str, bytes, v, 0);
+    JS_GETNUMBER(x, v, 1);
+    JS_GETNUMBER(y, v, 2);
+    JS_GETNUMBER(z, v, 3);
+
+    Actor_SpawnBodyFX(actor, bytes, (float)x, (float)y, (float)z);
+    JS_free(cx, bytes);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GameActor, getLocalVector)
+{
+    JSObject *thisObj;
+    gActor_t *actor;
+    jsdouble x, y, z;
+    vec3_t org;
+
+    JS_CHECKARGS(3);
+
+    thisObj = JS_THIS_OBJECT(cx, vp);
+    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
+        return JS_FALSE;
+
+    JS_GETNUMBER(x, v, 0);
+    JS_GETNUMBER(y, v, 1);
+    JS_GETNUMBER(z, v, 2);
+
+    Actor_GetLocalVectors(org, actor, (float)x, (float)y, (float)z);
+
+    JS_NEWVECTORPOOL(org);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GameActor, setNodeRotation)
+{
+    JSObject *thisObj;
+    JSObject *obj;
+    vec4_t rot;
+    int node;
+    gActor_t *actor;
+    kmodel_t *model;
+
+    JS_CHECKARGS(2);
+    
+    thisObj = JS_THIS_OBJECT(cx, vp);
+    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
+        return JS_FALSE;
+
+    model = actor->model;
+
+    JS_GETINTEGER(node, 0);
+    JS_GETOBJECT(obj, v, 1);
+    JS_GETQUATERNION2(obj, rot);
+
+    if(node >= 0 && node < (int)model->numnodes)
+        Vec_Copy4(actor->nodeOffsets_r[node], rot);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
 JS_FASTNATIVE_BEGIN(GameActor, spawn)
 {
     JSString *str;
@@ -682,16 +785,17 @@ JS_FASTNATIVE_BEGIN(GameActor, remove)
 
 JS_FASTNATIVE_BEGIN(GameActor, compare)
 {
-    JSObject *obj;
+    JSObject *obj1;
+    JSObject *obj2;
     gActor_t *actor1;
     gActor_t *actor2;
     JSBool ok;
 
     JS_CHECKARGS(2);
-    JS_GETOBJECT(obj, v, 0);
-    JS_GET_PRIVATE_DATA(obj, &GameActor_class, gActor_t, actor1);
-    JS_GETOBJECT(obj, v, 1);
-    JS_GET_PRIVATE_DATA(obj, &GameActor_class, gActor_t, actor2);
+    JS_GETOBJECT(obj1, v, 0);
+    JS_GET_PRIVATE_DATA(obj1, &GameActor_class, gActor_t, actor1);
+    JS_GETOBJECT(obj2, v, 1);
+    JS_GET_PRIVATE_DATA(obj2, &GameActor_class, gActor_t, actor2);
 
     ok = (actor1 == actor2);
 
@@ -737,7 +841,7 @@ JS_BEGINPROPS(GameActor)
     { "pitch",          20, JSPROP_ENUMERATE, NULL, NULL },
     { "roll",           21, JSPROP_ENUMERATE, NULL, NULL },
     { "animState",      22, JSPROP_ENUMERATE, NULL, NULL },
-    { "timeStamp",      23, JSPROP_ENUMERATE, NULL, NULL },
+    { "timeStamp",      23, JSPROP_ENUMERATE|JSPROP_READONLY, NULL, NULL },
     { "model",          24, JSPROP_ENUMERATE, NULL, NULL },
     { "owner",          25, JSPROP_ENUMERATE, NULL, NULL },
     { "targetID",       26, JSPROP_ENUMERATE, NULL, NULL },
@@ -746,6 +850,8 @@ JS_BEGINPROPS(GameActor)
     { "physics",        29, JSPROP_ENUMERATE, NULL, NULL },
     { "velocity",       30, JSPROP_ENUMERATE, NULL, NULL },
     { "ai",             31, JSPROP_ENUMERATE|JSPROP_READONLY, NULL, NULL },
+    { "mass",           32, JSPROP_ENUMERATE, NULL, NULL },
+    { "classFlags",     33, JSPROP_ENUMERATE|JSPROP_READONLY, NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 
@@ -763,6 +869,10 @@ JS_BEGINFUNCS(GameActor)
     JS_FASTNATIVE(GameActor, setBounds, 6),
     JS_FASTNATIVE(GameActor, setAnim, 3),
     JS_FASTNATIVE(GameActor, blendAnim, 4),
+    JS_FASTNATIVE(GameActor, checkAnimID, 1),
+    JS_FASTNATIVE(GameActor, spawnFX, 4),
+    JS_FASTNATIVE(GameActor, getLocalVector, 3),
+    JS_FASTNATIVE(GameActor, setNodeRotation, 2),
     JS_FS_END
 };
 

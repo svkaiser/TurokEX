@@ -246,6 +246,79 @@ JS_FASTNATIVE_BEGIN(Level, changeMap)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(Level, getActorsInRadius)
+{
+    jsdouble x, y, z;
+    jsdouble radius;
+    int filter;
+    JSBool bTrace;
+    plane_t *plane;
+    JSObject *objPlane;
+    JSObject *object;
+
+    JS_CHECKARGS(7);
+    JS_GETNUMBER(radius, v, 0);
+    JS_GETNUMBER(x, v, 1);
+    JS_GETNUMBER(y, v, 2);
+    JS_GETNUMBER(z, v, 3);
+    JS_GETINTEGER(filter, 5);
+    JS_GETBOOL(bTrace, v, 6);
+
+    objPlane = NULL;
+
+    if(!JSVAL_IS_NULL(v[4]))
+    {
+        JS_GETOBJECT(objPlane, v, 4);
+    }
+
+    plane = NULL;
+
+    if(objPlane)
+        JS_GET_PRIVATE_DATA(objPlane, &Plane_class, plane_t, plane);
+
+    if(!(object = Map_GetActorsInRadius((float)radius,
+        (float)x, (float)y, (float)z, plane, filter, bTrace)))
+    {
+        JS_SET_RVAL(cx, vp, JSVAL_NULL);
+    }
+    else
+        JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(object));
+
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Level, triggerActors)
+{
+    int tid;
+    int filter;
+
+    JS_CHECKARGS(2);
+    JS_GETINTEGER(tid, 0);
+    JS_GETINTEGER(filter, 1);
+
+    Map_TriggerActors(tid, filter);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Level, toggleBlockingPlanes)
+{
+    JSBool block;
+    JSObject *obj;
+    plane_t *plane;
+
+    JS_CHECKARGS(2);
+    JS_GETOBJECT(obj, v, 0);
+    JS_GETBOOL(block, v, 1);
+    JS_GET_PRIVATE_DATA(obj, &Plane_class, plane_t, plane);
+
+    Map_ToggleBlockingPlanes(plane, block);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
 JS_BEGINCLASS(Level)
     0,                                          // flags
     JS_PropertyStub,                            // addProperty
@@ -281,6 +354,9 @@ JS_BEGINFUNCS(Level)
     JS_FASTNATIVE(Level, spawnActor, 7),
     JS_FASTNATIVE(Level, changeFloorHeight, 2),
     JS_FASTNATIVE(Level, changeMap, 1),
+    JS_FASTNATIVE(Level, getActorsInRadius, 7),
+    JS_FASTNATIVE(Level, triggerActors, 2),
+    JS_FASTNATIVE(Level, toggleBlockingPlanes, 2),
     JS_FS_END
 };
 
