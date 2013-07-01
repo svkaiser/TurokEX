@@ -29,6 +29,8 @@
 extern short texindexes[2000];
 extern const char *sndfxnames[];
 
+char *GetActionName(int id, float arg0);
+
 static byte *fxdata;
 
 #define CHUNK_DIRECTORY_VFX     20
@@ -64,7 +66,7 @@ static byte *fxdata;
 #define FXF_UNKNOWN15       0x08000
 #define FXF_UNKNOWN16       0x10000
 #define FXF_UNKNOWN17       0x20000
-#define FXF_UNKNOWN18       0x40000
+#define FXF_PROJECTILE      0x40000
 #define FXF_LENSFLARES      0x80000
 #define FXF_LOCALAXIS       0x100000
 #define FXF_UNKNOWN21       0x200000
@@ -80,7 +82,7 @@ typedef struct
     short hitplane;
     short hitwater;
     short onhitmetal;
-    short hitsurface;
+    short onhitstone;
     short onhitflesh;
     short onhitmonster;
     short u07;
@@ -408,13 +410,13 @@ void FX_StoreParticleEffects(void)
                 Com_Strcat("        bAddOffset = %i\n", (flags & FXF_ADDOFFSET) ? 1 : 0);
                 Com_Strcat("        bNoDirection = %i\n", (flags & FXF_NODIRECTION) ? 1 : 0);
                 Com_Strcat("        bLocalAxis = %i\n", (flags & FXF_LOCALAXIS) ? 1 : 0);
+                Com_Strcat("        bProjectile = %i\n", (flags & FXF_PROJECTILE) ? 1 : 0);
                 Com_Strcat("        mass = %f\n", CoerceFloat(vfx[4]));
                 Com_Strcat("        translation_global_randomscale = %f\n", CoerceFloat(vfx[5]));
                 Com_Strcat("        translation_randomscale = { %f %f %f }\n",
                     CoerceFloat(vfx[6]), CoerceFloat(vfx[7]), CoerceFloat(vfx[8]));
                 Com_Strcat("        translation = { %f %f %f }\n",
-                    vfx[9] != 0 ? -(1 - CoerceFloat(vfx[9])) : CoerceFloat(vfx[9]),
-                    CoerceFloat(vfx[10]), CoerceFloat(vfx[11]));
+                    CoerceFloat(vfx[9]), CoerceFloat(vfx[10]), CoerceFloat(vfx[11]));
                 Com_Strcat("        gravity = %f\n", CoerceFloat(vfx[12]));
                 Com_Strcat("        gravity_randomscale = %f\n", CoerceFloat(vfx[13]));
                 Com_Strcat("        friction = %f\n", CoerceFloat(vfx[14]));
@@ -465,6 +467,9 @@ void FX_StoreParticleEffects(void)
                     break;
                 case 2:
                     Com_Strcat("        ontouch = reflect\n");
+                    break;
+                case 3:
+                    Com_Strcat("        onplane = bounce\n");
                     break;
                 default:
                     Com_Strcat("        // ontouch = unknown_%i\n", (vfx[42] >> 8) & 0xff);
@@ -525,7 +530,9 @@ void FX_StoreParticleEffects(void)
                     break;
                 }
 
-                if(fxevent->b_fx.hitplane != -1 || fxevent->b_sound.hitplane != -1)
+                if(fxevent->b_fx.hitplane != -1 ||
+                    fxevent->b_sound.hitplane != -1 ||
+                    fxevent->b_action.onhitflesh != -1)
                 {
                     Com_Strcat("        onHitSurface\n");
                     Com_Strcat("        {\n");
@@ -539,9 +546,20 @@ void FX_StoreParticleEffects(void)
                         Com_Strcat("            sound = \"sounds/shaders/%s.ksnd\"\n",
                             sndfxnames[fxevent->b_sound.hitplane]);
                     }
+                    if(fxevent->b_action.onhitflesh != -1)
+                    {
+                        float evf;
+
+                        evf = fxevent->f[4];
+
+                        Com_Strcat("            action = { \"%s\" %f }\n",
+                            GetActionName(fxevent->b_action.onhitflesh, evf), evf);
+                    }
                     Com_Strcat("        }\n");
                 }
-                if(fxevent->b_fx.active != -1 || fxevent->b_sound.active != -1)
+                if(fxevent->b_fx.active != -1 ||
+                    fxevent->b_sound.active != -1 ||
+                    fxevent->b_action.active != -1)
                 {
                     Com_Strcat("        onTick\n");
                     Com_Strcat("        {\n");
@@ -555,9 +573,20 @@ void FX_StoreParticleEffects(void)
                         Com_Strcat("            sound = \"sounds/shaders/%s.ksnd\"\n",
                             sndfxnames[fxevent->b_sound.active]);
                     }
+                    if(fxevent->b_action.active != -1)
+                    {
+                        float evf;
+
+                        evf = fxevent->f[11];
+
+                        Com_Strcat("            action = { \"%s\" %f }\n",
+                            GetActionName(fxevent->b_action.active, evf), evf);
+                    }
                     Com_Strcat("        }\n");
                 }
-                if(fxevent->b_fx.onexpire != -1 || fxevent->b_sound.onexpire != -1)
+                if(fxevent->b_fx.onexpire != -1 ||
+                    fxevent->b_sound.onexpire != -1 ||
+                    fxevent->b_action.onexpire != -1)
                 {
                     Com_Strcat("        onExpire\n");
                     Com_Strcat("        {\n");
@@ -570,6 +599,15 @@ void FX_StoreParticleEffects(void)
                     {
                         Com_Strcat("            sound = \"sounds/shaders/%s.ksnd\"\n",
                             sndfxnames[fxevent->b_sound.onexpire]);
+                    }
+                    if(fxevent->b_action.onexpire != -1)
+                    {
+                        float evf;
+
+                        evf = fxevent->f[10];
+
+                        Com_Strcat("            action = { \"%s\" %f }\n",
+                            GetActionName(fxevent->b_action.onexpire, evf), evf);
                     }
                     Com_Strcat("        }\n");
                 }

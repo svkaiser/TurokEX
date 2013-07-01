@@ -298,6 +298,7 @@ typedef enum
 static byte *leveldata;
 static byte *attribdata;
 static byte *warpdata;
+static byte *areadata;
 static short *typedata;
 static int numlevels;
 static int numattributes;
@@ -340,10 +341,10 @@ typedef struct
     float u12;
     float u13;
     int u14;
-    byte blockflags;
-    byte u16[3];
-    int u17;
-    short u18;
+    int behavior1;
+    int behavior2;
+    byte behavior3;
+    byte behavior4;
     short health;
     short tid;
     short target;
@@ -516,6 +517,19 @@ static attribute_t *GetAttribute(int index)
 {
     return (attribute_t*)(attribdata + 8 +
         (index * Com_GetCartOffset(attribdata, CHUNK_ATTRIB_SIZE, 0)));
+}
+
+//
+// GetArea
+//
+
+static maparea_t *GetArea(int index)
+{
+    if(index <= -1)
+        index = 0;
+
+    return (maparea_t*)(areadata + 8 + (index *
+        Com_GetCartOffset(areadata, CHUNK_AREAS_SIZE, 0)));
 }
 
 //
@@ -973,6 +987,56 @@ static void ProcessNavigation(byte *data, int index)
 }
 
 //
+// ProcessAIBehavior
+//
+
+static void ProcessAIBehavior(mapactor_t *actor, attribute_t *attr)
+{
+    if(attr->target > 0)
+        Com_Strcat("                \"targetID\" : %i,\n", attr->target);
+
+    Com_Strcat("                \"health\" : %i,\n", attr->health);
+    Com_Strcat("                \"meleeRange\" : %f,\n", (float)sqrt(attr->u11));
+    Com_Strcat("                \"rangeDistance\" : %f,\n", (float)sqrt(attr->u5));
+
+    if(attr->behavior1 & 0x200000)
+        Com_Strcat("                \"bCanMelee\" : false,\n");
+
+    if(attr->behavior1 & 0x42 || attr->behavior2 & 0xC3060000 ||
+        attr->behavior4 & 0x3)
+    {
+        int attackFlags = 0;
+
+        Com_Strcat("                \"bCanRangeAttack\" : true,\n");
+
+        if(attr->behavior1 & 0x2)
+            attackFlags |= 0x1;
+        if(attr->behavior1 & 0x40)
+            attackFlags |= 0x2;
+
+        if(attr->behavior2 & 0x40000000)
+            attackFlags |= 0x4;
+        if(attr->behavior2 & 0x80000000)
+            attackFlags |= 0x8;
+        if(attr->behavior2 & 0x1000000)
+            attackFlags |= 0x10;
+        if(attr->behavior2 & 0x2000000)
+            attackFlags |= 0x20;
+        if(attr->behavior2 & 0x20000)
+            attackFlags |= 0x40;
+        if(attr->behavior2 & 0x40000)
+            attackFlags |= 0x80;
+
+        if(attr->behavior4 & 0x1)
+            attackFlags |= 0x100;
+        if(attr->behavior4 & 0x2)
+            attackFlags |= 0x200;
+
+        Com_Strcat("                \"rangedAttacks\" : %i,\n", attackFlags);
+    }
+}
+
+//
 // ProcessActors
 //
 
@@ -1000,6 +1064,7 @@ static void ProcessActors(byte *data)
         mapactor_t *actor = (mapactor_t*)(data + 8 + (i * size));
         attribute_t *attr = GetAttribute(actor->attribute);
         int variant = abs(attr->variant1);
+        float bboxUnit;
 
 #ifdef FORMAT_BINARY
         *kmapInfo.actorStride[i] = com_fileoffset;
@@ -1014,6 +1079,7 @@ static void ProcessActors(byte *data)
         {
         case OT_TUROK:
 #ifndef FORMAT_BINARY
+            Com_Strcat("        classFlags = 10\n");
             Com_Strcat("        components[1] =\n");
             Com_Strcat("        {\n");
             Com_Strcat("            BeginObject = \"ComponentTurokPlayer\"\n");
@@ -1029,17 +1095,17 @@ static void ProcessActors(byte *data)
             break;
         case OT_AI_GRUNT:
 #ifndef FORMAT_BINARY
+            Com_Strcat("        classFlags = 3\n");
             Com_Strcat("        components[1] =\n");
             Com_Strcat("        {\n");
             Com_Strcat("            BeginObject = \"TurokAIGrunt\"\n");
             Com_Strcat("            {\n");
-            if(attr->target > 0)
-                Com_Strcat("                \"targetID\" : %i,\n", attr->target);
-            if(variant == 10 || variant == 11)
-            {
-                Com_Strcat("                \"bRangeAttack\" : true,\n");
-                Com_Strcat("                \"rangeType\" : 1,\n");
-            }
+
+            if(attr->behavior2 & 0x200000)
+                Com_Strcat("                \"bTwoHanded\" : true,\n");
+
+            ProcessAIBehavior(actor, attr);
+
             Com_Strcat("                \"active\" : 1\n");
 			Com_Strcat("            }\n");
             Com_Strcat("            EndObject\n");
@@ -1049,12 +1115,68 @@ static void ProcessActors(byte *data)
             Com_WriteBufferString(kmapInfo.buffer, "{\"active\":1}");
 #endif
             break;
+        case OT_AI_RAPTOR:
+#ifndef FORMAT_BINARY
+            Com_Strcat("        classFlags = 3\n");
+            Com_Strcat("        components[1] =\n");
+                Com_Strcat("        {\n");
+                Com_Strcat("            BeginObject = \"TurokAIRaptor\"\n");
+                Com_Strcat("            {\n");
+                ProcessAIBehavior(actor, attr);
+                Com_Strcat("                \"active\" : 1\n");
+			    Com_Strcat("            }\n");
+                Com_Strcat("            EndObject\n");
+                Com_Strcat("        }\n");
+#endif
+            break;
+        case OT_AI_DINOSAUR1:
+#ifndef FORMAT_BINARY
+            Com_Strcat("        classFlags = 3\n");
+            Com_Strcat("        components[1] =\n");
+                Com_Strcat("        {\n");
+                Com_Strcat("            BeginObject = \"TurokAIDimetrodon\"\n");
+                Com_Strcat("            {\n");
+                ProcessAIBehavior(actor, attr);
+                Com_Strcat("                \"active\" : 1\n");
+			    Com_Strcat("            }\n");
+                Com_Strcat("            EndObject\n");
+                Com_Strcat("        }\n");
+#endif
+            break;
+case OT_AI_STALKER:
+#ifndef FORMAT_BINARY
+            Com_Strcat("        classFlags = 3\n");
+            Com_Strcat("        components[1] =\n");
+                Com_Strcat("        {\n");
+                Com_Strcat("            BeginObject = \"TurokAIStalker\"\n");
+                Com_Strcat("            {\n");
+                ProcessAIBehavior(actor, attr);
+                Com_Strcat("                \"active\" : 1\n");
+			    Com_Strcat("            }\n");
+                Com_Strcat("            EndObject\n");
+                Com_Strcat("        }\n");
+#endif
+            break;
+        case OT_AI_PURLIN:
+#ifndef FORMAT_BINARY
+            Com_Strcat("        classFlags = 3\n");
+            Com_Strcat("        components[1] =\n");
+                Com_Strcat("        {\n");
+                Com_Strcat("            BeginObject = \"TurokAIPurlin\"\n");
+                Com_Strcat("            {\n");
+                ProcessAIBehavior(actor, attr);
+                Com_Strcat("                \"active\" : 1\n");
+			    Com_Strcat("            }\n");
+                Com_Strcat("            EndObject\n");
+                Com_Strcat("        }\n");
+#endif
             break;
         case OT_DYNAMIC_GENERIC:
             switch(actor->model)
             {
             case 225:
 #ifndef FORMAT_BINARY
+                Com_Strcat("        classFlags = 2\n");
                 Com_Strcat("        components[1] =\n");
                 Com_Strcat("        {\n");
                 Com_Strcat("            BeginObject = \"ScriptedSwingingHook\"\n");
@@ -1070,7 +1192,7 @@ static void ProcessActors(byte *data)
                 break;
             }
             break;
-        case OT_AI_INSECT:
+        /*case OT_AI_INSECT:
             switch(actor->model)
             {
             case 80:
@@ -1089,16 +1211,20 @@ static void ProcessActors(byte *data)
 #endif
                 break;
             }
-            break;
+            break;*/
         case OT_AI_ANIMAL:
+#ifndef FORMAT_BINARY
+            Com_Strcat("        classFlags = 3\n");
+#endif
             switch(actor->model)
             {
             case 325:
 #ifndef FORMAT_BINARY
                 Com_Strcat("        components[1] =\n");
                 Com_Strcat("        {\n");
-                Com_Strcat("            BeginObject = \"AnimalDeer\"\n");
+                Com_Strcat("            BeginObject = \"TurokAIAnimal\"\n");
                 Com_Strcat("            {\n");
+                ProcessAIBehavior(actor, attr);
                 Com_Strcat("                \"active\" : 1\n");
 			    Com_Strcat("            }\n");
                 Com_Strcat("            EndObject\n");
@@ -1142,8 +1268,9 @@ static void ProcessActors(byte *data)
 #ifndef FORMAT_BINARY
                 Com_Strcat("        components[1] =\n");
                 Com_Strcat("        {\n");
-                Com_Strcat("            BeginObject = \"AnimalBoar\"\n");
+                Com_Strcat("            BeginObject = \"TurokAIAnimal\"\n");
                 Com_Strcat("            {\n");
+                ProcessAIBehavior(actor, attr);
                 Com_Strcat("                \"active\" : 1\n");
 			    Com_Strcat("            }\n");
                 Com_Strcat("            EndObject\n");
@@ -1171,8 +1298,26 @@ static void ProcessActors(byte *data)
                 break;
             }
             break;
+        case OT_AI_FISH:
+#ifndef FORMAT_BINARY
+            Com_Strcat("        classFlags = 3\n");
+            Com_Strcat("        components[1] =\n");
+            Com_Strcat("        {\n");
+            Com_Strcat("            BeginObject = \"TurokAIFish\"\n");
+            Com_Strcat("            {\n");
+            ProcessAIBehavior(actor, attr);
+            Com_Strcat("                \"active\" : 1\n");
+		    Com_Strcat("            }\n");
+            Com_Strcat("            EndObject\n");
+            Com_Strcat("        }\n");
+#else
+            Com_WriteBufferString(kmapInfo.buffer, "TurokAIFish");
+            Com_WriteBufferString(kmapInfo.buffer, "{\"active\":1}");
+#endif
+            break;
         case OT_DYNAMIC_MOVER:
 #ifndef FORMAT_BINARY
+            Com_Strcat("        classFlags = 2\n");
             Com_Strcat("        components[1] =\n");
             Com_Strcat("        {\n");
             Com_Strcat("            BeginObject = \"ComponentPillarMover\"\n");
@@ -1204,6 +1349,7 @@ static void ProcessActors(byte *data)
             break;
         case OT_DYNAMIC_DOOR:
 #ifndef FORMAT_BINARY
+            Com_Strcat("        classFlags = 2\n");
             Com_Strcat("        components[1] =\n");
             Com_Strcat("        {\n");
             Com_Strcat("            BeginObject = \"ScriptedPressurePlate\"\n");
@@ -1231,8 +1377,14 @@ static void ProcessActors(byte *data)
             mdlboxes[actor->model][4],
             mdlboxes[actor->model][5]);
 
+        bboxUnit = (float)sqrt(
+            mdlboxes[actor->model][0]*mdlboxes[actor->model][0]+
+            mdlboxes[actor->model][2]*mdlboxes[actor->model][2]+
+            mdlboxes[actor->model][3]*mdlboxes[actor->model][3]+
+            mdlboxes[actor->model][5]*mdlboxes[actor->model][5]);
+
         Com_Strcat("        bCollision = %i\n",
-            attr->blockflags & 1);
+            attr->behavior1 & 1);
         Com_Strcat("        bStatic = 0\n");
 
         if(actor->flags & 1)
@@ -1253,6 +1405,7 @@ static void ProcessActors(byte *data)
         Com_Strcat("        centerheight = %f\n", attr->meleerange);
         Com_Strcat("        viewheight = %f\n", attr->viewheight);
         Com_Strcat("        modelVariant = %i\n", variant);
+        Com_Strcat("        cullDistance = %f\n", bboxUnit + 3072.0f);
 
         Com_Strcat("    }\n");
 #else
@@ -1266,7 +1419,7 @@ static void ProcessActors(byte *data)
         Com_WriteBufferFloat(kmapInfo.buffer, mdlboxes[actor->model][4]);
         Com_WriteBufferFloat(kmapInfo.buffer, mdlboxes[actor->model][5]);
 
-        Com_WriteBuffer8(kmapInfo.buffer, attr->blockflags  & 1);
+        Com_WriteBuffer8(kmapInfo.buffer, attr->behavior1  & 1);
         Com_WriteBuffer8(kmapInfo.buffer, 0);
 
         Com_WriteBuffer8(kmapInfo.buffer, actor->flags  & 1);
@@ -1296,6 +1449,27 @@ static void ProcessActors(byte *data)
 
 #ifndef FORMAT_BINARY
     Com_Strcat("}\n");
+#endif
+}
+
+//
+// ProcessLevelKey
+//
+
+static void ProcessLevelKey(mapinsttype3_t *mapinst, int id)
+{
+#ifndef FORMAT_BINARY
+    Com_Strcat("                    BeginObject = \"TurokPickupKey\"\n");
+    Com_Strcat("                    {\n");
+    Com_Strcat("                        \"active\" : true,\n");
+    Com_Strcat("                        \"levelID\" : %i,\n", id);
+    Com_Strcat("                        \"bits\" : %i\n",
+        (GetAttribute(mapinst->attribute)->tid & 3));
+    Com_Strcat("                    }\n"); 
+#else
+    Com_WriteBufferString(kmapInfo.buffer, "TurokPickupKey");
+    Com_WriteBufferString(kmapInfo.buffer, "{\"active\":true,\"levelID\":%i,\"bits\":%i}",
+        id, (GetAttribute(mapinst->attribute)->tid & 3));
 #endif
 }
 
@@ -1452,6 +1626,7 @@ static void ProcessInstances(byte *data, int offs)
     for(i = 0; i < count; i++)
     {
         mapinsttype3_t *mapinst = (mapinsttype3_t*)(data + 8 + (i * size));
+        float bboxUnit;
 
 #ifdef FORMAT_BINARY
         *kmapInfo.staticStride[offs + i] = com_fileoffset;
@@ -1483,6 +1658,8 @@ static void ProcessInstances(byte *data, int offs)
         Com_WriteBuffer8(kmapInfo.buffer, IsAPickup(mapinst->model));
 #else
 
+        bboxUnit = (float)sqrt(mapinst->bboxsize*mapinst->bboxsize);
+
         Com_Strcat("            {\n");
         Com_Strcat("                name = \"Actor_%i\"\n", actorTally++);
         Com_Strcat("                origin = { %f %f %f }\n",
@@ -1500,10 +1677,12 @@ static void ProcessInstances(byte *data, int offs)
         Com_Strcat("                bounds = { %f %f %f %f %f %f }\n",
             -mapinst->bboxsize, -mapinst->bboxsize, -mapinst->bboxsize,
             mapinst->bboxsize, mapinst->bboxsize, mapinst->bboxsize);
+        Com_Strcat("                cullDistance = %f\n", bboxUnit + 3072.0f);
 #endif
 
         if(IsAPickup(mapinst->model))
         {
+            int keyLevelID = 0;
 #ifndef FORMAT_BINARY
             Com_Strcat("                bTouch = 1\n");
             Com_Strcat("                components[1] =\n");
@@ -1932,24 +2111,22 @@ static void ProcessInstances(byte *data, int offs)
 #endif 
                 break;
             case OT_PICKUP_KEY1:
+                ProcessLevelKey(mapinst, 2);
+                break;
             case OT_PICKUP_KEY2:
+                ProcessLevelKey(mapinst, 3);
+                break;
             case OT_PICKUP_KEY3:
+                ProcessLevelKey(mapinst, 4);
+                break;
             case OT_PICKUP_KEY4:
+                ProcessLevelKey(mapinst, 5);
+                break;
             case OT_PICKUP_KEY5:
+                ProcessLevelKey(mapinst, 6);
+                break;
             case OT_PICKUP_KEY6:
-#ifndef FORMAT_BINARY
-                Com_Strcat("                    BeginObject = \"TurokPickupKey\"\n");
-                Com_Strcat("                    {\n");
-                Com_Strcat("                        \"active\" : true,\n");
-                Com_Strcat("                        \"levelID\" : %i,\n", levelID);
-                Com_Strcat("                        \"bits\" : %i\n",
-                    (GetAttribute(mapinst->attribute)->tid & 3));
-                Com_Strcat("                    }\n"); 
-#else
-                Com_WriteBufferString(kmapInfo.buffer, "TurokPickupKey");
-                Com_WriteBufferString(kmapInfo.buffer, "{\"active\":true,\"levelID\":%i,\"bits\":%i}",
-                    levelID, (GetAttribute(mapinst->attribute)->tid & 3));
-#endif
+                ProcessLevelKey(mapinst, 7);
                 break;
             default:
 #ifndef FORMAT_BINARY
@@ -2084,6 +2261,7 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
     {
         mapinsttype2_t *mapinst = (mapinsttype2_t*)(data + 8 + (i * size));
         float rotvec[4];
+        float bboxUnit;
 
 #ifdef FORMAT_BINARY
         *kmapInfo.staticStride[i] = com_fileoffset;
@@ -2108,7 +2286,7 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
         Com_WriteBufferFloat(kmapInfo.buffer, CoerceFloat(mapinst->bbox[3]));
         Com_WriteBufferFloat(kmapInfo.buffer, CoerceFloat(mapinst->bbox[4]));
         Com_WriteBufferFloat(kmapInfo.buffer, CoerceFloat(mapinst->bbox[5]));
-        Com_WriteBuffer8(kmapInfo.buffer, GetAttribute(mapinst->attribute)->blockflags & 1);
+        Com_WriteBuffer8(kmapInfo.buffer, GetAttribute(mapinst->attribute)->behavior1 & 1);
         Com_WriteBuffer8(kmapInfo.buffer, 1);
         Com_WriteBufferFloat(kmapInfo.buffer, mapinst->xyz[0]);
         Com_WriteBufferFloat(kmapInfo.buffer, mapinst->xyz[1]);
@@ -2135,10 +2313,16 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
             CoerceFloat(mapinst->bbox[4]),
             CoerceFloat(mapinst->bbox[5]));
 
+        bboxUnit = (float)sqrt(
+            CoerceFloat(mapinst->bbox[0])*CoerceFloat(mapinst->bbox[0])+
+            CoerceFloat(mapinst->bbox[2])*CoerceFloat(mapinst->bbox[2])+
+            CoerceFloat(mapinst->bbox[3])*CoerceFloat(mapinst->bbox[3])+
+            CoerceFloat(mapinst->bbox[5])*CoerceFloat(mapinst->bbox[5]));
+
         ProcessTextureOverrides(mapinst->model, GetAttribute(mapinst->attribute)->texture);
 
         Com_Strcat("                bCollision = %i\n",
-            GetAttribute(mapinst->attribute)->blockflags & 1);
+            GetAttribute(mapinst->attribute)->behavior1 & 1);
         Com_Strcat("                bStatic = 1\n");
         Com_Strcat("                origin = { %f %f %f }\n",
             mapinst->xyz[0], mapinst->xyz[1], mapinst->xyz[2]);
@@ -2149,6 +2333,7 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
         Com_Strcat("                plane = %i\n", mapinst->plane);
         Com_Strcat("                radius = %f\n", GetAttribute(mapinst->attribute)->width);
         Com_Strcat("                height = %f\n", GetAttribute(mapinst->attribute)->height);
+        Com_Strcat("                cullDistance = %f\n", bboxUnit + 3072.0f);
 
         Com_Strcat("            }\n");
 #endif
@@ -2236,7 +2421,6 @@ static void ProcessLevel(byte *data, int index)
     byte *grid;
     byte *inst;
     byte *info;
-    byte *areas;
     int size;
     int outsize;
     char name[256];
@@ -2289,22 +2473,20 @@ static void ProcessLevel(byte *data, int index)
         Com_GetCartOffset(actors, CHUNK_ACTORS_COUNT, 0));
 #endif
 
-    ProcessActors(actors);
-
 #ifdef FORMAT_BINARY
     *kmapInfo.gridLookup = com_fileoffset;
 #endif
 
-    ProcessGridBounds(grid, inst);
-
     rncdata = Com_GetCartData(data, CHUNK_LVROOT_INFO, &size);
     info = RNC_ParseFile(rncdata, size, &outsize);
 
-    areas = Com_GetCartData(info, CHUNK_LEVELINFO_AREAS, &size);
-    DC_DecodeData(areas, decode_buffer, 0);
-    memcpy(areas, decode_buffer, size);
+    areadata = Com_GetCartData(info, CHUNK_LEVELINFO_AREAS, &size);
+    DC_DecodeData(areadata, decode_buffer, 0);
+    memcpy(areadata, decode_buffer, size);
 
-    ProcessAreas(areas);
+    ProcessActors(actors);
+    ProcessGridBounds(grid, inst);
+    ProcessAreas(areadata);
 
 #ifndef FORMAT_BINARY
     sprintf(name, "maps/map%02d/map%02d.kmap", index, index);

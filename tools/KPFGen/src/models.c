@@ -27,6 +27,9 @@
 #include "decoders.h"
 #include "zone.h"
 
+extern const char *sndfxnames[];
+void FX_GetName(int index, char *name);
+
 #define CHUNK_DIRECTORY_MODEL       4
 
 /**************************************************
@@ -157,9 +160,9 @@
 #define CHUNK_ACTIONS_TYPE          10
 #define CHUNK_ACTIONS_ARGS          12
 
-#define CHUNK_UNKNOWN_ENTRIES       0
-#define CHUNK_UNKNOWN_A             4
-#define CHUNK_UNKNOWN_B             8
+#define CHUNK_UNKNOWNA_SIZE         0
+#define CHUNK_UNKNOWNA_COUNT        4
+#define CHUNK_UNKNOWNA_DATA(x)      (4 + (x * 4))
 
 // unknown
 #define CHUNK_UNKNOWNB_SIZE         0
@@ -961,6 +964,331 @@ static void ProcessRotation(byte *data, int frames)
 }
 
 //
+// CheckIfFXEvent
+//
+
+static int CheckIfFXEvent(int id)
+{
+    int i;
+
+    for(i = 125; i <= 154; i++)
+    {
+        if(i == id)
+            return 86 + (i-125);
+    }
+
+    for(i = 161; i <= 230; i++)
+    {
+        if(i == id)
+            return 124 + (i-161);
+    }
+
+    for(i = 260; i <= 319; i++)
+    {
+        if(i == 273)
+            continue;
+
+        if(i == id)
+            return 202 + (i-260);
+    }
+
+    for(i = 321; i <= 360; i++)
+    {
+        if(i == 338)
+            continue;
+
+        if(i == 353)
+            continue;
+
+        if(i == id)
+            return 262 + (i-321);
+    }
+
+    for(i = 408; i <= 467; i++)
+    {
+        if(i == 463)
+            continue;
+
+        if(i == id)
+            return 315 + (i-408);
+    }
+
+    switch(id)
+    {
+    case 95:
+        return 9;
+    case 96:
+        return 42;
+    case 97:
+        return 43;
+    case 98:
+        return 81;
+    case 99:
+        return 33;
+    case 100:
+        return 34;
+    case 101:
+        return 35;
+    case 104:
+        return 53;
+    case 105:
+        return 52;
+    case 106:
+        return 54;
+    case 113:
+        return 55;
+    case 114:
+        return 56;
+    case 115:
+        return 58;
+    case 116:
+        return 57;
+    case 117:
+        return 59;
+    case 118:
+        return 82;
+    case 119:
+        return 83;
+    case 120:
+        return 84;
+    }
+
+    return -1;
+}
+
+//
+// GetActionName
+//
+
+char *GetActionName(int id, float arg0)
+{
+    static char actionName[512];
+
+    sprintf(actionName, "unknown");
+
+    switch(id)
+    {
+    case 18:
+        sprintf(actionName, "spawnShockwave");
+        break;
+    case 19:
+        sprintf(actionName, "shockwaveExplosion");
+        break;
+    case 20:
+        sprintf(actionName, "shamanProjectile");
+        break;
+    case 22:
+        sprintf(actionName, "swooshSound");
+        break;
+    case 25:
+        sprintf(actionName, "fireWeapon");
+        break;
+    case 31:
+        sprintf(actionName, "veryWimpyMelee");
+        break;
+    case 32:
+        sprintf(actionName, "wimpyMelee");
+        break;
+    case 33:
+        sprintf(actionName, "weakMelee");
+        break;
+    case 34:
+        sprintf(actionName, "melee");
+        break;
+    case 35:
+        sprintf(actionName, "strongMelee");
+        break;
+    case 36:
+        sprintf(actionName, "veryStrongMelee");
+        break;
+    case 37:
+        sprintf(actionName, "heavyMelee");
+        break;
+    case 38:
+        sprintf(actionName, "veryHeavyMelee");
+        break;
+    case 39:
+        sprintf(actionName, "fatalMelee");
+        break;
+    case 40:
+        sprintf(actionName, "veryFatalMelee");
+        break;
+    case 41:
+        sprintf(actionName, "deathBlow");
+        break;
+    case 44:
+        sprintf(actionName, "footstepPuff");
+        break;
+    case 46:
+        sprintf(actionName, "alertScream");
+        break;
+    case 53:
+        sprintf(actionName, "deathScream");
+        break;
+    case 55:
+        sprintf(actionName, "footstepSound");
+        break;
+    case 56:
+        sprintf(actionName, "injuryScream");
+        break;
+    case 58:
+        sprintf(actionName, "stomp");
+        break;
+    case 70:
+        sprintf(actionName, "violentDeathScream");
+        break;
+    case 72:
+        sprintf(actionName, "deathYelp");
+        break;
+    case 92:
+        sprintf(actionName, "weakKnockBack");
+        break;
+    case 122:
+        sprintf(actionName, "arrowDamage");
+        break;
+    case 123:
+        sprintf(actionName, "customDamage");
+        break;
+    case 160:
+        sprintf(actionName, "shockwaveDamage");
+        break;
+    case 238:
+        sprintf(actionName, "spawnItem");
+        break;
+    case 248:
+        sprintf(actionName, "\"playSound\" \"sounds/shaders/%s.ksnd\"",
+            sndfxnames[(int)arg0]);
+        break;
+    case 273:
+        sprintf(actionName, "throwGrenade");
+        break;
+    case 338:
+        sprintf(actionName, "fireRaptorMissile");
+        break;
+    case 353:
+        sprintf(actionName, "fireDart");
+        break;
+    case 362:
+        sprintf(actionName, "weakExplosion");
+        break;
+    case 368:
+        sprintf(actionName, "grenadeExplode");
+        break;
+    case 373:
+        sprintf(actionName, "strongKnockBack");
+        break;
+    case 374:
+        sprintf(actionName, "veryWimpyFleshMelee");
+        break;
+    case 375:
+        sprintf(actionName, "wimpyFleshMelee");
+        break;
+    case 376:
+        sprintf(actionName, "weakFleshMelee");
+        break;
+    case 377:
+        sprintf(actionName, "fleshMelee");
+        break;
+    case 378:
+        sprintf(actionName, "strongFleshMelee");
+        break;
+    case 379:
+        sprintf(actionName, "veryStrongFleshMelee");
+        break;
+    case 380:
+        sprintf(actionName, "heavyFleshMelee");
+        break;
+    case 381:
+        sprintf(actionName, "veryHeavyFleshMelee");
+        break;
+    case 382:
+        sprintf(actionName, "fatalFleshMelee");
+        break;
+    case 383:
+        sprintf(actionName, "veryFatalFleshMelee");
+        break;
+    case 384:
+        sprintf(actionName, "fleshDeathBlow");
+        break;
+    case 385:
+        sprintf(actionName, "veryWimpyBluntMelee");
+        break;
+    case 386:
+        sprintf(actionName, "wimpyBluntMelee");
+        break;
+    case 387:
+        sprintf(actionName, "weakBluntMelee");
+        break;
+    case 388:
+        sprintf(actionName, "bluntMelee");
+        break;
+    case 389:
+        sprintf(actionName, "strongBluntMelee");
+        break;
+    case 390:
+        sprintf(actionName, "veryStrongBluntMelee");
+        break;
+    case 391:
+        sprintf(actionName, "heavyBluntMelee");
+        break;
+    case 392:
+        sprintf(actionName, "veryHeavyBluntMelee");
+        break;
+    case 393:
+        sprintf(actionName, "fatalBluntMelee");
+        break;
+    case 394:
+        sprintf(actionName, "veryFatalBluntMelee");
+        break;
+    case 395:
+        sprintf(actionName, "bluntDeathBlow");
+        break;
+    case 463:
+        sprintf(actionName, "demonProjectile");
+        break;
+    case 471:
+        sprintf(actionName, "veryWimpyAcidDamage");
+        break;
+    default:
+        strcpy(actionName, va("action_%03d", id));
+        break;
+    }
+
+    return actionName;
+}
+
+//
+// GetActionFunction
+//
+
+static char *GetActionFunction(factions_t *action)
+{
+    int fx = CheckIfFXEvent(action->type);
+
+    if(fx != -1)
+    {
+        char name[256];
+
+        FX_GetName(fx, name);
+
+        return va("\"fx\" \"%s\" %f %f %f",
+            name, action->args[1],
+            action->args[2], action->args[3]);
+    }
+
+    if(action->type == 248)
+    {
+        return va("%s %f %f %f",
+            GetActionName(action->type, action->args[0]),
+            action->args[1], action->args[2], action->args[3]);
+    }
+
+    return va("\"%s\" %f %f %f %f",
+            GetActionName(action->type, action->args[0]),
+            action->args[0], action->args[1], action->args[2], action->args[3]);
+}
+
+//
 // ProcessActions
 //
 
@@ -977,7 +1305,7 @@ static void ProcessActions(byte *data)
     if(count <= 0)
         return;
 
-    Com_Strcat("    actions = // [frame## action## arg0 arg1 arg2 arg3]\n");
+    Com_Strcat("    actions =\n");
     Com_Strcat("    {\n");
 
     for(i = 0; i < count; i++)
@@ -985,8 +1313,8 @@ static void ProcessActions(byte *data)
         int offset = i * size;
         factions_t *fa = (factions_t*)(action_buffer + 8 + offset);
 
-        Com_Strcat("        %i %i %f %f %f %f\n",
-            fa->frame, fa->type, fa->args[0], fa->args[1], fa->args[2], fa->args[3]);
+        Com_Strcat("        %i %s\n",
+            fa->frame, GetActionFunction(fa));
     }
 
     Com_Strcat("\n    }\n\n");
@@ -1000,23 +1328,47 @@ static void ProcessAnimation(byte *data, int index)
 {
     int numframes;
     int indexes;
+    byte *frameinfo;
     byte *indextable;
     byte *initial;
+    byte *lframe;
     short *lookup;
     int count;
     int i;
 
-    numframes = Com_GetCartOffset(Com_GetCartData(data, CHUNK_ANIMROOT_FRAMEINFO, 0),
-        CHUNK_FRAMEINFO_FRAMES, 0);
+    frameinfo = Com_GetCartData(data, CHUNK_ANIMROOT_FRAMEINFO, 0);
+    numframes = Com_GetCartOffset(frameinfo, CHUNK_FRAMEINFO_FRAMES, 0);
 
     Com_Strcat("    numframes = %i\n", numframes);
 
     indextable  = Com_GetCartData(data, CHUNK_ANIMROOT_INDEXES, 0);
     indexes     = Com_GetCartOffset(indextable, CHUNK_INDEXES_ENTRIES, 0);
     initial     = Com_GetCartData(data, CHUNK_ANIMROOT_INITIAL, 0);
+    lframe      = Com_GetCartData(data, CHUNK_ANIMROOT_UNKNOWN2, 0);
     lookup      = (short*)(indextable + CHUNK_INDEXES_TABLE);
 
+    if(Com_GetCartOffset(lframe, CHUNK_UNKNOWNA_SIZE, 0) != 0 &&
+        Com_GetCartOffset(lframe, CHUNK_UNKNOWNA_COUNT, 0) != 0)
+    {
+        short *rf = (short*)Com_GetCartData(lframe, CHUNK_UNKNOWNA_DATA(0), 0);
+        Com_Strcat("    // %i\n", rf[0]);
+        Com_Strcat("    loopframe = %i\n\n", rf[1]);
+    }
+
     Com_Strcat("    numnodes = %i\n\n", indexes);
+
+    if(numframes > 0)
+    {
+        short *turninfo = (short*)(frameinfo+8);
+
+        Com_Strcat("    turninfo = {\n");
+        for(i = 0; i < numframes; i++)
+        {
+            Com_Strcat("        %f\n", *turninfo * 0.00003051850944757462f);
+            turninfo++;
+        }
+        Com_Strcat("    }\n");
+    }
 
     ProcessMovement(Com_GetCartData(data, CHUNK_ANIMROOT_MOVEMENT, 0), numframes);
     ProcessRotation(Com_GetCartData(data, CHUNK_ANIMROOT_ROTATIONS, 0), numframes);
@@ -1035,7 +1387,7 @@ static void ProcessAnimation(byte *data, int index)
     }
     Com_Strcat("\n    }\n\n");
 
-    //ProcessActions(Com_GetCartData(data, CHUNK_ANIMROOT_ACTIONS, 0));
+    ProcessActions(Com_GetCartData(data, CHUNK_ANIMROOT_ACTIONS, 0));
 
     Com_Strcat("    initialtranslation = // [vx vy vz]\n");
     Com_Strcat("    {\n");
