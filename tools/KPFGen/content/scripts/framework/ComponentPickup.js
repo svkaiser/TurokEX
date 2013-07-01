@@ -42,7 +42,7 @@ class.properties(ComponentPickup,
         if(!this.bRespawn)
         {
             Sys.print(owner.origin.toString());
-            delete this;
+            GameActor.remove(this.parent.owner);
         }
         
         // TODO - TEMP

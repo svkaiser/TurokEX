@@ -58,7 +58,7 @@ class.properties(HudMessage,
         }
         else if(state == 2)
         {
-            this.curTime -= (this.time * Sys.deltatime());
+            this.curTime -= (15 * Sys.deltatime());
             this.scale = 1.0;
             
             if(this.curTime <= 0)

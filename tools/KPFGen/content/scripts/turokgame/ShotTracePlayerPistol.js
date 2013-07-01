@@ -20,3 +20,22 @@ class.properties(ShotTracePlayerPistol,
     hitSnd      : "sounds/shaders/bullet_impact_3.ksnd",
     damageClass : DamagePistolShot
 });
+
+//-----------------------------------------------------------------------------
+//
+// ShotTracePlayerPistol.js
+// DESCRIPTION:
+//
+//-----------------------------------------------------------------------------
+
+ShotTraceEnemyPistol = class.extends(ShotTracePlayerPistol);
+
+class.properties(ShotTraceEnemyPistol,
+{
+    //------------------------------------------------------------------------
+    // VARS
+    //------------------------------------------------------------------------
+    
+    spray       : 0.099609,
+    damageClass : DamageEnemyPistolShot
+});

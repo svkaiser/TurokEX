@@ -1,23 +1,24 @@
 //-----------------------------------------------------------------------------
 //
-// TurokPickupAmmo.js
+// TurokPickupKey.js
 // DESCRIPTION:
 //
 //-----------------------------------------------------------------------------
 
-TurokPickupAmmo = class.extendStatic(TurokPickup);
+TurokPickupKey = class.extendStatic(TurokPickup);
 
-class.properties(TurokPickupAmmo,
+class.properties(TurokPickupKey,
 {
     //------------------------------------------------------------------------
     // VARS
     //------------------------------------------------------------------------
     
-    active : true,
-    message : "ammo",
-    amount : 0,
-    id : 0,
-    pickupSnd : 'sounds/shaders/generic_1_bullet_pickup.ksnd',
+    active      : true,
+    amount      : 0,
+    levelID     : 0,
+    bits        : 0,
+    message     : "",
+    pickupSnd   : 'sounds/shaders/generic_4_non_weapon_pickup.ksnd',
     
     //------------------------------------------------------------------------
     // FUNCTIONS
@@ -30,9 +31,12 @@ class.properties(TurokPickupAmmo,
         if(player == null)
             return;
         
-        if(!player.ammo[this.id].give(player, this.amount))
-            return;
-        
         TurokPickup.prototype.onTouch.bind(this)(instigator);
+        
+        CameraEventKeyPickup.prototype.levelID = this.levelID;
+        
+        player.cameraEvent = CameraEventKeyPickup;
+        player.cameraEvent.prototype.startEvent();
+        player.giveLevelKey(this.levelID, this.bits);
     }
 });

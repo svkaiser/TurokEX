@@ -5,7 +5,13 @@
 //
 //-----------------------------------------------------------------------------
 
-Ammo = class.define();
+Ammo = class.define(function()
+{
+    this.config(
+        'amount',
+        'max'
+        );
+});
 
 class.properties(Ammo,
 {
@@ -25,6 +31,17 @@ class.properties(Ammo,
     
     give : function(player, amt)
     {
+        if(player.bHasBackpack)
+        {
+            if(this.amount == this.maxBackpack)
+                return false;
+        }
+        else
+        {
+            if(this.amount == this.max)
+                return false;
+        }
+        
         this.amount += amt;
         
         if(player.bHasBackpack)
@@ -37,6 +54,8 @@ class.properties(Ammo,
             if(this.amount > this.max)
                 this.amount = this.max;
         }
+        
+        return true;
     },
     
     use : function(amt)

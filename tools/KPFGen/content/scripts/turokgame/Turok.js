@@ -54,14 +54,20 @@ Sys.runScript('scripts/turokgame/TurokPickupHealthSmall.js');
 Sys.runScript('scripts/turokgame/TurokPickupHealthUltra.js');
 Sys.runScript('scripts/turokgame/TurokPickupMortalWound.js');
 Sys.runScript('scripts/turokgame/TurokPickupSpiritual.js');
+Sys.runScript('scripts/turokgame/TurokPickupKey.js');
 
 // hud
 Sys.runScript('scripts/turokgame/TurokHud.js');
 
 // AI components
 Sys.runScript('scripts/turokgame/TurokAIGrunt.js');
+Sys.runScript('scripts/turokgame/TurokAIRaptor.js');
+Sys.runScript('scripts/turokgame/TurokAIPurlin.js');
+Sys.runScript('scripts/turokgame/TurokAIStalker.js');
+Sys.runScript('scripts/turokgame/TurokAIDimetrodon.js');
 Sys.runScript('scripts/turokgame/TurokAIFish.js');
 Sys.runScript('scripts/turokgame/TurokAIAnimal.js');
+Sys.runScript('scripts/turokgame/TurokAIInsect.js');
 
 // animals
 Sys.runScript('scripts/turokgame/AnimalDeer.js');
@@ -69,6 +75,9 @@ Sys.runScript('scripts/turokgame/AnimalBoar.js');
 
 // damage classes
 Sys.runScript('scripts/turokgame/Damage.js');
+
+// blast radius class
+Sys.runScript('scripts/turokgame/BlastRadius.js');
 
 // projectile components
 Sys.runScript('scripts/turokgame/ComponentProjectile.js');
@@ -81,6 +90,8 @@ Sys.runScript('scripts/turokgame/ComponentAreaDamage.js');
 Sys.runScript('scripts/turokgame/ComponentAreaMessage.js');
 Sys.runScript('scripts/turokgame/ComponentAreaAmbience.js');
 Sys.runScript('scripts/turokgame/ComponentAreaTrigger.js');
+Sys.runScript('scripts/turokgame/ComponentAreaTeleport.js');
+Sys.runScript('scripts/turokgame/ComponentAreaSurface.js');
 
 // ambience
 Sys.runScript('scripts/turokgame/AmbienceJungle.js');
@@ -101,6 +112,9 @@ Sys.runScript('scripts/turokgame/ShotTracePlayerRifle.js');
 
 // weapons
 Sys.runScript('scripts/turokgame/ComponentPlayerWeapon.js');
+
+// camera events
+Sys.runScript('scripts/turokgame/CameraEvent.js');
 
 // ammo
 Sys.runScript('scripts/turokgame/Ammo.js');

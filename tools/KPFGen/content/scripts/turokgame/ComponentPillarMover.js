@@ -41,6 +41,9 @@ class.properties(ComponentPillarMover,
         
         var actor = this.parent.owner;
         
+        if(actor.plane <= -1)
+            return;
+        
         Snd.play('sounds/shaders/' + this.moveSound + '.ksnd', actor);
         
         this.bMove = true;

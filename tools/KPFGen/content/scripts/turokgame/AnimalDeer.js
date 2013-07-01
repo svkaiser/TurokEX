@@ -5,10 +5,7 @@
 //
 //-----------------------------------------------------------------------------
 
-AnimalDeer = class.extendStatic(TurokAIAnimal, function()
-{
-    TurokAIAnimal.prototype.constructor.bind(this)();
-});
+AnimalDeer = class.extendStatic(TurokAIAnimal);
 
 class.properties(AnimalDeer,
 {
@@ -16,7 +13,5 @@ class.properties(AnimalDeer,
     // VARS
     //------------------------------------------------------------------------
     
-    activeDistance  : 716.8,
-    health          : 40,
-    fleeLoopFrame   : 14,
+    health          : 40
 });

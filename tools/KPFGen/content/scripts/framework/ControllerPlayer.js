@@ -22,7 +22,7 @@ ControllerPlayer = class.extends(Controller, function()
     
     const ANGLE_MAXPITCH            = Angle.degToRad(90);
     
-    const JUMP_VELOCITY             = 768;
+    const JUMP_VELOCITY             = 672;
     const JUMP_GROUNDEPISILON       = 0.512;
     const JUMP_SLOPEHEIGHTMIN       = 8;
     
@@ -863,6 +863,9 @@ class.properties(ControllerPlayer,
             this.flyMove();
             return;
         }
+        
+        if(this.plane == null)
+            return;
         
         var area = this.plane.area;
         

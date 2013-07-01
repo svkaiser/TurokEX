@@ -36,11 +36,43 @@ class.properties(ShotTrace,
             
         if(t != null)
         {
-            Sys.spawnFx(this.hitFx, null, t.hitVector,
-                actor.rotation, t.hitPlane, null, this.hitSnd);
-                
+            var fx = this.hitFx;
+            var snd = this.hitSnd;
+            var rot = actor.rotation;
+            
             if(t.hitActor != null)
-                this.damageClass.prototype.inflict(t.hitActor, actor);
+            {
+                var hit = t.hitActor;
+                
+                this.damageClass.prototype.inflict(hit, actor);
+                rot = hit.rotation;
+                
+                // TODO - TEMP
+                if(hit.components)
+                {
+                    for(var i in hit.components)
+                    {
+                        var component = hit.components[i];
+                        
+                        if(component.bloodType !== undefined)
+                        {
+                            switch(component.bloodType)
+                            {
+                            case BLOOD_TYPE_HUMAN:
+                                fx = "fx/blood_gush1.kfx";
+                                snd = "sounds/shaders/bullet_impact_13.ksnd";
+                                break;
+                            case BLOOD_TYPE_ALIEN:
+                                fx = "fx/fx_048.kfx";
+                                snd = "sounds/shaders/bullet_impact_14.ksnd";
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            Sys.spawnFx(fx, null, t.hitVector, rot, t.hitPlane, null, snd);
         }
     }
 });

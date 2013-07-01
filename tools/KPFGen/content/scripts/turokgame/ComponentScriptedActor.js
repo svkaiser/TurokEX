@@ -1,7 +1,9 @@
 //-----------------------------------------------------------------------------
 //
 // ComponentScriptedActor.js
-// DESCRIPTION:
+//
+// DESCRIPTION: Base class for all Scripted Actor objects. Scripted Actors
+// can be used to trigger special one-offs or function as a door or switch
 //
 //-----------------------------------------------------------------------------
 
@@ -14,22 +16,48 @@ class.properties(ComponentScriptedActor,
     //------------------------------------------------------------------------
     
     triggerAnimation    : "",
+    bTriggered          : false,
     bRemoveOnCompletion : true,
-    anim                : null,
     bRootMotion         : false,
     
     //------------------------------------------------------------------------
     // FUNCTIONS
     //------------------------------------------------------------------------
     
+    // used to unblock a path when a door opens
+    // shared across all door types
+    action_232 : function()
+    {
+        var actor = this.parent.owner;
+        
+        if(actor.plane == -1)
+            return;
+        
+        var x = arguments[1];
+        var y = arguments[2];
+        var z = arguments[3];
+        var plane = Plane.fromIndex(actor.plane);
+        var vec = actor.getLocalVector(x, y, z);
+        var len = Math.round(vec.unit3());
+        var origin = actor.origin;
+        
+        vec.sub(origin);
+        vec.normalize();
+        
+        // looked at the disassembly but not sure why they would do it like this..
+        // seems like a workaround due to its origin being far off from the door mesh.
+        // find the plane facing the origin and then toggle the solid/blocking flags off
+        var trace = Physics.rayTrace(origin, vec, 1, len, plane);
+            
+        if(trace && trace.hitPlane)
+            plane = trace.hitPlane;
+            
+        Level.toggleBlockingPlanes(plane, true);
+    },
+    
     //------------------------------------------------------------------------
     // EVENTS
     //------------------------------------------------------------------------
-    
-    onReady : function()
-    {
-        this.anim = Sys.loadAnimation(this.parent.owner.model, this.triggerAnimation);
-    },
     
     onTrigger : function(instigator, args)
     {
@@ -39,7 +67,8 @@ class.properties(ComponentScriptedActor,
         if(this.bRootMotion == true)
             flags |= NRender.ANIM_ROOTMOTION;
         
-        actor.animState.blendAnim(this.anim, 4.0, 4.0, flags);
+        actor.blendAnim(this.triggerAnimation, 4.0, 4.0, flags);
+        this.bTriggered = true;
     },
     
     onLocalTick : function()
@@ -54,23 +83,11 @@ class.properties(ComponentScriptedActor,
                 return;
             }
         }
-        
-        actor.animState.update();
-        
-        if(actor.animState.flags & NRender.ANIM_ROOTMOTION &&
-            !(actor.animState.flags & NRender.ANIM_STOPPED))
-        {
-            var dir = Vector.applyRotation(actor.animState.rootMotion, actor.rotation);
-            dir.y = 0;
-            dir.scale(Sys.deltatime() * 0.5);
-            dir.add(actor.origin);
-            
-            actor.origin = dir;
-        }
-        
-        actor.updateTransform();
     }
 });
+
+
+// TODO - MOVE THESE INTO SEPERATE MODULES
 
 //-----------------------------------------------------------------------------
 //
@@ -101,11 +118,7 @@ class.properties(ScriptedMonkey,
     
     onReady : function()
     {
-        var actor = this.parent.owner;
-        
-        this.anim = Sys.loadAnimation(actor.model, this.triggerAnimation);
-        actor.animState.setAnim(Sys.loadAnimation(actor.model, "anim00"),
-            4.0, NRender.ANIM_LOOP);
+        this.parent.owner.setAnim("anim00", 4.0, NRender.ANIM_LOOP);
     },
     
     onTrigger : function(instigator, args)
@@ -114,6 +127,7 @@ class.properties(ScriptedMonkey,
         
         var actor = this.parent.owner;
         
+        // TODO - handle bounding box updates in engine
         var box = actor.bbox;
         box.min_z = -1024;
         
@@ -150,10 +164,7 @@ class.properties(ScriptedBird,
     
     onReady : function()
     {
-        var actor = this.parent.owner;
-        
-        this.anim = Sys.loadAnimation(actor.model, this.triggerAnimation);
-        actor.bHidden = true;
+        this.parent.owner.bHidden = true;
     },
     
     onTrigger : function(instigator, args)
@@ -166,12 +177,65 @@ class.properties(ScriptedBird,
         if(this.bRootMotion == true)
             flags |= NRender.ANIM_ROOTMOTION;
         
-        actor.animState.setAnim(this.anim, 4.0, flags);
+        actor.setAnim(this.triggerAnimation, 4.0, flags);
         
+        // TODO - handle bounding box updates in engine
         var box = actor.bbox;
         box.min_z = -4096;
         
         actor.setBounds(box.min_x, box.min_y, box.min_z, box.max_x, box.max_y, box.max_z);
+    }
+});
+
+//-----------------------------------------------------------------------------
+//
+// ScriptedSwingingHook.js
+// DESCRIPTION:
+//
+//-----------------------------------------------------------------------------
+
+ScriptedSwingingHook = class.extendStatic(ComponentScriptedActor);
+
+class.properties(ScriptedSwingingHook,
+{
+    //------------------------------------------------------------------------
+    // VARS
+    //------------------------------------------------------------------------
+    
+    bRemoveOnCompletion : false,
+    bRootMotion         : false,
+    
+    //------------------------------------------------------------------------
+    // FUNCTIONS
+    //------------------------------------------------------------------------
+    
+    //------------------------------------------------------------------------
+    // EVENTS
+    //------------------------------------------------------------------------
+    
+    onReady : function()
+    {
+        this.parent.owner.setAnim("anim00", 4.0, NRender.ANIM_LOOP);
+    },
+    
+    // kinda sucks that I have to define the same function twice. though it would probably
+    // make more since to have the AI component inherit off of the scripted actor component
+    melee : function()
+    {
+        var x = arguments[1];
+        var y = arguments[2];
+        var z = arguments[3];
+        
+        var self = this.parent.owner;
+        var target = ClientPlayer.actor;
+        var torg = target.origin;
+        var aorg = self.getLocalVector(x, y, z);
+        
+        aorg.y += (target.viewHeight * 0.5);
+        torg.sub(aorg);
+        
+        if(torg.unit3() <= (10.0 * 10.24) + target.radius)
+            DamageMelee.prototype.inflict(ClientPlayer.actor, self);
     }
 });
 

@@ -1,28 +1,28 @@
 //-----------------------------------------------------------------------------
 //
-// Hud.js
+// ComponentAreaSurface.js
 // DESCRIPTION:
 //
 //-----------------------------------------------------------------------------
 
-Hud = class.define(function()
-{
-    this.canvas = new Canvas();
-});
+const SURFACE_DEFAULT   = 0;
+const SURFACE_WATER     = 1;
+const SURFACE_STONE     = 2;
+const SURFACE_METAL     = 3;
 
-class.properties(Hud,
+ComponentAreaSurface = class.extendStatic(ComponentArea);
+
+class.properties(ComponentAreaSurface,
 {
     //------------------------------------------------------------------------
     // VARS
     //------------------------------------------------------------------------
     
-    canvas : null,
+    active          : true,
+    floorSurface    : SURFACE_DEFAULT,
+    wallSurface     : SURFACE_DEFAULT
     
     //------------------------------------------------------------------------
     // FUNCTIONS
     //------------------------------------------------------------------------
-    
-    onTick : function() { },
-    onDraw : function() { },
-    start : function() { }
 });
