@@ -1246,6 +1246,9 @@ char *GetActionName(int id, float arg0)
     case 463:
         sprintf(actionName, "demonProjectile");
         break;
+    case 407:
+        sprintf(actionName, "removeSelf");
+        break;
     case 471:
         sprintf(actionName, "veryWimpyAcidDamage");
         break;
@@ -1292,7 +1295,7 @@ static char *GetActionFunction(factions_t *action)
 // ProcessActions
 //
 
-static void ProcessActions(byte *data)
+static void ProcessActions(byte *data, int animIndex)
 {
     int size        = Com_GetCartOffset(data, CHUNK_ACTIONS_SIZE, 0);
     int count       = Com_GetCartOffset(data, CHUNK_ACTIONS_COUNT, 0);
@@ -1313,6 +1316,10 @@ static void ProcessActions(byte *data)
         int offset = i * size;
         factions_t *fa = (factions_t*)(action_buffer + 8 + offset);
 
+        // HACK
+        if(curmodel == 396 && animIndex == 22 && fa->type == 407 && fa->frame == 62)
+            fa->frame = 61;
+
         Com_Strcat("        %i %s\n",
             fa->frame, GetActionFunction(fa));
     }
@@ -1324,7 +1331,7 @@ static void ProcessActions(byte *data)
 // ProcessAnimation
 //
 
-static void ProcessAnimation(byte *data, int index)
+static void ProcessAnimation(byte *data, int index, int animIndex)
 {
     int numframes;
     int indexes;
@@ -1387,7 +1394,7 @@ static void ProcessAnimation(byte *data, int index)
     }
     Com_Strcat("\n    }\n\n");
 
-    ProcessActions(Com_GetCartData(data, CHUNK_ANIMROOT_ACTIONS, 0));
+    ProcessActions(Com_GetCartData(data, CHUNK_ANIMROOT_ACTIONS, 0), animIndex);
 
     Com_Strcat("    initialtranslation = // [vx vy vz]\n");
     Com_Strcat("    {\n");
@@ -1469,7 +1476,7 @@ static void AddAnimations(byte *data, int index)
         Com_StrcatClear();
 
         Com_Strcat("anim\n{\n");
-        ProcessAnimation(animdata, index);
+        ProcessAnimation(animdata, index, i);
         Com_Strcat("}\n\n");
 
         sprintf(name, "%smdl%03d/mdl%03d_%02d.kanim",

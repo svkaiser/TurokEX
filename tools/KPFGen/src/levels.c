@@ -1096,6 +1096,7 @@ static void ProcessActors(byte *data)
         case OT_AI_GRUNT:
 #ifndef FORMAT_BINARY
             Com_Strcat("        classFlags = 3\n");
+            Com_Strcat("        physics = 1\n");
             Com_Strcat("        components[1] =\n");
             Com_Strcat("        {\n");
             Com_Strcat("            BeginObject = \"TurokAIGrunt\"\n");
@@ -1118,6 +1119,7 @@ static void ProcessActors(byte *data)
         case OT_AI_RAPTOR:
 #ifndef FORMAT_BINARY
             Com_Strcat("        classFlags = 3\n");
+            Com_Strcat("        physics = 1\n");
             Com_Strcat("        components[1] =\n");
                 Com_Strcat("        {\n");
                 Com_Strcat("            BeginObject = \"TurokAIRaptor\"\n");
@@ -1132,6 +1134,7 @@ static void ProcessActors(byte *data)
         case OT_AI_DINOSAUR1:
 #ifndef FORMAT_BINARY
             Com_Strcat("        classFlags = 3\n");
+            Com_Strcat("        physics = 1\n");
             Com_Strcat("        components[1] =\n");
                 Com_Strcat("        {\n");
                 Com_Strcat("            BeginObject = \"TurokAIDimetrodon\"\n");
@@ -1143,9 +1146,10 @@ static void ProcessActors(byte *data)
                 Com_Strcat("        }\n");
 #endif
             break;
-case OT_AI_STALKER:
+        case OT_AI_STALKER:
 #ifndef FORMAT_BINARY
             Com_Strcat("        classFlags = 3\n");
+            Com_Strcat("        physics = 1\n");
             Com_Strcat("        components[1] =\n");
                 Com_Strcat("        {\n");
                 Com_Strcat("            BeginObject = \"TurokAIStalker\"\n");
@@ -1160,9 +1164,25 @@ case OT_AI_STALKER:
         case OT_AI_PURLIN:
 #ifndef FORMAT_BINARY
             Com_Strcat("        classFlags = 3\n");
+            Com_Strcat("        physics = 1\n");
             Com_Strcat("        components[1] =\n");
                 Com_Strcat("        {\n");
                 Com_Strcat("            BeginObject = \"TurokAIPurlin\"\n");
+                Com_Strcat("            {\n");
+                ProcessAIBehavior(actor, attr);
+                Com_Strcat("                \"active\" : 1\n");
+			    Com_Strcat("            }\n");
+                Com_Strcat("            EndObject\n");
+                Com_Strcat("        }\n");
+#endif
+            break;
+        case OT_AI_ALIEN:
+#ifndef FORMAT_BINARY
+            Com_Strcat("        classFlags = 3\n");
+            Com_Strcat("        physics = 1\n");
+            Com_Strcat("        components[1] =\n");
+                Com_Strcat("        {\n");
+                Com_Strcat("            BeginObject = \"TurokAIAlien\"\n");
                 Com_Strcat("            {\n");
                 ProcessAIBehavior(actor, attr);
                 Com_Strcat("                \"active\" : 1\n");
@@ -1220,6 +1240,7 @@ case OT_AI_STALKER:
             {
             case 325:
 #ifndef FORMAT_BINARY
+                Com_Strcat("        physics = 1\n");
                 Com_Strcat("        components[1] =\n");
                 Com_Strcat("        {\n");
                 Com_Strcat("            BeginObject = \"TurokAIAnimal\"\n");
@@ -1301,6 +1322,8 @@ case OT_AI_STALKER:
         case OT_AI_FISH:
 #ifndef FORMAT_BINARY
             Com_Strcat("        classFlags = 3\n");
+            Com_Strcat("        physics = 1\n");
+            Com_Strcat("        mass = 0.0\n");
             Com_Strcat("        components[1] =\n");
             Com_Strcat("        {\n");
             Com_Strcat("            BeginObject = \"TurokAIFish\"\n");
@@ -1672,6 +1695,14 @@ static void ProcessInstances(byte *data, int offs)
         Com_Strcat("                plane = %i\n", mapinst->plane);
         Com_Strcat("                radius = %f\n", mapinst->bboxsize);
         Com_Strcat("                height = %f\n", mapinst->bboxsize);
+
+        if(IsAPickup(mapinst->model))
+        {
+            Com_Strcat("                bRotor = 1\n");
+            Com_Strcat("                rotorSpeed = 1\n");
+            Com_Strcat("                rotorVector = { 0 1 0 }\n");
+        }
+
         Com_Strcat("                mesh = \"models/mdl%03d/mdl%03d.kmesh\"\n",
             mapinst->model, mapinst->model);
         Com_Strcat("                bounds = { %f %f %f %f %f %f }\n",
