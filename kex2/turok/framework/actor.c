@@ -56,12 +56,17 @@ enum
     scactor_bTouch,
     scactor_bHidden,
     scactor_bOrientOnSlope,
+    scactor_bNoDropOff,
+    scactor_bRotor,
     scactor_scale,
     scactor_radius,
     scactor_height,
     scactor_centerheight,
     scactor_viewheight,
     scactor_classFlags,
+    scactor_physics,
+    scactor_rotorSpeed,
+    scactor_rotorVector,
     scactor_end
 };
 
@@ -75,12 +80,17 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_bTouch,           "bTouch"            },
     { scactor_bHidden,          "bHidden"           },
     { scactor_bOrientOnSlope,   "bOrientOnSlope"    },
+    { scactor_bNoDropOff,       "bNoDropOff"        },
+    { scactor_bRotor,           "bRotor"            },
     { scactor_scale,            "scale"             },
     { scactor_radius,           "radius"            },
     { scactor_height,           "height"            },
     { scactor_centerheight,     "centerheight"      },
     { scactor_viewheight,       "viewheight"        },
     { scactor_classFlags,       "classFlags"        },
+    { scactor_physics,          "physics"           },
+    { scactor_rotorSpeed,       "rotorSpeed"        },
+    { scactor_rotorVector,      "rotorVector"       },
     { -1,                       NULL                }
 };
 
@@ -166,6 +176,16 @@ static void Actor_ParseTemplate(scparser_t *parser, gActorTemplate_t *ac)
                 scactor_bOrientOnSlope, parser, false);
             break;
 
+        case scactor_bNoDropOff:
+            SC_AssignInteger(mapactortokens, &ac->actor.bNoDropOff,
+                scactor_bNoDropOff, parser, false);
+            break;
+
+        case scactor_bRotor:
+            SC_AssignInteger(mapactortokens, &ac->actor.bRotor,
+                scactor_bRotor, parser, false);
+            break;
+
         case scactor_scale:
             SC_AssignVector(mapactortokens, ac->actor.scale,
                 scactor_scale, parser, false);
@@ -197,6 +217,21 @@ static void Actor_ParseTemplate(scparser_t *parser, gActorTemplate_t *ac)
 
             if(ac->actor.classFlags & AC_AI)
                 AI_Spawn(&ac->actor);
+            break;
+
+        case scactor_physics:
+            SC_AssignInteger(mapactortokens, &ac->actor.physics,
+                scactor_physics, parser, false);
+            break;
+
+        case scactor_rotorSpeed:
+            SC_AssignFloat(mapactortokens, &ac->actor.rotorSpeed,
+                scactor_rotorSpeed, parser, false);
+            break;
+
+        case scactor_rotorVector:
+            SC_AssignVector(mapactortokens, ac->actor.rotorVector,
+                scactor_rotorVector, parser, false);
             break;
 
         default:
@@ -334,7 +369,14 @@ static kbool Actor_AlignToPlane(gActor_t *actor)
 
 void Actor_UpdateTransform(gActor_t *actor)
 {
-    if(!actor->bStatic)
+    if(actor->bRotor)
+    {
+        actor->angles[0] += (actor->rotorVector[1] * actor->rotorSpeed * actor->timestamp);
+        actor->angles[1] += (actor->rotorVector[0] * actor->rotorSpeed * actor->timestamp);
+        actor->angles[2] += (actor->rotorVector[2] * actor->rotorSpeed * actor->timestamp);
+    }
+
+    if(!actor->bStatic || actor->classFlags & AC_FX || actor->bRotor)
     {
         vec4_t yaw;
         vec4_t pitch;
@@ -451,24 +493,33 @@ kbool Actor_CallEvent(gActor_t *actor, const char *function, long *args, unsigne
 
 static void Actor_UpdateMove(gActor_t *actor)
 {
-    plane_t *plane = Map_IndexToPlane(actor->plane);
-    float time = actor->timestamp;
+    plane_t *plane;
+    float time;
+    animstate_t *astate;
 
-    if(Actor_OnGround(actor) && actor->animState.flags & ANF_ROOTMOTION &&
-        !(actor->animState.flags & ANF_STOPPED))
+    plane = Map_IndexToPlane(actor->plane);
+    time = actor->timestamp;
+    astate = &actor->animState;
+
+    if(Actor_OnGround(actor) && astate->flags & ANF_ROOTMOTION &&
+        !(astate->flags & ANF_STOPPED))
     {
         vec3_t dir;
-        float speed;
+        float blendFrac;
 
-        Vec_ApplyQuaternion(dir, actor->animState.rootMotion, actor->rotation);
+        blendFrac = 1.0f;
+
+        if(astate->flags & ANF_BLEND && astate->blendtime != 0)
+            blendFrac = (astate->frametime/astate->blendtime);
+
+        Vec_ApplyQuaternion(dir, astate->rootMotion, actor->rotation);
         dir[1] = 0;
-        speed = 35.0f * Vec_Unit3(actor->scale);
-        Vec_Scale(dir, dir, speed * time);
+        Vec_Scale(dir, dir, 60.0f * blendFrac * time);
         Vec_Add(actor->velocity, actor->velocity, dir);
     }
 
     G_ApplyGravity(actor->origin, actor->velocity, plane, actor->mass, time);
-    G_ClipMovement(actor->origin, actor->velocity, time, &plane, actor, NULL);
+    G_ClipMovement(actor->origin, actor->velocity, time, &plane, actor);
 
     if(Actor_OnGround(actor))
         G_ApplyFriction(actor->velocity, actor->friction, false);
@@ -491,7 +542,7 @@ static void Actor_UpdateModelYaw(gActor_t *actor)
     astate = &actor->animState;
 
     if(!(astate->flags & ANF_ROOTMOTION) ||
-        astate->flags & ANF_STOPPED)
+        astate->flags & (ANF_STOPPED|ANF_BLEND))
         return;
 
     if(astate->frametime <= 0)
@@ -527,13 +578,12 @@ static void Actor_ExecuteFrameActions(gActor_t *actor)
     astate = &actor->animState;
     anim = astate->track.anim;
 
-    if(actor->components == NULL)
-        return;
-    if(astate == NULL)
-        return;
-    if(astate->flags & (ANF_STOPPED|ANF_PAUSED))
-        return;
-    if(anim->actions == NULL || anim->numactions <= 0)
+    if(actor->components == NULL    ||
+        astate == NULL              ||
+        anim == NULL                ||
+        astate->flags & ANF_PAUSED  ||
+        anim->actions == NULL       ||
+        anim->numactions <= 0)
         return;
 
     frame = astate->track.frame;
@@ -713,6 +763,12 @@ void Actor_LocalTick(void)
             if(actor->bStatic)
                 continue;
 
+            if(actor->bRotor)
+            {
+                actor->timestamp = client.runtime;
+                Actor_UpdateTransform(actor);
+            }
+
             // TODO
             if(Vec_Length3(client.player->camera->origin, actor->origin) < 2048.0f)
                 Actor_CallEvent(actor, "onLocalTick", NULL, 0);
@@ -850,12 +906,19 @@ void Actor_CopyProperties(gActor_t *actor, gActor_t *gTemplate)
     actor->bOrientOnSlope   = gTemplate->bOrientOnSlope;
     actor->bStatic          = gTemplate->bStatic;
     actor->bTouch           = gTemplate->bTouch;
+    actor->bNoDropOff       = gTemplate->bNoDropOff;
+    actor->bRotor           = gTemplate->bRotor;
     actor->centerHeight     = gTemplate->centerHeight;
     actor->viewHeight       = gTemplate->viewHeight;
     actor->radius           = gTemplate->radius;
     actor->height           = gTemplate->height;
     actor->model            = gTemplate->model;
     actor->classFlags       = gTemplate->classFlags;
+    actor->physics          = gTemplate->physics;
+    actor->mass             = gTemplate->mass;
+    actor->friction         = gTemplate->friction;
+    actor->bounceDamp       = gTemplate->bounceDamp;
+    actor->rotorSpeed       = gTemplate->rotorSpeed;
 
     if(actor->classFlags & AC_AI)
     {
@@ -871,6 +934,7 @@ void Actor_CopyProperties(gActor_t *actor, gActor_t *gTemplate)
     Vec_Copy3(actor->bbox.omin, gTemplate->bbox.min);
     Vec_Copy3(actor->bbox.omax, gTemplate->bbox.max);
     Vec_Copy3(actor->scale, gTemplate->scale);
+    Vec_Copy3(actor->rotorVector, gTemplate->rotorVector);
 }
 
 //
@@ -957,6 +1021,13 @@ gActorTemplate_t *Actor_NewTemplate(const char *name)
 
     at = (gActorTemplate_t*)Z_Calloc(sizeof(gActorTemplate_t), PU_STATIC, 0);
 
+    // set default properties
+    at->actor.physics       = PT_NONE;
+    at->actor.mass          = 1200;
+    at->actor.friction      = 1.0f;
+    at->actor.airfriction   = 1.0f;
+    at->actor.bounceDamp    = 0.0f;
+
     if(parser = SC_Open(kva("actors/%s.kact", name)))
     {
         Actor_ParseTemplate(parser, at);
@@ -987,13 +1058,6 @@ gActor_t *Actor_Spawn(const char *classname, float x, float y, float z,
     }
 
     actor = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
-
-    // set default properties
-    actor->physics      = PT_NONE;
-    actor->mass         = 1200;
-    actor->friction     = 1.0f;
-    actor->airfriction  = 1.0f;
-    actor->bounceDamp   = 0.0f;
 
     Actor_CopyProperties(actor, &at->actor);
 

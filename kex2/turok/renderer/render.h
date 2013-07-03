@@ -137,17 +137,8 @@ typedef struct
 
 typedef struct
 {
-    anim_t              *anim;
-    int                 frame;
-    int                 nextframe;
-    int                 flags;
-} oldtrack_t;
-
-typedef struct
-{
     animtrack_t         track;
     animtrack_t         prevtrack;
-    oldtrack_t          oldtrack;
     int                 currentFrame;
     float               time;
     float               deltatime;
@@ -155,6 +146,7 @@ typedef struct
     float               frametime;
     float               blendtime;
     int                 flags;
+    int                 prevflags;
     vec3_t              rootMotion;
     unsigned int        restartframe;
 } animstate_t;

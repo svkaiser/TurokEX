@@ -255,3 +255,41 @@ void Img_LoadTGA(const char *name, byte **output, int *width, int *height, kbool
     Z_Free(tgafile);
 }
 
+//
+// Img_WriteTGA
+//
+
+void Img_WriteTGA(const char *filename, byte *data, int width, int height)
+{
+    byte *buffer;
+    byte header[18];
+    int i;
+    int c;
+    FILE *f;
+
+    buffer = malloc(width*height*3);
+    memset(header, 0, 18);
+    header[2] = 2;      // uncompressed type
+    header[12] = width&255;
+    header[13] = width>>8;
+    header[14] = height&255;
+    header[15] = height>>8;
+    header[16] = 24;    // pixel size
+
+    // swap rgb to bgr
+    c = width * height * 3;
+
+    for(i = 0; i < c; i += 3)
+    {
+        buffer[i] = data[i+2];       // blue
+        buffer[i+1] = data[i+1];     // green
+        buffer[i+2] = data[i+0];     // red
+    }
+
+    f = fopen(filename, "wb");
+    fwrite(header, 1, 18, f);
+    fwrite(buffer, 1, c, f);
+    fclose(f);
+
+    free(buffer);
+}

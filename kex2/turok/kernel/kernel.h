@@ -65,7 +65,6 @@ typedef struct
 } control_t;
 
 extern control_t control;
-extern char keycode[2][MAX_KEYS];
 void Key_ExecCmd(char key, kbool keyup);
 void Key_WriteBindings(FILE *file);
 void Key_AddAction(byte id, char *name);

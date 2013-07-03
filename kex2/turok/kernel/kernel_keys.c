@@ -172,6 +172,16 @@ int Key_GetName(char *buff, int key)
     }
     for(pkey = Keys; pkey->name; pkey++)
     {
+        // F1 - F12 keys
+        if(key >= 26 && key <= 37)
+        {
+            if(pkey->code == (SDLK_F1 + (key-26)))
+            {
+                strcpy(buff, pkey->name);
+                return true;
+            }
+        }
+
         if(pkey->code == key)
         {
             strcpy(buff, pkey->name);

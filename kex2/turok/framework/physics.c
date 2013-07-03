@@ -114,15 +114,19 @@ void G_ApplyFriction(vec3_t velocity, float friction, kbool effectY)
 
 void G_ApplyBounceVelocity(vec3_t velocity, vec3_t reflection, float amount)
 {
-    float d = Vec_Unit3(velocity);
     float bounce = 1.0f;
 
-    if(d >= 1.05f)
+    if(amount != 0)
     {
-        bounce = (1 + amount);
+        float d = Vec_Unit3(velocity);
 
-        if(d < 16.8f && amount < 1.0f)
-            bounce = 0.2f;
+        if(d >= 1.05f)
+        {
+            bounce = (1 + amount);
+
+            if(d < 16.8f && amount < 1.0f)
+                bounce = 0.2f;
+        }
     }
 
     G_ClipVelocity(velocity, velocity, reflection, bounce);
@@ -154,8 +158,8 @@ kbool G_TryMove(gActor_t *source, vec3_t origin, vec3_t dest, plane_t **plane)
 // along the way
 //
 
-kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time, plane_t **plane,
-                    gActor_t *actor, trace_t *t)
+kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time,
+                     plane_t **plane, gActor_t *actor)
 {
     trace_t trace;
     vec3_t start;
@@ -168,23 +172,9 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time, plane_t **plane
     kbool hitOk;
 
     if(*plane == NULL)
-    {
-        if(t)
-        {
-            t->type = TRT_STUCK;
-            t->hitpl = NULL;
-            t->pl = NULL;
-            Vec_Copy3(t->hitvec, origin);
-            Vec_Copy3(t->normal, end);
-            Vec_Normalize3(t->normal);
-        }
-
         return true;
-    }
 
     hitOk = false;
-
-    if(t) memset(t, 0, sizeof(trace_t));
 
     // set start point
     Vec_Copy3(start, origin);
@@ -208,29 +198,6 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time, plane_t **plane
         {
             // went the entire distance
             break;
-        }
-
-        if(t)
-        {
-            if(trace.hitpl)
-                t->hitpl = trace.hitpl;
-
-            if(trace.hitActor)
-                t->hitActor = trace.hitActor;
-
-            Vec_Copy3(t->hitvec, end);
-
-            if(trace.type != TRT_NOHIT)
-            {
-                Vec_Copy3(t->normal, trace.normal);
-                t->type = trace.type;
-                Vec_Lerp3(t->hitvec, (1 + trace.frac), start, end);
-            }
-
-            if(trace.frac != 0)
-                t->frac = trace.frac;
-
-            t->pl = trace.pl;
         }
 
         hitOk = true;
@@ -302,16 +269,6 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time, plane_t **plane
     Vec_Add(end, origin, vel);
     if(!Plane_PointInRange(*plane, end[0], end[2]))
     {
-        if(t)
-        {
-            t->type = TRT_STUCK;
-            t->hitpl = *plane;
-            t->pl = *plane;
-            Vec_Copy3(t->hitvec, origin);
-            Vec_Copy3(t->normal, end);
-            Vec_Normalize3(t->normal);
-        }
-
         hitOk = true;
         velocity[0] = 0;
         velocity[2] = 0;
@@ -349,34 +306,11 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time, plane_t **plane
                 }
             }
 
-            if(t)
-            {
-                float d;
-
-                t->hitpl = *plane;
-                t->pl = *plane;
-                Vec_Copy3(t->hitvec, start);
-                Vec_Copy3(t->normal, (*plane)->normal);
-                t->type = TRT_SLOPE;
-
-                d = Vec_Dot(start, (*plane)->normal) -
-                    Vec_Dot((*plane)->points[0], (*plane)->normal);
-
-                if(d > 0)
-                {
-                    vec3_t dir;
-
-                    Vec_Copy3(dir, velocity);
-                    Vec_Normalize3(dir);
-                    Vec_Scale(dir, dir, d - 3.42f);
-                    Vec_Add(t->hitvec, start, dir);
-                }
-            }
-
             hitOk = true;
-            G_ClipVelocity(velocity, velocity, (*plane)->normal, 1);
+            G_ApplyBounceVelocity(velocity, (*plane)->normal,
+                actor->bounceDamp);
 
-            if(velocity[1] > 0)
+            if(actor->bounceDamp == 0 && velocity[1] > 0)
                 velocity[1] = 0;
         }
 
@@ -389,16 +323,6 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time, plane_t **plane
             if((dist - (origin[1] + offset) < 1.024f))
             {
                 origin[1] = dist - (1.024f + offset);
-
-                if(t)
-                {
-                    t->hitpl = *plane;
-                    t->pl = *plane;
-                    Vec_Copy3(t->hitvec, start);
-                    Vec_Copy3(t->normal, (*plane)->ceilingNormal);
-                    t->type = TRT_SLOPE;
-                }
-
                 hitOk = true;
                 G_ClipVelocity(velocity, velocity, (*plane)->ceilingNormal, 1);
             }

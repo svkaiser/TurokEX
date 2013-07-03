@@ -170,7 +170,7 @@ void GL_SwapBuffers(void)
 // GL_GetScreenBuffer
 //
 
-byte* GL_GetScreenBuffer(int x, int y, int width, int height)
+byte* GL_GetScreenBuffer(int x, int y, int width, int height, kbool flip)
 {
     byte* buffer;
     byte* data;
@@ -195,11 +195,14 @@ byte* GL_GetScreenBuffer(int x, int y, int width, int height)
     // Need to vertically flip the image
     // 20120313 villsa - better method to flip image. uses one buffer instead of two
     //
-    for(i = 0; i < height / 2; i++)
+    if(flip)
     {
-        memcpy(buffer, &data[i * col], col);
-        memcpy(&data[i * col], &data[(height - (i + 1)) * col], col);
-        memcpy(&data[(height - (i + 1)) * col], buffer, col);
+        for(i = 0; i < height / 2; i++)
+        {
+            memcpy(buffer, &data[i * col], col);
+            memcpy(&data[i * col], &data[(height - (i + 1)) * col], col);
+            memcpy(&data[(height - (i + 1)) * col], buffer, col);
+        }
     }
     
     Z_Free(buffer);

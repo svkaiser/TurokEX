@@ -228,6 +228,23 @@ JS_PROP_FUNC_GET(GameActor)
     case 33:
         JS_SET_RVAL(cx, vp, INT_TO_JSVAL(actor->classFlags));
 
+    case 34:
+        return JS_NewDoubleValue(cx, actor->friction, vp);
+
+    case 35:
+        return JS_NewDoubleValue(cx, actor->bounceDamp, vp);
+
+    case 36:
+        JS_RETURNBOOLEAN(vp, actor->bRotor);
+        return JS_TRUE;
+
+    case 37:
+        return JS_NewDoubleValue(cx, actor->rotorSpeed, vp);
+
+    case 38:
+        JS_NEWVECTORPOOL(actor->rotorVector);
+        return JS_TRUE;
+
     default:
         return JS_TRUE;
     }
@@ -343,6 +360,30 @@ JS_PROP_FUNC_SET(GameActor)
     case 32:
         JS_GETNUMBER(dval, vp, 0);
         actor->mass = (float)dval;
+        return JS_TRUE;
+
+    case 34:
+        JS_GETNUMBER(dval, vp, 0);
+        actor->friction = (float)dval;
+        return JS_TRUE;
+
+    case 35:
+        JS_GETNUMBER(dval, vp, 0);
+        actor->bounceDamp = (float)dval;
+        return JS_TRUE;
+
+    case 36:
+        JS_GETBOOL(actor->bRotor, vp, 0);
+        return JS_TRUE;
+
+    case 37:
+        JS_GETNUMBER(dval, vp, 0);
+        actor->rotorSpeed = (float)dval;
+        return JS_TRUE;
+
+    case 38:
+        JS_GETOBJECT(object, vp, 0);
+        JS_GETVECTOR2(object, actor->rotorVector);
         return JS_TRUE;
 
     default:
@@ -852,6 +893,11 @@ JS_BEGINPROPS(GameActor)
     { "ai",             31, JSPROP_ENUMERATE|JSPROP_READONLY, NULL, NULL },
     { "mass",           32, JSPROP_ENUMERATE, NULL, NULL },
     { "classFlags",     33, JSPROP_ENUMERATE|JSPROP_READONLY, NULL, NULL },
+    { "friction",       34, JSPROP_ENUMERATE, NULL, NULL },
+    { "bounceDamp",     35, JSPROP_ENUMERATE, NULL, NULL },
+    { "bRotor",         36, JSPROP_ENUMERATE, NULL, NULL },
+    { "rotorSpeed",     37, JSPROP_ENUMERATE, NULL, NULL },
+    { "rotorVector",    38, JSPROP_ENUMERATE, NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 

@@ -226,6 +226,8 @@ enum
     scactor_bStatic,
     scactor_bTouch,
     scactor_bOrientOnSlope,
+    scactor_bNoDropOff,
+    scactor_bRotor,
     scactor_plane,
     scactor_origin,
     scactor_scale,
@@ -236,9 +238,15 @@ enum
     scactor_centerheight,
     scactor_viewheight,
     scactor_targetID,
-    acactor_modelVariant,
-    acactor_classFlags,
-    acactor_cullDistance,
+    scactor_modelVariant,
+    scactor_classFlags,
+    scactor_cullDistance,
+    scactor_friction,
+    scactor_mass,
+    scactor_bounceDamp,
+    scactor_physics,
+    scactor_rotorSpeed,
+    scactor_rotorVector,
     scactor_end
 };
 
@@ -254,6 +262,8 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_bStatic,          "bStatic"           },
     { scactor_bTouch,           "bTouch"            },
     { scactor_bOrientOnSlope,   "bOrientOnSlope"    },
+    { scactor_bNoDropOff,       "bNoDropOff"        },
+    { scactor_bRotor,           "bRotor"            },
     { scactor_plane,            "plane"             },
     { scactor_origin,           "origin"            },
     { scactor_scale,            "scale"             },
@@ -264,9 +274,15 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_centerheight,     "centerheight"      },
     { scactor_viewheight,       "viewheight"        },
     { scactor_targetID,         "targetID"          },
-    { acactor_modelVariant,     "modelVariant"      },
-    { acactor_classFlags,       "classFlags"        },
-    { acactor_cullDistance,     "cullDistance"      },
+    { scactor_modelVariant,     "modelVariant"      },
+    { scactor_classFlags,       "classFlags"        },
+    { scactor_cullDistance,     "cullDistance"      },
+    { scactor_friction,         "friction"          },
+    { scactor_mass,             "mass"              },
+    { scactor_bounceDamp,       "bounceDamp"        },
+    { scactor_physics,          "physics"           },
+    { scactor_rotorSpeed,       "rotorSpeed"        },
+    { scactor_rotorVector,      "rotorVector"       },
     { -1,                       NULL                }
 };
 
@@ -458,6 +474,16 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
                 scactor_bOrientOnSlope, parser, false);
             break;
 
+        case scactor_bNoDropOff:
+            SC_AssignInteger(mapactortokens, &actor->bNoDropOff,
+                scactor_bNoDropOff, parser, false);
+            break;
+
+        case scactor_bRotor:
+            SC_AssignInteger(mapactortokens, &actor->bRotor,
+                scactor_bRotor, parser, false);
+            break;
+
         case scactor_plane:
             SC_AssignInteger(mapactortokens, &actor->plane,
                 scactor_plane, parser, false);
@@ -515,23 +541,53 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
                 scactor_targetID, parser, false);
             break;
 
-        case acactor_modelVariant:
+        case scactor_modelVariant:
             SC_AssignInteger(mapactortokens, &actor->variant,
-                acactor_modelVariant, parser, false);
+                scactor_modelVariant, parser, false);
             break;
 
-        case acactor_classFlags:
+        case scactor_classFlags:
             SC_AssignInteger(mapactortokens, &actor->classFlags,
-                acactor_classFlags, parser, false);
+                scactor_classFlags, parser, false);
 
             if(actor->classFlags & AC_AI)
                 AI_Spawn(actor);
 
             break;
 
-        case acactor_cullDistance:
+        case scactor_cullDistance:
             SC_AssignFloat(mapactortokens, &actor->cullDistance,
-                acactor_cullDistance, parser, false);
+                scactor_cullDistance, parser, false);
+            break;
+
+        case scactor_friction:
+            SC_AssignFloat(mapactortokens, &actor->friction,
+                scactor_friction, parser, false);
+            break;
+
+        case scactor_mass:
+            SC_AssignFloat(mapactortokens, &actor->mass,
+                scactor_mass, parser, false);
+            break;
+
+        case scactor_bounceDamp:
+            SC_AssignFloat(mapactortokens, &actor->bounceDamp,
+                scactor_bounceDamp, parser, false);
+            break;
+
+        case scactor_physics:
+            SC_AssignInteger(mapactortokens, &actor->physics,
+                scactor_physics, parser, false);
+            break;
+
+        case scactor_rotorSpeed:
+            SC_AssignFloat(mapactortokens, &actor->rotorSpeed,
+                scactor_rotorSpeed, parser, false);
+            break;
+
+        case scactor_rotorVector:
+            SC_AssignVector(mapactortokens, actor->rotorVector,
+                scactor_rotorVector, parser, false);
             break;
 
         default:

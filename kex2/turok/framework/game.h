@@ -46,7 +46,7 @@ void G_ApplyGravity(vec3_t origin, vec3_t velocity, plane_t *plane,
                     float mass, float timeDelta);
 kbool G_TryMove(gActor_t *source, vec3_t origin, vec3_t dest, plane_t **plane);
 kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time, plane_t **plane,
-                    gActor_t *actor, trace_t *t);
+                    gActor_t *actor);
 
 void G_Shutdown(void);
 void G_Ticker(void);

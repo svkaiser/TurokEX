@@ -339,45 +339,59 @@ void R_TraverseDrawNode(gActor_t *actor, mdlnode_t *node, animstate_t *animstate
             else
             {
                 vec4_t r3;
+                vec4_t r4;
                 vec3_t t3;
+                vec3_t t4;
 
                 frame = animstate->prevtrack.frame;
                 nextframe = animstate->prevtrack.nextframe;
 
                 Mdl_GetAnimRotation(r3, prevanim, nodenum, frame);
+                Mdl_GetAnimRotation(r4, prevanim, nodenum, nextframe);
                 Mdl_GetAnimTranslation(t3, prevanim, nodenum, frame);
+                Mdl_GetAnimTranslation(t4, prevanim, nodenum, nextframe);
 
                 Vec_Slerp(rot_cur, delta, r3, r1);
-                Vec_Slerp(rot_next, delta, r3, r2);
+                Vec_Slerp(rot_next, delta, r4, r2);
                 Vec_Lerp3(pos_cur, delta, t3, t1);
-                Vec_Lerp3(pos_next, delta, t3, t2);
+                Vec_Lerp3(pos_next, delta, t4, t2);
             }
 
             Vec_Slerp(rot, delta, rot_cur, rot_next);
             Vec_Lerp3(pos, delta, pos_cur, pos_next);
 
-            if(animstate->flags & ANF_ROOTMOTION && nodenum == 0)
+            if(nodenum == 0)
             {
-                if(nextframe >= frame && animstate->frametime > 0)
+                if(animstate->flags & ANF_ROOTMOTION)
                 {
-                    mtx_t mtx;
-                    vec3_t tmp;
+                    if(nextframe >= frame && animstate->frametime > 0)
+                    {
+                        mtx_t mtx;
+                        vec3_t offs;
+                        vec3_t dir;
 
-                    // TODO
-                    Mtx_IdentityY(mtx, DEG2RAD(-90));
-                    Mtx_Scale(mtx, -1, 1, 1);
+                        // TODO
+                        Mtx_IdentityY(mtx, DEG2RAD(-90));
+                        Mtx_Scale(mtx, -1, 1, 1);
 
-                    tmp[0] = t2[0] - t1[0];
-                    tmp[1] = t2[1] - t1[1];
-                    tmp[2] = t2[2] - t1[2];
+                        dir[0] = pos_next[0] - pos_cur[0];
+                        dir[1] = pos_next[1] - pos_cur[1];
+                        dir[2] = pos_next[2] - pos_cur[2];
 
-                    Vec_TransformToWorld(mtx, tmp, animstate->rootMotion);
+                        Vec_TransformToWorld(mtx, dir, offs);
 
-                    Vec_Scale(animstate->rootMotion, animstate->rootMotion,
-                        (60.0f / animstate->frametime));
+                        animstate->rootMotion[0] = offs[0] * actor->scale[0];
+                        animstate->rootMotion[1] = offs[1] * actor->scale[1];
+                        animstate->rootMotion[2] = offs[2] * actor->scale[2];
+
+                        Vec_Scale(animstate->rootMotion, animstate->rootMotion,
+                            (60.0f / animstate->frametime));
+                    }
                 }
 
-                Vec_Set3(pos, 0, 0, pos[2]);
+                if(animstate->flags & ANF_ROOTMOTION ||
+                    animstate->prevflags & ANF_ROOTMOTION)
+                    Vec_Set3(pos, 0, 0, pos[2]);
             }
 
             Vec_Copy4(rCur, rot);
@@ -553,7 +567,7 @@ void R_DrawActors(void)
                 dglPushMatrix();
 
                 // TODO - find a better solution for this
-                if(!actor->bTouch)
+                if(!actor->bTouch && !(actor->classFlags & AC_FX))
                     dglMultMatrixf(mtx);
 
                 if(bWireframe)
@@ -941,6 +955,39 @@ void R_DrawFrame(void)
 }
 
 //
+// R_ScreenShot
+//
+
+CVAR_EXTERNAL(kf_basepath);
+static void R_ScreenShot(void)
+{
+    static char name[256];
+    int shotnum;
+    byte *buff;
+
+    shotnum = 0;
+    while(shotnum < 1000)
+    {
+        sprintf(name, "%s\\sshot%03d.tga", kf_basepath.string, shotnum);
+        if(access(name, 0) != 0)
+            break;
+        shotnum++;
+    }
+
+    if(shotnum >= 1000)
+        return;
+
+    if((video_height % 2))  // height must be power of 2
+        return;
+
+    if(!(buff = GL_GetScreenBuffer(0, 0, video_width, video_height, false)))
+        return;
+
+    Img_WriteTGA(name, buff, video_width, video_height);
+    Com_Printf("Saved Screenshot %s\n", name);
+}
+
+//
 // R_FinishFrame
 //
 
@@ -1053,6 +1100,15 @@ static void FCmd_ShowNodes(void)
 }
 
 //
+// FCmd_Screenshot
+//
+
+static void FCmd_Screenshot(void)
+{
+    R_ScreenShot();
+}
+
+//
 // R_Shutdown
 //
 
@@ -1075,6 +1131,7 @@ void R_Init(void)
     Cmd_AddCommand("showradius", FCmd_ShowRadius);
     Cmd_AddCommand("drawwireframe", FCmd_ShowWireFrame);
     Cmd_AddCommand("shownodes", FCmd_ShowNodes);
+    Cmd_AddCommand("screenshot", FCmd_Screenshot);
 
     Cvar_Register(&r_fog);
     Cvar_Register(&r_cull);

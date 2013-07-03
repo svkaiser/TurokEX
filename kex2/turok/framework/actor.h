@@ -61,6 +61,7 @@ typedef struct gActor_s
     kbool               bClientOnly;
     kbool               bHidden;
     kbool               bNoDropOff;
+    kbool               bRotor;
     bbox_t              bbox;
     float               angles[3];
     char                name[64];
@@ -86,6 +87,9 @@ typedef struct gActor_s
     unsigned int        surfaceID;
     vec3_t              *nodeOffsets_t;
     vec4_t              *nodeOffsets_r;
+    float               rotorSpeed;
+    float               rotorAngle;
+    vec3_t              rotorVector;
     struct gActor_s     *owner;
     struct gActor_s     *prev;
     struct gActor_s     *next;

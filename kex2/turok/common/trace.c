@@ -27,6 +27,7 @@
 #include "common.h"
 #include "mathlib.h"
 #include "actor.h"
+#include "game.h"
 
 #define EPSILON_FLOOR   0.5f
 #define STEPHEIGHT      12.0f
@@ -191,6 +192,10 @@ static kbool Trace_Objects(trace_t *trace)
             }
         }
     }
+
+    // special objects doesn't interact with non-static actors
+    if(trace->actor && trace->actor->physics == PT_FX)
+        return false;
 
     // TODO
     for(rover = gLevel.actorRoot.next; rover != &gLevel.actorRoot; rover = rover->next)

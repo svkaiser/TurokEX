@@ -842,9 +842,10 @@ void Mdl_SetAnimState(animstate_t *astate, anim_t *anim,
     astate->blendtime               = 0;
     astate->playtime                = 0;
     astate->frametime               = time;
-    astate->track.frame             = 1;
-    astate->track.nextframe         = 2;
+    astate->track.frame             = 0;
+    astate->track.nextframe         = 1;
     astate->flags                   = flags;
+    astate->prevflags               = 0;
     astate->prevtrack.frame         = 0;
     astate->prevtrack.nextframe     = 0;
     astate->track.anim              = anim;
@@ -870,25 +871,18 @@ void Mdl_BlendAnimStates(animstate_t *astate, anim_t *anim,
         flags == astate->flags)
         return;
 
-    if(flags & ANF_CROSSFADE)
-    {
-        astate->oldtrack.anim       = astate->track.anim;
-        astate->oldtrack.frame      = astate->track.frame;
-        astate->oldtrack.nextframe  = astate->track.nextframe;
-        astate->oldtrack.flags      = astate->flags;
-    }
-
     if(bSameAnim)
     {
         astate->flags &= ~ANF_STOPPED;
         return;
     }
 
+    astate->prevflags               = astate->flags;
     astate->flags                   = flags | ANF_BLEND;
     astate->prevtrack.frame         = astate->track.frame;
     astate->prevtrack.nextframe     = astate->track.nextframe;
-    astate->track.frame             = bSameAnim ? anim->loopframe : 1;
-    astate->track.nextframe         = bSameAnim ? (anim->loopframe+1) : 2;
+    astate->track.frame             = bSameAnim ? anim->loopframe : 0;
+    astate->track.nextframe         = bSameAnim ? (anim->loopframe+1) : 1;
     astate->time                    = (float)client.tics + blendtime;
     astate->playtime                = 0;
     astate->frametime               = time;
@@ -928,18 +922,6 @@ static void Mdl_NextAnimFrame(animstate_t *astate)
         {
             astate->playtime = 0;
             astate->flags |= ANF_STOPPED;
-
-            if(astate->flags & ANF_CROSSFADE)
-            {
-                Mdl_BlendAnimStates(astate,
-                    astate->oldtrack.anim,
-                    astate->frametime,
-                    8,
-                    astate->oldtrack.flags);
-
-                astate->track.frame = astate->oldtrack.frame;
-                astate->track.nextframe = astate->oldtrack.nextframe;
-            }
         }
     }
 }

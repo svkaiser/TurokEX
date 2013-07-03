@@ -113,6 +113,7 @@ texture_t *Tex_CacheTextureFile(const char *name,
 //
 void GL_SetOrtho(void);
 void GL_SwapBuffers(void);
+byte* GL_GetScreenBuffer(int x, int y, int width, int height, kbool flip);
 void GL_SetState(int bit, kbool enable);
 void GL_SetTextureFilter(void);
 void GL_BindTexture(texture_t *texture);
@@ -153,5 +154,6 @@ float Draw_Text(float x, float y, rcolor color,
 //
 void Img_LoadTGA(const char *name, byte **output,
                  int *width, int *height, kbool masked);
+void Img_WriteTGA(const char *filename, byte *data, int width, int height);
 
 #endif

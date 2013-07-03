@@ -106,24 +106,14 @@ JS_FASTNATIVE_BEGIN(Physics, move)
     JSObject *objActor;
     JSObject *objAngles;
     JSObject *ctrlObject;
-    trace_t traceResult;
-    JSBool getResults;
     JSBool hitOk;
-    jsval *v;
 
-    v = JS_ARGV(cx, vp);
-
-    if(argc > 2 || argc <= 0)
-        return JS_FALSE;
+    JS_CHECKARGS(1);
 
     plane = NULL;
     hitOk = JS_FALSE;
-    getResults = JS_FALSE;
 
     JS_GETOBJECT(ctrlObject, v, 0);
-
-    if(argc == 2)
-        JS_GETBOOL(getResults, v, 1);
 
     JS_GET_PROPERTY_OBJECT(ctrlObject, "origin", objOrig);
     JS_GET_PROPERTY_OBJECT(ctrlObject, "velocity", objVel);
@@ -147,16 +137,13 @@ JS_FASTNATIVE_BEGIN(Physics, move)
     if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, objActor, &GameActor_class, NULL)))
         return JS_FALSE;
 
-    hitOk = G_ClipMovement(origin, velocity, (float)frametime, &plane, actor, &traceResult);
+    hitOk = G_ClipMovement(origin, velocity, (float)frametime, &plane, actor);
 
     JS_SETVECTOR(objOrig, origin);
     JS_SETVECTOR(objVel, velocity);
 
     if(objPlane != NULL)
         JS_SetPrivate(cx, objPlane, plane);
-
-    if(getResults == JS_TRUE)
-        return ReturnTraceResults(cx, vp, &traceResult);
 
     JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(hitOk));
     return JS_TRUE;
@@ -338,7 +325,7 @@ JS_BEGINCONST(Physics)
 
 JS_BEGINFUNCS(Physics)
 {
-    JS_FASTNATIVE(Physics, move,  2),
+    JS_FASTNATIVE(Physics, move,  1),
     JS_FASTNATIVE(Physics, rayTrace,  6),
     JS_FASTNATIVE(Physics, tryMove, 4),
     JS_FASTNATIVE(Physics, checkPosition, 4),

@@ -458,6 +458,9 @@ void AI_Think(ai_t *ai)
     if(ai == NULL)
         return;
 
+    if(!ai->owner)
+        return;
+
     if(ai->owner->bStale)
     {
         Actor_SetTarget(&ai->owner, NULL);
