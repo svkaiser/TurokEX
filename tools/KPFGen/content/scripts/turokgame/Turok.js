@@ -64,6 +64,7 @@ Sys.runScript('scripts/turokgame/TurokAIGrunt.js');
 Sys.runScript('scripts/turokgame/TurokAIRaptor.js');
 Sys.runScript('scripts/turokgame/TurokAIPurlin.js');
 Sys.runScript('scripts/turokgame/TurokAIStalker.js');
+Sys.runScript('scripts/turokgame/TurokAIAlien.js');
 Sys.runScript('scripts/turokgame/TurokAIDimetrodon.js');
 Sys.runScript('scripts/turokgame/TurokAIFish.js');
 Sys.runScript('scripts/turokgame/TurokAIAnimal.js');
@@ -115,6 +116,9 @@ Sys.runScript('scripts/turokgame/ComponentPlayerWeapon.js');
 
 // camera events
 Sys.runScript('scripts/turokgame/CameraEvent.js');
+
+// gibs
+Sys.runScript('scripts/turokgame/ComponentGibs.js');
 
 // ammo
 Sys.runScript('scripts/turokgame/Ammo.js');

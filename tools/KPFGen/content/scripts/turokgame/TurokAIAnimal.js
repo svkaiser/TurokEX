@@ -118,6 +118,11 @@ class.properties(TurokAIAnimal,
         }
     },
     
+    onDamage : function(instigator)
+    {
+        this.dropPickup('pickup_health_small');
+    },
+    
     onReady : function()
     {
         this.parent.owner.physics = Physics.PT_DEFAULT;
@@ -139,6 +144,10 @@ class.properties(TurokAIAnimal,
         ComponentTurokAI.prototype.onDeath.bind(this)();
         
         var actor = this.parent.owner;
+        
+        this.dropPickup('pickup_health_small');
+        this.dropPickup('pickup_health_small');
+        this.dropPickup('pickup_health_small');
         
         Snd.play('sounds/shaders/generic_3_energy_pickup.ksnd', actor);
         Sys.spawnFx('fx/animal_death_flash.kfx', null,

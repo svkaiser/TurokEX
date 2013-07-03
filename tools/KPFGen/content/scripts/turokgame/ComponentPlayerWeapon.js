@@ -642,7 +642,7 @@ class.properties(WeaponPistol,
         this.spawnFx('fx/bulletshell.kfx', -10.24, -10.24, 15.648, false);
         
         this.parent.owner.blendAnim(this.anim_Fire,
-            this.playSpeed, 6.0, 0);
+            this.playSpeed, 4.0, 0);
         
         this.playerOwner.ammo[AM_CLIPS].use(1);
         ClientPlayer.component.aPistolAttack(); 
@@ -783,7 +783,7 @@ class.properties(WeaponAutoShotgun,
         ClientPlayer.component.aAutoShotgunAttack();
         
         this.parent.owner.blendAnim(this.anim_Fire,
-            this.playSpeed, 6.0, 0);
+            this.playSpeed, 4.0, 0);
         
         this.bReload = false;
         this.spinAngle = Angle.degToRad(36);
@@ -1095,13 +1095,14 @@ class.properties(WeaponMiniGun,
             this.spawnFx('fx/fx_037.kfx', -4.608, -3.1744, 14.848);
             this.spawnFx('fx/bulletshell.kfx', -10.24, -10.24, 13.82);
             Snd.play('sounds/shaders/mini_gun_shot.ksnd');
+            this.playerOwner.aMinigunAttack();
             
-            var pActor = this.playerOwner.parent.owner;
-            var vec = pActor.getLocalVector(8.192, -10.24, 25.6);
-            vec.y += (pActor.centerHeight + pActor.viewHeight) * 0.72;
+            //var pActor = this.playerOwner.parent.owner;
+            //var vec = pActor.getLocalVector(8.192, -10.24, 25.6);
+            //vec.y += (pActor.centerHeight + pActor.viewHeight) * 0.72;
 
-            Sys.spawnFx('fx/projectile_minibullet.kfx', pActor, vec, pActor.rotation,
-                Plane.fromIndex(pActor.plane));
+            //Sys.spawnFx('fx/projectile_minibullet.kfx', pActor, vec, pActor.rotation,
+                //Plane.fromIndex(pActor.plane));
         }
         
         if(!ClientPlayer.command.getAction('+attack'))

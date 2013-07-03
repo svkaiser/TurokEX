@@ -266,7 +266,7 @@ class.properties(TurokAIGrunt,
     {
         var anim = this.bTwoHanded ? AI_ANIM_GRUNT_TWOHANDED_TURN_B_STAND : AI_ANIM_TURN_B_STAND;
         
-        actor.blendAnim(anim, 4.0, 4.0,
+        actor.blendAnim(anim, 4.0, 8.0,
             NRender.ANIM_ROOTMOTION);
     },
     
@@ -274,7 +274,7 @@ class.properties(TurokAIGrunt,
     {
         var anim = this.bTwoHanded ? AI_ANIM_GRUNT_TWOHANDED_TURN_B_WALK : AI_ANIM_TURN_B_WALK;
         
-        actor.blendAnim(anim, 4.0, 4.0,
+        actor.blendAnim(anim, 4.0, 8.0,
             NRender.ANIM_ROOTMOTION);
     },
     
@@ -282,7 +282,7 @@ class.properties(TurokAIGrunt,
     {
         var anim = this.bTwoHanded ? AI_ANIM_GRUNT_TWOHANDED_TURN_B_RUN : AI_ANIM_TURN_B_RUN;
         
-        actor.blendAnim(anim, 4.0, 4.0,
+        actor.blendAnim(anim, 4.0, 8.0,
             NRender.ANIM_ROOTMOTION);
     },
     
@@ -290,7 +290,7 @@ class.properties(TurokAIGrunt,
     {
         var anim = this.bTwoHanded ? AI_ANIM_GRUNT_TWOHANDED_TURN_R_STAND : AI_ANIM_TURN_R_STAND;
         
-        actor.blendAnim(anim, 4.0, 6.0,
+        actor.blendAnim(anim, 4.0, 8.0,
             NRender.ANIM_ROOTMOTION);
     },
     
@@ -298,7 +298,7 @@ class.properties(TurokAIGrunt,
     {
         var anim = this.bTwoHanded ? AI_ANIM_GRUNT_TWOHANDED_TURN_R_WALK : AI_ANIM_TURN_R_WALK;
 
-        actor.blendAnim(anim, 3.0, 8.0,
+        actor.blendAnim(anim, 4.0, 8.0,
             NRender.ANIM_ROOTMOTION);
     },
     
@@ -306,7 +306,7 @@ class.properties(TurokAIGrunt,
     {
         var anim = this.bTwoHanded ? AI_ANIM_GRUNT_TWOHANDED_TURN_R_RUN : AI_ANIM_TURN_R_RUN;
 
-        actor.blendAnim(anim, 3.0, 8.0,
+        actor.blendAnim(anim, 4.0, 8.0,
             NRender.ANIM_ROOTMOTION);
     },
     
@@ -314,7 +314,7 @@ class.properties(TurokAIGrunt,
     {
         var anim = this.bTwoHanded ? AI_ANIM_GRUNT_TWOHANDED_TURN_L_STAND : AI_ANIM_TURN_L_STAND;
 
-        actor.blendAnim(anim, 4.0, 6.0,
+        actor.blendAnim(anim, 4.0, 8.0,
             NRender.ANIM_ROOTMOTION);
     },
     
@@ -322,7 +322,7 @@ class.properties(TurokAIGrunt,
     {
         var anim = this.bTwoHanded ? AI_ANIM_GRUNT_TWOHANDED_TURN_L_WALK : AI_ANIM_TURN_L_WALK;
         
-        actor.blendAnim(anim, 3.0, 8.0,
+        actor.blendAnim(anim, 4.0, 8.0,
             NRender.ANIM_ROOTMOTION);
     },
     
@@ -330,7 +330,7 @@ class.properties(TurokAIGrunt,
     {
         var anim = this.bTwoHanded ? AI_ANIM_GRUNT_TWOHANDED_TURN_L_RUN : AI_ANIM_TURN_L_RUN;
         
-        actor.blendAnim(anim, 3.0, 8.0,
+        actor.blendAnim(anim, 4.0, 8.0,
             NRender.ANIM_ROOTMOTION);
     },
     

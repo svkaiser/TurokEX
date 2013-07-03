@@ -51,8 +51,9 @@ const AI_ANIM_MELEE_GENERIC2    = 19;
 const AI_ANIM_MELEE_GENERIC3    = 20;
 const AI_ANIM_MELEE_GENERIC4    = 21;
 const AI_ANIM_MELEE_GENERIC5    = 22;
-const AI_ANIM_MELEE_GENERIC6    = 25;
-const AI_ANIM_MELEE_GENERIC7    = 26;
+const AI_ANIM_MELEE_GENERIC6    = 23;
+const AI_ANIM_MELEE_GENERIC7    = 25;
+const AI_ANIM_MELEE_GENERIC8    = 26;
 
 const AI_ANIM_ATTACK_RANGE1     = 24;
 const AI_ANIM_ATTACK_RANGE2     = 59;
@@ -143,10 +144,11 @@ var g_AnimMelee =
         AI_ANIM_MELEE_GENERIC4,
         AI_ANIM_MELEE_GENERIC5,
         AI_ANIM_MELEE_GENERIC6,
-        AI_ANIM_MELEE_GENERIC7
+        AI_ANIM_MELEE_GENERIC7,
+        AI_ANIM_MELEE_GENERIC8
     ],
     
-    weightSets : [10, 10, 10, 8, 8, 6, 6],
+    weightSets : [10, 10, 10, 8, 8, 8, 6, 6],
     enabled : [true, true, true, true, true, true, true]
 };
 
@@ -285,6 +287,34 @@ class.properties(ComponentTurokAI,
         var y = arguments[2];
         var z = arguments[3];
         actor.spawnFX('fx/fx_051.kfx', x, y, z);
+    },
+    
+    swooshSound : function()
+    {
+        Snd.play('sounds/shaders/knife_swish_1.ksnd', this.parent.owner);
+    },
+    
+    dropPickup : function(itemName)
+    {
+        var actor = this.parent.owner;
+        var origin = actor.origin;
+        
+        var item = Level.spawnActor(itemName,
+            origin.x, origin.y+8.192, origin.z,
+            actor.yaw, 0.0, Plane.fromIndex(actor.plane));
+            
+        item.mass = 1500;
+        item.friction = 0.5;
+        item.bounceDamp = 0.35;
+        
+        var velocity = new Vector(0, 1, 0);
+        var rVector = new Vector(Sys.cRand(), Sys.cRand(), Sys.cRand());
+        
+        velocity.lerp(rVector, 0.25);
+        velocity.normalize();
+        velocity.scale(409.6);
+        
+        item.velocity = velocity;
     },
     
     //------------------------------------------------------------------------
@@ -453,6 +483,37 @@ class.properties(ComponentTurokAI,
     meleeAttack : function(actor, ai)
     {
         return this.animPicker(actor, this.meleeAnimObj, 6);
+    },
+    
+    tryMeleeAttack : function(actor, ai)
+    {
+        if(this.bCanMelee && ai.getTargetDistance() <= this.meleeRange)
+        {
+            if(!this.bAttacking)
+            {
+                var angle = ai.yawToTarget();
+                
+                // try to look at its target
+                if(!(angle <= 0.78 && angle >= -0.78))
+                    this.turn(actor, angle);
+                else
+                {
+                    var anim = this.meleeAttack(actor, ai);
+                    
+                    if(actor.checkAnimID(anim))
+                    {
+                        this.bAttacking = true;
+                        ai.bLookAtTarget = false;
+                        actor.ai.setIdealYaw(actor.yaw + ai.yawToTarget(), 4.096);
+                        this.state = AI_STATE_ATTACK_MELEE;
+                        actor.blendAnim(anim, 4.0, 8.0, NRender.ANIM_ROOTMOTION);
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
     },
     
     //------------------------------------------------------------------------
@@ -671,7 +732,7 @@ class.properties(ComponentTurokAI,
             
             this.turnDirection = 0;
             
-            if(angles < -angle135)
+            if(angles > angle135 || angles < -angle135)
             {
                 this.bTurning = true;
                 ai.bTurning = false;
@@ -699,7 +760,7 @@ class.properties(ComponentTurokAI,
             {
                 this.bTurning = true;
                 ai.bTurning = false;
-                ai.bLookAtTarget = false;
+                ai.bLookAtTarget = true;
                 
                 if(angles < 0)
                     this.turnDirection = 1;
@@ -887,31 +948,9 @@ class.properties(ComponentTurokAI,
         if(this.state != AI_STATE_DROPPING && !this.bTurning &&
             !this.bAttacking && this.health > 0)
         {
-            if(this.bCanMelee && ai.getTargetDistance() <= this.meleeRange)
+            if(!this.tryMeleeAttack(actor, ai) &&
+                this.bCanRangeAttack && this.attackThreshold <= 0)
             {
-                if(!this.bAttacking)
-                {
-                    var angle = ai.yawToTarget();
-                    
-                    // try to look at its target
-                    if(!(angle <= 0.78 && angle >= -0.78))
-                        this.turn(actor, angle);
-                    else
-                    {
-                        var anim = this.meleeAttack(actor, ai);
-                        
-                        if(anim != -1)
-                        {
-                            this.bAttacking = true;
-                            ai.bLookAtTarget = false;
-                            actor.ai.setIdealYaw(actor.yaw + ai.yawToTarget(), 4.096);
-                            this.state = AI_STATE_ATTACK_MELEE;
-                            actor.blendAnim(anim, 4.0, 8.0, NRender.ANIM_ROOTMOTION);
-                        }
-                    }
-                }
-            }
-            else if(this.bCanRangeAttack && this.attackThreshold <= 0) {
                 this.tryRangeAttack(actor, ai);
             }
         }
@@ -1000,6 +1039,18 @@ class.properties(ComponentTurokAI,
                 this.state = AI_STATE_STANDING;
                 this.bAttacking = false;
                 this.bTurning = false;
+                
+                if(!this.tryMeleeAttack(actor, ai))
+                {
+                    var dist = ai.getTargetDistance();
+                
+                    if(dist > this.runRange)
+                        this.state = AI_STATE_RUNNING;
+                    else if(dist > this.meleeRange)
+                        this.state = AI_STATE_WALKING;
+                    
+                    this.turn(actor, ai.getBestAngleToTarget(this.extendedRadius));
+                }
                 return;
             }
             break;
@@ -1041,7 +1092,7 @@ class.properties(ComponentTurokAI,
             if(Sys.rand(100) <= 4)
                 this.turn(actor, 1.22 + (Sys.fRand() * Math.PI));
             
-            if(Sys.rand(1000) >= 998)
+            if(this.bCanMelee && Sys.rand(1000) >= 998)
             {
                 switch(this.state)
                 {

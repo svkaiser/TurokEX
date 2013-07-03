@@ -647,6 +647,13 @@ class.properties(ComponentTurokPlayer,
         this.recoilPitch = -0.0325;
     },
     
+    aMinigunAttack : function()
+    {
+        Snd.play('sounds/shaders/pistol_shot.ksnd', this.parent.owner);
+        this.traceAttack(ShotTracePlayerMinigun, 0, 52, 0);
+        this.recoilPitch = -0.0325;
+    },
+    
     //------------------------------------------------------------------------
     // RENDER EVENTS
     //------------------------------------------------------------------------

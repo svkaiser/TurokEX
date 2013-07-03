@@ -41,11 +41,6 @@ class.properties(TurokAIPurlin,
         Snd.play('sounds/shaders/hulk_footfall.ksnd', this.parent.owner);
     },
     
-    swooshSound : function()
-    {
-        Snd.play('sounds/shaders/knife_swish_1.ksnd', this.parent.owner);
-    },
-    
     alertScream: function()
     {
         Snd.play('sounds/shaders/hulk_alert.ksnd', this.parent.owner);
