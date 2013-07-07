@@ -21,16 +21,6 @@ class.properties(ComponentPickup,
     // FUNCTIONS
     //------------------------------------------------------------------------
     
-    onLocalTick : function()
-    {
-        const ROTATE_RADIANS = 0.017;
-        
-        var actor = this.parent.owner;
-        
-        actor.yaw += ROTATE_RADIANS;
-        actor.updateTransform();
-    },
-    
     onTouch : function(instigator)
     {
         var owner = this.parent.owner;

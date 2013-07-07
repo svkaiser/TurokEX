@@ -22,7 +22,7 @@ ControllerPlayer = class.extends(Controller, function()
     
     const ANGLE_MAXPITCH            = Angle.degToRad(90);
     
-    const JUMP_VELOCITY             = 672;
+    const JUMP_VELOCITY             = 608;
     const JUMP_GROUNDEPISILON       = 0.512;
     const JUMP_SLOPEHEIGHTMIN       = 8;
     
@@ -34,7 +34,7 @@ ControllerPlayer = class.extends(Controller, function()
     const SLOPESLIDE_LERP           = 0.5;
 
     const MOVE_FRICTION             = 1.0;
-    const MOVE_GRAVITY              = 2232;
+    const MOVE_GRAVITY              = 1843.2;
 
     const WALKSPEED_F_FORWARD       = 384;
     const WALKSPEED_F_BACKWARD      = -292;
@@ -372,7 +372,8 @@ ControllerPlayer = class.extends(Controller, function()
             this.angles.yaw,
             0);
             
-        this.accelerate(this.speed[STATE_MOVE_WALK]);
+        if(!this.plane.isAWall())
+            this.accelerate(this.speed[STATE_MOVE_WALK]);
         
         // rolls the player's view when strafing
         if(this.command.getAction('+strafeleft'))
@@ -397,10 +398,6 @@ ControllerPlayer = class.extends(Controller, function()
         var plane = this.plane;
         var origin = this.origin;
         
-        // slide down on a slope
-        if(plane.isAWall() && origin.y - plane.distance(origin) <= SLOPESLIDE_DIST)
-            this.velocity.y = this.lerp(this.velocity.y, -SLOPESLIDE_VELOCITY, SLOPESLIDE_LERP);
-        
         // acceleration is slower when crawling
         if(this.bCrawling)
         {
@@ -417,7 +414,10 @@ ControllerPlayer = class.extends(Controller, function()
         
         this.super.prototype.beginMovement.bind(this)();
         this.gravity(MOVE_GRAVITY);
-        this.applyFriction(MOVE_FRICTION);
+        
+        if(!plane.isAWall())
+            this.applyFriction(MOVE_FRICTION);
+        
         this.checkFallLand(y);
     }
     
