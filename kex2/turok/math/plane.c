@@ -177,14 +177,10 @@ float Plane_GetHeight(plane_t *plane, vec3_t pos)
 kbool Plane_IsAWall(plane_t *plane)
 {
     if(plane == NULL)
-    {
         return false;
-    }
 
     if(!(plane->flags & CLF_SLOPETEST))
-    {
         return (plane->flags & CLF_FRONTNOCLIP);
-    }
 
     return (plane->normal[1] <= 0.5f);
 }
@@ -350,6 +346,21 @@ void Plane_GetNormalizedRotation(vec4_t out, plane_t *p)
         Vec_Scale(cp, cp, 1.0f / d);
         Vec_SetQuaternion(out, (float)acos(Vec_Dot(n2, n1)), cp[0], cp[1], cp[2]);
     }
+}
+
+//
+// Plane_GetInclinationVector
+//
+
+void Plane_GetInclinationVector(plane_t *plane, vec3_t out)
+{
+    vec3_t down;
+    vec3_t n;
+
+    Vec_Set3(down, 0, 1, 0);
+    Vec_Scale(n, plane->normal, Vec_Dot(down, plane->normal));
+    Vec_Sub(out, down, n);
+    Vec_Normalize3(out);
 }
 
 //

@@ -57,6 +57,7 @@ enum
     scvfx_bNoDirection,
     scvfx_bLocalAxis,
     scvfx_bProjectile,
+    scvfx_bActorInstance,
     scvfx_mass,
     scvfx_translation_global_randomscale,
     scvfx_translation_randomscale,
@@ -160,6 +161,7 @@ static const sctokens_t vfxtokens[scvfx_end+1] =
     { scvfx_bNoDirection,                   "bNoDirection"                      },
     { scvfx_bLocalAxis,                     "bLocalAxis"                        },
     { scvfx_bProjectile,                    "bProjectile"                       },
+    { scvfx_bActorInstance,                 "bActorInstance"                    },
     { -1,                                   NULL                                }
 };
 
@@ -251,6 +253,7 @@ static void Fx_ParseScript(fxfile_t *fx, scparser_t *parser)
             CHECK_INT(bNoDirection);
             CHECK_INT(bLocalAxis);
             CHECK_INT(bProjectile);
+            CHECK_INT(bActorInstance);
             CHECK_INT(animspeed);
             CHECK_INT(color1_randomscale);
             CHECK_INT(color2_randomscale);
@@ -730,9 +733,32 @@ fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
     if(!(fxfile = FX_Load(name)))
         return NULL;
 
+    fx = NULL;
+
     for(i = 0; i < fxfile->numfx; i++)
     {
+        kbool ok = true;
+
         info = &fxfile->info[i];
+
+        if(source && info->bActorInstance)
+        {
+            for(fxRover = fxRoot.next; fxRover != &fxRoot; fxRover = fxRover->next)
+            {
+                if(!fxRover->source)
+                    continue;
+
+                if(fxRover->source == source && fxRover->info == fxfile->info)
+                {
+                    fxRover->bForcedRestart = true;
+                    ok = false;
+                    break;
+                }
+            }
+        }
+
+        if(!ok)
+            continue;
 
         fx = (fx_t*)Z_Calloc(sizeof(fx_t), PU_FX, 0);
 
@@ -767,6 +793,7 @@ fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
         fx->frame = 0;
         fx->source = source;
         fx->bAnimate = info->numTextures > 1 ? true : false;
+        fx->bForcedRestart = false;
         fx->frametime = client.time + info->animspeed;
         fx->textures = (texture_t**)Z_Calloc(sizeof(texture_t*) *
             info->numTextures, PU_FX, 0);
@@ -954,7 +981,7 @@ static void FX_Move(fx_t *fx, vec3_t dest)
                 fx->plane->normal, fxinfo->mass);
 
             // apply friction when sliding on the floor
-            G_ApplyFriction(fx->translation, 1 - fxinfo->friction, false);
+            G_ApplyFriction(fx->translation, fxinfo->friction, false);
             break;
         case VFX_DESTROY:
             fx->origin[1] = fx->origin[1] - dist + 0.01f;
@@ -1060,6 +1087,12 @@ void FX_Ticker(void)
                         break;
 
                     default:
+                        if(fx->bForcedRestart)
+                        {
+                            fx->frame = 0;
+                            fx->bForcedRestart = false;
+                            continue;
+                        }
                         fx->bStale = true;
                         continue;
                     }
@@ -1138,6 +1171,13 @@ void FX_Ticker(void)
         if(fx->lifetime < 0 || (fx->source && fx->source->bStale))
         {
             fx_t *efx = NULL;
+
+            if(fx->bForcedRestart && fx->source && !fx->source->bStale)
+            {
+                fx->bForcedRestart = false;
+                fx->lifetime = (float)fx->info->lifetime.value;
+                continue;
+            }
 
             if(fxinfo->expireFX != NULL)
                 efx = FX_SpawnChild(fx, fxinfo->expireFX); 

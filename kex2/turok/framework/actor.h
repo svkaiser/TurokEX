@@ -47,6 +47,14 @@ typedef enum
     AC_PLAYER   = 8
 } actorClassFlags_e;
 
+typedef enum
+{
+    WL_INVALID  = 0,
+    WL_OVER     = 1,
+    WL_BETWEEN  = 2,
+    WL_UNDER    = 3
+} actorWaterLevel_e;
+
 typedef struct gActor_s
 {
     vec3_t              origin;
@@ -88,7 +96,7 @@ typedef struct gActor_s
     vec3_t              *nodeOffsets_t;
     vec4_t              *nodeOffsets_r;
     float               rotorSpeed;
-    float               rotorAngle;
+    float               rotorFriction;
     vec3_t              rotorVector;
     struct gActor_s     *owner;
     struct gActor_s     *prev;
@@ -97,9 +105,10 @@ typedef struct gActor_s
     kmodel_t            *model;
     animstate_t         animState;
     int                 variant;
-    char                **textureSwaps;
+    char                ****textureSwaps;
     float               timestamp;
     int                 physics;
+    int                 waterlevel;
     struct ai_s         *ai;
 } gActor_t;
 
@@ -124,6 +133,7 @@ kbool Actor_HasComponent(gActor_t *actor, const char *component);
 kbool Actor_FXEvent(gActor_t *actor, gActor_t *target, vec3_t fxOrigin, vec3_t fxVelocity,
                     int plane, action_t *action);
 void Actor_GetLocalVectors(vec3_t out, gActor_t *actor, float x, float y, float z);
+void Actor_GetWaterLevel(gActor_t *actor);
 void Actor_SpawnBodyFX(gActor_t *actor, const char *fx, float x, float y, float z);
 void Actor_OnTouchEvent(gActor_t *actor, gActor_t *instigator);
 void Actor_AddIntegerProperty(gActor_t *actor, const char *name, int id, int value);
@@ -131,6 +141,7 @@ void Actor_AddFloatProperty(gActor_t *actor, const char *name, int id, float val
 void Actor_AddDataProperty(gActor_t *actor, const char *name, int id, void *value);
 void Actor_AddStringProperty(gActor_t *actor, const char *name, int id, char *value);
 void Actor_DrawDebugStats(void);
+void Actor_UpdateModel(gActor_t *actor, const char *model);
 void Actor_Remove(gActor_t *actor);
 void Actor_ClearData(gActor_t *actor);
 gActor_t *Actor_Spawn(const char *classname, float x, float y, float z,

@@ -466,7 +466,11 @@ JS_FASTNATIVE_BEGIN(Sys, spawnFx)
     }
 
     JS_GETOBJECT(destobj, v, 2);
-    JS_GETOBJECT(rotobj, v, 3);
+
+    if(!JSVAL_IS_NULL(v[3]))
+    {
+        JS_GETOBJECT(rotobj, v, 3);
+    }
 
     plane = NULL;
 
@@ -478,7 +482,11 @@ JS_FASTNATIVE_BEGIN(Sys, spawnFx)
     }
 
     JS_GETVECTOR2(destobj, dest);
-    JS_GETQUATERNION2(rotobj, rot);
+
+    Vec_Set4(rot, 0, 0, 0, 1);
+
+    if(!JSVAL_IS_NULL(v[3]))
+        JS_GETQUATERNION2(rotobj, rot);
 
     Vec_Set3(dir, 0, 0, 0);
 
@@ -494,22 +502,25 @@ JS_FASTNATIVE_BEGIN(Sys, spawnFx)
     fx = FX_Spawn(bytes, actor, dir, dest, rot, plane);
     JS_free(cx, bytes);
 
-    if(argc == 7)
+    if(fx != NULL)
     {
-        JSString *str;
-        char *bytes;
+        if(argc == 7)
+        {
+            JSString *str;
+            char *bytes;
 
-        JS_GETSTRING(str, bytes, v, 6);
-        Snd_PlayShader(bytes, (gActor_t*)fx);
-        JS_free(cx, bytes);
+            JS_GETSTRING(str, bytes, v, 6);
+            Snd_PlayShader(bytes, (gActor_t*)fx);
+            JS_free(cx, bytes);
+        }
+
+        if(argc == 8)
+        {
+            JS_GETBOOL(fx->bAttachToSource, v, 7);
+        }
     }
 
-    if(argc == 8)
-    {
-        JS_GETBOOL(fx->bAttachToSource, v, 7);
-    }
-
-    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+   JS_SET_RVAL(cx, vp, JSVAL_VOID);
    return JS_TRUE;
 }
 

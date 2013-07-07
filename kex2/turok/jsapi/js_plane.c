@@ -258,7 +258,7 @@ JS_FASTNATIVE_BEGIN(Plane, fromIndex)
     v = JS_ARGV(cx, vp);
 
     JS_GETINTEGER(n, 0);
-    if(n <= -1)
+    if(n <= -1 || n >= (int)gLevel.numplanes)
     {
         JS_SET_RVAL(cx, vp, JSVAL_NULL);
         return JS_TRUE;

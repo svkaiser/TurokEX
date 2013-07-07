@@ -247,6 +247,7 @@ enum
     scactor_physics,
     scactor_rotorSpeed,
     scactor_rotorVector,
+    scactor_rotorFriction,
     scactor_end
 };
 
@@ -283,6 +284,7 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_physics,          "physics"           },
     { scactor_rotorSpeed,       "rotorSpeed"        },
     { scactor_rotorVector,      "rotorVector"       },
+    { scactor_rotorFriction,    "rotorFriction"     },
     { -1,                       NULL                }
 };
 
@@ -303,12 +305,20 @@ static const sctokens_t mapgridtokens[scgridbnd_end+1] =
 enum
 {
     scarea_components = 0,
+    scarea_waterplane,
+    scarea_flags,
+    scarea_triggerSound,
+    scarea_targetID,
     scarea_end
 };
 
 static const sctokens_t mapareatokens[scarea_end+1] =
 {
     { scarea_components,    "components"    },
+    { scarea_waterplane,    "waterplane"    },
+    { scarea_flags,         "flags"         },
+    { scarea_triggerSound,  "triggerSound"  },
+    { scarea_targetID,      "targetID"      },
     { -1,                   NULL            }
 };
 
@@ -378,7 +388,6 @@ void Map_RemoveActor(gLevel_t *level, gActor_t* actor)
 static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
 {
     int numComponents = 0;
-    int numTexSwaps = 0;
     int j;
 
     Vec_Set3(actor->scale, 1, 1, 1);
@@ -399,7 +408,7 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
         case scactor_mesh:
             SC_ExpectNextToken(TK_EQUAL);
             SC_GetString();
-            actor->model = Mdl_Load(parser->stringToken);
+            Actor_UpdateModel(actor, parser->stringToken);
             break;
 
         case scactor_bounds:
@@ -417,24 +426,44 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
             break;
 
         case scactor_textureSwaps:
-            SC_ExpectNextToken(TK_LSQBRACK);
-            numTexSwaps = SC_GetNumber();
-            if(numTexSwaps > 0)
-            {
-                actor->textureSwaps = (char**)Z_Calloc(sizeof(char*) *
-                    numTexSwaps, PU_ACTOR, NULL);
-            }
-            else
-            {
-                actor->textureSwaps = NULL;
-            }
-            SC_ExpectNextToken(TK_RSQBRACK);
+            if(actor->model == NULL)
+                SC_Error("Map_ParseActor: Attempted to parse \"textureSwaps\" token while model is null\n");
+
+            actor->textureSwaps = (char****)Z_Calloc(sizeof(char***) *
+                actor->model->numnodes, PU_ACTOR, NULL);
+
             SC_ExpectNextToken(TK_EQUAL);
             SC_ExpectNextToken(TK_LBRACK);
-            for(j = 0; j < numTexSwaps; j++)
+            for(j = 0; j < (int)actor->model->numnodes; j++)
             {
-                SC_GetString();
-                actor->textureSwaps[j] = Z_Strdup(parser->stringToken, PU_ACTOR, NULL);
+                unsigned int k;
+                mdlnode_t *node;
+
+                node = &actor->model->nodes[j];
+
+                actor->textureSwaps[j] = (char***)Z_Calloc(sizeof(char**) *
+                    node->nummeshes, PU_ACTOR, NULL);
+
+                SC_ExpectNextToken(TK_LBRACK);
+                for(k = 0; k < node->nummeshes; k++)
+                {
+                    unsigned int l;
+                    mdlmesh_t *mesh;
+
+                    mesh = &node->meshes[k];
+
+                    actor->textureSwaps[j][k] = (char**)Z_Calloc(sizeof(char*) *
+                        mesh->numsections, PU_ACTOR, NULL);
+
+                    SC_ExpectNextToken(TK_LBRACK);
+                    for(l = 0; l < mesh->numsections; l++)
+                    {
+                        SC_GetString();
+                        actor->textureSwaps[j][k][l] = Z_Strdup(parser->stringToken, PU_ACTOR, NULL);
+                    }
+                    SC_ExpectNextToken(TK_RBRACK);
+                }
+                SC_ExpectNextToken(TK_RBRACK);
             }
             SC_ExpectNextToken(TK_RBRACK);
             break;
@@ -588,6 +617,11 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
         case scactor_rotorVector:
             SC_AssignVector(mapactortokens, actor->rotorVector,
                 scactor_rotorVector, parser, false);
+            break;
+
+        case scactor_rotorFriction:
+            SC_AssignFloat(mapactortokens, &actor->rotorFriction,
+                scactor_rotorFriction, parser, false);
             break;
 
         default:
@@ -774,6 +808,27 @@ static void Map_ParseAreaBlock(scparser_t *parser)
                 SC_ExpectNextToken(TK_LBRACK);
                 JParse_Start(parser, &area->components, numComponents);
                 SC_ExpectNextToken(TK_RBRACK);
+                break;
+
+            case scarea_waterplane:
+                SC_AssignFloat(mapareatokens, &area->waterplane,
+                    scarea_waterplane, parser, false);
+                break;
+
+            case scarea_flags:
+                SC_AssignInteger(mapareatokens, &area->flags,
+                    scarea_waterplane, parser, false);
+                break;
+
+            case scarea_targetID:
+                SC_AssignInteger(mapareatokens, &area->targetID,
+                    scarea_targetID, parser, false);
+                break;
+
+            case scarea_triggerSound:
+                SC_ExpectNextToken(TK_EQUAL);
+                SC_GetString();
+                area->triggerSound = Z_Strdup(parser->stringToken, PU_LEVEL, NULL);
                 break;
 
             default:
@@ -1045,6 +1100,9 @@ static void TraverseAdjacentPlanesToHeight(plane_t *plane, plane_t *parent,
 
             plane->points[i][1] = destHeight;
 
+            Plane_GetNormal(plane->normal, plane);
+            Vec_Normalize3(plane->normal);
+
             for(j = 0; j < 3; j++)
             {
                 if(!plane->link[j])
@@ -1105,6 +1163,9 @@ void Map_TraverseChangePlaneHeight(plane_t *plane, float destHeight, int area_id
 
         for(i = 0; i < 3; i++)
             p->points[i][1] = destHeight;
+
+        Plane_GetNormal(p->normal, p);
+        Vec_Normalize3(p->normal);
 
         if(p->link[0])
             Map_TraverseChangePlaneHeight(p->link[0], destHeight, area_id);
@@ -1274,7 +1335,7 @@ void Map_Tick(void)
 
     gLevel.tics++;
     gLevel.time = (float)(gLevel.tics * SERVER_RUNTIME);
-    gLevel.deltaTime = (float)server.runtime;
+    gLevel.deltaTime = (float)server.elaspedTime;
 
     if(gLevel.bReadyUnload)
         Map_Unload();

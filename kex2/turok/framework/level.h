@@ -294,10 +294,12 @@ typedef struct
 
 typedef struct
 {
+    unsigned int    flags;
+    float           waterplane;
+    unsigned int    targetID;
+    char            *triggerSound;
     gObject_t       *components;
     gObject_t       *iterator;
-    float           waterplane;
-    unsigned int    flags;
 } gArea_t;
 
 typedef struct

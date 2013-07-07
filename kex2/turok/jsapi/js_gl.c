@@ -416,6 +416,118 @@ JS_FASTNATIVE_BEGIN(GL, multMatrix)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(GL, begin)
+{
+    JS_CHECKARGS(1);
+    JS_CHECKINTEGER(0);
+
+    dglBegin(JSVAL_TO_INT(JS_ARG(0)));
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GL, end)
+{
+    JS_CHECKARGS(0);
+
+    dglEnd();
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GL, vertex2f)
+{
+    jsdouble x, y;
+
+    JS_CHECKARGS(2);
+    JS_GETNUMBER(x, v, 0);
+    JS_GETNUMBER(y, v, 1);
+
+    dglVertex2d(x, y);
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GL, vertex3f)
+{
+    jsdouble x, y, z;
+
+    JS_CHECKARGS(3);
+    JS_GETNUMBER(x, v, 0);
+    JS_GETNUMBER(y, v, 1);
+    JS_GETNUMBER(z, v, 2);
+
+    dglVertex3d(x, y, z);
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GL, color4)
+{
+    int r, g, b, a;
+
+    JS_CHECKARGS(4);
+    JS_GETINTEGER(r, 0);
+    JS_GETINTEGER(g, 1);
+    JS_GETINTEGER(b, 2);
+    JS_GETINTEGER(a, 3);
+
+    dglColor4ub(r, g, b, a);
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GL, translate)
+{
+    jsdouble x, y, z;
+
+    JS_CHECKARGS(3);
+    JS_GETNUMBER(x, v, 0);
+    JS_GETNUMBER(y, v, 1);
+    JS_GETNUMBER(z, v, 2);
+
+    dglTranslated(x, y, z);
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GL, scale)
+{
+    jsdouble x, y, z;
+
+    JS_CHECKARGS(3);
+    JS_GETNUMBER(x, v, 0);
+    JS_GETNUMBER(y, v, 1);
+    JS_GETNUMBER(z, v, 2);
+
+    dglScaled(x, y, z);
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(GL, rotate)
+{
+    jsdouble a, x, y, z;
+
+    JS_CHECKARGS(4);
+    JS_GETNUMBER(a, v, 0);
+    JS_GETNUMBER(x, v, 1);
+    JS_GETNUMBER(y, v, 2);
+    JS_GETNUMBER(z, v, 3);
+
+    dglRotated(a, x, y, z);
+
+    JS_RVAL(cx, vp) = JSVAL_VOID;
+    return JS_TRUE;
+}
+
 JS_BEGINCLASS(GL)
     0,                                          // flags
     JS_PropertyStub,                            // addProperty
@@ -1203,10 +1315,12 @@ JS_BEGINFUNCS(GL)
     JS_FASTNATIVE(GL, finish, 0),
     JS_FASTNATIVE(GL, fog, 2), // pname, param | array of params
     JS_FASTNATIVE(GL, hint, 2), // target, mode
+    JS_FASTNATIVE(GL, vertex2f, 2),
+    JS_FASTNATIVE(GL, vertex3f, 3),
     /*JS_FASTNATIVE(GL, vertex, 4), // x, y [, z [, w]]
-    JS_FASTNATIVE(GL, edgeFlag, 1), // flag
-    JS_FASTNATIVE(GL, color, 4), // r, g, b [, a]
-    JS_FASTNATIVE(GL, normal, 3), // nx, ny, nz
+    JS_FASTNATIVE(GL, edgeFlag, 1), // flag*/
+    JS_FASTNATIVE(GL, color4, 4), // r, g, b [, a]
+    /*JS_FASTNATIVE(GL, normal, 3), // nx, ny, nz
     JS_FASTNATIVE(GL, texCoord, 3), // s [, t [,r ]]
     */JS_FASTNATIVE(GL, texParameter, 2), // pname, param | array of params
     /*JS_FASTNATIVE(GL, texEnv, 3), // target, pname, param | array of params
@@ -1263,17 +1377,17 @@ JS_BEGINFUNCS(GL)
     JS_FASTNATIVE(GL, popMatrix, 0),
     /*JS_FASTNATIVE(GL, loadMatrix, 1), // matrix
     */JS_FASTNATIVE(GL, multMatrix, 1), // matrix
-    /*JS_FASTNATIVE(GL, rotate, 4), // angle, x, y, z
+    JS_FASTNATIVE(GL, rotate, 4), // angle, x, y, z
     JS_FASTNATIVE(GL, translate, 3), // x, y, z
     JS_FASTNATIVE(GL, scale, 3), // x, y, z
-    JS_FASTNATIVE(GL, newList, 0),
+    /*JS_FASTNATIVE(GL, newList, 0),
     JS_FASTNATIVE(GL, deleteList, 1), // listId
     JS_FASTNATIVE(GL, endList, 0),
     JS_FASTNATIVE(GL, callList, 1), // listId | array of listId
-    JS_FASTNATIVE(GL, polygonMode, 2), // face, mode
+    JS_FASTNATIVE(GL, polygonMode, 2), // face, mode*/
     JS_FASTNATIVE(GL, begin, 1), // mode
     JS_FASTNATIVE(GL, end, 0),
-    JS_FASTNATIVE(GL, pushAttrib, 1), // mask
+    /*JS_FASTNATIVE(GL, pushAttrib, 1), // mask
     JS_FASTNATIVE(GL, popAttrib, 0),
     JS_FASTNATIVE(GL, genTexture, 0),
     JS_FASTNATIVE(GL, deleteTexture, 1), // textureId

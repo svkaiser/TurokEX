@@ -111,6 +111,9 @@ void R_DrawFX(void)
 
             if(dist >= fx->origin[1])
                 y = dist;
+
+            if(fxinfo->drawtype == VFX_DRAWSPRITE)
+                y += (float)texture->height;
         }
 
         Mtx_MultiplyRotation(finalmtx, scalemtx, mtx);

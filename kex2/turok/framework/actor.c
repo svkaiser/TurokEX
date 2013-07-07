@@ -67,6 +67,7 @@ enum
     scactor_physics,
     scactor_rotorSpeed,
     scactor_rotorVector,
+    scactor_rotorFriction,
     scactor_end
 };
 
@@ -91,6 +92,7 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_physics,          "physics"           },
     { scactor_rotorSpeed,       "rotorSpeed"        },
     { scactor_rotorVector,      "rotorVector"       },
+    { scactor_rotorFriction,    "rotorFriction"     },
     { -1,                       NULL                }
 };
 
@@ -232,6 +234,11 @@ static void Actor_ParseTemplate(scparser_t *parser, gActorTemplate_t *ac)
         case scactor_rotorVector:
             SC_AssignVector(mapactortokens, ac->actor.rotorVector,
                 scactor_rotorVector, parser, false);
+            break;
+
+        case scactor_rotorFriction:
+            SC_AssignFloat(mapactortokens, &ac->actor.rotorFriction,
+                scactor_rotorFriction, parser, false);
             break;
 
         default:
@@ -501,8 +508,8 @@ static void Actor_UpdateMove(gActor_t *actor)
     time = actor->timestamp;
     astate = &actor->animState;
 
-    if(Actor_OnGround(actor) && astate->flags & ANF_ROOTMOTION &&
-        !(astate->flags & ANF_STOPPED))
+    if(Actor_OnGround(actor) && !Plane_IsAWall(plane) &&
+        astate->flags & ANF_ROOTMOTION && !(astate->flags & ANF_STOPPED))
     {
         vec3_t dir;
         float blendFrac;
@@ -514,7 +521,7 @@ static void Actor_UpdateMove(gActor_t *actor)
 
         Vec_ApplyQuaternion(dir, astate->rootMotion, actor->rotation);
         dir[1] = 0;
-        Vec_Scale(dir, dir, 60.0f * blendFrac * time);
+        Vec_Scale(dir, dir, blendFrac);
         Vec_Add(actor->velocity, actor->velocity, dir);
     }
 
@@ -522,7 +529,30 @@ static void Actor_UpdateMove(gActor_t *actor)
     G_ClipMovement(actor->origin, actor->velocity, time, &plane, actor);
 
     if(Actor_OnGround(actor))
-        G_ApplyFriction(actor->velocity, actor->friction, false);
+    {
+        if(!Plane_IsAWall(plane))
+            G_ApplyFriction(actor->velocity, actor->friction, false);
+
+        if(actor->bRotor && actor->rotorFriction != 0)
+        {
+            float speed;
+
+            speed = Vec_Unit3(actor->velocity);
+
+            if(speed < VELOCITY_EPSILON)
+                actor->rotorSpeed = 0;
+            else
+            {
+                float clipspeed = speed - (speed * actor->rotorFriction);
+
+                if(clipspeed < 0) clipspeed = 0;
+                clipspeed /= speed;
+
+                // de-accelerate
+                actor->rotorSpeed *= clipspeed;
+            }
+        }
+    }
     
     actor->plane = Map_PlaneToIndex(plane);
 }
@@ -559,8 +589,38 @@ static void Actor_UpdateModelYaw(gActor_t *actor)
 
     Ang_Clamp(&angle);
 
-    time = (actor->timestamp * 1000.0f) * (4.0f / astate->frametime);
+    time = (4.0f * astate->frametime);
     actor->angles[0] -= angle * (actor->timestamp * time);
+}
+
+//
+// Actor_GetWaterLevel
+//
+
+void Actor_GetWaterLevel(gActor_t *actor)
+{
+    plane_t *plane;
+    gArea_t *area;
+
+    actor->waterlevel = WL_INVALID;
+
+    if(!(plane = Map_IndexToPlane(actor->plane)))
+        return;
+
+    area = &gLevel.areas[plane->area_id];
+
+    if(plane != NULL && area->flags & AAF_WATER)
+    {
+        actor->waterlevel = WL_UNDER;
+
+        if(actor->viewHeight + actor->origin[1] >= area->waterplane)
+        {
+            if(actor->origin[1] < area->waterplane)
+                actor->waterlevel = WL_BETWEEN;
+            else
+                actor->waterlevel = WL_OVER;
+        }
+    }
 }
 
 //
@@ -571,9 +631,10 @@ static void Actor_ExecuteFrameActions(gActor_t *actor)
 {
     animstate_t *astate;
     anim_t *anim;
-    int frame;
     int i;
     int j;
+    unsigned int inc;
+    int frame;
 
     astate = &actor->animState;
     anim = astate->track.anim;
@@ -591,8 +652,12 @@ static void Actor_ExecuteFrameActions(gActor_t *actor)
     if(astate->currentFrame == frame)
         return;
 
-    for(i = astate->currentFrame; i != frame; i++)
+    inc = 0;
+    for(i = astate->currentFrame; i != frame; i++, inc++)
     {
+        if(inc >= anim->numframes)
+            break;
+
         if(i == anim->numframes)
             i = 0;
 
@@ -818,7 +883,7 @@ void Actor_Tick(void)
         if(client.playerActor == actor)
             continue;
 
-        actor->timestamp = ((float)server.runtime -
+        actor->timestamp = ((float)server.elaspedTime -
             gLevel.deltaTime) / 1000.0f;
 
         if(actor->timestamp < 0)
@@ -841,6 +906,7 @@ void Actor_Tick(void)
 
         if(actor->physics != PT_NONE)
         {
+            Actor_GetWaterLevel(actor);
             Actor_UpdateMove(actor);
             Actor_UpdateModelYaw(actor);
             Actor_UpdateTransform(actor);
@@ -919,6 +985,9 @@ void Actor_CopyProperties(gActor_t *actor, gActor_t *gTemplate)
     actor->friction         = gTemplate->friction;
     actor->bounceDamp       = gTemplate->bounceDamp;
     actor->rotorSpeed       = gTemplate->rotorSpeed;
+    actor->rotorFriction    = gTemplate->rotorFriction;
+
+    Actor_UpdateModel(actor, NULL);
 
     if(actor->classFlags & AC_AI)
     {
@@ -1174,6 +1243,40 @@ void Actor_ClearData(gActor_t *actor)
 }
 
 //
+// Actor_UpdateModel
+//
+
+void Actor_UpdateModel(gActor_t *actor, const char *model)
+{
+    if(model)
+        actor->model = Mdl_Load(model);
+
+    if(actor->model)
+    {
+        unsigned int i;
+        anim_t *anim;
+
+        if(anim = Mdl_GetAnim(actor->model, "anim00"))
+            Mdl_SetAnimState(&actor->animState, anim, 4, ANF_PAUSED);
+
+        actor->nodeOffsets_t = (vec3_t*)Z_Realloc(
+            actor->nodeOffsets_t,
+            sizeof(vec3_t) * actor->model->numnodes,
+            PU_ACTOR,
+            0);
+
+        actor->nodeOffsets_r = (vec4_t*)Z_Realloc(
+            actor->nodeOffsets_r,
+            sizeof(vec4_t) * actor->model->numnodes,
+            PU_ACTOR,
+            0);
+
+        for(i = 0; i < actor->model->numnodes; i++)
+            Vec_Set4(actor->nodeOffsets_r[i], 0, 0, 0, 1);
+    }
+}
+
+//
 // Actor_Remove
 //
 
@@ -1190,7 +1293,6 @@ void Actor_Remove(gActor_t *actor)
 void Actor_Setup(gActor_t *actor)
 {
     gObject_t *ownerObject;
-    anim_t *anim;
     jsval ownerVal;
     kbool found;
     JSContext *cx = js_context;
@@ -1204,20 +1306,6 @@ void Actor_Setup(gActor_t *actor)
     }
 
     Vec_Normalize4(actor->rotation);
-
-    if(actor->model && (anim = Mdl_GetAnim(actor->model, "anim00")))
-    {
-        unsigned int i;
-
-        Mdl_SetAnimState(&actor->animState, anim, 4, ANF_PAUSED);
-        actor->nodeOffsets_t = (vec3_t*)Z_Calloc(sizeof(vec3_t) *
-            actor->model->numnodes, PU_ACTOR, 0);
-        actor->nodeOffsets_r = (vec4_t*)Z_Calloc(sizeof(vec4_t) *
-            actor->model->numnodes, PU_ACTOR, 0);
-
-        for(i = 0; i < actor->model->numnodes; i++)
-            Vec_Set4(actor->nodeOffsets_r[i], 0, 0, 0, 1);
-    }
 
     Actor_UpdateTransform(actor);
     actor->timestamp = (float)server.runtime;

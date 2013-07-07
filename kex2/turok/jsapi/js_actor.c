@@ -245,6 +245,9 @@ JS_PROP_FUNC_GET(GameActor)
         JS_NEWVECTORPOOL(actor->rotorVector);
         return JS_TRUE;
 
+    case 39:
+        return JS_NewDoubleValue(cx, actor->rotorFriction, vp);
+
     default:
         return JS_TRUE;
     }
@@ -384,6 +387,11 @@ JS_PROP_FUNC_SET(GameActor)
     case 38:
         JS_GETOBJECT(object, vp, 0);
         JS_GETVECTOR2(object, actor->rotorVector);
+        return JS_TRUE;
+
+    case 39:
+        JS_GETNUMBER(dval, vp, 0);
+        actor->rotorFriction = (float)dval;
         return JS_TRUE;
 
     default:
@@ -765,6 +773,21 @@ JS_FASTNATIVE_BEGIN(GameActor, setNodeRotation)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(GameActor, onGround)
+{
+    JSObject *thisObj;
+    gActor_t *actor;
+
+    JS_CHECKARGS(0);
+    
+    thisObj = JS_THIS_OBJECT(cx, vp);
+    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
+        return JS_FALSE;
+
+    JS_SET_RVAL(cx, vp, BOOLEAN_TO_JSVAL(Actor_OnGround(actor)));
+    return JS_TRUE;
+}
+
 JS_FASTNATIVE_BEGIN(GameActor, spawn)
 {
     JSString *str;
@@ -898,6 +921,7 @@ JS_BEGINPROPS(GameActor)
     { "bRotor",         36, JSPROP_ENUMERATE, NULL, NULL },
     { "rotorSpeed",     37, JSPROP_ENUMERATE, NULL, NULL },
     { "rotorVector",    38, JSPROP_ENUMERATE, NULL, NULL },
+    { "rotorFriction",  39, JSPROP_ENUMERATE, NULL, NULL },
     { NULL, 0, 0, NULL, NULL }
 };
 
@@ -919,6 +943,7 @@ JS_BEGINFUNCS(GameActor)
     JS_FASTNATIVE(GameActor, spawnFX, 4),
     JS_FASTNATIVE(GameActor, getLocalVector, 3),
     JS_FASTNATIVE(GameActor, setNodeRotation, 2),
+    JS_FASTNATIVE(GameActor, onGround, 0),
     JS_FS_END
 };
 

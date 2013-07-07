@@ -307,7 +307,14 @@ void Snd_PlayShaderDirect(sndShader_t *shader, gActor_t *actor)
 
 void Snd_PlayShader(const char *name, gActor_t *actor)
 {
-    sndShader_t *shader = Snd_LoadShader(name);
+    sndShader_t *shader;
+
+    // TODO
+    if(actor && Vec_Length3(client.playerActor->origin,
+        actor->origin) >= 4096)
+        return;
+    
+    shader = Snd_LoadShader(name);
 
     if(shader == NULL)
         return;

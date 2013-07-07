@@ -76,6 +76,7 @@ typedef struct
     kbool               bAddOffset;
     kbool               bDepthBuffer;
     kbool               bScaleLerp;
+    kbool               bActorInstance;
     kbool               bNoDirection;
     kbool               bLocalAxis;
     kbool               bClientSpace;
@@ -150,6 +151,7 @@ typedef struct fx_s
     float               restart;
     kbool               bAnimate;
     kbool               bAttachToSource;
+    kbool               bForcedRestart;
     byte                color1[4];
     byte                color2[4];
     texture_t           **textures;

@@ -423,6 +423,7 @@ void AI_ClearTarget(ai_t *ai)
     Actor_SetTarget(&ai->target, NULL);
     ai->flags &= ~AIF_SEEPLAYER;
     ai->flags &= ~AIF_SEETARGET;
+    ai->flags &= ~AIF_LOOKATTARGET;
 }
 
 //

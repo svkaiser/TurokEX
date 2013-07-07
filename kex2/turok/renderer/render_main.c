@@ -295,9 +295,11 @@ void R_TraverseDrawNode(gActor_t *actor, mdlnode_t *node, animstate_t *animstate
     int frame;
     int nextframe;
     float delta;
+    int nodenum;
     kmodel_t *model;
 
     model = actor->model;
+    nodenum = node - model->nodes;
 
     if(animstate != NULL)
     {
@@ -320,9 +322,6 @@ void R_TraverseDrawNode(gActor_t *actor, mdlnode_t *node, animstate_t *animstate
             vec3_t pos_cur;
             vec3_t pos_next;
             vec4_t rCur;
-            int nodenum;
-
-            nodenum = node - model->nodes;
 
             Mdl_GetAnimRotation(r1, anim, nodenum, frame);
             Mdl_GetAnimRotation(r2, anim, nodenum, nextframe);
@@ -430,8 +429,8 @@ void R_TraverseDrawNode(gActor_t *actor, mdlnode_t *node, animstate_t *animstate
 
             if(actor->textureSwaps != NULL)
             {
-                if(actor->textureSwaps[i][0] != '-')
-                    texturepath = actor->textureSwaps[i];
+                if(actor->textureSwaps[nodenum][var][i][0] != '-')
+                    texturepath = actor->textureSwaps[nodenum][var][i];
             }
 
             R_DrawSection(section, texturepath);

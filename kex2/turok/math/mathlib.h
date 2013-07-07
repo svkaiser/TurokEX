@@ -124,6 +124,7 @@ float Plane_GetPitch(plane_t *p);
 float Plane_GetSlope(plane_t *plane, float x1, float z1, float x2, float z2);
 void  Plane_GetRotation(vec4_t vec, plane_t *p);
 void  Plane_GetNormalizedRotation(vec4_t out, plane_t *p);
+void  Plane_GetInclinationVector(plane_t *plane, vec3_t out);
 kbool Plane_PointInRange(plane_t *p, float x, float z);
 
 //

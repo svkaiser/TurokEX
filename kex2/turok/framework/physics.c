@@ -151,6 +151,52 @@ kbool G_TryMove(gActor_t *source, vec3_t origin, vec3_t dest, plane_t **plane)
 }
 
 //
+// G_ClimbOnWall
+//
+
+static void G_ClimbOnWall(vec3_t origin, vec3_t velocity, plane_t *plane)
+{
+    vec3_t end;
+    vec3_t vr;
+    vec3_t ray;
+    float lenxz;
+    float leny;
+    float y1, y2;
+    float d;
+
+    Vec_Add(end, origin, velocity);
+    Vec_Sub(vr, end, plane->points[0]);
+
+    y1 = Plane_GetDistance(plane, origin);
+    y2 = Plane_GetDistance(plane, end);
+
+    d = Vec_Dot(vr, plane->normal);
+
+    if(d > 0)
+        return;
+
+    ray[0] = end[0] - origin[0];
+    ray[1] = y2 - y1;
+    ray[2] = end[2] - origin[2];
+
+    lenxz = Vec_Unit2(ray);
+    leny = ray[1]*ray[1]+lenxz;
+
+    if(leny == 0)
+        origin[1] = y1;
+    else
+    {
+        float dist;
+
+        dist = (float)sqrt(lenxz / leny);
+
+        origin[0] = (end[0] - origin[0]) * dist + origin[0];
+        origin[1] = (y2 - y1) * dist + y1;
+        origin[2] = (end[2] - origin[2]) * dist + origin[2];
+    }
+}
+
+//
 // G_ClipMovement
 //
 // Trace against surrounding planes and slide
@@ -170,11 +216,26 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time,
     int i;
     int hits;
     kbool hitOk;
+    kbool onSlope;
 
     if(*plane == NULL)
         return true;
 
+    onSlope = false;
     hitOk = false;
+
+    if(actor && !((*plane)->flags & CLF_CLIMB) &&
+        Plane_IsAWall(*plane) && Actor_OnGround(actor))
+    {
+        vec3_t dir;
+
+        Plane_GetInclinationVector(*plane, dir);
+
+        Vec_Scale(dir, dir, actor->mass * time);
+        Vec_Sub(velocity, velocity, dir);
+
+        onSlope = true;
+    }
 
     // set start point
     Vec_Copy3(start, origin);
@@ -251,10 +312,13 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time,
         // attempted moves (don't count against objects hit)
         if(trace.type != TRT_OBJECT)
         {
-            if(Vec_Dot(vel, velocity) <= 0 || i == (TRYMOVE_COUNT - 1))
+            if(Vec_Dot(vel, velocity) <= 0)
             {
-                velocity[0] = 0;
-                velocity[2] = 0;
+                if(!onSlope)
+                {
+                    velocity[0] = 0;
+                    velocity[2] = 0;
+                }
                 break;
             }
         }
@@ -284,7 +348,7 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time,
 
         // test the floor and adjust height
         dist = origin[1] - Plane_GetDistance(*plane, origin);
-        if(dist <= 0.512f)
+        if(dist <= ONPLANE_EPSILON)
         {
             if(!((*plane)->flags & CLF_CLIMB))
                 origin[1] = origin[1] - dist;

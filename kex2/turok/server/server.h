@@ -69,6 +69,7 @@ typedef struct
     unsigned int    maxclients;
     int             time;
     int             runtime;
+    int             elaspedTime;
     int             tics;
 } server_t;
 

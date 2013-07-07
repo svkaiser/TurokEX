@@ -371,10 +371,15 @@ void P_LocalPlayerTick(void)
     Vec_Copy3(ws->origin, actor->origin);
     Vec_Add(ws->velocity, ws->velocity, actor->velocity);
 
+    Actor_GetWaterLevel(actor);
+
     // TODO
     actor->velocity[1] = 0;
 
     P_LocalPlayerEvent("onLocalTick");
+
+    JPool_ReleaseObjects(&objPoolVector);
+    JPool_ReleaseObjects(&objPoolGameActor);
 
     // TODO - handle actual actor movement/clipping here
     if(Actor_OnGround(actor))

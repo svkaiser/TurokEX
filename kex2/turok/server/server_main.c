@@ -319,6 +319,7 @@ void SV_Run(int msec)
         return;
 
     server.runtime += msec;
+    server.elaspedTime += msec;
 
     SV_ReadPackets();
     SV_Ticker();
