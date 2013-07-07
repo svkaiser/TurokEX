@@ -615,6 +615,30 @@ class.properties(ComponentTurokPlayer,
             plane, radius, 50.0, 0.5, true);
     },
     
+    action_124 : function()
+    {
+        var actor = this.parent.owner;
+        var target = arguments[0];
+        
+        if(target == null)
+            return;
+        
+        if(GameActor.compare(target, actor))
+            return;
+
+        Damage.prototype.inflict(target, actor, arguments[1]);
+    },
+    
+    action_365 : function()
+    {
+        var radius = arguments[1];
+        var origin = arguments[2];
+        var plane = arguments[4];
+        
+        BlastRadius.prototype.explode(this.parent.owner, origin.x, origin.y, origin.z,
+            plane, radius, 20.0, 1.0, true);
+    },
+    
     aPistolAttack : function()
     {
         Snd.play('sounds/shaders/pistol_shot.ksnd', this.parent.owner);
@@ -850,9 +874,6 @@ class.properties(ComponentTurokPlayer,
             this.activeWeapon.tick();
             this.recoilPitch = Math.lerp(this.recoilPitch, 0, 0.125);
         }
-        
-        //if(camera.owner != actor)
-            //actor.animState.update();
             
         if(this.cameraEvent != null)
         {

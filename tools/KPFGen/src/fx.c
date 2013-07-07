@@ -55,7 +55,7 @@ static byte *fxdata;
 #define FXF_UNKNOWN5        0x00010
 #define FXF_ADDOFFSET       0x00020
 #define FXF_UNKNOWN7        0x00040
-#define FXF_PERFRAME        0x00080
+#define FXF_ACTORINSTANCE   0x00080
 #define FXF_MIRROR          0x00100
 #define FXF_UNKNOWN10       0x00200
 #define FXF_UNKNOWN11       0x00400
@@ -404,6 +404,7 @@ void FX_StoreParticleEffects(void)
                 Com_Strcat("        bOffsetFromFloor = %i\n", (flags & FXF_FLOOROFFSET) ? 1 : 0);
                 Com_Strcat("        bTextureWrapMirror = %i\n", (flags & FXF_MIRROR) ? 1 : 0);
                 Com_Strcat("        bDepthBuffer = %i\n", (flags & FXF_DEPTHBUFFER) ? 1 : 0);
+                Com_Strcat("        bActorInstance = %i\n", (flags & FXF_ACTORINSTANCE) ? 1 : 0);
                 Com_Strcat("        bScaleLerp = %i\n", (flags & FXF_SCALELERP) ? 1 : 0);
                 Com_Strcat("        bLensFlares = %i\n", (flags & FXF_LENSFLARES) ? 1 : 0);
                 Com_Strcat("        bBlood = %i\n", (flags & FXF_BLOOD) ? 1 : 0);
@@ -436,7 +437,7 @@ void FX_StoreParticleEffects(void)
                 Com_Strcat("        screen_offset_x = %f\n", CoerceFloat(vfx[31]));
                 Com_Strcat("        screen_offset_y = %f\n", CoerceFloat(vfx[32]));
                 Com_Strcat("        offset = { %f %f %f }\n",
-                    -CoerceFloat(vfx[33]), CoerceFloat(vfx[34]), CoerceFloat(vfx[35]));
+                    CoerceFloat(vfx[33]), CoerceFloat(vfx[34]), CoerceFloat(vfx[35]));
                 Com_Strcat("        textures[%i] =\n", texindexes[vfx[36]]);
                 Com_Strcat("        {\n");
                 for(k = 0; k < texindexes[vfx[36]]; k++)

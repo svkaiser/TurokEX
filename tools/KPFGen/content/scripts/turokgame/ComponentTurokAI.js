@@ -27,6 +27,8 @@ const AI_STATE_ATTACK_MELEE     = 3;
 const AI_STATE_ATTACK_RANGE     = 4;
 const AI_STATE_DEATH            = 5;
 const AI_STATE_DROPPING         = 6;
+const AI_STATE_TELEPORT_OUT     = 7;
+const AI_STATE_TELEPORT_IN      = 8;
 
 //------------------------------------------------------------------------
 // Animation ID constants. These are shared across all AI actors
@@ -71,6 +73,9 @@ const AI_ANIM_DEATH_KNOCKBACK2  = 31;
 const AI_ANIM_DEATH_KNOCKBACK3  = 32;
 const AI_ANIM_DEATH_KNOCKBACK4  = 33;
 
+const AI_ANIM_TELEPORT_IN       = 2550;
+const AI_ANIM_TELEPORT_OUT      = 2551;
+
 const AI_ANIM_DEATH_STAND       = 34;
 const AI_ANIM_DEATH_VIOLENT     = 35;
 const AI_ANIM_DEATH_RUNNING     = 37;
@@ -91,6 +96,14 @@ const FLAG_ATTACK_RANGE7        = 64;
 const FLAG_ATTACK_RANGE8        = 128;
 const FLAG_ATTACK_RANGE9        = 256;
 const FLAG_ATTACK_RANGE10       = 512;
+
+//------------------------------------------------------------------------
+// Item drop flags
+//------------------------------------------------------------------------
+
+const FLAG_ITEMDROP_HEALTHFULL  = 8;
+const FLAG_ITEMDROP_HEALTH2     = 32;
+const FLAG_ITEMDROP_HEALTH10    = 64;
 
 //------------------------------------------------------------------------
 // Range attack animation object
@@ -174,6 +187,7 @@ class.properties(ComponentTurokAI,
     rangeDistance   : 1024.0,               // how far should the AI do long range attacks?
     bCanMelee       : true,                 // if enabled, AI will try to reach its target
     bCanRangeAttack : false,                // if enabled, AI will try to do long range attacks
+    bCanTeleport    : false,
     bAttacking      : false,                // AI is currently attacking its target
     attackThreshold : 0,                    // how long before attacking again
     sightThreshold  : 0,                    // determines when to stop chasing if lost sight of target
@@ -181,12 +195,14 @@ class.properties(ComponentTurokAI,
     bTurning        : false,                // AI is playing a turning animation
     turnAnim        : 0,                    // animation ID of the current turning animation
     rangedAttacks   : 0,                    // range attack flags
+    alligenceID     : 0,
     lookNode        : 0,                    // node ID for the AI's head
     lookYawAxis_x   : 0,
     lookYawAxis_y   : 1,
     lookYawAxis_z   : 0,
     meleeAnimObj    : g_AnimMelee,
     deathAnimObj    : g_AnimDeath,
+    dropItemFlags   : 0,
     
     //------------------------------------------------------------------------
     // MELEE DAMAGE FUNCTIONS
@@ -303,7 +319,7 @@ class.properties(ComponentTurokAI,
             origin.x, origin.y+8.192, origin.z,
             actor.yaw, 0.0, Plane.fromIndex(actor.plane));
             
-        item.mass = 1500;
+        item.mass = 1200;
         item.friction = 0.5;
         item.bounceDamp = 0.35;
         
@@ -315,6 +331,12 @@ class.properties(ComponentTurokAI,
         velocity.scale(409.6);
         
         item.velocity = velocity;
+    },
+    
+    spawnItem : function()
+    {
+        if(this.dropItemFlags & FLAG_ITEMDROP_HEALTH2)
+            this.dropPickup('pickup_health_small');
     },
     
     //------------------------------------------------------------------------
@@ -529,6 +551,27 @@ class.properties(ComponentTurokAI,
             this.deathAnimObj.enabled[2] = false;
 
         return this.animPicker(actor, this.deathAnimObj, 3);
+    },
+    
+    //------------------------------------------------------------------------
+    // TELEPORT FUNCTIONS
+    //------------------------------------------------------------------------
+    
+    tryTeleport : function(actor)
+    {
+        // handle teleporting
+        if(!this.bAttacking && !this.bTurning && this.bCanTeleport)
+        {
+            if(Sys.rand(1000) < 15)
+            {
+                this.state = AI_STATE_TELEPORT_OUT;
+                actor.blendAnim(AI_ANIM_TELEPORT_OUT, 4.0, 8.0,
+                    NRender.ANIM_ROOTMOTION);
+                return true;
+            }
+        }
+        
+        return false;
     },
     
     //------------------------------------------------------------------------
@@ -905,6 +948,7 @@ class.properties(ComponentTurokAI,
         this.bTurning = false;
         
         self.ai.clearTarget();
+        self.ai.bLookAtTarget = false;
         self.ai.bTurning = false;
         self.ai.bDisabled = true;
         self.bNoDropOff = false;
@@ -945,7 +989,9 @@ class.properties(ComponentTurokAI,
             this.attackThreshold -= 15;
         
         // handle melee and ranged attacks
-        if(this.state != AI_STATE_DROPPING && !this.bTurning &&
+        if(this.state != AI_STATE_TELEPORT_OUT &&
+            this.state != AI_STATE_TELEPORT_IN &&
+            this.state != AI_STATE_DROPPING && !this.bTurning &&
             !this.bAttacking && this.health > 0)
         {
             if(!this.tryMeleeAttack(actor, ai) &&
@@ -989,6 +1035,9 @@ class.properties(ComponentTurokAI,
             }
             if(!this.bTurning && !this.bAttacking)
             {
+                if(this.tryTeleport(actor))
+                    return;
+                
                 var an = ai.yawToTarget();
     
                 if(!(an <= 0.78 && an >= -0.78))
@@ -1069,6 +1118,52 @@ class.properties(ComponentTurokAI,
             }
             if(!this.bCanMelee)
                 this.turn(actor, ai.yawToTarget());
+            break;
+            
+        ////////////////////////////////////////////////////
+        // TELEPORT OUT STATE
+        ////////////////////////////////////////////////////
+        case AI_STATE_TELEPORT_OUT:
+            if(actor.animState.flags & NRender.ANIM_STOPPED)
+            {
+                var plane = Plane.fromIndex(actor.plane);
+                var pos = ai.target.origin;
+                var range = (Sys.rand(100) >= 50) ?
+                    this.meleeRange : this.rangeDistance;
+                    
+                var an = (Sys.rand(10) * 36.0) * 0.017;
+                
+                pos.x += range * Math.sin(an);
+                pos.z += range * Math.cos(an);
+                
+                Physics.tryMove(actor, actor.origin, pos, plane);
+                
+                actor.origin = pos;
+                actor.plane = plane.toIndex();
+                
+                ai.setIdealYaw(ai.getBestAngleToTarget(1.5), 2.0);
+        
+                this.state = AI_STATE_TELEPORT_IN;
+                actor.setAnim(AI_ANIM_TELEPORT_IN, 4.0,
+                    NRender.ANIM_ROOTMOTION);
+            }
+            break;
+            
+        ////////////////////////////////////////////////////
+        // TELEPORT IN STATE
+        ////////////////////////////////////////////////////
+        case AI_STATE_TELEPORT_IN:
+            if(actor.animState.flags & NRender.ANIM_STOPPED)
+            {
+                this.state = AI_STATE_STANDING;
+                this.bAttacking = false;
+                this.bTurning = false;
+                
+                if(this.bCanMelee)
+                    this.turn(actor, ai.yawToTarget());
+                else
+                    this.tryRangeAttack(actor, ai);
+            }
             break;
         }
     },

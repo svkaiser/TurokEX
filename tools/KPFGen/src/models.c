@@ -176,9 +176,13 @@ static int highidx;
 static int hightri;
 static byte action_buffer[0x4000];
 static short curmodel;
+static short curnode;
+static short curmesh;
 
-short section_count[800];
-short section_textures[800][100];
+short model_nodeCount[800];
+short model_meshCount[800][100];
+short section_count[800][100][100];
+short section_textures[800][100][100][100];
 bbox mdlboxes[1000];
 
 typedef struct
@@ -305,7 +309,7 @@ static void PrintFlags(int flags)
     {
         if(flags & flagnames[i].flag)
         {
-            Com_Strcat("                            %s = 1\n", flagnames[i].name);
+            Com_Strcat("%s = 1\n", flagnames[i].name);
         }
     }
 }
@@ -368,7 +372,7 @@ static void ProcessTriangles(byte *data)
 
         if((i % 4) == 0)
         {
-            Com_Strcat("\n                                ");
+            Com_Strcat("\n    ");
         }
 
         Com_Strcat("%i %i %i ",
@@ -416,8 +420,8 @@ static void ProcessVertices(byte *data)
     tv2 = (short*)(data + 8 + ((count * 2) * 7));
     n   = (byte*)( data + 8 + ((count * 2) * 8));
 
-    Com_Strcat("                                xyz =\n");
-    Com_Strcat("                                {\n");
+    Com_Strcat("xyz =\n");
+    Com_Strcat("{\n");
 
     for(i = 0; i < count; i++)
     {
@@ -436,13 +440,12 @@ static void ProcessVertices(byte *data)
         yy = (signed short)((fy[count + i] << 8) | fy[i]);
         zz = (signed short)((fz[count + i] << 8) | fz[i]);
 
-        Com_Strcat("                                    ");
         Com_Strcat("%f %f %f\n", (float)xx, (float)yy, (float)zz);
     }
-    Com_Strcat("                                }\n\n");
+    Com_Strcat("}\n\n");
 
-    Com_Strcat("                                coords =\n");
-    Com_Strcat("                                {\n");
+    Com_Strcat("coords =\n");
+    Com_Strcat("{\n");
 
     for(i = 0; i < count; i++)
     {
@@ -474,13 +477,12 @@ static void ProcessVertices(byte *data)
         uv.uvi[0] = (tmu2 << 16) | tmu1;
         uv.uvi[1] = (tmv2 << 16) | tmv1;
 
-        Com_Strcat("                                    ");
         Com_Strcat("%f %f\n", uv.uvf[0], uv.uvf[1]);
     }
-    Com_Strcat("                                }\n\n");
+    Com_Strcat("}\n\n");
 
-    Com_Strcat("                                normals =\n");
-    Com_Strcat("                                {\n");
+    Com_Strcat("normals =\n");
+    Com_Strcat("{\n");
 
     for(i = 0; i < count; i++)
     {
@@ -492,10 +494,9 @@ static void ProcessVertices(byte *data)
         n2 = (float)n[(count * 1) + i] / 127.0f;
         n3 = (float)n[(count * 2) + i] / 127.0f;
 
-        Com_Strcat("                                    ");
         Com_Strcat("%f %f %f\n", n1, n2, n3);
     }
-    Com_Strcat("                                }\n\n");
+    Com_Strcat("}\n\n");
 }
 
 //
@@ -519,34 +520,34 @@ static void ProcessGeometry(byte *data)
     vertices = Com_GetCartData(data, CHUNK_SECTION_VERTEX, &vertexsize);
     vertexcount = Com_GetCartOffset(vertices, CHUNK_VERTEX_COUNT, 0);
 
-    section_textures[curmodel][cursection] = header->texture;
+    section_textures[curmodel][curnode][curmesh][cursection] = header->texture;
 
     PrintFlags(header->flags);
     if(header->texture != -1)
     {
-        Com_Strcat("                            texture = \"textures/tex%04d_00.tga\"\n",
+        Com_Strcat("texture = \"textures/tex%04d_00.tga\"\n",
             header->texture);
     }
-    Com_Strcat("                            rgba = %i %i %i %i\n",
+    Com_Strcat("rgba = %i %i %i %i\n",
         header->rgba1[0], header->rgba1[1], header->rgba1[2], header->rgba1[3]);
-    Com_Strcat("                            // rgba = %i %i %i %i\n",
+    Com_Strcat("// rgba = %i %i %i %i\n",
         header->rgba2[0], header->rgba2[1], header->rgba2[2], header->rgba2[3]);
 
-    Com_Strcat("\n                            numtriangles = %i\n",
+    Com_Strcat("\nnumtriangles = %i\n",
         Com_GetCartOffset(indices, CHUNK_INDICES_COUNT, 0));
 
-    Com_Strcat("\n                            triangles =\n");
-    Com_Strcat("                            {\n");
+    Com_Strcat("\ntriangles =\n");
+    Com_Strcat("{\n");
     ProcessTriangles(indices);
-    Com_Strcat("\n                            }\n\n");
+    Com_Strcat("\n}\n\n");
 
-    Com_Strcat("\n                            numvertices = %i\n",
+    Com_Strcat("\nnumvertices = %i\n",
         vertexcount);
 
-    Com_Strcat("                            vertices =\n");
-    Com_Strcat("                            {\n");
+    Com_Strcat("vertices =\n");
+    Com_Strcat("{\n");
     ProcessVertices(vertices);
-    Com_Strcat("                            }\n\n");
+    Com_Strcat("}\n\n");
 
     hightri = highidx;
     totalverts += vertexcount;
@@ -563,11 +564,11 @@ static void ProcessGroup(byte *data)
 
     sectioncount = Com_GetCartOffset(data, CHUNK_SECTIONLIST_COUNT, 0);
 
-    section_count[curmodel] = sectioncount;
+    section_count[curmodel][curnode][curmesh] = sectioncount;
 
-    Com_Strcat("                    numsections = %i\n\n", sectioncount);
-    Com_Strcat("                    sections\n");
-    Com_Strcat("                    {\n");
+    Com_Strcat("numsections = %i\n\n", sectioncount);
+    Com_Strcat("sections\n");
+    Com_Strcat("{\n");
     for(i = 0; i < sectioncount; i++)
     {
         totalverts = 0;
@@ -576,11 +577,11 @@ static void ProcessGroup(byte *data)
 
         cursection = i;
 
-        Com_Strcat("                        { // section %02d\n", i);
+        Com_Strcat("{ // section %02d\n", i);
         ProcessGeometry(Com_GetCartData(data, CHUNK_SECTIONLIST_OFFSET(i), 0));
-        Com_Strcat("                        }\n");
+        Com_Strcat("}\n");
     }
-    Com_Strcat("                    }\n\n");
+    Com_Strcat("}\n\n");
 }
 
 //
@@ -604,13 +605,15 @@ static void ProcessLimbData(byte *data)
     objects = Com_GetCartData(data, CHUNK_LIMB_OBJECTS, 0);
     numobjects = Com_GetCartOffset(objects, CHUNK_OBJECTS_COUNT, 0);
 
+    model_meshCount[curmodel][curnode] = numobjects;
+
     children = Com_GetCartOffset(matrix, CHUNK_MATRIX_COUNT, 0);
 
-    Com_Strcat("            numchildren = %i\n", children);
+    Com_Strcat("numchildren = %i\n", children);
 
     if(children > 0)
     {
-        Com_Strcat("            children = { ");
+        Com_Strcat("children = { ");
 
         for(i = 0; i < children; i++)
         {
@@ -622,8 +625,8 @@ static void ProcessLimbData(byte *data)
     }
 
     variantcount = Com_GetCartOffset(variants, CHUNK_VARIATIONS_COUNT, 0);
-    Com_Strcat("\n            numvariants = %i\n", variantcount);
-    Com_Strcat("            variants = { ");
+    Com_Strcat("\nnumvariants = %i\n", variantcount);
+    Com_Strcat("variants = { ");
     if(variantcount <= 0)
     {
         Com_Strcat("0 ");
@@ -638,16 +641,17 @@ static void ProcessLimbData(byte *data)
     }
     Com_Strcat("}\n");
 
-    Com_Strcat("            numgroups = %i\n\n", numobjects);
-    Com_Strcat("            groups\n");
-    Com_Strcat("            {\n");
+    Com_Strcat("numgroups = %i\n\n", numobjects);
+    Com_Strcat("groups\n");
+    Com_Strcat("{\n");
     for(i = 0; i < numobjects; i++)
     {
-        Com_Strcat("                { // group %02d\n", i);
+        Com_Strcat("{ // group %02d\n", i);
+        curmesh = i;
         ProcessGroup(Com_GetCartData(objects, CHUNK_OBJECTS_OFFSET(i), 0));
-        Com_Strcat("                }\n");
+        Com_Strcat("}\n");
     }
-    Com_Strcat("            }\n\n");
+    Com_Strcat("}\n\n");
 }
 
 //
@@ -663,17 +667,19 @@ static void ProcessRoot(byte *data, int index)
 
     limbcount = Com_GetCartOffset(data, CHUNK_LIMBINDEX_COUNT, 0);
 
-    Com_Strcat("    numnodes = %i\n\n", limbcount);
+    Com_Strcat("numnodes = %i\n\n", limbcount);
+    model_nodeCount[curmodel] = limbcount;
 
-    Com_Strcat("    nodes\n");
-    Com_Strcat("    {\n");
+    Com_Strcat("nodes\n");
+    Com_Strcat("{\n");
     for(i = 0; i < limbcount; i++)
     {
-        Com_Strcat("        { // node %02d\n", i);
+        Com_Strcat("{ // node %02d\n", i);
+        curnode = i;
         ProcessLimbData(Com_GetCartData(data, CHUNK_LIMBINDEX_OFFSET(i), 0));
-        Com_Strcat("        }\n");
+        Com_Strcat("}\n");
     }
-    Com_Strcat("    }\n\n");
+    Com_Strcat("}\n\n");
 
     Com_Strcat("}\n\n");
 }
@@ -731,7 +737,7 @@ static void ProcessProperties(byte *data, int index)
     Com_Strcat("animsets =\n{\n");
     for(i = 0; i < animcount; i++)
     {
-        Com_Strcat("    { %i \"anim%02d\" \"%smdl%03d/mdl%03d_%02d.kanim\" }\n",
+        Com_Strcat("{ %i \"anim%02d\" \"%smdl%03d/mdl%03d_%02d.kanim\" }\n",
             Com_GetCartOffset(types, CHUNK_INFO_OFFSET(i), 0),
             i, GetModelNamespace(0), index, index, i);
     }
@@ -741,13 +747,13 @@ static void ProcessProperties(byte *data, int index)
 
     if(bboxsize < 24)
     {
-        Com_Strcat("    bbox = { 0.0 0.0 0.0 0.0 0.0 0.0 }\n");
+        Com_Strcat("bbox = { 0.0 0.0 0.0 0.0 0.0 0.0 }\n");
     }
     else
     {
         float *fbbox = (float*)bbox;
 
-        Com_Strcat("    bbox = { %f %f %f %f %f %f }\n",
+        Com_Strcat("bbox = { %f %f %f %f %f %f }\n",
             fbbox[0], fbbox[1], fbbox[2], fbbox[3], fbbox[4], fbbox[5]);
 
         mdlboxes[index][0] = fbbox[0];
@@ -778,14 +784,14 @@ static void ProcessSpawnActions(byte *data, int index)
 
     Com_Strcat("behaviors = // [frame## action## arg0 arg1 arg2 arg3]\n");
     Com_Strcat("{\n");
-    Com_Strcat("    numbehaviors = %i\n\n", count);
+    Com_Strcat("numbehaviors = %i\n\n", count);
 
     for(i = 0; i < count; i++)
     {
         int offset = i * size;
         factions_t *fa = (factions_t*)(action_buffer + 8 + offset);
 
-        Com_Strcat("    { %i %i %f %f %f %f }\n",
+        Com_Strcat("{ %i %i %f %f %f %f }\n",
             fa->frame, fa->type, fa->args[0], fa->args[1], fa->args[2], fa->args[3]);
     }
 
@@ -829,19 +835,19 @@ static void ProcessMovement(byte *data, int frames)
     dboolean encoded    = Com_GetCartOffset(data, CHUNK_MOVEMENT_ENCODED, 0);
     int i;
 
-    Com_Strcat("    numtranslationsets = %i\n", count);
+    Com_Strcat("numtranslationsets = %i\n", count);
 
     if(count <= 0)
         return;
 
-    Com_Strcat("    translationsets =\n");
-    Com_Strcat("    {\n");
+    Com_Strcat("translationsets =\n");
+    Com_Strcat("{\n");
 
     for(i = 0; i < count; i++)
     {
         byte *cmpdata = data + 8 + (size * i);
 
-        Com_Strcat("        { // %i\n", i);
+        Com_Strcat("{ // %i\n", i);
 
         if(encoded)
         {
@@ -875,7 +881,7 @@ static void ProcessMovement(byte *data, int frames)
                     dy  = *(short*)&tables[1][j * 2];
                     dz  = *(short*)&tables[2][j * 2];
 
-                    Com_Strcat("            { %f %f %f }\n",
+                    Com_Strcat("{ %f %f %f }\n",
                         (float)dx * t * flt_48EC8C + x,
                         (float)dy * t * flt_48EC8C + y,
                         (float)dz * t * flt_48EC8C + z);
@@ -890,15 +896,15 @@ static void ProcessMovement(byte *data, int frames)
 
             for(j = 0; j < frames; j++, xyz += 3)
             {
-                Com_Strcat("            { %f %f %f }\n",
+                Com_Strcat("{ %f %f %f }\n",
                     xyz[0], xyz[1], xyz[2]);
             }
         }
 
-        Com_Strcat("        }\n");
+        Com_Strcat("}\n");
     }
 
-    Com_Strcat("    }\n\n");
+    Com_Strcat("}\n\n");
 }
 
 //
@@ -912,13 +918,13 @@ static void ProcessRotation(byte *data, int frames)
     int count       = Com_GetCartOffset(data, CHUNK_ROTATIONS_COUNT, 0);
     int i;
 
-    Com_Strcat("    numrotationsets = %i\n", count);
+    Com_Strcat("numrotationsets = %i\n", count);
 
     if(count <= 0)
         return;
 
-    Com_Strcat("    rotationsets =\n");
-    Com_Strcat("    {\n");
+    Com_Strcat("rotationsets =\n");
+    Com_Strcat("{\n");
 
     for(i = 0; i < count; i++)
     {
@@ -931,7 +937,7 @@ static void ProcessRotation(byte *data, int frames)
 
         DC_BuildAnimTable((int**)tables, data + 8 + (size * i), 4);
 
-        Com_Strcat("        { // %i\n", i);
+        Com_Strcat("{ // %i\n", i);
 
         if(frames > 0)
         {
@@ -949,7 +955,7 @@ static void ProcessRotation(byte *data, int frames)
                 ys  = *(short*)&tables[2][j * 2];
                 yc  = *(short*)&tables[3][j * 2];
 
-                Com_Strcat("            { %f %f %f %f }\n",
+                Com_Strcat("{ %f %f %f %f }\n",
                     (float)p  * flt_48EC8C,
                     (float)r  * flt_48EC8C,
                     (float)ys * flt_48EC8C,
@@ -957,10 +963,10 @@ static void ProcessRotation(byte *data, int frames)
             }
         }
 
-        Com_Strcat("        }\n");
+        Com_Strcat("}\n");
     }
 
-    Com_Strcat("    }\n\n");
+    Com_Strcat("}\n\n");
 }
 
 //
@@ -1303,13 +1309,13 @@ static void ProcessActions(byte *data, int animIndex)
 
     DC_DecodeData(data, action_buffer, 0);
 
-    Com_Strcat("    numactions = %i\n\n", count);
+    Com_Strcat("numactions = %i\n\n", count);
 
     if(count <= 0)
         return;
 
-    Com_Strcat("    actions =\n");
-    Com_Strcat("    {\n");
+    Com_Strcat("actions =\n");
+    Com_Strcat("{\n");
 
     for(i = 0; i < count; i++)
     {
@@ -1320,7 +1326,7 @@ static void ProcessActions(byte *data, int animIndex)
         if(curmodel == 396 && animIndex == 22 && fa->type == 407 && fa->frame == 62)
             fa->frame = 61;
 
-        Com_Strcat("        %i %s\n",
+        Com_Strcat("%i %s\n",
             fa->frame, GetActionFunction(fa));
     }
 
@@ -1346,7 +1352,7 @@ static void ProcessAnimation(byte *data, int index, int animIndex)
     frameinfo = Com_GetCartData(data, CHUNK_ANIMROOT_FRAMEINFO, 0);
     numframes = Com_GetCartOffset(frameinfo, CHUNK_FRAMEINFO_FRAMES, 0);
 
-    Com_Strcat("    numframes = %i\n", numframes);
+    Com_Strcat("numframes = %i\n", numframes);
 
     indextable  = Com_GetCartData(data, CHUNK_ANIMROOT_INDEXES, 0);
     indexes     = Com_GetCartOffset(indextable, CHUNK_INDEXES_ENTRIES, 0);
@@ -1358,34 +1364,34 @@ static void ProcessAnimation(byte *data, int index, int animIndex)
         Com_GetCartOffset(lframe, CHUNK_UNKNOWNA_COUNT, 0) != 0)
     {
         short *rf = (short*)Com_GetCartData(lframe, CHUNK_UNKNOWNA_DATA(0), 0);
-        Com_Strcat("    // %i\n", rf[0]);
-        Com_Strcat("    loopframe = %i\n\n", rf[1]);
+        Com_Strcat("// %i\n", rf[0]);
+        Com_Strcat("loopframe = %i\n\n", rf[1]);
     }
 
-    Com_Strcat("    numnodes = %i\n\n", indexes);
+    Com_Strcat("numnodes = %i\n\n", indexes);
 
     if(numframes > 0)
     {
         short *turninfo = (short*)(frameinfo+8);
 
-        Com_Strcat("    turninfo = {\n");
+        Com_Strcat("turninfo = {\n");
         for(i = 0; i < numframes; i++)
         {
-            Com_Strcat("        %f\n", *turninfo * 0.00003051850944757462f);
+            Com_Strcat("%f\n", *turninfo * 0.00003051850944757462f);
             turninfo++;
         }
-        Com_Strcat("    }\n");
+        Com_Strcat("}\n");
     }
 
     ProcessMovement(Com_GetCartData(data, CHUNK_ANIMROOT_MOVEMENT, 0), numframes);
     ProcessRotation(Com_GetCartData(data, CHUNK_ANIMROOT_ROTATIONS, 0), numframes);
 
-    Com_Strcat("    nodeframes = // [translationset rotationset]\n");
-    Com_Strcat("    {\n");
+    Com_Strcat("nodeframes = // [translationset rotationset]\n");
+    Com_Strcat("{\n");
 
     for(i = 0; i < indexes; i++)
     {
-        Com_Strcat("        { ");
+        Com_Strcat("{ ");
 
         Com_Strcat("%i ",    lookup[TRANSLATION_INDEX]);
         Com_Strcat("%i }\n", lookup[ROTATION_INDEX]);
@@ -1396,8 +1402,8 @@ static void ProcessAnimation(byte *data, int index, int animIndex)
 
     ProcessActions(Com_GetCartData(data, CHUNK_ANIMROOT_ACTIONS, 0), animIndex);
 
-    Com_Strcat("    initialtranslation = // [vx vy vz]\n");
-    Com_Strcat("    {\n");
+    Com_Strcat("initialtranslation = // [vx vy vz]\n");
+    Com_Strcat("{\n");
 
     count = Com_GetCartOffset(initial, CHUNK_INITIAL_COUNT, 0);
     for(i = 0; i < count; i++)
@@ -1407,21 +1413,21 @@ static void ProcessAnimation(byte *data, int index, int animIndex)
         float y = *(float*)((initial + CHUNK_INITIAL_DATA) + (size * i) + (4 * 1));
         float z = *(float*)((initial + CHUNK_INITIAL_DATA) + (size * i) + (4 * 2));
 
-        Com_Strcat("        { %f %f %f }\n", x, y, z);
+        Com_Strcat("{ %f %f %f }\n", x, y, z);
     }
 
     if(count < indexes)
     {
         for(i = 0; i < (indexes - count); i++)
         {
-            Com_Strcat("        { 0 0 0 }\n");
+            Com_Strcat("{ 0 0 0 }\n");
         }
     }
 
-    Com_Strcat("\n    }\n\n");
+    Com_Strcat("\n}\n\n");
 
-    Com_Strcat("    initialrotation = // [qx qy qz qw]\n");
-    Com_Strcat("    {\n");
+    Com_Strcat("initialrotation = // [qx qy qz qw]\n");
+    Com_Strcat("{\n");
 
     count = Com_GetCartOffset(initial, CHUNK_INITIAL_COUNT, 0);
     for(i = 0; i < count; i++)
@@ -1429,7 +1435,7 @@ static void ProcessAnimation(byte *data, int index, int animIndex)
         int size = Com_GetCartOffset(initial, CHUNK_INITIAL_SIZE, 0);
         short *r = (short*)((initial + CHUNK_INITIAL_DATA) + (size * i) + (4 * 3));
 
-        Com_Strcat("        { %f %f %f %f }\n",
+        Com_Strcat("{ %f %f %f %f }\n",
             (float)(r[0]) * flt_48EC8C,
             (float)(r[1]) * flt_48EC8C,
             (float)(r[2]) * flt_48EC8C,
@@ -1440,11 +1446,11 @@ static void ProcessAnimation(byte *data, int index, int animIndex)
     {
         for(i = 0; i < (indexes - count); i++)
         {
-            Com_Strcat("        { 0 0 0 0 }\n");
+            Com_Strcat("{ 0 0 0 0 }\n");
         }
     }
 
-    Com_Strcat("\n    }\n\n");
+    Com_Strcat("\n}\n\n");
 }
 
 //

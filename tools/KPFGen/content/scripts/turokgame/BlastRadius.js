@@ -59,9 +59,8 @@ class.properties(BlastRadius,
             
             dmg = force * maxDamage;
             
-            // reduce damage on player
-            // TODO - Setup const types for classFlags in engine
-            if(bReduceDmg && aobj.classFlags & 8)
+            // reduce damage on self
+            if(bReduceDmg && GameActor.compare(aobj, instigator))
                 dmg *= 0.25;
             
             Damage.prototype.inflict(aobj, instigator, Math.round(dmg));

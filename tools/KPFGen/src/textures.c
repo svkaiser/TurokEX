@@ -161,12 +161,16 @@ void AddTexture(byte *data, int size, const char *path)
     texcount = Com_GetCartOffset(texheader, CHUNK_TEX_SUBCOUNT, 0);
     palcount = Com_GetCartOffset(palheader, CHUNK_PAL_SUBCOUNT, 0);
 
-    texindexes[curtexture] = texcount;
+    if(texcount <= 1 && palcount > 1)
+        texindexes[curtexture] = palcount;
+    else
+        texindexes[curtexture] = texcount;
 
-    for(i = 0; i < texcount; i++)
+    for(i = 0; i < texindexes[curtexture]; i++)
     {
         byte *texdata;
         byte *paldata;
+        int curtex;
         int texsize;
         int palsize;
         dPalette_t pal[256];
@@ -178,7 +182,13 @@ void AddTexture(byte *data, int size, const char *path)
         memset(&pal, 0, sizeof(dPalette_t) * 256);
         sprintf(name, "%s_%02d.tga", path, i);
 
-        texdata = Com_GetCartData(texheader, CHUNK_TEXDATA_OFFSET(i), &texsize);
+        curtex = i;
+        if(curtex >= texcount)
+            curtex = (texcount-1);
+        if(curtex < 0)
+            curtex = 0;
+
+        texdata = Com_GetCartData(texheader, CHUNK_TEXDATA_OFFSET(curtex), &texsize);
 
         if(!palcount)
         {

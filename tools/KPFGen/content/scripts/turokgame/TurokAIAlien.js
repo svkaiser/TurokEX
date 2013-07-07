@@ -21,6 +21,7 @@ class.properties(TurokAIAlien,
     rangeDistance   : 1024.0,
     bCanMelee       : true,
     bCanRangeAttack : true,
+    bCanTeleport    : false,
     rangedAttacks   : (FLAG_ATTACK_RANGE1|FLAG_ATTACK_RANGE2),
     lookNode        : 12,
     lookYawAxis_x   : -1.0,
@@ -68,21 +69,22 @@ class.properties(TurokAIAlien,
             actor.yaw, actor.pitch, plane);
         
         gib.bRotor = true;
-        gib.mass = 1500;
+        gib.mass = 1000;
         gib.friction = 0.5;
+        gib.rotorFriction = 0.5;
         gib.bounceDamp = 0.35;
         
-        var velocity = new Vector(
-            (Sys.cRand() - 0) * 0.3 + 0,
-            (Sys.cRand() - 1) * 0.3 + 1,
-            (Sys.cRand() - 0) * 0.3 + 0);
-            
+        var velocity = new Vector(0, 1, 0);
+        var rVector = new Vector(Sys.cRand(), Sys.cRand(), Sys.cRand());
+        
+        velocity.lerp(rVector, 0.3);
         velocity.normalize();
         velocity.scale((-Sys.rand(2) + 3) * 10.24);
         velocity.scale(15.0);
         
         gib.velocity = velocity;
-        gib.rotorSpeed = 1.0 + (velocity.unit3() / 1500);
+        gib.rotorSpeed = 15.0 * (velocity.unit3() / 1500);
+        
         velocity.normalize();
         var axis = Vector.cross(plane.normal, velocity);
         axis.normalize();
@@ -126,7 +128,7 @@ class.properties(TurokAIAlien,
         this.gibDeath('gibs_alien04', x, y, z);
     },
     
-    action_407 : function()
+    removeSelf : function()
     {
         this.parent.owner.bHidden = true;
         this.parent.owner.bCollision = false;
