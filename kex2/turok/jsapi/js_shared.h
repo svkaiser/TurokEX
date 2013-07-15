@@ -85,9 +85,12 @@ jsuint J_AllocByteArray(JSContext *cx, JSObject *object, byte **arr, JSBool fixe
 #ifdef JS_LOGNEWOBJECTS
 JSObject *J_NewObjectLog(JSContext *cx, JSClass *clasp,
                         JSObject *proto, JSObject *parent, char *file, int line);
+JSBool J_NewDoubleValueLog(JSContext *cx, jsdouble d, jsval *rval, char *file, int line);
 #define J_NewObjectEx(cx,clasp,proto,parent) J_NewObjectLog(cx,clasp,proto,parent,__FILE__,__LINE__)
+#define J_NewDoubleEx(cx,d,rval) J_NewDoubleValueLog(cx,d,rval,__FILE__,__LINE__)
 #else
 #define J_NewObjectEx(cx,clasp,proto,parent) JS_NewObject(cx,clasp,proto,parent)
+#define J_NewDoubleEx(cx,d,rval) JS_NewDoubleValue(cx,d,rval)
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -172,7 +175,7 @@ JS_EXTERNOBJECT(Net);
 JS_EXTERNOBJECT(NClient);
 JS_EXTERNOBJECT(NServer);
 JS_EXTERNOBJECT(NRender);
-JS_EXTERNOBJECT(NGame);
+JS_EXTERNOBJECT(Game);
 JS_EXTERNOBJECT(Angle);
 JS_EXTERNOBJECT(Physics);
 JS_EXTERNOBJECT(Level);
@@ -395,19 +398,19 @@ JS_EXTERNCLASS_NOCONSTRUCTOR(Command);
 #define JS_SETQUATERNION(obj, rot)                      \
 {                                                       \
     jsval val;                                          \
-    if(!JS_NewDoubleValue(cx, rot[0], &val))            \
+    if(!J_NewDoubleEx(cx, rot[0], &val))                \
         JS_WARNING();                                   \
     if(!JS_SetProperty(cx, obj, "x", &val))             \
         JS_WARNING();                                   \
-    if(!JS_NewDoubleValue(cx, rot[1], &val))            \
+    if(!J_NewDoubleEx(cx, rot[1], &val))                \
         JS_WARNING();                                   \
     if(!JS_SetProperty(cx, obj, "y", &val))             \
         JS_WARNING();                                   \
-    if(!JS_NewDoubleValue(cx, rot[2], &val))            \
+    if(!J_NewDoubleEx(cx, rot[2], &val))                \
         JS_WARNING();                                   \
     if(!JS_SetProperty(cx, obj, "z", &val))             \
         JS_WARNING();                                   \
-    if(!JS_NewDoubleValue(cx, rot[3], &val))            \
+    if(!J_NewDoubleEx(cx, rot[3], &val))                \
         JS_WARNING();                                   \
     if(!JS_SetProperty(cx, obj, "w", &val))             \
         JS_WARNING();                                   \
@@ -518,6 +521,12 @@ JS_EXTERNCLASS_NOCONSTRUCTOR(Command);
     if(!(str = JS_ValueToString(cx, v[a])) ||                                       \
         !(bytes = JS_EncodeString(cx, str)))                                        \
         JS_WARNING();
+
+#define JS_SAFERETURN()                                                             \
+    {                                                                               \
+        JS_SET_RVAL(cx, vp, JSVAL_VOID);                                            \
+        return JS_TRUE;                                                             \
+    }
 
 ///////////////////////////////////////////////////////////////////////////////////
 // OBJECT CREATION MACROS

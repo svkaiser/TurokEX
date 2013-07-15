@@ -32,10 +32,16 @@
 #include "zone.h"
 #include "kernel.h"
 
+CVAR_EXTERNAL(developer);
+
 CVAR_CMD(gl_gamma, 0)
 {
     //GL_DumpTextures();
 }
+
+//////////////////////////////////////
+// TGA FORMAT HANDLING
+//////////////////////////////////////
 
 typedef struct
 {
@@ -93,7 +99,16 @@ void Img_LoadTGA(const char *name, byte **output, int *width, int *height, kbool
     byte *data;
     byte *data_r;
 
-    if(KF_OpenFileCache(name, &tgafile, PU_STATIC) == 0)
+    if(developer.value)
+    {
+        if(KF_OpenFileCache(name, &tgafile, PU_STATIC) == 0 &&
+            KF_ReadTextFile(name, &tgafile) <= 0)
+        {
+            *output = NULL;
+            return;
+        }
+    }
+    else if(KF_OpenFileCache(name, &tgafile, PU_STATIC) == 0)
     {
         *output = NULL;
         return;

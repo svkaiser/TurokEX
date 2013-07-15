@@ -34,6 +34,7 @@
 #include "game.h"
 #include "packet.h"
 #include "js.h"
+#include "js_shared.h"
 
 //
 // G_Shutdown
@@ -70,6 +71,9 @@ void G_ClientThink(void)
 
 void G_Init(void)
 {
+    jsval val;
+
     Map_Init();
+    JS_CallFunctionName(js_context, js_objGame, "main", 0, NULL, &val);
 }
 

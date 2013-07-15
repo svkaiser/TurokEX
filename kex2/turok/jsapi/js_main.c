@@ -230,6 +230,18 @@ JSObject *J_NewObjectLog(JSContext *cx, JSClass *clasp, JSObject *proto, JSObjec
 
     return JS_NewObject(cx, clasp, proto, parent);
 }
+
+//
+// J_NewDoubleValueLog
+//
+
+JSBool J_NewDoubleValueLog(JSContext *cx, jsdouble d, jsval *rval, char *file, int line)
+{
+    if(!JS_ReportWarning(cx, "New Double(%f) called at:\n%s : %i\n", d, file, line))
+        Com_Printf("New Double(%f): %s : %i\n", d, file, line);
+
+    return JS_NewDoubleValue(cx, d, rval);
+}
 #endif
 
 //
@@ -860,7 +872,7 @@ void J_Init(void)
     JS_DEFINEOBJECT(NClient);
     JS_DEFINEOBJECT(NServer);
     JS_DEFINEOBJECT(NRender);
-    JS_DEFINEOBJECT(NGame);
+    JS_DEFINEOBJECT(Game);
     JS_DEFINEOBJECT(Angle);
     JS_DEFINEOBJECT(Physics);
     JS_DEFINEOBJECT(Level);

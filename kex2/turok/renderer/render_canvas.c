@@ -29,6 +29,7 @@
 #include "gl.h"
 #include "actor.h"
 #include "render.h"
+#include "client.h"
 
 //
 // Canvas_SetDrawColor
@@ -342,6 +343,8 @@ void Canvas_DrawActor(canvas_t *canvas, gActor_t *actor)
 
     Actor_UpdateTransform(actor);
 
+    GL_SetState(GLSTATE_LIGHTING, true);
+
     // setup projection matrix
     dglMatrixMode(GL_PROJECTION);
     dglLoadIdentity();
@@ -368,6 +371,8 @@ void Canvas_DrawActor(canvas_t *canvas, gActor_t *actor)
         dglPopMatrix();
     }
 
+    GL_SetState(GLSTATE_LIGHTING, false);
+
     if(showorigin)
     {
         vec3_t vec;
@@ -379,4 +384,80 @@ void Canvas_DrawActor(canvas_t *canvas, gActor_t *actor)
         R_DrawOrigin(vec, 32.0f);
         dglPopMatrix();
     }
+}
+
+//
+// Canvas_DrawPlaneOutlines
+//
+
+void Canvas_DrawPlaneOutlines(canvas_t *canvas)
+{
+    float px;
+    float py;
+    unsigned int i;
+    gActor_t *camera;
+
+    camera = client.player->actor;
+
+    GL_BindTextureName("textures/white.tga");
+    dglPushMatrix();
+    dglScalef(0.25f, 0.25f, 0.25f);
+    px = -camera->origin[0];
+    py = -camera->origin[2];
+
+    dglRotatef(-RAD2DEG(camera->angles[0] + M_PI), 0, 0, 1);
+    dglTranslatef(1, -1, 0);
+    dglColor4ub(255, 255, 255, 255);
+
+    dglBegin(GL_LINES);
+    dglVertex2f(0, 16);
+    dglVertex2f(0, -16);
+    dglVertex2f(-16, 0);
+    dglVertex2f(16, 0);
+    dglEnd();
+
+    dglBegin(GL_LINES);
+
+    for(i = 0; i < gLevel.numplanes; i++)
+    {
+        plane_t *pl = &gLevel.planes[i];
+
+        if(pl == NULL)
+            continue;
+
+        if(pl->link[0] == NULL || (pl->link[0] && pl->area_id != pl->link[0]->area_id))
+        {
+            if(pl->link[0])
+                dglColor4ub(224, 224, 224, 255);
+            else
+                dglColor4ub(0, 255, 0, 255);
+
+            dglVertex2f(pl->points[0][0]+px, pl->points[0][2]+py);
+            dglVertex2f(pl->points[1][0]+px, pl->points[1][2]+py);
+        }
+
+        if(pl->link[1] == NULL || (pl->link[1] && pl->area_id != pl->link[1]->area_id))
+        {
+            if(pl->link[1])
+                dglColor4ub(224, 224, 224, 255);
+            else
+                dglColor4ub(0, 255, 0, 255);
+
+            dglVertex2f(pl->points[1][0]+px, pl->points[1][2]+py);
+            dglVertex2f(pl->points[2][0]+px, pl->points[2][2]+py);
+        }
+
+        if(pl->link[2] == NULL || (pl->link[2] && pl->area_id != pl->link[2]->area_id))
+        {
+            if(pl->link[2])
+                dglColor4ub(224, 224, 224, 255);
+            else
+                dglColor4ub(0, 255, 0, 255);
+
+            dglVertex2f(pl->points[2][0]+px, pl->points[2][2]+py);
+            dglVertex2f(pl->points[0][0]+px, pl->points[0][2]+py);
+        }
+    }
+    dglEnd();
+    dglPopMatrix();
 }

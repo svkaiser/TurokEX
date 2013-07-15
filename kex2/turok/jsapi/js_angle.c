@@ -40,7 +40,7 @@ JS_FASTNATIVE_BEGIN(Angle, clamp)
     JS_GETNUMBER(x, v, 0);
     an = (float)x;
     Ang_Clamp(&an);
-    return JS_NewDoubleValue(cx, an, vp);
+    return J_NewDoubleEx(cx, an, vp);
 }
 
 JS_FASTNATIVE_BEGIN(Angle, invertClamp)
@@ -49,7 +49,7 @@ JS_FASTNATIVE_BEGIN(Angle, invertClamp)
 
     JS_CHECKARGS(1);
     JS_GETNUMBER(x, v, 0);
-    return JS_NewDoubleValue(cx, Ang_ClampInvert((float)x), vp);
+    return J_NewDoubleEx(cx, Ang_ClampInvert((float)x), vp);
 }
 
 JS_FASTNATIVE_BEGIN(Angle, invertClampSum)
@@ -60,7 +60,7 @@ JS_FASTNATIVE_BEGIN(Angle, invertClampSum)
     JS_CHECKARGS(2);
     JS_GETNUMBER(x1, v, 0);
     JS_GETNUMBER(x2, v, 1);
-    return JS_NewDoubleValue(cx, Ang_ClampInvertSums((float)x1, (float)x2), vp);
+    return J_NewDoubleEx(cx, Ang_ClampInvertSums((float)x1, (float)x2), vp);
 }
 
 JS_FASTNATIVE_BEGIN(Angle, diff)
@@ -71,7 +71,7 @@ JS_FASTNATIVE_BEGIN(Angle, diff)
     JS_CHECKARGS(2);
     JS_GETNUMBER(x1, v, 0);
     JS_GETNUMBER(x2, v, 1);
-    return JS_NewDoubleValue(cx, Ang_Diff((float)x1, (float)x2), vp);
+    return J_NewDoubleEx(cx, Ang_Diff((float)x1, (float)x2), vp);
 }
 
 JS_FASTNATIVE_BEGIN(Angle, radToDeg)
@@ -80,7 +80,7 @@ JS_FASTNATIVE_BEGIN(Angle, radToDeg)
 
     JS_CHECKARGS(1);
     JS_GETNUMBER(x, v, 0);
-    return JS_NewDoubleValue(cx, RAD2DEG((float)x), vp);
+    return J_NewDoubleEx(cx, RAD2DEG((float)x), vp);
 }
 
 JS_FASTNATIVE_BEGIN(Angle, degToRad)
@@ -89,7 +89,7 @@ JS_FASTNATIVE_BEGIN(Angle, degToRad)
 
     JS_CHECKARGS(1);
     JS_GETNUMBER(x, v, 0);
-    return JS_NewDoubleValue(cx, DEG2RAD((float)x), vp);
+    return J_NewDoubleEx(cx, DEG2RAD((float)x), vp);
 }
 
 JS_FASTNATIVE_BEGIN(Angle, alignYawToDirection)
@@ -110,7 +110,7 @@ JS_FASTNATIVE_BEGIN(Angle, alignYawToDirection)
     yaw = Ang_AlignYawToVector((float)an, vec1, vec2);
     Ang_Clamp(&yaw);
 
-    return JS_NewDoubleValue(cx, yaw, vp);
+    return J_NewDoubleEx(cx, yaw, vp);
 }
 
 JS_BEGINCLASS(Angle)

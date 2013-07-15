@@ -129,6 +129,12 @@ void Con_Drawer(void)
         return;
     if(cObject == NULL)
         return;
+    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    if(developer.value)
+        Draw_Text(32, 32, COLOR_WHITE, 1, Con_GetLastBuffer());
+
     if(!JS_GetProperty(cx, cObject, "draw", &val))
         return;
     if(!JS_ValueToObject(cx, val, &function))

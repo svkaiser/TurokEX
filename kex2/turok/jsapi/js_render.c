@@ -300,7 +300,7 @@ JS_PROP_FUNC_GET(Canvas)
     switch(JSVAL_TO_INT(id))
     {
     case 0:
-        return JS_NewDoubleValue(cx, canvas->scale, vp);
+        return J_NewDoubleEx(cx, canvas->scale, vp);
     default:
         return JS_TRUE;
     }
@@ -583,6 +583,21 @@ JS_FASTNATIVE_BEGIN(Canvas, drawActor)
     return JS_TRUE;
 }
 
+void Canvas_DrawPlaneOutlines(canvas_t *canvas);
+
+JS_FASTNATIVE_BEGIN(Canvas, drawPlaneOutline)
+{
+    canvas_t *canvas;
+
+    JS_CHECKARGS(0);
+
+    JS_THISCANVAS();
+    Canvas_DrawPlaneOutlines(canvas);
+
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
 JS_BEGINCLASS(Canvas)
     JSCLASS_HAS_PRIVATE,                        // flags
     JS_PropertyStub,                            // addProperty
@@ -620,6 +635,7 @@ JS_BEGINFUNCS(Canvas)
     JS_FASTNATIVE(Canvas, drawString, 3),
     JS_FASTNATIVE(Canvas, drawFixedString, 3),
     JS_FASTNATIVE(Canvas, drawActor, 1),
+    JS_FASTNATIVE(Canvas, drawPlaneOutline, 0),
     JS_FS_END
 };
 
@@ -787,7 +803,7 @@ JS_FASTNATIVE_BEGIN(Font, stringWidth)
     width = Font_StringWidth(font, bytes, (float)scale, fixedLen);
     JS_free(cx, bytes);
 
-    return JS_NewDoubleValue(cx, width, vp);
+    return J_NewDoubleEx(cx, width, vp);
 }
 
 JS_BEGINCLASS(Font)

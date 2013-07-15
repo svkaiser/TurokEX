@@ -32,12 +32,22 @@
 
 typedef enum
 {
-    PT_NONE     = 0,
-    PT_DEFAULT,
-    PT_FX,
-    PT_SWIMMING,
-    PT_CLIMBING
-} physics_type_e;
+    PF_CLIPSTATICS      = 0x1,
+    PF_CLIPACTORS       = 0x2,
+    PF_CLIPGEOMETRY     = 0x4,
+    PF_CLIPEDGES        = 0x8,
+    PF_IGNOREBLOCKERS   = 0x10,
+    PF_CLIMBSURFACES    = 0x20,
+    PF_SLIDEMOVE        = 0x40,
+    PF_NOSTEPUP         = 0x80,
+    PF_DROPOFF          = 0x100,
+    PF_NOENTERWATER     = 0x200,
+    PF_NOEXITWATER      = 0x400,
+    PF_TOUCHACTORS      = 0x800,
+} physics_flags_e;
+
+#define PF_CLIP_ALL (PF_CLIPSTATICS|PF_CLIPACTORS|PF_CLIPGEOMETRY|PF_CLIPEDGES)
+#define PF_EXCLUDE_FLAG(f, exclude) ((f & exclude) ? (f ^ exclude) : f)
 
 void G_ClipVelocity(vec3_t out, vec3_t velocity, vec3_t normal, float fudge);
 void G_ApplyFriction(vec3_t velocity, float friction, kbool effectY);

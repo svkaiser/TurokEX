@@ -26,6 +26,8 @@
 #define false 0
 #define true (!false)
 
+#define MAX_FILEPATH    256
+
 typedef unsigned char   byte;
 typedef unsigned short  word;
 typedef unsigned long   ulong;
@@ -35,6 +37,7 @@ typedef unsigned int    rcolor;
 typedef float           vec3_t[3];
 typedef float           vec4_t[4];
 typedef float           mtx_t[16];
+typedef char            filepath_t[MAX_FILEPATH];
 
 typedef struct
 {
@@ -54,8 +57,6 @@ typedef struct gclient_s gclient_t;
 typedef struct gActor_s gActor_t;
 typedef struct svclient_s svclient_t;
 typedef struct JSObject gObject_t;
-
-#define MAX_FILEPATH    256
 
 #define ASCII_SLASH		47
 #define ASCII_BACKSLASH 92

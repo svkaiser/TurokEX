@@ -183,7 +183,6 @@ kmodel_t *Mdl_Load(const char *file);
 // MAIN
 //
 
-extern float rRenderTime;
 extern kbool showorigin;
 extern kbool bWireframe;
 
@@ -216,6 +215,7 @@ void R_DrawRadius(float x, float y, float z, float radius, float height,
                   byte r, byte g, byte b);
 void R_DrawBoundingBox(bbox_t bbox, byte r, byte g, byte b);
 void R_DrawOrigin(vec3_t origin, float size);
+void R_DrawNormals(mdlsection_t *section);
 
 //
 // FONT

@@ -240,7 +240,7 @@ typedef enum
     TRT_WALL        = 2,
     TRT_EDGE        = 3,
     TRT_OBJECT      = 4,
-    TRT_INTERACT    = 5,
+    TRT_CLIMB       = 5,
     TRT_STUCK       = 6
 } tracetype_e;
 
@@ -248,22 +248,20 @@ typedef struct
 {
     vec3_t      start;
     vec3_t      end;
+    int         physics;
     float       offset;
     float       width;
-    kbool       bFullTrace;
     plane_t     *pl;
     plane_t     *hitpl;
     vec3_t      hitvec;
     gActor_t    *hitActor;
     vec3_t      normal;
     float       frac;
-    float       dist;
-    gActor_t    *actor;
     gActor_t    *source;
     tracetype_e type;
 } trace_t;
 
 trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
-              gActor_t *actor, gActor_t *source, kbool bFullTrace);
+              gActor_t *source, int physicFlags);
 
 #endif

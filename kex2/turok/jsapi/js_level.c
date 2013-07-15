@@ -56,7 +56,7 @@ JS_PROP_FUNC_GET(Level)
         return JS_TRUE;
 
     case 3:
-        return JS_NewDoubleValue(cx, gLevel.time, vp);
+        return J_NewDoubleEx(cx, gLevel.time, vp);
 
     case 4:
         JS_RETURNBOOLEAN(vp, gLevel.loaded);
@@ -319,6 +319,35 @@ JS_FASTNATIVE_BEGIN(Level, toggleBlockingPlanes)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(Level, getActors)
+{
+    int filter;
+    int count;
+    gActor_t *actor;
+    JSObject *arrObj;
+
+    JS_CHECKARGS(1);
+    JS_GETINTEGER(filter, 0);
+
+    arrObj = JS_NewArrayObject(cx, 0, NULL);
+    count = 0;
+
+    for(actor = gLevel.actorRoot.next; actor != &gLevel.actorRoot;
+        actor = actor->next)
+    {
+        jsval val;
+
+        if(filter != 0 && !(actor->classFlags & filter))
+            continue;
+
+        Actor_ToVal(actor, &val);
+        JS_SetElement(cx, arrObj, count++, &val);
+    }
+
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(arrObj));
+    return JS_TRUE;
+}
+
 JS_BEGINCLASS(Level)
     0,                                          // flags
     JS_PropertyStub,                            // addProperty
@@ -357,6 +386,7 @@ JS_BEGINFUNCS(Level)
     JS_FASTNATIVE(Level, getActorsInRadius, 7),
     JS_FASTNATIVE(Level, triggerActors, 2),
     JS_FASTNATIVE(Level, toggleBlockingPlanes, 2),
+    JS_FASTNATIVE(Level, getActors, 1),
     JS_FS_END
 };
 
@@ -402,22 +432,22 @@ JS_PROP_FUNC_GET(WorldState)
         return JS_TRUE;
 
     case 6:
-        return JS_NewDoubleValue(cx, ws->angles[0], vp);
+        return J_NewDoubleEx(cx, ws->angles[0], vp);
 
     case 7:
-        return JS_NewDoubleValue(cx, ws->angles[1], vp);
+        return J_NewDoubleEx(cx, ws->angles[1], vp);
 
     case 8:
-        return JS_NewDoubleValue(cx, ws->angles[2], vp);
+        return J_NewDoubleEx(cx, ws->angles[2], vp);
 
     case 9:
-        return JS_NewDoubleValue(cx, ws->moveTime, vp);
+        return J_NewDoubleEx(cx, ws->moveTime, vp);
 
     case 10:
-        return JS_NewDoubleValue(cx, ws->frameTime, vp);
+        return J_NewDoubleEx(cx, ws->frameTime, vp);
 
     case 11:
-        return JS_NewDoubleValue(cx, ws->timeStamp, vp);
+        return J_NewDoubleEx(cx, ws->timeStamp, vp);
 
     case 12:
         if(ws->plane == NULL)

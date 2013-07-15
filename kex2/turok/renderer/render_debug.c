@@ -335,3 +335,40 @@ void R_DrawOrigin(vec3_t origin, float size)
     GL_SetState(GLSTATE_TEXTURE0, true);
 }
 
+//
+// R_DrawNormals
+//
+
+void R_DrawNormals(mdlsection_t *section)
+{
+    unsigned int i;
+
+    GL_SetState(GLSTATE_TEXTURE0, false);
+    GL_SetState(GLSTATE_CULL, false);
+    GL_SetState(GLSTATE_BLEND, true);
+
+    dglBegin(GL_LINES);
+
+    for(i = 0; i < section->numverts; i++)
+    {
+        float x, y, z;
+
+        x = section->xyz[i][0];
+        y = section->xyz[i][1];
+        z = section->xyz[i][2];
+
+        dglColor4ub(0, 0, 255, 255);
+        dglVertex3f(x, y, z);
+        glColor4ub(0, 255, 0, 255);
+        dglVertex3f(
+            x + (8 * section->normals[i*3+0]),
+            y + (8 * section->normals[i*3+1]),
+            z + (8 * section->normals[i*3+2]));
+    }
+
+    dglEnd();
+
+    GL_SetState(GLSTATE_TEXTURE0, true);
+    GL_SetState(GLSTATE_CULL, true);
+    GL_SetState(GLSTATE_BLEND, false);
+}

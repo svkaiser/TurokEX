@@ -42,7 +42,6 @@
 
 client_t client;
 
-static kbool bDebugTime;
 static int clientFPS;
 
 CVAR(cl_name, player);
@@ -181,42 +180,6 @@ static void CL_CheckHostMsg(void)
 }
 
 //
-// CL_DrawDebug
-//
-
-static void CL_DrawDebug(void)
-{
-    if(bDebugTime)
-    {
-        Draw_Text(32, 16,  COLOR_GREEN, 1, "-------------------");
-        Draw_Text(32, 32,  COLOR_YELLOW, 1, "   client debug");
-        Draw_Text(32, 48,  COLOR_GREEN, 1, "-------------------");
-        Draw_Text(32, 64,  COLOR_GREEN, 1, "FPS: %i", (int)(1000.0f / (client.runtime * 1000.0f)));
-        Draw_Text(32, 80,  COLOR_GREEN, 1, "runtime: %f", client.runtime);
-        Draw_Text(32, 96,  COLOR_GREEN, 1, "time: %i", client.time);
-        Draw_Text(32, 112,  COLOR_GREEN, 1, "tics: %i", client.tics);
-        Draw_Text(32, 128, COLOR_GREEN, 1, "max msecs: %f",
-            (1000.0f / cl_maxfps.value) / 1000.0f);
-        Draw_Text(32, 144, COLOR_GREEN, 1, "GC time: %i\n", J_GetGCTime());
-        /*Draw_Text(32, 144, COLOR_GREEN, 1, "server time: %i",
-            client.st.tics - (client.st.time/100));
-        Draw_Text(32, 160, COLOR_GREEN, 1, "latency: %i",
-            client.time - client.latency[client.ns.acks & (NETBACKUPS-1)]);*/
-        Draw_Text(32, 160, COLOR_WHITE, 1, Con_GetLastBuffer());
-        Actor_DrawDebugStats();
-        Draw_Text(32, 224,  COLOR_GREEN, 1, "level tick: %i", gLevel.tics);
-        Draw_Text(32, 240,  COLOR_GREEN, 1, "level time: %f", gLevel.time);
-        return;
-    }
-
-    if(developer.value)
-    {
-        Draw_Text(32, 32, COLOR_WHITE, 1, Con_GetLastBuffer());
-        Z_PrintStats();
-    }
-}
-
-//
 // CL_Run
 //
 
@@ -259,8 +222,6 @@ void CL_Run(int msec)
 
     Debug_DrawStats();
 
-    CL_DrawDebug();
-
     Menu_Drawer();
 
     Con_Drawer();
@@ -288,15 +249,6 @@ void CL_MessageServer(char *string)
     Packet_Write8(packet, cp_msgserver);
     Packet_WriteString(packet, string);
     Packet_Send(packet, client.peer);
-}
-
-//
-// FCmd_ShowClientTime
-//
-
-static void FCmd_ShowClientTime(void)
-{
-    bDebugTime ^= 1;
 }
 
 //
@@ -363,8 +315,6 @@ void CL_Init(void)
         return;
     }
 
-    bDebugTime = false;
-
     client.client_id = -1;
     client.time = 0;
     client.tics = 0;
@@ -386,7 +336,6 @@ void CL_Init(void)
     Cvar_Register(&cl_mlookinvert);
     Cvar_Register(&cl_port);
 
-    Cmd_AddCommand("debugclienttime", FCmd_ShowClientTime);
     Cmd_AddCommand("ping", FCmd_Ping);
     Cmd_AddCommand("say", FCmd_Say);
     Cmd_AddCommand("msgserver", FCmd_MsgServer);

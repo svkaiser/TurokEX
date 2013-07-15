@@ -68,6 +68,7 @@ enum
     scactor_rotorSpeed,
     scactor_rotorVector,
     scactor_rotorFriction,
+    scactor_tickDistance,
     scactor_end
 };
 
@@ -93,6 +94,7 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_rotorSpeed,       "rotorSpeed"        },
     { scactor_rotorVector,      "rotorVector"       },
     { scactor_rotorFriction,    "rotorFriction"     },
+    { scactor_tickDistance,     "tickDistance"      },
     { -1,                       NULL                }
 };
 
@@ -199,7 +201,7 @@ static void Actor_ParseTemplate(scparser_t *parser, gActorTemplate_t *ac)
             break;
 
         case scactor_height:
-            SC_AssignFloat(mapactortokens, &ac->actor.height,
+            SC_AssignFloat(mapactortokens, &ac->actor.baseHeight,
                 scactor_height, parser, false);
             break;
 
@@ -239,6 +241,11 @@ static void Actor_ParseTemplate(scparser_t *parser, gActorTemplate_t *ac)
         case scactor_rotorFriction:
             SC_AssignFloat(mapactortokens, &ac->actor.rotorFriction,
                 scactor_rotorFriction, parser, false);
+            break;
+
+        case scactor_tickDistance:
+            SC_AssignFloat(mapactortokens, &ac->actor.tickDistance,
+                scactor_tickDistance, parser, false);
             break;
 
         default:
@@ -343,7 +350,7 @@ static void Actor_TransformBBox(gActor_t *actor)
 
 static kbool Actor_AlignToPlane(gActor_t *actor)
 {
-    if(!actor->bStatic && actor->physics == PT_DEFAULT &&
+    if(!actor->bStatic && actor->physics & PF_SLIDEMOVE &&
         actor->plane != -1 && actor->bOrientOnSlope &&
         client.playerActor != actor /*TODO*/)
     {
@@ -508,6 +515,15 @@ static void Actor_UpdateMove(gActor_t *actor)
     time = actor->timestamp;
     astate = &actor->animState;
 
+    if(astate->frametime != 0)
+    {
+        actor->height = actor->baseHeight * 0.6f -
+            (astate->rootMotion[1] * (1.0f / (60.0f / astate->frametime)));
+    }
+
+    if(actor->height < 0 || astate->frametime == 0)
+        actor->height = 0;
+
     if(Actor_OnGround(actor) && !Plane_IsAWall(plane) &&
         astate->flags & ANF_ROOTMOTION && !(astate->flags & ANF_STOPPED))
     {
@@ -613,7 +629,7 @@ void Actor_GetWaterLevel(gActor_t *actor)
     {
         actor->waterlevel = WL_UNDER;
 
-        if(actor->viewHeight + actor->origin[1] >= area->waterplane)
+        if(actor->height + actor->origin[1] >= area->waterplane)
         {
             if(actor->origin[1] < area->waterplane)
                 actor->waterlevel = WL_BETWEEN;
@@ -694,10 +710,10 @@ static void Actor_ExecuteFrameActions(gActor_t *actor)
                 if(!JS_ObjectIsFunction(js_context, func))
                     continue;
 
-                JS_NewDoubleValue(js_context, action->args[0], &argv[0]);
-                JS_NewDoubleValue(js_context, action->args[1], &argv[1]);
-                JS_NewDoubleValue(js_context, action->args[2], &argv[2]);
-                JS_NewDoubleValue(js_context, action->args[3], &argv[3]);
+                J_NewDoubleEx(js_context, action->args[0], &argv[0]);
+                J_NewDoubleEx(js_context, action->args[1], &argv[1]);
+                J_NewDoubleEx(js_context, action->args[2], &argv[2]);
+                J_NewDoubleEx(js_context, action->args[3], &argv[3]);
 
 #ifdef JS_LOGNEWOBJECTS
                 Com_Printf("\nLogging Event (%s)...\n", action->function);
@@ -739,7 +755,7 @@ kbool Actor_FXEvent(gActor_t *actor, gActor_t *target,
 
     cx = js_context;
 
-    JS_NewDoubleValue(js_context, action->args[0], &args[1]);
+    J_NewDoubleEx(js_context, action->args[0], &args[1]);
     JS_VECTORTOVAL(fxOrigin, args[2]);
     JS_VECTORTOVAL(fxVelocity, args[3]);
     args[4] = INT_TO_JSVAL(plane);
@@ -834,8 +850,7 @@ void Actor_LocalTick(void)
                 Actor_UpdateTransform(actor);
             }
 
-            // TODO
-            if(Vec_Length3(client.player->camera->origin, actor->origin) < 2048.0f)
+            if(actor->bCulled)
                 Actor_CallEvent(actor, "onLocalTick", NULL, 0);
         }
     }
@@ -849,13 +864,24 @@ void Actor_LocalTick(void)
         if(actor->bStatic)
             continue;
 
+        if(!actor->ai && actor->animState.track.anim != NULL && actor->tickDistance != 0)
+        {
+            float x = actor->origin[0] - client.playerActor->origin[0];
+            float z = actor->origin[2] - client.playerActor->origin[2];
+
+            if(x*x+z*z >= (actor->tickDistance * 2.048f))
+                actor->animState.flags |= ANF_PAUSED;
+            else
+                actor->animState.flags &= ~ANF_PAUSED;
+        }
+
         Mdl_UpdateAnimState(&actor->animState);
 
         // TODO
         if(client.playerActor == actor)
             continue;
 
-        if(actor->components)
+        if(actor->components && !actor->bCulled)
             Actor_CallEvent(actor, "onLocalTick", NULL, 0);
     }
 }
@@ -904,7 +930,8 @@ void Actor_Tick(void)
             }
         }
 
-        if(actor->physics != PT_NONE)
+        // TODO
+        if(actor->physics != 0)
         {
             Actor_GetWaterLevel(actor);
             Actor_UpdateMove(actor);
@@ -936,36 +963,11 @@ void Actor_SetTarget(gActor_t **self, gActor_t *target)
 }
 
 //
-// Actor_NewProperty
-//
-
-static propKey_t *Actor_NewProperty(gActor_t *actor, const char *name, int id)
-{
-    if(id <= -1 || id < actor->numProperties)
-        return NULL;
-
-    actor->numProperties = (id + 1);
-
-    actor->properties = (propKey_t*)Z_Realloc(actor->properties,
-        sizeof(propKey_t) * actor->numProperties, PU_STATIC, 0);
-
-    return &actor->properties[id];
-}
-
-//
 // Actor_CopyProperties
 //
 
 void Actor_CopyProperties(gActor_t *actor, gActor_t *gTemplate)
 {
-    int size = sizeof(propKey_t) * gTemplate->numProperties;
-
-    if(size > 0)
-    {
-        actor->properties = (propKey_t*)Z_Calloc(size, PU_ACTOR, 0);
-        memcpy(actor->properties, gTemplate->properties, size);
-    }
-
     actor->bClientOnly      = gTemplate->bClientOnly;
     actor->bCollision       = gTemplate->bCollision;
     actor->bHidden          = gTemplate->bHidden;
@@ -977,7 +979,7 @@ void Actor_CopyProperties(gActor_t *actor, gActor_t *gTemplate)
     actor->centerHeight     = gTemplate->centerHeight;
     actor->viewHeight       = gTemplate->viewHeight;
     actor->radius           = gTemplate->radius;
-    actor->height           = gTemplate->height;
+    actor->baseHeight       = gTemplate->baseHeight;
     actor->model            = gTemplate->model;
     actor->classFlags       = gTemplate->classFlags;
     actor->physics          = gTemplate->physics;
@@ -1091,7 +1093,6 @@ gActorTemplate_t *Actor_NewTemplate(const char *name)
     at = (gActorTemplate_t*)Z_Calloc(sizeof(gActorTemplate_t), PU_STATIC, 0);
 
     // set default properties
-    at->actor.physics       = PT_NONE;
     at->actor.mass          = 1200;
     at->actor.friction      = 1.0f;
     at->actor.airfriction   = 1.0f;
@@ -1153,66 +1154,6 @@ gActor_t *Actor_Spawn(const char *classname, float x, float y, float z,
 }
 
 //
-// Actor_AddIntegerProperty
-//
-
-void Actor_AddIntegerProperty(gActor_t *actor, const char *name, int id, int value)
-{
-    propKey_t *key;
-
-    if(!(key = Actor_NewProperty(actor, name, id)))
-        return;
-
-    key->val.i = value;
-    key->type = 0;
-}
-
-//
-// Actor_AddFloatProperty
-//
-
-void Actor_AddFloatProperty(gActor_t *actor, const char *name, int id, float value)
-{
-    propKey_t *key;
-
-    if(!(key = Actor_NewProperty(actor, name, id)))
-        return;
-
-    key->val.f = value;
-    key->type = 1;
-}
-
-//
-// Actor_AddStringProperty
-//
-
-void Actor_AddStringProperty(gActor_t *actor, const char *name, int id, char *value)
-{
-    propKey_t *key;
-
-    if(!(key = Actor_NewProperty(actor, name, id)))
-        return;
-
-    key->val.c = value;
-    key->type = 2;
-}
-
-//
-// Actor_AddDataProperty
-//
-
-void Actor_AddDataProperty(gActor_t *actor, const char *name, int id, void *value)
-{
-    propKey_t *key;
-
-    if(!(key = Actor_NewProperty(actor, name, id)))
-        return;
-
-    key->val.p = value;
-    key->type = 3;
-}
-
-//
 // Actor_ClearData
 //
 
@@ -1226,9 +1167,6 @@ void Actor_ClearData(gActor_t *actor)
         JS_SetPrivate(js_context, actor->components, NULL);
         JS_RemoveRoot(js_context, &actor->components);
     }
-
-    if(actor->properties && actor->numProperties > 0)
-        Z_Free(actor->properties);
 
     if(actor->classFlags & AC_AI && actor->ai)
     {
@@ -1254,25 +1192,59 @@ void Actor_UpdateModel(gActor_t *actor, const char *model)
     if(actor->model)
     {
         unsigned int i;
+        unsigned int j;
         anim_t *anim;
+        kmodel_t *m;
 
-        if(anim = Mdl_GetAnim(actor->model, "anim00"))
-            Mdl_SetAnimState(&actor->animState, anim, 4, ANF_PAUSED);
+        m = actor->model;
 
+        // set initial animation
+        // TODO - rename anim00 to something better
+        if(anim = Mdl_GetAnim(m, "anim00"))
+            Mdl_SetAnimState(&actor->animState, anim, 4, ANF_LOOP);
+
+        // allocate node translation offset data
         actor->nodeOffsets_t = (vec3_t*)Z_Realloc(
             actor->nodeOffsets_t,
-            sizeof(vec3_t) * actor->model->numnodes,
+            sizeof(vec3_t) * m->numnodes,
             PU_ACTOR,
             0);
 
+        // allocate node rotation offset data
         actor->nodeOffsets_r = (vec4_t*)Z_Realloc(
             actor->nodeOffsets_r,
-            sizeof(vec4_t) * actor->model->numnodes,
+            sizeof(vec4_t) * m->numnodes,
             PU_ACTOR,
             0);
 
-        for(i = 0; i < actor->model->numnodes; i++)
+        // set default rotation offsets
+        for(i = 0; i < m->numnodes; i++)
             Vec_Set4(actor->nodeOffsets_r[i], 0, 0, 0, 1);
+
+        // allocate data for texture swap array
+        actor->textureSwaps = (char****)Z_Calloc(sizeof(char***) *
+            m->numnodes, PU_ACTOR, NULL);
+
+        for(j = 0; j < m->numnodes; j++)
+        {
+            unsigned int k;
+            mdlnode_t *node;
+
+            node = &m->nodes[j];
+
+            actor->textureSwaps[j] = (char***)Z_Calloc(sizeof(char**) *
+                node->nummeshes, PU_ACTOR, NULL);
+
+            for(k = 0; k < node->nummeshes; k++)
+            {
+                mdlmesh_t *mesh;
+
+                mesh = &node->meshes[k];
+
+                actor->textureSwaps[j][k] = (char**)Z_Calloc(sizeof(char*) *
+                    mesh->numsections, PU_ACTOR, NULL);
+            }
+        }
     }
 }
 
@@ -1309,6 +1281,7 @@ void Actor_Setup(gActor_t *actor)
 
     Actor_UpdateTransform(actor);
     actor->timestamp = (float)server.runtime;
+    actor->height = actor->bStatic ? actor->baseHeight : 0;
 
     if(actor->components == NULL)
         return;

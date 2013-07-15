@@ -139,10 +139,10 @@ JS_PROP_FUNC_GET(Command)
     switch(JSVAL_TO_INT(id))
     {
     case 0:
-        return JS_NewDoubleValue(cx, cmd->mouse[0].f, vp);
+        return J_NewDoubleEx(cx, cmd->mouse[0].f, vp);
 
     case 1:
-        return JS_NewDoubleValue(cx, cmd->mouse[1].f, vp);
+        return J_NewDoubleEx(cx, cmd->mouse[1].f, vp);
 
     default:
         return JS_TRUE;

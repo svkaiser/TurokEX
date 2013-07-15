@@ -141,7 +141,7 @@ kbool G_TryMove(gActor_t *source, vec3_t origin, vec3_t dest, plane_t **plane)
     plane_t *newPlane = NULL;
     trace_t trace;
 
-    trace = Trace(origin, dest, *plane, NULL, source, true);
+    trace = Trace(origin, dest, *plane, source, PF_CLIP_ALL | PF_DROPOFF);
     *plane = trace.pl;
 
     if(trace.type != TRT_NOHIT)
@@ -224,17 +224,30 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time,
     onSlope = false;
     hitOk = false;
 
-    if(actor && !((*plane)->flags & CLF_CLIMB) &&
-        Plane_IsAWall(*plane) && Actor_OnGround(actor))
+    // handle cases when standing on wall surfaces
+    if(actor && Plane_IsAWall(*plane))
     {
-        vec3_t dir;
+        if(!((*plane)->flags & CLF_CLIMB))
+        {
+            // slide down on steep slopes
+            if(Actor_OnGround(actor))
+            {
+                vec3_t dir;
 
-        Plane_GetInclinationVector(*plane, dir);
+                Plane_GetInclinationVector(*plane, dir);
 
-        Vec_Scale(dir, dir, actor->mass * time);
-        Vec_Sub(velocity, velocity, dir);
+                Vec_Scale(dir, dir, actor->mass * time);
+                Vec_Sub(velocity, velocity, dir);
 
-        onSlope = true;
+                onSlope = true;
+            }
+        }
+        // handle climbing
+        else if(actor->physics & PF_CLIMBSURFACES)
+        {
+            Vec_Scale(vel, velocity, time);
+            G_ClimbOnWall(origin, vel, *plane);
+        }
     }
 
     // set start point
@@ -245,13 +258,12 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time,
     for(i = 0; i < TRYMOVE_COUNT; i++)
     {
         // set end point
-        //Vec_Add(end, start, vel);
         end[0] = start[0] + (vel[0] * time);
         end[1] = start[1] + (vel[1] * time);
         end[2] = start[2] + (vel[2] * time);
 
         // get trace results
-        trace = Trace(start, end, *plane, actor, NULL, false);
+        trace = Trace(start, end, *plane, actor, actor->physics);
 
         *plane = trace.pl;
 
@@ -381,7 +393,7 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time,
         // test the ceiling and adjust height
         if((*plane)->flags & CLF_CHECKHEIGHT)
         {
-            float offset = actor->centerHeight + actor->viewHeight;
+            float offset = (actor->height + actor->viewHeight);
 
             dist = Plane_GetHeight(*plane, origin);
             if((dist - (origin[1] + offset) < 1.024f))

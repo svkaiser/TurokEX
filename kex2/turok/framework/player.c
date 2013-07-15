@@ -454,6 +454,9 @@ void P_SpawnLocalPlayer(void)
     if(pStart == NULL)
         Com_Error("P_SpawnLocalPlayer: No player start has been found");
 
+    pStart->height = pStart->baseHeight * 0.72f;
+    pStart->physics |= PF_TOUCHACTORS;
+
     client.playerActor = pStart;
     localPlayer.actor = pStart;
     localPlayer.playerObject = pObject;

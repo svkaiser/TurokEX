@@ -65,7 +65,8 @@ static JSBool ReturnTraceResults(JSContext *cx, jsval *vp, trace_t *trace)
 
     JS_AddRoot(cx, &rObject);
     JS_DefineProperty(cx, rObject, "hitPlane",
-        OBJECT_TO_JSVAL(hplObject), NULL, NULL, JSPROP_ENUMERATE);
+        trace->hitpl == NULL ? JSVAL_NULL : OBJECT_TO_JSVAL(hplObject),
+        NULL, NULL, JSPROP_ENUMERATE);
     JS_DefineProperty(cx, rObject, "fraction", fracval, NULL, NULL, JSPROP_ENUMERATE);
     JS_DefineProperty(cx, rObject, "hitVector",
         OBJECT_TO_JSVAL(hvObject), NULL, NULL, JSPROP_ENUMERATE);
@@ -204,7 +205,7 @@ JS_FASTNATIVE_BEGIN(Physics, rayTrace)
         Vec_Copy3(fwd, forward);
         Vec_Scale(fwd, fwd, (float)length);
         Vec_Add(end, start, fwd);
-        trace = Trace(start, end, pl, NULL, actor, true);
+        trace = Trace(start, end, pl, actor, PF_CLIP_ALL | PF_DROPOFF);
         pl = trace.pl;
 
         if(trace.type != TRT_NOHIT)
@@ -283,7 +284,7 @@ JS_FASTNATIVE_BEGIN(Physics, checkPosition)
     JS_GETOBJECT(objPln, v, 3);
     JS_GET_PRIVATE_DATA(objPln, &Plane_class, plane_t, plane);
 
-    trace = Trace(origin, dest, plane, NULL, actor, false);
+    trace = Trace(origin, dest, plane, actor, actor->physics);
 
     JS_SET_RVAL(cx, vp, INT_TO_JSVAL(trace.type));
     return JS_TRUE;
@@ -315,11 +316,17 @@ JS_BEGINCONST(Physics)
     JS_DEFINE_CONST(TRT_WALL,           TRT_EDGE),
     JS_DEFINE_CONST(TRT_ACTOR,          TRT_OBJECT),
     JS_DEFINE_CONST(TRT_STUCK,          TRT_STUCK),
-    JS_DEFINE_CONST(PT_NONE,            PT_NONE),
-    JS_DEFINE_CONST(PT_DEFAULT,         PT_DEFAULT),
-    JS_DEFINE_CONST(PT_FX,              PT_FX),
-    JS_DEFINE_CONST(PT_SWIMMING,        PT_SWIMMING),
-    JS_DEFINE_CONST(PT_CLIMBING,        PT_CLIMBING),
+    JS_DEFINE_CONST(PF_CLIPSTATICS,     PF_CLIPSTATICS),
+    JS_DEFINE_CONST(PF_CLIPACTORS,      PF_CLIPACTORS),
+    JS_DEFINE_CONST(PF_CLIPGEOMETRY,    PF_CLIPGEOMETRY),
+    JS_DEFINE_CONST(PF_CLIPEDGES,       PF_CLIPEDGES),
+    JS_DEFINE_CONST(PF_IGNOREBLOCKERS,  PF_IGNOREBLOCKERS),
+    JS_DEFINE_CONST(PF_CLIMBSURFACES,   PF_CLIMBSURFACES),
+    JS_DEFINE_CONST(PF_SLIDEMOVE,       PF_SLIDEMOVE),
+    JS_DEFINE_CONST(PF_NOSTEPUP,        PF_NOSTEPUP),
+    JS_DEFINE_CONST(PF_DROPOFF,         PF_DROPOFF),
+    JS_DEFINE_CONST(PF_NOENTERWATER,    PF_NOENTERWATER),
+    JS_DEFINE_CONST(PF_NOEXITWATER,     PF_NOEXITWATER),
     { 0, 0, 0, { 0, 0, 0 } }
 };
 

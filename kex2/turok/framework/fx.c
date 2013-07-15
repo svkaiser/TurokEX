@@ -923,7 +923,7 @@ static void FX_Move(fx_t *fx, vec3_t dest)
     
     fxinfo = fx->info;
 
-    trace = Trace(fx->origin, dest, fx->plane, NULL, fx->source, true);
+    trace = Trace(fx->origin, dest, fx->plane, fx->source, PF_CLIP_ALL | PF_DROPOFF);
     fx->plane = trace.pl;
 
     switch(trace.type)

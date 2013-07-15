@@ -123,14 +123,14 @@ JS_PROP_FUNC_GET(AnimState)
         return JS_TRUE;
 
     case ANS_TIME:
-        return JS_NewDoubleValue(cx, animstate->time, vp);
+        return J_NewDoubleEx(cx, animstate->time, vp);
 
     case ANS_FRAMETIME:
         JS_SET_RVAL(cx, vp, INT_TO_JSVAL(animstate->track.frame));
         return JS_TRUE;
 
     case ANS_PLAYTIME:
-        return JS_NewDoubleValue(cx, animstate->playtime, vp);
+        return J_NewDoubleEx(cx, animstate->playtime, vp);
 
     case ANS_ROOTMOTION:
         JS_NEWVECTORPOOL(animstate->rootMotion);

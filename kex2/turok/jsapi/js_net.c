@@ -383,7 +383,7 @@ JS_FASTNATIVE_BEGIN(Packet, readFloat)
     JS_GETPACKET(JS_THIS_OBJECT(cx, vp));
     Packet_ReadFloat(packet, &val);
 
-    JS_NewDoubleValue(cx, (jsdouble)val, vp);
+    J_NewDoubleEx(cx, (jsdouble)val, vp);
     return JS_TRUE;
 }
 

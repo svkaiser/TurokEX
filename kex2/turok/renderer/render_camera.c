@@ -76,6 +76,7 @@ void R_RenderCameraView(void)
     Vec_MultQuaternion(rot, vroll, pitch);
     Mtx_ApplyRotation(rot, mtx);
     Vec_TransformToWorld(mtx, org, pos);
+    Mtx_Copy(camera->matrix, mtx);
     Mtx_AddTranslation(mtx, -pos[0], -pos[1], -pos[2]);
 
     // load view matrix

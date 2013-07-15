@@ -412,27 +412,6 @@ JS_FASTNATIVE_BEGIN(Sys, loadAnimation)
     return JS_TRUE;
 }
 
-JS_FASTNATIVE_BEGIN(Sys, readTextFile)
-{
-    JSString *str;
-    char *bytes;
-    char *buffer;
-    int len;
-
-    JS_CHECKARGS(1);
-    JS_GETSTRING(str, bytes, v, 0);
-
-    len = KF_ReadTextFile(bytes, &buffer);
-    JS_free(cx, bytes);
-
-    if(len == -1)
-        JS_SET_RVAL(cx, vp, JSVAL_NULL);
-    else
-        JS_RETURNSTRING(vp, buffer);
-
-    return JS_TRUE;
-}
-
 JS_FASTNATIVE_BEGIN(Sys, spawnFx)
 {
     JSString *str;
@@ -524,20 +503,87 @@ JS_FASTNATIVE_BEGIN(Sys, spawnFx)
    return JS_TRUE;
 }
 
-JS_FASTNATIVE_BEGIN(Sys, GC)
+JS_FASTNATIVE_BEGIN(Sys, newTextFile)
 {
-   JS_GC(cx);
+    JSObject *obj;
+    JSString *str;
+    char *bytes;
+    FILE *f;
+    
+    JS_CHECKARGS(1);
+    JS_GETSTRING(str, bytes, v, 0);
 
-   JS_SET_RVAL(cx, vp, JSVAL_VOID);
-   return JS_TRUE;
+    f = fopen(bytes, "w");
+    JS_free(cx, bytes);
+
+    obj = J_NewObjectEx(cx, NULL, NULL, NULL);
+    JS_SetPrivate(cx, obj, f);
+    
+    JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(obj));
+    return JS_TRUE;
 }
 
-JS_FASTNATIVE_BEGIN(Sys, maybeGC)
+JS_FASTNATIVE_BEGIN(Sys, writeTextFile)
 {
-   JS_MaybeGC(cx);
+    JSObject *obj;
+    JSString *str;
+    char *bytes;
+    FILE *f;
+    
+    JS_CHECKARGS(2);
+    JS_GETOBJECT(obj, v, 0);
+    JS_GETSTRING(str, bytes, v, 1);
 
-   JS_SET_RVAL(cx, vp, JSVAL_VOID);
-   return JS_TRUE;
+    if(!(f = (FILE*)JS_GetPrivate(cx, obj)))
+        JS_WARNING();
+
+    fprintf(f, bytes);
+    JS_free(cx, bytes);
+    
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Sys, readTextFile)
+{
+    JSString *str;
+    char *bytes;
+    char *buffer;
+    int len;
+
+    JS_CHECKARGS(1);
+    JS_GETSTRING(str, bytes, v, 0);
+
+    len = KF_ReadTextFile(bytes, &buffer);
+    JS_free(cx, bytes);
+
+    if(len == -1)
+        JS_SET_RVAL(cx, vp, JSVAL_NULL);
+    else
+    {
+        JS_RETURNSTRING(vp, buffer);
+        Z_Free(buffer);
+    }
+
+    return JS_TRUE;
+}
+
+JS_FASTNATIVE_BEGIN(Sys, closeTextFile)
+{
+    JSObject *obj;
+    FILE *f;
+    
+    JS_CHECKARGS(1);
+    JS_GETOBJECT(obj, v, 0);
+
+    if(!(f = (FILE*)JS_GetPrivate(cx, obj)))
+        JS_WARNING();
+
+    fclose(f);
+    JS_SetPrivate(cx, obj, NULL);
+    
+    JS_SET_RVAL(cx, vp, JSVAL_VOID);
+    return JS_TRUE;
 }
 
 JS_BEGINCLASS(Sys)
@@ -588,7 +634,9 @@ JS_BEGINFUNCS(Sys)
     JS_FASTNATIVE(Sys, loadAnimation, 2),
     JS_FASTNATIVE(Sys, readTextFile, 1),
     JS_FASTNATIVE(Sys, spawnFx, 8),
-    JS_FASTNATIVE(Sys, GC, 0),
-    JS_FASTNATIVE(Sys, maybeGC, 0),
+    JS_FASTNATIVE(Sys, newTextFile, 1),
+    JS_FASTNATIVE(Sys, writeTextFile, 2),
+    JS_FASTNATIVE(Sys, readTextFile, 1),
+    JS_FASTNATIVE(Sys, closeTextFile, 1),
     JS_FS_END
 };

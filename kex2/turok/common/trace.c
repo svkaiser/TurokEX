@@ -42,7 +42,7 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
 {
     vec3_t dir;
     vec3_t tdir;
-    float vu;
+    float r;
     float px;
     float pz;
     float cx;
@@ -56,8 +56,6 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
     // get directional vector
     Vec_Sub(dir, trace->end, trace->start);
     Vec_Copy3(tdir, dir);
-
-    vu = Vec_Unit3(tdir);
 
     cx = objpos[0] - trace->start[0];
     cz = objpos[2] - trace->start[2];
@@ -78,21 +76,25 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
     px = ((tdir[0] * vd) + trace->start[0]) - objpos[0];
     pz = ((tdir[2] * vd) + trace->start[2]) - objpos[2];
 
-    len = radius * radius - (px * px + pz * pz);
+    r = (radius + trace->width);
 
-    if(Vec_Length2(trace->start, objpos) < radius)
+    len = r * r - (px * px + pz * pz);
+
+    if(Vec_Length2(trace->start, objpos) < r)
         len = 1;
 
     if(len > 0)
     {
         vec3_t lerp;
         vec3_t n;
+        float sqd;
         float f;
 
         Vec_Normalize3(dir);
 
         // get result normal from object
-        f = (px * dir[0] + pz * dir[2]) - (float)sqrt(len) * vd;
+        sqd = (float)sqrt(len) * vd;
+        f = (px * dir[0] + pz * dir[2]) - sqd;
 
         Vec_Lerp3(lerp, f, trace->start, objpos);
         Vec_Set3(n,
@@ -114,15 +116,14 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
 
             // TODO
             // get the intersect vector for bullet shots
-            if(trace->bFullTrace)
+            if(!(trace->physics & PF_SLIDEMOVE))
             {
+                len = Vec_Length3(trace->start, trace->end);
+
                 Vec_Sub(dir, trace->end, trace->start);
                 Vec_Normalize3(dir);
-                Vec_Scale(dir, dir, radius);
-                Vec_Set3(trace->hitvec,
-                    trace->end[0] - dir[0],
-                    trace->end[1],
-                    trace->end[2] - dir[2]);
+                Vec_Scale(dir, dir, len * (sqd / (r+len)));
+                Vec_Sub(trace->hitvec, trace->end, dir);
             }
 
             return true;
@@ -147,46 +148,47 @@ static kbool Trace_Objects(trace_t *trace)
 
     Vec_Lerp3(pos, trace->frac, trace->end, trace->start);
 
-    for(i = 0; i < gLevel.numGridBounds; i++)
+    if(trace->physics & PF_CLIPSTATICS)
     {
-        gridBounds_t *grid = &gLevel.gridBounds[i];
-
-        if((pos[0] > grid->minx && pos[0] < grid->maxx) &&
-            (pos[2] > grid->minz && pos[2] < grid->maxz))
+        for(i = 0; i < gLevel.numGridBounds; i++)
         {
-            unsigned int j;
+            gridBounds_t *grid = &gLevel.gridBounds[i];
 
-            for(j = 0; j < grid->numStatics; j++)
+            if((pos[0] > grid->minx && pos[0] < grid->maxx) &&
+                (pos[2] > grid->minz && pos[2] < grid->maxz))
             {
-                gActor_t *actor = &grid->statics[j];
+                unsigned int j;
 
-                if(!actor->bCollision && !actor->bTouch)
-                    continue;
-
-                if(actor->bTouch && trace->actor &&
-                    trace->actor->components)
+                for(j = 0; j < grid->numStatics; j++)
                 {
-                    if(Vec_Length3(pos, actor->origin) < trace->width)
-                        Actor_OnTouchEvent(actor, trace->actor);
-                }
+                    gActor_t *actor = &grid->statics[j];
 
-                if(actor->bCollision)
-                {
-                    float r;
-
-                    if(pos[1] > actor->origin[1] + actor->height ||
-                        pos[1] + trace->offset < actor->origin[1])
-                    {
+                    if(!actor->bCollision && !actor->bTouch)
                         continue;
-                    }
 
-                    r = (actor->radius + trace->width) * 0.5f;
-
-                    if(Trace_Object(trace, actor->origin, r))
+                    if(actor->bCollision || actor->bTouch)
                     {
-                        trace->type = TRT_OBJECT;
-                        trace->hitActor = actor;
-                        return true;
+                        if(pos[1] > actor->origin[1] + (actor->height+actor->viewHeight) ||
+                            pos[1] + trace->offset < actor->origin[1])
+                        {
+                            continue;
+                        }
+
+                        if(Trace_Object(trace, actor->origin, actor->radius))
+                        {
+                            if(actor->bTouch && trace->source && trace->source->components &&
+                                trace->source->physics & PF_TOUCHACTORS)
+                            {
+                                Actor_OnTouchEvent(actor, trace->source);
+                            }
+
+                            if(actor->bCollision)
+                            {
+                                trace->type = TRT_OBJECT;
+                                trace->hitActor = actor;
+                                return true;
+                            }
+                        }
                     }
                 }
             }
@@ -194,7 +196,10 @@ static kbool Trace_Objects(trace_t *trace)
     }
 
     // special objects doesn't interact with non-static actors
-    if(trace->actor && trace->actor->physics == PT_FX)
+    if(trace->source && !(trace->source->physics & PF_SLIDEMOVE))
+        return false;
+
+    if(!(trace->physics & PF_CLIPACTORS))
         return false;
 
     // TODO
@@ -202,37 +207,34 @@ static kbool Trace_Objects(trace_t *trace)
     {
         gActor_t *actor = rover;
 
-        if(actor == trace->actor || actor == trace->source)
+        if(actor == trace->source)
             continue;
 
-        if(trace->actor && trace->actor->owner == actor)
+        if(trace->source && trace->source->owner == actor)
             continue;
 
-        if(actor->bTouch && trace->actor &&
-            trace->actor->components)
+        if(actor->bCollision || actor->bTouch)
         {
-            if(Vec_Length3(pos, actor->origin) < trace->width)
-                Actor_OnTouchEvent(actor, trace->actor);
-        }
-
-        if(actor->bCollision)
-        {
-            float r;
-
-            if(pos[1] > actor->origin[1] +
-                (actor->centerHeight + actor->viewHeight) ||
+            if(pos[1] > actor->origin[1] + (actor->height+actor->viewHeight) ||
                 pos[1] + trace->offset < actor->origin[1])
             {
                 continue;
             }
 
-            r = (actor->radius + trace->width) * 0.5f;
-
-            if(Trace_Object(trace, actor->origin, r))
+            if(Trace_Object(trace, actor->origin, actor->radius))
             {
-                trace->type = TRT_OBJECT;
-                trace->hitActor = actor;
-                return true;
+                if(actor->bTouch && trace->source && trace->source->components &&
+                    trace->source->physics & PF_TOUCHACTORS)
+                {
+                    Actor_OnTouchEvent(actor, trace->source);
+                }
+
+                if(actor->bCollision)
+                {
+                    trace->type = TRT_OBJECT;
+                    trace->hitActor = actor;
+                    return true;
+                }
             }
         }
     }
@@ -408,7 +410,7 @@ static kbool Trace_PlaneEdge(trace_t *trace, vec3_t vp1, vec3_t vp2)
         {
             trace->frac = d;
 
-            if(trace->bFullTrace)
+            if(!(trace->physics & PF_SLIDEMOVE))
                 Trace_GetEdgeIntersect(trace, vp1, vp2);
             return true;
         }
@@ -448,6 +450,7 @@ static void Trace_GetEdgeNormal(trace_t *trace, vec3_t vp1, vec3_t vp2)
 static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
 {
     vec3_t pos;
+    float ty;
     plane_t *link;
 
     link = p->link[point];
@@ -459,10 +462,26 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
     }
 
     Vec_Lerp3(pos, trace->frac, trace->end, trace->start);
+    ty = pos[1] + trace->offset + 30.72f;
+
+    if(link->flags & CLF_CHECKHEIGHT && link->ceilingNormal[1] <= 0.5f)
+    {
+        float vh = 71.68f;
+        float len = (
+            link->height[0] +
+            link->height[1] +
+            link->height[2]) * (1.0f/3.0f);
+
+        if(trace->source && trace->physics & PF_SLIDEMOVE)
+            vh = trace->source->viewHeight * 0.8333f;
+
+        if(ty - vh >= len)
+            return NULL;
+    }
 
     if(!(p->flags & CLF_CHECKHEIGHT) &&
         link->flags & CLF_CHECKHEIGHT &&
-        Plane_GetHeight(link, pos) < (pos[1] + trace->offset + 30.72f))
+        Plane_GetHeight(link, pos) < ty)
     {
         // above ceiling height
         return NULL;
@@ -474,7 +493,7 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
         return NULL;
     }
 
-    if(trace->bFullTrace)
+    if(!(trace->physics & PF_SLIDEMOVE))
         return link;
 
     if(Plane_IsAWall(p))
@@ -489,6 +508,14 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
             return NULL;
         }
     }
+
+    if(Map_GetArea(p)->flags & AAF_WATER && !(Map_GetArea(link)->flags & AAF_WATER) &&
+        trace->physics & PF_NOEXITWATER)
+        return NULL;
+
+    if(!(Map_GetArea(p)->flags & AAF_WATER) && Map_GetArea(link)->flags & AAF_WATER &&
+        trace->physics & PF_NOENTERWATER)
+        return NULL;
 
     if(Plane_IsAWall(link))
     {
@@ -508,14 +535,12 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
                 if(len < 0)
                     len = -len;
 
-                if(!Trace_CheckPlaneHeight(trace, link) && len >= STEPHEIGHT
-                    && !trace->bFullTrace)
+                if(!Trace_CheckPlaneHeight(trace, link) &&
+                    len >= STEPHEIGHT &&
+                    trace->physics & PF_SLIDEMOVE &&
+                    !(trace->physics & PF_DROPOFF))
                 {
-                    if(trace->actor && trace->actor->bNoDropOff)
-                        return NULL;
-
-                    if(trace->source && trace->source->bNoDropOff)
-                        return NULL;
+                    return NULL;
                 }
 
                 // able to step off into this plane
@@ -523,12 +548,13 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
             }
 
             // check climbable plane
-            if(link->flags & CLF_CLIMB && trace->actor)
+            if(link->flags & CLF_CLIMB && trace->source &&
+                trace->source->physics & (PF_SLIDEMOVE|PF_CLIMBSURFACES))
             {
                 float angle = Plane_GetEdgeYaw(p, point) + M_PI;
                 Ang_Clamp(&angle);
 
-                angle = Ang_Diff(angle, trace->actor->angles[0]);
+                angle = Ang_Diff(angle, trace->source->angles[0]);
 
                 if(angle < 0)
                     angle = -angle;
@@ -536,7 +562,7 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
                 // must be facing the wall
                 if(angle >= DEG2RAD(140))
                 {
-                    trace->type = TRT_INTERACT;
+                    trace->type = TRT_CLIMB;
                     trace->hitpl = link;
                     return link;
                 }
@@ -628,7 +654,7 @@ void Trace_TraversePlanes(plane_t *plane, trace_t *trace)
     trace->pl = plane;
 
     // bullet-trace detection for floors
-    if(!Plane_IsAWall(plane) && trace->bFullTrace)
+    if(!Plane_IsAWall(plane) && !(trace->physics & PF_SLIDEMOVE))
     {
         if(Trace_CheckBulletRay(trace, plane))
             return;
@@ -656,7 +682,7 @@ void Trace_TraversePlanes(plane_t *plane, trace_t *trace)
                 // treat it as a solid wall
                 Trace_GetEdgeNormal(trace, vp1, vp2);
             }
-            else if(trace->type == TRT_INTERACT)
+            else if(trace->type == TRT_CLIMB)
             {
                 trace->pl = pl;
             }
@@ -669,7 +695,7 @@ void Trace_TraversePlanes(plane_t *plane, trace_t *trace)
         if(Plane_IsAWall(pl))
         {
             // trace it to see if its valid or not
-            if(trace->bFullTrace)
+            if(!(trace->physics & PF_SLIDEMOVE))
             {
                 if(Trace_CheckBulletRay(trace, pl))
                     return;
@@ -690,7 +716,7 @@ void Trace_TraversePlanes(plane_t *plane, trace_t *trace)
 //
 
 trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
-              gActor_t *actor, gActor_t *source, kbool bFullTrace)
+              gActor_t *source, int physicFlags)
 {
     trace_t trace;
 
@@ -704,14 +730,16 @@ trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
     trace.hitActor      = NULL;
     trace.frac          = 0;
     trace.type          = TRT_NOHIT;
-    trace.width         = actor ? actor->radius : 32.0f;
-    trace.offset        = actor ? actor->centerHeight : 0;
-    trace.bFullTrace    = bFullTrace;
-    trace.actor         = actor;
+    trace.width         = source ? source->radius : 30.72f;
+    trace.offset        = source ? source->height : 30.72f;
     trace.source        = source;
-    trace.dist          = 0;
 
-    if(actor == NULL)
+    if(physicFlags <= -1)
+        trace.physics = source ? source->physics : 0;
+    else
+        trace.physics = physicFlags;
+
+    if(source == NULL)
         Trace_TraversePlanes(plane, &trace);
     else
     {
@@ -748,4 +776,3 @@ trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
 
     return trace;
 }
-

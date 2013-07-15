@@ -42,10 +42,10 @@ JS_PROP_FUNC_GET(AI)
     switch(JSVAL_TO_INT(id))
     {
     case 0:
-        return JS_NewDoubleValue(cx, ai->turnSpeed, vp);
+        return J_NewDoubleEx(cx, ai->turnSpeed, vp);
 
     case 1:
-        return JS_NewDoubleValue(cx, ai->activeDistance, vp);
+        return J_NewDoubleEx(cx, ai->activeDistance, vp);
 
     case 2:
         JS_SET_RVAL(cx, vp, INT_TO_JSVAL(ai->flags));
@@ -56,10 +56,10 @@ JS_PROP_FUNC_GET(AI)
         return JS_TRUE;
 
     case 4:
-        return JS_NewDoubleValue(cx, ai->thinkTime, vp);
+        return J_NewDoubleEx(cx, ai->thinkTime, vp);
 
     case 5:
-        return JS_NewDoubleValue(cx, ai->nextThinkTime, vp);
+        return J_NewDoubleEx(cx, ai->nextThinkTime, vp);
 
     case 6:
         if(ai->owner)
@@ -114,7 +114,7 @@ JS_PROP_FUNC_GET(AI)
         return JS_TRUE;
 
     case 16:
-        return JS_NewDoubleValue(cx, ai->idealYaw, vp);
+        return J_NewDoubleEx(cx, ai->idealYaw, vp);
 
     case 17:
         JS_RETURNBOOLEAN(vp, (ai->flags & AIF_DISABLED) != 0);
@@ -125,7 +125,7 @@ JS_PROP_FUNC_GET(AI)
         return JS_TRUE;
 
     case 19:
-        return JS_NewDoubleValue(cx, ai->maxHeadAngle, vp);
+        return J_NewDoubleEx(cx, ai->maxHeadAngle, vp);
 
     case 20:
         JS_SET_RVAL(cx, vp, INT_TO_JSVAL(ai->nodeHead));
@@ -312,7 +312,7 @@ JS_FASTNATIVE_BEGIN(AI, yawToTarget)
     if(target != NULL)
         angle = AI_GetYawToTarget(ai, target);
 
-    return JS_NewDoubleValue(cx, angle, vp);
+    return J_NewDoubleEx(cx, angle, vp);
 }
 
 JS_FASTNATIVE_BEGIN(AI, getTargetDistance)
@@ -344,7 +344,7 @@ JS_FASTNATIVE_BEGIN(AI, getTargetDistance)
     if(target != NULL)
         dist = AI_GetTargetDistance(ai, target);
 
-    return JS_NewDoubleValue(cx, dist, vp);
+    return J_NewDoubleEx(cx, dist, vp);
 }
 
 JS_FASTNATIVE_BEGIN(AI, checkPosition)
@@ -471,7 +471,7 @@ JS_FASTNATIVE_BEGIN(AI, getBestAngleToTarget)
     if(target != NULL)
         angle = AI_FindBestAngleToTarget(ai, target, (float)radius);
 
-    return JS_NewDoubleValue(cx, angle, vp);
+    return J_NewDoubleEx(cx, angle, vp);
 }
 
 JS_FASTNATIVE_BEGIN(AI, clearTarget)

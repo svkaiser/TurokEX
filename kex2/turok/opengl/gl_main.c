@@ -395,6 +395,9 @@ void GL_SetState(int bit, kbool enable)
     case GLSTATE_DEPTHTEST:
         TOGGLEGLBIT(GLSTATE_DEPTHTEST, GL_DEPTH_TEST);
         break;
+    case GLSTATE_LIGHTING:
+        TOGGLEGLBIT(GLSTATE_LIGHTING, GL_LIGHTING);
+        break;
     default:
         Com_Warning("GL_SetState: unknown bit flag: %i\n", bit);
         break;
@@ -613,7 +616,7 @@ void GL_Init(void)
     dglClearStencil(0);
     dglDisable(GL_TEXTURE_2D);
     dglEnable(GL_CULL_FACE);
-    dglDisable(GL_NORMALIZE);
+    dglEnable(GL_NORMALIZE);
     dglCullFace(GL_FRONT);
     dglShadeModel(GL_SMOOTH);
     dglHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
@@ -626,6 +629,8 @@ void GL_Init(void)
     dglEnable(GL_DITHER);
     dglTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
 	dglTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
+    dglColorMaterial(GL_FRONT, GL_DIFFUSE);
+    dglColorMaterial(GL_BACK, GL_DIFFUSE);
     
     GL_SetState(GLSTATE_TEXTURE0, 1);
     GL_SetTextureFilter();

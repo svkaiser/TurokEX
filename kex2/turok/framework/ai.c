@@ -78,7 +78,7 @@ float AI_GetTargetDistance(ai_t *ai, gActor_t *target)
     actor = ai->owner;
 
     x = actor->origin[0] - target->origin[0];
-    y = (actor->origin[1] + actor->centerHeight) - (target->origin[1] + target->centerHeight);
+    y = (actor->origin[1] + actor->height) - (target->origin[1] + target->height);
     z = actor->origin[2] - target->origin[2];
 
     return (float)sqrt(x*x+y*y+z*z);
@@ -118,7 +118,7 @@ float AI_FindBestAngleToTarget(ai_t *ai, gActor_t *target, float extendRadius)
 
     Vec_Set3(position,
         owner->origin[0],
-        owner->origin[1] + (owner->viewHeight * 0.8f),
+        owner->origin[1] + (owner->height * 0.8f),
         owner->origin[2]);
 
     if(!AI_CheckPosition(ai, position, extendRadius, owner->angles[0] + angle))
@@ -173,7 +173,7 @@ trace_t AI_TracePosition(ai_t *ai, vec3_t position, float radius, float angle)
     dest[2] = position[2] + (ai->owner->radius * radius * c);
 
     plane = ai->owner->plane != -1 ? &gLevel.planes[ai->owner->plane] : NULL;
-    return Trace(position, dest, plane, NULL, ai->owner, false);
+    return Trace(position, dest, plane, ai->owner, ai->owner->physics);
 }
 
 //
@@ -290,16 +290,15 @@ kbool AI_CanSeeTarget(ai_t *ai, gActor_t *target)
     plane = Map_IndexToPlane(self->plane);
 
     pos[0] = self->origin[0];
-    pos[1] = self->origin[1] +
-        ((self->viewHeight + self->centerHeight) * 0.8f);
+    pos[1] = self->origin[1] + (self->baseHeight * 0.8f);
     pos[2] = self->origin[2];
 
     dest[0] = target->origin[0];
-    dest[1] = target->origin[1] +
-        ((target->viewHeight + target->centerHeight) * 0.8f);
+    dest[1] = target->origin[1] + (target->baseHeight * 0.8f);
     dest[2] = target->origin[2];
 
-    trace = Trace(pos, dest, plane, NULL, self, true);
+    trace = Trace(pos, dest, plane, self,
+        PF_CLIP_ALL | PF_DROPOFF);
 
     if(trace.type == TRT_OBJECT &&
         trace.hitActor && trace.hitActor == target)
@@ -347,11 +346,11 @@ static void AI_SetHeadLook(ai_t *ai)
         target = ai->target;
 
         p2[0] = actor->origin[0];
-        p2[1] = actor->origin[1] + actor->viewHeight;
+        p2[1] = actor->origin[1] + actor->height;
         p2[2] = actor->origin[2];
 
         p1[0] = target->origin[0];
-        p1[1] = target->origin[1] + target->viewHeight;
+        p1[1] = target->origin[1] + target->height;
         p1[2] = target->origin[2];
 
         yan = M_PI - (actor->angles[0] - (float)atan2(p2[0] - p1[0], p2[2] - p1[2]));

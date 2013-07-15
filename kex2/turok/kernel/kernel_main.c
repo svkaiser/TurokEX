@@ -37,7 +37,6 @@
 #include "menu.h"
 #include "script.h"
 #include "game.h"
-#include "as.h"
 #include "js.h"
 #include "type.h"
 #include "fx.h"
@@ -64,7 +63,6 @@ void Sys_Shutdown(void)
     Com_WriteConfigFile();
 
     J_Shutdown();
-    AS_Shutdown();
     Snd_Shutdown();
     FX_Shutdown();
     Tex_Shutdown();
@@ -101,6 +99,23 @@ int Sys_GetMilliseconds(void)
 }
 
 //
+// FCmd_ShowWinConsole
+//
+
+static void FCmd_ShowWinConsole(void)
+{
+    if(Cmd_GetArgc() < 1)
+    {
+        Com_Printf("1 = show, 0 = hide");
+        return;
+    }
+
+#ifdef _WIN32
+    Sys_ShowConsole(atoi(Cmd_GetArgv(1)));
+#endif
+}
+
+//
 // Sys_Init
 //
 
@@ -124,6 +139,8 @@ static void Sys_Init(void)
         "Kex Engine");
 
     Z_Init();
+
+    Cmd_AddCommand("showconsole", FCmd_ShowWinConsole);
 }
 
 //
@@ -133,23 +150,6 @@ static void Sys_Init(void)
 static void FCmd_Quit(void)
 {
     Sys_Shutdown();
-}
-
-//
-// FCmd_ShowWinConsole
-//
-
-static void FCmd_ShowWinConsole(void)
-{
-    if(Cmd_GetArgc() < 1)
-    {
-        Com_Printf("1 = show, 0 = hide");
-        return;
-    }
-
-#ifdef _WIN32
-    Sys_ShowConsole(atoi(Cmd_GetArgv(1)));
-#endif
 }
 
 //
@@ -224,8 +224,6 @@ void Kernel_Main(int argc, char **argv)
     Com_Printf("Sound System Initialized (%s)\n", Snd_GetDeviceName());
     J_Init();
     Com_Printf("Javascript API Initialized\n");
-    AS_Init();
-    Com_Printf("AngelScript Initialized\n");
     SV_Init();
     Com_Printf("Server Initialized\n");
     CL_Init();
@@ -243,13 +241,13 @@ void Kernel_Main(int argc, char **argv)
     Cvar_Register(&developer);
 
     Cmd_AddCommand("quit", FCmd_Quit);
-    Cmd_AddCommand("showconsole", FCmd_ShowWinConsole);
+
+    G_Init();
+    Com_Printf("Game Initialized\n");
 
     Com_ReadConfigFile("config.cfg");
     Com_ReadConfigFile("autoexec.cfg");
 
-    G_Init();
-    Com_Printf("Game Initialized\n");
     GL_Init();
     Com_Printf("OpenGL Initialized\n");
 

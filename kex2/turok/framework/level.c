@@ -198,6 +198,10 @@ enum
 {
     scmap_title = 0,
     scmap_mapID,
+    scmap_glight_origin,
+    scmap_glight_color,
+    scmap_glight_ambience,
+    scmap_glight_modelamb,
     scmap_actors,
     scmap_gridbounds,
     scmap_areas,
@@ -208,6 +212,10 @@ static const sctokens_t maptokens[scmap_end+1] =
 {
     { scmap_title,              "title"                 },
     { scmap_mapID,              "mapID"                 },
+    { scmap_glight_origin,      "global_light_position" },
+    { scmap_glight_color,       "global_light_color"    },
+    { scmap_glight_ambience,    "global_light_ambience" },
+    { scmap_glight_modelamb,    "global_model_ambience" },
     { scmap_actors,             "actors"                },
     { scmap_gridbounds,         "gridbounds"            },
     { scmap_areas,              "areas"                 },
@@ -248,6 +256,7 @@ enum
     scactor_rotorSpeed,
     scactor_rotorVector,
     scactor_rotorFriction,
+    scactor_tickDistance,
     scactor_end
 };
 
@@ -285,6 +294,7 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_rotorSpeed,       "rotorSpeed"        },
     { scactor_rotorVector,      "rotorVector"       },
     { scactor_rotorFriction,    "rotorFriction"     },
+    { scactor_tickDistance,     "tickDistance"      },
     { -1,                       NULL                }
 };
 
@@ -429,10 +439,8 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
             if(actor->model == NULL)
                 SC_Error("Map_ParseActor: Attempted to parse \"textureSwaps\" token while model is null\n");
 
-            actor->textureSwaps = (char****)Z_Calloc(sizeof(char***) *
-                actor->model->numnodes, PU_ACTOR, NULL);
-
             SC_ExpectNextToken(TK_EQUAL);
+            // texture swap block
             SC_ExpectNextToken(TK_LBRACK);
             for(j = 0; j < (int)actor->model->numnodes; j++)
             {
@@ -441,9 +449,7 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
 
                 node = &actor->model->nodes[j];
 
-                actor->textureSwaps[j] = (char***)Z_Calloc(sizeof(char**) *
-                    node->nummeshes, PU_ACTOR, NULL);
-
+                // node block
                 SC_ExpectNextToken(TK_LBRACK);
                 for(k = 0; k < node->nummeshes; k++)
                 {
@@ -452,19 +458,21 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
 
                     mesh = &node->meshes[k];
 
-                    actor->textureSwaps[j][k] = (char**)Z_Calloc(sizeof(char*) *
-                        mesh->numsections, PU_ACTOR, NULL);
-
+                    // mesh block
                     SC_ExpectNextToken(TK_LBRACK);
                     for(l = 0; l < mesh->numsections; l++)
                     {
+                        // parse sections
                         SC_GetString();
                         actor->textureSwaps[j][k][l] = Z_Strdup(parser->stringToken, PU_ACTOR, NULL);
                     }
+                    // end mesh block
                     SC_ExpectNextToken(TK_RBRACK);
                 }
+                // end node block
                 SC_ExpectNextToken(TK_RBRACK);
             }
+            // end texture swap block
             SC_ExpectNextToken(TK_RBRACK);
             break;
 
@@ -551,7 +559,7 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
             break;
 
         case scactor_height:
-            SC_AssignFloat(mapactortokens, &actor->height,
+            SC_AssignFloat(mapactortokens, &actor->baseHeight,
                 scactor_height, parser, false);
             break;
 
@@ -624,6 +632,11 @@ static void Map_ParseActor(scparser_t *parser, gActor_t *actor)
                 scactor_rotorFriction, parser, false);
             break;
 
+        case scactor_tickDistance:
+            SC_AssignFloat(mapactortokens, &actor->tickDistance,
+                scactor_tickDistance, parser, false);
+            break;
+
         default:
             if(parser->tokentype == TK_IDENIFIER)
             {
@@ -666,7 +679,6 @@ static void Map_ParseLevelActorBlock(scparser_t *parser, gLevel_t *level)
         Map_ParseActor(parser, actor);
 
         // TODO - TEMP
-        actor->physics      = PT_NONE;
         actor->mass         = 1200;
         actor->friction     = 1.0f;
         actor->airfriction  = 1.0f;
@@ -875,6 +887,26 @@ static void Map_ParseLevelScript(scparser_t *parser)
                 case scmap_mapID:
                     SC_AssignInteger(maptokens, &gLevel.mapID,
                         scmap_mapID, parser, false);
+                    break;
+
+                case scmap_glight_origin:
+                    SC_AssignVector(mapactortokens, gLevel.worldLightOrigin,
+                        scmap_glight_origin, parser, false);
+                    break;
+
+                case scmap_glight_color:
+                    SC_AssignVector(mapactortokens, gLevel.worldLightColor,
+                        scmap_glight_color, parser, false);
+                    break;
+
+                case scmap_glight_ambience:
+                    SC_AssignVector(mapactortokens, gLevel.worldLightAmbience,
+                        scmap_glight_ambience, parser, false);
+                    break;
+
+                case scmap_glight_modelamb:
+                    SC_AssignVector(mapactortokens, gLevel.worldLightModelAmbience,
+                        scmap_glight_modelamb, parser, false);
                     break;
 
                 case scmap_actors:
@@ -1285,7 +1317,7 @@ gObject_t *Map_GetActorsInRadius(float radius, float x, float y, float z, plane_
             continue;
         if(actor->bHidden || actor->bStale)
             continue;
-        if(Vec_Length3(org, actor->origin) >= radius)
+        if(Vec_Length3(org, actor->origin) >= (radius + actor->radius) * 0.925f)
             continue;
 
         if(plane == NULL)
@@ -1300,9 +1332,9 @@ gObject_t *Map_GetActorsInRadius(float radius, float x, float y, float z, plane_
             vec3_t dest;
 
             Vec_Copy3(dest, actor->origin);
-            dest[1] += actor->centerHeight;
+            dest[1] += actor->height;
 
-            trace = Trace(org, dest, plane, NULL, NULL, true);
+            trace = Trace(org, dest, plane, NULL, PF_CLIP_ALL | PF_DROPOFF);
 
             if(trace.type != TRT_OBJECT ||
                 !trace.hitActor || trace.hitActor != actor)
@@ -1348,6 +1380,8 @@ void Map_Tick(void)
 void Map_Load(int map)
 {
     scparser_t *parser;
+    filepath_t file;
+    jsval val;
 
     if(client.state < CL_STATE_READY)
         return;
@@ -1363,24 +1397,42 @@ void Map_Load(int map)
     gLevel.planes       = NULL;
     gLevel.bReadyUnload = false;
 
-    if(parser = SC_Open(kva("maps/map%02d/map%02d.kcm", map, map)))
+    Vec_Set4(gLevel.worldLightOrigin, 0, 0, 0, 0);
+    Vec_Set4(gLevel.worldLightColor, 1, 1, 1, 1);
+    Vec_Set4(gLevel.worldLightAmbience, 1, 1, 1, 1);
+    Vec_Set4(gLevel.worldLightModelAmbience, 1, 1, 1, 1);
+
+    sprintf(file, "maps/map%02d/map%02d.kcm", map, map);
+    Com_Printf("Map_Load: Loading %s...\n", file);
+
+    if(parser = SC_Open(file))
     {
         Map_ParseNavScript(parser);
         // we're done with the file
         SC_Close();
     }
 
-    if(!(parser = SC_Open(kva("maps/map%02d/map%02d.kmap", map, map))))
+    sprintf(file, "maps/map%02d/map%02d.kmap", map, map);
+    Com_Printf("Map_Load: Loading %s...\n", file);
+
+    if(!(parser = SC_Open(file)))
         return;
 
     Map_ParseLevelScript(parser);
     SC_Close();
+
+    Com_Printf("Level loaded\n");
+    Com_Printf("Actors allocated: %ikb\n", Z_TagUsage(PU_ACTOR) >> 10);
+    Com_Printf("Level data allocated: %ikb\n", Z_TagUsage(PU_LEVEL) >> 10);
 
     gLevel.nextMap = -1;
     gLevel.loaded = true;
 
     P_SpawnLocalPlayer();
     client.state = CL_STATE_INGAME;
+
+    JS_CallFunctionName(js_context, js_objGame, "onLevelLoad", 0, NULL, &val);
+
 }
 
 //
@@ -1390,9 +1442,11 @@ void Map_Load(int map)
 void Map_Unload(void)
 {
     unsigned int i;
+    jsval val;
 
     Snd_StopAll();
 
+    JS_CallFunctionName(js_context, js_objGame, "onLevelUnLoad", 0, NULL, &val);
     P_SaveLocalComponentData();
 
     gLevel.loaded = false;

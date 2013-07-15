@@ -318,6 +318,10 @@ typedef struct
     int             mapID;
     int             nextMap;
     char            name[64];
+    vec4_t          worldLightOrigin;
+    vec4_t          worldLightColor;
+    vec4_t          worldLightAmbience;
+    vec4_t          worldLightModelAmbience;
     int             tics;
     float           time;
     float           deltaTime;

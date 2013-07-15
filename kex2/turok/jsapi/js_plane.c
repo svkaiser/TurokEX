@@ -73,13 +73,13 @@ static JSBool plane_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *v
         return JS_TRUE;
 
     case PL_HEIGHT1:
-        return JS_NewDoubleValue(cx, plane->height[0], vp);
+        return J_NewDoubleEx(cx, plane->height[0], vp);
 
     case PL_HEIGHT2:
-        return JS_NewDoubleValue(cx, plane->height[1], vp);
+        return J_NewDoubleEx(cx, plane->height[1], vp);
 
     case PL_HEIGHT3:
-        return JS_NewDoubleValue(cx, plane->height[2], vp);
+        return J_NewDoubleEx(cx, plane->height[2], vp);
 
     case PL_NORMAL:
         JS_NEWVECTOR2(plane->normal);
@@ -165,7 +165,7 @@ static JSBool plane_distance(JSContext *cx, uintN argc, jsval *vp)
     JS_GETOBJECT(obj, v, 0);
     JS_GETVECTOR2(obj, vector);
 
-    return JS_NewDoubleValue(cx, Plane_GetDistance(plane, vector), vp);
+    return J_NewDoubleEx(cx, Plane_GetDistance(plane, vector), vp);
 }
 
 //
@@ -184,7 +184,7 @@ static JSBool plane_heightDistance(JSContext *cx, uintN argc, jsval *vp)
     JS_GETOBJECT(obj, v, 0);
     JS_GETVECTOR2(obj, vector);
 
-    return JS_NewDoubleValue(cx, Plane_GetHeight(plane, vector), vp);
+    return J_NewDoubleEx(cx, Plane_GetHeight(plane, vector), vp);
 }
 
 //
@@ -226,7 +226,7 @@ static JSBool plane_getYaw(JSContext *cx, uintN argc, jsval *vp)
     plane_t *plane = NULL;
 
     JS_THISPLANE(plane, vp);
-    return JS_NewDoubleValue(cx, Plane_GetYaw(plane), vp);
+    return J_NewDoubleEx(cx, Plane_GetYaw(plane), vp);
 }
 
 //

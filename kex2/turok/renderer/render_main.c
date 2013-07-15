@@ -61,7 +61,6 @@ static double viewMatrix[16];
 static double projMatrix[16];
 static float frustum[6][4];
 
-float rRenderTime = 0.0f;
 kbool showorigin = false;
 
 #define CALCMATRIX(a, b, c, d, e, f, g, h)  \
@@ -236,10 +235,12 @@ void R_DrawSection(mdlsection_t *section, char *texture)
     if(section->flags & MDF_COLORIZE)
     {
         color = section->color1;
+        GL_SetState(GLSTATE_LIGHTING, false);
     }
     else
     {
         color = COLOR_WHITE;
+        GL_SetState(GLSTATE_LIGHTING, true);
     }
 
     if(section->flags & MDF_MASKED)
@@ -251,7 +252,7 @@ void R_DrawSection(mdlsection_t *section, char *texture)
         dglAlphaFunc(GL_GEQUAL, 0.01f);
     }
 
-    dglNormalPointer(GL_FLOAT, sizeof(float), section->normals);
+    dglNormalPointer(GL_FLOAT, sizeof(float)*3, section->normals);
     dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, section->coords);
     dglVertexPointer(3, GL_FLOAT, sizeof(vec3_t), section->xyz);
 
@@ -261,15 +262,20 @@ void R_DrawSection(mdlsection_t *section, char *texture)
     if(!bWireframe)
     {
         if(tex)
+        {
+            GL_SetState(GLSTATE_LIGHTING, true);
             GL_BindTexture(tex);
+        }
         else
         {
+            GL_SetState(GLSTATE_LIGHTING, false);
             GL_BindTextureName("textures/white.tga");
             color = section->color1;
         }
 
         if(section->flags & MDF_TRANSPARENT1)
         {
+            GL_SetState(GLSTATE_LIGHTING, false);
             color = color & 0xffffff;
             color |= (160 << 24);
         }
@@ -277,7 +283,10 @@ void R_DrawSection(mdlsection_t *section, char *texture)
         dglColor4ubv((byte*)&color);
     }
     else
+    {
+        GL_SetState(GLSTATE_LIGHTING, false);
         GL_BindTextureName("textures/white.tga");
+    }
 
     dglDrawElements(GL_TRIANGLES, section->numtris, GL_UNSIGNED_SHORT, section->tris);
 }
@@ -402,7 +411,14 @@ void R_TraverseDrawNode(gActor_t *actor, mdlnode_t *node, animstate_t *animstate
 
             if(shownodes)
             {
-                R_DrawOrigin(pos_cur, 4.0f);
+                vec3_t tmp;
+                Vec_Copy3(tmp, pos_cur);
+                tmp[0] *= actor->scale[0];
+                tmp[1] *= actor->scale[1];
+                tmp[2] *= actor->scale[2];
+                GL_SetState(GLSTATE_LIGHTING, false);
+                R_DrawOrigin(tmp, 4.0f);
+                GL_SetState(GLSTATE_LIGHTING, true);
                 // restore the color if in wireframe mode
                 if(bWireframe)
                     dglColor4ub(192, 192, 192, 255);
@@ -429,8 +445,10 @@ void R_TraverseDrawNode(gActor_t *actor, mdlnode_t *node, animstate_t *animstate
 
             if(actor->textureSwaps != NULL)
             {
-                if(actor->textureSwaps[nodenum][var][i][0] != '-')
-                    texturepath = actor->textureSwaps[nodenum][var][i];
+                char *meshTexture = actor->textureSwaps[nodenum][var][i];
+
+                if(meshTexture != NULL && meshTexture[0] != '-')
+                    texturepath = meshTexture;
             }
 
             R_DrawSection(section, texturepath);
@@ -556,7 +574,9 @@ void R_DrawActors(void)
 
         if(actor != client.player->camera->owner)
         {
-            if(!R_FrustumTestBox(box))
+            actor->bCulled = !R_FrustumTestBox(box);
+
+            if(actor->bCulled)
                 continue;
 
             if(actor->model)
@@ -579,51 +599,58 @@ void R_DrawActors(void)
             }
         }
 
-        if(showbbox)
+        if(showbbox || showorigin || showradius)
         {
-            if(actor->bTouch)
-                R_DrawBoundingBox(box, 0, 255, 0);
-            else
-                R_DrawBoundingBox(box, 255, 0, 0);
-        }
+            GL_SetState(GLSTATE_LIGHTING, false);
 
-        if(showorigin && actor != client.player->camera->owner)
-        {
-            vec3_t vec;
+            if(showbbox)
+            {
+                if(actor->bTouch)
+                    R_DrawBoundingBox(box, 0, 255, 0);
+                else
+                    R_DrawBoundingBox(box, 255, 0, 0);
+            }
 
-            dglPushMatrix();
-            dglMultMatrixf(actor->matrix);
-            Vec_Set3(vec, 0, 0, 0);
-            R_DrawOrigin(vec, 32.0f);
-            Vec_Set3(vec, 0, actor->centerHeight+actor->viewHeight, 0);
-            R_DrawOrigin(vec, 16.0f);
-            dglPopMatrix();
-        }
-        if(showradius && actor != client.player->camera->owner)
-        {
-            R_DrawRadius(
-                actor->origin[0],
-                actor->origin[1],
-                actor->origin[2],
-                actor->radius,
-                actor->height,
-                255, 128, 128);
+            if(showorigin && actor != client.player->camera->owner)
+            {
+                vec3_t vec;
 
-            R_DrawRadius(
-                actor->origin[0],
-                actor->origin[1] + (actor->centerHeight * 0.5f),
-                actor->origin[2],
-                actor->radius * 0.5f,
-                (actor->origin[1] + actor->centerHeight) - actor->origin[1],
-                128, 128, 255);
+                dglPushMatrix();
+                dglMultMatrixf(actor->matrix);
+                Vec_Set3(vec, 0, 0, 0);
+                R_DrawOrigin(vec, 32.0f);
+                Vec_Set3(vec, 0, actor->centerHeight+actor->viewHeight, 0);
+                R_DrawOrigin(vec, 16.0f);
+                dglPopMatrix();
+            }
+            if(showradius && actor != client.player->camera->owner)
+            {
+                R_DrawRadius(
+                    actor->origin[0],
+                    actor->origin[1],
+                    actor->origin[2],
+                    actor->radius,
+                    actor->baseHeight,
+                    255, 128, 128);
 
-            R_DrawRadius(
-                actor->origin[0],
-                actor->origin[1] + (actor->viewHeight * 0.5f),
-                actor->origin[2],
-                actor->radius * 0.5f,
-                (actor->origin[1] + actor->viewHeight) - actor->origin[1],
-                128, 255, 128);
+                R_DrawRadius(
+                    actor->origin[0],
+                    actor->origin[1],
+                    actor->origin[2],
+                    actor->radius * 0.5f,
+                    actor->height + actor->viewHeight,
+                    128, 128, 255);
+
+                R_DrawRadius(
+                    actor->origin[0],
+                    actor->origin[1],
+                    actor->origin[2],
+                    actor->radius * 0.5f,
+                    actor->viewHeight,
+                    128, 255, 128);
+            }
+
+            GL_SetState(GLSTATE_LIGHTING, true);
         }
     }
 }
@@ -655,7 +682,9 @@ void R_DrawStatics(void)
             box.max[1] = grid_high_y;
             box.max[2] = gb->maxz;
 
+            GL_SetState(GLSTATE_LIGHTING, false);
             R_DrawBoundingBox(box, 224, 244, 224);
+            GL_SetState(GLSTATE_LIGHTING, true);
         }
 
         for(j = 0; j < gb->numStatics; j++)
@@ -683,7 +712,9 @@ void R_DrawStatics(void)
             box.max[1] += actor->origin[1];
             box.max[2] += actor->origin[2];
 
-            if(!R_FrustumTestBox(box))
+            actor->bCulled = !R_FrustumTestBox(box);
+
+            if(actor->bCulled)
                 continue;
 
             if(showgrid)
@@ -710,17 +741,24 @@ void R_DrawStatics(void)
 
             dglPopMatrix();
 
-            if(showbbox)
+            if(showbbox || showradius)
             {
-                if(actor->bTouch)
-                    R_DrawBoundingBox(box, 0, 255, 0);
-                else
-                    R_DrawBoundingBox(box, 255, 255, 0);
-            }
-            if(showradius && actor->bCollision)
-            {
-                R_DrawRadius(actor->origin[0], actor->origin[1], actor->origin[2],
-                    actor->radius, actor->height, 255, 128, 128);
+                GL_SetState(GLSTATE_LIGHTING, false);
+
+                if(showbbox)
+                {
+                    if(actor->bTouch)
+                        R_DrawBoundingBox(box, 0, 255, 0);
+                    else
+                        R_DrawBoundingBox(box, 255, 255, 0);
+                }
+                if(showradius && actor->bCollision)
+                {
+                    R_DrawRadius(actor->origin[0], actor->origin[1], actor->origin[2],
+                        actor->radius, actor->height, 255, 128, 128);
+                }
+
+                GL_SetState(GLSTATE_LIGHTING, true);
             }
         }
     }
@@ -889,13 +927,32 @@ static void R_DrawSkies(void)
 }
 
 //
+// R_SetupWorldLight
+//
+
+static void R_SetupWorldLight(void)
+{
+    if(bWireframe || !gLevel.loaded)
+        return;
+
+    GL_SetState(GLSTATE_LIGHTING, true);
+
+    dglEnable(GL_LIGHT0);
+    dglEnable(GL_COLOR_MATERIAL);
+    dglColorMaterial(GL_FRONT, GL_DIFFUSE);
+    dglColorMaterial(GL_BACK, GL_DIFFUSE);
+    dglLightfv(GL_LIGHT0, GL_POSITION, gLevel.worldLightOrigin);
+    dglMaterialfv(GL_FRONT, GL_DIFFUSE, gLevel.worldLightColor);
+    dglMaterialfv(GL_FRONT, GL_AMBIENT, gLevel.worldLightAmbience);
+    dglLightModelfv(GL_LIGHT_MODEL_AMBIENT, gLevel.worldLightModelAmbience);
+}
+
+//
 // R_DrawFrame
 //
 
 void R_DrawFrame(void)
 {
-    rRenderTime += (62.5f * client.runtime);
-
     P_LocalPlayerEvent("onPreRender");
 
     if(showcollision)
@@ -918,8 +975,11 @@ void R_DrawFrame(void)
     if(bWireframe)
         dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+    R_SetupWorldLight();
     R_DrawStatics();
     R_DrawActors();
+
+    GL_SetState(GLSTATE_LIGHTING, false);
 
     dglCullFace(GL_FRONT);
     R_DrawFX();
@@ -944,6 +1004,10 @@ void R_DrawFrame(void)
     GL_SetState(GLSTATE_ALPHATEST, false);
     GL_SetState(GLSTATE_TEXGEN_S, false);
     GL_SetState(GLSTATE_TEXGEN_T, false);
+    GL_SetState(GLSTATE_LIGHTING, false);
+    
+    dglDisable(GL_LIGHT0);
+    dglDisable(GL_COLOR_MATERIAL);
 
     GL_SetOrtho();
 

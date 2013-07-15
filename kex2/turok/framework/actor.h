@@ -26,19 +26,6 @@
 #include "render.h"
 #include "level.h"
 
-typedef struct
-{
-    int                 type;
-    char                name[32];
-    union
-    {
-        int     i;
-        float   f;
-        void    *p;
-        char    *c;
-    } val;
-} propKey_t;
-
 typedef enum
 {
     AC_AI       = 1,
@@ -76,6 +63,7 @@ typedef struct gActor_s
     int                 plane;
     float               radius;
     float               height;
+    float               baseHeight;
     float               centerHeight;
     float               viewHeight;
     float               friction;
@@ -89,7 +77,6 @@ typedef struct gActor_s
     vec4_t              lerpRotation;
     gObject_t           *components;
 	gObject_t           *iterator;
-    propKey_t           *properties;
     int                 numProperties;
     int                 classFlags;
     unsigned int        surfaceID;
@@ -107,6 +94,8 @@ typedef struct gActor_s
     int                 variant;
     char                ****textureSwaps;
     float               timestamp;
+    float               tickDistance;
+    kbool               bCulled;
     int                 physics;
     int                 waterlevel;
     struct ai_s         *ai;
@@ -136,10 +125,6 @@ void Actor_GetLocalVectors(vec3_t out, gActor_t *actor, float x, float y, float 
 void Actor_GetWaterLevel(gActor_t *actor);
 void Actor_SpawnBodyFX(gActor_t *actor, const char *fx, float x, float y, float z);
 void Actor_OnTouchEvent(gActor_t *actor, gActor_t *instigator);
-void Actor_AddIntegerProperty(gActor_t *actor, const char *name, int id, int value);
-void Actor_AddFloatProperty(gActor_t *actor, const char *name, int id, float value);
-void Actor_AddDataProperty(gActor_t *actor, const char *name, int id, void *value);
-void Actor_AddStringProperty(gActor_t *actor, const char *name, int id, char *value);
 void Actor_DrawDebugStats(void);
 void Actor_UpdateModel(gActor_t *actor, const char *model);
 void Actor_Remove(gActor_t *actor);

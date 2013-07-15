@@ -47,11 +47,11 @@ JS_PROP_FUNC_GET(Vector)
         switch(JSVAL_TO_INT(id))
         {
         case VEC3_X:
-            return JS_NewDoubleValue(cx, (*vector)[0], vp);
+            return J_NewDoubleEx(cx, (*vector)[0], vp);
         case VEC3_Y:
-            return JS_NewDoubleValue(cx, (*vector)[1], vp);
+            return J_NewDoubleEx(cx, (*vector)[1], vp);
         case VEC3_Z:
-            return JS_NewDoubleValue(cx, (*vector)[2], vp);
+            return J_NewDoubleEx(cx, (*vector)[2], vp);
         }
     }
     else
@@ -70,7 +70,7 @@ JS_PROP_FUNC_GET(Vector)
                 s2 = JSVAL_TO_INT(val);
                 x.i = (s1 | (s2 << 16));
 
-                return JS_NewDoubleValue(cx, x.f, vp);
+                return J_NewDoubleEx(cx, x.f, vp);
             }
         case VEC3_Y:
             {
@@ -84,7 +84,7 @@ JS_PROP_FUNC_GET(Vector)
                 s2 = JSVAL_TO_INT(val);
                 y.i = (s1 | (s2 << 16));
 
-                return JS_NewDoubleValue(cx, y.f, vp);
+                return J_NewDoubleEx(cx, y.f, vp);
             }
         case VEC3_Z:
             {
@@ -98,7 +98,7 @@ JS_PROP_FUNC_GET(Vector)
                 s2 = JSVAL_TO_INT(val);
                 z.i = (s1 | (s2 << 16));
 
-                return JS_NewDoubleValue(cx, z.f, vp);
+                return J_NewDoubleEx(cx, z.f, vp);
             }
         }
     }
@@ -364,7 +364,7 @@ JS_FASTNATIVE_BEGIN(Vector, unit2)
     JS_CHECKARGS(0);
     JS_THISVECTOR(vector);
 
-    return JS_NewDoubleValue(cx, Vec_Unit2(vector), vp);
+    return J_NewDoubleEx(cx, Vec_Unit2(vector), vp);
 }
 
 JS_FASTNATIVE_BEGIN(Vector, unit3)
@@ -374,7 +374,7 @@ JS_FASTNATIVE_BEGIN(Vector, unit3)
     JS_CHECKARGS(0);
     JS_THISVECTOR(vector);
 
-    return JS_NewDoubleValue(cx, Vec_Unit3(vector), vp);
+    return J_NewDoubleEx(cx, Vec_Unit3(vector), vp);
 }
 
 JS_FASTNATIVE_BEGIN(Vector, toYaw)
@@ -384,7 +384,7 @@ JS_FASTNATIVE_BEGIN(Vector, toYaw)
     JS_CHECKARGS(0);
     JS_THISVECTOR(vector);
 
-    return JS_NewDoubleValue(cx, Ang_VectorToAngle(vector), vp);
+    return J_NewDoubleEx(cx, Ang_VectorToAngle(vector), vp);
 }
 
 JS_FASTNATIVE_BEGIN(Vector, toQuaternion)
@@ -435,7 +435,7 @@ JS_FASTNATIVE_BEGIN(Vector, dot)
     JS_GETVECTOR2(obj1, vec1);
     JS_GETVECTOR2(obj2, vec2);
 
-    return JS_NewDoubleValue(cx, Vec_Dot(vec1, vec2), vp);
+    return J_NewDoubleEx(cx, Vec_Dot(vec1, vec2), vp);
 }
 
 JS_FASTNATIVE_BEGIN(Vector, gScale)
@@ -470,7 +470,7 @@ JS_FASTNATIVE_BEGIN(Vector, length2)
     JS_GETVECTOR2(obj1, vec1);
     JS_GETVECTOR2(obj2, vec2);
 
-    return JS_NewDoubleValue(cx, Vec_Length2(vec1, vec2), vp);
+    return J_NewDoubleEx(cx, Vec_Length2(vec1, vec2), vp);
 }
 
 JS_FASTNATIVE_BEGIN(Vector, length3)
@@ -486,7 +486,7 @@ JS_FASTNATIVE_BEGIN(Vector, length3)
     JS_GETVECTOR2(obj1, vec1);
     JS_GETVECTOR2(obj2, vec2);
 
-    return JS_NewDoubleValue(cx, Vec_Length3(vec1, vec2), vp);
+    return J_NewDoubleEx(cx, Vec_Length3(vec1, vec2), vp);
 }
 
 JS_FASTNATIVE_BEGIN(Vector, pointToAxis)
