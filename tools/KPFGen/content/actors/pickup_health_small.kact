@@ -2,6 +2,11 @@
     scale = { 0.35 0.35 0.35 }
     bStatic = 0
     bCollision = 0
+    physics = 2
+    classFlags = 6
+    bRotor = 1
+    rotorSpeed = 1
+    rotorVector = { 0 1 0 }
     radius = 53.010265
     height = 53.010265
     mesh = "models/mdl386/mdl386.kmesh"

@@ -1021,6 +1021,8 @@ static int CheckIfFXEvent(int id)
 
     switch(id)
     {
+    case 49:
+        return 318;
     case 95:
         return 9;
     case 96:
@@ -1127,6 +1129,9 @@ char *GetActionName(int id, float arg0)
         break;
     case 46:
         sprintf(actionName, "alertScream");
+        break;
+    case 48:
+        sprintf(actionName, "roboShutdown");
         break;
     case 53:
         sprintf(actionName, "deathScream");

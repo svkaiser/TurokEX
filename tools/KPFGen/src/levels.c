@@ -306,6 +306,15 @@ static byte decode_buffer[0x40000];
 static int actorTally = 0;
 static int levelID = 0;
 
+static byte lightheader_table1[0x40];
+static byte lightheader_table2[0x40];
+static byte lightheader_table3[0x40];
+static byte lvcolortable1[3];
+static byte lvcolortable2[3];
+static byte lvcolortable3[3];
+static byte lvcolortable4[3];
+static byte lvcolortable5[3];
+
 typedef struct
 {
     byte *buffer;
@@ -335,10 +344,10 @@ typedef struct
     float u4;
     float u5;
     float uf6;
-    float meleerange;
     float width;
+    float centerHeight;
     float height;
-    float viewheight;
+    float viewHeight;
     float u11;
     float u12;
     float triggerDelay;
@@ -642,7 +651,113 @@ static void ProcessTextureOverrides(short model, int textureid)
 
 static void ProcessHeader(byte *data, int index)
 {
-    //Com_WriteCartData(data, CHUNK_LVROOT_HEADER, "lvlheader38.lmp");
+    byte *header = Com_GetCartData(data, CHUNK_LVROOT_HEADER, 0);
+    int i;
+    float d;
+    float ambient[3];
+    float diffuse[3];
+    int ci;
+    float x;
+    float y;
+    float z;
+
+    ci = 0;
+
+    for(i = 0; i < 64; i++)
+    {
+        float c;
+        float cf;
+        byte cv;
+        short val;
+
+        c = ci * 0.015873f * 255.0f;
+
+        if(c <= 255.0f)
+            cf = c;
+        else
+            cf = 255.0f;
+
+        if(cf >= 0.0f)
+        {
+            if(c > 255.0f)
+                c = 255.0f;
+        }
+        else
+            c = 0.0f;
+
+         val = *(header + 10) * (int)c + (*(header + 13) << 8);
+         if(val <= 0xFF00)
+             cv = (val >> 8);
+         else
+             cv = 0xff;
+
+         lightheader_table1[i] = cv;
+
+         val = *(header + 11) * (int)c + (*(header + 14) << 8);
+         if(val <= 0xFF00)
+             cv = (val >> 8);
+         else
+             cv = 0xff;
+
+         lightheader_table2[i] = cv;
+
+         val = *(header + 12) * (int)c + (*(header + 15) << 8);
+         if(val <= 0xFF00)
+             cv = (val >> 8);
+         else
+             cv = 0xff;
+
+         lightheader_table3[i] = cv;
+
+         ci = i;
+    }
+
+    for(i = 0; i < 3; i++)
+    {
+        byte c1;
+        byte c2;
+        byte c3;
+
+        c1 = *(header + 13 + i);
+        c2 = *(header + 10 + i);
+        c3 = *(header + 17 + i);
+
+        lvcolortable1[i] = c1;
+        lvcolortable2[i] = c1;
+        lvcolortable3[i] = c2;
+        lvcolortable4[i] = c2;
+        lvcolortable5[i] = c3;
+    }
+
+    x = *(char*)(header + 17);
+    y = *(char*)(header + 18);
+    z = *(char*)(header + 19);
+
+    d = (float)sqrt(x*x+y*y+z*z);
+
+    if(d != 0.0)
+    {
+        float factor = 1.0f / d;
+        x = x * factor;
+        y = y * factor;
+        z = z * factor;
+    }
+
+    diffuse[0] = (float)lvcolortable3[0] / 255.0f;
+    diffuse[1] = (float)lvcolortable3[1] / 255.0f;
+    diffuse[2] = (float)lvcolortable3[2] / 255.0f;
+
+    ambient[0] = (float)lvcolortable1[0] / 255.0f;
+    ambient[1] = (float)lvcolortable1[1] / 255.0f;
+    ambient[2] = (float)lvcolortable1[2] / 255.0f;
+
+    Com_Strcat("global_light_position = { %f %f %f }\n", x, y, z);
+    Com_Strcat("global_light_color = { %f %f %f }\n",
+        diffuse[0], diffuse[1], diffuse[2]);
+    Com_Strcat("global_light_ambience = { %f %f %f }\n",
+        ambient[0], ambient[1], ambient[2]);
+    Com_Strcat("global_model_ambience = { %f %f %f }\n",
+        1.5f+ambient[0], 1.5f+ambient[1], 1.5f+ambient[2]);
 }
 
 //
@@ -1157,6 +1272,7 @@ static void ProcessActors(byte *data)
         case OT_TUROK:
 #ifndef FORMAT_BINARY
             Com_Strcat("classFlags = 10\n");
+            Com_Strcat("physics = 367\n");
             Com_Strcat("components[1] =\n");
             Com_Strcat("{\n");
             Com_Strcat("BeginObject = \"ComponentTurokPlayer\"\n");
@@ -1174,7 +1290,7 @@ static void ProcessActors(byte *data)
         case OT_AI_GRUNT:
 #ifndef FORMAT_BINARY
             Com_Strcat("classFlags = 3\n");
-            Com_Strcat("physics = 1\n");
+            Com_Strcat("physics = 591\n");
             Com_Strcat("components[1] =\n");
             Com_Strcat("{\n");
             Com_Strcat("BeginObject = \"TurokAIGrunt\"\n");
@@ -1198,7 +1314,7 @@ static void ProcessActors(byte *data)
         case OT_AI_RAPTOR:
 #ifndef FORMAT_BINARY
             Com_Strcat("classFlags = 3\n");
-            Com_Strcat("physics = 1\n");
+            Com_Strcat("physics = 591\n");
             Com_Strcat("components[1] =\n");
                 Com_Strcat("{\n");
                 Com_Strcat("BeginObject = \"TurokAIRaptor\"\n");
@@ -1214,7 +1330,7 @@ static void ProcessActors(byte *data)
         case OT_AI_DINOSAUR1:
 #ifndef FORMAT_BINARY
             Com_Strcat("classFlags = 3\n");
-            Com_Strcat("physics = 1\n");
+            Com_Strcat("physics = 591\n");
             Com_Strcat("components[1] =\n");
                 Com_Strcat("{\n");
                 Com_Strcat("BeginObject = \"TurokAIDimetrodon\"\n");
@@ -1230,7 +1346,7 @@ static void ProcessActors(byte *data)
         case OT_AI_STALKER:
 #ifndef FORMAT_BINARY
             Com_Strcat("classFlags = 3\n");
-            Com_Strcat("physics = 1\n");
+            Com_Strcat("physics = 591\n");
             Com_Strcat("components[1] =\n");
                 Com_Strcat("{\n");
                 Com_Strcat("BeginObject = \"TurokAIStalker\"\n");
@@ -1245,7 +1361,7 @@ static void ProcessActors(byte *data)
         case OT_AI_PURLIN:
 #ifndef FORMAT_BINARY
             Com_Strcat("classFlags = 3\n");
-            Com_Strcat("physics = 1\n");
+            Com_Strcat("physics = 591\n");
             Com_Strcat("components[1] =\n");
                 Com_Strcat("{\n");
                 Com_Strcat("BeginObject = \"TurokAIPurlin\"\n");
@@ -1261,10 +1377,26 @@ static void ProcessActors(byte *data)
         case OT_AI_ALIEN:
 #ifndef FORMAT_BINARY
             Com_Strcat("classFlags = 3\n");
-            Com_Strcat("physics = 1\n");
+            Com_Strcat("physics = 591\n");
             Com_Strcat("components[1] =\n");
                 Com_Strcat("{\n");
                 Com_Strcat("BeginObject = \"TurokAIAlien\"\n");
+                Com_Strcat("{\n");
+                ProcessAIBehavior(actor, attr);
+                Com_Strcat("\"active\" : 1\n");
+			    Com_Strcat("}\n");
+                Com_Strcat("EndObject\n");
+                Com_Strcat("}\n");
+#endif
+            break;
+
+            case OT_AI_MECH:
+#ifndef FORMAT_BINARY
+            Com_Strcat("classFlags = 3\n");
+            Com_Strcat("physics = 591\n");
+            Com_Strcat("components[1] =\n");
+                Com_Strcat("{\n");
+                Com_Strcat("BeginObject = \"TurokAIMech\"\n");
                 Com_Strcat("{\n");
                 ProcessAIBehavior(actor, attr);
                 Com_Strcat("\"active\" : 1\n");
@@ -1294,7 +1426,7 @@ static void ProcessActors(byte *data)
             {
             case 325:
 #ifndef FORMAT_BINARY
-                Com_Strcat("physics = 1\n");
+                Com_Strcat("physics = 591\n");
                 Com_Strcat("components[1] =\n");
                 Com_Strcat("{\n");
                 Com_Strcat("BeginObject = \"TurokAIAnimal\"\n");
@@ -1311,6 +1443,7 @@ static void ProcessActors(byte *data)
                 break;
             case 442:
 #ifndef FORMAT_BINARY
+                Com_Strcat("physics = 77\n");
                 Com_Strcat("components[1] =\n");
                 Com_Strcat("{\n");
                 Com_Strcat("BeginObject = \"ScriptedMonkey\"\n");
@@ -1327,6 +1460,7 @@ static void ProcessActors(byte *data)
                 break;
             case 471:
 #ifndef FORMAT_BINARY
+                Com_Strcat("physics = 16\n");
                 Com_Strcat("components[1] =\n");
                 Com_Strcat("{\n");
                 Com_Strcat("BeginObject = \"ScriptedBird\"\n");
@@ -1343,6 +1477,7 @@ static void ProcessActors(byte *data)
                 break;
             case 474:
 #ifndef FORMAT_BINARY
+                Com_Strcat("physics = 591\n");
                 Com_Strcat("components[1] =\n");
                 Com_Strcat("{\n");
                 Com_Strcat("BeginObject = \"TurokAIAnimal\"\n");
@@ -1363,7 +1498,7 @@ static void ProcessActors(byte *data)
         case OT_AI_FISH:
 #ifndef FORMAT_BINARY
             Com_Strcat("classFlags = 3\n");
-            Com_Strcat("physics = 1\n");
+            Com_Strcat("physics = 1357\n");
             Com_Strcat("mass = 0.0\n");
             Com_Strcat("components[1] =\n");
             Com_Strcat("{\n");
@@ -1472,10 +1607,11 @@ static void ProcessActors(byte *data)
         Com_Strcat("radius = %f\n", attr->width);
         Com_Strcat("height = %f\n", attr->height);
         Com_Strcat("targetID = %i\n", attr->tid);
-        Com_Strcat("centerheight = %f\n", attr->meleerange);
-        Com_Strcat("viewheight = %f\n", attr->viewheight);
+        Com_Strcat("centerheight = %f\n", attr->centerHeight);
+        Com_Strcat("viewheight = %f\n", attr->viewHeight);
         Com_Strcat("modelVariant = %i\n", variant);
         Com_Strcat("cullDistance = %f\n", bboxUnit + 3072.0f);
+        Com_Strcat("tickDistance = %f\n", attr->u1);
 
         Com_Strcat("}\n");
 #else
@@ -1508,8 +1644,8 @@ static void ProcessActors(byte *data)
         Com_WriteBufferFloat(kmapInfo.buffer, attr->width);
         Com_WriteBufferFloat(kmapInfo.buffer, attr->height);
         Com_WriteBuffer32(kmapInfo.buffer, attr->tid);
-        Com_WriteBufferFloat(kmapInfo.buffer, attr->meleerange);
-        Com_WriteBufferFloat(kmapInfo.buffer, attr->viewheight);
+        Com_WriteBufferFloat(kmapInfo.buffer, attr->centerHeight);
+        Com_WriteBufferFloat(kmapInfo.buffer, attr->viewHeight);
 
         Com_WriteBufferPad4(kmapInfo.buffer);
 #endif
@@ -2496,7 +2632,10 @@ static void ProcessLevel(byte *data, int index)
 
 #ifndef FORMAT_BINARY
     Com_Strcat("title = \"Map%02d\"\n", index);
-    Com_Strcat("mapID = %i\n\n", index);
+    Com_Strcat("mapID = %i\n", index);
+
+    ProcessHeader(data, index);
+    Com_Strcat("\n");
 #else
     kmapInfo.actorStride = (int**)Com_Alloc(sizeof(int*) *
         Com_GetCartOffset(actors, CHUNK_ACTORS_COUNT, 0));
@@ -2550,7 +2689,6 @@ static void AddLevel(byte *data, int index)
 
     level = Com_GetCartData(data, CHUNK_LEVEL_OFFSET(index), 0);
 
-    //ProcessHeader(level, index);
     ProcessNavigation(level, index);
     ProcessLevel(level, index);
     //ProcessSkyTexture(level, index);

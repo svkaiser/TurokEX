@@ -2,6 +2,7 @@
     bounds = { -79.481621 -153.385345 -89.338776 95.567413 3455.857178 88.684303 }
     bCollision = 1
     bStatic = 0
+    classFlags = 3
     bOrientOnSlope = 1
     radius = 40.959999
     height = 71.680000
