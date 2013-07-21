@@ -1565,6 +1565,23 @@ static void ProcessActors(byte *data)
             Com_WriteBufferString(kmapInfo.buffer, "{\"active\":1}");
 #endif
             break;
+
+        default:
+            switch(actor->model)
+            {
+            case 26:
+                Com_Strcat("components[1] =\n");
+                Com_Strcat("{\n");
+                Com_Strcat("BeginObject = \"ComponentEmitter\"\n");
+                Com_Strcat("{\n");
+                Com_Strcat("\"fx\" : \"fx/ambience_tall_fire2.kfx\",\n");
+                Com_Strcat("\"active\" : 1\n");
+			    Com_Strcat("}\n");
+                Com_Strcat("EndObject\n");
+                Com_Strcat("}\n");
+                break;
+            }
+            break;
         }
 
 #ifndef FORMAT_BINARY
@@ -1610,7 +1627,7 @@ static void ProcessActors(byte *data)
         Com_Strcat("centerheight = %f\n", attr->centerHeight);
         Com_Strcat("viewheight = %f\n", attr->viewHeight);
         Com_Strcat("modelVariant = %i\n", variant);
-        Com_Strcat("cullDistance = %f\n", bboxUnit + 3072.0f);
+        Com_Strcat("cullDistance = %f\n", bboxUnit + 4096);
         Com_Strcat("tickDistance = %f\n", attr->u1);
 
         Com_Strcat("}\n");
@@ -1891,7 +1908,7 @@ static void ProcessInstances(byte *data, int offs)
         Com_Strcat("bounds = { %f %f %f %f %f %f }\n",
             -mapinst->bboxsize, -mapinst->bboxsize, -mapinst->bboxsize,
             mapinst->bboxsize, mapinst->bboxsize, mapinst->bboxsize);
-        Com_Strcat("cullDistance = %f\n", bboxUnit + 3072.0f);
+        Com_Strcat("cullDistance = %f\n", bboxUnit + 4096.0f);
 #endif
 
         if(IsAPickup(mapinst->model))
@@ -2390,6 +2407,23 @@ static void ProcessStaticInstances1(byte *data)
 }
 
 //
+// ProcessEmitterActor
+//
+
+static void ProcessEmitterActor(const char *name)
+{
+    Com_Strcat("components[1] =\n");
+    Com_Strcat("{\n");
+    Com_Strcat("BeginObject = \"ComponentEmitter\"\n");
+    Com_Strcat("{\n");
+    Com_Strcat("\"fx\" : \"%s\",\n", name);
+    Com_Strcat("\"active\" : 1\n");
+    Com_Strcat("}\n");
+    Com_Strcat("EndObject\n");
+    Com_Strcat("}\n");
+}
+
+//
 // ProcessStaticInstances2
 //
 
@@ -2427,6 +2461,7 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
         mapinsttype2_t *mapinst = (mapinsttype2_t*)(data + 8 + (i * size));
         float rotvec[4];
         float bboxUnit;
+        dboolean bStatic = true;
 
 #ifdef FORMAT_BINARY
         *kmapInfo.staticStride[i] = com_fileoffset;
@@ -2486,9 +2521,112 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
 
         ProcessTextureOverrides(mapinst->model, GetAttribute(mapinst->attribute)->texture);
 
+        switch(mapinst->model)
+        {
+        case 9:
+            bStatic = false;
+            ProcessEmitterActor("fx/fx_263.kfx");
+            break;
+
+        case 10:
+            bStatic = false;
+            ProcessEmitterActor("fx/fx_347.kfx");
+            break;
+
+        case 11:
+            bStatic = false;
+            ProcessEmitterActor("fx/ambience_bubbles01.kfx");
+            break;
+
+        case 12:
+            bStatic = false;
+            ProcessEmitterActor("fx/fx_171.kfx");
+            break;
+
+        case 13:
+            bStatic = false;
+            ProcessEmitterActor("fx/fx_262.kfx");
+            break;
+
+        case 14:
+            bStatic = false;
+            ProcessEmitterActor("fx/fx_353.kfx");
+            break;
+
+        case 25:
+            bStatic = false;
+            ProcessEmitterActor("fx/fx_169.kfx");
+            break;
+
+        case 26:
+            bStatic = false;
+            ProcessEmitterActor("fx/ambience_tall_fire2.kfx");
+            break;
+
+        case 28:
+            bStatic = false;
+            ProcessEmitterActor("fx/ambience_thunderstorm.kfx");
+            break;
+
+        case 29:
+            bStatic = false;
+            ProcessEmitterActor("fx/ambience_tall_fire1.kfx");
+            break;
+
+        case 32:
+            bStatic = false;
+            ProcessEmitterActor("fx/fx_342.kfx");
+            break;
+
+        case 33:
+            bStatic = false;
+            ProcessEmitterActor("fx/fx_153.kfx");
+            break;
+
+        case 34:
+            bStatic = false;
+            ProcessEmitterActor("fx/fx_188.kfx");
+            break;
+
+        case 35:
+            bStatic = false;
+            ProcessEmitterActor("fx/ambience_underwater_bubbles.kfx");
+            break;
+
+        case 331:
+            bStatic = false;
+            ProcessEmitterActor("fx/fx_263.kfx");
+            break;
+
+        case 347:
+            bStatic = false;
+            ProcessEmitterActor("fx/fx_171.kfx");
+            break;
+
+        case 348:
+            bStatic = false;
+            ProcessEmitterActor("fx/fx_262.kfx");
+            break;
+
+        case 349:
+            bStatic = false;
+            ProcessEmitterActor("fx/ambience_waterfall_steam.kfx");
+            break;
+
+        case 412:
+            bStatic = false;
+            ProcessEmitterActor("fx/fx_170.kfx");
+            break;
+
+        case 555:
+            bStatic = false;
+            ProcessEmitterActor("fx/fx_083.kfx");
+            break;
+        }
+
         Com_Strcat("bCollision = %i\n",
             GetAttribute(mapinst->attribute)->behavior1 & 1);
-        Com_Strcat("bStatic = 1\n");
+        Com_Strcat("bStatic = %i\n", bStatic);
         Com_Strcat("origin = { %f %f %f }\n",
             mapinst->xyz[0], mapinst->xyz[1], mapinst->xyz[2]);
         Com_Strcat("scale = { %f %f %f }\n",
@@ -2498,7 +2636,7 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
         Com_Strcat("plane = %i\n", mapinst->plane);
         Com_Strcat("radius = %f\n", GetAttribute(mapinst->attribute)->width);
         Com_Strcat("height = %f\n", GetAttribute(mapinst->attribute)->height);
-        Com_Strcat("cullDistance = %f\n", bboxUnit + 3072.0f);
+        Com_Strcat("cullDistance = %f\n", bboxUnit + 4096.0f);
 
         Com_Strcat("}\n");
 #endif
