@@ -76,7 +76,7 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
     px = ((tdir[0] * vd) + trace->start[0]) - objpos[0];
     pz = ((tdir[2] * vd) + trace->start[2]) - objpos[2];
 
-    r = (radius + trace->width);
+    r = (radius + trace->width) * 0.8448f;
 
     len = r * r - (px * px + pz * pz);
 
@@ -108,11 +108,10 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
 
         if(d != 0)
         {
-            // TODO - inaccurate
-            trace->frac = (px * dir[0] + pz * dir[2]) / d;
-
             Vec_Normalize3(n);
             Vec_Copy3(trace->normal, n);
+
+            trace->frac = (px * dir[0] + pz * dir[2]) / d;
 
             // TODO
             // get the intersect vector for bullet shots
@@ -177,7 +176,7 @@ static kbool Trace_Objects(trace_t *trace)
                         if(Trace_Object(trace, actor->origin, actor->radius))
                         {
                             if(actor->bTouch && trace->source && trace->source->components &&
-                                trace->source->physics & PF_TOUCHACTORS)
+                                trace->physics & PF_TOUCHACTORS)
                             {
                                 Actor_OnTouchEvent(actor, trace->source);
                             }
@@ -224,7 +223,7 @@ static kbool Trace_Objects(trace_t *trace)
             if(Trace_Object(trace, actor->origin, actor->radius))
             {
                 if(actor->bTouch && trace->source && trace->source->components &&
-                    trace->source->physics & PF_TOUCHACTORS)
+                    trace->physics & PF_TOUCHACTORS)
                 {
                     Actor_OnTouchEvent(actor, trace->source);
                 }
@@ -462,20 +461,23 @@ static plane_t *Trace_GetPlaneLink(trace_t *trace, plane_t *p, int point)
     }
 
     Vec_Lerp3(pos, trace->frac, trace->end, trace->start);
-    ty = pos[1] + trace->offset + 30.72f;
+    ty = pos[1] + trace->offset;
 
-    if(link->flags & CLF_CHECKHEIGHT && link->ceilingNormal[1] <= 0.5f)
+    if(trace->source)
+        ty += (trace->source->viewHeight * 0.5f);
+
+    if(link->flags & CLF_CHECKHEIGHT && link->ceilingNormal[1] >= -0.5f)
     {
-        float vh = 71.68f;
-        float len = (
-            link->height[0] +
-            link->height[1] +
-            link->height[2]) * (1.0f/3.0f);
+        float cy;
 
         if(trace->source && trace->physics & PF_SLIDEMOVE)
-            vh = trace->source->viewHeight * 0.8333f;
+            cy = ty;
+        else
+            cy = pos[1];
 
-        if(ty - vh >= len)
+        if(cy >= link->height[0] ||
+            cy >= link->height[1] ||
+            cy >= link->height[2])
             return NULL;
     }
 
@@ -730,8 +732,8 @@ trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
     trace.hitActor      = NULL;
     trace.frac          = 0;
     trace.type          = TRT_NOHIT;
-    trace.width         = source ? source->radius : 30.72f;
-    trace.offset        = source ? source->height : 30.72f;
+    trace.width         = source ? source->radius : 10.24f;
+    trace.offset        = source ? source->height : 10.24f;
     trace.source        = source;
 
     if(physicFlags <= -1)

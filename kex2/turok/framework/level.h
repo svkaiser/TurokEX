@@ -42,7 +42,7 @@ typedef enum
     CLF_UNKNOWN4096     = 0x1000,
     CLF_SLOPETEST       = 0x2000,
     CLF_ENDLESSPIT      = 0x4000,
-    CLF_DAMAGE_LAVA     = 0x8000,
+    CLF_MAPPED          = 0x8000,
     CLF_UNKNOWN65536    = 0x10000
 } collisionflags_t;
 

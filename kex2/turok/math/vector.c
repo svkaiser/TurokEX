@@ -157,6 +157,15 @@ void Vec_Scale(vec3_t out, vec3_t vec1, float val)
 }
 
 //
+// Vec_Magnitude
+//
+
+float Vec_Magnitude(vec3_t vec)
+{
+    return vec[0]*vec[0]+vec[1]*vec[1]+vec[2]*vec[2];
+}
+
+//
 // Vec_Length2
 //
 

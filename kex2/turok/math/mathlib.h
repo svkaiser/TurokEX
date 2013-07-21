@@ -48,6 +48,7 @@ void  Vec_Add(vec3_t out, vec3_t vec1, vec3_t vec2);
 void  Vec_Sub(vec3_t out, vec3_t vec1, vec3_t vec2);
 void  Vec_Mult(vec3_t out, vec3_t vec1, vec3_t vec2);
 void  Vec_Scale(vec3_t out, vec3_t vec1, float val);
+float Vec_Magnitude(vec3_t vec);
 float Vec_Length2(vec3_t v1, vec3_t v2);
 float Vec_Length3(vec3_t v1, vec3_t v2);
 float Vec_Unit2(vec3_t vec);

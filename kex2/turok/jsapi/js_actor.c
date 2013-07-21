@@ -477,6 +477,9 @@ JS_FASTNATIVE_BEGIN(GameActor, setAnim)
     if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
         return JS_FALSE;
 
+    if(actor->model == NULL)
+        JS_SAFERETURN();
+
     anim = NULL;
 
     if(!JSVAL_IS_STRING(v[0]))
@@ -522,6 +525,9 @@ JS_FASTNATIVE_BEGIN(GameActor, blendAnim)
     if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
         return JS_FALSE;
 
+    if(actor->model == NULL)
+        JS_SAFERETURN();
+
     anim = NULL;
 
     if(!JSVAL_IS_STRING(v[0]))
@@ -565,6 +571,12 @@ JS_FASTNATIVE_BEGIN(GameActor, checkAnimID)
     if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
         return JS_FALSE;
 
+    if(actor->model == NULL)
+    {
+        JS_RETURNBOOLEAN(vp, false);
+        return JS_TRUE;
+    }
+
     JS_RETURNBOOLEAN(vp, Mdl_CheckAnimID(actor->model, JSVAL_TO_INT(JS_ARG(0))));
     return JS_TRUE;
 }
@@ -575,7 +587,8 @@ JS_FASTNATIVE_BEGIN(GameActor, spawnFX)
     gActor_t *actor;
     jsdouble x, y, z;
     JSString *str;
-    char *bytes;
+    size_t len;
+    filepath_t file;
 
     JS_CHECKARGS(4);
 
@@ -583,13 +596,16 @@ JS_FASTNATIVE_BEGIN(GameActor, spawnFX)
     if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
         return JS_FALSE;
 
-    JS_GETSTRING(str, bytes, v, 0);
+    str = JS_ValueToString(cx, v[0]);
+    len = sizeof(filepath_t);
+    JS_EncodeCharacters(cx, JS_GetStringChars(str), JS_GetStringLength(str), file, &len);
+    file[len] = 0;
+
     JS_GETNUMBER(x, v, 1);
     JS_GETNUMBER(y, v, 2);
     JS_GETNUMBER(z, v, 3);
 
-    Actor_SpawnBodyFX(actor, bytes, (float)x, (float)y, (float)z);
-    JS_free(cx, bytes);
+    Actor_SpawnBodyFX(actor, file, (float)x, (float)y, (float)z);
 
     JS_SAFERETURN();
 }
@@ -701,6 +717,26 @@ JS_FASTNATIVE_BEGIN(GameActor, setTexture)
         Z_Free(*meshTexture);
 
     *meshTexture = Z_Strdup(bytes, PU_ACTOR, NULL);
+
+    JS_free(cx, bytes);
+    JS_SAFERETURN();
+}
+
+JS_FASTNATIVE_BEGIN(GameActor, setModel)
+{
+    JSObject *thisObj;
+    gActor_t *actor;
+    JSString *str;
+    char *bytes;
+
+    JS_CHECKARGS(1);
+    JS_GETSTRING(str, bytes, v, 0);
+
+    thisObj = JS_THIS_OBJECT(cx, vp);
+    if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, thisObj, &GameActor_class, NULL)))
+        return JS_FALSE;
+
+    Actor_UpdateModel(actor, bytes);
 
     JS_free(cx, bytes);
     JS_SAFERETURN();
@@ -861,6 +897,7 @@ JS_BEGINFUNCS(GameActor)
     JS_FASTNATIVE(GameActor, setNodeRotation, 2),
     JS_FASTNATIVE(GameActor, onGround, 0),
     JS_FASTNATIVE(GameActor, setTexture, 4),
+    JS_FASTNATIVE(GameActor, setModel, 1),
     JS_FS_END
 };
 

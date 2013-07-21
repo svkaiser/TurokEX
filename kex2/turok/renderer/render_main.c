@@ -388,6 +388,8 @@ void R_TraverseDrawNode(gActor_t *actor, mdlnode_t *node, animstate_t *animstate
 
                         Vec_TransformToWorld(mtx, dir, offs);
 
+                        animstate->baseOffset = -pos_cur[2] * actor->scale[1];
+
                         animstate->rootMotion[0] = offs[0] * actor->scale[0];
                         animstate->rootMotion[1] = offs[1] * actor->scale[1];
                         animstate->rootMotion[2] = offs[2] * actor->scale[2];
@@ -562,7 +564,10 @@ void R_DrawActors(void)
         {
             if(Vec_Length3(client.player->camera->origin,
                 actor->origin) >= actor->cullDistance)
+            {
+                actor->bCulled = true;
                 continue;
+            }
         }
 
         Vec_Copy3(box.min, actor->bbox.min);
@@ -699,7 +704,10 @@ void R_DrawStatics(void)
             {
                 if(Vec_Length3(client.player->camera->origin,
                     actor->origin) >= actor->cullDistance)
+                {
+                    actor->bCulled = true;
                     continue;
+                }
             }
 
             Vec_Copy3(box.min, actor->bbox.min);

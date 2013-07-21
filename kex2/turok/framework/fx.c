@@ -349,7 +349,7 @@ static void Fx_ParseScript(fxfile_t *fx, scparser_t *parser)
                 else if(!strcmp(sc_parser->token, "decal"))
                     info->drawtype = VFX_DRAWDECAL;
                 else if(!strcmp(sc_parser->token, "billboard"))
-                    info->drawtype = VFX_DRAWSPRITE;
+                    info->drawtype = VFX_DRAWBILLBOARD;
                 else
                     info->drawtype = VFX_DRAWDEFAULT;
                 break;
@@ -679,41 +679,21 @@ static void FX_DestroyEvent(fx_t *fx, gActor_t *hitActor)
             fx->translation, Map_PlaneToIndex(fx->plane),
             &fx->info->hitAction);
     }
+
+    Actor_SetTarget((gActor_t**)&fx->source, NULL);
 }
 
 //
-// FX_Sort
+// FX_SetDistance
 //
 
-static void FX_Sort()
+static void FX_SetDistance(fx_t *fx)
 {
-    fx_t *rfx1;
-    fx_t *rfx2;
+    float s = (float)sin(client.playerActor->angles[0]);
+    float c = (float)cos(client.playerActor->angles[0]);
 
-    for(rfx1 = fxRoot.next; rfx1 != &fxRoot; rfx1 = rfx1->next)
-    {
-        for(rfx2 = fxRoot.next; rfx2 != &fxRoot; rfx2 = rfx2->next)
-        {
-            if(rfx1 == rfx2)
-                continue;
-
-            if(rfx1->dist > rfx2->dist)
-            {
-                fx_t *prev = rfx1->prev;
-                fx_t *next = rfx1->next;
-
-                prev->next = next;
-                next->prev = prev;
-
-                prev = rfx2->prev;
-                prev->next = rfx1;
-                rfx1->prev = prev;
-                rfx1->next = rfx2;
-                rfx2->prev = rfx1;
-                break;
-            }
-        }
-    }
+    fx->dist = (int)((fx->origin[0] - client.playerActor->origin[0]) * s +
+        (fx->origin[2] - client.playerActor->origin[2]) * c) * 0.5f;
 }
 
 //
@@ -725,6 +705,7 @@ fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
 {
     unsigned int i;
     int j;
+    int k;
     fx_t *fx;
     fxfile_t *fxfile;
     fxinfo_t *info;
@@ -738,8 +719,20 @@ fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
     for(i = 0; i < fxfile->numfx; i++)
     {
         kbool ok = true;
+        int instances;
+        int spawnDice;
 
         info = &fxfile->info[i];
+
+        instances = info->instances.value;
+        spawnDice = instances;
+        if(info->instances.rand > 0)
+            spawnDice += (rand() % ((int)info->instances.rand + 1));
+        else
+            spawnDice += -(rand() % (1 - (int)info->instances.rand));
+
+        if(spawnDice <= 0)
+            continue;
 
         if(source && info->bActorInstance)
         {
@@ -760,142 +753,150 @@ fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
         if(!ok)
             continue;
 
-        fx = (fx_t*)Z_Calloc(sizeof(fx_t), PU_FX, 0);
+        if(instances <= 0)
+            instances = 1;
 
-        fxRoot.prev->next = fx;
-        fx->next = &fxRoot;
-        fx->prev = fxRoot.prev;
-        fxRoot.prev = fx;
-
-        if(info->bNoDirection)
-            Mtx_Identity(fx->matrix);
-        else
+        for(k = 0; k < instances; k++)
         {
-            if(info->bProjectile && source && source->ai)
+            fx = (fx_t*)Z_Calloc(sizeof(fx_t), PU_FX, 0);
+
+            fxRoot.prev->next = fx;
+            fx->next = &fxRoot;
+            fx->prev = fxRoot.prev;
+            fxRoot.prev = fx;
+
+            if(info->bNoDirection)
+                Mtx_Identity(fx->matrix);
+            else
             {
-                if(source->ai->target)
+                if(info->bProjectile && source && source->ai)
                 {
-                    vec3_t torg;
+                    if(source->ai->target)
+                    {
+                        vec3_t torg;
 
-                    Vec_Copy3(torg, source->ai->target->origin);
-                    torg[1] += 30.72f;
+                        Vec_Copy3(torg, source->ai->target->origin);
+                        torg[1] += 30.72f;
 
-                    Vec_PointAt(dest, torg, source->rotation, 0, rotation);
+                        Vec_PointAt(dest, torg, source->rotation, 0, rotation);
+                    }
                 }
+                
+                Mtx_ApplyRotation(rotation, fx->matrix);
             }
-            
-            Mtx_ApplyRotation(rotation, fx->matrix);
+
+            Actor_SetTarget((gActor_t**)&fx->source, source);
+
+            fx->file = fxfile;
+            fx->info = info;
+            fx->plane = plane;
+            fx->frame = 0;
+            fx->bAnimate = info->numTextures > 1 ? true : false;
+            fx->bForcedRestart = false;
+            fx->frametime = client.time + info->animspeed;
+            fx->textures = (texture_t**)Z_Calloc(sizeof(texture_t*) *
+                info->numTextures, PU_FX, 0);
+
+            for(j = 0; j < info->numTextures; j++)
+                fx->textures[j] = Tex_CacheTextureFile(info->textures[j], DGL_CLAMP, true);
+
+            fx->instances = info->instances.value;
+
+            fx->lifetime = (float)info->lifetime.value;
+            if(info->lifetime.rand > 0)
+                fx->lifetime += (rand() % ((int)info->lifetime.rand + 1));
+
+            fx->scale = info->scale.value;
+            if(info->scale.rand != 0)
+                fx->scale += FX_Rand(info->scale.rand);
+
+            fx->scale_dest = info->scaledest.value;
+            if(info->scaledest.rand != 0)
+                fx->scale_dest += FX_Rand(info->scaledest.rand);
+
+            fx->forward = info->forward.value;
+            if(info->forward.rand != 0)
+                fx->forward += FX_Rand(info->forward.rand);
+
+            fx->rotation_offset = info->rotation_offset.value;
+            if(info->rotation_offset.rand != 0)
+                fx->rotation_offset += FX_Rand(info->rotation_offset.rand);
+
+            fx->rotation_speed = info->rotation_speed.value;
+            if(info->rotation_speed.rand != 0)
+                fx->rotation_speed += FX_Rand(info->rotation_speed.rand);
+
+            fx->gravity = info->gravity.value;
+            if(info->gravity.rand != 0)
+                fx->gravity += FX_Rand(info->gravity.rand);
+
+            //
+            // process translation
+            //
+            Vec_Copy3(translation, info->translation.value);
+            // TODO - FIXME
+            translation[0] = -translation[0];
+
+            FX_SetTranslationX(translation, translation, info->translation.rand[0]);
+            FX_SetTranslationY(translation, translation, info->translation.rand[1]);
+            FX_SetTranslationZ(translation, translation, info->translation.rand[2]);
+
+            if(Vec_Unit3(translation) != 0)
+            {
+                vec3_t worldvec;
+                vec3_t tvec;
+
+                Vec_TransformToWorld(fx->matrix, translation, worldvec);
+
+                tvec[0] = FX_RANDVAL();
+                tvec[1] = FX_RANDVAL();
+                tvec[2] = FX_RANDVAL();
+
+                Vec_Normalize3(tvec);
+                Vec_Normalize3(worldvec);
+                Vec_Lerp3(translation,
+                    info->translation_randomscale, worldvec, tvec);
+            }
+
+            if(fx->forward != 0)
+                Vec_Scale(fx->translation, translation, fx->forward);
+            else
+                Vec_Copy3(fx->translation, translation);
+
+            if(info->bAddOffset)
+                Vec_Add(fx->translation, fx->translation, origin);
+
+            //
+            // process offsets
+            //
+            Vec_Copy3(fx->offset, info->offset.value);
+            if(info->offset.rand[0] != 0) fx->offset[0] += FX_Rand(info->offset.rand[0]);
+            if(info->offset.rand[1] != 0) fx->offset[1] += FX_Rand(info->offset.rand[1]);
+            if(info->offset.rand[2] != 0) fx->offset[2] += FX_Rand(info->offset.rand[2]);
+
+            Vec_Copy3(fx->origin, dest);
+
+            if(Vec_Unit3(fx->offset) != 0)
+            {
+                vec3_t worldvec;
+
+                // TODO - HANDLE CLIPPING IF OUTSIDE OF WORLD
+                Vec_TransformToWorld(fx->matrix, fx->offset, worldvec);
+                Vec_Add(fx->origin, fx->origin, worldvec);
+            }
+
+            // TODO
+            fx->color1[0] = info->color1[0];
+            fx->color1[1] = info->color1[1];
+            fx->color1[2] = info->color1[2];
+            fx->color1[3] = info->fadein_time == 0 ? 0xff : 0;
+            fx->color2[0] = info->color2[0];
+            fx->color2[1] = info->color2[1];
+            fx->color2[2] = info->color2[2];
+            fx->color2[3] = info->fadein_time == 0 ? 0xff : 0;
+
+            FX_SetDistance(fx);
         }
-
-        fx->file = fxfile;
-        fx->info = info;
-        fx->plane = plane;
-        fx->frame = 0;
-        fx->source = source;
-        fx->bAnimate = info->numTextures > 1 ? true : false;
-        fx->bForcedRestart = false;
-        fx->frametime = client.time + info->animspeed;
-        fx->textures = (texture_t**)Z_Calloc(sizeof(texture_t*) *
-            info->numTextures, PU_FX, 0);
-
-        for(j = 0; j < info->numTextures; j++)
-            fx->textures[j] = Tex_CacheTextureFile(info->textures[j], DGL_CLAMP, true);
-
-        fx->instances = info->instances.value;
-        if(info->instances.rand > 0)
-            fx->instances += (rand() % ((int)info->instances.rand + 1));
-
-        fx->lifetime = (float)info->lifetime.value;
-        if(info->lifetime.rand > 0)
-            fx->lifetime += (rand() % ((int)info->lifetime.rand + 1));
-
-        fx->scale = info->scale.value;
-        if(info->scale.rand != 0)
-            fx->scale += FX_Rand(info->scale.rand);
-
-        fx->scale_dest = info->scaledest.value;
-        if(info->scaledest.rand != 0)
-            fx->scale_dest += FX_Rand(info->scaledest.rand);
-
-        fx->forward = info->forward.value;
-        if(info->forward.rand != 0)
-            fx->forward += FX_Rand(info->forward.rand);
-
-        fx->rotation_offset = info->rotation_offset.value;
-        if(info->rotation_offset.rand != 0)
-            fx->rotation_offset += FX_Rand(info->rotation_offset.rand);
-
-        fx->rotation_speed = info->rotation_speed.value;
-        if(info->rotation_speed.rand != 0)
-            fx->rotation_speed += FX_Rand(info->rotation_speed.rand);
-
-        fx->gravity = info->gravity.value;
-        if(info->gravity.rand != 0)
-            fx->gravity += FX_Rand(info->gravity.rand);
-
-        //
-        // process translation
-        //
-        Vec_Copy3(translation, info->translation.value);
-        // TODO - FIXME
-        translation[0] = -translation[0];
-
-        FX_SetTranslationX(translation, translation, info->translation.rand[0]);
-        FX_SetTranslationY(translation, translation, info->translation.rand[1]);
-        FX_SetTranslationZ(translation, translation, info->translation.rand[2]);
-
-        if(Vec_Unit3(translation) != 0)
-        {
-            vec3_t worldvec;
-            vec3_t tvec;
-
-            Vec_TransformToWorld(fx->matrix, translation, worldvec);
-
-            tvec[0] = FX_RANDVAL();
-            tvec[1] = FX_RANDVAL();
-            tvec[2] = FX_RANDVAL();
-
-            Vec_Normalize3(tvec);
-            Vec_Normalize3(worldvec);
-            Vec_Lerp3(translation,
-                info->translation_randomscale, worldvec, tvec);
-        }
-
-        Vec_Scale(fx->translation, translation, fx->forward);
-
-        if(info->bAddOffset)
-            Vec_Add(fx->translation, fx->translation, origin);
-
-        //
-        // process offsets
-        //
-        Vec_Copy3(fx->offset, info->offset.value);
-        if(info->offset.rand[0] != 0) fx->offset[0] += FX_Rand(info->offset.rand[0]);
-        if(info->offset.rand[1] != 0) fx->offset[1] += FX_Rand(info->offset.rand[1]);
-        if(info->offset.rand[2] != 0) fx->offset[2] += FX_Rand(info->offset.rand[2]);
-
-        Vec_Copy3(fx->origin, dest);
-
-        if(Vec_Unit3(fx->offset) != 0)
-        {
-            vec3_t worldvec;
-
-            // TODO - HANDLE CLIPPING IF OUTSIDE OF WORLD
-            Vec_TransformToWorld(fx->matrix, fx->offset, worldvec);
-            Vec_Add(fx->origin, fx->origin, worldvec);
-        }
-
-        // TODO
-        fx->color1[0] = info->color1[0];
-        fx->color1[1] = info->color1[1];
-        fx->color1[2] = info->color1[2];
-        fx->color1[3] = info->fadein_time == 0 ? 0xff : 0;
-        fx->color2[0] = info->color2[0];
-        fx->color2[1] = info->color2[1];
-        fx->color2[2] = info->color2[2];
-        fx->color2[3] = info->fadein_time == 0 ? 0xff : 0;
-
-        fx->dist = Vec_Length3(fx->origin, client.player->actor->origin);
     }
 
     return fx;
@@ -1034,8 +1035,6 @@ void FX_Ticker(void)
 
     time = 15 * client.runtime;
 
-    FX_Sort();
-
     for(fxRover = fxRoot.next; fxRover != &fxRoot; fxRover = fxRover->next)
     {
         fx_t *fx;
@@ -1151,8 +1150,11 @@ void FX_Ticker(void)
 
         Vec_Scale(dest, fx->translation, client.runtime);
 
-        if(Vec_Unit3(dest) >= 0.001f)
+        if(fx->gravity != 0 && (fx->origin[1] != 0 || fx->gravity >= 0) ||
+            Vec_Magnitude(dest) >= 0.001f)
+        {
             FX_Move(fx, dest);
+        }
 
         if(fx->source && fx->bAttachToSource)
         {
@@ -1165,7 +1167,7 @@ void FX_Ticker(void)
             Vec_Add(fx->origin, fx->origin, worldvec);
         }
 
-        fx->dist = Vec_Length3(fx->origin, client.player->actor->origin);
+        FX_SetDistance(fx);
         fx->lifetime -= time;
 
         if(fx->lifetime < 0 || (fx->source && fx->source->bStale))

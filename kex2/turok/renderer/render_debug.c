@@ -67,8 +67,6 @@ void R_DrawCollision(void)
             dglColor4ub(255, 255, 0, 80);
         else if(p->flags & CLF_SLOPETEST)
             dglColor4ub(255, 128, 0, 80);
-        else if(p->flags & CLF_DAMAGE_LAVA)
-            dglColor4ub(255, 0, 0, 80);
         else if(p->flags & CLF_UNKNOWN4096)
             dglColor4ub(224, 208, 128, 80);
         else if(p->flags & CLF_UNKNOWN2048)

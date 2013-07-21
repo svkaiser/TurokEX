@@ -30,12 +30,36 @@
 #include "fx.h"
 #include "client.h"
 
+typedef struct
+{
+    fx_t *fx;
+} fxDisplay_t;
+
+#define MAX_FX_DISPLAYS 2048
+
+static fxDisplay_t fxDisplayList[MAX_FX_DISPLAYS];
+
+//
+// SortSprites
+//
+
+static int SortSprites(const fxDisplay_t *a, const fxDisplay_t *b)
+{
+    fx_t *xa = a->fx;
+    fx_t *xb = b->fx;
+
+    return (int)(xb->dist - xa->dist);
+}
+
 //
 // R_DrawFX
 //
 
 void R_DrawFX(void)
 {
+    int fxDisplayNum;
+    int i;
+
     if(client.playerActor == NULL)
         return;
 
@@ -49,9 +73,23 @@ void R_DrawFX(void)
     if(!bWireframe)
         dglEnableClientState(GL_COLOR_ARRAY);
 
-    for(fxRover = fxRoot.next; fxRover != &fxRoot; fxRover = fxRover->next)
+    memset(fxDisplayList, 0, sizeof(fxDisplay_t) * MAX_FX_DISPLAYS);
+
+    for(fxRover = fxRoot.next, fxDisplayNum = 0; fxRover != &fxRoot; fxRover = fxRover->next)
     {
-        // TODO - PLACEHOLDER/TESTING
+        if(fxDisplayNum >= MAX_FX_DISPLAYS)
+            break;
+
+        if(fxRover == NULL)
+            continue;
+
+        fxDisplayList[fxDisplayNum++].fx = fxRover;
+    }
+
+    qsort(fxDisplayList, fxDisplayNum, sizeof(fxDisplay_t), SortSprites);
+
+    for(i = 0; i < fxDisplayNum; i++)
+    {
         mtx_t mtx;
         mtx_t scalemtx;
         mtx_t finalmtx;
@@ -63,11 +101,11 @@ void R_DrawFX(void)
         fxinfo_t *fxinfo;
         texture_t *texture;
 
-        if(fxRover == NULL)
-            continue;
-
-        fx = fxRover;
+        fx = fxDisplayList[i].fx;
         fxinfo = fx->info;
+
+        if(fxinfo == NULL)
+            continue;
 
         if(fx->bStale)
             continue;
@@ -93,11 +131,18 @@ void R_DrawFX(void)
             Mtx_IdentityY(mtx, DEG2RAD(90));
             GL_SetState(GLSTATE_CULL, false);
             break;
-        default:
+        case VFX_DRAWBILLBOARD:
             {
-                Mtx_ApplyRotation(client.player->camera->rotation, mtx);
+                vec4_t rot;
+
+                Vec_SetQuaternion(rot, client.player->camera->angles[0], 0, 1, 0);
+                Mtx_ApplyRotation(rot, mtx);
                 GL_SetState(GLSTATE_CULL, true);
             }
+            break;
+        default:
+            Mtx_ApplyRotation(client.player->camera->rotation, mtx);
+            GL_SetState(GLSTATE_CULL, true);
             break;
         }
 
@@ -112,7 +157,7 @@ void R_DrawFX(void)
             if(dist >= fx->origin[1])
                 y = dist;
 
-            if(fxinfo->drawtype == VFX_DRAWSPRITE)
+            if(fxinfo->drawtype == VFX_DRAWBILLBOARD)
                 y += (float)texture->height;
         }
 

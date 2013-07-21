@@ -393,7 +393,7 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time,
         // test the ceiling and adjust height
         if((*plane)->flags & CLF_CHECKHEIGHT)
         {
-            float offset = (actor->height + actor->viewHeight);
+            float offset = (actor->height + (actor->viewHeight * 0.5f));
 
             dist = Plane_GetHeight(*plane, origin);
             if((dist - (origin[1] + offset) < 1.024f))

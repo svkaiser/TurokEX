@@ -31,6 +31,9 @@
 #include "render.h"
 #include "client.h"
 
+void R_SetupClipFrustum(void);
+kbool R_FrustumTestPlane(plane_t *plane);
+
 //
 // Canvas_SetDrawColor
 //
@@ -387,77 +390,202 @@ void Canvas_DrawActor(canvas_t *canvas, gActor_t *actor)
 }
 
 //
+// DrawPlaneOutline
+//
+
+static void DrawPlaneOutline(plane_t *plane, int idx, float zoom)
+{
+    rcolor outlineColor;
+    vec3_t pos;
+    kbool drawOk = false;
+    plane_t * pl;
+
+    if(!plane)
+        return;
+
+    pl = plane->link[idx];
+
+    if(!pl || plane->area_id != pl->area_id)
+    {
+        gArea_t *area;
+        drawOk = true;
+
+        area = Map_GetArea(plane);
+
+        if(area->triggerSound)
+            outlineColor = RGBA(255, 0, 160, 255);
+        else if(plane->flags & CLF_ONESIDED)
+            outlineColor = RGBA(128, 96, 64, 255);
+        else if(area->flags & AAF_WATER)
+            outlineColor = RGBA(0, 0, 255, 255);
+        else if(area->flags & AAF_TELEPORT)
+            outlineColor = RGBA(255, 0, 160, 255);
+        else if(!pl)
+            outlineColor = RGBA(0, 255, 0, 255);
+        else
+        {
+            area = Map_GetArea(pl);
+
+            if(area->triggerSound)
+                outlineColor = RGBA(255, 0, 160, 255);
+            else if(pl->flags & CLF_ONESIDED)
+                outlineColor = RGBA(128, 96, 64, 255);
+            else if(area->flags & AAF_WATER)
+                outlineColor = RGBA(0, 0, 255, 255);
+            else if(area->flags & AAF_TELEPORT)
+                outlineColor = RGBA(255, 0, 160, 255);
+            else if(pl->flags & (CLF_FRONTNOCLIP|CLF_SLOPETEST|CLF_CLIMB))
+                outlineColor = RGBA(224, 224, 224, 255);
+            else
+                drawOk = false;
+        }
+    }
+
+    if(drawOk)
+    {
+        float c[4];
+
+        dglGetColorf(outlineColor, c);
+
+        if(plane->flags & CLF_CHECKHEIGHT)
+        {
+            c[3] = 1.0f - 
+                ((float)fabs(client.playerActor->origin[1] -
+                Plane_GetDistance(plane, client.playerActor->origin)) / 512);
+
+            if(c[3] < 0) c[3] = 0;
+            if(c[3] > 1) c[3] = 1;
+        }
+
+        dglColor4fv(c);
+
+        Vec_Sub(pos, plane->points[(idx+0)%3], client.playerActor->origin);
+        dglVertex3f(pos[0], zoom, pos[2]);
+        Vec_Sub(pos, plane->points[(idx+1)%3], client.playerActor->origin);
+        dglVertex3f(pos[0], zoom, pos[2]);
+    }
+}
+
+//
+// RecursiveDrawPlaneOutline
+//
+
+static void RecursiveDrawPlaneOutline(plane_t *plane, float zoom)
+{
+    plane_t *p;
+    float dx, dz;
+
+    p = plane;
+
+    dx = (plane->points[0][0] + plane->points[1][0] + plane->points[2][0]) / 3;
+    dz = (plane->points[0][2] + plane->points[1][2] + plane->points[2][2]) / 3;
+
+    dx = client.playerActor->origin[0] - dx;
+    dz = client.playerActor->origin[2] - dz;
+
+    if(dx*dx+dz*dz >= 4194304.0f)
+        return;
+
+    while(1)
+    {
+        p->flags |= CLF_MAPPED;
+
+        if(p->link[0] && !(p->link[0]->flags & CLF_MAPPED))
+            RecursiveDrawPlaneOutline(p->link[0], zoom);
+        
+        DrawPlaneOutline(p, 0, zoom);
+
+        if(p->link[1] && !(p->link[1]->flags & CLF_MAPPED))
+            RecursiveDrawPlaneOutline(p->link[1], zoom);
+
+        DrawPlaneOutline(p, 1, zoom);
+        DrawPlaneOutline(p, 2, zoom);
+
+        if(p->link[2] == NULL)
+            break;
+
+        p = p->link[2];
+
+        if(p->flags & CLF_MAPPED)
+            break;
+    }
+}
+
+//
+// RecursiveClearMappedFlags
+//
+
+static void RecursiveClearMappedFlags(plane_t *plane)
+{
+    plane_t *p = plane;
+
+    do
+    {
+        p->flags &= ~CLF_MAPPED;
+
+        if(p->link[0] && p->link[0]->flags & CLF_MAPPED)
+            RecursiveClearMappedFlags(p->link[0]);
+
+        if(p->link[1] && p->link[1]->flags & CLF_MAPPED)
+            RecursiveClearMappedFlags(p->link[1]);
+
+        p = p->link[2];
+
+    } while(p && p->flags & CLF_MAPPED);
+}
+
+//
 // Canvas_DrawPlaneOutlines
 //
 
 void Canvas_DrawPlaneOutlines(canvas_t *canvas)
 {
-    float px;
-    float py;
-    unsigned int i;
     gActor_t *camera;
+    plane_t *plane;
+    float zoom;
 
     camera = client.player->actor;
+    plane = Map_IndexToPlane(camera->plane);
 
     GL_BindTextureName("textures/white.tga");
-    dglPushMatrix();
-    dglScalef(0.25f, 0.25f, 0.25f);
-    px = -camera->origin[0];
-    py = -camera->origin[2];
+    dglEnable(GL_ALPHA_TEST);
+    GL_SetState(GLSTATE_DEPTHTEST, 0);
+    GL_SetState(GLSTATE_BLEND, 1);
+    dglDisable(GL_FOG);
 
-    dglRotatef(-RAD2DEG(camera->angles[0] + M_PI), 0, 0, 1);
-    dglTranslatef(1, -1, 0);
-    dglColor4ub(255, 255, 255, 255);
+    // setup projection matrix
+    dglMatrixMode(GL_PROJECTION);
+    dglLoadIdentity();
+    Mtx_ViewFrustum(video_width, video_height, 45, 32, -1);
 
+    zoom = -2048;
+
+    // setup modelview matrix
+    dglMatrixMode(GL_MODELVIEW);
+    dglLoadIdentity();
+    dglRotatef(90, 1, 0, 0);
+    dglRotatef(180, 0, 1, 0);
+
+    dglColor4ub(255, 255, 0, 255);
     dglBegin(GL_LINES);
-    dglVertex2f(0, 16);
-    dglVertex2f(0, -16);
-    dglVertex2f(-16, 0);
-    dglVertex2f(16, 0);
+    dglVertex3f(0, zoom, 0);
+    dglVertex3f(-16.0f, zoom, -48.0f);
+    dglVertex3f(0, zoom, 0);
+    dglVertex3f(16.0f, zoom, -48.0f);
     dglEnd();
 
+    dglColor4ub(0, 255, 0, 255);
+    dglPushMatrix();
+    dglRotatef(RAD2DEG(-camera->angles[0]), 0, 1, 0);
     dglBegin(GL_LINES);
-
-    for(i = 0; i < gLevel.numplanes; i++)
-    {
-        plane_t *pl = &gLevel.planes[i];
-
-        if(pl == NULL)
-            continue;
-
-        if(pl->link[0] == NULL || (pl->link[0] && pl->area_id != pl->link[0]->area_id))
-        {
-            if(pl->link[0])
-                dglColor4ub(224, 224, 224, 255);
-            else
-                dglColor4ub(0, 255, 0, 255);
-
-            dglVertex2f(pl->points[0][0]+px, pl->points[0][2]+py);
-            dglVertex2f(pl->points[1][0]+px, pl->points[1][2]+py);
-        }
-
-        if(pl->link[1] == NULL || (pl->link[1] && pl->area_id != pl->link[1]->area_id))
-        {
-            if(pl->link[1])
-                dglColor4ub(224, 224, 224, 255);
-            else
-                dglColor4ub(0, 255, 0, 255);
-
-            dglVertex2f(pl->points[1][0]+px, pl->points[1][2]+py);
-            dglVertex2f(pl->points[2][0]+px, pl->points[2][2]+py);
-        }
-
-        if(pl->link[2] == NULL || (pl->link[2] && pl->area_id != pl->link[2]->area_id))
-        {
-            if(pl->link[2])
-                dglColor4ub(224, 224, 224, 255);
-            else
-                dglColor4ub(0, 255, 0, 255);
-
-            dglVertex2f(pl->points[2][0]+px, pl->points[2][2]+py);
-            dglVertex2f(pl->points[0][0]+px, pl->points[0][2]+py);
-        }
-    }
+    RecursiveDrawPlaneOutline(plane, zoom);
     dglEnd();
     dglPopMatrix();
+
+    dglDisable(GL_ALPHA_TEST);
+    GL_SetState(GLSTATE_BLEND, 0);
+    GL_SetState(GLSTATE_DEPTHTEST, 1);
+    dglEnable(GL_FOG);
+
+    RecursiveClearMappedFlags(plane);
 }

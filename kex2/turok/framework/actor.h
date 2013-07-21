@@ -131,5 +131,7 @@ void Actor_Remove(gActor_t *actor);
 void Actor_ClearData(gActor_t *actor);
 gActor_t *Actor_Spawn(const char *classname, float x, float y, float z,
                       float yaw, float pitch, int plane);
+gActor_t *Actor_SpawnEx(float x, float y, float z, float yaw, float pitch, int plane,
+                        int classFlags, const char *component, gObject_t *callback);
 
 #endif

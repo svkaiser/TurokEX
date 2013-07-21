@@ -197,6 +197,75 @@ JS_FASTNATIVE_BEGIN(Level, spawnActor)
     return JS_TRUE;
 }
 
+JS_FASTNATIVE_BEGIN(Level, spawnActorEx)
+{
+    JSString *str;
+    char *bytes;
+    jsdouble x;
+    jsdouble y;
+    jsdouble z;
+    jsdouble yaw;
+    jsdouble pitch;
+    JSObject *callback;
+    plane_t *plane;
+    int classFlags;
+    gActor_t *actor;
+
+    JS_CHECKARGS(9);
+    JS_GETNUMBER(x, v, 0);
+    JS_GETNUMBER(y, v, 1);
+    JS_GETNUMBER(z, v, 2);
+    JS_GETNUMBER(yaw, v, 3);
+    JS_GETNUMBER(pitch, v, 4);
+    
+    if(!JSVAL_IS_NULL(v[5]))
+    {
+        JSObject *plObj;
+
+        JS_GETOBJECT(plObj, v, 5);
+        JS_GET_PRIVATE_DATA(plObj, &Plane_class, plane_t, plane);
+    }
+    else
+    {
+        vec3_t org;
+
+        Vec_Set3(org, (float)x, (float)y, (float)z);
+        plane = Map_FindClosestPlane(org);
+    }
+
+    JS_GETINTEGER(classFlags, 6);
+
+    bytes = NULL;
+
+    if(!JSVAL_IS_NULL(v[7]))
+    {
+        JS_GETSTRING(str, bytes, v, 7);
+    }
+
+    callback = NULL;
+
+    if(!JSVAL_IS_NULL(v[8]))
+    {
+        JS_GETOBJECT(callback, v, 8);
+    }
+
+    actor = Actor_SpawnEx(
+        (float)x,
+        (float)y,
+        (float)z,
+        (float)yaw,
+        (float)pitch,
+        plane == NULL ? -1 : plane - gLevel.planes, classFlags, bytes, callback);
+
+    Map_AddActor(&gLevel, actor);
+
+    if(bytes)
+        JS_free(cx, bytes);
+
+    JS_NEWOBJECT_SETPRIVATE(actor, &GameActor_class);
+    return JS_TRUE;
+}
+
 JS_FASTNATIVE_BEGIN(Level, changeFloorHeight)
 {
     jsdouble height;
@@ -381,6 +450,7 @@ JS_BEGINFUNCS(Level)
     JS_FASTNATIVE(Level, findPlane, 1),
     JS_FASTNATIVE(Level, findActor, 1),
     JS_FASTNATIVE(Level, spawnActor, 7),
+    JS_FASTNATIVE(Level, spawnActorEx, 9),
     JS_FASTNATIVE(Level, changeFloorHeight, 2),
     JS_FASTNATIVE(Level, changeMap, 1),
     JS_FASTNATIVE(Level, getActorsInRadius, 7),

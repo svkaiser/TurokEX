@@ -516,10 +516,7 @@ static void Actor_UpdateMove(gActor_t *actor)
     astate = &actor->animState;
 
     if(astate->frametime != 0)
-    {
-        actor->height = actor->baseHeight * 0.6f -
-            (astate->rootMotion[1] * (1.0f / (60.0f / astate->frametime)));
-    }
+        actor->height = ((actor->baseHeight * 0.72f) - astate->baseOffset) * 0.5f;
 
     if(actor->height < 0 || astate->frametime == 0)
         actor->height = 0;
@@ -804,6 +801,9 @@ void Actor_SpawnBodyFX(gActor_t *actor, const char *fx, float x, float y, float 
     if(actor->bStatic)
         return;
 
+    if(actor->bCulled)
+        return;
+
     Actor_GetLocalVectors(org, actor, x, y, z);
     Vec_Set3(tmp, 0, 0, 0);
 
@@ -850,7 +850,7 @@ void Actor_LocalTick(void)
                 Actor_UpdateTransform(actor);
             }
 
-            if(actor->bCulled)
+            if(actor->components && !actor->bCulled)
                 Actor_CallEvent(actor, "onLocalTick", NULL, 0);
         }
     }
@@ -1154,6 +1154,67 @@ gActor_t *Actor_Spawn(const char *classname, float x, float y, float z,
 }
 
 //
+// Actor_SpawnEx
+//
+
+gActor_t *Actor_SpawnEx(float x, float y, float z, float yaw, float pitch, int plane,
+                        int classFlags, const char *component, gObject_t *callback)
+{
+    gActor_t *actor;
+
+    actor = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
+
+    // set default properties
+    actor->classFlags   = classFlags;
+    actor->mass         = 1200;
+    actor->friction     = 1.0f;
+    actor->airfriction  = 1.0f;
+    actor->radius       = 30.72f;
+    actor->baseHeight   = 30.72f;
+    actor->viewHeight   = 16.384f;
+    actor->centerHeight = 10.24f;
+
+    Vec_Set3(actor->rotorVector, 0, 1, 0);
+    Vec_Set3(actor->scale, 1, 1, 1);
+    Vec_Set3(actor->bbox.min, -actor->radius, -actor->radius, -actor->radius);
+    Vec_Set3(actor->bbox.max, actor->radius, actor->radius, actor->radius);
+    Vec_Copy3(actor->bbox.omin, actor->bbox.min);
+    Vec_Copy3(actor->bbox.omax, actor->bbox.max);
+
+    if(actor->classFlags & AC_AI)
+        AI_Spawn(actor);
+
+    if(component != NULL)
+    {
+        Actor_CreateComponent(actor);
+        Actor_AddComponent(actor, component);
+    }
+
+    actor->angles[0] = yaw;
+    actor->angles[1] = pitch;
+    actor->plane = plane;
+
+    Vec_Set3(actor->origin, x, y, z);
+    Vec_Set4(actor->lerpRotation, 0, 0, 0, 1);
+    Vec_SetQuaternion(actor->rotation, actor->angles[0], 0, 1, 0);
+
+    if(callback && JS_ObjectIsFunction(js_context, callback))
+    {
+        jsval actorVal;
+
+        if(Actor_ToVal(actor, &actorVal))
+        {
+            jsval rval;
+            JS_CallFunctionValue(js_context, js_gobject,
+                OBJECT_TO_JSVAL(callback), 1, &actorVal, &rval);
+        }
+    }
+
+    Actor_Setup(actor);
+    return actor;
+}
+
+//
 // Actor_ClearData
 //
 
@@ -1282,6 +1343,9 @@ void Actor_Setup(gActor_t *actor)
     Actor_UpdateTransform(actor);
     actor->timestamp = (float)server.runtime;
     actor->height = actor->bStatic ? actor->baseHeight : 0;
+
+    if(actor->bTouch)
+        actor->viewHeight = actor->baseHeight * 0.5f;
 
     if(actor->components == NULL)
         return;

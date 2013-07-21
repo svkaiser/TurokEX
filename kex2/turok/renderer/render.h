@@ -148,6 +148,7 @@ typedef struct
     int                 flags;
     int                 prevflags;
     vec3_t              rootMotion;
+    float               baseOffset;
     unsigned int        restartframe;
 } animstate_t;
 
