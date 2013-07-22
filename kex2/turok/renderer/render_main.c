@@ -37,6 +37,7 @@
 #include "js.h"
 #include "fx.h"
 #include "ai.h"
+#include "debug.h"
 
 CVAR_EXTERNAL(cl_fov);
 CVAR(r_fog, 1);
@@ -53,6 +54,8 @@ kbool bWireframe = false;
 
 static float grid_high_y = 0;
 static float grid_low_y = 0;
+
+int numFxCount = 0;
 
 static float wpn_thudoffset = 0;
 static mtx_t mtx_rotation;
@@ -1206,6 +1209,8 @@ void R_Init(void)
 
     Cvar_Register(&r_fog);
     Cvar_Register(&r_cull);
+
+    Debug_RegisterPerfStatVar((float*)&numFxCount, "FX Count", false);
 
     Mdl_Init();
     FX_Init();

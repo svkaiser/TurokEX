@@ -30,6 +30,8 @@
 #include "fx.h"
 #include "client.h"
 
+extern int numFxCount;
+
 typedef struct
 {
     fx_t *fx;
@@ -60,6 +62,8 @@ void R_DrawFX(void)
     int fxDisplayNum;
     int i;
 
+    numFxCount = 0;
+
     if(client.playerActor == NULL)
         return;
 
@@ -83,10 +87,14 @@ void R_DrawFX(void)
         if(fxRover == NULL)
             continue;
 
+        if(fxRover->restart > 0)
+            continue;
+
         fxDisplayList[fxDisplayNum++].fx = fxRover;
     }
 
     qsort(fxDisplayList, fxDisplayNum, sizeof(fxDisplay_t), SortSprites);
+    numFxCount = fxDisplayNum;
 
     for(i = 0; i < fxDisplayNum; i++)
     {

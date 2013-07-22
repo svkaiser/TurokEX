@@ -338,23 +338,25 @@ void Snd_UpdateListener(void)
     if(client.playerActor)
     {
         ALfloat orientation[6];
-        vec3_t axis;
-        float angle;
-
-        Vec_QuaternionToAxis(&angle, axis, client.playerActor->rotation);
+        float sy = (float)sin(client.player->camera->angles[0]);
+        float cy = (float)cos(client.player->camera->angles[0]);
+        float sp = (float)sin(client.player->camera->angles[1]);
+        float cp = (float)cos(client.player->camera->angles[1]);
+        float sr = (float)sin(client.player->camera->angles[2]);
+        float cr = (float)cos(client.player->camera->angles[2]);
         
-        orientation[0] = (float)sin(angle);
-        orientation[1] = 0;
-        orientation[2] = (float)cos(angle);
-        orientation[3] = 0;
-        orientation[4] = 1;
-        orientation[5] = 0;
+        orientation[0] = sy * cp;
+        orientation[1] = -sp;
+        orientation[2] = cy * cp;
+        orientation[3] = cr * sp * sy + -sr * cy;
+        orientation[4] = cr * cp;
+        orientation[5] = cr * sp * cy + -sr * -sy;
 
         Snd_EnterCriticalSection();
 
         alListenerfv(AL_ORIENTATION, orientation);
         alListener3f(AL_POSITION,
-            SND_VECTOR2METRICS(client.playerActor->origin));
+            SND_VECTOR2METRICS(client.player->camera->origin));
 
         Snd_ExitCriticalSection();
     }

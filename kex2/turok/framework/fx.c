@@ -697,6 +697,15 @@ static void FX_SetDistance(fx_t *fx)
 }
 
 //
+// FX_SetRandValue
+//
+
+static int FX_SetRandValue(int randValue)
+{
+    return (randValue > 0) ? (rand() % (randValue + 1)) : -(rand() % (1 - randValue));
+}
+
+//
 // FX_Link
 //
 
@@ -725,15 +734,12 @@ fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
         info = &fxfile->info[i];
 
         instances = info->instances.value;
-        spawnDice = instances;
-        if(info->instances.rand > 0)
-            spawnDice += (rand() % ((int)info->instances.rand + 1));
-        else
-            spawnDice += -(rand() % (1 - (int)info->instances.rand));
+        spawnDice = instances + FX_SetRandValue((int)info->instances.rand);
 
         if(spawnDice <= 0)
             continue;
 
+        // allow only one FX instance to be spawned per actor
         if(source && info->bActorInstance)
         {
             for(fxRover = fxRoot.next; fxRover != &fxRoot; fxRover = fxRover->next)
@@ -765,6 +771,7 @@ fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
             fx->prev = fxRoot.prev;
             fxRoot.prev = fx;
 
+            // setup initial matrix
             if(info->bNoDirection)
                 Mtx_Identity(fx->matrix);
             else
@@ -785,8 +792,10 @@ fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
                 Mtx_ApplyRotation(rotation, fx->matrix);
             }
 
+            // bind target
             Actor_SetTarget((gActor_t**)&fx->source, source);
 
+            // set default properties
             fx->file = fxfile;
             fx->info = info;
             fx->plane = plane;
@@ -797,35 +806,46 @@ fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
             fx->textures = (texture_t**)Z_Calloc(sizeof(texture_t*) *
                 info->numTextures, PU_FX, 0);
 
+            // setup texture lookup array
             for(j = 0; j < info->numTextures; j++)
                 fx->textures[j] = Tex_CacheTextureFile(info->textures[j], DGL_CLAMP, true);
 
+            // instances
             fx->instances = info->instances.value;
 
-            fx->lifetime = (float)info->lifetime.value;
-            if(info->lifetime.rand > 0)
-                fx->lifetime += (rand() % ((int)info->lifetime.rand + 1));
+            // spawn delay time
+            fx->restart = (float)FX_SetRandValue((int)info->restart);
 
+            // life time
+            fx->lifetime = (float)info->lifetime.value +
+                FX_SetRandValue((int)info->lifetime.rand);
+
+            // scale
             fx->scale = info->scale.value;
             if(info->scale.rand != 0)
                 fx->scale += FX_Rand(info->scale.rand);
 
+            // scale destination
             fx->scale_dest = info->scaledest.value;
             if(info->scaledest.rand != 0)
                 fx->scale_dest += FX_Rand(info->scaledest.rand);
 
+            // forward speed
             fx->forward = info->forward.value;
             if(info->forward.rand != 0)
                 fx->forward += FX_Rand(info->forward.rand);
 
+            // rotation offset
             fx->rotation_offset = info->rotation_offset.value;
             if(info->rotation_offset.rand != 0)
                 fx->rotation_offset += FX_Rand(info->rotation_offset.rand);
 
+            // rotation speed
             fx->rotation_speed = info->rotation_speed.value;
             if(info->rotation_speed.rand != 0)
                 fx->rotation_speed += FX_Rand(info->rotation_speed.rand);
 
+            // gravity
             fx->gravity = info->gravity.value;
             if(info->gravity.rand != 0)
                 fx->gravity += FX_Rand(info->gravity.rand);
@@ -1055,6 +1075,15 @@ void FX_Ticker(void)
             continue;
         }
 
+        fx->restart -= time;
+
+        // ready to spawn?
+        if(fx->restart > 0)
+            continue;
+
+        //
+        // handle 'on tick' events
+        //
         if(fxinfo->tickFX != NULL)
             FX_SpawnChild(fx, fxinfo->tickFX);
 
@@ -1068,6 +1097,7 @@ void FX_Ticker(void)
                 &fx->info->tickAction);
         }
 
+        // animation effects
         if(fx->bAnimate)
         {
             if(fx->frametime < client.time && fxinfo->numTextures > 1)
@@ -1104,8 +1134,12 @@ void FX_Ticker(void)
             }
         }
 
+        // update rotation
         fx->rotation_offset += (fx->rotation_speed * time);
 
+        //
+        // update scaling
+        //
         if(!fxinfo->bScaleLerp)
         {
             float sdest = (fx->scale * fx->scale_dest);
@@ -1127,6 +1161,9 @@ void FX_Ticker(void)
 
         lifetime = (fxinfo->lifetime.value - (int)fx->lifetime);
 
+        //
+        // process fade in
+        //
         alpha = fx->color1[3];
 
         if(lifetime < fxinfo->fadein_time)
@@ -1137,6 +1174,9 @@ void FX_Ticker(void)
                 alpha = 0xff;
         }
 
+        //
+        // process fade out
+        //
         if(fx->lifetime < fxinfo->fadeout_time)
         {
             alpha = (int)(255 * fx->lifetime / (fxinfo->fadeout_time + 1));
@@ -1148,8 +1188,10 @@ void FX_Ticker(void)
         fx->color1[3] = alpha;
         fx->color2[3] = alpha;
 
+        // update translation/velocity
         Vec_Scale(dest, fx->translation, client.runtime);
 
+        // process movement
         if(fx->gravity != 0 && (fx->origin[1] != 0 || fx->gravity >= 0) ||
             Vec_Magnitude(dest) >= 0.001f)
         {
@@ -1168,8 +1210,13 @@ void FX_Ticker(void)
         }
 
         FX_SetDistance(fx);
+
+        // update lifetime
         fx->lifetime -= time;
 
+        //
+        // handle expire event
+        //
         if(fx->lifetime < 0 || (fx->source && fx->source->bStale))
         {
             fx_t *efx = NULL;
