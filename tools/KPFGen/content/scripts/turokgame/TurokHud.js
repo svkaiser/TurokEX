@@ -117,7 +117,7 @@ class.properties(TurokHud,
             switch(player.activeWeaponID)
             {
             case WP_BOW:
-                ammo_id = AM_ARROWS;
+                ammo_id = player.activeWeapon.bAltAmmoSet ? AM_TEKARROWS : AM_ARROWS;
                 break;
                 
             case WP_PISTOL:
@@ -130,7 +130,7 @@ class.properties(TurokHud,
             case WP_SHOTGUN:
             case WP_AUTOSHOTGUN:
                 am_icon_x = 79;
-                ammo_id = AM_SHELLS;
+                ammo_id = player.activeWeapon.bAltAmmoSet ? AM_EXPSHELLS : AM_SHELLS;
                 break;
                 
             case WP_PULSERIFLE:
@@ -165,7 +165,6 @@ class.properties(TurokHud,
         
         // messages
         this.drawMessages();
-        this.canvas.setDrawScale(1);
         
         // debug stats
         if(Sys.getCvar('g_displayplayerinfo'))
@@ -188,6 +187,17 @@ class.properties(TurokHud,
             this.canvas.drawString('yaw: ' + pmove.yaw, 32, 240, false);
             this.canvas.drawString('pitch: ' + pmove.pitch, 32, 256, false);
             this.canvas.drawString('roll: ' + pmove.roll, 32, 272, false);
+        }
+        
+        // TODO - crosshairs
+        if(Sys.getCvar('g_showcrosshairs'))
+        {
+            this.canvas.setDrawColor(255, 255, 255);
+            this.canvas.setDrawAlpha(224);
+            this.canvas.setTextureTile(0, 1, 0, 1);
+            this.canvas.setDrawScale(0.25);
+            this.canvas.drawFixedTile('hud/crosshair.tga', 156, 120);
+            this.canvas.setDrawScale(1);
         }
         
         GL.setBlend(0);

@@ -148,7 +148,7 @@ class.properties(TurokAIPurlin,
         var torg = target.origin;
         var aorg = actor.getLocalVector(arguments[1], arguments[2], arguments[3]);
         
-        aorg.y += (target.viewHeight * 0.5);
+        aorg.y += (target.baseHeight * 0.5);
         torg.sub(aorg);
         
         if(torg.unit3() <= (10.0 * 10.24) + actor.radius)
@@ -184,13 +184,5 @@ class.properties(TurokAIPurlin,
     
     onTrigger : function()
     {
-        var actor = this.parent.owner;
-        
-        actor.physics = Physics.PT_DEFAULT;
-        actor.ai.bDisabled = false;
-        actor.bHidden = false;
-        
-        this.state = AI_STATE_DROPPING;
-        actor.setAnim(AI_ANIM_PURLIN_SPAWN_DROP, 4.0, 0);
     }
 });

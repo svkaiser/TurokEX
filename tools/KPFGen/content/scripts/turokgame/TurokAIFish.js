@@ -50,8 +50,20 @@ class.properties(TurokAIFish,
     {
         if(actor.ai.bTurning)
             return;
+            
+        if((actor.animState.animID == AI_ANIM_WALKING ||
+            actor.animState.animID == AI_STATE_RUNNING) && actor.animState.frame > 1)
+            return;
+            
+        var maxTurn = Angle.degToRad(50);
         
-        actor.ai.setIdealYaw(actor.yaw + angles, 2.048);
+        if(angles > maxTurn)
+            angles = maxTurn;
+            
+        if(angles < -maxTurn)
+            angles = maxTurn;
+        
+        actor.ai.setIdealYaw(actor.yaw + angles, 4.096);
     },
     
     onTargetFound : function()
@@ -65,12 +77,19 @@ class.properties(TurokAIFish,
     
     onReady : function()
     {
-        this.parent.owner.physics = Physics.PT_DEFAULT;
-        
         var actor = this.parent.owner;
         
+        if(actor.physics == 0)
+        {
+            actor.physics = (
+                Physics.PF_CLIPSTATICS |
+                Physics.PF_CLIPGEOMETRY |
+                Physics.PF_CLIPEDGES |
+                Physics.PF_SLIDEMOVE |
+                Physics.PF_NOEXITWATER);
+        }
+        
         actor.mass = 0.0;
-        actor.bNoDropOff = false;
         actor.ai.bFindPlayers = false;
         actor.ai.bAvoidWalls = true;
         actor.ai.bAvoidActors = true;

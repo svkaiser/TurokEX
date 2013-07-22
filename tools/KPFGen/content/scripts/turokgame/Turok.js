@@ -68,6 +68,7 @@ Sys.runScript('scripts/turokgame/TurokAIPurlin.js');
 Sys.runScript('scripts/turokgame/TurokAIStalker.js');
 Sys.runScript('scripts/turokgame/TurokAIAlien.js');
 Sys.runScript('scripts/turokgame/TurokAIDimetrodon.js');
+Sys.runScript('scripts/turokgame/TurokAIMech.js');
 Sys.runScript('scripts/turokgame/TurokAIFish.js');
 Sys.runScript('scripts/turokgame/TurokAIAnimal.js');
 Sys.runScript('scripts/turokgame/TurokAIInsect.js');
@@ -128,32 +129,3 @@ Sys.runScript('scripts/turokgame/AmmoTekArrow.js');
 // packet events
 //Sys.runScript('scripts/turokgame/PacketEventRequestWeapon.js');
 //Sys.runScript('scripts/turokgame/PacketEventChangeWeapon.js');
-
-// cvars
-Sys.addCvar('g_wpnautoswitch', '1');
-Sys.addCvar('g_displayplayerinfo', '0');
-Sys.addCvar('g_weaponbobbing', '0');
-
-// input
-Input.add(0, '+attack');
-Input.add(0, '-attack');
-Input.add(1, '+forward');
-Input.add(1, '-forward');
-Input.add(2, '+back');
-Input.add(2, '-back');
-Input.add(3, '+left');
-Input.add(3, '-left');
-Input.add(4, '+right');
-Input.add(4, '-right');
-Input.add(5, '+strafeleft');
-Input.add(5, '-strafeleft');
-Input.add(6, '+straferight');
-Input.add(6, '-straferight');
-Input.add(7, '+run');
-Input.add(7, '-run');
-Input.add(8, '+jump');
-Input.add(8, '-jump');
-Input.add(11, '+nextweap');
-Input.add(11, '-nextweap');
-Input.add(12, '+prevweap');
-Input.add(12, '-prevweap');

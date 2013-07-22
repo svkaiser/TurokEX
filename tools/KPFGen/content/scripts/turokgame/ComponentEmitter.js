@@ -27,6 +27,11 @@ class.properties(ComponentEmitter,
     {
     },
     
+    onReady : function()
+    {
+        this.parent.owner.setBounds(-1024, -1024, -1024, 1024, 1024, 1024);
+    },
+    
     onLocalTick : function()
     {
         var actor = this.parent.owner;

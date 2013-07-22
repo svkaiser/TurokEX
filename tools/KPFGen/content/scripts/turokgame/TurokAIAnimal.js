@@ -125,15 +125,11 @@ class.properties(TurokAIAnimal,
     
     onReady : function()
     {
-        this.parent.owner.physics = Physics.PT_DEFAULT;
-        
         var actor = this.parent.owner;
         
-        actor.bNoDropOff = true;
-        actor.ai.bFindPlayers = true;
-        actor.ai.bAvoidWalls = true;
-        actor.ai.bAvoidActors = true;
-        actor.setAnim(AI_ANIM_STANDING, 4.0, NRender.ANIM_LOOP);
+        ComponentTurokAI.prototype.onReady.bind(this)();
+        actor.ai.bLookAtTarget = false;
+        actor.ai.nodeHead = 0;
     },
     
     onDeath : function(instigator)
@@ -151,7 +147,7 @@ class.properties(TurokAIAnimal,
         
         Snd.play('sounds/shaders/generic_3_energy_pickup.ksnd', actor);
         Sys.spawnFx('fx/animal_death_flash.kfx', null,
-            actor.getLocalVector(0, 51.2, actor.centerHeight), actor.rotation,
+            actor.getLocalVector(0, 51.2, actor.height), actor.rotation,
             Plane.fromIndex(actor.plane));
         
         GameActor.remove(actor);

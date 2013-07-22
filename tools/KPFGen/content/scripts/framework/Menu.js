@@ -5,11 +5,19 @@
 //
 //-----------------------------------------------------------------------------
 
-Menu = class.define(function()
-{
-    this.canvas = new Canvas();
-    this.constructItems();
-});
+const MENU_STATUS_READY         = 0;
+const MENU_STATUS_FADEIN        = 1;
+const MENU_STATUS_FADEOUT       = 2;
+
+const MENU_STATUS_ITEM_HIDDEN   = 0;
+const MENU_STATUS_ITEM_ENTEROK  = 1;
+const MENU_STATUS_ITEM_DISABLED = 2;
+const MENU_STATUS_ITEM_NOCURSOR = 3;
+const MENU_STATUS_ITEM_OK       = 4;
+const MENU_STATUS_ITEM_ARROWSOK = 5;
+const MENU_STATUS_ITEM_SLIDER   = 6;
+
+Menu = class.define();
 
 class.properties(Menu,
 {
@@ -25,15 +33,11 @@ class.properties(Menu,
     hints           : null,
     thermoBars      : null,
     opacity         : 1.0,
-    state           : 0,
+    state           : MENU_STATUS_ITEM_OK,
     
     //------------------------------------------------------------------------
     // FUNCTIONS
     //------------------------------------------------------------------------
-    
-    constructItems : function()
-    {
-    },
     
     getActiveItemCount : function()
     {
@@ -42,8 +46,8 @@ class.properties(Menu,
         for(var i = 0; i < this.items.length; i++)
         {
             // ignore hidden items
-            /*if(this.items[i].state == -3)
-                continue;*/
+            if(this.items[i].state == MENU_STATUS_ITEM_HIDDEN)
+                continue;
                 
             numItems++;
         }
@@ -51,26 +55,26 @@ class.properties(Menu,
         return numItems;
     },
     
-    drawCenteredItems : function(y, spacing)
+    drawCenteredItems : function(canvas, y, spacing)
     {
         var row = y;
         
         TurokString.setStringColor(180, 180, 124, 77, 63, 42);
-        this.canvas.setDrawScale(0.35);
-        this.canvas.setDrawAlpha(Math.round(255.0 * this.opacity));
+        canvas.setDrawScale(0.35);
+        canvas.setDrawAlpha(Math.round(255.0 * this.opacity));
         
         for(var i = 0; i < this.items.length; i++)
         {
             // ignore hidden items
-            /*if(this.items[i].state == -3)
-                continue;*/
+            if(this.items[i].state == MENU_STATUS_ITEM_HIDDEN)
+                continue;
                 
-            TurokString.drawText(this.canvas, this.items[i].text, 160, row, true);
+            TurokString.drawText(canvas, this.items[i].text, 160, row, true);
             row += spacing;
         }
     },
     
-    draw : function()
+    draw : function(canvas)
     {
         var height = (15.0 * this.getActiveItemCount() + 8);
         var row = 178.0 - height / 2.0;
@@ -78,13 +82,13 @@ class.properties(Menu,
         var alpha = Math.round(255.0 * ((this.opacity * 150.0) / 255.0));
         
         GL.setBlend(1);
-        this.canvas.setDrawScale(1.0);
-        this.drawFillBox(70, y, 250, y + height, 2, false, 0, 0, 0, alpha);
-        this.drawCenteredItems(y + 8.0, 15.0);
+        canvas.setDrawScale(1.0);
+        this.drawFillBox(canvas, 70, y, 250, y + height, 2, false, 0, 0, 0, alpha);
+        this.drawCenteredItems(canvas, y + 8.0, 15.0);
         GL.setBlend(0);
     },
     
-    drawFillBox : function(x, y, w, h, borderSize, bTintSide, r, g, b, a)
+    drawFillBox : function(canvas, x, y, w, h, borderSize, bTintSide, r, g, b, a)
     {
         var r1, r2;
         var g1, g2;
@@ -121,21 +125,21 @@ class.properties(Menu,
         }
         
         // body
-        this.canvas.setDrawColor(r, g, b);
-        this.canvas.setDrawAlpha(a);
-        this.canvas.drawTile('textures/white.tga', rx, ry, rw, rh);
+        canvas.setDrawColor(r, g, b);
+        canvas.setDrawAlpha(a);
+        canvas.drawTile('textures/white.tga', rx, ry, rw, rh);
         // border 1
-        this.canvas.setDrawColor(r2, g2, b2);
-        this.canvas.drawTile('textures/white.tga', rx, ry, rw, borderSize);
+        canvas.setDrawColor(r2, g2, b2);
+        canvas.drawTile('textures/white.tga', rx, ry, rw, borderSize);
         // border 2
-        this.canvas.setDrawColor(r1, g1, b1);
-        this.canvas.drawTile('textures/white.tga', (rx+rw)-borderSize, ry, borderSize, rh);
+        canvas.setDrawColor(r1, g1, b1);
+        canvas.drawTile('textures/white.tga', (rx+rw)-borderSize, ry, borderSize, rh);
         // border 3
-        this.canvas.setDrawColor(r1, g1, b1);
-        this.canvas.drawTile('textures/white.tga', rx, (ry+rh)-borderSize, rw, borderSize);
+        canvas.setDrawColor(r1, g1, b1);
+        canvas.drawTile('textures/white.tga', rx, (ry+rh)-borderSize, rw, borderSize);
         // border 4
-        this.canvas.setDrawColor(r2, g2, b2);
-        this.canvas.drawTile('textures/white.tga', rx, ry, borderSize, rh);
+        canvas.setDrawColor(r2, g2, b2);
+        canvas.drawTile('textures/white.tga', rx, ry, borderSize, rh);
     },
     
     //------------------------------------------------------------------------
@@ -161,22 +165,19 @@ class.properties(MainMenu,
     // VARS
     //------------------------------------------------------------------------
     
+    items : [
+                { state : 0, text : "start game",   callBack : null },
+                { state : 0, text : "load game",    callBack : null },
+                { state : 0, text : "options",      callBack : null },
+                { state : 0, text : "training",     callBack : null },
+                { state : 0, text : "enter cheat",  callBack : null },
+                { state : 0, text : "cheat menu",   callBack : null },
+                { state : 0, text : "quit",         callBack : null },
+            ],
+    
     //------------------------------------------------------------------------
     // FUNCTIONS
     //------------------------------------------------------------------------
-    
-    constructItems : function()
-    {
-        this.items = [
-            { state : 0, text : "start game",   callBack : null },
-            { state : 0, text : "load game",    callBack : null },
-            { state : 0, text : "options",      callBack : null },
-            { state : 0, text : "training",     callBack : null },
-            { state : 0, text : "enter cheat",  callBack : null },
-            { state : 0, text : "cheat menu",   callBack : null },
-            { state : 0, text : "quit",         callBack : null },
-        ];
-    },
     
     //------------------------------------------------------------------------
     // EVENTS

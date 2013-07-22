@@ -51,7 +51,7 @@ class.properties(ComponentDoor,
         // find the plane facing the origin and then toggle the solid/blocking flags off
         var trace = Physics.rayTrace(origin, vec, 1, len, plane);
             
-        if(trace && trace.hitPlane)
+        if(trace && trace.hitPlane != null)
             plane = trace.hitPlane;
             
         Level.toggleBlockingPlanes(plane, true);

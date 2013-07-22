@@ -18,7 +18,6 @@ class.properties(ComponentScriptedActor,
     triggerAnimation        : -1,
     bTriggered              : false,
     bRemoveOnCompletion     : true,
-    bRootMotion             : false,
     triggerDelay            : 0.0,
     bSleepUntilTriggered    : false,
     
@@ -29,7 +28,8 @@ class.properties(ComponentScriptedActor,
     onReady : function()
     {
         if(!this.bSleepUntilTriggered)
-            this.parent.owner.setAnim("anim00", 4.0, NRender.ANIM_LOOP);
+            this.parent.owner.setAnim("anim00", 4.0,
+                NRender.ANIM_LOOP|NRender.ANIM_ROOTMOTION);
         else
             this.parent.owner.bHidden = true;
     },
@@ -37,15 +37,11 @@ class.properties(ComponentScriptedActor,
     onTrigger : function(instigator, args)
     {
         var actor = this.parent.owner;
-        var flags = 0;
         
         if(this.bSleepUntilTriggered)
             actor.bHidden = false;
         
-        if(this.bRootMotion == true)
-            flags |= NRender.ANIM_ROOTMOTION;
-        
-        actor.setAnim(this.triggerAnimation, 4.0, flags);
+        actor.blendAnim(this.triggerAnimation, 4.0, 4.0, NRender.ANIM_ROOTMOTION);
         this.bTriggered = true;
     },
     
@@ -82,29 +78,7 @@ class.properties(ScriptedMonkey,
     //------------------------------------------------------------------------
     
     triggerAnimation    : 200,
-    bRemoveOnCompletion : true,
-    bRootMotion         : false,
-    
-    //------------------------------------------------------------------------
-    // FUNCTIONS
-    //------------------------------------------------------------------------
-    
-    //------------------------------------------------------------------------
-    // EVENTS
-    //------------------------------------------------------------------------
-    
-    onTrigger : function(instigator, args)
-    {
-        ComponentScriptedActor.prototype.onTrigger.bind(this)();
-        
-        var actor = this.parent.owner;
-        
-        // TODO - handle bounding box updates in engine
-        var box = actor.bbox;
-        box.min_z = -1024;
-        
-        actor.setBounds(box.min_x, box.min_y, box.min_z, box.max_x, box.max_y, box.max_z);
-    }
+    bRemoveOnCompletion : true
 });
 
 //-----------------------------------------------------------------------------
@@ -124,27 +98,5 @@ class.properties(ScriptedBird,
     
     triggerAnimation        : 200,
     bRemoveOnCompletion     : true,
-    bRootMotion             : false,
-    bSleepUntilTriggered    : true,
-    
-    //------------------------------------------------------------------------
-    // FUNCTIONS
-    //------------------------------------------------------------------------
-    
-    //------------------------------------------------------------------------
-    // EVENTS
-    //------------------------------------------------------------------------
-    
-    onTrigger : function(instigator, args)
-    {
-        ComponentScriptedActor.prototype.onTrigger.bind(this)();
-        
-        var actor = this.parent.owner;
-        
-        // TODO - handle bounding box updates in engine
-        var box = actor.bbox;
-        box.min_z = -4096;
-        
-        actor.setBounds(box.min_x, box.min_y, box.min_z, box.max_x, box.max_y, box.max_z);
-    }
+    bSleepUntilTriggered    : true
 });

@@ -371,8 +371,8 @@ ControllerPlayer = class.extends(Controller, function()
             0,
             this.angles.yaw,
             0);
-            
-        if(!this.plane.isAWall())
+
+        if(!this.plane.isAWall() || this.plane.flags & 16)
             this.accelerate(this.speed[STATE_MOVE_WALK]);
         
         // rolls the player's view when strafing
@@ -413,10 +413,15 @@ ControllerPlayer = class.extends(Controller, function()
         var y = this.velocity.y;
         
         this.super.prototype.beginMovement.bind(this)();
-        this.gravity(MOVE_GRAVITY);
         
-        if(!plane.isAWall())
+        if(!(plane.flags & 16))
+            this.gravity(MOVE_GRAVITY);
+        
+        if(!plane.isAWall() || plane.flags & 16)
             this.applyFriction(MOVE_FRICTION);
+            
+        if(plane.flags & 16)
+            this.applyVerticalFriction(MOVE_FRICTION);
         
         this.checkFallLand(y);
     }

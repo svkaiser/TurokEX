@@ -51,12 +51,12 @@ class.properties(BlastRadius,
             
             origin = aobj.origin;
             ax = origin.x - x;
-            ay = (origin.y + aobj.centerHeight) - y;
+            ay = (origin.y + aobj.height) - y;
             az = origin.z - z;
             
             dist = (ax*ax+ay*ay+az*az);
-            force = Math.sqrt((r - dist) / r);
             
+            force = (r < dist) ? 1 : Math.sqrt((r - dist) / r);
             dmg = force * maxDamage;
             
             // reduce damage on self

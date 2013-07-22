@@ -35,6 +35,8 @@ class.properties(TurokAIInsect,
     
     walk : function(actor)
     {
+        if(!actor.checkAnimID(AI_ANIM_WALKING))
+            this.run(actor);
     },
     
     turnRunFront : function(actor, angles)
@@ -44,7 +46,10 @@ class.properties(TurokAIInsect,
     run : function(actor)
     {
         this.state = AI_STATE_RUNNING;
-        actor.blendAnim(AI_ANIM_WALKING, 4.0, 8.0,
+        
+        var anim = actor.checkAnimID(AI_ANIM_WALKING) ? AI_ANIM_WALKING : AI_ANIM_RUNNING;
+        
+        actor.blendAnim(anim, 4.0, 8.0,
             NRender.ANIM_LOOP |
             NRender.ANIM_ROOTMOTION);
     },

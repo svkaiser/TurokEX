@@ -392,5 +392,221 @@ class.properties(TurokAIGrunt,
             this.meleeAnimObj = g_AnimGruntMelee;
             
         ComponentTurokAI.prototype.onReady.bind(this)();
+        
+        var actor = this.parent.owner;
+        
+        switch(actor.modelVariant)
+        {
+        // soldier variants
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 8:
+            // chest
+            actor.setTexture(0, 0, 0, "textures/tex0829_01.tga");
+            actor.setTexture(9, 0, 0, "textures/tex0829_01.tga");
+            actor.setTexture(0, 0, 1, "textures/tex0830_01.tga");
+            actor.setTexture(9, 0, 1, "textures/tex0830_01.tga");
+            actor.setTexture(9, 0, 2, "textures/tex0832_01.tga");
+            // arms
+            actor.setTexture(10, 0, 0, "textures/tex0833_01.tga");
+            actor.setTexture(11, 0, 0, "textures/tex0833_01.tga");
+            actor.setTexture(12, 0, 0, "textures/tex0833_01.tga");
+            actor.setTexture(13, 0, 0, "textures/tex0833_01.tga");
+            actor.setTexture(14, 0, 0, "textures/tex0833_01.tga");
+            actor.setTexture(15, 0, 0, "textures/tex0833_01.tga");
+            actor.setTexture(16, 0, 0, "textures/tex0833_01.tga");
+            actor.setTexture(17, 0, 0, "textures/tex0833_01.tga");
+            actor.setTexture(10, 1, 1, "textures/tex0833_01.tga");
+            actor.setTexture(14, 1, 1, "textures/tex0833_01.tga");
+            break;
+            
+        // poacher variants
+        case 9:
+        case 10:
+        case 11:
+        case 12:
+        case 13:
+            // chest
+            actor.setTexture(0, 0, 0, "textures/tex0829_05.tga");
+            actor.setTexture(9, 0, 0, "textures/tex0829_05.tga");
+            actor.setTexture(0, 0, 1, "textures/tex0830_05.tga");
+            actor.setTexture(9, 0, 1, "textures/tex0830_05.tga");
+            actor.setTexture(9, 0, 2, "textures/tex0832_05.tga");
+            // legs
+            actor.setTexture(1, 1, 0, "textures/tex0710_02.tga");
+            actor.setTexture(3, 1, 0, "textures/tex0710_02.tga");
+            actor.setTexture(4, 1, 0, "textures/tex0710_02.tga");
+            actor.setTexture(5, 1, 0, "textures/tex0710_02.tga");
+            actor.setTexture(7, 1, 0, "textures/tex0710_02.tga");
+            actor.setTexture(8, 1, 0, "textures/tex0710_02.tga");
+            // shin
+            actor.setTexture(2, 2, 0, "textures/tex0710_02.tga");
+            actor.setTexture(6, 2, 0, "textures/tex0710_02.tga");
+            break;
+            
+        // tribal variants
+        case 14:
+            // hands
+            actor.setTexture(17, 8, 0, "textures/tex0833_02.tga");
+        case 15:
+            // hands
+            actor.setTexture(17, 9, 0, "textures/tex0833_02.tga");
+        case 16:
+            // hands
+            actor.setTexture(17, 10, 0, "textures/tex0833_02.tga");
+            // chest
+            actor.setTexture(0, 0, 0, "textures/tex0829_02.tga");
+            actor.setTexture(9, 0, 0, "textures/tex0829_02.tga");
+            actor.setTexture(0, 0, 1, "textures/tex0830_02.tga");
+            actor.setTexture(9, 0, 1, "textures/tex0830_02.tga");
+            actor.setTexture(9, 0, 2, "textures/tex0832_02.tga");
+            // arms
+            actor.setTexture(10, 0, 0, "textures/tex0833_02.tga");
+            actor.setTexture(11, 0, 0, "textures/tex0833_02.tga");
+            actor.setTexture(12, 0, 0, "textures/tex0833_02.tga");
+            actor.setTexture(13, 0, 0, "textures/tex0833_02.tga");
+            actor.setTexture(14, 0, 0, "textures/tex0833_02.tga");
+            actor.setTexture(15, 0, 0, "textures/tex0833_02.tga");
+            actor.setTexture(16, 0, 0, "textures/tex0833_02.tga");
+            // neck
+            actor.setTexture(18, 0, 0, "textures/tex0835_01.tga");
+            break;
+            
+        // shaman
+        case 17:
+            // chest
+            actor.setTexture(0, 0, 0, "textures/tex0829_03.tga");
+            actor.setTexture(9, 0, 0, "textures/tex0829_03.tga");
+            actor.setTexture(0, 0, 1, "textures/tex0830_03.tga");
+            actor.setTexture(9, 0, 1, "textures/tex0830_03.tga");
+            actor.setTexture(9, 0, 2, "textures/tex0832_03.tga");
+            // neck
+            actor.setTexture(18, 0, 0, "textures/tex0835_02.tga");
+            // legs
+            actor.setTexture(1, 1, 0, "textures/tex0710_01.tga");
+            actor.setTexture(3, 1, 0, "textures/tex0710_01.tga");
+            actor.setTexture(4, 1, 0, "textures/tex0710_01.tga");
+            actor.setTexture(5, 1, 0, "textures/tex0710_01.tga");
+            actor.setTexture(7, 1, 0, "textures/tex0710_01.tga");
+            actor.setTexture(8, 1, 0, "textures/tex0710_01.tga");
+            // shin
+            actor.setTexture(2, 2, 0, "textures/tex0710_01.tga");
+            actor.setTexture(6, 2, 0, "textures/tex0710_01.tga");
+            // hands
+            actor.setTexture(17, 11, 4, "textures/tex0833_03.tga");
+            // arms
+            actor.setTexture(10, 0, 0, "textures/tex0833_03.tga");
+            actor.setTexture(11, 0, 0, "textures/tex0833_03.tga");
+            actor.setTexture(12, 0, 0, "textures/tex0833_03.tga");
+            actor.setTexture(13, 0, 0, "textures/tex0833_03.tga");
+            actor.setTexture(14, 0, 0, "textures/tex0833_03.tga");
+            actor.setTexture(15, 0, 0, "textures/tex0833_03.tga");
+            actor.setTexture(16, 0, 0, "textures/tex0833_03.tga");
+            break;
+            
+        // cyborg guard
+        case 18:
+            // legs
+            actor.setTexture(1, 0, 0, "textures/tex0831_01.tga");
+            actor.setTexture(3, 0, 0, "textures/tex0831_01.tga");
+            actor.setTexture(4, 0, 0, "textures/tex0831_01.tga");
+            actor.setTexture(5, 0, 0, "textures/tex0831_01.tga");
+            actor.setTexture(7, 0, 0, "textures/tex0831_01.tga");
+            actor.setTexture(8, 0, 0, "textures/tex0831_01.tga");
+            // shin
+            actor.setTexture(2, 0, 0, "textures/tex0831_01.tga");
+            actor.setTexture(6, 0, 0, "textures/tex0831_01.tga");
+            // chest
+            actor.setTexture(0, 0, 0, "textures/tex0829_04.tga");
+            actor.setTexture(9, 0, 0, "textures/tex0829_04.tga");
+            actor.setTexture(0, 0, 1, "textures/tex0830_04.tga");
+            actor.setTexture(9, 0, 1, "textures/tex0830_04.tga");
+            actor.setTexture(9, 0, 2, "textures/tex0832_04.tga");
+            // arms
+            actor.setTexture(10, 0, 0, "textures/tex0833_04.tga");
+            actor.setTexture(11, 0, 0, "textures/tex0833_04.tga");
+            actor.setTexture(12, 0, 0, "textures/tex0833_04.tga");
+            actor.setTexture(13, 0, 0, "textures/tex0833_04.tga");
+            actor.setTexture(14, 0, 0, "textures/tex0833_04.tga");
+            actor.setTexture(15, 0, 0, "textures/tex0833_04.tga");
+            actor.setTexture(16, 0, 0, "textures/tex0833_04.tga");
+            // neck
+            actor.setTexture(18, 0, 0, "textures/tex0835_03.tga");
+            break;
+            
+        // demon variant
+        case 21:
+            // hands
+            actor.setTexture(17, 1, 0, "textures/tex0833_06.tga");
+        case 22:
+            // hands
+            actor.setTexture(17, 3, 0, "textures/tex0833_06.tga");
+        case 23:
+            // hands
+            actor.setTexture(13, 2, 0, "textures/tex0833_06.tga");
+            actor.setTexture(17, 15, 0, "textures/tex0833_06.tga");
+            // legs
+            actor.setTexture(1, 0, 0, "textures/tex0831_02.tga");
+            actor.setTexture(3, 0, 0, "textures/tex0831_02.tga");
+            actor.setTexture(4, 0, 0, "textures/tex0831_02.tga");
+            actor.setTexture(5, 0, 0, "textures/tex0831_02.tga");
+            actor.setTexture(7, 0, 0, "textures/tex0831_02.tga");
+            actor.setTexture(8, 0, 0, "textures/tex0831_02.tga");
+            // shin
+            actor.setTexture(2, 0, 0, "textures/tex0831_02.tga");
+            actor.setTexture(6, 0, 0, "textures/tex0831_02.tga");
+            // chest
+            actor.setTexture(0, 0, 0, "textures/tex0829_06.tga");
+            actor.setTexture(9, 0, 0, "textures/tex0829_06.tga");
+            actor.setTexture(0, 0, 1, "textures/tex0830_06.tga");
+            actor.setTexture(9, 0, 1, "textures/tex0830_06.tga");
+            actor.setTexture(9, 0, 2, "textures/tex0832_06.tga");
+            // arms
+            actor.setTexture(10, 0, 0, "textures/tex0833_06.tga");
+            actor.setTexture(11, 0, 0, "textures/tex0833_06.tga");
+            actor.setTexture(12, 0, 0, "textures/tex0833_06.tga");
+            actor.setTexture(13, 0, 0, "textures/tex0833_06.tga");
+            actor.setTexture(14, 0, 0, "textures/tex0833_06.tga");
+            actor.setTexture(15, 0, 0, "textures/tex0833_06.tga");
+            actor.setTexture(16, 0, 0, "textures/tex0833_06.tga");
+            // neck
+            actor.setTexture(18, 0, 0, "textures/tex0835_04.tga");
+            break;
+            
+        // demon lord
+        case 24:
+            // legs
+            actor.setTexture(1, 0, 0, "textures/tex0831_03.tga");
+            actor.setTexture(3, 0, 0, "textures/tex0831_03.tga");
+            actor.setTexture(4, 0, 0, "textures/tex0831_03.tga");
+            actor.setTexture(5, 0, 0, "textures/tex0831_03.tga");
+            actor.setTexture(7, 0, 0, "textures/tex0831_03.tga");
+            actor.setTexture(8, 0, 0, "textures/tex0831_03.tga");
+            // shin
+            actor.setTexture(2, 0, 0, "textures/tex0831_03.tga");
+            actor.setTexture(6, 0, 0, "textures/tex0831_03.tga");
+            // neck
+            actor.setTexture(18, 0, 0, "textures/tex0835_05.tga");
+            // chest
+            actor.setTexture(0, 0, 0, "textures/tex0829_07.tga");
+            actor.setTexture(9, 0, 0, "textures/tex0829_07.tga");
+            actor.setTexture(0, 0, 1, "textures/tex0830_07.tga");
+            actor.setTexture(9, 0, 1, "textures/tex0830_07.tga");
+            actor.setTexture(9, 0, 2, "textures/tex0832_07.tga");
+            // arms
+            actor.setTexture(10, 3, 0, "textures/tex0833_07.tga");
+            actor.setTexture(11, 2, 0, "textures/tex0833_07.tga");
+            actor.setTexture(12, 2, 0, "textures/tex0833_07.tga");
+            actor.setTexture(13, 2, 0, "textures/tex0833_07.tga");
+            actor.setTexture(14, 3, 0, "textures/tex0833_07.tga");
+            actor.setTexture(15, 2, 0, "textures/tex0833_07.tga");
+            actor.setTexture(16, 2, 0, "textures/tex0833_07.tga");
+            // hands
+            actor.setTexture(13, 2, 0, "textures/tex0833_07.tga");
+            actor.setTexture(17, 16, 4, "textures/tex0833_07.tga");
+            break;
+        }
     }
 });

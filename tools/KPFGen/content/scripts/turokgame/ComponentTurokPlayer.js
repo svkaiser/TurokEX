@@ -16,8 +16,8 @@ const WP_SHOTGUN            = 3;
 const WP_AUTOSHOTGUN        = 4;
 const WP_RIFLE              = 5;
 const WP_PULSERIFLE         = 6;
-const WP_GRENADE_L          = 7;
-const WP_MINIGUN            = 8;
+const WP_MINIGUN            = 7;
+const WP_GRENADE_L          = 8;
 const WP_ALIENRIFLE         = 9;
 const WP_ROCKET_L           = 10;
 
@@ -177,6 +177,7 @@ class.properties(ComponentTurokPlayer,
     cameraEvent         : null,
     bTeleporting        : false,
     teleportInfo        : null,
+    bMapEnabled         : false,
     
     //------------------------------------------------------------------------
     // FUNCTIONS
@@ -568,7 +569,7 @@ class.properties(ComponentTurokPlayer,
         var t = Physics.rayTrace(
             new Vector(
                 this.controller.origin.x,
-                this.controller.origin.y + (self.centerHeight + self.viewHeight),
+                this.controller.origin.y + self.height,
                 this.controller.origin.z),
             Vector.applyRotation(new Vector(0, 0, 1), self.rotation),
             1, 64, this.controller.plane, self);
@@ -642,7 +643,7 @@ class.properties(ComponentTurokPlayer,
     aPistolAttack : function()
     {
         Snd.play('sounds/shaders/pistol_shot.ksnd', this.parent.owner);
-        this.traceAttack(ShotTracePlayerPistol, 0, 52, 0);
+        this.traceAttack(ShotTracePlayerPistol, 0, 51.2, 0);
         this.recoilPitch = -0.0325;
     },
     
@@ -651,7 +652,7 @@ class.properties(ComponentTurokPlayer,
         Snd.play('sounds/shaders/riot_shotgun_shot.ksnd', this.parent.owner);
         
         for(var i = 0; i < 5; i++)
-            this.traceAttack(ShotTracePlayerShotgun, 0, 52, 0);
+            this.traceAttack(ShotTracePlayerShotgun, 0, 51.2, 0);
         this.recoilPitch = -0.0408;
     },
     
@@ -660,21 +661,21 @@ class.properties(ComponentTurokPlayer,
         Snd.play('sounds/shaders/auto_shotgun_shot.ksnd', this.parent.owner);
         
         for(var i = 0; i < 5; i++)
-            this.traceAttack(ShotTracePlayerShotgun, 0, 52, 0);
+            this.traceAttack(ShotTracePlayerShotgun, 0, 51.2, 0);
         this.recoilPitch = -0.0408;
     },
     
     aRifleAttack : function()
     {
         Snd.play('sounds/shaders/rifle_shot.ksnd', this.parent.owner);
-        this.traceAttack(ShotTracePlayerRifle, 0, 52, 0);
+        this.traceAttack(ShotTracePlayerRifle, 0, 51.2, 0);
         this.recoilPitch = -0.0325;
     },
     
     aMinigunAttack : function()
     {
         Snd.play('sounds/shaders/pistol_shot.ksnd', this.parent.owner);
-        this.traceAttack(ShotTracePlayerMinigun, 0, 52, 0);
+        this.traceAttack(ShotTracePlayerMinigun, 0, 51.2, 0);
         this.recoilPitch = -0.0325;
     },
     
@@ -705,7 +706,12 @@ class.properties(ComponentTurokPlayer,
         wpn.bHidden = false;
         
         if(this.bHideHud == false)
+        {
+            if(this.bMapEnabled)
+                this.playerHud.canvas.drawPlaneOutline();
+            
             this.playerHud.canvas.drawActor(wpn);
+        }
     },
     
     onPostRender : function()
@@ -816,7 +822,7 @@ class.properties(ComponentTurokPlayer,
             var origin = camera.origin;
             
             origin.x = worldState.origin.x;
-            origin.y = worldState.origin.y + actor.centerHeight + camera.viewHeight;
+            origin.y = worldState.origin.y + (actor.height + camera.viewHeight) * 0.72;
             origin.z = worldState.origin.z;
             
             camera.yaw      = worldState.yaw;
@@ -834,8 +840,7 @@ class.properties(ComponentTurokPlayer,
             {
                 case STATE_MOVE_WALK:
                     if((worldState.origin.y + worldState.velocity.y) -
-                    worldState.plane.distance(worldState.origin) <
-                    (actor.viewHeight + actor.centerHeight)+1)
+                    worldState.plane.distance(worldState.origin) < actor.height)
                     {
                         var d = Math.abs(worldState.accel.z * worldState.frameTime) * 0.06;
                         

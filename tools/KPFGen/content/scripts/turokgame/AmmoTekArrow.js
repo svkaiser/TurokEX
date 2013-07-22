@@ -15,5 +15,5 @@ class.properties(AmmoTekArrow,
     
     max         : 15,
     maxBackpack : 15,
-    hudIcon     : "h_a_arrow2.tga"
+    hudIcon     : "hud/h_a_arrow2.tga"
 });

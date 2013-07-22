@@ -5,6 +5,9 @@
 //
 //-----------------------------------------------------------------------------
 
+const MAX_LIFEFORCES = 100;
+const MAX_LIVES = 9;
+        
 TurokPickupLifeForce = class.extendStatic(TurokPickup);
 
 class.properties(TurokPickupLifeForce,
@@ -15,7 +18,7 @@ class.properties(TurokPickupLifeForce,
     
     active : true,
     amount : 1,
-    message : "Life Force",
+    message : "",
     
     //------------------------------------------------------------------------
     // FUNCTIONS
@@ -23,9 +26,6 @@ class.properties(TurokPickupLifeForce,
     
     onTouch : function(instigator)
     {
-        const MAX_LIFEFORCES = 100;
-        const MAX_LIVES = 9;
-        
         var player = instigator.components.ComponentTurokPlayer;
         
         if(player == null)

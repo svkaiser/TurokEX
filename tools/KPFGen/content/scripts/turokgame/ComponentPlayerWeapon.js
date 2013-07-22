@@ -36,6 +36,8 @@ class.properties(ComponentPlayerWeapon,
     translation     : null,
     actorType       : "",
     bActive         : false,
+    bHasAltAmmo     : false,
+    bAltAmmoSet     : false,
     playerOwner     : null,
     
     //------------------------------------------------------------------------
@@ -50,12 +52,20 @@ class.properties(ComponentPlayerWeapon,
             Math.PI, 0, null);
         
         actor.bHidden = true;
-        actor.physics = Physics.PT_NONE;
+        actor.physics = 0;
         return actor;
     },
     
     initAnimations : function()
     {
+    },
+    
+    switchAmmoType : function()
+    {
+        if(!this.bHasAltAmmo)
+            return;
+            
+        this.bAltAmmoSet ^= 1;
     },
     
     checkHoldster : function()
@@ -178,7 +188,7 @@ class.properties(ComponentPlayerWeapon,
         var vec = Vector.applyRotation(new Vector(x, y, z), actor.rotation);
         
         vec.x += org.x;
-        vec.y += org.y + actor.centerHeight + actor.viewHeight;
+        vec.y += org.y + 56.32;
         vec.z += org.z;
 
         Sys.spawnFx(fx, actor, vec, actor.rotation,
@@ -351,8 +361,8 @@ class.properties(ComponentPlayerWeapon,
                 var pa = ClientPlayer.actor;
             
                 if(controller.state == STATE_MOVE_WALK &&
-                    (wstate.origin.y + wstate.velocity.y) - wstate.plane.distance(wstate.origin) <
-                    (pa.viewHeight + pa.centerHeight)+1)
+                    (wstate.origin.y + wstate.velocity.y) -
+                    wstate.plane.distance(wstate.origin) < pa.height)
                 {
                     const WEPBOB_EPISILON  = 0.001;
                     const WEPBOB_MAXSWAY   = Angle.degToRad(22.5);
@@ -522,6 +532,7 @@ class.properties(WeaponBow,
     y           : -12.62882,
     z           : -150.18696,
     actorType   : 'pweapon_bow',
+    bHasAltAmmo : true,
     bAiming     : false,
     
     // new animations
@@ -576,20 +587,29 @@ class.properties(WeaponBow,
                 this.bAiming = false;
                 this.parent.owner.blendAnim(this.anim_Fire,
                     this.playSpeed, 4.0, 0);
-                    
-                this.playerOwner.ammo[AM_ARROWS].use(1);
                 
                 var actor = this.playerOwner.parent.owner;
                 var vec = actor.getLocalVector(0.2048, -6.144, 25.6);
                 
-                vec.y += (actor.centerHeight + actor.viewHeight) * 0.5;
+                vec.y += actor.height;
                 
                 var dir = new Vector(0, 0, 1);
                 dir.scale(time * 512.0 * 15.0);
 
-                Sys.spawnFx('fx/projectile_arrow.kfx', actor, vec, actor.rotation,
-                    Plane.fromIndex(actor.plane),
-                    Vector.applyRotation(dir, actor.rotation));
+                if(!this.bAltAmmoSet)
+                {
+                    this.playerOwner.ammo[AM_ARROWS].use(1);
+                    Sys.spawnFx('fx/projectile_arrow.kfx', actor, vec, actor.rotation,
+                        Plane.fromIndex(actor.plane),
+                        Vector.applyRotation(dir, actor.rotation));
+                }
+                else
+                {
+                    this.playerOwner.ammo[AM_TEKARROWS].use(1);
+                    Sys.spawnFx('fx/projectile_tekarrow.kfx', actor, vec, actor.rotation,
+                        Plane.fromIndex(actor.plane),
+                        Vector.applyRotation(dir, actor.rotation));
+                }
             }
         }
         
@@ -671,6 +691,7 @@ class.properties(WeaponShotgun,
     readySound  : 'sounds/shaders/ready_shotgun.ksnd',
     actorType   : 'pweapon_shotgun',
     bReload     : false,
+    bHasAltAmmo : true,
     
     //------------------------------------------------------------------------
     // FUNCTIONS
@@ -692,13 +713,24 @@ class.properties(WeaponShotgun,
     
     onBeginAttack : function()
     {
-        this.spawnFx('fx/muzzle_shotgun.kfx', -6.656, -2.7648, 15.696);
+        this.spawnFx('fx/muzzle_shotgun.kfx', -5.75, -3.5, 15.696);
         
         this.parent.owner.blendAnim(this.anim_Fire,
             this.playSpeed, 4.0, 0);
         
-        this.playerOwner.ammo[AM_SHELLS].use(1);
-        ClientPlayer.component.aShotgunAttack();
+        if(!this.bAltAmmoSet)
+        {
+            //this.playerOwner.ammo[AM_SHELLS].use(1);
+            //this.spawnFx('fx/projectile_shell.kfx', -12.288, -7.1680, 25.6);
+            ClientPlayer.component.aShotgunAttack();
+        }
+        else
+        {
+            Snd.play('sounds/shaders/riot_shotgun_shot.ksnd', this.playerOwner.parent.owner);
+            this.playerOwner.recoilPitch = -0.0408;
+            this.playerOwner.ammo[AM_EXPSHELLS].use(1);
+            this.spawnFx('fx/fx_195.kfx', -12.288, -7.1680, 25.6);
+        }
         return true;
     },
     
@@ -709,7 +741,12 @@ class.properties(WeaponShotgun,
             if(!this.bReload)
             {
                 this.bReload = true;
-                this.spawnFx('fx/shotshell.kfx', -11.26, -8.19, 20.736);
+                
+                if(!this.bAltAmmoSet)
+                    this.spawnFx('fx/shotshell.kfx', -11.26, -4.0, 15.696);
+                else
+                    this.spawnFx('fx/shotshellexp.kfx', -11.26, -4.0, 15.696);
+                    
                 Snd.play('sounds/shaders/ready_shotgun.ksnd');
             }
         }
@@ -742,6 +779,7 @@ class.properties(WeaponAutoShotgun,
     bReload         : false,
     spinAngle       : 0.0,
     spinRotation    : new Quaternion(0, 0, 0, 1),
+    bHasAltAmmo     : true,
     
     //------------------------------------------------------------------------
     // FUNCTIONS
@@ -777,10 +815,23 @@ class.properties(WeaponAutoShotgun,
     onBeginAttack : function()
     {
         this.spawnFx('fx/muzzle_shotgun.kfx', -6.144, -1.9456, 15.696);
-        this.spawnFx('fx/shotshell.kfx', -14.336, -12.288, 20.736);
+        if(!this.bAltAmmoSet)
+            this.spawnFx('fx/shotshell.kfx', -14.336, -12.288, 20.736);
+        else
+            this.spawnFx('fx/shotshellexp.kfx', -14.336, -12.288, 20.736);
         
-        this.playerOwner.ammo[AM_SHELLS].use(1);
-        ClientPlayer.component.aAutoShotgunAttack();
+        if(!this.bAltAmmoSet)
+        {
+            this.playerOwner.ammo[AM_SHELLS].use(1);
+            ClientPlayer.component.aAutoShotgunAttack();
+        }
+        else
+        {
+            Snd.play('sounds/shaders/riot_shotgun_shot.ksnd', this.playerOwner.parent.owner);
+            this.playerOwner.recoilPitch = -0.0408;
+            this.playerOwner.ammo[AM_EXPSHELLS].use(1);
+            this.spawnFx('fx/fx_195.kfx', -12.288, -7.1680, 25.6);
+        }
         
         this.parent.owner.blendAnim(this.anim_Fire,
             this.playSpeed, 4.0, 0);
@@ -953,7 +1004,17 @@ class.properties(WeaponPulseRifle,
         {
             actor.animState.playTime -= 0.16;
             this.playerOwner.ammo[AM_CELLS].use(1);
-            this.spawnFx('fx/projectile_pulseshot.kfx', -20.48, -12.8, -96);
+            var cActor = ClientPlayer.actor;
+            var org = this.playerOwner.controller.origin;
+            var vec = Vector.applyRotation(new Vector(-5.12, -14.336, -107.52), cActor.rotation);
+            
+            vec.x += org.x;
+            vec.y += org.y + 56.32;
+            vec.z += org.z;
+
+            Sys.spawnFx('fx/projectile_pulseshot.kfx', cActor, vec, cActor.rotation,
+                Plane.fromIndex(cActor.plane));
+            
             this.playerOwner.recoilPitch = -0.0288;
             Snd.play('sounds/shaders/machine_gun_shot_2.ksnd',
                 this.playerOwner.parent.owner);
@@ -1013,7 +1074,7 @@ class.properties(WeaponGrenadeLauncher,
      
         this.playerOwner.ammo[AM_GRENADES].use(1);
         Snd.play('sounds/shaders/grenade_launch.ksnd', ClientPlayer.actor);
-        this.spawnFx('fx/projectile_grenade.kfx', -18.432, -5.12, -25.6);
+        this.spawnFx('fx/projectile_grenade.kfx', -18.432, -5.12, -15.696);
         this.spawnFx('fx/muzzle_grenade_launcher.kfx', -10.35, -2.048, 18.432);
         return true;
     }
@@ -1206,7 +1267,7 @@ class.properties(WeaponRocketLauncher,
     
     onBeginAttack : function()
     {
-        this.spawnFx('fx/projectile_rocket.kfx', -4.096, -14.336, -25.6);
+        this.spawnFx('fx/projectile_rocket.kfx', -56.32, -14.336, -25.6);
         Snd.play('sounds/shaders/missile_launch.ksnd');
         Snd.play('sounds/shaders/reload_missile_launcher.ksnd');
         

@@ -39,6 +39,81 @@ class.properties(ComponentScriptedTrap,
             dmgClass.prototype.inflict(ClientPlayer.actor, self);
     },
     
+    weakKnockBack : function()
+    {
+        var r = arguments[0] * 10.24;
+        var actor = this.parent.owner;
+        var aorg = actor.getLocalVector(arguments[1], arguments[2], arguments[3]);
+        
+        var list = Level.getActorsInRadius(r, aorg.x, aorg.y - actor.baseHeight * 0.5, aorg.z,
+            Plane.fromIndex(actor.plane), 9, true);
+            
+        if(list == null)
+            return;
+            
+        // declare all vars here instead of in the loop to avoid thrashing the GC
+        var vx;
+        var vy;
+        var vz;
+        var aobj;
+        var origin;
+        var vel;
+        var j;
+        var bDead;
+        
+        var velocity = new Vector(0, 0, 0);
+        
+        for(var i = 0; i < list.length; i++)
+        {
+            aobj = list[i];
+            bDead = false;
+            
+            for(j in aobj.components)
+            {
+                var component = aobj.components[j];
+                if(component.health && component.health <= 0)
+                {
+                    bDead = true;
+                    break;
+                }
+            }
+            
+            // don't knock around dead things
+            if(bDead)
+                continue;
+            
+            origin = aobj.origin;
+            
+            vx = origin.x - aorg.x;
+            vy = (origin.y + aobj.baseHeight * 0.5) - aorg.y;
+            vz = origin.z - aorg.z;
+            
+            if(Math.sqrt(vx*vx+vy*vy+vz*vz) <= r + aobj.radius)
+            {
+                vel = aobj.velocity;
+                
+                // TODO - need to fix this
+                // nudge player actors a few feet from the ground
+                // so they'll be affected by the xz velocity
+                if(aobj.classFlags & 8)
+                {
+                    origin.y += 1.0;
+                    aobj.origin = origin;
+                }
+            
+                velocity.x = vx;
+                velocity.y = vy;
+                velocity.z = vz;
+                
+                velocity.scale(13.824);
+                velocity.add(vel);
+                velocity.y = 307.2;
+                
+                aobj.velocity = velocity;
+            }
+        }
+    },
+    
     melee : function()
     {
         this.dealDamage(DamageMelee,

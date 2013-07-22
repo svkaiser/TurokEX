@@ -80,8 +80,6 @@ const AI_ANIM_DEATH_STAND       = 34;
 const AI_ANIM_DEATH_VIOLENT     = 35;
 const AI_ANIM_DEATH_RUNNING     = 37;
 
-const AI_ANIM_SPAWN_DROP        = 202;
-
 //------------------------------------------------------------------------
 // Range attack flags
 //------------------------------------------------------------------------
@@ -208,6 +206,11 @@ class.properties(ComponentTurokAI,
     // MELEE DAMAGE FUNCTIONS
     //------------------------------------------------------------------------
     
+    veryWimpyMelee : function()
+    {
+        this.meleeDamage(this.parent.owner, DamageVeryWimpyMelee);
+    },
+    
     wimpyMelee : function()
     {
         this.meleeDamage(this.parent.owner, DamageWimpyMelee);
@@ -241,6 +244,11 @@ class.properties(ComponentTurokAI,
     weakFleshMelee : function()
     {
         this.meleeDamage(this.parent.owner, DamageWeakFleshMelee);
+    },
+    
+    heavyMelee : function()
+    {
+        this.meleeDamage(this.parent.owner, DamageHeavyMelee);
     },
     
     meleeDamage : function(actor, damageClass)
@@ -280,6 +288,16 @@ class.properties(ComponentTurokAI,
         
         BlastRadius.prototype.explode(this.parent.owner, origin.x, origin.y, origin.z,
             plane, radius, 10.0, 1.0, false);
+    },
+    
+    action_364 : function()
+    {
+        var radius = arguments[1];
+        var origin = arguments[2];
+        var plane = arguments[4];
+        
+        BlastRadius.prototype.explode(this.parent.owner, origin.x, origin.y, origin.z,
+            plane, radius, 20.0, 1.0, false);
     },
     
     //------------------------------------------------------------------------
@@ -880,8 +898,17 @@ class.properties(ComponentTurokAI,
     {
         var actor = this.parent.owner;
         
-        actor.physics = Physics.PT_DEFAULT;
-        actor.bNoDropOff = true;
+        if(actor.physics == 0)
+        {
+            actor.physics = (
+                Physics.PF_CLIPSTATICS |
+                Physics.PF_CLIPACTORS |
+                Physics.PF_CLIPGEOMETRY |
+                Physics.PF_CLIPEDGES |
+                Physics.PF_SLIDEMOVE |
+                Physics.PF_NOENTERWATER);
+        }
+        
         actor.ai.bFindPlayers = true;
         actor.ai.bAvoidWalls = true;
         actor.ai.bLookAtTarget = true;
@@ -891,37 +918,13 @@ class.properties(ComponentTurokAI,
         
         if(this.rangeDistance < 1.0)
             this.rangeDistance = 1.0;
-        
-        if(actor.plane != -1)
-        {
-            var origin = actor.origin;
-            var plane = Plane.fromIndex(actor.plane);
             
-            if(origin.y - plane.distance(origin) > (1024.0 - 1.024))
-            {
-                actor.physics = Physics.PT_NONE;
-                actor.ai.bDisabled = true;
-                actor.ai.bFindPlayers = false;
-                actor.bHidden = true;
-                return;
-            }
-        }
+        if(this.health <= 0)
+            this.health = 1;
     },
     
     onTrigger : function()
     {
-        var actor = this.parent.owner;
-        
-        if(!actor.checkAnimID(AI_ANIM_SPAWN_DROP))
-            return;
-        
-        // enable physics and unhide it
-        actor.physics = Physics.PT_DEFAULT;
-        actor.ai.bDisabled = false;
-        actor.bHidden = false;
-        
-        this.state = AI_STATE_DROPPING;
-        actor.setAnim(AI_ANIM_SPAWN_DROP, 4.0, 0);
     },
     
     onDamage : function(instigator, amount, dmgClass)
@@ -953,6 +956,8 @@ class.properties(ComponentTurokAI,
         self.ai.bDisabled = true;
         self.bNoDropOff = false;
         self.velocity.clear();
+        
+        self.physics = self.physics | Physics.PF_DROPOFF;
         
         if(!(this.targetID <= -1))
             Level.triggerActors(this.targetID, 0);
