@@ -257,6 +257,7 @@ typedef struct
     gActor_t    *hitActor;
     vec3_t      normal;
     float       frac;
+    float       tfrac;
     gActor_t    *source;
     tracetype_e type;
 } trace_t;
