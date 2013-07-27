@@ -782,6 +782,9 @@ JS_FASTNATIVE_BEGIN(GameActor, spawn)
 
     JS_free(cx, bytes);
 
+    if(actor->plane >= 0)
+        Map_LinkActorToWorld(actor);
+
     JS_NEWOBJECT_SETPRIVATE(actor, &GameActor_class);
     return JS_TRUE;
 }

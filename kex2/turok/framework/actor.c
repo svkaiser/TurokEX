@@ -567,7 +567,9 @@ static void Actor_UpdateMove(gActor_t *actor)
         }
     }
     
+    Map_UnlinkActorFromWorld(actor);
     actor->plane = Map_PlaneToIndex(plane);
+    Map_LinkActorToWorld(actor);
 }
 
 //
@@ -1315,6 +1317,9 @@ void Actor_UpdateModel(gActor_t *actor, const char *model)
 
 void Actor_Remove(gActor_t *actor)
 {
+    Map_UnlinkActorFromWorld(actor);
+    actor->linkNext = actor->linkPrev = NULL;
+
     Actor_ClearData(actor);
     Z_Free(actor);
 }

@@ -191,6 +191,9 @@ JS_FASTNATIVE_BEGIN(Level, spawnActor)
         (float)pitch,
         plane == NULL ? -1 : plane - gLevel.planes);
 
+    if(actor->plane >= 0)
+        Map_LinkActorToWorld(actor);
+
     JS_free(cx, bytes);
 
     JS_NEWOBJECT_SETPRIVATE(actor, &GameActor_class);
@@ -258,6 +261,9 @@ JS_FASTNATIVE_BEGIN(Level, spawnActorEx)
         plane == NULL ? -1 : plane - gLevel.planes, classFlags, bytes, callback);
 
     Map_AddActor(&gLevel, actor);
+
+    if(actor->plane >= 0)
+        Map_LinkActorToWorld(actor);
 
     if(bytes)
         JS_free(cx, bytes);

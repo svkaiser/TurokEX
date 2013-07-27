@@ -78,6 +78,8 @@ typedef enum
     AAF_SAVEGAME        = 0x8000000
 } areaflags_t;
 
+#if 0
+
 typedef enum
 {
     BLF_SECTORLINK      = 0x1,
@@ -92,7 +94,6 @@ typedef struct
     float               maxz;
 } mapgrid_t;
 
-#if 0
 typedef enum
 {
     OC_GENERIC  = 0,
@@ -249,9 +250,6 @@ typedef enum
 typedef struct plane_s
 {
     unsigned short      area_id;
-    unsigned short      fSurfaceID;
-    unsigned short      cSurfaceID;
-    unsigned short      wSurfaceID;
     unsigned int        flags;
     vec3_t              points[3];
     float               height[3];
@@ -278,12 +276,6 @@ typedef struct
 
 typedef struct
 {
-    int             (*length)(void);
-    kbool           (*get)(int, gActor_t*);
-} gActorList_t;
-
-typedef struct
-{
     float           minx;
     float           minz;
     float           maxx;
@@ -298,6 +290,10 @@ typedef struct
     float           waterplane;
     unsigned int    targetID;
     char            *triggerSound;
+    unsigned short  fSurfaceID;
+    unsigned short  cSurfaceID;
+    unsigned short  wSurfaceID;
+    gActor_t        actorRoot;
     gObject_t       *components;
     gObject_t       *iterator;
 } gArea_t;
@@ -348,6 +344,8 @@ d_inline plane_t *Map_IndexToPlane(int index)
 }
 
 gArea_t *Map_GetArea(plane_t *plane);
+void Map_LinkActorToWorld(gActor_t *actor);
+void Map_UnlinkActorFromWorld(gActor_t *actor);
 plane_t *Map_FindClosestPlane(vec3_t coord);
 gActor_t *Map_SpawnActor(const char *classname, float x, float y, float z,
                          float yaw, float pitch, int plane);

@@ -32,8 +32,6 @@
 #define EPSILON_FLOOR   0.5f
 #define STEPHEIGHT      12.0f
 
-#define DOT2D(v1, v2)   ((v1[0]*v2[0]+v1[2]*v2[2]))
-
 //
 // Trace_Object
 //
@@ -48,7 +46,7 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
     Vec_Sub(tdir, trace->start, trace->end);
     Vec_Sub(odir, trace->start, objpos);
 
-    if(DOT2D(tdir, odir) > 0)
+    if((tdir[0] * odir[0] + tdir[2] * odir[2]) > 0)
     {
         float len = Vec_Unit2(tdir);
 
@@ -60,7 +58,7 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
             float cp;
 
             Vec_Scale(ndir, tdir, 1.0f / len);
-            cp = DOT2D(ndir, odir);
+            cp = ndir[0] * odir[0] + ndir[2] * odir[2];
             Vec_Scale(ndir, ndir, cp);
             Vec_Sub(cDist, odir, ndir);
 
@@ -70,16 +68,14 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
             {
                 float frac = (cp - (float)sqrt(rd)) * (1.0f / len);
 
-                if(frac <= 1.0f && (1.0f-frac) > trace->tfrac)
+                if(frac <= 1.0f && frac < trace->frac)
                 {
                     vec3_t lerp;
 
-                    trace->frac = 1.0f - frac;
+                    trace->frac = frac;
                     trace->tfrac = trace->frac;
 
                     Vec_Scale(lerp, tdir, frac);
-                    Vec_Add(lerp, lerp, trace->start);
-                    Vec_Sub(lerp, lerp, trace->start);
                     Vec_Sub(trace->hitvec, trace->start, lerp);
 
                     Vec_Copy3(trace->normal, odir);
@@ -95,25 +91,94 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
 }
 
 //
+// Trace_TestActor
+//
+
+static void Trace_TestActor(trace_t *trace, vec3_t pos, gActor_t *actor, plane_t *plane)
+{
+    if(actor->bStale)
+        return;
+    if(!(trace->physics & PF_CLIPSTATICS) && actor->bStatic)
+        return;
+    if(!(trace->physics & PF_CLIPACTORS) && !actor->bStatic)
+        return;
+    if(actor == trace->source)
+        return;
+    if(trace->source && trace->source->owner == actor)
+        return;
+
+    if(actor->bCollision || actor->bTouch)
+    {
+        if(actor->plane >= 0 && Map_IndexToPlane(actor->plane)->area_id != plane->area_id)
+            return;
+
+        if(actor->bTouch && trace->source && trace->source->components &&
+            trace->physics & PF_TOUCHACTORS)
+        {
+            bbox_t box;
+
+            Vec_Copy3(box.min, actor->bbox.min);
+            Vec_Copy3(box.max, actor->bbox.max);
+            Vec_Mult(box.min, box.min, actor->scale);
+            Vec_Mult(box.max, box.max, actor->scale);
+            Vec_Add(box.min, box.min, actor->origin);
+            Vec_Add(box.max, box.max, actor->origin);
+
+            box.min[0] -= trace->offset;
+            box.min[1] -= trace->offset;
+            box.min[2] -= trace->offset;
+            box.max[0] += trace->offset;
+            box.max[1] += trace->offset;
+            box.max[2] += trace->offset;
+
+            if((pos[0] > box.min[0] && pos[0] < box.max[0]) &&
+                (pos[1] > box.min[1] && pos[1] < box.max[1]) &&
+                (pos[2] > box.min[2] && pos[2] < box.max[2]))
+            {
+                Actor_OnTouchEvent(actor, trace->source);
+                return;
+            }
+        }
+
+        if(pos[1] > actor->origin[1] + (actor->height+actor->viewHeight) ||
+            pos[1] + trace->offset < actor->origin[1])
+        {
+            return;
+        }
+
+        if(Trace_Object(trace, actor->origin, actor->radius))
+        {
+            if(actor->bCollision)
+            {
+                trace->type = TRT_OBJECT;
+                trace->hitActor = actor;
+            }
+        }
+    }
+}
+
+//
 // Trace_Objects
 //
 // Scans through planes for linked objects and test
 // collision against them
 //
 
-static kbool Trace_Objects(trace_t *trace)
+static void Trace_Objects(trace_t *trace, plane_t *plane)
 {
     unsigned int i;
     vec3_t pos;
     gActor_t *rover;
-    kbool hit = false;
 
-    trace->frac = trace->tfrac = 0;
+    if(plane == NULL)
+        return;
 
-    Vec_Copy3(pos, trace->start);
+    Vec_Lerp3(pos, trace->tfrac, trace->start, trace->end);
 
     if(trace->physics & PF_CLIPSTATICS)
     {
+        trace->frac = 1;
+
         for(i = 0; i < gLevel.numGridBounds; i++)
         {
             gridBounds_t *grid = &gLevel.gridBounds[i];
@@ -125,95 +190,59 @@ static kbool Trace_Objects(trace_t *trace)
 
                 for(j = 0; j < grid->numStatics; j++)
                 {
-                    gActor_t *actor = &grid->statics[j];
+                    int k = 0;
 
-                    if(!actor->bCollision && !actor->bTouch)
-                        continue;
+                    Trace_TestActor(trace, pos, &grid->statics[j], plane);
 
-                    if(actor->bCollision || actor->bTouch)
+                    // early out for slide movers
+                    if(trace->physics & PF_SLIDEMOVE && trace->type == TRT_OBJECT)
+                        return;
+
+                    for(k = 0; k < 3; k++)
                     {
-                        if(pos[1] > actor->origin[1] + (actor->height+actor->viewHeight) ||
-                            pos[1] + trace->offset < actor->origin[1])
-                        {
+                        if(plane->link[k] == NULL)
                             continue;
-                        }
 
-                        if(Trace_Object(trace, actor->origin, actor->radius))
-                        {
-                            hit = true;
-
-                            if(actor->bTouch && trace->source && trace->source->components &&
-                                trace->physics & PF_TOUCHACTORS)
-                            {
-                                Actor_OnTouchEvent(actor, trace->source);
-                            }
-
-                            if(actor->bCollision)
-                            {
-                                trace->type = TRT_OBJECT;
-                                trace->hitActor = actor;
-                                // TODO - TEMP
-                                return true;
-                            }
-                        }
+                        Trace_TestActor(trace, pos,
+                            &grid->statics[j], plane->link[k]);
                     }
                 }
             }
         }
-
-        if(hit)
-            return true;
     }
 
-    hit = false;
-
-    // special objects doesn't interact with non-static actors
-    if(trace->source && !(trace->source->physics & PF_SLIDEMOVE))
-        return false;
-
-    if(!(trace->physics & PF_CLIPACTORS))
-        return false;
-
-    // TODO
-    for(rover = gLevel.actorRoot.next; rover != &gLevel.actorRoot; rover = rover->next)
+    if(trace->physics & PF_CLIPACTORS)
     {
-        gActor_t *actor = rover;
+        gArea_t *area;
 
-        if(actor == trace->source)
-            continue;
+        area = Map_GetArea(plane);
+        trace->frac = 1;
 
-        if(trace->source && trace->source->owner == actor)
-            continue;
-
-        if(actor->bCollision || actor->bTouch)
+        // scan through area for slide movers
+        if(trace->physics & PF_SLIDEMOVE)
         {
-            if(pos[1] > actor->origin[1] + (actor->height+actor->viewHeight) ||
-                pos[1] + trace->offset < actor->origin[1])
+            for(rover = area->actorRoot.linkNext;
+                rover != &area->actorRoot;
+                rover = rover->linkNext)
             {
-                continue;
+                Trace_TestActor(trace, pos, rover, plane);
+             
+                // early out for slide movers
+                if(trace->type == TRT_OBJECT)
+                    return;
             }
-
-            if(Trace_Object(trace, actor->origin, actor->radius))
+        }
+        else
+        {
+            // scan through all actors for full ray-tracing
+            for(rover = gLevel.actorRoot.next;
+                rover != &gLevel.actorRoot;
+                rover = rover->next)
             {
-                if(actor->bTouch && trace->source && trace->source->components &&
-                    trace->physics & PF_TOUCHACTORS)
-                {
-                    Actor_OnTouchEvent(actor, trace->source);
-                }
-
-                if(actor->bCollision)
-                {
-                    hit = true;
-                    trace->type = TRT_OBJECT;
-                    trace->hitActor = actor;
-                    // TODO - TEMP
-                    return true;
-                }
+                Trace_TestActor(trace, pos, rover, plane);
             }
         }
     }
-
-    return hit;
 }
 
 //
@@ -409,7 +438,7 @@ static plane_t *Trace_CrossPlane(trace_t *trace, plane_t *p, int point)
         return NULL;
     }
 
-    Vec_Lerp3(pos, trace->tfrac, trace->end, trace->start);
+    Vec_Lerp3(pos, trace->tfrac, trace->start, trace->end);
     ty = pos[1];
 
     // add an extra 'lip' to height for slide movers
@@ -735,7 +764,7 @@ trace_t Trace(vec3_t start, vec3_t end, plane_t *plane,
     }
 
     if(trace.type == TRT_NOHIT)
-        Trace_Objects(&trace);
+        Trace_Objects(&trace, trace.pl);
 
     return trace;
 }

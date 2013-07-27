@@ -300,8 +300,8 @@ kbool AI_CanSeeTarget(ai_t *ai, gActor_t *target)
     trace = Trace(pos, dest, plane, self,
         PF_CLIP_ALL | PF_DROPOFF);
 
-    if(trace.type == TRT_OBJECT &&
-        trace.hitActor && trace.hitActor == target)
+    if(trace.tfrac == 1 || (trace.type == TRT_OBJECT &&
+        trace.hitActor && trace.hitActor == target))
     {
         ai->flags |= AIF_SEETARGET;
         return true;

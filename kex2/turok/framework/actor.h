@@ -88,6 +88,8 @@ typedef struct gActor_s
     struct gActor_s     *owner;
     struct gActor_s     *prev;
     struct gActor_s     *next;
+    struct gActor_s     *linkPrev;
+    struct gActor_s     *linkNext;
     vec3_t              scale;
     kmodel_t            *model;
     animstate_t         animState;

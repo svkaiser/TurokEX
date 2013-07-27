@@ -367,6 +367,9 @@ void P_LocalPlayerTick(void)
     ws->timeStamp = (float)info->cmd.timestamp.i;
     ws->frameTime = info->cmd.frametime.f;
 
+    Map_UnlinkActorFromWorld(actor);
+    Map_UnlinkActorFromWorld(localPlayer.camera);
+
     // update controller in case movement was corrected by server
     Vec_Copy3(ws->origin, actor->origin);
     Vec_Add(ws->velocity, ws->velocity, actor->velocity);
@@ -402,6 +405,10 @@ void P_LocalPlayerTick(void)
 
     Vec_Copy3(actor->origin, ws->origin);
     Vec_Copy3(actor->angles, ws->angles);
+
+    Map_LinkActorToWorld(actor);
+    Map_LinkActorToWorld(localPlayer.camera);
+
     Actor_UpdateTransform(actor);
     Actor_UpdateTransform(localPlayer.camera);
 }

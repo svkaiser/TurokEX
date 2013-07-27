@@ -38,8 +38,13 @@
 #include "sound.h"
 #include "ai.h"
 #include "fx.h"
+#include "debug.h"
 
 gLevel_t gLevel;
+
+CVAR_EXTERNAL(developer);
+
+static int numAreaActors = 0;
 
 enum
 {
@@ -804,6 +809,8 @@ static void Map_ParseAreaBlock(scparser_t *parser)
         int numComponents = 0;
         gArea_t *area = &gLevel.areas[i];
 
+        area->actorRoot.linkNext = area->actorRoot.linkPrev = &area->actorRoot;
+
         // read into nested gridBound block
         SC_ExpectNextToken(TK_LBRACK);
         SC_Find();
@@ -1051,6 +1058,51 @@ gArea_t *Map_GetArea(plane_t *plane)
 }
 
 //
+// Map_LinkActorToWorld
+//
+
+void Map_LinkActorToWorld(gActor_t *actor)
+{
+    gArea_t *area;
+
+    if(actor->plane >= (int)gLevel.numplanes ||
+        actor->plane <= -1 || !gLevel.loaded)
+        return;
+
+    area = Map_GetArea(Map_IndexToPlane(actor->plane));
+
+    if(area == NULL)
+        return;
+
+    area->actorRoot.linkPrev->linkNext = actor;
+    actor->linkNext = &area->actorRoot;
+    actor->linkPrev = area->actorRoot.linkPrev;
+    area->actorRoot.linkPrev = actor;
+}
+
+//
+// Map_UnlinkActorFromWorld
+//
+
+void Map_UnlinkActorFromWorld(gActor_t *actor)
+{
+    gArea_t *area;
+    gActor_t *next;
+
+    if(actor->plane >= (int)gLevel.numplanes ||
+        actor->plane <= -1 || !gLevel.loaded)
+        return;
+
+    area = Map_GetArea(Map_IndexToPlane(actor->plane));
+
+    if(area == NULL)
+        return;
+
+    next = actor->linkNext;
+    (next->linkPrev = actor->linkPrev)->linkNext = next;
+}
+
+//
 // Map_FindClosestPlane
 //
 
@@ -1077,14 +1129,10 @@ plane_t *Map_FindClosestPlane(vec3_t coord)
             dist = coord[1] - Plane_GetDistance(p, coord);
 
             if(p->flags & CLF_ONESIDED && dist < -16)
-            {
                 continue;
-            }
 
             if(dist < 0)
-            {
                 dist = -dist;
-            }
 
             if(ok)
             {
@@ -1352,6 +1400,33 @@ gObject_t *Map_GetActorsInRadius(float radius, float x, float y, float z, plane_
 }
 
 //
+// Map_GetAreaLinkCount
+//
+
+static void Map_GetAreaLinkCount(void)
+{
+    gActor_t *rover;
+    gArea_t *area;
+
+    numAreaActors = 0;
+
+    if(client.playerActor->plane <= -1)
+        return;
+
+    area = Map_GetArea(Map_IndexToPlane(client.playerActor->plane));
+
+    if(area == NULL)
+        return;
+
+    for(rover = area->actorRoot.linkNext;
+        rover != &area->actorRoot;
+        rover = rover->linkNext)
+    {
+        numAreaActors++;
+    }
+}
+
+//
 // Map_Tick
 //
 
@@ -1365,12 +1440,44 @@ void Map_Tick(void)
         return;
     }
 
+    if(developer.value)
+        Map_GetAreaLinkCount();
+
     gLevel.tics++;
     gLevel.time = (float)(gLevel.tics * SERVER_RUNTIME);
     gLevel.deltaTime = (float)server.elaspedTime;
 
     if(gLevel.bReadyUnload)
         Map_Unload();
+}
+
+//
+// Map_PostLoad
+//
+
+static void Map_PostLoad(void)
+{
+    gActor_t *actor;
+    jsval val;
+    unsigned int i;
+    unsigned int j;
+
+    gLevel.nextMap = -1;
+    gLevel.loaded = true;
+
+    P_SpawnLocalPlayer();
+    client.state = CL_STATE_INGAME;
+
+    JS_CallFunctionName(js_context, js_objGame, "onLevelLoad", 0, NULL, &val);
+
+    // TODO - area data may not be fully initialized or initialized last
+    // after actors were spawned. here, actors are unlinked and linked again
+    // to insure that all area data has been fully loaded
+    for(actor = gLevel.actorRoot.next; actor != &gLevel.actorRoot;
+        actor = actor->next)
+    {
+        Map_LinkActorToWorld(actor);
+    }
 }
 
 //
@@ -1381,7 +1488,6 @@ void Map_Load(int map)
 {
     scparser_t *parser;
     filepath_t file;
-    jsval val;
 
     if(client.state < CL_STATE_READY)
         return;
@@ -1425,14 +1531,7 @@ void Map_Load(int map)
     Com_Printf("Actors allocated: %ikb\n", Z_TagUsage(PU_ACTOR) >> 10);
     Com_Printf("Level data allocated: %ikb\n", Z_TagUsage(PU_LEVEL) >> 10);
 
-    gLevel.nextMap = -1;
-    gLevel.loaded = true;
-
-    P_SpawnLocalPlayer();
-    client.state = CL_STATE_INGAME;
-
-    JS_CallFunctionName(js_context, js_objGame, "onLevelLoad", 0, NULL, &val);
-
+    Map_PostLoad();
 }
 
 //
@@ -1470,6 +1569,12 @@ void Map_Unload(void)
         for(j = 0; j < gb->numStatics; j++)
         {
             gActor_t *actor = &gb->statics[j];
+
+            if(actor->plane >= 0)
+            {
+                Map_UnlinkActorFromWorld(actor);
+                actor->linkNext = actor->linkPrev = NULL;
+            }
 
             if(actor->bStatic)
                 continue;
@@ -1564,5 +1669,7 @@ void Map_Init(void)
     Cmd_AddCommand("loadmap", FCmd_LoadTestMap);
     Cmd_AddCommand("unloadmap", FCmd_UnloadMap);
     Cmd_AddCommand("spawnactor", FCmd_SpawnActor);
+
+    Debug_RegisterPerfStatVar((float*)&numAreaActors, "Area Link Count", false);
 }
 

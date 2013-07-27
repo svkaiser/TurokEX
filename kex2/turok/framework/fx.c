@@ -934,6 +934,9 @@ static void FX_Move(fx_t *fx, vec3_t dest)
     float dist;
     fxinfo_t *fxinfo;
 
+    if(fx->bStale)
+        return;
+
     Vec_Add(dest, dest, fx->origin);
 
     if(fx->plane == NULL)
@@ -973,6 +976,7 @@ static void FX_Move(fx_t *fx, vec3_t dest)
                 trace.normal, (1 + fxinfo->mass));
             break;
         case VFX_DESTROY:
+            Vec_Copy3(fx->origin, trace.hitvec);
             FX_DestroyEvent(fx, trace.hitActor);
             break;
         default:
