@@ -812,7 +812,7 @@ static void AddModel(byte *data, int index)
     ProcessProperties(modeldata, index);
     Com_UpdateDataProgress();
 
-    ProcessSpawnActions(modeldata, index);
+    //ProcessSpawnActions(modeldata, index);
     Com_UpdateDataProgress();
 
     ProcessMeshes(modeldata, index);

@@ -67,6 +67,13 @@ enum
 
 typedef struct
 {
+    char        *fx;
+    char        *snd;
+    action_t    action;
+} fxEvent_t;
+
+typedef struct
+{
     kbool               bFadeout;
     kbool               bStopAnimOnImpact;
     kbool               bOffsetFromFloor;
@@ -81,6 +88,7 @@ typedef struct
     kbool               bLocalAxis;
     kbool               bClientSpace;
     kbool               bProjectile;
+    kbool               bDestroyOnWaterSurface;
     float               mass;
     float               translation_randomscale;
     fxvector_t          translation;
@@ -112,15 +120,12 @@ typedef struct
     int                 saturation_randomscale;
     int                 fadein_time;
     int                 fadeout_time;
-    char                *hitFX;
-    char                *hitSnd;
-    action_t            hitAction;
-    char                *tickFX;
-    char                *tickSnd;
-    action_t            tickAction;
-    char                *expireFX;
-    char                *expireSnd;
-    action_t            expireAction;
+    fxEvent_t           onImpact;
+    fxEvent_t           onTick;
+    fxEvent_t           onExpire;
+    fxEvent_t           onWaterImpact;
+    fxEvent_t           onWaterTick;
+    fxEvent_t           onWaterExpire;
 } fxinfo_t;
 
 typedef struct fxfile_s
@@ -172,7 +177,6 @@ extern fx_t *fxRover;
 void FX_Init(void);
 void FX_Kill(fx_t *fx);
 void FX_Ticker(void);
-fxfile_t *FX_Load(const char *name);
 void FX_ClearLinks(void);
 void FX_Shutdown(void);
 fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,

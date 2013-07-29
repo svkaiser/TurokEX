@@ -685,4 +685,3 @@ void Mtx_ApplyRotation(vec4_t rot, mtx_t out)
     out[14] = 0;
     out[15] = 1;
 }
-

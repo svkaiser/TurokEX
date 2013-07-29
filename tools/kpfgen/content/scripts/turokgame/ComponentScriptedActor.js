@@ -1,7 +1,9 @@
 //-----------------------------------------------------------------------------
 //
 // ComponentScriptedActor.js
-// DESCRIPTION:
+//
+// DESCRIPTION: Base class for all Scripted Actor objects. Scripted Actors
+// can be used to trigger special one-offs
 //
 //-----------------------------------------------------------------------------
 
@@ -13,14 +15,11 @@ class.properties(ComponentScriptedActor,
     // VARS
     //------------------------------------------------------------------------
     
-    triggerAnimation    : "",
-    bRemoveOnCompletion : true,
-    anim                : null,
-    bRootMotion         : false,
-    
-    //------------------------------------------------------------------------
-    // FUNCTIONS
-    //------------------------------------------------------------------------
+    triggerAnimation        : -1,
+    bTriggered              : false,
+    bRemoveOnCompletion     : true,
+    triggerDelay            : 0.0,
+    bSleepUntilTriggered    : false,
     
     //------------------------------------------------------------------------
     // EVENTS
@@ -28,18 +27,22 @@ class.properties(ComponentScriptedActor,
     
     onReady : function()
     {
-        this.anim = Sys.loadAnimation(this.parent.owner.model, this.triggerAnimation);
+        if(!this.bSleepUntilTriggered)
+            this.parent.owner.setAnim("anim00", 4.0,
+                NRender.ANIM_LOOP|NRender.ANIM_ROOTMOTION);
+        else
+            this.parent.owner.bHidden = true;
     },
     
     onTrigger : function(instigator, args)
     {
         var actor = this.parent.owner;
-        var flags = NRender.ANIM_NOINTERRUPT;
         
-        if(this.bRootMotion == true)
-            flags |= NRender.ANIM_ROOTMOTION;
+        if(this.bSleepUntilTriggered)
+            actor.bHidden = false;
         
-        actor.animState.blendAnim(this.anim, 4.0, 4.0, flags);
+        actor.blendAnim(this.triggerAnimation, 4.0, 4.0, NRender.ANIM_ROOTMOTION);
+        this.bTriggered = true;
     },
     
     onLocalTick : function()
@@ -54,23 +57,10 @@ class.properties(ComponentScriptedActor,
                 return;
             }
         }
-        
-        actor.animState.update();
-        
-        if(actor.animState.flags & NRender.ANIM_ROOTMOTION &&
-            !(actor.animState.flags & NRender.ANIM_STOPPED))
-        {
-            var dir = Vector.applyRotation(actor.animState.rootMotion, actor.rotation);
-            dir.y = 0;
-            dir.scale(Sys.deltatime() * 0.5);
-            dir.add(actor.origin);
-            
-            actor.origin = dir;
-        }
-        
-        actor.updateTransform();
     }
 });
+
+// TODO - MOVE THESE INTO SEPERATE MODULES
 
 //-----------------------------------------------------------------------------
 //
@@ -87,38 +77,8 @@ class.properties(ScriptedMonkey,
     // VARS
     //------------------------------------------------------------------------
     
-    triggerAnimation    : "anim01",
-    bRemoveOnCompletion : true,
-    bRootMotion         : false,
-    
-    //------------------------------------------------------------------------
-    // FUNCTIONS
-    //------------------------------------------------------------------------
-    
-    //------------------------------------------------------------------------
-    // EVENTS
-    //------------------------------------------------------------------------
-    
-    onReady : function()
-    {
-        var actor = this.parent.owner;
-        
-        this.anim = Sys.loadAnimation(actor.model, this.triggerAnimation);
-        actor.animState.setAnim(Sys.loadAnimation(actor.model, "anim00"),
-            4.0, NRender.ANIM_LOOP);
-    },
-    
-    onTrigger : function(instigator, args)
-    {
-        ComponentScriptedActor.prototype.onTrigger.bind(this)();
-        
-        var actor = this.parent.owner;
-        
-        var box = actor.bbox;
-        box.min_z = -1024;
-        
-        actor.setBounds(box.min_x, box.min_y, box.min_z, box.max_x, box.max_y, box.max_z);
-    }
+    triggerAnimation    : 200,
+    bRemoveOnCompletion : true
 });
 
 //-----------------------------------------------------------------------------
@@ -136,74 +96,7 @@ class.properties(ScriptedBird,
     // VARS
     //------------------------------------------------------------------------
     
-    triggerAnimation    : "anim00",
-    bRemoveOnCompletion : true,
-    bRootMotion         : false,
-    
-    //------------------------------------------------------------------------
-    // FUNCTIONS
-    //------------------------------------------------------------------------
-    
-    //------------------------------------------------------------------------
-    // EVENTS
-    //------------------------------------------------------------------------
-    
-    onReady : function()
-    {
-        var actor = this.parent.owner;
-        
-        this.anim = Sys.loadAnimation(actor.model, this.triggerAnimation);
-        actor.bHidden = true;
-    },
-    
-    onTrigger : function(instigator, args)
-    {
-        var actor = this.parent.owner;
-        actor.bHidden = false;
-        
-        var flags = NRender.ANIM_NOINTERRUPT;
-        
-        if(this.bRootMotion == true)
-            flags |= NRender.ANIM_ROOTMOTION;
-        
-        actor.animState.setAnim(this.anim, 4.0, flags);
-        
-        var box = actor.bbox;
-        box.min_z = -4096;
-        
-        actor.setBounds(box.min_x, box.min_y, box.min_z, box.max_x, box.max_y, box.max_z);
-    }
-});
-
-//-----------------------------------------------------------------------------
-//
-// ScriptedPressurePlate.js
-// DESCRIPTION:
-//
-//-----------------------------------------------------------------------------
-
-ScriptedPressurePlate = class.extendStatic(ComponentScriptedActor);
-
-class.properties(ScriptedPressurePlate,
-{
-    //------------------------------------------------------------------------
-    // VARS
-    //------------------------------------------------------------------------
-    
-    triggerAnimation    : "anim01",
-    bRemoveOnCompletion : false,
-    bRootMotion         : false,
-    
-    //------------------------------------------------------------------------
-    // FUNCTIONS
-    //------------------------------------------------------------------------
-    
-    //------------------------------------------------------------------------
-    // EVENTS
-    //------------------------------------------------------------------------
-    
-    onTrigger : function(instigator, args)
-    {
-        ComponentScriptedActor.prototype.onTrigger.bind(this)();
-    }
+    triggerAnimation        : 200,
+    bRemoveOnCompletion     : true,
+    bSleepUntilTriggered    : true
 });

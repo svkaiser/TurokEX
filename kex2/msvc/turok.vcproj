@@ -151,7 +151,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\openal\include\&quot;;&quot;$(OutDir)\SDL\include\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\turok\common\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\client\&quot;;&quot;$(OutDir)\turok\server\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\sound\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\menu\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDir)\turok\jsapi\&quot;"
+				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\openal\include\&quot;;&quot;$(OutDir)\SDL\include\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\turok\common\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\client\&quot;;&quot;$(OutDir)\turok\server\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\sound\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\menu\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDir)\turok\jsapi\&quot;;&quot;$(OutDir)\turok\parse\&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -592,6 +592,34 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="parse"
+				>
+				<File
+					RelativePath="..\turok\parse\kact.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\parse\kanim.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\parse\kfx.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\parse\kmap.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\parse\kmesh.c"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\parse\knav.c"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -766,6 +794,14 @@
 				>
 				<File
 					RelativePath="..\turok\sound\sound.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="parse"
+				>
+				<File
+					RelativePath="..\turok\parse\parse.h"
 					>
 				</File>
 			</Filter>

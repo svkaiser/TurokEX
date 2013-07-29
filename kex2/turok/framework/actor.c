@@ -39,6 +39,7 @@
 #include "server.h"
 #include "sound.h"
 #include "fx.h"
+#include "parse.h"
 
 CVAR_EXTERNAL(developer);
 
@@ -120,7 +121,7 @@ static void Actor_ParseTemplate(scparser_t *parser, gActorTemplate_t *ac)
         case scactor_mesh:
             SC_ExpectNextToken(TK_EQUAL);
             SC_GetString();
-            ac->actor.model = Mdl_Load(parser->stringToken);
+            ac->actor.model = Kmesh_Load(parser->stringToken);
             break;
 
         case scactor_bounds:
@@ -311,16 +312,10 @@ static void Actor_TransformBBox(gActor_t *actor)
 
     Mtx_Copy(m, actor->rotMtx);
 
-    c[0] = (box.min[0] + box.max[0]) * 0.5f;
-    c[1] = (box.min[1] + box.max[1]) * 0.5f;
-    c[2] = (box.min[2] + box.max[2]) * 0.5f;
-
+    Vec_Add(c, box.min, box.max);
+    Vec_Scale(c, c, 0.5f);
     Vec_Sub(h, box.max, c);
-
     Vec_TransformToWorld(m, c, ct);
-
-    ct[0] = -ct[0];
-    ct[2] = -ct[2];
 
     m[ 0] = (float)fabs(m[ 0]);
     m[ 1] = (float)fabs(m[ 1]);
@@ -606,36 +601,6 @@ static void Actor_UpdateModelYaw(gActor_t *actor)
 
     time = (4.0f * astate->frametime);
     actor->angles[0] -= angle * (actor->timestamp * time);
-}
-
-//
-// Actor_GetWaterLevel
-//
-
-void Actor_GetWaterLevel(gActor_t *actor)
-{
-    plane_t *plane;
-    gArea_t *area;
-
-    actor->waterlevel = WL_INVALID;
-
-    if(!(plane = Map_IndexToPlane(actor->plane)))
-        return;
-
-    area = &gLevel.areas[plane->area_id];
-
-    if(plane != NULL && area->flags & AAF_WATER)
-    {
-        actor->waterlevel = WL_UNDER;
-
-        if(actor->height + actor->origin[1] >= area->waterplane)
-        {
-            if(actor->origin[1] < area->waterplane)
-                actor->waterlevel = WL_BETWEEN;
-            else
-                actor->waterlevel = WL_OVER;
-        }
-    }
 }
 
 //
@@ -935,7 +900,10 @@ void Actor_Tick(void)
         // TODO
         if(actor->physics != 0)
         {
-            Actor_GetWaterLevel(actor);
+            actor->waterlevel = Map_GetWaterLevel(actor->origin,
+                actor->height,
+                Map_IndexToPlane(actor->plane));
+
             Actor_UpdateMove(actor);
             Actor_UpdateModelYaw(actor);
             Actor_UpdateTransform(actor);
@@ -1250,7 +1218,7 @@ void Actor_ClearData(gActor_t *actor)
 void Actor_UpdateModel(gActor_t *actor, const char *model)
 {
     if(model)
-        actor->model = Mdl_Load(model);
+        actor->model = Kmesh_Load(model);
 
     if(actor->model)
     {
@@ -1350,7 +1318,10 @@ void Actor_Setup(gActor_t *actor)
     actor->height = actor->bStatic ? actor->baseHeight : 0;
 
     if(actor->bTouch)
+    {
+        actor->bCollision = false;
         actor->viewHeight = actor->baseHeight * 0.5f;
+    }
 
     if(actor->components == NULL)
         return;

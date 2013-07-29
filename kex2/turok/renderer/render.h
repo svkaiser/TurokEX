@@ -177,9 +177,6 @@ anim_t *Mdl_GetAnim(kmodel_t *model, const char *name);
 anim_t *Mdl_GetAnimFromID(kmodel_t *model, int id);
 kbool Mdl_CheckAnimID(kmodel_t *model, int id);
 
-kmodel_t *Mdl_Find(const char *name);
-kmodel_t *Mdl_Load(const char *file);
-
 //
 // MAIN
 //

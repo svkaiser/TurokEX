@@ -65,7 +65,7 @@ static byte *fxdata;
 #define FXF_DEPTHBUFFER     0x04000
 #define FXF_UNKNOWN15       0x08000
 #define FXF_UNKNOWN16       0x10000
-#define FXF_UNKNOWN17       0x20000
+#define FXF_DESTROYONWATER  0x20000
 #define FXF_PROJECTILE      0x40000
 #define FXF_LENSFLARES      0x80000
 #define FXF_LOCALAXIS       0x100000
@@ -248,6 +248,9 @@ void FX_GetName(int index, char *name)
     case 120:
         sprintf(name, "fx/projectile_pulseshot.kfx");
         break;
+    case 121:
+        sprintf(name, "fx/impact_bubbles.kfx");
+        break;
     case 127:
         sprintf(name, "fx/projectile_greenblob_trail.kfx");
         break;
@@ -344,6 +347,40 @@ void FX_GetName(int index, char *name)
     }
 }
 
+static FX_WriteEvents(fxevent_t *fxevent, const char *eventName,
+                      short fxEvent, short soundEvent, short actionEvent, short actionSlot)
+{
+    char name[256];
+
+    if(fxEvent != -1 ||
+        soundEvent != -1 ||
+        actionEvent != -1)
+    {
+        Com_Strcat("        %s\n", eventName);
+        Com_Strcat("        {\n");
+        if(fxEvent != -1)
+        {
+            FX_GetName(fxEvent, name);
+            Com_Strcat("            fx = \"%s\"\n", name);
+        }
+        if(soundEvent != -1)
+        {
+            Com_Strcat("            sound = \"sounds/shaders/%s.ksnd\"\n",
+                sndfxnames[soundEvent]);
+        }
+        if(actionEvent != -1)
+        {
+            float evf;
+
+            evf = fxevent->f[actionSlot];
+
+            Com_Strcat("            action = { \"%s\" %f }\n",
+                GetActionName(actionEvent, evf), evf);
+        }
+        Com_Strcat("        }\n");
+    }
+}
+
 void FX_StoreParticleEffects(void)
 {
     byte *tmp;
@@ -412,6 +449,7 @@ void FX_StoreParticleEffects(void)
                 Com_Strcat("        bNoDirection = %i\n", (flags & FXF_NODIRECTION) ? 1 : 0);
                 Com_Strcat("        bLocalAxis = %i\n", (flags & FXF_LOCALAXIS) ? 1 : 0);
                 Com_Strcat("        bProjectile = %i\n", (flags & FXF_PROJECTILE) ? 1 : 0);
+                Com_Strcat("        bDestroyOnWaterSurface = %i\n", (flags & FXF_DESTROYONWATER) ? 1 : 0);
                 Com_Strcat("        mass = %f\n", CoerceFloat(vfx[4]));
                 Com_Strcat("        translation_global_randomscale = %f\n", CoerceFloat(vfx[5]));
                 Com_Strcat("        translation_randomscale = { %f %f %f }\n",
@@ -531,87 +569,35 @@ void FX_StoreParticleEffects(void)
                     break;
                 }
 
-                if(fxevent->b_fx.hitplane != -1 ||
-                    fxevent->b_sound.hitplane != -1 ||
-                    fxevent->b_action.onhitflesh != -1)
-                {
-                    Com_Strcat("        onHitSurface\n");
-                    Com_Strcat("        {\n");
-                    if(fxevent->b_fx.hitplane != -1)
-                    {
-                        FX_GetName(fxevent->b_fx.hitplane, name);
-                        Com_Strcat("            fx = \"%s\"\n", name);
-                    }
-                    if(fxevent->b_sound.hitplane != -1)
-                    {
-                        Com_Strcat("            sound = \"sounds/shaders/%s.ksnd\"\n",
-                            sndfxnames[fxevent->b_sound.hitplane]);
-                    }
-                    if(fxevent->b_action.onhitflesh != -1)
-                    {
-                        float evf;
+                FX_WriteEvents(fxevent, "onHitSurface",
+                    fxevent->b_fx.hitplane,
+                    fxevent->b_sound.hitplane,
+                    fxevent->b_action.onhitflesh, 4);
 
-                        evf = fxevent->f[4];
+                FX_WriteEvents(fxevent, "onTick",
+                    fxevent->b_fx.active,
+                    fxevent->b_sound.active,
+                    fxevent->b_action.active, 11);
 
-                        Com_Strcat("            action = { \"%s\" %f }\n",
-                            GetActionName(fxevent->b_action.onhitflesh, evf), evf);
-                    }
-                    Com_Strcat("        }\n");
-                }
-                if(fxevent->b_fx.active != -1 ||
-                    fxevent->b_sound.active != -1 ||
-                    fxevent->b_action.active != -1)
-                {
-                    Com_Strcat("        onTick\n");
-                    Com_Strcat("        {\n");
-                    if(fxevent->b_fx.active != -1)
-                    {
-                        FX_GetName(fxevent->b_fx.active, name);
-                        Com_Strcat("            fx = \"%s\"\n", name);
-                    }
-                    if(fxevent->b_sound.active != -1)
-                    {
-                        Com_Strcat("            sound = \"sounds/shaders/%s.ksnd\"\n",
-                            sndfxnames[fxevent->b_sound.active]);
-                    }
-                    if(fxevent->b_action.active != -1)
-                    {
-                        float evf;
+                FX_WriteEvents(fxevent, "onExpire",
+                    fxevent->b_fx.onexpire,
+                    fxevent->b_sound.onexpire,
+                    fxevent->b_action.onexpire, 10);
 
-                        evf = fxevent->f[11];
+                FX_WriteEvents(fxevent, "onWaterImpact",
+                    fxevent->b_fx.hitwater,
+                    fxevent->b_sound.hitwater,
+                    fxevent->b_action.hitwater, 1);
 
-                        Com_Strcat("            action = { \"%s\" %f }\n",
-                            GetActionName(fxevent->b_action.active, evf), evf);
-                    }
-                    Com_Strcat("        }\n");
-                }
-                if(fxevent->b_fx.onexpire != -1 ||
-                    fxevent->b_sound.onexpire != -1 ||
-                    fxevent->b_action.onexpire != -1)
-                {
-                    Com_Strcat("        onExpire\n");
-                    Com_Strcat("        {\n");
-                    if(fxevent->b_fx.onexpire != -1)
-                    {
-                        FX_GetName(fxevent->b_fx.onexpire, name);
-                        Com_Strcat("            fx = \"%s\"\n", name);
-                    }
-                    if(fxevent->b_sound.onexpire != -1)
-                    {
-                        Com_Strcat("            sound = \"sounds/shaders/%s.ksnd\"\n",
-                            sndfxnames[fxevent->b_sound.onexpire]);
-                    }
-                    if(fxevent->b_action.onexpire != -1)
-                    {
-                        float evf;
+                FX_WriteEvents(fxevent, "onWaterTick",
+                    fxevent->b_fx.activewater,
+                    fxevent->b_sound.activewater,
+                    fxevent->b_action.activewater, 13);
 
-                        evf = fxevent->f[10];
-
-                        Com_Strcat("            action = { \"%s\" %f }\n",
-                            GetActionName(fxevent->b_action.onexpire, evf), evf);
-                    }
-                    Com_Strcat("        }\n");
-                }
+                FX_WriteEvents(fxevent, "onWaterExpire",
+                    fxevent->b_fx.onexpirewater,
+                    fxevent->b_sound.onexpirewater,
+                    fxevent->b_action.onexpirewater, 12);
 
                 Com_Strcat("    }\n");
                 start++;
@@ -620,7 +606,6 @@ void FX_StoreParticleEffects(void)
             Com_Strcat("}\n");
 
             FX_GetName(i, name);
-
             Com_StrcatAddToFile(name);
             j++;
         }

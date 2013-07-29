@@ -19,12 +19,12 @@ class.properties(ComponentPlayerWeapon,
     // VARS
     //------------------------------------------------------------------------
     
-    anim_Idle       : null,
-    anim_Walk       : null,
-    anim_Run        : null,
-    anim_Fire       : null,
-    anim_SwapIn     : null,
-    anim_SwapOut    : null,
+    anim_Idle       : "",
+    anim_Walk       : "",
+    anim_Run        : "",
+    anim_Fire       : "",
+    anim_SwapIn     : "",
+    anim_SwapOut    : "",
     x               : 0,
     y               : 0,
     z               : 0,
@@ -36,6 +36,8 @@ class.properties(ComponentPlayerWeapon,
     translation     : null,
     actorType       : "",
     bActive         : false,
+    bHasAltAmmo     : false,
+    bAltAmmoSet     : false,
     playerOwner     : null,
     
     //------------------------------------------------------------------------
@@ -45,11 +47,25 @@ class.properties(ComponentPlayerWeapon,
     spawn : function(playerComponent)
     {
         this.playerOwner = playerComponent;
-        return GameActor.spawn(this.actorType, this.x, this.y, this.z, Math.PI, 0, null);
+        
+        var actor = Level.spawnActor(this.actorType, this.x, this.y, this.z,
+            Math.PI, 0, null);
+        
+        actor.bHidden = true;
+        actor.physics = 0;
+        return actor;
     },
     
     initAnimations : function()
     {
+    },
+    
+    switchAmmoType : function()
+    {
+        if(!this.bHasAltAmmo)
+            return;
+            
+        this.bAltAmmoSet ^= 1;
     },
     
     checkHoldster : function()
@@ -59,8 +75,8 @@ class.properties(ComponentPlayerWeapon,
         if(ClientPlayer.component.controller.state == STATE_MOVE_CLIMB &&
             this.state != PWPN_STATE_HOLDSTER)
         {
-            actor.animState.blendAnim(this.anim_SwapOut,
-                this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
+            actor.blendAnim(this.anim_SwapOut,
+                this.playSpeed, 4.0, 0);
 
             this.state = PWPN_STATE_HOLDSTER;
 
@@ -74,16 +90,16 @@ class.properties(ComponentPlayerWeapon,
     {
         var actor = this.parent.owner;
         
-        actor.animState.blendAnim(this.anim_SwapOut,
-            this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
+        actor.blendAnim(this.anim_SwapOut,
+            this.playSpeed, 4.0, 0);
 
         this.state = PWPN_STATE_SWAPOUT;
     },
     
     onBeginAttack : function()
     {
-        this.parent.owner.animState.blendAnim(this.anim_Fire,
-            this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
+        this.parent.owner.blendAnim(this.anim_Fire,
+            this.playSpeed, 4.0, 0);
             
         return true;
     },
@@ -141,7 +157,7 @@ class.properties(ComponentPlayerWeapon,
             
         if(Sys.getCvar('g_weaponbobbing') > 0)
         {
-            actor.animState.blendAnim(this.anim_Idle,
+            actor.blendAnim(this.anim_Idle,
                 this.playSpeed, 8.0, NRender.ANIM_LOOP);
             return;
         }
@@ -150,17 +166,17 @@ class.properties(ComponentPlayerWeapon,
         
         if(d >= 1.35)
         {
-            actor.animState.blendAnim(this.anim_Run,
+            actor.blendAnim(this.anim_Run,
                 this.playSpeed, 8.0, NRender.ANIM_LOOP);
         }
         else if(d >= 0.1)
         {
-            actor.animState.blendAnim(this.anim_Walk,
+            actor.blendAnim(this.anim_Walk,
                 this.playSpeed, 8.0, NRender.ANIM_LOOP);
         }
         else
         {
-            actor.animState.blendAnim(this.anim_Idle,
+            actor.blendAnim(this.anim_Idle,
                 this.playSpeed, 8.0, NRender.ANIM_LOOP);
         }
     },
@@ -172,7 +188,7 @@ class.properties(ComponentPlayerWeapon,
         var vec = Vector.applyRotation(new Vector(x, y, z), actor.rotation);
         
         vec.x += org.x;
-        vec.y += org.y + actor.centerHeight + actor.viewHeight;
+        vec.y += org.y + 56.32;
         vec.z += org.z;
 
         Sys.spawnFx(fx, actor, vec, actor.rotation,
@@ -212,8 +228,8 @@ class.properties(ComponentPlayerWeapon,
     {
         if(ClientPlayer.component.controller.state != STATE_MOVE_CLIMB)
         {
-            this.parent.owner.animState.setAnim(this.anim_SwapIn,
-                this.playSpeed, NRender.ANIM_NOINTERRUPT);
+            this.parent.owner.setAnim(this.anim_SwapIn,
+                this.playSpeed, 0);
 
             this.state = PWPN_STATE_SWAPIN;
         }
@@ -232,10 +248,11 @@ class.properties(ComponentPlayerWeapon,
             ClientPlayer.component.setNewWeapon();
             
             var newWpn = ClientPlayer.component.activeWeapon;
+            this.parent.owner.bHidden = true;
             
             Snd.play(newWpn.readySound);
-            newWpn.parent.owner.animState.setAnim(newWpn.anim_SwapIn,
-                newWpn.playSpeed, NRender.ANIM_NOINTERRUPT);
+            newWpn.parent.owner.setAnim(newWpn.anim_SwapIn,
+                newWpn.playSpeed, 0);
 
             newWpn.state = PWPN_STATE_SWAPIN;
         }
@@ -268,9 +285,10 @@ class.properties(ComponentPlayerWeapon,
     {
         this.translation = new Vector();
         this.initAnimations();
+        this.parent.owner.owner = ClientPlayer.actor;
     },
     
-    onLocalTick : function()
+    tick : function()
     {
         const WEAPONTURN_MAX        = 0.08;
         const WEAPONTURN_EPSILON    = 0.001;
@@ -343,8 +361,8 @@ class.properties(ComponentPlayerWeapon,
                 var pa = ClientPlayer.actor;
             
                 if(controller.state == STATE_MOVE_WALK &&
-                    (wstate.origin.y + wstate.velocity.y) - wstate.plane.distance(wstate.origin) <
-                    (pa.viewHeight + pa.centerHeight)+1)
+                    (wstate.origin.y + wstate.velocity.y) -
+                    wstate.plane.distance(wstate.origin) < pa.height)
                 {
                     const WEPBOB_EPISILON  = 0.001;
                     const WEPBOB_MAXSWAY   = Angle.degToRad(22.5);
@@ -401,7 +419,7 @@ class.properties(ComponentPlayerWeapon,
             }
         }
         
-        actor.animState.update();
+        //actor.animState.update();
     }
 });
 
@@ -424,6 +442,8 @@ class.properties(WeaponKnife,
     y               : -9.21548,
     z               : -153.6003,
     actorType       : 'pweapon_knife',
+    bCanAttack      : false,
+    swishType       : 0,
     
     // new animations
     anim_FireAlt1   : null,
@@ -437,16 +457,16 @@ class.properties(WeaponKnife,
     {
         var actor = this.parent.owner;
         
-        this.anim_Idle      = Sys.loadAnimation(actor.model, "anim00");
-        this.anim_Walk      = Sys.loadAnimation(actor.model, "anim01");
-        this.anim_Run       = Sys.loadAnimation(actor.model, "anim02");
-        this.anim_Fire      = Sys.loadAnimation(actor.model, "anim03");
-        this.anim_FireAlt1  = Sys.loadAnimation(actor.model, "anim04");
-        this.anim_FireAlt2  = Sys.loadAnimation(actor.model, "anim05");
-        this.anim_SwapIn    = Sys.loadAnimation(actor.model, "anim06");
-        this.anim_SwapOut   = Sys.loadAnimation(actor.model, "anim07");
+        this.anim_Idle      = "anim00";
+        this.anim_Walk      = "anim01";
+        this.anim_Run       = "anim02";
+        this.anim_Fire      = "anim03";
+        this.anim_FireAlt1  = "anim04";
+        this.anim_FireAlt2  = "anim05";
+        this.anim_SwapIn    = "anim06";
+        this.anim_SwapOut   = "anim07";
         
-        actor.animState.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
+        actor.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
     },
     
     onBeginAttack : function()
@@ -456,23 +476,40 @@ class.properties(WeaponKnife,
         
         if(r <= 32)
         {
+            this.swishType = 0;
             fireAnim = this.anim_FireAlt1;
             Snd.play('sounds/shaders/knife_swish_1.ksnd');
         }
         else if(r <= 65)
         {
+            this.swishType = 1;
             fireAnim = this.anim_Fire;
             Snd.play('sounds/shaders/knife_swish_2.ksnd');
         }
         else
         {
+            this.swishType = 2;
             fireAnim = this.anim_FireAlt2;
             Snd.play('sounds/shaders/knife_swish_3.ksnd');
         }
-
-        this.parent.owner.animState.blendAnim(fireAnim,
-            this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
+        
+        this.bCanAttack = true;
+        this.parent.owner.blendAnim(fireAnim,
+            this.playSpeed, 4.0, 0);
         return true;
+    },
+    
+    onAttack : function()
+    {
+        var actor = this.parent.owner;
+        
+        if(actor.animState.playTime >= 0.15 && this.bCanAttack)
+        {
+            this.bCanAttack = false;
+            ClientPlayer.component.aKnifeAttack();
+        }
+        
+        ComponentPlayerWeapon.prototype.onAttack.bind(this)();
     }
 });
 
@@ -495,6 +532,7 @@ class.properties(WeaponBow,
     y           : -12.62882,
     z           : -150.18696,
     actorType   : 'pweapon_bow',
+    bHasAltAmmo : true,
     bAiming     : false,
     
     // new animations
@@ -508,15 +546,15 @@ class.properties(WeaponBow,
     {
         var actor = this.parent.owner;
         
-        this.anim_Idle      = Sys.loadAnimation(actor.model, "anim00");
-        this.anim_Walk      = Sys.loadAnimation(actor.model, "anim01");
-        this.anim_Run       = Sys.loadAnimation(actor.model, "anim02");
-        this.anim_Aim       = Sys.loadAnimation(actor.model, "anim03");
-        this.anim_Fire      = Sys.loadAnimation(actor.model, "anim04");
-        this.anim_SwapIn    = Sys.loadAnimation(actor.model, "anim05");
-        this.anim_SwapOut   = Sys.loadAnimation(actor.model, "anim06");
+        this.anim_Idle      = "anim00";
+        this.anim_Walk      = "anim01";
+        this.anim_Run       = "anim02";
+        this.anim_Aim       = "anim03";
+        this.anim_Fire      = "anim04";
+        this.anim_SwapIn    = "anim05";
+        this.anim_SwapOut   = "anim06";
         
-        actor.animState.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
+        actor.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
     },
     
     onBeginAttack : function()
@@ -526,7 +564,7 @@ class.properties(WeaponBow,
         
         this.bAiming = true;
         Snd.play('sounds/shaders/bow_stretch.ksnd');
-        this.parent.owner.animState.blendAnim(this.anim_Aim,
+        this.parent.owner.blendAnim(this.anim_Aim,
             this.playSpeed, 18.0, NRender.ANIM_LOOP);
             
         return true;
@@ -540,12 +578,38 @@ class.properties(WeaponBow,
         {
             if(this.bAiming == true)
             {
+                var time = this.parent.owner.animState.playTime;
+                
+                if(time > 0.4)
+                    time = 0.4;
+                
                 Snd.play('sounds/shaders/bow_twang.ksnd');
                 this.bAiming = false;
-                this.parent.owner.animState.blendAnim(this.anim_Fire,
-                    this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
-                    
-                this.playerOwner.ammo[AM_ARROWS].use(1);
+                this.parent.owner.blendAnim(this.anim_Fire,
+                    this.playSpeed, 4.0, 0);
+                
+                var actor = this.playerOwner.parent.owner;
+                var vec = actor.getLocalVector(0.2048, -6.144, 25.6);
+                
+                vec.y += actor.height;
+                
+                var dir = new Vector(0, 0, 1);
+                dir.scale(time * 512.0 * 15.0);
+
+                if(!this.bAltAmmoSet)
+                {
+                    this.playerOwner.ammo[AM_ARROWS].use(1);
+                    Sys.spawnFx('fx/projectile_arrow.kfx', actor, vec, actor.rotation,
+                        Plane.fromIndex(actor.plane),
+                        Vector.applyRotation(dir, actor.rotation));
+                }
+                else
+                {
+                    this.playerOwner.ammo[AM_TEKARROWS].use(1);
+                    Sys.spawnFx('fx/projectile_tekarrow.kfx', actor, vec, actor.rotation,
+                        Plane.fromIndex(actor.plane),
+                        Vector.applyRotation(dir, actor.rotation));
+                }
             }
         }
         
@@ -582,14 +646,14 @@ class.properties(WeaponPistol,
     {
         var actor = this.parent.owner;
         
-        this.anim_Idle      = Sys.loadAnimation(actor.model, "anim00");
-        this.anim_Walk      = Sys.loadAnimation(actor.model, "anim01");
-        this.anim_Run       = Sys.loadAnimation(actor.model, "anim02");
-        this.anim_Fire      = Sys.loadAnimation(actor.model, "anim03");
-        this.anim_SwapIn    = Sys.loadAnimation(actor.model, "anim04");
-        this.anim_SwapOut   = Sys.loadAnimation(actor.model, "anim05");
+        this.anim_Idle      = "anim00";
+        this.anim_Walk      = "anim01";
+        this.anim_Run       = "anim02";
+        this.anim_Fire      = "anim03";
+        this.anim_SwapIn    = "anim04";
+        this.anim_SwapOut   = "anim05";
         
-        actor.animState.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
+        actor.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
     },
     
     onBeginAttack : function()
@@ -597,8 +661,8 @@ class.properties(WeaponPistol,
         this.spawnFx('fx/muzzle_pistol.kfx', -6.656, -3.2, 15.696, false);
         this.spawnFx('fx/bulletshell.kfx', -10.24, -10.24, 15.648, false);
         
-        this.parent.owner.animState.blendAnim(this.anim_Fire,
-            this.playSpeed, 6.0, NRender.ANIM_NOINTERRUPT);
+        this.parent.owner.blendAnim(this.anim_Fire,
+            this.playSpeed, 4.0, 0);
         
         this.playerOwner.ammo[AM_CLIPS].use(1);
         ClientPlayer.component.aPistolAttack(); 
@@ -627,6 +691,7 @@ class.properties(WeaponShotgun,
     readySound  : 'sounds/shaders/ready_shotgun.ksnd',
     actorType   : 'pweapon_shotgun',
     bReload     : false,
+    bHasAltAmmo : true,
     
     //------------------------------------------------------------------------
     // FUNCTIONS
@@ -636,25 +701,36 @@ class.properties(WeaponShotgun,
     {
         var actor = this.parent.owner;
         
-        this.anim_Idle      = Sys.loadAnimation(actor.model, "anim00");
-        this.anim_Walk      = Sys.loadAnimation(actor.model, "anim01");
-        this.anim_Run       = Sys.loadAnimation(actor.model, "anim02");
-        this.anim_Fire      = Sys.loadAnimation(actor.model, "anim03");
-        this.anim_SwapIn    = Sys.loadAnimation(actor.model, "anim04");
-        this.anim_SwapOut   = Sys.loadAnimation(actor.model, "anim05");
+        this.anim_Idle      = "anim00";
+        this.anim_Walk      = "anim01";
+        this.anim_Run       = "anim02";
+        this.anim_Fire      = "anim03";
+        this.anim_SwapIn    = "anim04";
+        this.anim_SwapOut   = "anim05";
         
-        actor.animState.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
+        actor.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
     },
     
     onBeginAttack : function()
     {
-        this.spawnFx('fx/muzzle_shotgun.kfx', -6.656, -2.7648, 15.696);
+        this.spawnFx('fx/muzzle_shotgun.kfx', -5.75, -3.5, 15.696);
         
-        this.parent.owner.animState.blendAnim(this.anim_Fire,
-            this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
+        this.parent.owner.blendAnim(this.anim_Fire,
+            this.playSpeed, 4.0, 0);
         
-        this.playerOwner.ammo[AM_SHELLS].use(1);
-        ClientPlayer.component.aShotgunAttack();
+        if(!this.bAltAmmoSet)
+        {
+            //this.playerOwner.ammo[AM_SHELLS].use(1);
+            //this.spawnFx('fx/projectile_shell.kfx', -12.288, -7.1680, 25.6);
+            ClientPlayer.component.aShotgunAttack();
+        }
+        else
+        {
+            Snd.play('sounds/shaders/riot_shotgun_shot.ksnd', this.playerOwner.parent.owner);
+            this.playerOwner.recoilPitch = -0.0408;
+            this.playerOwner.ammo[AM_EXPSHELLS].use(1);
+            this.spawnFx('fx/fx_195.kfx', -12.288, -7.1680, 25.6);
+        }
         return true;
     },
     
@@ -665,7 +741,12 @@ class.properties(WeaponShotgun,
             if(!this.bReload)
             {
                 this.bReload = true;
-                this.spawnFx('fx/shotshell.kfx', -11.26, -8.19, 20.736);
+                
+                if(!this.bAltAmmoSet)
+                    this.spawnFx('fx/shotshell.kfx', -11.26, -4.0, 15.696);
+                else
+                    this.spawnFx('fx/shotshellexp.kfx', -11.26, -4.0, 15.696);
+                    
                 Snd.play('sounds/shaders/ready_shotgun.ksnd');
             }
         }
@@ -697,7 +778,8 @@ class.properties(WeaponAutoShotgun,
     actorType       : 'pweapon_autoshotgun',
     bReload         : false,
     spinAngle       : 0.0,
-    spinRotation    : null,
+    spinRotation    : new Quaternion(0, 0, 0, 1),
+    bHasAltAmmo     : true,
     
     //------------------------------------------------------------------------
     // FUNCTIONS
@@ -707,39 +789,52 @@ class.properties(WeaponAutoShotgun,
     {
         var actor = this.parent.owner;
         
-        this.anim_Idle      = Sys.loadAnimation(actor.model, "anim00");
-        this.anim_Walk      = Sys.loadAnimation(actor.model, "anim01");
-        this.anim_Run       = Sys.loadAnimation(actor.model, "anim02");
-        this.anim_Fire      = Sys.loadAnimation(actor.model, "anim03");
-        this.anim_SwapIn    = Sys.loadAnimation(actor.model, "anim04");
-        this.anim_SwapOut   = Sys.loadAnimation(actor.model, "anim05");
+        this.anim_Idle      = "anim00";
+        this.anim_Walk      = "anim01";
+        this.anim_Run       = "anim02";
+        this.anim_Fire      = "anim03";
+        this.anim_SwapIn    = "anim04";
+        this.anim_SwapOut   = "anim05";
         
-        actor.animState.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
+        actor.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
     },
     
-    onLocalTick : function()
+    tick : function()
     {
         if(this.spinAngle > 0)
             this.spinAngle -= 0.03;
         else
             this.spinAngle = 0;
         
-        //this.spinRotation.setRotation(this.spinAngle, 1, 0, 0);
-        //this.model.setNodeRotation(1, this.spinRotation);
+        this.spinRotation.setRotation(this.spinAngle, 1, 0, 0);
+        this.parent.owner.setNodeRotation(1, this.spinRotation);
 
-        ComponentPlayerWeapon.prototype.onLocalTick.bind(this)();
+        ComponentPlayerWeapon.prototype.tick.bind(this)();
     },
     
     onBeginAttack : function()
     {
         this.spawnFx('fx/muzzle_shotgun.kfx', -6.144, -1.9456, 15.696);
-        this.spawnFx('fx/shotshell.kfx', -14.336, -12.288, 20.736);
+        if(!this.bAltAmmoSet)
+            this.spawnFx('fx/shotshell.kfx', -14.336, -12.288, 20.736);
+        else
+            this.spawnFx('fx/shotshellexp.kfx', -14.336, -12.288, 20.736);
         
-        this.playerOwner.ammo[AM_SHELLS].use(1);
-        ClientPlayer.component.aAutoShotgunAttack();
+        if(!this.bAltAmmoSet)
+        {
+            this.playerOwner.ammo[AM_SHELLS].use(1);
+            ClientPlayer.component.aAutoShotgunAttack();
+        }
+        else
+        {
+            Snd.play('sounds/shaders/riot_shotgun_shot.ksnd', this.playerOwner.parent.owner);
+            this.playerOwner.recoilPitch = -0.0408;
+            this.playerOwner.ammo[AM_EXPSHELLS].use(1);
+            this.spawnFx('fx/fx_195.kfx', -12.288, -7.1680, 25.6);
+        }
         
-        this.parent.owner.animState.blendAnim(this.anim_Fire,
-            this.playSpeed, 6.0, NRender.ANIM_NOINTERRUPT);
+        this.parent.owner.blendAnim(this.anim_Fire,
+            this.playSpeed, 4.0, 0);
         
         this.bReload = false;
         this.spinAngle = Angle.degToRad(36);
@@ -792,14 +887,14 @@ class.properties(WeaponRifle,
     {
         var actor = this.parent.owner;
         
-        this.anim_Idle      = Sys.loadAnimation(actor.model, "anim00");
-        this.anim_Walk      = Sys.loadAnimation(actor.model, "anim01");
-        this.anim_Run       = Sys.loadAnimation(actor.model, "anim02");
-        this.anim_Fire      = Sys.loadAnimation(actor.model, "anim03");
-        this.anim_SwapIn    = Sys.loadAnimation(actor.model, "anim04");
-        this.anim_SwapOut   = Sys.loadAnimation(actor.model, "anim05");
+        this.anim_Idle      = "anim00";
+        this.anim_Walk      = "anim01";
+        this.anim_Run       = "anim02";
+        this.anim_Fire      = "anim03";
+        this.anim_SwapIn    = "anim04";
+        this.anim_SwapOut   = "anim05";
         
-        actor.animState.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
+        actor.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
     },
     
     onAttack : function()
@@ -882,19 +977,19 @@ class.properties(WeaponPulseRifle,
     {
         var actor = this.parent.owner;
         
-        this.anim_Idle      = Sys.loadAnimation(actor.model, "anim00");
-        this.anim_Walk      = Sys.loadAnimation(actor.model, "anim01");
-        this.anim_Run       = Sys.loadAnimation(actor.model, "anim02");
-        this.anim_Fire      = Sys.loadAnimation(actor.model, "anim05");
-        this.anim_SwapIn    = Sys.loadAnimation(actor.model, "anim03");
-        this.anim_SwapOut   = Sys.loadAnimation(actor.model, "anim04");
+        this.anim_Idle      = "anim00";
+        this.anim_Walk      = "anim01";
+        this.anim_Run       = "anim02";
+        this.anim_Fire      = "anim05";
+        this.anim_SwapIn    = "anim03";
+        this.anim_SwapOut   = "anim04";
         
-        actor.animState.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
+        actor.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
     },
     
     onBeginAttack : function()
     {
-        this.parent.owner.animState.blendAnim(this.anim_Fire,
+        this.parent.owner.blendAnim(this.anim_Fire,
             this.playSpeed, 4.0, NRender.ANIM_LOOP);
         
         this.parent.owner.animState.playTime = 0.08;
@@ -909,7 +1004,20 @@ class.properties(WeaponPulseRifle,
         {
             actor.animState.playTime -= 0.16;
             this.playerOwner.ammo[AM_CELLS].use(1);
-            ClientPlayer.component.aPulseAttack();
+            var cActor = ClientPlayer.actor;
+            var org = this.playerOwner.controller.origin;
+            var vec = Vector.applyRotation(new Vector(-5.12, -14.336, -107.52), cActor.rotation);
+            
+            vec.x += org.x;
+            vec.y += org.y + 56.32;
+            vec.z += org.z;
+
+            Sys.spawnFx('fx/projectile_pulseshot.kfx', cActor, vec, cActor.rotation,
+                Plane.fromIndex(cActor.plane));
+            
+            this.playerOwner.recoilPitch = -0.0288;
+            Snd.play('sounds/shaders/machine_gun_shot_2.ksnd',
+                this.playerOwner.parent.owner);
         }
         
         if(!ClientPlayer.command.getAction('+attack'))
@@ -949,26 +1057,24 @@ class.properties(WeaponGrenadeLauncher,
     {
         var actor = this.parent.owner;
         
-        this.anim_Idle      = Sys.loadAnimation(actor.model, "anim00");
-        this.anim_Walk      = Sys.loadAnimation(actor.model, "anim01");
-        this.anim_Run       = Sys.loadAnimation(actor.model, "anim02");
-        this.anim_Fire      = Sys.loadAnimation(actor.model, "anim03");
-        this.anim_SwapIn    = Sys.loadAnimation(actor.model, "anim04");
-        this.anim_SwapOut   = Sys.loadAnimation(actor.model, "anim05");
+        this.anim_Idle      = "anim00";
+        this.anim_Walk      = "anim01";
+        this.anim_Run       = "anim02";
+        this.anim_Fire      = "anim03";
+        this.anim_SwapIn    = "anim04";
+        this.anim_SwapOut   = "anim05";
         
-        actor.animState.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
+        actor.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
     },
     
     onBeginAttack : function()
     {
-        this.parent.owner.animState.blendAnim(this.anim_Fire,
-            this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
+        this.parent.owner.blendAnim(this.anim_Fire,
+            this.playSpeed, 4.0, 0);
      
         this.playerOwner.ammo[AM_GRENADES].use(1);
-        //ClientPlayer.component.aGrenadeAttack();
-        // TODO
         Snd.play('sounds/shaders/grenade_launch.ksnd', ClientPlayer.actor);
-        this.spawnFx('fx/projectile_grenade.kfx', -18.432, -5.12, -25.6);  
+        this.spawnFx('fx/projectile_grenade.kfx', -18.432, -5.12, -15.696);
         this.spawnFx('fx/muzzle_grenade_launcher.kfx', -10.35, -2.048, 18.432);
         return true;
     }
@@ -995,7 +1101,7 @@ class.properties(WeaponMiniGun,
     actorType       : 'pweapon_minigun',
     spinSpeed       : 0.0,
     spinAngle       : 0.0,
-    spinRotation    : null,
+    spinRotation    : new Quaternion(0, 0, 0, 1),
     
     //------------------------------------------------------------------------
     // FUNCTIONS
@@ -1005,17 +1111,17 @@ class.properties(WeaponMiniGun,
     {
         var actor = this.parent.owner;
         
-        this.anim_Idle      = Sys.loadAnimation(actor.model, "anim00");
-        this.anim_Walk      = Sys.loadAnimation(actor.model, "anim01");
-        this.anim_Run       = Sys.loadAnimation(actor.model, "anim02");
-        this.anim_Fire      = Sys.loadAnimation(actor.model, "anim05");
-        this.anim_SwapIn    = Sys.loadAnimation(actor.model, "anim03");
-        this.anim_SwapOut   = Sys.loadAnimation(actor.model, "anim04");
+        this.anim_Idle      = "anim00";
+        this.anim_Walk      = "anim01";
+        this.anim_Run       = "anim02";
+        this.anim_Fire      = "anim05";
+        this.anim_SwapIn    = "anim03";
+        this.anim_SwapOut   = "anim04";
         
-        actor.animState.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
+        actor.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
     },
     
-    onLocalTick : function()
+    tick : function()
     {
         if(this.state == PWPN_STATE_FIRING)
             this.spinSpeed = Math.lerp(this.spinSpeed, 40.0, 0.35);
@@ -1023,17 +1129,17 @@ class.properties(WeaponMiniGun,
             this.spinSpeed = Math.lerp(this.spinSpeed, 0.0, 0.025);
             
         this.spinAngle += this.spinSpeed * Sys.deltatime();
-        //this.spinRotation.setRotation(this.spinAngle, 0, 1, 0);
-        //this.model.setNodeRotation(1, this.spinRotation);
+        this.spinRotation.setRotation(this.spinAngle, 0, 1, 0);
+        this.parent.owner.setNodeRotation(1, this.spinRotation);
 
-        ComponentPlayerWeapon.prototype.onLocalTick.bind(this)();
+        ComponentPlayerWeapon.prototype.tick.bind(this)();
     },
     
     onBeginAttack : function()
     {
         Snd.play('sounds/shaders/mini_gun_whir.ksnd', ClientPlayer.actor);
         
-        this.parent.owner.animState.blendAnim(this.anim_Fire,
+        this.parent.owner.blendAnim(this.anim_Fire,
             this.playSpeed, 4.0, NRender.ANIM_LOOP);
         
         return true;
@@ -1050,6 +1156,14 @@ class.properties(WeaponMiniGun,
             this.spawnFx('fx/fx_037.kfx', -4.608, -3.1744, 14.848);
             this.spawnFx('fx/bulletshell.kfx', -10.24, -10.24, 13.82);
             Snd.play('sounds/shaders/mini_gun_shot.ksnd');
+            this.playerOwner.aMinigunAttack();
+            
+            //var pActor = this.playerOwner.parent.owner;
+            //var vec = pActor.getLocalVector(8.192, -10.24, 25.6);
+            //vec.y += (pActor.centerHeight + pActor.viewHeight) * 0.72;
+
+            //Sys.spawnFx('fx/projectile_minibullet.kfx', pActor, vec, pActor.rotation,
+                //Plane.fromIndex(pActor.plane));
         }
         
         if(!ClientPlayer.command.getAction('+attack'))
@@ -1090,14 +1204,14 @@ class.properties(WeaponAlienRifle,
     {
         var actor = this.parent.owner;
         
-        this.anim_Idle      = Sys.loadAnimation(actor.model, "anim00");
-        this.anim_Walk      = Sys.loadAnimation(actor.model, "anim01");
-        this.anim_Run       = Sys.loadAnimation(actor.model, "anim02");
-        this.anim_Fire      = Sys.loadAnimation(actor.model, "anim03");
-        this.anim_SwapIn    = Sys.loadAnimation(actor.model, "anim04");
-        this.anim_SwapOut   = Sys.loadAnimation(actor.model, "anim05");
+        this.anim_Idle      = "anim00";
+        this.anim_Walk      = "anim01";
+        this.anim_Run       = "anim02";
+        this.anim_Fire      = "anim03";
+        this.anim_SwapIn    = "anim04";
+        this.anim_SwapOut   = "anim05";
         
-        actor.animState.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
+        actor.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
     },
     
     onBeginAttack : function()
@@ -1105,8 +1219,8 @@ class.properties(WeaponAlienRifle,
         this.spawnFx('fx/projectile_tekshot.kfx', -4.096, -14.336, -25.6);
         Snd.play('sounds/shaders/tek_weapon_1.ksnd');
         
-        this.parent.owner.animState.blendAnim(this.anim_Fire,
-            this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
+        this.parent.owner.blendAnim(this.anim_Fire,
+            this.playSpeed, 4.0, 0);
             
         return true;
     }
@@ -1141,24 +1255,24 @@ class.properties(WeaponRocketLauncher,
     {
         var actor = this.parent.owner;
         
-        this.anim_Idle      = Sys.loadAnimation(actor.model, "anim00");
-        this.anim_Walk      = Sys.loadAnimation(actor.model, "anim01");
-        this.anim_Run       = Sys.loadAnimation(actor.model, "anim02");
-        this.anim_Fire      = Sys.loadAnimation(actor.model, "anim03");
-        this.anim_SwapIn    = Sys.loadAnimation(actor.model, "anim04");
-        this.anim_SwapOut   = Sys.loadAnimation(actor.model, "anim05");
+        this.anim_Idle      = "anim00";
+        this.anim_Walk      = "anim01";
+        this.anim_Run       = "anim02";
+        this.anim_Fire      = "anim03";
+        this.anim_SwapIn    = "anim04";
+        this.anim_SwapOut   = "anim05";
         
-        actor.animState.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
+        actor.setAnim(this.anim_Idle, 4.0, NRender.ANIM_LOOP);
     },
     
     onBeginAttack : function()
     {
-        this.spawnFx('fx/projectile_rocket.kfx', -4.096, -14.336, -25.6);
+        this.spawnFx('fx/projectile_rocket.kfx', -56.32, -14.336, -25.6);
         Snd.play('sounds/shaders/missile_launch.ksnd');
         Snd.play('sounds/shaders/reload_missile_launcher.ksnd');
         
-        this.parent.owner.animState.blendAnim(this.anim_Fire,
-            this.playSpeed, 4.0, NRender.ANIM_NOINTERRUPT);
+        this.parent.owner.blendAnim(this.anim_Fire,
+            this.playSpeed, 4.0, 0);
             
         return true;
     }

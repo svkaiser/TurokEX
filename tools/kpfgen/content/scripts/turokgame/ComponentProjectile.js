@@ -85,7 +85,7 @@ class.properties(ComponentProjectile,
             if(this.bTouchActors && t.hitActor != null &&
                 GameActor.compare(t.hitActor, this.sourceActor) == false)
             {
-                this.damageClass.prototype.inflict(t.hitActor, actor);
+                this.damageClass.prototype.inflict(t.hitActor, this.actor);
                 this.destroy(t.hitVector);
             }
             else if(this.bTouchSurface)

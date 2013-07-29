@@ -96,7 +96,7 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
 
 static void Trace_TestActor(trace_t *trace, vec3_t pos, gActor_t *actor, plane_t *plane)
 {
-    if(actor->bStale)
+    if(actor->bStale || actor->bHidden)
         return;
     if(!(trace->physics & PF_CLIPSTATICS) && actor->bStatic)
         return;

@@ -33,6 +33,7 @@
 #include "gl.h"
 #include "fx.h"
 #include "sound.h"
+#include "parse.h"
 
 JS_CLASSOBJECT(Sys);
 
@@ -373,7 +374,7 @@ JS_FASTNATIVE_BEGIN(Sys, loadModel)
     JS_CHECKARGS(1);
     JS_GETSTRING(str, bytes, v, 0);
 
-    model = Mdl_Load(bytes);
+    model = Kmesh_Load(bytes);
     JS_free(cx, bytes);
 
     if(model == NULL)

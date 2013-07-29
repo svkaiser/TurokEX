@@ -374,7 +374,9 @@ void P_LocalPlayerTick(void)
     Vec_Copy3(ws->origin, actor->origin);
     Vec_Add(ws->velocity, ws->velocity, actor->velocity);
 
-    Actor_GetWaterLevel(actor);
+    actor->waterlevel = Map_GetWaterLevel(actor->origin,
+        actor->height,
+        Map_IndexToPlane(actor->plane));
 
     // TODO
     actor->velocity[1] = 0;

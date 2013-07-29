@@ -124,7 +124,6 @@ kbool Actor_HasComponent(gActor_t *actor, const char *component);
 kbool Actor_FXEvent(gActor_t *actor, gActor_t *target, vec3_t fxOrigin, vec3_t fxVelocity,
                     int plane, action_t *action);
 void Actor_GetLocalVectors(vec3_t out, gActor_t *actor, float x, float y, float z);
-void Actor_GetWaterLevel(gActor_t *actor);
 void Actor_SpawnBodyFX(gActor_t *actor, const char *fx, float x, float y, float z);
 void Actor_OnTouchEvent(gActor_t *actor, gActor_t *instigator);
 void Actor_DrawDebugStats(void);

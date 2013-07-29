@@ -298,15 +298,15 @@ kbool AI_CanSeeTarget(ai_t *ai, gActor_t *target)
     dest[2] = target->origin[2];
 
     trace = Trace(pos, dest, plane, self,
-        PF_CLIP_ALL | PF_DROPOFF);
+        PF_CLIPGEOMETRY | PF_CLIPEDGES | PF_DROPOFF);
 
-    if(trace.tfrac == 1 || (trace.type == TRT_OBJECT &&
-        trace.hitActor && trace.hitActor == target))
+    if(trace.type == TRT_NOHIT)
     {
         ai->flags |= AIF_SEETARGET;
         return true;
     }
 
+    // something is obstructing its line of sight
     ai->flags &= ~AIF_SEETARGET;
     return false;
 }

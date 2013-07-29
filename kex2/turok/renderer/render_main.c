@@ -38,6 +38,7 @@
 #include "fx.h"
 #include "ai.h"
 #include "debug.h"
+#include "parse.h"
 
 CVAR_EXTERNAL(cl_fov);
 CVAR(r_fog, 1);
@@ -500,7 +501,7 @@ static void R_MorphModel(morphmodel_t *morph)
     mdlmesh_t *src1;
     mdlmesh_t *src2;
 
-    if(!(model = Mdl_Find(morph->model)))
+    if(!(model = Kmesh_Find(morph->model)))
     {
         return;
     }
