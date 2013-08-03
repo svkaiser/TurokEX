@@ -600,10 +600,6 @@
 				Name="parse"
 				>
 				<File
-					RelativePath="..\turok\parse\kact.c"
-					>
-				</File>
-				<File
 					RelativePath="..\turok\parse\kanim.c"
 					>
 				</File>
