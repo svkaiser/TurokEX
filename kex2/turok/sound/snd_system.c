@@ -400,7 +400,13 @@ static void Snd_UpdateSources(void)
 
             if(!sndSrc->playing)
             {
-                float time = (float)sndSrc->startTime +
+                float time;
+
+                if(sndSrc->sfx->random != 1.0f &&
+                    (rand()%100) >= (sndSrc->sfx->random * 100.0f))
+                    continue;
+
+                time = (float)sndSrc->startTime +
                     SND_INT2TIME(sndSrc->sfx->delay);
 
                 if(time > sndTime)
