@@ -356,6 +356,8 @@ void P_LocalPlayerTick(void)
     playerInfo_t *info;
     gActor_t *actor;
     int current;
+    plane_t *plane;
+    int area_idx;
 
     if(client.state != CL_STATE_INGAME)
         return;
@@ -363,6 +365,9 @@ void P_LocalPlayerTick(void)
     ws = &localPlayer.worldState;
     info = &localPlayer.info;
     actor = localPlayer.actor;
+    plane = Map_IndexToPlane(actor->plane);
+
+    area_idx = plane ? plane->area_id : -1;
 
     ws->timeStamp = (float)info->cmd.timestamp.i;
     ws->frameTime = info->cmd.frametime.f;
@@ -375,8 +380,7 @@ void P_LocalPlayerTick(void)
     Vec_Add(ws->velocity, ws->velocity, actor->velocity);
 
     actor->waterlevel = Map_GetWaterLevel(actor->origin,
-        actor->height,
-        Map_IndexToPlane(actor->plane));
+        actor->height, plane);
 
     // TODO
     actor->velocity[1] = 0;
@@ -413,6 +417,21 @@ void P_LocalPlayerTick(void)
 
     Actor_UpdateTransform(actor);
     Actor_UpdateTransform(localPlayer.camera);
+
+    if(actor->classFlags & AC_PLAYER)
+    {
+        if(ws->plane && area_idx != ws->plane->area_id)
+        {
+            Map_CallAreaEvent(Map_GetArea(ws->plane),
+                "onEnter", NULL, 0);
+
+            if(area_idx != -1)
+            {
+                Map_CallAreaEvent(&gLevel.areas[area_idx],
+                "onExit", NULL, 0);
+            }
+        }
+    }
 }
 
 //

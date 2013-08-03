@@ -298,7 +298,7 @@ kbool AI_CanSeeTarget(ai_t *ai, gActor_t *target)
     dest[2] = target->origin[2];
 
     trace = Trace(pos, dest, plane, self,
-        PF_CLIPGEOMETRY | PF_CLIPEDGES | PF_DROPOFF);
+        PF_CLIPSTATICS | PF_CLIPGEOMETRY | PF_CLIPEDGES | PF_DROPOFF);
 
     if(trace.type == TRT_NOHIT)
     {

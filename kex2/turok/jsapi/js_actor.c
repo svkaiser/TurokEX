@@ -204,7 +204,7 @@ JS_PROP_FUNC_GET(GameActor)
         return JS_TRUE;
 
     case 28:
-        JS_RETURNBOOLEAN(vp, actor->bNoDropOff);
+        JS_RETURNBOOLEAN(vp, actor->bClimbing);
         return JS_TRUE;
 
     case 29:
@@ -357,7 +357,7 @@ JS_PROP_FUNC_SET(GameActor)
         return JS_TRUE;
 
     case 28:
-        JS_GETBOOL(actor->bNoDropOff, vp, 0);
+        JS_GETBOOL(actor->bClimbing, vp, 0);
         return JS_TRUE;
 
     case 29:
@@ -458,8 +458,8 @@ JS_FASTNATIVE_BEGIN(GameActor, setBounds)
     Vec_Set3(actor->bbox.min, (float)b[0], (float)b[1], (float)b[2]);
     Vec_Set3(actor->bbox.max, (float)b[3], (float)b[4], (float)b[5]);
 
-    Vec_Copy3(actor->bbox.omin, actor->bbox.min);
-    Vec_Copy3(actor->bbox.omax, actor->bbox.max);
+    Vec_Copy3(actor->baseBBox.min, actor->bbox.min);
+    Vec_Copy3(actor->baseBBox.max, actor->bbox.max);
 
     JS_SAFERETURN();
 }
@@ -866,7 +866,7 @@ JS_BEGINPROPS(GameActor)
     { "owner",          25, JSPROP_ENUMERATE, NULL, NULL },
     { "targetID",       26, JSPROP_ENUMERATE, NULL, NULL },
     { "modelVariant",   27, JSPROP_ENUMERATE, NULL, NULL },
-    { "bNoDropOff",     28, JSPROP_ENUMERATE, NULL, NULL },
+    { "bClimbing",      28, JSPROP_ENUMERATE, NULL, NULL },
     { "physics",        29, JSPROP_ENUMERATE, NULL, NULL },
     { "velocity",       30, JSPROP_ENUMERATE, NULL, NULL },
     { "ai",             31, JSPROP_ENUMERATE|JSPROP_READONLY, NULL, NULL },

@@ -57,7 +57,6 @@ enum
     scactor_bTouch,
     scactor_bHidden,
     scactor_bOrientOnSlope,
-    scactor_bNoDropOff,
     scactor_bRotor,
     scactor_scale,
     scactor_radius,
@@ -83,7 +82,6 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_bTouch,           "bTouch"            },
     { scactor_bHidden,          "bHidden"           },
     { scactor_bOrientOnSlope,   "bOrientOnSlope"    },
-    { scactor_bNoDropOff,       "bNoDropOff"        },
     { scactor_bRotor,           "bRotor"            },
     { scactor_scale,            "scale"             },
     { scactor_radius,           "radius"            },
@@ -179,11 +177,6 @@ static void Actor_ParseTemplate(scparser_t *parser, gActorTemplate_t *ac)
         case scactor_bOrientOnSlope:
             SC_AssignInteger(mapactortokens, &ac->actor.bOrientOnSlope,
                 scactor_bOrientOnSlope, parser, false);
-            break;
-
-        case scactor_bNoDropOff:
-            SC_AssignInteger(mapactortokens, &ac->actor.bNoDropOff,
-                scactor_bNoDropOff, parser, false);
             break;
 
         case scactor_bRotor:
@@ -295,51 +288,6 @@ void Actor_OnTouchEvent(gActor_t *actor, gActor_t *instigator)
 }
 
 //
-// Actor_TransformBBox
-//
-
-static void Actor_TransformBBox(gActor_t *actor)
-{
-    bbox_t box;
-    vec3_t c;
-    vec3_t h;
-    vec3_t ct;
-    vec3_t ht;
-    mtx_t m;
-
-    Vec_Copy3(box.min, actor->bbox.omin);
-    Vec_Copy3(box.max, actor->bbox.omax);
-
-    Mtx_Copy(m, actor->rotMtx);
-
-    Vec_Add(c, box.min, box.max);
-    Vec_Scale(c, c, 0.5f);
-    Vec_Sub(h, box.max, c);
-    Vec_TransformToWorld(m, c, ct);
-
-    m[ 0] = (float)fabs(m[ 0]);
-    m[ 1] = (float)fabs(m[ 1]);
-    m[ 2] = (float)fabs(m[ 2]);
-    m[ 4] = (float)fabs(m[ 4]);
-    m[ 5] = (float)fabs(m[ 5]);
-    m[ 6] = (float)fabs(m[ 6]);
-    m[ 8] = (float)fabs(m[ 8]);
-    m[ 9] = (float)fabs(m[ 9]);
-    m[10] = (float)fabs(m[10]);
-    m[12] = 0;
-    m[13] = 0;
-    m[14] = 0;
-
-    Vec_TransformToWorld(m, h, ht);
-
-    Vec_Sub(box.min, ct, ht);
-    Vec_Add(box.max, ct, ht);
-
-    Vec_Copy3(actor->bbox.min, box.min);
-    Vec_Copy3(actor->bbox.max, box.max);
-}
-
-//
 // Actor_AlignToPlane
 //
 
@@ -417,7 +365,7 @@ void Actor_UpdateTransform(gActor_t *actor)
         actor->origin[2]);
 
     if(!actor->bStatic)
-        Actor_TransformBBox(actor);
+        BBox_Transform(actor->baseBBox, actor->rotMtx, &actor->bbox);
 }
 
 //
@@ -944,7 +892,6 @@ void Actor_CopyProperties(gActor_t *actor, gActor_t *gTemplate)
     actor->bOrientOnSlope   = gTemplate->bOrientOnSlope;
     actor->bStatic          = gTemplate->bStatic;
     actor->bTouch           = gTemplate->bTouch;
-    actor->bNoDropOff       = gTemplate->bNoDropOff;
     actor->bRotor           = gTemplate->bRotor;
     actor->centerHeight     = gTemplate->centerHeight;
     actor->viewHeight       = gTemplate->viewHeight;
@@ -972,8 +919,8 @@ void Actor_CopyProperties(gActor_t *actor, gActor_t *gTemplate)
 
     Vec_Copy3(actor->bbox.min, gTemplate->bbox.min);
     Vec_Copy3(actor->bbox.max, gTemplate->bbox.max);
-    Vec_Copy3(actor->bbox.omin, gTemplate->bbox.min);
-    Vec_Copy3(actor->bbox.omax, gTemplate->bbox.max);
+    Vec_Copy3(actor->baseBBox.min, gTemplate->bbox.min);
+    Vec_Copy3(actor->baseBBox.max, gTemplate->bbox.max);
     Vec_Copy3(actor->scale, gTemplate->scale);
     Vec_Copy3(actor->rotorVector, gTemplate->rotorVector);
 }
@@ -1148,8 +1095,8 @@ gActor_t *Actor_SpawnEx(float x, float y, float z, float yaw, float pitch, int p
     Vec_Set3(actor->scale, 1, 1, 1);
     Vec_Set3(actor->bbox.min, -actor->radius, -actor->radius, -actor->radius);
     Vec_Set3(actor->bbox.max, actor->radius, actor->radius, actor->radius);
-    Vec_Copy3(actor->bbox.omin, actor->bbox.min);
-    Vec_Copy3(actor->bbox.omax, actor->bbox.max);
+    Vec_Copy3(actor->baseBBox.min, actor->bbox.min);
+    Vec_Copy3(actor->baseBBox.max, actor->bbox.max);
 
     if(actor->classFlags & AC_AI)
         AI_Spawn(actor);

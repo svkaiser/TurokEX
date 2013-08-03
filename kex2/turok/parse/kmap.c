@@ -29,6 +29,8 @@
 #include "script.h"
 #include "level.h"
 #include "ai.h"
+#include "js.h"
+#include "js_shared.h"
 #include "js_parse.h"
 
 enum
@@ -71,7 +73,6 @@ enum
     scactor_bStatic,
     scactor_bTouch,
     scactor_bOrientOnSlope,
-    scactor_bNoDropOff,
     scactor_bRotor,
     scactor_plane,
     scactor_origin,
@@ -109,7 +110,6 @@ static const sctokens_t mapactortokens[scactor_end+1] =
     { scactor_bStatic,          "bStatic"           },
     { scactor_bTouch,           "bTouch"            },
     { scactor_bOrientOnSlope,   "bOrientOnSlope"    },
-    { scactor_bNoDropOff,       "bNoDropOff"        },
     { scactor_bRotor,           "bRotor"            },
     { scactor_plane,            "plane"             },
     { scactor_origin,           "origin"            },
@@ -208,8 +208,8 @@ static void Kmap_ParseActor(scparser_t *parser, gActor_t *actor)
             actor->bbox.max[0] = (float)SC_GetFloat();
             actor->bbox.max[1] = (float)SC_GetFloat();
             actor->bbox.max[2] = (float)SC_GetFloat();
-            Vec_Copy3(actor->bbox.omin, actor->bbox.min);
-            Vec_Copy3(actor->bbox.omax, actor->bbox.max);
+            Vec_Copy3(actor->baseBBox.min, actor->bbox.min);
+            Vec_Copy3(actor->baseBBox.max, actor->bbox.max);
             SC_ExpectNextToken(TK_RBRACK);
             break;
 
@@ -287,11 +287,6 @@ static void Kmap_ParseActor(scparser_t *parser, gActor_t *actor)
         case scactor_bOrientOnSlope:
             SC_AssignInteger(mapactortokens, &actor->bOrientOnSlope,
                 scactor_bOrientOnSlope, parser, false);
-            break;
-
-        case scactor_bNoDropOff:
-            SC_AssignInteger(mapactortokens, &actor->bNoDropOff,
-                scactor_bNoDropOff, parser, false);
             break;
 
         case scactor_bRotor:
@@ -633,6 +628,12 @@ static void Kmap_ParseAreaBlock(scparser_t *parser)
             }
 
             SC_Find();
+        }
+
+        if(area->components)
+        {
+            area->iterator = JS_NewPropertyIterator(js_context, area->components);
+            JS_AddRoot(js_context, &area->iterator);
         }
     }
 

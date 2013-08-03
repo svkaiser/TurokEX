@@ -452,6 +452,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\math\bounds.c"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\math\matrix.c"
 					>
 				</File>

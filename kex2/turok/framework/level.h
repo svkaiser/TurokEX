@@ -175,6 +175,7 @@ d_inline plane_t *Map_IndexToPlane(int index)
 }
 
 gArea_t *Map_GetArea(plane_t *plane);
+kbool Map_CallAreaEvent(gArea_t *area, const char *function, long *args, unsigned int nargs);
 void Map_LinkActorToWorld(gActor_t *actor);
 void Map_UnlinkActorFromWorld(gActor_t *actor);
 int Map_GetWaterLevel(vec3_t origin, float height, plane_t *plane);

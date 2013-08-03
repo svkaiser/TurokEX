@@ -273,6 +273,8 @@ kbool G_ClipMovement(vec3_t origin, vec3_t velocity, float time,
             break;
         }
 
+        actor->bClimbing = (trace.hitpl && trace.hitpl->flags & CLF_CLIMB);
+
         hitOk = true;
 
         Vec_Copy3(normals[moves++], trace.normal);

@@ -110,9 +110,7 @@ float Ang_Diff(float angle1, float angle2);
 //
 // PLANE OPERATIONS
 //
-
 #include "level.h"
-
 void  Plane_SetTemp(plane_t *plane, vec3_t p1, vec3_t p2, vec3_t p3);
 void  Plane_GetNormal(vec3_t normal, plane_t *plane);
 void  Plane_GetCeilingNormal(vec3_t normal, plane_t *plane);
@@ -131,12 +129,17 @@ kbool Plane_PointInRange(plane_t *p, float x, float z);
 
 //
 // RANDOM OPERATIONS
-
+//
 void Random_SetSeed(int seed);
 int Random_Int(void);
 int Random_Max(int max);
 float Random_Float(void);
 float Random_CFloat(void);
+
+//
+// BOUNDING BOX OPERATIONS
+//
+void BBox_Transform(bbox_t srcBox, mtx_t matrix, bbox_t *out);
 
 #endif
 

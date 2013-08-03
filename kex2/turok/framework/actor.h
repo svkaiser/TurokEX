@@ -55,9 +55,10 @@ typedef struct gActor_s
     kbool               bTouch;
     kbool               bClientOnly;
     kbool               bHidden;
-    kbool               bNoDropOff;
+    kbool               bClimbing;
     kbool               bRotor;
     bbox_t              bbox;
+    bbox_t              baseBBox;
     float               angles[3];
     char                name[64];
     int                 plane;

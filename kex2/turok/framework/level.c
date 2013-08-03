@@ -33,6 +33,7 @@
 #include "client.h"
 #include "server.h"
 #include "js.h"
+#include "jsobj.h"
 #include "js_parse.h"
 #include "js_shared.h"
 #include "sound.h"
@@ -112,7 +113,48 @@ void Map_RemoveActor(gLevel_t *level, gActor_t* actor)
 
 gArea_t *Map_GetArea(plane_t *plane)
 {
-    return &gLevel.areas[plane->area_id];
+    return plane ? &gLevel.areas[plane->area_id] : NULL;
+}
+
+//
+// Map_CallAreaEvent
+//
+
+kbool Map_CallAreaEvent(gArea_t *area, const char *function, long *args, unsigned int nargs)
+{
+    jsval val;
+    kbool ok;
+
+    if(area->components == NULL)
+        return true;
+
+#ifdef JS_LOGNEWOBJECTS
+    Com_Printf("\nLogging Event (%s)...\n", function);
+#endif
+
+    ok = false;
+
+    JS_ITERATOR_START(area, val);
+    JS_ITERATOR_LOOP(area, val, function);
+    {
+        gObject_t *func;
+        jsval rval;
+        jsval argv = JSVAL_VOID;
+
+        if(!JS_ValueToObject(js_context, vp, &func))
+            continue;
+        if(!JS_ObjectIsFunction(js_context, func))
+            continue;
+
+        if(args == NULL)
+            args = &argv;
+
+        JS_CallFunctionName(js_context, component, function, nargs, args, &rval);
+        ok = true;
+    }
+    JS_ITERATOR_END(area, val);
+
+    return ok;
 }
 
 //

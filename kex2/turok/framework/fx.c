@@ -173,8 +173,33 @@ static void FX_Event(fx_t *fx, fxEvent_t *fxEvent, gActor_t *actor)
     if(!nfx)
         nfx = fx;
 
-    if(fxEvent->snd != NULL && fx->refcount <= 0)
+    if(fxEvent->snd != NULL && nfx->refcount <= 0)
         Snd_PlayShader(fxEvent->snd, (gActor_t*)nfx);
+
+    if(fxEvent->action.function != NULL && fx->source)
+    {
+        Actor_FXEvent(fx->source, actor, fx->origin,
+            fx->translation, Map_PlaneToIndex(fx->plane),
+            &fxEvent->action);
+    }
+}
+
+//
+// FX_TickEvent
+//
+// Same as FX_Event except that sounds are played on the parent actor
+// and not on child fx thats spawned from it
+//
+
+static void FX_TickEvent(fx_t *fx, fxEvent_t *fxEvent, gActor_t *actor)
+{
+    fx_t *nfx = NULL;
+
+    if(fxEvent->fx != NULL)
+        FX_SpawnChild(fx, fxEvent->fx);
+
+    if(fxEvent->snd != NULL && fx->refcount <= 0)
+        Snd_PlayShader(fxEvent->snd, (gActor_t*)fx);
 
     if(fxEvent->action.function != NULL && fx->source)
     {
@@ -647,9 +672,9 @@ void FX_Ticker(void)
         // handle 'on tick' events
         //
         if(bUnderWater)
-            FX_Event(fx, &fxinfo->onWaterTick, NULL);
+            FX_TickEvent(fx, &fxinfo->onWaterTick, NULL);
         else
-            FX_Event(fx, &fxinfo->onTick, NULL);
+            FX_TickEvent(fx, &fxinfo->onTick, NULL);
 
         // animation effects
         if(fx->bAnimate)

@@ -1515,6 +1515,27 @@ static void ProcessActors(byte *data)
 #endif
             break;
 
+        case OT_AI_INSECT:
+            switch(actor->model)
+            {
+            case 330:
+#ifndef FORMAT_BINARY
+                Com_Strcat("classFlags = 3\n");
+                Com_Strcat("physics = 591\n");
+                Com_Strcat("components[1] =\n");
+                Com_Strcat("{\n");
+                Com_Strcat("BeginObject = \"TurokAIInsect\"\n");
+                Com_Strcat("{\n");
+                ProcessAIBehavior(actor, attr);
+                Com_Strcat("\"active\" : 1\n");
+		        Com_Strcat("}\n");
+                Com_Strcat("EndObject\n");
+                Com_Strcat("}\n");
+                break;
+#endif
+            }
+            break;
+
         case OT_DYNAMIC_MOVER:
 #ifndef FORMAT_BINARY
             Com_Strcat("classFlags = 2\n");
@@ -2829,7 +2850,7 @@ static void AddLevel(byte *data, int index)
 
     ProcessNavigation(level, index);
     ProcessLevel(level, index);
-    //ProcessSkyTexture(level, index);
+    ProcessSkyTexture(level, index);
 }
 
 //
