@@ -151,7 +151,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\openal\include\&quot;;&quot;$(OutDir)\SDL\include\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\turok\common\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\client\&quot;;&quot;$(OutDir)\turok\server\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\sound\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\menu\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDir)\turok\jsapi\&quot;;&quot;$(OutDir)\turok\parse\&quot;"
+				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\openal\include\&quot;;&quot;$(OutDir)\SDL\include\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\sound\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\menu\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDir)\turok\jsapi\&quot;;&quot;$(OutDir)\turok\parse\&quot;;&quot;$(OutDir)\turok\game\&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -164,7 +164,7 @@
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
-				CompileAs="1"
+				CompileAs="2"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -225,66 +225,26 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\turok\main.c"
+				RelativePath="..\turok\main.cpp"
 				>
 			</File>
-			<Filter
-				Name="common"
-				>
-				<File
-					RelativePath="..\turok\common\cmd.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\common.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\cvar.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\packet.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\psnprntf.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\script.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\trace.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\unzip.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\zone.c"
-					>
-				</File>
-			</Filter>
 			<Filter
 				Name="win32"
 				>
 				<File
-					RelativePath="..\turok\win32\exception.c"
+					RelativePath="..\turok\win32\exception.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\win32\opndir.c"
+					RelativePath="..\turok\win32\opndir.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\win32\win32_console.c"
+					RelativePath="..\turok\win32\win32_console.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\win32\win32_main.c"
+					RelativePath="..\turok\win32\win32_main.cpp"
 					>
 				</File>
 			</Filter>
@@ -292,51 +252,15 @@
 				Name="kernel"
 				>
 				<File
-					RelativePath="..\turok\kernel\kernel_console.c"
+					RelativePath="..\turok\kernel\kernel_console.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\kernel\kernel_files.c"
+					RelativePath="..\turok\kernel\kernel_main.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\kernel\kernel_input.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\kernel\kernel_keys.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\kernel\kernel_main.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\kernel\kernel_video.c"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="client"
-				>
-				<File
-					RelativePath="..\turok\client\client_events.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\client\client_main.c"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="server"
-				>
-				<File
-					RelativePath="..\turok\server\server_main.c"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\server\server_send.c"
+					RelativePath="..\turok\kernel\kernel_video.cpp"
 					>
 				</File>
 			</Filter>
@@ -344,19 +268,19 @@
 				Name="opengl"
 				>
 				<File
-					RelativePath="..\turok\opengl\gl_draw.c"
+					RelativePath="..\turok\opengl\gl_draw.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\opengl\gl_images.c"
+					RelativePath="..\turok\opengl\gl_images.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\opengl\gl_main.c"
+					RelativePath="..\turok\opengl\gl_main.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\opengl\gl_textures.c"
+					RelativePath="..\turok\opengl\gl_textures.cpp"
 					>
 				</File>
 			</Filter>
@@ -364,35 +288,35 @@
 				Name="renderer"
 				>
 				<File
-					RelativePath="..\turok\renderer\render_camera.c"
+					RelativePath="..\turok\renderer\render_camera.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\renderer\render_canvas.c"
+					RelativePath="..\turok\renderer\render_canvas.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\renderer\render_debug.c"
+					RelativePath="..\turok\renderer\render_debug.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\renderer\render_font.c"
+					RelativePath="..\turok\renderer\render_font.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\renderer\render_fx.c"
+					RelativePath="..\turok\renderer\render_fx.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\renderer\render_main.c"
+					RelativePath="..\turok\renderer\render_main.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\renderer\render_model.c"
+					RelativePath="..\turok\renderer\render_model.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\renderer\render_shadows.c"
+					RelativePath="..\turok\renderer\render_shadows.cpp"
 					>
 				</File>
 			</Filter>
@@ -400,11 +324,11 @@
 				Name="menu"
 				>
 				<File
-					RelativePath="..\turok\menu\menu_items.c"
+					RelativePath="..\turok\menu\menu_items.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\menu\menu_main.c"
+					RelativePath="..\turok\menu\menu_main.cpp"
 					>
 				</File>
 			</Filter>
@@ -412,35 +336,67 @@
 				Name="framework"
 				>
 				<File
-					RelativePath="..\turok\framework\actor.c"
+					RelativePath="..\turok\framework\client.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\framework\ai.c"
+					RelativePath="..\turok\framework\cmd.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\framework\debug.c"
+					RelativePath="..\turok\framework\common.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\framework\fx.c"
+					RelativePath="..\turok\framework\cvar.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\framework\game.c"
+					RelativePath="..\turok\framework\debug.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\framework\level.c"
+					RelativePath="..\turok\framework\fileSystem.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\framework\physics.c"
+					RelativePath="..\turok\framework\input.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\framework\player.c"
+					RelativePath="..\turok\framework\keyinput.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\network.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\packet.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\psnprntf.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\script.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\server.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\trace.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\unzip.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\zone.cpp"
 					>
 				</File>
 			</Filter>
@@ -448,27 +404,27 @@
 				Name="math"
 				>
 				<File
-					RelativePath="..\turok\math\angle.c"
+					RelativePath="..\turok\math\angle.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\math\bounds.c"
+					RelativePath="..\turok\math\bounds.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\math\matrix.c"
+					RelativePath="..\turok\math\matrix.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\math\plane.c"
+					RelativePath="..\turok\math\plane.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\math\random.c"
+					RelativePath="..\turok\math\random.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\math\vector.c"
+					RelativePath="..\turok\math\vector.cpp"
 					>
 				</File>
 			</Filter>
@@ -476,110 +432,110 @@
 				Name="jsapi"
 				>
 				<File
-					RelativePath="..\turok\jsapi\js_class.c"
+					RelativePath="..\turok\jsapi\js_class.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\jsapi\js_main.c"
+					RelativePath="..\turok\jsapi\js_main.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\jsapi\js_objPool.c"
+					RelativePath="..\turok\jsapi\js_objPool.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\jsapi\js_parse.c"
+					RelativePath="..\turok\jsapi\js_parse.cpp"
 					>
 				</File>
 				<Filter
 					Name="classes"
 					>
 					<File
-						RelativePath="..\turok\jsapi\js_actor.c"
+						RelativePath="..\turok\jsapi\js_actor.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_ai.c"
+						RelativePath="..\turok\jsapi\js_ai.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_angle.c"
+						RelativePath="..\turok\jsapi\js_angle.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_anim.c"
+						RelativePath="..\turok\jsapi\js_anim.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_client.c"
+						RelativePath="..\turok\jsapi\js_client.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_cmd.c"
+						RelativePath="..\turok\jsapi\js_cmd.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_component.c"
+						RelativePath="..\turok\jsapi\js_component.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_game.c"
+						RelativePath="..\turok\jsapi\js_game.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_gl.c"
+						RelativePath="..\turok\jsapi\js_gl.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_input.c"
+						RelativePath="..\turok\jsapi\js_input.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_level.c"
+						RelativePath="..\turok\jsapi\js_level.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_matrix.c"
+						RelativePath="..\turok\jsapi\js_matrix.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_net.c"
+						RelativePath="..\turok\jsapi\js_net.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_physics.c"
+						RelativePath="..\turok\jsapi\js_physics.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_plane.c"
+						RelativePath="..\turok\jsapi\js_plane.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_player.c"
+						RelativePath="..\turok\jsapi\js_player.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_quaternion.c"
+						RelativePath="..\turok\jsapi\js_quaternion.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_render.c"
+						RelativePath="..\turok\jsapi\js_render.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_server.c"
+						RelativePath="..\turok\jsapi\js_server.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_sound.c"
+						RelativePath="..\turok\jsapi\js_sound.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_sys.c"
+						RelativePath="..\turok\jsapi\js_sys.cpp"
 						>
 					</File>
 					<File
-						RelativePath="..\turok\jsapi\js_vector.c"
+						RelativePath="..\turok\jsapi\js_vector.cpp"
 						>
 					</File>
 				</Filter>
@@ -588,11 +544,11 @@
 				Name="sound"
 				>
 				<File
-					RelativePath="..\turok\sound\snd_shader.c"
+					RelativePath="..\turok\sound\snd_shader.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\sound\snd_system.c"
+					RelativePath="..\turok\sound\snd_system.cpp"
 					>
 				</File>
 			</Filter>
@@ -600,23 +556,55 @@
 				Name="parse"
 				>
 				<File
-					RelativePath="..\turok\parse\kanim.c"
+					RelativePath="..\turok\parse\kanim.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\parse\kfx.c"
+					RelativePath="..\turok\parse\kfx.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\parse\kmap.c"
+					RelativePath="..\turok\parse\kmap.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\parse\kmesh.c"
+					RelativePath="..\turok\parse\kmesh.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\parse\knav.c"
+					RelativePath="..\turok\parse\knav.cpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="game"
+				>
+				<File
+					RelativePath="..\turok\game\actor.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\ai.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\fx.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\game.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\level.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\physics.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\player.cpp"
 					>
 				</File>
 			</Filter>
@@ -625,46 +613,6 @@
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl"
 			>
-			<Filter
-				Name="common"
-				>
-				<File
-					RelativePath="..\turok\common\common.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\keywds.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\packet.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\psnprntf.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\script.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\shared.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\type.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\unzip.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\common\zone.h"
-					>
-				</File>
-			</Filter>
 			<Filter
 				Name="win32"
 				>
@@ -678,14 +626,6 @@
 				>
 				<File
 					RelativePath="..\turok\kernel\kernel.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="client"
-				>
-				<File
-					RelativePath="..\turok\client\client.h"
 					>
 				</File>
 			</Filter>
@@ -729,11 +669,23 @@
 				Name="framework"
 				>
 				<File
-					RelativePath="..\turok\framework\actor.h"
+					RelativePath="..\turok\framework\cachefilelist.h"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\framework\ai.h"
+					RelativePath="..\turok\framework\client.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\cmd.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\common.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\cvar.h"
 					>
 				</File>
 				<File
@@ -741,19 +693,59 @@
 					>
 				</File>
 				<File
-					RelativePath="..\turok\framework\fx.h"
+					RelativePath="..\turok\framework\filesystem.h"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\framework\game.h"
+					RelativePath="..\turok\framework\input.h"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\framework\level.h"
+					RelativePath="..\turok\framework\keyinput.h"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\framework\player.h"
+					RelativePath="..\turok\framework\keywds.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\linkedlist.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\network.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\packet.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\psnprntf.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\script.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\server.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\shared.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\type.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\unzip.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\zone.h"
 					>
 				</File>
 			</Filter>
@@ -802,6 +794,34 @@
 				>
 				<File
 					RelativePath="..\turok\parse\parse.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="game"
+				>
+				<File
+					RelativePath="..\turok\game\actor.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\ai.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\fx.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\game.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\level.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\player.h"
 					>
 				</File>
 			</Filter>
