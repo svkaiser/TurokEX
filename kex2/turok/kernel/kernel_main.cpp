@@ -204,6 +204,7 @@ void Kernel_Main(int argc, char **argv) {
 
     command.Init();
     cvarManager.Init();
+    kexObject::Init();
     console.Init();
 
     SC_Init();

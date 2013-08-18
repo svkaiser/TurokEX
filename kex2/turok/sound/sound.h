@@ -56,6 +56,7 @@ typedef struct
     float           freqLerpEnd;
     int             freqLerpTime;
     int             freqLerpDelay;
+    float           rolloffFactor;
 } sfx_t;
 
 typedef struct sndShader_s

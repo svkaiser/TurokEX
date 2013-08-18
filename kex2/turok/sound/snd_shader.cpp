@@ -92,6 +92,8 @@ static void Snd_ParseShaderScript(sndShader_t *snd, scparser_t *parser)
     snd->numsfx = SC_GetNumber();
     snd->sfx = (sfx_t*)Z_Calloc(sizeof(sfx_t) * snd->numsfx, PU_SOUND, 0);
 
+    snd->sfx->rolloffFactor = 1.0f;
+
     SC_ExpectNextToken(TK_RSQBRACK);
     SC_ExpectNextToken(TK_EQUAL);
     SC_ExpectNextToken(TK_LBRACK);
