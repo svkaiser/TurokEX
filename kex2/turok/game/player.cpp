@@ -36,6 +36,7 @@
 #include "actor.h"
 #include "player.h"
 #include "zone.h"
+#include "console.h"
 
 localPlayer_t localPlayer;
 netPlayer_t netPlayers[MAX_PLAYERS];
@@ -56,7 +57,7 @@ void P_ResetNetSeq(playerInfo_t *info)
 
 kbool P_Responder(event_t *ev)
 {
-    if(Con_ProcessConsoleInput(ev))
+    if(console.ProcessInput(ev))
         return true;
 
     switch(ev->type)

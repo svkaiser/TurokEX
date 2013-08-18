@@ -79,6 +79,7 @@ public:
     void            BindCommand(char key, const char *string);
     void            ListBindings(void);
     void            HandleControl(int ctrl);
+    int             GetAsciiKey(char c, bool bShift) { return keycode[bShift][c]; }
 
 private:
     char            keycode[2][MAX_KEYS];

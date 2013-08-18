@@ -25,16 +25,14 @@
 
 #include "unzip.h"
 
-typedef struct
-{
+typedef struct {
     char            name[MAX_FILEPATH];
     unsigned long   position;
     unz_file_info   info;
     void*           cache;
 } file_t;
 
-typedef struct kpf_s
-{
+typedef struct kpf_s {
     unzFile         *filehandle;
     unsigned int    numfiles;
     char            filename[MAX_FILEPATH];

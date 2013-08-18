@@ -206,8 +206,7 @@ static void Kfx_ParseEvent(fxEvent_t *fxEvent, scparser_t *parser) {
 // Kfx_ParseScript
 //
 
-static void Kfx_ParseScript(fxfile_t *fx, scparser_t *parser)
-{
+static void Kfx_ParseScript(fxfile_t *fx, scparser_t *parser) {
     unsigned int i;
 
     SC_Find();

@@ -252,10 +252,6 @@
 				Name="kernel"
 				>
 				<File
-					RelativePath="..\turok\kernel\kernel_console.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\turok\kernel\kernel_main.cpp"
 					>
 				</File>
@@ -348,6 +344,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\framework\console.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\cvar.cpp"
 					>
 				</File>
@@ -365,6 +365,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\keyinput.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\kstring.cpp"
 					>
 				</File>
 				<File
@@ -669,6 +673,10 @@
 				Name="framework"
 				>
 				<File
+					RelativePath="..\turok\framework\array.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\cachefilelist.h"
 					>
 				</File>
@@ -682,6 +690,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\common.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\console.h"
 					>
 				</File>
 				<File
@@ -706,6 +718,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\keywds.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\kstring.h"
 					>
 				</File>
 				<File

@@ -26,11 +26,11 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-
 #include "common.h"
 #include "zone.h"
 #include "kernel.h"
 #include "filesystem.h"
+#include "console.h"
 
 int     myargc;
 char**  myargv;
@@ -52,7 +52,7 @@ void kexCommon::Printf(const char *string, ...) {
     Sys_Printf(buffer);
 #endif
 
-    Con_Printf(COLOR_WHITE, buffer);
+    console.Print(COLOR_WHITE, buffer);
     printf(buffer);
 }
 
@@ -71,7 +71,7 @@ void kexCommon::CPrintf(rcolor color, const char *string, ...) {
     Sys_Printf(buffer);
 #endif
 
-    Con_Printf(color, buffer);
+    console.Print(color, buffer);
     printf(buffer);
 }
 
@@ -90,7 +90,7 @@ void kexCommon::Warning(const char *string, ...) {
     Sys_Printf(buffer);
 #endif
 
-    Con_Printf(COLOR_YELLOW, buffer);
+    console.Print(COLOR_YELLOW, buffer);
     printf(buffer);
 }
 

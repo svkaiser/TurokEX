@@ -38,6 +38,7 @@
 #include "zone.h"
 #include "debug.h"
 #include "network.h"
+#include "console.h"
 
 static int clientFPS;
 
@@ -175,7 +176,7 @@ void kexClient::Run(const int msec) {
 
     P_LocalPlayerTick();
 
-    Con_Ticker();
+    console.Tick();
 
     FX_Ticker();
 
@@ -186,7 +187,7 @@ void kexClient::Run(const int msec) {
 
     Debug_DrawStats();
 
-    Con_Drawer();
+    console.Draw();
 
     R_FinishFrame();
 
@@ -263,7 +264,7 @@ void kexClient::ProcessEvents(void) {
         if(ev == oldev)
             return;
 
-        if(Con_ProcessConsoleInput(ev))
+        if(console.ProcessInput(ev))
             continue;
 
         // TODO - TEMP

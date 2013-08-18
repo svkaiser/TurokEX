@@ -77,7 +77,7 @@ typedef struct gActor_s
     mtx_t               rotMtx;
     vec4_t              lerpRotation;
     gObject_t           *components;
-	gObject_t           *iterator;
+    gObject_t           *iterator;
     int                 numProperties;
     unsigned int        classFlags;
     unsigned int        surfaceID;

@@ -42,6 +42,7 @@
 #include "fx.h"
 #include "debug.h"
 #include "filesystem.h"
+#include "console.h"
 
 kexCvar cvarDeveloper("developer", CVF_BOOL|CVF_CONFIG, "0", "Developer mode");
 kexCvar cvarFixedTime("fixedtime", CVF_INT|CVF_CONFIG, "0", "TODO");
@@ -203,6 +204,7 @@ void Kernel_Main(int argc, char **argv) {
 
     command.Init();
     cvarManager.Init();
+    console.Init();
 
     SC_Init();
     common.Printf("Lexer System Initialized\n");

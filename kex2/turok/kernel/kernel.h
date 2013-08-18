@@ -48,13 +48,4 @@ extern float video_ratio;
 extern kbool video_windowed;
 void V_SetupScreen(void);
 
-//
-// CONSOLE
-//
-void Con_Printf(rcolor clr, const char *s);
-char *Con_GetLastBuffer(void);
-void Con_Ticker(void);
-void Con_Drawer(void);
-kbool Con_ProcessConsoleInput(event_t *ev);
-
 #endif
