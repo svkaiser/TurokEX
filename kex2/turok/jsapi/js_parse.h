@@ -23,6 +23,6 @@
 #ifndef _JSPARSE_H_
 #define _JSPARSE_H_
 
-kbool JParse_Start(scparser_t *parser, gObject_t **object, int count);
+kbool JParse_Start(kexLexer *lexer, gObject_t **object, int count);
 
 #endif

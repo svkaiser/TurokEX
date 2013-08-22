@@ -166,38 +166,38 @@ static const sctokens_t vfxtokens[scvfx_end+1] =
 // Kfx_ParseEvent
 //
 
-static void Kfx_ParseEvent(fxEvent_t *fxEvent, scparser_t *parser) {
-    SC_ExpectNextToken(TK_LBRACK);
+static void Kfx_ParseEvent(fxEvent_t *fxEvent, kexLexer *lexer) {
+    lexer->ExpectNextToken(TK_LBRACK);
     while(1) {
-        SC_Find();
-        if(!strcmp(sc_parser->token, "fx")) {
-            SC_ExpectNextToken(TK_EQUAL);
-            SC_GetString();
-            fxEvent->fx = Z_Strndup(parser->stringToken,
+        lexer->Find();
+        if(!strcmp(lexer->Token(), "fx")) {
+            lexer->ExpectNextToken(TK_EQUAL);
+            lexer->GetString();
+            fxEvent->fx = Z_Strndup(lexer->StringToken(),
                 MAX_FILEPATH, PU_STATIC, 0);
         }
-        else if(!strcmp(sc_parser->token, "sound")) {
-            SC_ExpectNextToken(TK_EQUAL);
-            SC_GetString();
-            fxEvent->snd = Z_Strndup(parser->stringToken,
+        else if(!strcmp(lexer->Token(), "sound")) {
+            lexer->ExpectNextToken(TK_EQUAL);
+            lexer->GetString();
+            fxEvent->snd = Z_Strndup(lexer->StringToken(),
                 MAX_FILEPATH, PU_STATIC, 0);
         }
-        else if(!strcmp(sc_parser->token, "action")) {
-            SC_ExpectNextToken(TK_EQUAL);
-            SC_ExpectNextToken(TK_LBRACK);
+        else if(!strcmp(lexer->Token(), "action")) {
+            lexer->ExpectNextToken(TK_EQUAL);
+            lexer->ExpectNextToken(TK_LBRACK);
 
-            SC_GetString();
-            fxEvent->action.function = Z_Strdup(parser->stringToken,
+            lexer->GetString();
+            fxEvent->action.function = Z_Strdup(lexer->StringToken(),
                 PU_STATIC, 0);
-            fxEvent->action.args[0] = (float)SC_GetFloat();
+            fxEvent->action.args[0] = (float)lexer->GetFloat();
 
-            SC_ExpectNextToken(TK_RBRACK);
+            lexer->ExpectNextToken(TK_RBRACK);
         }
-        else if(sc_parser->tokentype == TK_RBRACK)
+        else if(lexer->TokenType() == TK_RBRACK)
             break;
         else {
-            SC_Error("Kfx_ParseScript: Unknown token: %s\n",
-                parser->token);
+            parser.Error("Kfx_ParseScript: Unknown token: %s\n",
+                lexer->Token());
         }
     }
 }
@@ -206,74 +206,74 @@ static void Kfx_ParseEvent(fxEvent_t *fxEvent, scparser_t *parser) {
 // Kfx_ParseScript
 //
 
-static void Kfx_ParseScript(fxfile_t *fx, scparser_t *parser) {
+static void Kfx_ParseScript(fxfile_t *fx, kexLexer *lexer) {
     unsigned int i;
 
-    SC_Find();
+    lexer->Find();
 
-    if(strcmp(parser->token, "fx"))
-        common.Error("Kfx_ParseScript: Expected 'fx', found %s", parser->token);
+    if(strcmp(lexer->Token(), "fx"))
+        common.Error("Kfx_ParseScript: Expected 'fx', found %s", lexer->Token());
 
-    SC_ExpectNextToken(TK_LSQBRACK);
+    lexer->ExpectNextToken(TK_LSQBRACK);
 
-    fx->numfx = SC_GetNumber();
+    fx->numfx = lexer->GetNumber();
     fx->info = (fxinfo_t*)Z_Calloc(sizeof(fxinfo_t) * fx->numfx, PU_STATIC, 0);
 
-    SC_ExpectNextToken(TK_RSQBRACK);
-    SC_ExpectNextToken(TK_EQUAL);
-    SC_ExpectNextToken(TK_LBRACK);
+    lexer->ExpectNextToken(TK_RSQBRACK);
+    lexer->ExpectNextToken(TK_EQUAL);
+    lexer->ExpectNextToken(TK_LBRACK);
 
 #define CHECK_INT(name)                         \
     case scvfx_ ##name:                         \
-    SC_AssignInteger(vfxtokens, (unsigned int*)&info-> ##name, \
-        scvfx_ ##name, parser, false);          \
+    lexer->AssignFromTokenList(vfxtokens, (unsigned int*)&info-> ##name, \
+        scvfx_ ##name, false);          \
     break
 
 #define CHECK_FLOAT(name, prop)                 \
     case scvfx_ ##name:                         \
-    SC_AssignFloat(vfxtokens, &info-> ##prop,   \
-        scvfx_ ##name, parser, false);          \
+    lexer->AssignFromTokenList(vfxtokens, &info-> ##prop,   \
+        scvfx_ ##name, false);          \
     break
 
 #define CHECK_VFXINT(name)                              \
     case scvfx_ ##name:                                 \
-    SC_AssignInteger(vfxtokens, (unsigned int*)&info-> ##name .value,  \
-        scvfx_ ##name, parser, false);                  \
+    lexer->AssignFromTokenList(vfxtokens, (unsigned int*)&info-> ##name .value,  \
+        scvfx_ ##name, false);                  \
     break;                                              \
     case scvfx_ ##name## _randomscale:                  \
-    SC_AssignFloat(vfxtokens, &info-> ##name .rand,     \
-        scvfx_ ##name## _randomscale, parser, false);   \
+    lexer->AssignFromTokenList(vfxtokens, &info-> ##name .rand,     \
+        scvfx_ ##name## _randomscale, false);   \
     break
 
 #define CHECK_VFXFLOAT(name)                            \
     case scvfx_ ##name:                                 \
-    SC_AssignFloat(vfxtokens, &info-> ##name .value,    \
-        scvfx_ ##name, parser, false);                  \
+    lexer->AssignFromTokenList(vfxtokens, &info-> ##name .value,    \
+        scvfx_ ##name, false);                  \
     break;                                              \
     case scvfx_ ##name## _randomscale:                  \
-    SC_AssignFloat(vfxtokens, &info-> ##name .rand,     \
-        scvfx_ ##name## _randomscale, parser, false);   \
+    lexer->AssignFromTokenList(vfxtokens, &info-> ##name .rand,     \
+        scvfx_ ##name## _randomscale, false);   \
     break
 
 #define CHECK_VFXVECTOR(name)                           \
     case scvfx_ ##name:                                 \
-    SC_AssignVector(vfxtokens, info-> ##name .value,    \
-        scvfx_ ##name, parser, false);                  \
+    lexer->AssignVectorFromTokenList(vfxtokens, info-> ##name .value,    \
+        scvfx_ ##name, false);                  \
     break;                                              \
     case scvfx_ ##name## _randomscale:                  \
-    SC_AssignVector(vfxtokens, info-> ##name .rand,     \
-        scvfx_ ##name## _randomscale, parser, false);   \
+    lexer->AssignVectorFromTokenList(vfxtokens, info-> ##name .rand,     \
+        scvfx_ ##name## _randomscale, false);   \
     break
 
     for(i = 0; i < fx->numfx; i++) {
         fxinfo_t *info = &fx->info[i];
         int j;
 
-        SC_ExpectNextToken(TK_LBRACK);
-        SC_Find();
+        lexer->ExpectNextToken(TK_LBRACK);
+        lexer->Find();
 
-        while(parser->tokentype != TK_RBRACK) {
-            switch(SC_GetIDForToken(vfxtokens, parser->token)) {
+        while(lexer->TokenType() != TK_RBRACK) {
+            switch(lexer->GetIDForTokenList(vfxtokens, lexer->Token())) {
             CHECK_INT(bFadeout);
             CHECK_INT(bStopAnimOnImpact);
             CHECK_INT(bOffsetFromFloor);
@@ -317,117 +317,117 @@ static void Kfx_ParseScript(fxfile_t *fx, scparser_t *parser) {
             CHECK_VFXVECTOR(offset);
 
             case scvfx_texture:
-                SC_ExpectNextToken(TK_LSQBRACK);
-                info->numTextures = SC_GetNumber();
+                lexer->ExpectNextToken(TK_LSQBRACK);
+                info->numTextures = lexer->GetNumber();
                 info->textures = (char**)Z_Calloc(sizeof(char*) *
                     info->numTextures, PU_STATIC, 0);
-                SC_ExpectNextToken(TK_RSQBRACK);
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_ExpectNextToken(TK_LBRACK);
+                lexer->ExpectNextToken(TK_RSQBRACK);
+                lexer->ExpectNextToken(TK_EQUAL);
+                lexer->ExpectNextToken(TK_LBRACK);
                 for(j = 0; j < info->numTextures; j++) {
-                    SC_GetString();
-                    info->textures[j] = Z_Strndup(parser->stringToken,
+                    lexer->GetString();
+                    info->textures[j] = Z_Strndup(lexer->StringToken(),
                         MAX_FILEPATH, PU_STATIC, 0);
                 }
-                SC_ExpectNextToken(TK_RBRACK);
+                lexer->ExpectNextToken(TK_RBRACK);
                 break;
 
             case scvfx_color1:
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_ExpectNextToken(TK_LSQBRACK);
-                info->color1[0] = SC_GetNumber();
-                info->color1[1] = SC_GetNumber();
-                info->color1[2] = SC_GetNumber();
-                SC_ExpectNextToken(TK_RSQBRACK);
+                lexer->ExpectNextToken(TK_EQUAL);
+                lexer->ExpectNextToken(TK_LSQBRACK);
+                info->color1[0] = lexer->GetNumber();
+                info->color1[1] = lexer->GetNumber();
+                info->color1[2] = lexer->GetNumber();
+                lexer->ExpectNextToken(TK_RSQBRACK);
                 break;
 
             case scvfx_color2:
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_ExpectNextToken(TK_LSQBRACK);
-                info->color2[0] = SC_GetNumber();
-                info->color2[1] = SC_GetNumber();
-                info->color2[2] = SC_GetNumber();
-                SC_ExpectNextToken(TK_RSQBRACK);
+                lexer->ExpectNextToken(TK_EQUAL);
+                lexer->ExpectNextToken(TK_LSQBRACK);
+                info->color2[0] = lexer->GetNumber();
+                info->color2[1] = lexer->GetNumber();
+                info->color2[2] = lexer->GetNumber();
+                lexer->ExpectNextToken(TK_RSQBRACK);
                 break;
 
             case scvfx_ontouch:
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_Find();
-                if(!strcmp(sc_parser->token, "destroy"))
+                lexer->ExpectNextToken(TK_EQUAL);
+                lexer->Find();
+                if(!strcmp(lexer->Token(), "destroy"))
                     info->ontouch = VFX_DESTROY;
-                else if(!strcmp(sc_parser->token, "reflect"))
+                else if(!strcmp(lexer->Token(), "reflect"))
                     info->ontouch = VFX_REFLECT;
                 else
                     info->ontouch = VFX_DEFAULT;
                 break;
 
             case scvfx_onplane:
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_Find();
-                if(!strcmp(sc_parser->token, "destroy"))
+                lexer->ExpectNextToken(TK_EQUAL);
+                lexer->Find();
+                if(!strcmp(lexer->Token(), "destroy"))
                     info->onplane = VFX_DESTROY;
-                else if(!strcmp(sc_parser->token, "reflect"))
+                else if(!strcmp(lexer->Token(), "reflect"))
                     info->onplane = VFX_REFLECT;
-                else if(!strcmp(sc_parser->token, "bounce"))
+                else if(!strcmp(lexer->Token(), "bounce"))
                     info->onplane = VFX_BOUNCE;
                 else
                     info->onplane = VFX_DEFAULT;
                 break;
 
             case scvfx_drawtype:
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_Find();
-                if(!strcmp(sc_parser->token, "flat"))
+                lexer->ExpectNextToken(TK_EQUAL);
+                lexer->Find();
+                if(!strcmp(lexer->Token(), "flat"))
                     info->drawtype = VFX_DRAWFLAT;
-                else if(!strcmp(sc_parser->token, "decal"))
+                else if(!strcmp(lexer->Token(), "decal"))
                     info->drawtype = VFX_DRAWDECAL;
-                else if(!strcmp(sc_parser->token, "billboard"))
+                else if(!strcmp(lexer->Token(), "billboard"))
                     info->drawtype = VFX_DRAWBILLBOARD;
                 else
                     info->drawtype = VFX_DRAWDEFAULT;
                 break;
 
             case scvfx_animtype:
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_Find();
-                if(!strcmp(sc_parser->token, "onetime"))
+                lexer->ExpectNextToken(TK_EQUAL);
+                lexer->Find();
+                if(!strcmp(lexer->Token(), "onetime"))
                     info->animtype = VFX_ANIMONETIME;
-                else if(!strcmp(sc_parser->token, "loop"))
+                else if(!strcmp(lexer->Token(), "loop"))
                     info->animtype = VFX_ANIMLOOP;
-                else if(!strcmp(sc_parser->token, "sinwave"))
+                else if(!strcmp(lexer->Token(), "sinwave"))
                     info->animtype = VFX_ANIMSINWAVE;
                 else
                     info->animtype = VFX_ANIMDEFAULT;
                 break;
 
             case scvfx_onHitSurface:
-                Kfx_ParseEvent(&info->onImpact, parser);
+                Kfx_ParseEvent(&info->onImpact, lexer);
                 break;
 
             case scvfx_onExpire:
-                Kfx_ParseEvent(&info->onExpire, parser);
+                Kfx_ParseEvent(&info->onExpire, lexer);
                 break;
 
             case scvfx_onTick:
-                Kfx_ParseEvent(&info->onTick, parser);
+                Kfx_ParseEvent(&info->onTick, lexer);
                 break;
 
             case scvfx_onWaterHit:
-                Kfx_ParseEvent(&info->onWaterImpact, parser);
+                Kfx_ParseEvent(&info->onWaterImpact, lexer);
                 break;
 
             case scvfx_onWaterExpire:
-                Kfx_ParseEvent(&info->onWaterExpire, parser);
+                Kfx_ParseEvent(&info->onWaterExpire, lexer);
                 break;
 
             case scvfx_onWaterTick:
-                Kfx_ParseEvent(&info->onWaterTick, parser);
+                Kfx_ParseEvent(&info->onWaterTick, lexer);
                 break;
 
             default:
-                if(parser->tokentype == TK_IDENIFIER) {
-                    SC_Error("Kfx_ParseScript: Unknown token: %s\n",
-                        parser->token);
+                if(lexer->TokenType() == TK_IDENIFIER) {
+                    parser.Error("Kfx_ParseScript: Unknown token: %s\n",
+                        lexer->Token());
                 }
                 break;
             }
@@ -439,11 +439,11 @@ static void Kfx_ParseScript(fxfile_t *fx, scparser_t *parser) {
             if(info->translation.value[2] > 1.0f)  info->translation.value[2] -= 1.0f;
             if(info->translation.value[2] < -1.0f) info->translation.value[2] += 1.0f;
 
-            SC_Find();
+            lexer->Find();
         }
     }
 
-    SC_ExpectNextToken(TK_RBRACK);
+    lexer->ExpectNextToken(TK_RBRACK);
 
 #undef CHECK_INT
 #undef CHECK_FLOAT
@@ -463,21 +463,21 @@ fxfile_t *Kfx_Load(const char *name) {
         return NULL;
 
     if(!(fx = kfxList.Find(name))) {
-        scparser_t *parser;
+        kexLexer *lexer;
 
         if(strlen(name) >= MAX_FILEPATH)
             common.Error("FX_Load: \"%s\" is too long", name);
 
-        if(!(parser = SC_Open(name)))
+        if(!(lexer = parser.Open(name)))
             return NULL;
 
         fx = kfxList.Create(name);
 
-        Kfx_ParseScript(fx, parser);
+        Kfx_ParseScript(fx, lexer);
 
         kfxList.Add(fx);
 
-        SC_Close();
+        parser.Close();
     }
 
     return fx;

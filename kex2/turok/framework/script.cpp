@@ -33,20 +33,6 @@
 
 //#define SC_DEBUG
 
-scparser_t *sc_parsers[MAX_NESTED_PARSERS];
-int sc_numparsers;
-scparser_t *sc_parser;
-
-#define MAX_NESTED_FILENAMES    128
-static char sc_nested_filenames[MAX_NESTED_FILENAMES][MAX_FILEPATH];
-static int sc_num_nested_filenames;
-
-identifier_t identifier_cap;
-identifier_t *current_identifier;
-
-identifer_stack_t id_stack[MAX_IDENTIFER_STACK_LEN];
-int id_stack_count;
-
 #define COMMENT_NONE        0
 #define COMMENT_SINGLELINE  1
 #define COMMENT_MULTILINE   2
@@ -61,29 +47,17 @@ typedef enum
     CHAR_EOF
 } chartype_t;
 
-static byte sc_charcode[256];
-
-static void SC_PopIdStack(identifier_t *id, identifer_stack_t *stack);
-
-//------------------------------------------------------------------------
-//
-// GENERAL ROUTINES
-//
-//------------------------------------------------------------------------
-
 #ifdef SC_DEBUG
 
 //
 // SC_DebugPrintf
 //
 
-static void SC_DebugPrintf(const char *str, ...)
-{
+static void SC_DebugPrintf(const char *str, ...) {
     char buf[1024];
     va_list v;
 
-    if(!verbose)
-    {
+    if(!verbose) {
         return;
     }
     
@@ -95,304 +69,154 @@ static void SC_DebugPrintf(const char *str, ...)
 }
 #endif
 
-//
-// SC_PushNestedFilename
-//
-
-static void SC_PushNestedFilename(const char *name)
-{
-#ifdef SC_DEBUG
-    SC_DebugPrintf("push nested file %s\n", name);
-#endif
-    strcpy(sc_nested_filenames[sc_num_nested_filenames++], name);
-}
+kexParser parser;
 
 //
-// SC_PopNestedFilename
+// kexLexer::kexLexer
 //
 
-static void SC_PopNestedFilename(void)
-{
-#ifdef SC_DEBUG
-    SC_DebugPrintf("nested file pop\n");
-#endif
-    memset(sc_nested_filenames[--sc_num_nested_filenames], 0, 256);
-}
+kexLexer::kexLexer(const char *filename) {
+    if(cvarDeveloper.GetBool()) {
+        buffsize = fileSystem.ReadExternalTextFile(filename, (byte**)(&buffer));
 
-//
-// SC_GetNestedFilename
-//
-
-static char *SC_GetNestedFilename(void)
-{
-    if(sc_num_nested_filenames <= 0)
-    {
-        return NULL;
-    }
-
-    return sc_nested_filenames[sc_num_nested_filenames-1];
-}
-
-//
-// SC_PushParser
-//
-
-void SC_PushParser(void)
-{
-    if(sc_numparsers >= MAX_NESTED_PARSERS)
-    {
-        SC_Error("Reached max number of nested parsers (%i)", sc_numparsers);
-    }
-
-    sc_parsers[sc_numparsers] = (scparser_t*)Z_Calloc(sizeof(scparser_t), PU_STATIC, 0);
-    sc_parser = sc_parsers[sc_numparsers];
-
-    sc_numparsers++;
-}
-
-//
-// SC_PopParser
-//
-
-void SC_PopParser(void)
-{
-    if(sc_parser->stack != NULL && sc_parser->identifier != NULL)
-    {
-        SC_PopIdStack(sc_parser->identifier, sc_parser->stack);
-    }
-
-    Z_Free(sc_parsers[--sc_numparsers]);
-    if(sc_numparsers <= 0)
-    {
-        sc_parser = NULL;
+        if(buffsize <= 0)
+            buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), PU_STATIC);
     }
     else
-    {
-        sc_parser = sc_parsers[sc_numparsers - 1];
-    }
+        buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), PU_STATIC);
+
+    if(buffsize <= 0)
+        return;
+
+    pointer_start   = buffer;
+    pointer_end     = buffer + buffsize;
+    linepos         = 1;
+    rowpos          = 1;
+    buffpos         = 0;
+    tokentype       = TK_NONE;
+    name            = filename;
 }
 
 //
-// SC_Open
+// kexLexer::~kexLexer
 //
 
-scparser_t *SC_Open(const char* name)
-{
-#ifdef SC_DEBUG
-    SC_DebugPrintf("opening %s\n", name);
-#endif
+kexLexer::~kexLexer(void) {
+    Z_Free(buffer);
 
-    // push out a new parser
-    SC_PushParser();
-
-    if(cvarDeveloper.GetBool())
-    {
-        sc_parser->buffsize = fileSystem.ReadExternalTextFile(name, (byte**)(&sc_parser->buffer));
-
-        if(sc_parser->buffsize <= 0)
-            sc_parser->buffsize = fileSystem.OpenFile(name, (byte**)(&sc_parser->buffer), PU_STATIC);
-    }
-    else
-        sc_parser->buffsize = fileSystem.OpenFile(name, (byte**)(&sc_parser->buffer), PU_STATIC);
-    
-    if(sc_parser->buffsize <= 0)
-    {
-        SC_PopParser();
-        return NULL;
-        /*if(SC_GetNestedFilename())
-            common.Error("%s : %s not found", SC_GetNestedFilename(), name);
-        else
-            common.Error("%s not found", name);*/
-    }
-
-    SC_PushNestedFilename(name);
-
-    sc_parser->pointer_start    = sc_parser->buffer;
-    sc_parser->pointer_end      = sc_parser->buffer + sc_parser->buffsize;
-    sc_parser->linepos          = 1;
-    sc_parser->rowpos           = 1;
-    sc_parser->buffpos          = 0;
-    sc_parser->identifier       = NULL;
-    sc_parser->stack            = NULL;
-    sc_parser->tokentype        = TK_NONE;
-    sc_parser->isamacro         = false;
-    sc_parser->name             = name;
-
-    return sc_parser;
+    buffer          = NULL;
+    buffsize        = 0;
+    pointer_start   = NULL;
+    pointer_end     = NULL;
+    linepos         = 0;
+    rowpos          = 0;
+    buffpos         = 0;
 }
 
 //
-// SC_Close
+// kexLexer::CheckState
 //
 
-void SC_Close(void)
-{
-#ifdef SC_DEBUG
-    SC_DebugPrintf("sc_close\n");
-#endif
-
-    Z_Free(sc_parser->buffer);
-
-    sc_parser->buffer           = NULL;
-    sc_parser->buffsize         = 0;
-    sc_parser->pointer_start    = NULL;
-    sc_parser->pointer_end      = NULL;
-    sc_parser->linepos          = 0;
-    sc_parser->rowpos           = 0;
-    sc_parser->buffpos          = 0;
-
-    SC_PopParser();
-    SC_PopNestedFilename();
-}
-
-//
-// SC_Error
-//
-
-void SC_Error(const char *msg, ...)
-{
-    char buf[1024];
-    va_list v;
-    
-    va_start(v,msg);
-    vsprintf(buf,msg,v);
-    va_end(v);
-
-    common.Error("%s : %s\n(line = %i, pos = %i)",
-        SC_GetNestedFilename(),
-        buf, sc_parser->linepos, sc_parser->rowpos);
-}
-
-//------------------------------------------------------------------------
-//
-// TOKEN SEARCHING ROUTINES
-//
-//------------------------------------------------------------------------
-
-//
-// SC_CheckScriptState
-//
-
-int SC_CheckScriptState(void)
-{
+bool kexLexer::CheckState(void) {
 #ifdef SC_DEBUG
     SC_DebugPrintf("(%s): checking script state: %i : %i\n",
-        sc_parser->name, sc_parser->buffpos, sc_parser->buffsize);
+        name, buffpos, buffsize);
 #endif
 
-    if(sc_parser->buffpos < sc_parser->buffsize)
-    {
+    if(buffpos < buffsize) {
         return true;
-    }
-    else if(sc_parser->isamacro)
-    {
-        SC_PopParser();
     }
 
     return false;
 }
 
 //
-// SC_CheckKeywords
+// kexLexer::CheckKeywords
 //
 
-void SC_CheckKeywords(void)
-{
-    if(!strcasecmp(sc_parser->token, "define"))
-    {
-        sc_parser->tokentype = TK_DEFINE;
+void kexLexer::CheckKeywords(void) {
+    if(!strcasecmp(token, "define")) {
+        tokentype = TK_DEFINE;
     }
-    else if(!strcasecmp(sc_parser->token, "include"))
-    {
-        sc_parser->tokentype = TK_INCLUDE;
+    else if(!strcasecmp(token, "include")) {
+        tokentype = TK_INCLUDE;
     }
-    else if(!strcasecmp(sc_parser->token, "setdir"))
-    {
-        sc_parser->tokentype = TK_SETDIR;
+    else if(!strcasecmp(token, "setdir")) {
+        tokentype = TK_SETDIR;
     }
-    else if(!strcasecmp(sc_parser->token, "undef"))
-    {
-        sc_parser->tokentype = TK_UNDEF;
+    else if(!strcasecmp(token, "undef")) {
+        tokentype = TK_UNDEF;
     }
 }
 
 //
-// SC_ClearToken
+// kexLexer::ClearToken
 //
 
-static void SC_ClearToken(void)
-{
-    sc_parser->tokentype = TK_NONE;
-    memset(sc_parser->token, 0, SC_TOKEN_LEN);
+void kexLexer::ClearToken(void) {
+    tokentype = TK_NONE;
+    memset(token, 0, SC_TOKEN_LEN);
 }
 
 //
-// SC_GetNumber
+// kexLexer::GetNumber
 //
 
-int SC_GetNumber(void)
-{
+int kexLexer::GetNumber(void) {
 #ifdef SC_DEBUG
-    SC_DebugPrintf("get number (%s)\n", sc_parser->token);
+    SC_DebugPrintf("get number (%s)\n", token);
 #endif
 
-    SC_Find();
+    Find();
 
-    if(sc_parser->tokentype != TK_NUMBER)
-    {
-        SC_Error("%s is not a number", sc_parser->token);
+    if(tokentype != TK_NUMBER) {
+        parser.Error("%s is not a number", token);
     }
 
-    return atoi(sc_parser->token);
+    return atoi(token);
 }
 
 //
-// SC_GetFloat
+// kexLexer::GetFloat
 //
 
-double SC_GetFloat(void)
-{
+double kexLexer::GetFloat(void) {
 #ifdef SC_DEBUG
-    SC_DebugPrintf("get float (%s)\n", sc_parser->token);
+    SC_DebugPrintf("get float (%s)\n", token);
 #endif
 
-    SC_Find();
+    Find();
 
-    if(sc_parser->tokentype != TK_NUMBER)
-    {
-        SC_Error("%s is not a float", sc_parser->token);
+    if(tokentype != TK_NUMBER) {
+        parser.Error("%s is not a float", token);
     }
 
-    return atof(sc_parser->token);
+    return atof(token);
 }
 
 //
-// SC_GetString
+// kexLexer::GetString
 //
 
-void SC_GetString(void)
-{
-    SC_ExpectNextToken(TK_STRING);
-    strcpy(sc_parser->stringToken, sc_parser->token);
+void kexLexer::GetString(void) {
+    ExpectNextToken(TK_STRING);
+    strcpy(stringToken, token);
 }
 
 //
-// SC_MustMatchToken
+// kexLexer::MustMatchToken
 //
 
-void SC_MustMatchToken(int type)
-{
+void kexLexer::MustMatchToken(int type) {
 #ifdef SC_DEBUG
     SC_DebugPrintf("must match %i\n", type);
-    SC_DebugPrintf("tokentype %i\n", sc_parser->tokentype);
+    SC_DebugPrintf("tokentype %i\n", tokentype);
 #endif
 
-    if(sc_parser->tokentype != type)
-    {
+    if(tokentype != type) {
         char *string;
 
-        switch(type)
-        {
+        switch(type) {
         case TK_NUMBER:
             string = "a number";
             break;
@@ -430,231 +254,181 @@ void SC_MustMatchToken(int type)
             string = "a comma";
             break;
         default:
-            SC_Error("Invalid token: %s", sc_parser->token);
+            parser.Error("Invalid token: %s", token);
             break;
         }
 
-        SC_Error("Expected %s, but found: %s (%i : %i)",
-            string, sc_parser->token, sc_parser->tokentype, type);
+        parser.Error("Expected %s, but found: %s (%i : %i)",
+            string, token, tokentype, type);
     }
 }
 
 //
-// SC_ExpectNextToken
+// kexLexer::ExpectNextToken
 //
 
-void SC_ExpectNextToken(int type)
-{
+void kexLexer::ExpectNextToken(int type) {
 #ifdef SC_DEBUG
     SC_DebugPrintf("expect %i\n", type);
 #endif
-    SC_Find();
-    SC_MustMatchToken(type);
+    Find();
+    MustMatchToken(type);
 }
 
 //
-// SC_CheckIdentifierArgs
+// kexLexer::GetNumberToken
 //
 
-static void SC_CheckIdentifierArgs(void)
-{
-    int i;
-    int len;
-    identifier_t* id;
-
-    if(sc_parser->stack == NULL || sc_parser->identifier == NULL)
-    {
-        return;
-    }
-
-    id = sc_parser->identifier;
-
-    for(i = 0; i < id->numargs; i++)
-    {
-        if(!strcmp(sc_parser->token, sc_parser->stack[i].argname))
-        {
-            SC_ClearToken();
-
-            len = strlen(sc_parser->stack[i].value);
-            strncpy(sc_parser->token, sc_parser->stack[i].value, len);
-            sc_parser->tokentype = sc_parser->stack[i].token_type;
-
-            return;
-        }
-    }
-}
-
-//
-// SC_GetNumberToken
-//
-
-static void SC_GetNumberToken(char initial)
-{
+void kexLexer::GetNumberToken(char initial) {
     int c = initial;
     int i = 0;
 
-    sc_parser->tokentype = TK_NUMBER;
+    tokentype = TK_NUMBER;
 
-    while(sc_charcode[c] == CHAR_NUMBER)
-    {
-        sc_parser->token[i++] = c;
-        c = SC_GetChar();
+    while(parser.CharCode()[c] == CHAR_NUMBER) {
+        token[i++] = c;
+        c = GetChar();
     }
 
 #ifdef SC_DEBUG
-    SC_DebugPrintf("get number (%s)\n", sc_parser->token);
+    SC_DebugPrintf("get number (%s)\n", token);
 #endif
 
-    SC_Rewind();
-    SC_CheckIdentifierArgs();
+    Rewind();
 }
 
 //
-// SC_GetLetterToken
+// kexLexer::GetLetterToken
 //
 
-static void SC_GetLetterToken(char initial)
-{
+void kexLexer::GetLetterToken(char initial) {
     int c = initial;
     int i = 0;
-    kbool haschar = false;
+    bool haschar = false;
 
-    while(sc_charcode[c] == CHAR_LETTER ||
-        (haschar && sc_charcode[c] == CHAR_NUMBER))
-    {
-        sc_parser->token[i++] = c;
-        c = SC_GetChar();
+    while(parser.CharCode()[c] == CHAR_LETTER ||
+        (haschar && parser.CharCode()[c] == CHAR_NUMBER)) {
+        token[i++] = c;
+        c = GetChar();
         haschar = true;
     }
 
-    sc_parser->tokentype = TK_IDENIFIER;
+    tokentype = TK_IDENIFIER;
 
 #ifdef SC_DEBUG
-    SC_DebugPrintf("get letter (%s)\n", sc_parser->token);
+    SC_DebugPrintf("get letter (%s)\n", token);
 #endif
 
-    SC_Rewind();
-    SC_CheckKeywords();
-    SC_CheckIdentifierArgs();
+    Rewind();
+    CheckKeywords();
 }
 
 //
-// SC_GetSymbolToken
+// kexLexer::GetSymbolToken
 //
 
-static void SC_GetSymbolToken(char c)
-{
-    switch(c)
-    {
+void kexLexer::GetSymbolToken(char c) {
+    switch(c) {
     case '#':
-        sc_parser->tokentype = TK_POUND;
-        sc_parser->token[0] = c;
+        tokentype = TK_POUND;
+        token[0] = c;
         break;
     case ':':
-        sc_parser->tokentype = TK_COLON;
-        sc_parser->token[0] = c;
+        tokentype = TK_COLON;
+        token[0] = c;
         break;
     case ';':
-        sc_parser->tokentype = TK_SEMICOLON;
-        sc_parser->token[0] = c;
+        tokentype = TK_SEMICOLON;
+        token[0] = c;
         break;
     case '=':
-        sc_parser->tokentype = TK_EQUAL;
-        sc_parser->token[0] = c;
+        tokentype = TK_EQUAL;
+        token[0] = c;
         break;
     case '.':
-        sc_parser->tokentype = TK_PERIOD;
-        sc_parser->token[0] = c;
+        tokentype = TK_PERIOD;
+        token[0] = c;
         break;
     case '{':
-        sc_parser->tokentype = TK_LBRACK;
-        sc_parser->token[0] = c;
+        tokentype = TK_LBRACK;
+        token[0] = c;
         break;
     case '}':
-        sc_parser->tokentype = TK_RBRACK;
-        sc_parser->token[0] = c;
+        tokentype = TK_RBRACK;
+        token[0] = c;
         break;
     case '(':
-        sc_parser->tokentype = TK_LPAREN;
-        sc_parser->token[0] = c;
+        tokentype = TK_LPAREN;
+        token[0] = c;
         break;
     case ')':
-        sc_parser->tokentype = TK_RPAREN;
-        sc_parser->token[0] = c;
+        tokentype = TK_RPAREN;
+        token[0] = c;
         break;
     case '[':
-        sc_parser->tokentype = TK_LSQBRACK;
-        sc_parser->token[0] = c;
+        tokentype = TK_LSQBRACK;
+        token[0] = c;
         break;
     case ']':
-        sc_parser->tokentype = TK_RSQBRACK;
-        sc_parser->token[0] = c;
+        tokentype = TK_RSQBRACK;
+        token[0] = c;
         break;
     case ',':
-        sc_parser->tokentype = TK_COMMA;
-        sc_parser->token[0] = c;
+        tokentype = TK_COMMA;
+        token[0] = c;
         break;
     default:
-        SC_Error("Unknown symbol: %c", c);
+        parser.Error("Unknown symbol: %c", c);
         break;
     }
 
 #ifdef SC_DEBUG
-    SC_DebugPrintf("get symbol (%s)\n", sc_parser->token);
+    SC_DebugPrintf("get symbol (%s)\n", token);
 #endif
 }
 
 //
-// SC_GetStringToken
+// kexLexer::GetStringToken
 //
 
-static void SC_GetStringToken(void)
-{
+void kexLexer::GetStringToken(void) {
     int i = 0;
-    char c = SC_GetChar();
+    char c = GetChar();
 
-    while(sc_charcode[c] != CHAR_QUOTE)
-    {
-        sc_parser->token[i++] = c;
-        c = SC_GetChar();
+    while(parser.CharCode()[c] != CHAR_QUOTE) {
+        token[i++] = c;
+        c = GetChar();
     }
 
-    sc_parser->tokentype = TK_STRING;
+    tokentype = TK_STRING;
 
 #ifdef SC_DEBUG
-    SC_DebugPrintf("get string (%s)\n", sc_parser->token);
+    SC_DebugPrintf("get string (%s)\n", token);
 #endif
 }
 
 //
-// SC_Find
+// kexLexer::Find
 //
 
-int SC_Find(void)
-{
+bool kexLexer::Find(void) {
     char c = 0;
     int comment = COMMENT_NONE;
 
-    SC_ClearToken();
+    ClearToken();
 
-    while(SC_CheckScriptState())
-    {
-        c = SC_GetChar();
+    while(CheckState()) {
+        c = GetChar();
 
-        if(comment == COMMENT_NONE)
-        {
-            if(c == '/')
-            {
-                char gc = SC_GetChar();
+        if(comment == COMMENT_NONE) {
+            if(c == '/') {
+                char gc = GetChar();
 
-                if(gc != '/' && gc != '*')
-                {
-                    SC_Rewind();
+                if(gc != '/' && gc != '*') {
+                    Rewind();
                 }
-                else
-                {
-                    if(gc == '*')
-                    {
+                else {
+                    if(gc == '*') {
                         comment = COMMENT_MULTILINE;
                     }
                     else
@@ -664,46 +438,39 @@ int SC_Find(void)
                 }
             }
         }
-        else if(comment == COMMENT_MULTILINE)
-        {
-            if(c == '*')
-            {
-                char gc = SC_GetChar();
+        else if(comment == COMMENT_MULTILINE) {
+            if(c == '*') {
+                char gc = GetChar();
 
-                if(gc != '/')
-                {
-                    SC_Rewind();
+                if(gc != '/') {
+                    Rewind();
                 }
-                else
-                {
+                else {
                     comment = COMMENT_NONE;
                     continue;
                 }
             }
         }
 
-        if(comment == COMMENT_NONE)
-        {
+        if(comment == COMMENT_NONE) {
             byte bc = ((byte)c);
 
-            if(sc_charcode[bc] != CHAR_SPECIAL)
-            {
-                switch(sc_charcode[bc])
-                {
+            if(parser.CharCode()[bc] != CHAR_SPECIAL) {
+                switch(parser.CharCode()[bc]) {
                 case CHAR_NUMBER:
-                    SC_GetNumberToken(c);
+                    GetNumberToken(c);
                     return true;
                 case CHAR_LETTER:
-                    SC_GetLetterToken(c);
+                    GetLetterToken(c);
                     return true;
                 case CHAR_QUOTE:
-                    SC_GetStringToken();
+                    GetStringToken();
                     return true;
                 case CHAR_SYMBOL:
-                    SC_GetSymbolToken(c);
+                    GetSymbolToken(c);
                     return true;
                 case CHAR_EOF:
-                    sc_parser->tokentype = TK_EOF;
+                    tokentype = TK_EOF;
 #ifdef SC_DEBUG
                     SC_DebugPrintf("EOF token\n");
 #endif
@@ -714,13 +481,11 @@ int SC_Find(void)
             }
         }
 
-        if(c == '\n')
-        {
-            sc_parser->linepos++;
-            sc_parser->rowpos = 1;
+        if(c == '\n') {
+            linepos++;
+            rowpos = 1;
 
-            if(comment == COMMENT_SINGLELINE)
-            {
+            if(comment == COMMENT_SINGLELINE) {
                 comment = COMMENT_NONE;
             }
         }
@@ -730,21 +495,20 @@ int SC_Find(void)
 }
 
 //
-// SC_GetChar
+// kexLexer::GetChar
 //
 
-char SC_GetChar(void)
-{
+char kexLexer::GetChar(void) {
     int c;
 
 #ifdef SC_DEBUG
-    SC_DebugPrintf("(%s): get char\n", sc_parser->name);
+    SC_DebugPrintf("(%s): get char\n", name);
 #endif
 
-    sc_parser->rowpos++;
-    c = sc_parser->buffer[sc_parser->buffpos++];
+    rowpos++;
+    c = buffer[buffpos++];
 
-    if(sc_charcode[c] == CHAR_EOF)
+    if(parser.CharCode()[c] == CHAR_EOF)
         c = 0;
 
 #ifdef SC_DEBUG
@@ -755,222 +519,30 @@ char SC_GetChar(void)
 }
 
 //
-// SC_Rewind
+// kexLexer::Rewind
 //
 
-void SC_Rewind(void)
-{
+void kexLexer::Rewind(void) {
 #ifdef SC_DEBUG
-    SC_DebugPrintf("(%s): rewind\n", sc_parser->name);
+    SC_DebugPrintf("(%s): rewind\n", name);
 #endif
 
-    sc_parser->rowpos--;
-    sc_parser->buffpos--;
-}
-
-//------------------------------------------------------------------------
-//
-// IDENTIFIER ROUTINES
-//
-//------------------------------------------------------------------------
-
-//
-// SC_AddIdentifier
-//
-
-void SC_AddIdentifier(void)
-{
-    identifier_t *id;
-    int len;
-    char *buffer;
-    int row;
-    int pos;
-
-    id = (identifier_t*)Z_Calloc(sizeof(*id), PU_STATIC, 0);
-    strcpy(id->name, sc_parser->token);
-    id->numargs = 0;
-
-    row = sc_parser->rowpos;
-    pos = sc_parser->buffpos;
-
-    SC_Find();
-    if(sc_parser->tokentype == TK_LPAREN)
-    {
-        id->has_args = true;
-        while(1)
-        {
-            SC_Find();
-            if(strlen(sc_parser->token) >= MAX_IDENTIFIER_LEN)
-            {
-                SC_Error("Arg name (%s) for %s is longer than %i characters",
-                    sc_parser->token, id->name, MAX_IDENTIFIER_LEN);
-            }
-
-            strcpy(id->argnames[id->numargs], sc_parser->token);
-            id->numargs++;
-
-            SC_Find();
-            if(sc_parser->tokentype == TK_RPAREN)
-            {
-                break;
-            }
-            else
-            {
-                SC_MustMatchToken(TK_COMMA);
-
-                if(id->numargs >= MAX_IDENTIFIER_ARGS)
-                    SC_Error("Too many args for identifier %s", id->name);
-
-                continue;
-            }
-        }
-    }
-    else
-    {
-        sc_parser->rowpos = row;
-        sc_parser->buffpos = pos;
-
-        id->has_args = false;
-    }
-
-    len = 0;
-    buffer = sc_parser->buffer + sc_parser->buffpos;
-
-    do
-    {
-        if(buffer[len] == '\\')
-        {
-            buffer[len] = '\n';
-            while(buffer[len++] < ' ');
-        }
-
-    } while(buffer[len++] >= ' ');
-
-    id->bufsize = len;
-    id->buffer = (char*)Z_Calloc(len+1, PU_STATIC, 0);
-    strncpy(id->buffer, buffer, len);
-
-    id->buffer[len] = 127;
-
-    identifier_cap.prev->next = id;
-    id->next = &identifier_cap;
-    id->prev = identifier_cap.prev;
-    identifier_cap.prev = id;
-
-    sc_parser->rowpos += len;
-    sc_parser->buffpos += len;
-
-#ifdef SC_DEBUG
-    SC_DebugPrintf("add identifier\n");
-#endif
+    rowpos--;
+    buffpos--;
 }
 
 //
-// SC_RemoveIdentifier
+// kexLexer::GetIDForTokenList
 //
 
-void SC_RemoveIdentifier(void)
-{
-    for(current_identifier = identifier_cap.next;
-        current_identifier != &identifier_cap;
-        current_identifier = current_identifier->next)
-    {
-        identifier_t *id = current_identifier;
-
-        if(!strcmp(id->name, sc_parser->token))
-        {
-            identifier_t* next = current_identifier->next;
-            (next->prev = current_identifier = id->prev)->next = next;
-
-            Z_Free(id->buffer);
-            Z_Free(id);
-
-#ifdef SC_DEBUG
-            SC_DebugPrintf("remove identifier\n");
-#endif
-
-            return;
-        }
-    }
-
-    SC_Error("Unknown identifier '%s'", sc_parser->token);
-}
-
-//
-// SC_PushIdStack
-//
-
-void SC_PushIdStack(char *name)
-{
-    int len;
-
-    if(id_stack_count >= MAX_IDENTIFER_STACK_LEN)
-    {
-        SC_Error("Stack overflowed\n");
-    }
-
-    id_stack[id_stack_count].argname = name;
-    id_stack[id_stack_count].token_type = sc_parser->tokentype;
-    len = strlen(sc_parser->token);
-    memset(id_stack[id_stack_count].value, 0, MAX_IDENTIFER_VALUE_LEN);
-    strncpy(id_stack[id_stack_count].value, sc_parser->token, len);
-
-    id_stack_count++;
-
-#ifdef SC_DEBUG
-    SC_DebugPrintf("push id stack\n");
-#endif
-}
-
-//
-// SC_PopIdStack
-//
-
-static void SC_PopIdStack(identifier_t *id,
-                          identifer_stack_t *stack)
-{
+int kexLexer::GetIDForTokenList(const sctokens_t *tokenlist, const char *token) {
     int i;
-
-    for(i = 0; i < id->numargs; i++)
-    {
-        if(id_stack_count <= 0)
-        {
-            SC_Error("Tried to pop an empty stack for identifier '%s'",
-                id->name);
-        }
-
-        memset(id_stack[id_stack_count].value, 0, MAX_IDENTIFER_VALUE_LEN);
-        id_stack_count--;
-    }
-
-#ifdef SC_DEBUG
-    SC_DebugPrintf("pop id stack\n");
-#endif
-}
-
-//------------------------------------------------------------------------
-//
-// TOKEN IDENTIFIERS
-//
-//------------------------------------------------------------------------
-
-//
-// SC_GetIDForToken
-//
-
-int SC_GetIDForToken(const sctokens_t *tokenlist, const char *token)
-{
-    int i;
-
-    for(i = 0; tokenlist[i].id != -1; i++)
-    {
-        if(tokenlist[i].token == NULL)
-        {
+    for(i = 0; tokenlist[i].id != -1; i++) {
+        if(tokenlist[i].token == NULL) {
             continue;
         }
 
-        if(!strcmp(token, tokenlist[i].token))
-        {
+        if(!strcmp(token, tokenlist[i].token)) {
             return tokenlist[i].id;
         }
     }
@@ -979,152 +551,116 @@ int SC_GetIDForToken(const sctokens_t *tokenlist, const char *token)
 }
 
 //
-// SC_ExpectTokenID
+// kexLexer::ExpectTokenListID
 //
 
-void SC_ExpectTokenID(const sctokens_t *tokenlist, int id, scparser_t *parser)
+void kexLexer::ExpectTokenListID(const sctokens_t *tokenlist, int id)
 {
-    SC_Find();
-    if(SC_GetIDForToken(tokenlist, parser->token) != id)
-    {
-        SC_Error("Expected \"%s\" but found %s",
-            tokenlist[id].token, parser->token);
+    Find();
+    if(GetIDForTokenList(tokenlist, token) != id) {
+        parser.Error("Expected \"%s\" but found %s",
+            tokenlist[id].token, token);
     }
 }
 
-//------------------------------------------------------------------------
 //
-// ASSIGNMENT ROUTINES
-//
-//------------------------------------------------------------------------
-
-//
-// SC_AssignString
+// kexLexer::AssignFromTokenList
 //
 
-void SC_AssignString(const sctokens_t *tokenlist, char *str, int id,
-                     scparser_t *parser, kbool expect)
-{
-    if(expect)
-    {
-        SC_ExpectTokenID(tokenlist, id, parser);
+void kexLexer::AssignFromTokenList(const sctokens_t *tokenlist, char *str, int id, bool expect) {
+    if(expect) {
+        ExpectTokenListID(tokenlist, id);
     }
-
-    SC_ExpectNextToken(TK_EQUAL);
-    SC_GetString();
-    strcpy(str, parser->stringToken);
+    ExpectNextToken(TK_EQUAL);
+    GetString();
+    strcpy(str, stringToken);
 }
 
 //
-// SC_AssignInteger
+// kexLexer::AssignFromTokenList
 //
 
-void SC_AssignInteger(const sctokens_t *tokenlist, unsigned int *var, int id,
-                             scparser_t *parser, kbool expect)
-{
-    if(expect)
-    {
-        SC_ExpectTokenID(tokenlist, id, parser);
+void kexLexer::AssignFromTokenList(const sctokens_t *tokenlist, unsigned int *var, int id, bool expect) {
+    if(expect) {
+        ExpectTokenListID(tokenlist, id);
     }
-
-    SC_ExpectNextToken(TK_EQUAL);
-    *var = SC_GetNumber();
+    ExpectNextToken(TK_EQUAL);
+    *var = GetNumber();
 }
 
 //
-// SC_AssignWord
+// kexLexer::AssignFromTokenList
 //
 
-void SC_AssignWord(const sctokens_t *tokenlist, unsigned short *var, int id,
-                             scparser_t *parser, kbool expect)
-{
-    if(expect)
-    {
-        SC_ExpectTokenID(tokenlist, id, parser);
+void kexLexer::AssignFromTokenList(const sctokens_t *tokenlist, unsigned short *var, int id, bool expect) {
+    if(expect) {
+        ExpectTokenListID(tokenlist, id);
     }
-
-    SC_ExpectNextToken(TK_EQUAL);
-    *var = SC_GetNumber();
+    ExpectNextToken(TK_EQUAL);
+    *var = GetNumber();
 }
 
 //
-// SC_AssignFloat
+// kexLexer::AssignFromTokenList
 //
 
-void SC_AssignFloat(const sctokens_t *tokenlist, float *var, int id,
-                             scparser_t *parser, kbool expect)
-{
-    if(expect)
-    {
-        SC_ExpectTokenID(tokenlist, id, parser);
+void kexLexer::AssignFromTokenList(const sctokens_t *tokenlist, float *var, int id, bool expect) {
+    if(expect) {
+        ExpectTokenListID(tokenlist, id);
     }
-
-    SC_ExpectNextToken(TK_EQUAL);
-    *var = (float)SC_GetFloat();
+    ExpectNextToken(TK_EQUAL);
+    *var = (float)GetFloat();
 }
 
 //
-// SC_AssignVector
+// kexLexer::AssignVectorFromTokenList
 //
 
-void SC_AssignVector(const sctokens_t *tokenlist, vec3_t var, int id,
-                             scparser_t *parser, kbool expect)
-{
-    if(expect)
-    {
-        SC_ExpectTokenID(tokenlist, id, parser);
+void kexLexer::AssignVectorFromTokenList(const sctokens_t *tokenlist, vec3_t var, int id, bool expect) {
+    if(expect) {
+        ExpectTokenListID(tokenlist, id);
     }
-
-    SC_ExpectNextToken(TK_EQUAL);
-    SC_ExpectNextToken(TK_LBRACK);
-
-    var[0] = (float)SC_GetFloat();
-    var[1] = (float)SC_GetFloat();
-    var[2] = (float)SC_GetFloat();
-
-    SC_ExpectNextToken(TK_RBRACK);
+    ExpectNextToken(TK_EQUAL);
+    ExpectNextToken(TK_LBRACK);
+    var[0] = (float)GetFloat();
+    var[1] = (float)GetFloat();
+    var[2] = (float)GetFloat();
+    ExpectNextToken(TK_RBRACK);
 }
 
 //
-// SC_AssignArray
+// kexLexer::AssignFromTokenList
 //
 
-void SC_AssignArray(const sctokens_t *tokenlist, arraytype_t type,
-                    void **data, int count, int id,
-                    scparser_t *parser, kbool expect, int tag)
-{
+void kexLexer::AssignFromTokenList(const sctokens_t *tokenlist, arraytype_t type,
+                    void **data, int count, int id, bool expect, int tag) {
     void *buf;
 
-    if(expect)
-    {
-        SC_ExpectTokenID(tokenlist, id, parser);
+    if(expect) {
+        ExpectTokenListID(tokenlist, id);
     }
-    else if(count <= 0)
-    {
-        SC_Error("Parsing \"%s\" array with count = 0",
+    else if(count <= 0) {
+        parser.Error("Parsing \"%s\" array with count = 0",
             tokenlist[id].token);
     }
 
-    SC_ExpectNextToken(TK_EQUAL);
-    SC_ExpectNextToken(TK_LBRACK);
+    ExpectNextToken(TK_EQUAL);
+    ExpectNextToken(TK_LBRACK);
 
     buf = NULL;
 
-    if(count <= 0)
-    {
+    if(count <= 0) {
         // skip null arrays. note that parser will assume a -1 followed by a
         // closing bracket
 
-        SC_Find();  // skip the -1 number
-        SC_ExpectNextToken(TK_RBRACK);
+        Find();  // skip the -1 number
+        ExpectNextToken(TK_RBRACK);
     }
-    else
-    {
+    else {
         int i;
         size_t len;
 
-        switch(type)
-        {
+        switch(type) {
         case AT_SHORT:
             len = sizeof(short);
             break;
@@ -1146,57 +682,46 @@ void SC_AssignArray(const sctokens_t *tokenlist, arraytype_t type,
 
         buf = (void*)Z_Calloc(len * count, tag, 0);
 
-        switch(type)
-        {
-        case AT_SHORT:
-            {
+        switch(type) {
+        case AT_SHORT: {
                 word *wbuf = (word*)buf;
 
-                for(i = 0; i < count; i++)
-                {
-                    wbuf[i] = SC_GetNumber();
+                for(i = 0; i < count; i++) {
+                    wbuf[i] = GetNumber();
                 }
             }
             break;
-        case AT_INTEGER:
-            {
+        case AT_INTEGER: {
                 int *ibuf = (int*)buf;
 
-                for(i = 0; i < count; i++)
-                {
-                    ibuf[i] = SC_GetNumber();
+                for(i = 0; i < count; i++) {
+                    ibuf[i] = GetNumber();
                 }
             }
             break;
-        case AT_FLOAT:
-            {
+        case AT_FLOAT: {
                 float *fbuf = (float*)buf;
 
-                for(i = 0; i < count; i++)
-                {
-                    fbuf[i] = (float)SC_GetFloat();
+                for(i = 0; i < count; i++) {
+                    fbuf[i] = (float)GetFloat();
                 }
             }
             break;
-        case AT_DOUBLE:
-            {
+        case AT_DOUBLE: {
                 double *dbuf = (double*)buf;
 
-                for(i = 0; i < count; i++)
-                {
-                    dbuf[i] = SC_GetFloat();
+                for(i = 0; i < count; i++) {
+                    dbuf[i] = GetFloat();
                 }
             }
             break;
-        case AT_VECTOR:
-            {
+        case AT_VECTOR: {
                 vec3_t *vbuf = (vec3_t*)buf;
 
-                for(i = 0; i < count; i++)
-                {
-                    vbuf[i][0] = (float)SC_GetFloat();
-                    vbuf[i][1] = (float)SC_GetFloat();
-                    vbuf[i][2] = (float)SC_GetFloat();
+                for(i = 0; i < count; i++) {
+                    vbuf[i][0] = (float)GetFloat();
+                    vbuf[i][1] = (float)GetFloat();
+                    vbuf[i][2] = (float)GetFloat();
                 }
             }
             break;
@@ -1204,54 +729,159 @@ void SC_AssignArray(const sctokens_t *tokenlist, arraytype_t type,
             break;
         }
 
-        SC_ExpectNextToken(TK_RBRACK);
+        ExpectNextToken(TK_RBRACK);
     }
 
     *data = buf;
 }
 
 //
-// SC_Init
+// kexParser::kexParser
 //
 
-void SC_Init(void)
-{
+kexParser::kexParser(void) {
     int i;
 
-    sc_num_nested_filenames = 0;
-    sc_numparsers = 0;
-    identifier_cap.prev = identifier_cap.next  = &identifier_cap;
-    id_stack_count = 0;
-    memset(id_stack, 0, sizeof(*id_stack));
+    numNestedFilenames = 0;
+    numLexers = 0;
 
-    for(i = 0; i < 256; i++)
-    {
-        sc_charcode[i] = CHAR_SPECIAL;
+    for(i = 0; i < 256; i++) {
+        charcode[i] = CHAR_SPECIAL;
+    }
+    for(i = '!'; i <= '~'; i++) {
+        charcode[i] = CHAR_SYMBOL;
+    }
+    for(i = '0'; i <= '9'; i++) {
+        charcode[i] = CHAR_NUMBER;
+    }
+    for(i = 'A'; i <= 'Z'; i++) {
+        charcode[i] = CHAR_LETTER;
+    }
+    for(i = 'a'; i <= 'z'; i++) {
+        charcode[i] = CHAR_LETTER;
     }
 
-    for(i = '!'; i <= '~'; i++)
-    {
-        sc_charcode[i] = CHAR_SYMBOL;
+    charcode['"'] = CHAR_QUOTE;
+    charcode['_'] = CHAR_LETTER;
+    charcode['-'] = CHAR_NUMBER;
+    charcode['.'] = CHAR_NUMBER;
+    charcode[127] = CHAR_EOF;
+}
+
+//
+// kexParser::~kexParser
+//
+
+kexParser::~kexParser(void) {
+}
+
+//
+// kexParser::GetNestedFileName
+//
+
+const char *kexParser::GetNestedFileName(void) const {
+    if(numNestedFilenames <= 0) {
+        return NULL;
     }
 
-    for(i = '0'; i <= '9'; i++)
-    {
-        sc_charcode[i] = CHAR_NUMBER;
+    return nestedFilenames[numNestedFilenames-1];
+}
+
+//
+// kexParser::PushFileName
+//
+
+void kexParser::PushFileName(const char *name) {
+#ifdef SC_DEBUG
+    SC_DebugPrintf("push nested file %s\n", name);
+#endif
+    strcpy(nestedFilenames[numNestedFilenames++], name);
+}
+
+//
+// kexParser::PopFileName
+//
+
+void kexParser::PopFileName(void) {
+#ifdef SC_DEBUG
+    SC_DebugPrintf("nested file pop\n");
+#endif
+    memset(nestedFilenames[--numNestedFilenames], 0, 256);
+}
+
+//
+// kexParser::PushLexer
+//
+
+void kexParser::PushLexer(const char *filename) {
+    if(numLexers >= MAX_NESTED_PARSERS) {
+        Error("Reached max number of nested lexers (%i)", numLexers);
     }
 
-    for(i = 'A'; i <= 'Z'; i++)
-    {
-        sc_charcode[i] = CHAR_LETTER;
+    lexers[numLexers] = new kexLexer(filename);
+    currentLexer = lexers[numLexers];
+
+    numLexers++;
+}
+
+//
+// kexParser::PopLexer
+//
+
+void kexParser::PopLexer(void) {
+    delete lexers[--numLexers];
+    if(numLexers <= 0) {
+        currentLexer = NULL;
+    }
+    else {
+        currentLexer = lexers[numLexers - 1];
+    }
+}
+
+//
+// kexParser::Error
+//
+
+void kexParser::Error(const char *msg, ...) {
+    char buf[1024];
+    va_list v;
+    
+    va_start(v,msg);
+    vsprintf(buf,msg,v);
+    va_end(v);
+
+    common.Error("%s : %s\n(line = %i, pos = %i)",
+        GetNestedFileName(),
+        buf, currentLexer->LinePos(), currentLexer->RowPos());
+}
+
+//
+// kexParser::Open
+//
+
+kexLexer *kexParser::Open(const char* filename) {
+#ifdef SC_DEBUG
+    SC_DebugPrintf("opening %s\n", filename);
+#endif
+
+    // push out a new lexer
+    PushLexer(filename);
+    
+    if(currentLexer->BufferSize() <= 0) {
+        PopLexer();
+        return NULL;
     }
 
-    for(i = 'a'; i <= 'z'; i++)
-    {
-        sc_charcode[i] = CHAR_LETTER;
-    }
+    PushFileName(filename);
 
-    sc_charcode['"'] = CHAR_QUOTE;
-    sc_charcode['_'] = CHAR_LETTER;
-    sc_charcode['-'] = CHAR_NUMBER;
-    sc_charcode['.'] = CHAR_NUMBER;
-    sc_charcode[127] = CHAR_EOF;
+    return currentLexer;
+}
+
+//
+// kexParser::Close
+//
+
+void kexParser::Close(void) {
+    PopLexer();
+    PopFileName();
 }

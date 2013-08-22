@@ -128,90 +128,90 @@ static const mdlflagnames_t mdlflagnames[17] = {
 // the section block
 //
 
-static void Kmesh_ParseSectionBlock(mdlmesh_t *mesh, scparser_t *parser) {
+static void Kmesh_ParseSectionBlock(mdlmesh_t *mesh, kexLexer *lexer) {
     unsigned int i;
     kbool nested = false;
 
     mesh->sections = (mdlsection_t*)Z_Calloc(sizeof(mdlsection_t) *
         mesh->numsections, PU_MODEL, 0);
 
-    SC_ExpectTokenID(mdltokens, scmdl_sections, parser);
-    SC_ExpectNextToken(TK_LBRACK);
+    lexer->ExpectTokenListID(mdltokens, scmdl_sections);
+    lexer->ExpectNextToken(TK_LBRACK);
 
     for(i = 0; i < mesh->numsections; i++) {
         mdlsection_t *section = &mesh->sections[i];
 
         // read into the nested section block
-        SC_ExpectNextToken(TK_LBRACK);
+        lexer->ExpectNextToken(TK_LBRACK);
         
         // this is the only block that doesn't require the fields
         // to be in a certain order
-        while(parser->tokentype != TK_RBRACK || nested != false) {
-            // required so the parser doesn't get confused with the
+        while(lexer->TokenType() != TK_RBRACK || nested != false) {
+            // required so the lexer doesn't get confused with the
             // closing bracket of the section block and the nested
             // section blocks
             nested = false;
 
-            SC_Find();
+            lexer->Find();
 
-            switch(SC_GetIDForToken(mdltokens, parser->token)) {
+            switch(lexer->GetIDForTokenList(mdltokens, lexer->Token())) {
                 // texture
             case scmdl_texture:
-                SC_AssignString(mdltokens, section->texpath,
-                    scmdl_texture, parser, false);
+                lexer->AssignFromTokenList(mdltokens, section->texpath,
+                    scmdl_texture, false);
                 break;
                 // rgba
             case scmdl_rgba1: {
                     byte r, g, b, a;
 
-                    SC_ExpectNextToken(TK_EQUAL);
+                    lexer->ExpectNextToken(TK_EQUAL);
 
-                    r = SC_GetNumber();
-                    g = SC_GetNumber();
-                    b = SC_GetNumber();
-                    a = SC_GetNumber();
+                    r = lexer->GetNumber();
+                    g = lexer->GetNumber();
+                    b = lexer->GetNumber();
+                    a = lexer->GetNumber();
 
                     section->color1 = RGBA(r, g, b, a);
                 }
                 break;
                 // number of triangle indices
             case scmdl_numtriangles:
-                SC_AssignInteger(mdltokens, &section->numtris,
-                    scmdl_numtriangles, parser, false);
+                lexer->AssignFromTokenList(mdltokens, &section->numtris,
+                    scmdl_numtriangles, false);
                 section->numtris *= 3;
                 break;
                 // triangle indice array
             case scmdl_triangles:
                 nested = true;
-                SC_AssignArray(mdltokens, AT_SHORT, (void**)&section->tris, section->numtris,
-                    scmdl_triangles, parser, false, PU_MODEL);
+                lexer->AssignFromTokenList(mdltokens, AT_SHORT, (void**)&section->tris, section->numtris,
+                    scmdl_triangles, false, PU_MODEL);
                 break;
                 // number of vertices
             case scmdl_numvertices:
-                SC_AssignInteger(mdltokens, &section->numverts,
-                    scmdl_numvertices, parser, false);
+                lexer->AssignFromTokenList(mdltokens, &section->numverts,
+                    scmdl_numvertices, false);
                 break;
                 // vertex block: contains nested arrays (vertices, tex coords and normals)
             case scmdl_vertices:
                 nested = true;
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_ExpectNextToken(TK_LBRACK);
-                SC_AssignArray(mdltokens, AT_VECTOR, (void**)&section->xyz, section->numverts,
-                    scmdl_xyz, parser, true, PU_MODEL);
-                SC_AssignArray(mdltokens, AT_FLOAT, (void**)&section->coords, section->numverts * 2,
-                    scmdl_coords, parser, true, PU_MODEL);
-                SC_AssignArray(mdltokens, AT_FLOAT, (void**)&section->normals, section->numverts * 3,
-                    scmdl_normals, parser, true, PU_MODEL);
-                SC_ExpectNextToken(TK_RBRACK);
+                lexer->ExpectNextToken(TK_EQUAL);
+                lexer->ExpectNextToken(TK_LBRACK);
+                lexer->AssignFromTokenList(mdltokens, AT_VECTOR, (void**)&section->xyz, section->numverts,
+                    scmdl_xyz, true, PU_MODEL);
+                lexer->AssignFromTokenList(mdltokens, AT_FLOAT, (void**)&section->coords, section->numverts * 2,
+                    scmdl_coords, true, PU_MODEL);
+                lexer->AssignFromTokenList(mdltokens, AT_FLOAT, (void**)&section->normals, section->numverts * 3,
+                    scmdl_normals, true, PU_MODEL);
+                lexer->ExpectNextToken(TK_RBRACK);
                 break;
                 // misc tokens will be considered as a flag or property name
             default: {
                     int j;
 
                     for(j = 0; j < 17; j++) {
-                        if(!strcmp(parser->token, mdlflagnames[j].name)) {
-                            SC_ExpectNextToken(TK_EQUAL);
-                            if(SC_GetNumber()) {
+                        if(!strcmp(lexer->Token(), mdlflagnames[j].name)) {
+                            lexer->ExpectNextToken(TK_EQUAL);
+                            if(lexer->GetNumber()) {
                                 section->flags |= mdlflagnames[j].flag;
                                 break;
                             }
@@ -224,45 +224,45 @@ static void Kmesh_ParseSectionBlock(mdlmesh_t *mesh, scparser_t *parser) {
     }
 
     // end of section block
-    SC_ExpectNextToken(TK_RBRACK);
+    lexer->ExpectNextToken(TK_RBRACK);
 }
 
 //
 // Kmesh_ParseMeshBlock
 //
 
-static void Kmesh_ParseMeshBlock(mdlnode_t *node, scparser_t *parser) {
+static void Kmesh_ParseMeshBlock(mdlnode_t *node, kexLexer *lexer) {
     unsigned int i;
 
     node->meshes = (mdlmesh_t*)Z_Calloc(sizeof(mdlmesh_t) * node->nummeshes, PU_MODEL, 0);
 
-    SC_ExpectTokenID(mdltokens, scmdl_groups, parser);
-    SC_ExpectNextToken(TK_LBRACK);
+    lexer->ExpectTokenListID(mdltokens, scmdl_groups);
+    lexer->ExpectNextToken(TK_LBRACK);
 
     for(i = 0; i < node->nummeshes; i++) {
         mdlmesh_t *mesh = &node->meshes[i];
 
         // read into the nested mesh block
-        SC_ExpectNextToken(TK_LBRACK);
-        SC_AssignInteger(mdltokens, &mesh->numsections,
-            scmdl_numsections, parser, true);
+        lexer->ExpectNextToken(TK_LBRACK);
+        lexer->AssignFromTokenList(mdltokens, &mesh->numsections,
+            scmdl_numsections, true);
 
         // read into section block
-        Kmesh_ParseSectionBlock(mesh, parser);
+        Kmesh_ParseSectionBlock(mesh, lexer);
 
         // end of nested mesh block
-        SC_ExpectNextToken(TK_RBRACK);
+        lexer->ExpectNextToken(TK_RBRACK);
     }
 
     // end of mesh block
-    SC_ExpectNextToken(TK_RBRACK);
+    lexer->ExpectNextToken(TK_RBRACK);
 }
 
 //
 // Kmesh_ParseNodeBlock
 //
 
-static void Kmesh_ParseNodeBlock(kmodel_t *model, scparser_t *parser) {
+static void Kmesh_ParseNodeBlock(kmodel_t *model, kexLexer *lexer) {
     unsigned int i;
 
     model->nodes = (mdlnode_t*)Z_Calloc(sizeof(mdlnode_t) * model->numnodes, PU_MODEL, 0);
@@ -271,39 +271,39 @@ static void Kmesh_ParseNodeBlock(kmodel_t *model, scparser_t *parser) {
         mdlnode_t *node = &model->nodes[i];
 
         // read into nested node block
-        SC_ExpectNextToken(TK_LBRACK);
+        lexer->ExpectNextToken(TK_LBRACK);
 
-        SC_AssignInteger(mdltokens, &node->numchildren,
-            scmdl_numchildren, parser, true);
+        lexer->AssignFromTokenList(mdltokens, &node->numchildren,
+            scmdl_numchildren, true);
 
         if(node->numchildren > 0) {
-            SC_AssignArray(mdltokens, AT_SHORT, (void**)&node->children, node->numchildren,
-                scmdl_children, parser, true, PU_MODEL);
+            lexer->AssignFromTokenList(mdltokens, AT_SHORT, (void**)&node->children, node->numchildren,
+                scmdl_children, true, PU_MODEL);
         }
 
-        SC_AssignInteger(mdltokens, &node->numvariants,
-            scmdl_numvariants, parser, true);
+        lexer->AssignFromTokenList(mdltokens, &node->numvariants,
+            scmdl_numvariants, true);
 
         // must have a variant
         if(node->numvariants <= 0) {
-            SC_Error("Variant count for node %i should be at least 1 or more", i);
+            parser.Error("Variant count for node %i should be at least 1 or more", i);
         }
 
-        SC_AssignArray(mdltokens, AT_SHORT, (void**)&node->variants, node->numvariants,
-            scmdl_variants, parser, true, PU_MODEL);
-        SC_AssignInteger(mdltokens, &node->nummeshes,
-            scmdl_numgroups, parser, true);
+        lexer->AssignFromTokenList(mdltokens, AT_SHORT, (void**)&node->variants, node->numvariants,
+            scmdl_variants, true, PU_MODEL);
+        lexer->AssignFromTokenList(mdltokens, &node->nummeshes,
+            scmdl_numgroups, true);
 
         // must have a mesh
         if(node->nummeshes <= 0) {
-            SC_Error("Mesh count for node %i should be at least 1 or more", i);
+            parser.Error("Mesh count for node %i should be at least 1 or more", i);
         }
 
         // read into the mesh block
-        Kmesh_ParseMeshBlock(node, parser);
+        Kmesh_ParseMeshBlock(node, lexer);
 
         // end of nested node block
-        SC_ExpectNextToken(TK_RBRACK);
+        lexer->ExpectNextToken(TK_RBRACK);
     }
 }
 
@@ -313,79 +313,79 @@ static void Kmesh_ParseNodeBlock(kmodel_t *model, scparser_t *parser) {
 // Main parsing routine
 //
 
-static void Kmesh_ParseScript(kmodel_t *model, scparser_t *parser) {
+static void Kmesh_ParseScript(kmodel_t *model, kexLexer *lexer) {
     unsigned int i;
 
-    while(SC_CheckScriptState()) {
-        SC_Find();
+    while(lexer->CheckState()) {
+        lexer->Find();
 
-        switch(parser->tokentype) {
+        switch(lexer->TokenType()) {
         case TK_NONE:
             break;
         case TK_EOF:
             return;
         case TK_IDENIFIER: {
                 // there are three main blocks for a kmesh file
-                switch(SC_GetIDForToken(mdltokens, parser->token)) {
+                switch(lexer->GetIDForTokenList(mdltokens, lexer->Token())) {
                     // info block (bounding box, etc)
                 case scmdl_info:
-                    /*SC_ExpectNextToken(TK_LBRACK);
-                    SC_ExpectTokenID(mdltokens, scmdl_bbox, parser);
-                    SC_ExpectNextToken(TK_EQUAL);
-                    SC_ExpectNextToken(TK_LBRACK);
+                    /*lexer->ExpectNextToken(TK_LBRACK);
+                    lexer->ExpectTokenListID(mdltokens, scmdl_bbox, lexer);
+                    lexer->ExpectNextToken(TK_EQUAL);
+                    lexer->ExpectNextToken(TK_LBRACK);
                     model->bbox.min[0] = (float)SC_GetFloat();
                     model->bbox.min[1] = (float)SC_GetFloat();
                     model->bbox.min[2] = (float)SC_GetFloat();
                     model->bbox.max[0] = (float)SC_GetFloat();
                     model->bbox.max[1] = (float)SC_GetFloat();
                     model->bbox.max[2] = (float)SC_GetFloat();
-                    SC_ExpectNextToken(TK_RBRACK);
-                    SC_ExpectNextToken(TK_RBRACK);*/
+                    lexer->ExpectNextToken(TK_RBRACK);
+                    lexer->ExpectNextToken(TK_RBRACK);*/
                     break;
                     // behavior block (looping action, startup action, etc)
                 case scmdl_behaviors:
                     break;
                     // model block (geometry)
                 case scmdl_model:
-                    SC_ExpectNextToken(TK_LBRACK);
-                    SC_AssignInteger(mdltokens, &model->numnodes,
-                        scmdl_numnodes, parser, true);
+                    lexer->ExpectNextToken(TK_LBRACK);
+                    lexer->AssignFromTokenList(mdltokens, &model->numnodes,
+                        scmdl_numnodes, true);
 
                     // begin reading into the node block
-                    SC_ExpectTokenID(mdltokens, scmdl_nodes, parser);
-                    SC_ExpectNextToken(TK_LBRACK);
-                    Kmesh_ParseNodeBlock(model, parser);
+                    lexer->ExpectTokenListID(mdltokens, scmdl_nodes);
+                    lexer->ExpectNextToken(TK_LBRACK);
+                    Kmesh_ParseNodeBlock(model, lexer);
 
                     // end of node block
-                    SC_ExpectNextToken(TK_RBRACK);
+                    lexer->ExpectNextToken(TK_RBRACK);
 
                     // end of model block
-                    SC_ExpectNextToken(TK_RBRACK);
+                    lexer->ExpectNextToken(TK_RBRACK);
                     break;
                     // numanims variable
                 case scmdl_numanims:
-                    SC_ExpectNextToken(TK_EQUAL);
-                    model->numanimations = SC_GetNumber();
+                    lexer->ExpectNextToken(TK_EQUAL);
+                    model->numanimations = lexer->GetNumber();
                     break;
                     // animsets
                 case scmdl_animsets:
-                    SC_ExpectNextToken(TK_EQUAL);
-                    SC_ExpectNextToken(TK_LBRACK);
+                    lexer->ExpectNextToken(TK_EQUAL);
+                    lexer->ExpectNextToken(TK_LBRACK);
                     if(model->numanimations > 0) {
                         model->anims = (anim_t*)Z_Calloc(sizeof(anim_t) *
                             model->numanimations, PU_MODEL, 0);
 
                         for(i = 0; i < model->numanimations; i++) {
-                            SC_ExpectNextToken(TK_LBRACK);
-                            model->anims[i].animID = SC_GetNumber();
-                            SC_GetString();
-                            model->anims[i].alias = Z_Strdup(parser->stringToken, PU_MODEL, 0);
-                            SC_GetString();
-                            memcpy(model->anims[i].animpath, parser->stringToken, MAX_FILEPATH);
-                            SC_ExpectNextToken(TK_RBRACK);
+                            lexer->ExpectNextToken(TK_LBRACK);
+                            model->anims[i].animID = lexer->GetNumber();
+                            lexer->GetString();
+                            model->anims[i].alias = Z_Strdup(lexer->StringToken(), PU_MODEL, 0);
+                            lexer->GetString();
+                            memcpy(model->anims[i].animpath, lexer->StringToken(), MAX_FILEPATH);
+                            lexer->ExpectNextToken(TK_RBRACK);
                         }
                     }
-                    SC_ExpectNextToken(TK_RBRACK);
+                    lexer->ExpectNextToken(TK_RBRACK);
                     break;
                 default:
                     break;
@@ -416,21 +416,21 @@ kmodel_t *Kmesh_Load(const char *file) {
 
     // is the model already parsed/allocated?
     if(!(model = kmeshList.Find(file))) {
-        scparser_t *parser;
+        kexLexer *lexer;
 
-        if(!(parser = SC_Open(file))) {
+        if(!(lexer = parser.Open(file))) {
             return NULL;
         }
 
         model = kmeshList.Create(file);
 
         // begin parsing
-        Kmesh_ParseScript(model, parser);
+        Kmesh_ParseScript(model, lexer);
 
         kmeshList.Add(model);
 
         // we're done with the file
-        SC_Close();
+        parser.Close();
 
         Kanim_Load(model);
     }

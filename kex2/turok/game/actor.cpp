@@ -99,7 +99,7 @@ static const sctokens_t mapactortokens[scactor_end+1] =
 // Actor_ParseTemplate
 //
 
-static void Actor_ParseTemplate(scparser_t *parser, gActorTemplate_t *ac)
+static void Actor_ParseTemplate(kexLexer *lexer, gActorTemplate_t *ac)
 {
     int numComponents = 0;
     int j;
@@ -107,149 +107,149 @@ static void Actor_ParseTemplate(scparser_t *parser, gActorTemplate_t *ac)
     Vec_Set3(ac->actor.scale, 1, 1, 1);
 
     // read into nested actor block
-    SC_ExpectNextToken(TK_LBRACK);
-    SC_Find();
+    lexer->ExpectNextToken(TK_LBRACK);
+    lexer->Find();
 
-    while(parser->tokentype != TK_RBRACK)
+    while(lexer->TokenType() != TK_RBRACK)
     {
-        switch(SC_GetIDForToken(mapactortokens, parser->token))
+        switch(lexer->GetIDForTokenList(mapactortokens, lexer->Token()))
         {
         case scactor_mesh:
-            SC_ExpectNextToken(TK_EQUAL);
-            SC_GetString();
-            ac->actor.model = Kmesh_Load(parser->stringToken);
+            lexer->ExpectNextToken(TK_EQUAL);
+            lexer->GetString();
+            ac->actor.model = Kmesh_Load(lexer->StringToken());
             break;
 
         case scactor_bounds:
-            SC_ExpectNextToken(TK_EQUAL);
-            SC_ExpectNextToken(TK_LBRACK);
-            ac->actor.bbox.min[0] = (float)SC_GetFloat();
-            ac->actor.bbox.min[1] = (float)SC_GetFloat();
-            ac->actor.bbox.min[2] = (float)SC_GetFloat();
-            ac->actor.bbox.max[0] = (float)SC_GetFloat();
-            ac->actor.bbox.max[1] = (float)SC_GetFloat();
-            ac->actor.bbox.max[2] = (float)SC_GetFloat();
-            SC_ExpectNextToken(TK_RBRACK);
+            lexer->ExpectNextToken(TK_EQUAL);
+            lexer->ExpectNextToken(TK_LBRACK);
+            ac->actor.bbox.min[0] = (float)lexer->GetFloat();
+            ac->actor.bbox.min[1] = (float)lexer->GetFloat();
+            ac->actor.bbox.min[2] = (float)lexer->GetFloat();
+            ac->actor.bbox.max[0] = (float)lexer->GetFloat();
+            ac->actor.bbox.max[1] = (float)lexer->GetFloat();
+            ac->actor.bbox.max[2] = (float)lexer->GetFloat();
+            lexer->ExpectNextToken(TK_RBRACK);
             break;
 
         case scactor_components:
-            SC_ExpectNextToken(TK_LSQBRACK);
-            numComponents = SC_GetNumber();
-            SC_ExpectNextToken(TK_RSQBRACK);
+            lexer->ExpectNextToken(TK_LSQBRACK);
+            numComponents = lexer->GetNumber();
+            lexer->ExpectNextToken(TK_RSQBRACK);
             if(numComponents > 0)
             {
                 ac->components = (char**)Z_Calloc(sizeof(char*) *
                     numComponents, PU_ACTOR, NULL);
             }
-            SC_ExpectNextToken(TK_EQUAL);
-            SC_ExpectNextToken(TK_LBRACK);
+            lexer->ExpectNextToken(TK_EQUAL);
+            lexer->ExpectNextToken(TK_LBRACK);
             for(j = 0; j < numComponents; j++)
             {
-                SC_GetString();
-                ac->components[j] = Z_Strdup(parser->stringToken, PU_ACTOR, NULL);
+                lexer->GetString();
+                ac->components[j] = Z_Strdup(lexer->StringToken(), PU_ACTOR, NULL);
             }
             ac->numComponents = numComponents;
-            SC_ExpectNextToken(TK_RBRACK);
+            lexer->ExpectNextToken(TK_RBRACK);
             break;
 
         case scactor_bCollision:
-            SC_AssignInteger(mapactortokens, (unsigned int*)&ac->actor.bCollision,
-                scactor_bCollision, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, (unsigned int*)&ac->actor.bCollision,
+                scactor_bCollision, false);
             break;
 
         case scactor_bStatic:
-            SC_AssignInteger(mapactortokens, (unsigned int*)&ac->actor.bStatic,
-                scactor_bStatic, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, (unsigned int*)&ac->actor.bStatic,
+                scactor_bStatic, false);
             break;
 
         case scactor_bTouch:
-            SC_AssignInteger(mapactortokens, (unsigned int*)&ac->actor.bTouch,
-                scactor_bTouch, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, (unsigned int*)&ac->actor.bTouch,
+                scactor_bTouch, false);
             break;
 
         case scactor_bHidden:
-            SC_AssignInteger(mapactortokens, (unsigned int*)&ac->actor.bHidden,
-                scactor_bHidden, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, (unsigned int*)&ac->actor.bHidden,
+                scactor_bHidden, false);
             break;
 
         case scactor_bOrientOnSlope:
-            SC_AssignInteger(mapactortokens, (unsigned int*)&ac->actor.bOrientOnSlope,
-                scactor_bOrientOnSlope, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, (unsigned int*)&ac->actor.bOrientOnSlope,
+                scactor_bOrientOnSlope, false);
             break;
 
         case scactor_bRotor:
-            SC_AssignInteger(mapactortokens, (unsigned int*)&ac->actor.bRotor,
-                scactor_bRotor, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, (unsigned int*)&ac->actor.bRotor,
+                scactor_bRotor, false);
             break;
 
         case scactor_scale:
-            SC_AssignVector(mapactortokens, ac->actor.scale,
-                scactor_scale, parser, false);
+            lexer->AssignVectorFromTokenList(mapactortokens, ac->actor.scale,
+                scactor_scale, false);
             break;
 
         case scactor_radius:
-            SC_AssignFloat(mapactortokens, &ac->actor.radius,
-                scactor_radius, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &ac->actor.radius,
+                scactor_radius, false);
             break;
 
         case scactor_height:
-            SC_AssignFloat(mapactortokens, &ac->actor.baseHeight,
-                scactor_height, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &ac->actor.baseHeight,
+                scactor_height, false);
             break;
 
         case scactor_centerheight:
-            SC_AssignFloat(mapactortokens, &ac->actor.centerHeight,
-                scactor_centerheight, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &ac->actor.centerHeight,
+                scactor_centerheight, false);
             break;
 
         case scactor_viewheight:
-            SC_AssignFloat(mapactortokens, &ac->actor.viewHeight,
-                scactor_viewheight, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &ac->actor.viewHeight,
+                scactor_viewheight, false);
             break;
 
         case scactor_classFlags:
-            SC_AssignInteger(mapactortokens, &ac->actor.classFlags,
-                scactor_classFlags, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &ac->actor.classFlags,
+                scactor_classFlags, false);
 
             if(ac->actor.classFlags & AC_AI)
                 AI_Spawn(&ac->actor);
             break;
 
         case scactor_physics:
-            SC_AssignInteger(mapactortokens, &ac->actor.physics,
-                scactor_physics, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &ac->actor.physics,
+                scactor_physics, false);
             break;
 
         case scactor_rotorSpeed:
-            SC_AssignFloat(mapactortokens, &ac->actor.rotorSpeed,
-                scactor_rotorSpeed, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &ac->actor.rotorSpeed,
+                scactor_rotorSpeed, false);
             break;
 
         case scactor_rotorVector:
-            SC_AssignVector(mapactortokens, ac->actor.rotorVector,
-                scactor_rotorVector, parser, false);
+            lexer->AssignVectorFromTokenList(mapactortokens, ac->actor.rotorVector,
+                scactor_rotorVector, false);
             break;
 
         case scactor_rotorFriction:
-            SC_AssignFloat(mapactortokens, &ac->actor.rotorFriction,
-                scactor_rotorFriction, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &ac->actor.rotorFriction,
+                scactor_rotorFriction, false);
             break;
 
         case scactor_tickDistance:
-            SC_AssignFloat(mapactortokens, &ac->actor.tickDistance,
-                scactor_tickDistance, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &ac->actor.tickDistance,
+                scactor_tickDistance, false);
             break;
 
         default:
-            if(parser->tokentype == TK_IDENIFIER)
+            if(lexer->TokenType() == TK_IDENIFIER)
             {
-                SC_Error("Actor_ParseTemplate: Unknown token: %s\n",
-                    parser->token);
+                parser.Error("Actor_ParseTemplate: Unknown token: %s\n",
+                    lexer->Token());
             }
             break;
         }
 
-        SC_Find();
+        lexer->Find();
     }
 }
 
@@ -1003,7 +1003,7 @@ gActorTemplate_t *Actor_NewTemplate(const char *name)
 {
     gActorTemplate_t *at;
     unsigned int hash;
-    scparser_t *parser;
+    kexLexer *lexer;
 
     at = (gActorTemplate_t*)Z_Calloc(sizeof(gActorTemplate_t), PU_STATIC, 0);
 
@@ -1013,10 +1013,10 @@ gActorTemplate_t *Actor_NewTemplate(const char *name)
     at->actor.airfriction   = 1.0f;
     at->actor.bounceDamp    = 0.0f;
 
-    if(parser = SC_Open(kva("actors/%s.kact", name)))
+    if(lexer = parser.Open(kva("actors/%s.kact", name)))
     {
-        Actor_ParseTemplate(parser, at);
-        SC_Close();
+        Actor_ParseTemplate(lexer, at);
+        parser.Close();
     }
 
     hash = common.HashFileName(name);

@@ -28,6 +28,236 @@
 #include "kstring.h"
 
 //
+// kexStr::Init
+//
+
+void kexStr::Init(void) {
+    length = 0;
+    bufferLength = STRING_DEFAULT_SIZE;
+    charPtr = defaultBuffer;
+    charPtr[0] = '\0';
+}
+
+//
+// kexStr::CheckSize
+//
+
+void kexStr::CheckSize(int size, bool bKeepString) {
+    if(size <= bufferLength)
+        return;
+
+    Resize(size, bKeepString);
+}
+
+//
+// kexStr::CopyNew
+//
+
+void kexStr::CopyNew(const char *string, int len) {
+    CheckSize(len+1, false);
+    strcpy(charPtr, string);
+    length = len;
+}
+
+//
+// kexStr::kexStr
+//
+
+kexStr::kexStr(void) {
+    Init();
+}
+
+//
+// kexStr::kexStr
+//
+
+kexStr::kexStr(const char *string) {
+    Init();
+
+    if(string == NULL)
+        return;
+
+    CopyNew(string, strlen(string));
+}
+
+//
+// kexStr::kexStr
+//
+
+kexStr::kexStr(const kexStr &string) {
+    Init();
+
+    if(string.charPtr == NULL)
+        return;
+
+    CopyNew(string.charPtr, string.Length());
+}
+
+//
+// kexStr::~kexStr
+//
+
+kexStr::~kexStr(void) {
+    if(charPtr != defaultBuffer) {
+        delete[] charPtr;
+        charPtr = defaultBuffer;
+    }
+
+    charPtr[0] = '\0';
+    length = 0;
+}
+
+//
+// kexStr::Concat
+//
+
+kexStr &kexStr::Concat(const char *string) {
+    return Concat(string, strlen(string));
+}
+
+//
+// kexStr::Concat
+//
+
+kexStr &kexStr::Concat(const char *string, int len) {
+    CheckSize((length + len)+1, true);
+
+    for(int i = 0; i < len; i++) {
+        charPtr[length+i] = string[i];
+    }
+
+    length += len;
+    charPtr[length] = '\0';
+    
+    return *this;
+}
+
+//
+// kexStr::Copy
+//
+
+kexStr &kexStr::Copy(const kexStr &src, int len) {
+    int i = 0;
+    const char *p = src;
+    CheckSize((length + len)+1, true);
+    
+    while((len--) >= 0) {
+        charPtr[i] = p[i];
+        i++;
+    }
+
+    return *this;
+}
+
+//
+// kexStr::Copy
+//
+
+kexStr &kexStr::Copy(const kexStr &src) {
+    return Copy(src, src.Length());
+}
+
+//
+// kexStr::operator=
+//
+
+kexStr &kexStr::operator=(const kexStr &str) {
+    int len = str.Length();
+    
+    CheckSize(len+1, false);
+    strncpy(charPtr, str.charPtr, len);
+    length = len;
+    charPtr[length] = '\0';
+
+    return *this;
+}
+
+//
+// kexStr::operator=
+//
+
+kexStr &kexStr::operator=(const char *str) {
+    int len = strlen(str);
+    
+    CheckSize(len+1, false);
+    strncpy(charPtr, str, len);
+    length = len;
+    charPtr[length] = '\0';
+
+    return *this;
+}
+
+//
+// kexStr::operator=
+//
+
+kexStr &kexStr::operator=(const bool b) {
+    const char *str = b ? "true" : "false";
+    int len = strlen(str);
+    
+    CheckSize(len+1, false);
+    strncpy(charPtr, str, len);
+    length = len;
+    charPtr[length] = '\0';
+
+    return *this;
+}
+
+//
+// kexStr::operator+
+//
+
+kexStr kexStr::operator+(const kexStr &str) {
+    kexStr out(*this);
+    
+    return out.Concat(str.c_str());
+}
+
+//
+// kexStr::operator+
+//
+
+kexStr kexStr::operator+(const char *str) {
+    kexStr out(*this);
+    
+    return out.Concat(str);
+}
+
+//
+// kexStr::operator+
+//
+
+kexStr kexStr::operator+(const bool b) {
+    kexStr out(*this);
+    
+    return out.Concat(b ? "true" : "false");
+}
+
+//
+// kexStr::operator+=
+//
+
+kexStr &kexStr::operator+=(const kexStr &str) {
+    return Concat(str.c_str());
+}
+
+//
+// kexStr::operator+=
+//
+
+kexStr &kexStr::operator+=(const char *str) {
+    return Concat(str);
+}
+
+//
+// kexStr::operator+=
+//
+
+kexStr &kexStr::operator+=(const bool b) {
+    return Concat(b ? "true" : "false");
+}
+
+//
 // kexStr::Resize
 //
 

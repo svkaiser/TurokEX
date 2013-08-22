@@ -30,7 +30,6 @@
 #include "client.h"
 #include "kernel.h"
 #include "render.h"
-#include "menu.h"
 #include "gl.h"
 #include "js.h"
 #include "sound.h"

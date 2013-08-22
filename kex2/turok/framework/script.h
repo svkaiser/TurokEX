@@ -23,7 +23,8 @@
 #ifndef __SCRIPT_H__
 #define __SCRIPT_H__
 
-#define MAX_NESTED_PARSERS  128
+#define MAX_NESTED_PARSERS      128
+#define MAX_NESTED_FILENAMES    128
 
 typedef enum
 {
@@ -59,41 +60,60 @@ typedef enum
     AT_VECTOR
 } arraytype_t;
 
-#define MAX_IDENTIFIER_LEN  16
-#define MAX_IDENTIFIER_ARGS 5
-
-typedef struct identifier_s
-{
-    struct identifier_s* prev;
-    struct identifier_s* next;
-    char name[64];
-    kbool has_args;
-    char argnames[MAX_IDENTIFIER_ARGS][MAX_IDENTIFIER_LEN];
-    int numargs;
-    char *buffer;
-    int bufsize;
-} identifier_t;
-
-extern identifier_t identifier_cap;
-extern identifier_t *current_identifier;
-
-#define MAX_IDENTIFER_VALUE_LEN 16
-#define MAX_IDENTIFER_STACK_LEN 128
-
-typedef struct
-{
-    char *argname;
-    char value[MAX_IDENTIFER_VALUE_LEN];
-    int token_type;
-} identifer_stack_t;
-
-extern identifer_stack_t id_stack[MAX_IDENTIFER_STACK_LEN];
-extern int id_stack_count;
-
 #define SC_TOKEN_LEN    512
 
 typedef struct
 {
+    int         id;
+    const char  *token;
+} sctokens_t;
+
+class kexLexer {
+public:
+                        kexLexer(const char *filename);
+                        ~kexLexer(void);
+
+    bool                CheckState(void);
+    void                CheckKeywords(void);
+    void                MustMatchToken(int type);
+    void                ExpectNextToken(int type);
+    bool                Find(void);
+    char                GetChar(void);
+    void                Rewind(void);
+    int                 GetNumber(void);
+    double              GetFloat(void);
+    void                GetString(void);
+    int                 GetIDForTokenList(const sctokens_t *tokenlist, const char *token);
+    void                ExpectTokenListID(const sctokens_t *tokenlist, int id);
+    void                AssignFromTokenList(const sctokens_t *tokenlist,
+                                            char *str, int id, bool expect);
+    void                AssignFromTokenList(const sctokens_t *tokenlist,
+                                            unsigned int *var, int id, bool expect);
+    void                AssignFromTokenList(const sctokens_t *tokenlist,
+                                            unsigned short *var, int id, bool expect);
+    void                AssignFromTokenList(const sctokens_t *tokenlist,
+                                            float *var, int id, bool expect);
+    void                AssignFromTokenList(const sctokens_t *tokenlist,
+                                            arraytype_t type, void **data, int count,
+                                            int id, bool expect, int tag);
+    void                AssignVectorFromTokenList(const sctokens_t *tokenlist,
+                                            vec3_t var, int id, bool expect);
+    int                 LinePos(void) { return linepos; }
+    int                 RowPos(void) { return rowpos; }
+    int                 BufferPos(void) { return buffpos; }
+    int                 BufferSize(void) { return buffsize; }
+    char                *Buffer(void) { return buffer; }
+    char                *StringToken(void) { return stringToken; }
+    const char          *Token(void) const { return token; }
+    const int           TokenType(void) const { return tokentype; }
+
+private:
+    void                ClearToken(void);
+    void                GetNumberToken(char initial);
+    void                GetLetterToken(char initial);
+    void                GetSymbolToken(char c);
+    void                GetStringToken(void);
+
     char                token[SC_TOKEN_LEN];
     char                stringToken[MAX_FILEPATH];
     char*               buffer;
@@ -104,54 +124,35 @@ typedef struct
     int                 buffpos;
     int                 buffsize;
     int                 tokentype;
-    kbool               isamacro;
-    identifier_t        *identifier;
-    identifer_stack_t   *stack;
     const char          *name;
-} scparser_t;
+};
 
-extern scparser_t *sc_parsers[MAX_NESTED_PARSERS];
-extern scparser_t *sc_parser;
+class kexParser {
+public:
+                        kexParser(void);
+                        ~kexParser(void);
 
-typedef struct
-{
-    int         id;
-    const char  *token;
-} sctokens_t;
+    kexLexer            *Open(const char *filename);
+    void                Close(void);
+    void                Error(const char *msg, ...);
+    void                PushLexer(const char *filename);
+    void                PopLexer(void);
+    void                PushFileName(const char *name);
+    void                PopFileName(void);
+    byte                *CharCode(void) { return charcode; }
+    const kexLexer      *CurrentLexer(void) const { return currentLexer; }
 
-scparser_t *SC_Open(const char* name);
-void SC_Close(void);
-int SC_CheckScriptState(void);
-void SC_CheckKeywords(void);
-void SC_MustMatchToken(int type);
-void SC_ExpectNextToken(int type);
-int SC_Find(void);
-char SC_GetChar(void);
-void SC_Rewind(void);
-void SC_Error(const char *msg, ...);
-void SC_PushParser(void);
-void SC_PopParser(void);
-int SC_GetNumber(void);
-double SC_GetFloat(void);
-void SC_GetString(void);
-void SC_AddIdentifier(void);
-void SC_RemoveIdentifier(void);
-void SC_PushIdStack(char *name);
-int SC_GetIDForToken(const sctokens_t *tokenlist, const char *token);
-void SC_ExpectTokenID(const sctokens_t *tokenlist, int id, scparser_t *parser);
-void SC_AssignString(const sctokens_t *tokenlist, char *str, int id,
-                     scparser_t *parser, kbool expect);
-void SC_AssignInteger(const sctokens_t *tokenlist, unsigned int *var, int id,
-                      scparser_t *parser, kbool expect);
-void SC_AssignWord(const sctokens_t *tokenlist, unsigned short *var, int id,
-                   scparser_t *parser, kbool expect);
-void SC_AssignFloat(const sctokens_t *tokenlist, float *var, int id,
-                    scparser_t *parser, kbool expect);
-void SC_AssignVector(const sctokens_t *tokenlist, vec3_t var, int id,
-                     scparser_t *parser, kbool expect);
-void SC_AssignArray(const sctokens_t *tokenlist, arraytype_t type,
-                    void **data, int count, int id,
-                    scparser_t *parser, kbool expect, int tag);
-void SC_Init(void);
+private:
+    const char          *GetNestedFileName(void) const;
+
+    kexLexer            *currentLexer;
+    kexLexer            *lexers[MAX_NESTED_PARSERS];
+    int                 numLexers;
+    byte                charcode[256];
+    char                nestedFilenames[MAX_NESTED_FILENAMES][MAX_FILEPATH];
+    int                 numNestedFilenames;
+};
+
+extern kexParser parser;
 
 #endif

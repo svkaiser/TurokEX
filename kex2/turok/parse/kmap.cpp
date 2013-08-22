@@ -173,7 +173,7 @@ static const sctokens_t mapareatokens[scarea_end+1] =
 // Kmap_ParseActor
 //
 
-static void Kmap_ParseActor(scparser_t *parser, gActor_t *actor)
+static void Kmap_ParseActor(kexLexer *lexer, gActor_t *actor)
 {
     int numComponents = 0;
     int j;
@@ -181,45 +181,45 @@ static void Kmap_ParseActor(scparser_t *parser, gActor_t *actor)
     Vec_Set3(actor->scale, 1, 1, 1);
 
     // read into nested actor block
-    SC_ExpectNextToken(TK_LBRACK);
-    SC_Find();
+    lexer->ExpectNextToken(TK_LBRACK);
+    lexer->Find();
 
-    while(parser->tokentype != TK_RBRACK)
+    while(lexer->TokenType() != TK_RBRACK)
     {
-        switch(SC_GetIDForToken(mapactortokens, parser->token))
+        switch(lexer->GetIDForTokenList(mapactortokens, lexer->Token()))
         {
         case scactor_name:
-            SC_AssignString(mapactortokens, actor->name,
-                scactor_name, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, actor->name,
+                scactor_name, false);
             break;
 
         case scactor_mesh:
-            SC_ExpectNextToken(TK_EQUAL);
-            SC_GetString();
-            Actor_UpdateModel(actor, parser->stringToken);
+            lexer->ExpectNextToken(TK_EQUAL);
+            lexer->GetString();
+            Actor_UpdateModel(actor, lexer->StringToken());
             break;
 
         case scactor_bounds:
-            SC_ExpectNextToken(TK_EQUAL);
-            SC_ExpectNextToken(TK_LBRACK);
-            actor->bbox.min[0] = (float)SC_GetFloat();
-            actor->bbox.min[1] = (float)SC_GetFloat();
-            actor->bbox.min[2] = (float)SC_GetFloat();
-            actor->bbox.max[0] = (float)SC_GetFloat();
-            actor->bbox.max[1] = (float)SC_GetFloat();
-            actor->bbox.max[2] = (float)SC_GetFloat();
+            lexer->ExpectNextToken(TK_EQUAL);
+            lexer->ExpectNextToken(TK_LBRACK);
+            actor->bbox.min[0] = (float)lexer->GetFloat();
+            actor->bbox.min[1] = (float)lexer->GetFloat();
+            actor->bbox.min[2] = (float)lexer->GetFloat();
+            actor->bbox.max[0] = (float)lexer->GetFloat();
+            actor->bbox.max[1] = (float)lexer->GetFloat();
+            actor->bbox.max[2] = (float)lexer->GetFloat();
             Vec_Copy3(actor->baseBBox.min, actor->bbox.min);
             Vec_Copy3(actor->baseBBox.max, actor->bbox.max);
-            SC_ExpectNextToken(TK_RBRACK);
+            lexer->ExpectNextToken(TK_RBRACK);
             break;
 
         case scactor_textureSwaps:
             if(actor->model == NULL)
-                SC_Error("Kmap_ParseActor: Attempted to parse \"textureSwaps\" token while model is null\n");
+                parser.Error("Kmap_ParseActor: Attempted to parse \"textureSwaps\" token while model is null\n");
 
-            SC_ExpectNextToken(TK_EQUAL);
+            lexer->ExpectNextToken(TK_EQUAL);
             // texture swap block
-            SC_ExpectNextToken(TK_LBRACK);
+            lexer->ExpectNextToken(TK_LBRACK);
             for(j = 0; j < (int)actor->model->numnodes; j++)
             {
                 unsigned int k;
@@ -228,7 +228,7 @@ static void Kmap_ParseActor(scparser_t *parser, gActor_t *actor)
                 node = &actor->model->nodes[j];
 
                 // node block
-                SC_ExpectNextToken(TK_LBRACK);
+                lexer->ExpectNextToken(TK_LBRACK);
                 for(k = 0; k < node->nummeshes; k++)
                 {
                     unsigned int l;
@@ -237,128 +237,128 @@ static void Kmap_ParseActor(scparser_t *parser, gActor_t *actor)
                     mesh = &node->meshes[k];
 
                     // mesh block
-                    SC_ExpectNextToken(TK_LBRACK);
+                    lexer->ExpectNextToken(TK_LBRACK);
                     for(l = 0; l < mesh->numsections; l++)
                     {
                         // parse sections
-                        SC_GetString();
-                        actor->textureSwaps[j][k][l] = Z_Strdup(parser->stringToken, PU_ACTOR, NULL);
+                        lexer->GetString();
+                        actor->textureSwaps[j][k][l] = Z_Strdup(lexer->StringToken(), PU_ACTOR, NULL);
                     }
                     // end mesh block
-                    SC_ExpectNextToken(TK_RBRACK);
+                    lexer->ExpectNextToken(TK_RBRACK);
                 }
                 // end node block
-                SC_ExpectNextToken(TK_RBRACK);
+                lexer->ExpectNextToken(TK_RBRACK);
             }
             // end texture swap block
-            SC_ExpectNextToken(TK_RBRACK);
+            lexer->ExpectNextToken(TK_RBRACK);
             break;
 
         case scactor_components:
-            SC_ExpectNextToken(TK_LSQBRACK);
-            numComponents = SC_GetNumber();
-            SC_ExpectNextToken(TK_RSQBRACK);
-            SC_ExpectNextToken(TK_EQUAL);
-            SC_ExpectNextToken(TK_LBRACK);
-            JParse_Start(parser, &actor->components, numComponents);
-            SC_ExpectNextToken(TK_RBRACK);
+            lexer->ExpectNextToken(TK_LSQBRACK);
+            numComponents = lexer->GetNumber();
+            lexer->ExpectNextToken(TK_RSQBRACK);
+            lexer->ExpectNextToken(TK_EQUAL);
+            lexer->ExpectNextToken(TK_LBRACK);
+            JParse_Start(lexer, &actor->components, numComponents);
+            lexer->ExpectNextToken(TK_RBRACK);
             break;
 
         case scactor_bCollision:
-            SC_AssignInteger(mapactortokens, (unsigned int*)&actor->bCollision,
-                scactor_bCollision, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, (unsigned int*)&actor->bCollision,
+                scactor_bCollision, false);
             break;
 
         case scactor_bHidden:
-            SC_AssignInteger(mapactortokens, (unsigned int*)&actor->bHidden,
-                scactor_bHidden, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, (unsigned int*)&actor->bHidden,
+                scactor_bHidden, false);
             break;
 
         case scactor_bStatic:
-            SC_AssignInteger(mapactortokens, (unsigned int*)&actor->bStatic,
-                scactor_bStatic, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, (unsigned int*)&actor->bStatic,
+                scactor_bStatic, false);
             break;
 
         case scactor_bTouch:
-            SC_AssignInteger(mapactortokens, (unsigned int*)&actor->bTouch,
-                scactor_bTouch, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, (unsigned int*)&actor->bTouch,
+                scactor_bTouch, false);
             break;
 
         case scactor_bOrientOnSlope:
-            SC_AssignInteger(mapactortokens, (unsigned int*)&actor->bOrientOnSlope,
-                scactor_bOrientOnSlope, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, (unsigned int*)&actor->bOrientOnSlope,
+                scactor_bOrientOnSlope, false);
             break;
 
         case scactor_bRotor:
-            SC_AssignInteger(mapactortokens, (unsigned int*)&actor->bRotor,
-                scactor_bRotor, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, (unsigned int*)&actor->bRotor,
+                scactor_bRotor, false);
             break;
 
         case scactor_plane:
-            SC_AssignInteger(mapactortokens, (unsigned int*)&actor->plane,
-                scactor_plane, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, (unsigned int*)&actor->plane,
+                scactor_plane, false);
             break;
 
         case scactor_origin:
-            SC_AssignVector(mapactortokens, actor->origin,
-                scactor_origin, parser, false);
+            lexer->AssignVectorFromTokenList(mapactortokens, actor->origin,
+                scactor_origin, false);
             break;
 
         case scactor_scale:
-            SC_AssignVector(mapactortokens, actor->scale,
-                scactor_scale, parser, false);
+            lexer->AssignVectorFromTokenList(mapactortokens, actor->scale,
+                scactor_scale, false);
             break;
 
         case scactor_angles:
-            SC_AssignVector(mapactortokens, actor->angles,
-                scactor_angles, parser, false);
+            lexer->AssignVectorFromTokenList(mapactortokens, actor->angles,
+                scactor_angles, false);
             break;
 
         case scactor_rotation:
-            SC_ExpectNextToken(TK_EQUAL);
-            SC_ExpectNextToken(TK_LBRACK);
+            lexer->ExpectNextToken(TK_EQUAL);
+            lexer->ExpectNextToken(TK_LBRACK);
 
-            actor->rotation[0] = (float)SC_GetFloat();
-            actor->rotation[1] = (float)SC_GetFloat();
-            actor->rotation[2] = (float)SC_GetFloat();
-            actor->rotation[3] = (float)SC_GetFloat();
+            actor->rotation[0] = (float)lexer->GetFloat();
+            actor->rotation[1] = (float)lexer->GetFloat();
+            actor->rotation[2] = (float)lexer->GetFloat();
+            actor->rotation[3] = (float)lexer->GetFloat();
 
-            SC_ExpectNextToken(TK_RBRACK);
+            lexer->ExpectNextToken(TK_RBRACK);
             break;
 
         case scactor_radius:
-            SC_AssignFloat(mapactortokens, &actor->radius,
-                scactor_radius, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &actor->radius,
+                scactor_radius, false);
             break;
 
         case scactor_height:
-            SC_AssignFloat(mapactortokens, &actor->baseHeight,
-                scactor_height, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &actor->baseHeight,
+                scactor_height, false);
             break;
 
         case scactor_centerheight:
-            SC_AssignFloat(mapactortokens, &actor->centerHeight,
-                scactor_centerheight, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &actor->centerHeight,
+                scactor_centerheight, false);
             break;
 
         case scactor_viewheight:
-            SC_AssignFloat(mapactortokens, &actor->viewHeight,
-                scactor_viewheight, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &actor->viewHeight,
+                scactor_viewheight, false);
             break;
 
         case scactor_targetID:
-            SC_AssignInteger(mapactortokens, &actor->targetID,
-                scactor_targetID, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &actor->targetID,
+                scactor_targetID, false);
             break;
 
         case scactor_modelVariant:
-            SC_AssignInteger(mapactortokens, (unsigned int*)&actor->variant,
-                scactor_modelVariant, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, (unsigned int*)&actor->variant,
+                scactor_modelVariant, false);
             break;
 
         case scactor_classFlags:
-            SC_AssignInteger(mapactortokens, &actor->classFlags,
-                scactor_classFlags, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &actor->classFlags,
+                scactor_classFlags, false);
 
             if(actor->classFlags & AC_AI)
                 AI_Spawn(actor);
@@ -366,60 +366,60 @@ static void Kmap_ParseActor(scparser_t *parser, gActor_t *actor)
             break;
 
         case scactor_cullDistance:
-            SC_AssignFloat(mapactortokens, &actor->cullDistance,
-                scactor_cullDistance, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &actor->cullDistance,
+                scactor_cullDistance, false);
             break;
 
         case scactor_friction:
-            SC_AssignFloat(mapactortokens, &actor->friction,
-                scactor_friction, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &actor->friction,
+                scactor_friction, false);
             break;
 
         case scactor_mass:
-            SC_AssignFloat(mapactortokens, &actor->mass,
-                scactor_mass, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &actor->mass,
+                scactor_mass, false);
             break;
 
         case scactor_bounceDamp:
-            SC_AssignFloat(mapactortokens, &actor->bounceDamp,
-                scactor_bounceDamp, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &actor->bounceDamp,
+                scactor_bounceDamp, false);
             break;
 
         case scactor_physics:
-            SC_AssignInteger(mapactortokens, &actor->physics,
-                scactor_physics, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &actor->physics,
+                scactor_physics, false);
             break;
 
         case scactor_rotorSpeed:
-            SC_AssignFloat(mapactortokens, &actor->rotorSpeed,
-                scactor_rotorSpeed, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &actor->rotorSpeed,
+                scactor_rotorSpeed, false);
             break;
 
         case scactor_rotorVector:
-            SC_AssignVector(mapactortokens, actor->rotorVector,
-                scactor_rotorVector, parser, false);
+            lexer->AssignVectorFromTokenList(mapactortokens, actor->rotorVector,
+                scactor_rotorVector, false);
             break;
 
         case scactor_rotorFriction:
-            SC_AssignFloat(mapactortokens, &actor->rotorFriction,
-                scactor_rotorFriction, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &actor->rotorFriction,
+                scactor_rotorFriction, false);
             break;
 
         case scactor_tickDistance:
-            SC_AssignFloat(mapactortokens, &actor->tickDistance,
-                scactor_tickDistance, parser, false);
+            lexer->AssignFromTokenList(mapactortokens, &actor->tickDistance,
+                scactor_tickDistance, false);
             break;
 
         default:
-            if(parser->tokentype == TK_IDENIFIER)
+            if(lexer->TokenType() == TK_IDENIFIER)
             {
-                SC_Error("Kmap_ParseActor: Unknown token: %s\n",
-                    parser->token);
+                parser.Error("Kmap_ParseActor: Unknown token: %s\n",
+                    lexer->Token());
             }
             break;
         }
 
-        SC_Find();
+        lexer->Find();
     }
 }
 
@@ -427,19 +427,19 @@ static void Kmap_ParseActor(scparser_t *parser, gActor_t *actor)
 // Kmap_ParseLevelActorBlock
 //
 
-static void Kmap_ParseLevelActorBlock(scparser_t *parser, gLevel_t *level)
+static void Kmap_ParseLevelActorBlock(kexLexer *lexer, gLevel_t *level)
 {
     int i;
     int count;
 
-    SC_ExpectNextToken(TK_EQUAL);
-    SC_ExpectNextToken(TK_LBRACK);
+    lexer->ExpectNextToken(TK_EQUAL);
+    lexer->ExpectNextToken(TK_LBRACK);
 
     count = level->numActors;
 
     if(count <= 0)
     {
-        SC_ExpectNextToken(TK_RBRACK);
+        lexer->ExpectNextToken(TK_RBRACK);
         return;
     }
 
@@ -449,7 +449,7 @@ static void Kmap_ParseLevelActorBlock(scparser_t *parser, gLevel_t *level)
     {
         gActor_t *actor = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
         Map_AddActor(level, actor);
-        Kmap_ParseActor(parser, actor);
+        Kmap_ParseActor(lexer, actor);
 
         // TODO - TEMP
         actor->mass         = 1200;
@@ -461,23 +461,23 @@ static void Kmap_ParseLevelActorBlock(scparser_t *parser, gLevel_t *level)
         Actor_Setup(actor);
     }
 
-    SC_ExpectNextToken(TK_RBRACK);
+    lexer->ExpectNextToken(TK_RBRACK);
 }
 
 //
 // Kmap_ParseStaticActorBlock
 //
 
-static void Kmap_ParseStaticActorBlock(scparser_t *parser, int count, gActor_t **actorList)
+static void Kmap_ParseStaticActorBlock(kexLexer *lexer, int count, gActor_t **actorList)
 {
     int i;
 
-    SC_ExpectNextToken(TK_EQUAL);
-    SC_ExpectNextToken(TK_LBRACK);
+    lexer->ExpectNextToken(TK_EQUAL);
+    lexer->ExpectNextToken(TK_LBRACK);
 
     if(count <= 0)
     {
-        SC_ExpectNextToken(TK_RBRACK);
+        lexer->ExpectNextToken(TK_RBRACK);
         return;
     }
 
@@ -487,26 +487,26 @@ static void Kmap_ParseStaticActorBlock(scparser_t *parser, int count, gActor_t *
     {
         gActor_t *actor = &(*actorList)[i];
         
-        Kmap_ParseActor(parser, actor);
+        Kmap_ParseActor(lexer, actor);
         Actor_Setup(actor);
     }
 
-    SC_ExpectNextToken(TK_RBRACK);
+    lexer->ExpectNextToken(TK_RBRACK);
 }
 
 //
 // Kmap_ParseGridSectionBlock
 //
 
-static void Kmap_ParseGridSectionBlock(scparser_t *parser)
+static void Kmap_ParseGridSectionBlock(kexLexer *lexer)
 {
     unsigned int i;
 
     if(gLevel.numGridBounds == 0)
         return;
 
-    SC_ExpectNextToken(TK_EQUAL);
-    SC_ExpectNextToken(TK_LBRACK);
+    lexer->ExpectNextToken(TK_EQUAL);
+    lexer->ExpectNextToken(TK_LBRACK);
 
     gLevel.gridBounds = (gridBounds_t*)Z_Calloc(sizeof(gridBounds_t) *
         gLevel.numGridBounds, PU_LEVEL, 0);
@@ -516,58 +516,58 @@ static void Kmap_ParseGridSectionBlock(scparser_t *parser)
         gridBounds_t *gridbound = &gLevel.gridBounds[i];
 
         // read into nested gridBound block
-        SC_ExpectNextToken(TK_LBRACK);
-        SC_Find();
+        lexer->ExpectNextToken(TK_LBRACK);
+        lexer->Find();
 
-        while(parser->tokentype != TK_RBRACK)
+        while(lexer->TokenType() != TK_RBRACK)
         {
-            switch(SC_GetIDForToken(mapgridtokens, parser->token))
+            switch(lexer->GetIDForTokenList(mapgridtokens, lexer->Token()))
             {
             case scgridbnd_bounds:
-                SC_ExpectNextToken(TK_EQUAL);
-                gridbound->minx = (float)SC_GetFloat();
-                gridbound->minz = (float)SC_GetFloat();
-                gridbound->maxx = (float)SC_GetFloat();
-                gridbound->maxz = (float)SC_GetFloat();
+                lexer->ExpectNextToken(TK_EQUAL);
+                gridbound->minx = (float)lexer->GetFloat();
+                gridbound->minz = (float)lexer->GetFloat();
+                gridbound->maxx = (float)lexer->GetFloat();
+                gridbound->maxz = (float)lexer->GetFloat();
                 break;
 
             case scgridbnd_statics:
-                SC_ExpectNextToken(TK_LSQBRACK);
-                gridbound->numStatics = SC_GetNumber();
-                SC_ExpectNextToken(TK_RSQBRACK);
-                Kmap_ParseStaticActorBlock(parser, gridbound->numStatics,
+                lexer->ExpectNextToken(TK_LSQBRACK);
+                gridbound->numStatics = lexer->GetNumber();
+                lexer->ExpectNextToken(TK_RSQBRACK);
+                Kmap_ParseStaticActorBlock(lexer, gridbound->numStatics,
                     &gridbound->statics);
                 break;
 
             default:
-                if(parser->tokentype == TK_IDENIFIER)
+                if(lexer->TokenType() == TK_IDENIFIER)
                 {
-                    SC_Error("Kmap_ParseGridSectionBlock: Unknown token: %s\n",
-                        parser->token);
+                    parser.Error("Kmap_ParseGridSectionBlock: Unknown token: %s\n",
+                        lexer->Token());
                 }
                 break;
             }
 
-            SC_Find();
+            lexer->Find();
         }
     }
 
-    SC_ExpectNextToken(TK_RBRACK);
+    lexer->ExpectNextToken(TK_RBRACK);
 }
 
 //
 // Kmap_ParseAreaBlock
 //
 
-static void Kmap_ParseAreaBlock(scparser_t *parser)
+static void Kmap_ParseAreaBlock(kexLexer *lexer)
 {
     unsigned int i;
 
     if(gLevel.numAreas == 0)
         return;
 
-    SC_ExpectNextToken(TK_EQUAL);
-    SC_ExpectNextToken(TK_LBRACK);
+    lexer->ExpectNextToken(TK_EQUAL);
+    lexer->ExpectNextToken(TK_LBRACK);
 
     gLevel.areas = (gArea_t*)Z_Calloc(sizeof(gArea_t) *
         gLevel.numAreas, PU_LEVEL, 0);
@@ -580,54 +580,54 @@ static void Kmap_ParseAreaBlock(scparser_t *parser)
         area->actorRoot.linkNext = area->actorRoot.linkPrev = &area->actorRoot;
 
         // read into nested gridBound block
-        SC_ExpectNextToken(TK_LBRACK);
-        SC_Find();
+        lexer->ExpectNextToken(TK_LBRACK);
+        lexer->Find();
 
-        while(parser->tokentype != TK_RBRACK)
+        while(lexer->TokenType() != TK_RBRACK)
         {
-            switch(SC_GetIDForToken(mapareatokens, parser->token))
+            switch(lexer->GetIDForTokenList(mapareatokens, lexer->Token()))
             {
             case scarea_components:
-                SC_ExpectNextToken(TK_LSQBRACK);
-                numComponents = SC_GetNumber();
-                SC_ExpectNextToken(TK_RSQBRACK);
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_ExpectNextToken(TK_LBRACK);
-                JParse_Start(parser, &area->components, numComponents);
-                SC_ExpectNextToken(TK_RBRACK);
+                lexer->ExpectNextToken(TK_LSQBRACK);
+                numComponents = lexer->GetNumber();
+                lexer->ExpectNextToken(TK_RSQBRACK);
+                lexer->ExpectNextToken(TK_EQUAL);
+                lexer->ExpectNextToken(TK_LBRACK);
+                JParse_Start(lexer, &area->components, numComponents);
+                lexer->ExpectNextToken(TK_RBRACK);
                 break;
 
             case scarea_waterplane:
-                SC_AssignFloat(mapareatokens, &area->waterplane,
-                    scarea_waterplane, parser, false);
+                lexer->AssignFromTokenList(mapareatokens, &area->waterplane,
+                    scarea_waterplane, false);
                 break;
 
             case scarea_flags:
-                SC_AssignInteger(mapareatokens, &area->flags,
-                    scarea_waterplane, parser, false);
+                lexer->AssignFromTokenList(mapareatokens, &area->flags,
+                    scarea_waterplane, false);
                 break;
 
             case scarea_targetID:
-                SC_AssignInteger(mapareatokens, &area->targetID,
-                    scarea_targetID, parser, false);
+                lexer->AssignFromTokenList(mapareatokens, &area->targetID,
+                    scarea_targetID, false);
                 break;
 
             case scarea_triggerSound:
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_GetString();
-                area->triggerSound = Z_Strdup(parser->stringToken, PU_LEVEL, NULL);
+                lexer->ExpectNextToken(TK_EQUAL);
+                lexer->GetString();
+                area->triggerSound = Z_Strdup(lexer->StringToken(), PU_LEVEL, NULL);
                 break;
 
             default:
-                if(parser->tokentype == TK_IDENIFIER)
+                if(lexer->TokenType() == TK_IDENIFIER)
                 {
-                    SC_Error("Kmap_ParseAreaBlock: Unknown token: %s\n",
-                        parser->token);
+                    parser.Error("Kmap_ParseAreaBlock: Unknown token: %s\n",
+                        lexer->Token());
                 }
                 break;
             }
 
-            SC_Find();
+            lexer->Find();
         }
 
         if(area->components)
@@ -637,20 +637,20 @@ static void Kmap_ParseAreaBlock(scparser_t *parser)
         }
     }
 
-    SC_ExpectNextToken(TK_RBRACK);
+    lexer->ExpectNextToken(TK_RBRACK);
 }
 
 //
 // Kmap_ParseLevelScript
 //
 
-static void Kmap_ParseLevelScript(scparser_t *parser)
+static void Kmap_ParseLevelScript(kexLexer *lexer)
 {
-    while(SC_CheckScriptState())
+    while(lexer->CheckState())
     {
-        SC_Find();
+        lexer->Find();
 
-        switch(parser->tokentype)
+        switch(lexer->TokenType())
         {
         case TK_NONE:
             break;
@@ -658,64 +658,64 @@ static void Kmap_ParseLevelScript(scparser_t *parser)
             return;
         case TK_IDENIFIER:
             {
-                switch(SC_GetIDForToken(maptokens, parser->token))
+                switch(lexer->GetIDForTokenList(maptokens, lexer->Token()))
                 {
                 case scmap_title:
-                    SC_AssignString(maptokens, gLevel.name,
-                        scmap_title, parser, false);
+                    lexer->AssignFromTokenList(maptokens, gLevel.name,
+                        scmap_title, false);
                     break;
 
                 case scmap_mapID:
-                    SC_AssignInteger(maptokens, (unsigned int*)&gLevel.mapID,
-                        scmap_mapID, parser, false);
+                    lexer->AssignFromTokenList(maptokens, (unsigned int*)&gLevel.mapID,
+                        scmap_mapID, false);
                     break;
 
                 case scmap_glight_origin:
-                    SC_AssignVector(mapactortokens, gLevel.worldLightOrigin,
-                        scmap_glight_origin, parser, false);
+                    lexer->AssignVectorFromTokenList(mapactortokens,
+                        gLevel.worldLightOrigin, scmap_glight_origin, false);
                     break;
 
                 case scmap_glight_color:
-                    SC_AssignVector(mapactortokens, gLevel.worldLightColor,
-                        scmap_glight_color, parser, false);
+                    lexer->AssignVectorFromTokenList(mapactortokens,
+                        gLevel.worldLightColor, scmap_glight_color, false);
                     break;
 
                 case scmap_glight_ambience:
-                    SC_AssignVector(mapactortokens, gLevel.worldLightAmbience,
-                        scmap_glight_ambience, parser, false);
+                    lexer->AssignVectorFromTokenList(mapactortokens,
+                        gLevel.worldLightAmbience, scmap_glight_ambience, false);
                     break;
 
                 case scmap_glight_modelamb:
-                    SC_AssignVector(mapactortokens, gLevel.worldLightModelAmbience,
-                        scmap_glight_modelamb, parser, false);
+                    lexer->AssignVectorFromTokenList(mapactortokens,
+                        gLevel.worldLightModelAmbience, scmap_glight_modelamb, false);
                     break;
 
                 case scmap_actors:
-                    SC_ExpectNextToken(TK_LSQBRACK);
-                    gLevel.numActors = SC_GetNumber();
-                    SC_ExpectNextToken(TK_RSQBRACK);
-                    Kmap_ParseLevelActorBlock(parser, &gLevel);
+                    lexer->ExpectNextToken(TK_LSQBRACK);
+                    gLevel.numActors = lexer->GetNumber();
+                    lexer->ExpectNextToken(TK_RSQBRACK);
+                    Kmap_ParseLevelActorBlock(lexer, &gLevel);
                     break;
 
                 case scmap_gridbounds:
-                    SC_ExpectNextToken(TK_LSQBRACK);
-                    gLevel.numGridBounds = SC_GetNumber();
-                    SC_ExpectNextToken(TK_RSQBRACK);
-                    Kmap_ParseGridSectionBlock(parser);
+                    lexer->ExpectNextToken(TK_LSQBRACK);
+                    gLevel.numGridBounds = lexer->GetNumber();
+                    lexer->ExpectNextToken(TK_RSQBRACK);
+                    Kmap_ParseGridSectionBlock(lexer);
                     break;
 
                 case scmap_areas:
-                    SC_ExpectNextToken(TK_LSQBRACK);
-                    gLevel.numAreas = SC_GetNumber();
-                    SC_ExpectNextToken(TK_RSQBRACK);
-                    Kmap_ParseAreaBlock(parser);
+                    lexer->ExpectNextToken(TK_LSQBRACK);
+                    gLevel.numAreas = lexer->GetNumber();
+                    lexer->ExpectNextToken(TK_RSQBRACK);
+                    Kmap_ParseAreaBlock(lexer);
                     break;
 
                 default:
-                    if(parser->tokentype == TK_IDENIFIER)
+                    if(lexer->TokenType() == TK_IDENIFIER)
                     {
-                        SC_Error("Kmap_ParseLevelScript: Unknown token: %s\n",
-                            parser->token);
+                        parser.Error("Kmap_ParseLevelScript: Unknown token: %s\n",
+                            lexer->Token());
                     }
                     break;
                 }
@@ -733,17 +733,17 @@ static void Kmap_ParseLevelScript(scparser_t *parser)
 
 void Kmap_Load(int map)
 {
-    scparser_t *parser;
+    kexLexer *lexer;
     filepath_t file;
 
     sprintf(file, "maps/map%02d/map%02d.kmap", map, map);
     common.Printf("Kmap_Load: Loading %s...\n", file);
 
-    if(!(parser = SC_Open(file)))
+    if(!(lexer = parser.Open(file)))
         return;
 
-    Kmap_ParseLevelScript(parser);
-    SC_Close();
+    Kmap_ParseLevelScript(lexer);
+    parser.Close();
 
     common.Printf("Level loaded\n");
     common.Printf("Actors allocated: %ikb\n", Z_TagUsage(PU_ACTOR) >> 10);

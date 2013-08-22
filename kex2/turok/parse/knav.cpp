@@ -51,7 +51,7 @@ static const sctokens_t navtokens[scnav_end+1] =
 // Knav_ParseCollisionPlanes
 //
 
-static void Knav_ParseCollisionPlanes(scparser_t *parser,
+static void Knav_ParseCollisionPlanes(kexLexer *lexer,
                                      unsigned int numpoints, float *points)
 {
     unsigned int i;
@@ -59,7 +59,7 @@ static void Knav_ParseCollisionPlanes(scparser_t *parser,
     if(gLevel.numplanes <= 0)
     {
 #if 0
-        SC_Error("numplanes is 0 or hasn't been set yet");
+        parser.Error("numplanes is 0 or hasn't been set yet");
 #endif
         return;
     }
@@ -67,34 +67,34 @@ static void Knav_ParseCollisionPlanes(scparser_t *parser,
     if(numpoints <= 0)
     {
 #if 0
-        SC_Error("numpoints is 0 or hasn't been set yet");
+        parser.Error("numpoints is 0 or hasn't been set yet");
 #endif
         return;
     }
 
     if(points == NULL)
     {
-        SC_Error("points hasn't been allocated yet");
+        parser.Error("points hasn't been allocated yet");
         return;
     }
 
     gLevel.planes = (plane_t*)Z_Calloc(sizeof(plane_t) *
         gLevel.numplanes, PU_LEVEL, 0);
 
-    SC_ExpectNextToken(TK_EQUAL);
-    SC_ExpectNextToken(TK_LBRACK);
+    lexer->ExpectNextToken(TK_EQUAL);
+    lexer->ExpectNextToken(TK_LBRACK);
 
     for(i = 0; i < gLevel.numplanes; i++)
     {
         int p;
         plane_t *pl = &gLevel.planes[i];
 
-        pl->area_id = SC_GetNumber();
-        pl->flags = SC_GetNumber();
+        pl->area_id = lexer->GetNumber();
+        pl->flags = lexer->GetNumber();
 
         for(p = 0; p < 3; p++)
         {
-            int index = SC_GetNumber();
+            int index = lexer->GetNumber();
 
             pl->points[p][0] = points[index * 4 + 0];
             pl->points[p][1] = points[index * 4 + 1];
@@ -104,7 +104,7 @@ static void Knav_ParseCollisionPlanes(scparser_t *parser,
 
         for(p = 0; p < 3; p++)
         {
-            int link = SC_GetNumber();
+            int link = lexer->GetNumber();
             pl->link[p] = link == -1 ? NULL : &gLevel.planes[link];
         }
 
@@ -114,23 +114,23 @@ static void Knav_ParseCollisionPlanes(scparser_t *parser,
         Vec_Normalize3(pl->ceilingNormal);
     }
 
-    SC_ExpectNextToken(TK_RBRACK);
+    lexer->ExpectNextToken(TK_RBRACK);
 }
 
 //
 // Knav_ParseNavScript
 //
 
-static void Knav_ParseNavScript(scparser_t *parser)
+static void Knav_ParseNavScript(kexLexer *lexer)
 {
     unsigned int numpoints = 0;
     float *points = NULL;
 
-    while(SC_CheckScriptState())
+    while(lexer->CheckState())
     {
-        SC_Find();
+        lexer->Find();
 
-        switch(parser->tokentype)
+        switch(lexer->TokenType())
         {
         case TK_NONE:
             break;
@@ -138,35 +138,36 @@ static void Knav_ParseNavScript(scparser_t *parser)
             return;
         case TK_IDENIFIER:
             {
-                switch(SC_GetIDForToken(navtokens, parser->token))
+                switch(lexer->GetIDForTokenList(navtokens, lexer->Token()))
                 {
                 case scnav_numpoints:
-                    SC_AssignInteger(navtokens, &numpoints,
-                        scnav_numpoints, parser, false);
+                    lexer->AssignFromTokenList(navtokens, &numpoints,
+                        scnav_numpoints, false);
                     break;
 
                 case scnav_numleafs:
-                    SC_AssignInteger(navtokens, &gLevel.numplanes,
-                        scnav_numleafs, parser, false);
+                    lexer->AssignFromTokenList(navtokens, &gLevel.numplanes,
+                        scnav_numleafs, false);
                     break;
 
                 case scnav_points:
                     if((numpoints * 4) > 0)
                     {
-                        SC_AssignArray(navtokens, AT_FLOAT, (void**)&points, numpoints * 4,
-                            scnav_points, parser, false, PU_LEVEL);
+                        lexer->AssignFromTokenList(navtokens, AT_FLOAT,
+                            (void**)&points, numpoints * 4, scnav_points,
+                            false, PU_LEVEL);
                     }
                     break;
 
                 case scnav_leafs:
-                    Knav_ParseCollisionPlanes(parser, numpoints, points);
+                    Knav_ParseCollisionPlanes(lexer, numpoints, points);
                     break;
 
                 default:
-                    if(parser->tokentype == TK_IDENIFIER)
+                    if(lexer->TokenType() == TK_IDENIFIER)
                     {
                         common.DPrintf("Knav_ParseNavScript: Unknown token: %s\n",
-                            parser->token);
+                            lexer->Token());
                     }
                     break;
                 }
@@ -188,16 +189,16 @@ static void Knav_ParseNavScript(scparser_t *parser)
 
 void Knav_Load(int map)
 {
-    scparser_t *parser;
+    kexLexer *lexer;
     filepath_t file;
 
     sprintf(file, "maps/map%02d/map%02d.kcm", map, map);
     common.Printf("Knav_Load: Loading %s...\n", file);
 
-    if(parser = SC_Open(file))
+    if(lexer = parser.Open(file))
     {
-        Knav_ParseNavScript(parser);
+        Knav_ParseNavScript(lexer);
         // we're done with the file
-        SC_Close();
+        parser.Close();
     }
 }

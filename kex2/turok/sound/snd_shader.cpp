@@ -78,127 +78,127 @@ static const sctokens_t sfxtokens[scsfx_end+1] =
 // Snd_ParseShaderScript
 //
 
-static void Snd_ParseShaderScript(sndShader_t *snd, scparser_t *parser)
+static void Snd_ParseShaderScript(sndShader_t *snd, kexLexer *lexer)
 {
     unsigned int i;
 
-    SC_Find();
+    lexer->Find();
 
-    if(strcmp(parser->token, "sounds"))
-        common.Error("Snd_ParseShaderScript: Expected 'sound', found %s", parser->token);
+    if(strcmp(lexer->Token(), "sounds"))
+        common.Error("Snd_ParseShaderScript: Expected 'sound', found %s", lexer->Token());
 
-    SC_ExpectNextToken(TK_LSQBRACK);
+    lexer->ExpectNextToken(TK_LSQBRACK);
 
-    snd->numsfx = SC_GetNumber();
+    snd->numsfx = lexer->GetNumber();
     snd->sfx = (sfx_t*)Z_Calloc(sizeof(sfx_t) * snd->numsfx, PU_SOUND, 0);
 
     snd->sfx->rolloffFactor = 1.0f;
 
-    SC_ExpectNextToken(TK_RSQBRACK);
-    SC_ExpectNextToken(TK_EQUAL);
-    SC_ExpectNextToken(TK_LBRACK);
+    lexer->ExpectNextToken(TK_RSQBRACK);
+    lexer->ExpectNextToken(TK_EQUAL);
+    lexer->ExpectNextToken(TK_LBRACK);
 
     for(i = 0; i < snd->numsfx; i++)
     {
         sfx_t *sfx = &snd->sfx[i];
 
-        SC_ExpectNextToken(TK_LBRACK);
-        SC_Find();
+        lexer->ExpectNextToken(TK_LBRACK);
+        lexer->Find();
 
-        while(parser->tokentype != TK_RBRACK)
+        while(lexer->TokenType() != TK_RBRACK)
         {
-            switch(SC_GetIDForToken(sfxtokens, parser->token))
+            switch(lexer->GetIDForTokenList(sfxtokens, lexer->Token()))
             {
             case scsfx_wavefile:
-                SC_ExpectNextToken(TK_EQUAL);
-                SC_GetString();
-                sfx->wave = Snd_CacheWaveFile(parser->stringToken);
+                lexer->ExpectNextToken(TK_EQUAL);
+                lexer->GetString();
+                sfx->wave = Snd_CacheWaveFile(lexer->StringToken());
                 break;
 
             case scsfx_delay:
-                SC_AssignInteger(sfxtokens, (unsigned int*)&sfx->delay,
-                    scsfx_delay, parser, false);
+                lexer->AssignFromTokenList(sfxtokens, (unsigned int*)&sfx->delay,
+                    scsfx_delay, false);
                 break;
 
             case scsfx_dbFreq:
-                SC_AssignFloat(sfxtokens, &sfx->dbFreq,
-                    scsfx_dbFreq, parser, false);
+                lexer->AssignFromTokenList(sfxtokens, &sfx->dbFreq,
+                    scsfx_dbFreq, false);
                 break;
                 
             case scsfx_gain:
-                SC_AssignFloat(sfxtokens, &sfx->gain,
-                    scsfx_gain, parser, false);
+                lexer->AssignFromTokenList(sfxtokens, &sfx->gain,
+                    scsfx_gain, false);
                 break;
 
             case scsfx_random:
-                SC_AssignFloat(sfxtokens, &sfx->random,
-                    scsfx_random, parser, false);
+                lexer->AssignFromTokenList(sfxtokens, &sfx->random,
+                    scsfx_random, false);
                 break;
 
             case scsfx_interpgain:
-                SC_AssignInteger(sfxtokens, (unsigned int*)&sfx->bLerpVol,
-                    scsfx_interpgain, parser, false);
+                lexer->AssignFromTokenList(sfxtokens, (unsigned int*)&sfx->bLerpVol,
+                    scsfx_interpgain, false);
                 break;
 
             case scsfx_interpfreq:
-                SC_AssignInteger(sfxtokens, (unsigned int*)&sfx->bLerpFreq,
-                    scsfx_interpfreq, parser, false);
+                lexer->AssignFromTokenList(sfxtokens, (unsigned int*)&sfx->bLerpFreq,
+                    scsfx_interpfreq, false);
                 break;
 
             case scsfx_gainfactorstart:
-                SC_AssignFloat(sfxtokens, &sfx->gainLerpStart,
-                    scsfx_gainfactorstart, parser, false);
+                lexer->AssignFromTokenList(sfxtokens, &sfx->gainLerpStart,
+                    scsfx_gainfactorstart, false);
                 break;
 
             case scsfx_gainfactorend:
-                SC_AssignFloat(sfxtokens, &sfx->gainLerpEnd,
-                    scsfx_gainfactorend, parser, false);
+                lexer->AssignFromTokenList(sfxtokens, &sfx->gainLerpEnd,
+                    scsfx_gainfactorend, false);
                 break;
 
             case scsfx_gainfactortime:
-                SC_AssignInteger(sfxtokens, (unsigned int*)&sfx->gainLerpTime,
-                    scsfx_gainfactortime, parser, false);
+                lexer->AssignFromTokenList(sfxtokens, (unsigned int*)&sfx->gainLerpTime,
+                    scsfx_gainfactortime, false);
                 break;
 
             case scsfx_gainfactordelay:
-                SC_AssignInteger(sfxtokens, (unsigned int*)&sfx->gainLerpDelay,
-                    scsfx_gainfactordelay, parser, false);
+                lexer->AssignFromTokenList(sfxtokens, (unsigned int*)&sfx->gainLerpDelay,
+                    scsfx_gainfactordelay, false);
                 break;
 
             case scsfx_freqfactorstart:
-                SC_AssignFloat(sfxtokens, &sfx->freqLerpStart,
-                    scsfx_freqfactorstart, parser, false);
+                lexer->AssignFromTokenList(sfxtokens, &sfx->freqLerpStart,
+                    scsfx_freqfactorstart, false);
                 break;
 
             case scsfx_freqfactorend:
-                SC_AssignFloat(sfxtokens, &sfx->freqLerpEnd,
-                    scsfx_freqfactorend, parser, false);
+                lexer->AssignFromTokenList(sfxtokens, &sfx->freqLerpEnd,
+                    scsfx_freqfactorend, false);
                 break;
 
             case scsfx_freqfactortime:
-                SC_AssignInteger(sfxtokens, (unsigned int*)&sfx->freqLerpTime,
-                    scsfx_freqfactortime, parser, false);
+                lexer->AssignFromTokenList(sfxtokens, (unsigned int*)&sfx->freqLerpTime,
+                    scsfx_freqfactortime, false);
                 break;
 
             case scsfx_freqfactordelay:
-                SC_AssignInteger(sfxtokens, (unsigned int*)&sfx->freqLerpDelay,
-                    scsfx_freqfactordelay, parser, false);
+                lexer->AssignFromTokenList(sfxtokens, (unsigned int*)&sfx->freqLerpDelay,
+                    scsfx_freqfactordelay, false);
                 break;
 
             default:
-                if(parser->tokentype == TK_IDENIFIER)
+                if(lexer->TokenType() == TK_IDENIFIER)
                 {
-                    SC_Error("Snd_ParseShaderScript: Unknown token: %s\n",
-                        parser->token);
+                    parser.Error("Snd_ParseShaderScript: Unknown token: %s\n",
+                        lexer->Token());
                 }
                 break;
             }
 
-            SC_Find();
+            lexer->Find();
         }
     }
 
-    SC_ExpectNextToken(TK_RBRACK);
+    lexer->ExpectNextToken(TK_RBRACK);
 }
 
 //
@@ -235,24 +235,24 @@ sndShader_t *Snd_LoadShader(const char *name)
     if(!(snd = Snd_FindShader(name)))
     {
         unsigned int hash;
-        scparser_t *parser;
+        kexLexer *lexer;
 
         if(strlen(name) >= MAX_FILEPATH)
             common.Error("Snd_LoadShader: \"%s\" is too long", name);
 
-        if(!(parser = SC_Open(name)))
+        if(!(lexer = parser.Open(name)))
             return NULL;
 
         snd = (sndShader_t*)Z_Calloc(sizeof(sndShader_t), PU_STATIC, 0);
         strncpy(snd->name, name, MAX_FILEPATH);
 
-        Snd_ParseShaderScript(snd, parser);
+        Snd_ParseShaderScript(snd, lexer);
 
         hash = common.HashFileName(name);
         snd->next = snd_hashlist[hash];
         snd_hashlist[hash] = snd;
 
-        SC_Close();
+        parser.Close();
     }
 
     return snd;

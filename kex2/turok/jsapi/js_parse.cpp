@@ -35,24 +35,24 @@
 // JParse_GetJSONBuffer
 //
 
-char *JParse_GetJSONBuffer(scparser_t *parser)
+char *JParse_GetJSONBuffer(kexLexer *lexer)
 {
     char *start;
     char *end;
     char *out;
 
-    SC_ExpectNextToken(TK_LBRACK);
-    start = &sc_parser->buffer[sc_parser->buffpos-1];
+    lexer->ExpectNextToken(TK_LBRACK);
+    start = &lexer->Buffer()[lexer->BufferPos()-1];
 
-    while(parser->tokentype != TK_RBRACK)
+    while(lexer->TokenType() != TK_RBRACK)
     {
-        SC_Find();
-        end = &sc_parser->buffer[sc_parser->buffpos];
+        lexer->Find();
+        end = &lexer->Buffer()[lexer->BufferPos()];
     }
 
-    SC_Find();
-    if(strcmp(parser->token, "EndObject"))
-        SC_Error("Expected 'EndObject', found %s", parser->token);
+    lexer->Find();
+    if(strcmp(lexer->Token(), "EndObject"))
+        parser.Error("Expected 'EndObject', found %s", lexer->Token());
 
     out = (char*)Z_Calloc((end-start)+1, PU_STATIC, NULL);
     strncpy(out, start, (end-start));
@@ -64,7 +64,7 @@ char *JParse_GetJSONBuffer(scparser_t *parser)
 // JParse_BeginObject
 //
 
-kbool JParse_BeginObject(scparser_t *parser, gObject_t *object)
+kbool JParse_BeginObject(kexLexer *lexer, gObject_t *object)
 {
     JSBool found;
     jsval val;
@@ -76,24 +76,24 @@ kbool JParse_BeginObject(scparser_t *parser, gObject_t *object)
     jsval argv;
     jsval rval;
 
-    SC_Find();
-    if(strcmp(parser->token, "BeginObject"))
-        SC_Error("Expected 'BeginObject', found %s", parser->token);
+    lexer->Find();
+    if(strcmp(lexer->Token(), "BeginObject"))
+        parser.Error("Expected 'BeginObject', found %s", lexer->Token());
 
-    SC_ExpectNextToken(TK_EQUAL);
-    SC_GetString();
+    lexer->ExpectNextToken(TK_EQUAL);
+    lexer->GetString();
 
     cx = js_context;
 
     // get class name of the prototype object
-    if(!JS_HasProperty(cx, js_gobject, parser->stringToken, &found))
+    if(!JS_HasProperty(cx, js_gobject, lexer->StringToken(), &found))
         return false;
 
     if(!found)
-        SC_Error("Unknown object class: %s", parser->stringToken);
+        parser.Error("Unknown object class: %s", lexer->StringToken());
 
     // get prototype
-    if(!JS_GetProperty(cx, js_gobject, parser->stringToken, &val))
+    if(!JS_GetProperty(cx, js_gobject, lexer->StringToken(), &val))
         return false;
     if(!JS_ValueToObject(cx, val, &cObject))
         return false;
@@ -103,7 +103,7 @@ kbool JParse_BeginObject(scparser_t *parser, gObject_t *object)
         return false;
 
     // add new object as property
-    if(!JS_DefineProperty(cx, object, parser->stringToken, OBJECT_TO_JSVAL(newObject),
+    if(!JS_DefineProperty(cx, object, lexer->StringToken(), OBJECT_TO_JSVAL(newObject),
         NULL, NULL, JSPROP_ENUMERATE))
         return false;
 
@@ -117,7 +117,7 @@ kbool JParse_BeginObject(scparser_t *parser, gObject_t *object)
         return false;
 
     // deserialize data
-    json = JParse_GetJSONBuffer(parser);
+    json = JParse_GetJSONBuffer(lexer);
     JS_GET_PROPERTY_OBJECT(newObject, "deSerialize", fObject);
     if(JS_ObjectIsFunction(cx, fObject))
     {
@@ -133,7 +133,7 @@ kbool JParse_BeginObject(scparser_t *parser, gObject_t *object)
 // JParse_Start
 //
 
-kbool JParse_Start(scparser_t *parser, gObject_t **object, int count)
+kbool JParse_Start(kexLexer *lexer, gObject_t **object, int count)
 {
     int i;
 
@@ -144,7 +144,7 @@ kbool JParse_Start(scparser_t *parser, gObject_t **object, int count)
     for(i = 0; i < count; i++)
     {
         // entered 'BeginObject' block
-        if(!JParse_BeginObject(parser, *object))
+        if(!JParse_BeginObject(lexer, *object))
             return false;
     }
 

@@ -34,7 +34,6 @@
 #include "render.h"
 #include "sound.h"
 #include "gl.h"
-#include "menu.h"
 #include "script.h"
 #include "game.h"
 #include "js.h"
@@ -206,10 +205,6 @@ void Kernel_Main(int argc, char **argv) {
     cvarManager.Init();
     kexObject::Init();
     console.Init();
-
-    SC_Init();
-    common.Printf("Lexer System Initialized\n");
-
     inputSystem.Init();
     inputKey.Init();
 

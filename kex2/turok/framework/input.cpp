@@ -30,7 +30,6 @@
 #include "common.h"
 #include "kernel.h"
 #include "client.h"
-#include "menu.h"
 #include "input.h"
 
 kexInput inputSystem;
