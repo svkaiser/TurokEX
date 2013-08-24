@@ -32,10 +32,13 @@ public:
 
     void                Push(type o);
     void                Pop(void);
+    void                Empty(void);
+    void                EmptyContents(void);
     type                IndexOf(unsigned int index) const;
     void                Splice(const unsigned int start, unsigned int len);
     const unsigned int  Length(void) const { return length; }
     void                IsPointer(bool IsPointer) { bPointer = IsPointer; }
+    type                GetData(const int index) { return data[index]; }
 
 private:
     type                *data;
@@ -68,6 +71,22 @@ kexArray<type>::kexArray(bool bIsPointer) {
 //
 template<class type>
 kexArray<type>::~kexArray() {
+    if(bPointer)
+        EmptyContents();
+
+    if(data)
+        delete[] data;
+}
+
+//
+// kexArray::EmptyContents
+//
+template<class type>
+void kexArray<type>::EmptyContents(void) {
+    for(unsigned int i = 0; i < length; i++) {
+        delete data[i];
+        data[i] = NULL;
+    }
 }
 
 //
@@ -80,12 +99,12 @@ void kexArray<type>::Push(type o) {
         data[length] = o;
     }
     else {
-        type *tmp = new type[length+1];
+        type *tmp = data;
+        data = new type[length+1];
         for(unsigned int i = 0; i < length; i++)
-            tmp[i] = data[i];
+            data[i] = tmp[i];
 
-        delete[] data;
-        data = tmp;
+        delete[] tmp;
         data[length] = o;
     }
 
@@ -100,17 +119,39 @@ void kexArray<type>::Pop(void) {
     if(length == 0)
         return;
 
-    type *tmp = new type[length-1];
+    if(length != 1) {
+        type *tmp = data;
+        
+        data = new type[length-1];
 
-    for(unsigned int i = 0; i < length-1; i++)
-        tmp[i] = data[i];
+        for(unsigned int i = 0; i < length-1; i++)
+            data[i] = tmp[i];
+        if(bPointer) {
+            delete tmp[length-1];
+            tmp[length-1] = NULL;
+        }
 
-    if(bPointer) {
-        delete data[length-1];
-        data[length-1] = NULL;
+        delete[] tmp;
+    }
+    else {
+        if(bPointer) {
+            delete data[0];
+        }
+        delete[] data;
+        data = NULL;
     }
 
     length--;
+}
+
+//
+// kexArray::Empty
+//
+template<class type>
+void kexArray<type>::Empty(void) {
+    while(length) {
+        Pop();
+    }
 }
 
 //

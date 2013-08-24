@@ -30,6 +30,8 @@
 #include "fx.h"
 #include "client.h"
 
+kexCvar cvarRenderFxTexture("r_fxtexture", CVF_BOOL|CVF_CONFIG, "1", "TODO");
+
 extern int numFxCount;
 
 typedef struct
@@ -78,6 +80,8 @@ void R_DrawFX(void)
         dglEnableClientState(GL_COLOR_ARRAY);
 
     memset(fxDisplayList, 0, sizeof(fxDisplay_t) * MAX_FX_DISPLAYS);
+
+    bool bShowTexture = cvarRenderFxTexture.GetBool();
 
     for(fxRover = fxRoot.next, fxDisplayNum = 0; fxRover != &fxRoot; fxRover = fxRover->next)
     {
@@ -197,8 +201,12 @@ void R_DrawFX(void)
             GL_BindTextureName("textures/white.tga");
             dglColor4ub(192, 0, 0, 255);
         }
-        else
-            GL_BindTexture(texture);
+        else {
+            if(bShowTexture)
+                GL_BindTexture(texture);
+            else
+                GL_BindTextureName("textures/white.tga");
+        }
 
         GL_DrawElements2();
         dglPopMatrix();

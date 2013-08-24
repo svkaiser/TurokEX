@@ -224,6 +224,29 @@ int kexFileSystem::OpenFile(const char *filename, byte **data, int tag) const {
 }
 
 //
+// kexFileSystem::GetMatchingFiles
+//
+
+kexArray<kexStr*> *kexFileSystem::GetMatchingFiles(const char *search) {
+    kexArray<kexStr*> *strlist = new kexArray<kexStr*>(true);
+
+    for(kpf_t *pack = root; pack; pack = pack->next) {
+        for(unsigned int i = 0; i < pack->numfiles; i++) {
+            file_t *file = &pack->files[i];
+
+            if(strstr(file->name, search)) {
+                if(kexStr::IndexOf(file->name, ".") == -1)
+                    continue;
+
+                strlist->Push(new kexStr(file->name));
+            }
+        }
+    }
+
+    return strlist;
+}
+
+//
 // kexFileSystem::ReadExternalTextFile
 //
 

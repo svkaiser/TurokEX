@@ -24,6 +24,8 @@
 #define __FILESYSTEM_H__
 
 #include "unzip.h"
+#include "array.h"
+#include "kstring.h"
 
 typedef struct {
     char            name[MAX_FILEPATH];
@@ -45,20 +47,21 @@ typedef struct kpf_s {
 
 class kexFileSystem {
 public:
-                    kexFileSystem();
-                    ~kexFileSystem();
+                        kexFileSystem();
+                        ~kexFileSystem();
 
-    const char      *BasePath(void);
-    void            Shutdown(void);
-    void            LoadZipFile(const char *file);
-    int             OpenFile(const char *filename, byte **data, int tag) const;
-    int             ReadExternalTextFile(const char *name, byte **buffer) const;
-    void            Init(void);
+    const char          *BasePath(void);
+    void                Shutdown(void);
+    void                LoadZipFile(const char *file);
+    int                 OpenFile(const char *filename, byte **data, int tag) const;
+    kexArray<kexStr*>   *GetMatchingFiles(const char *search);
+    int                 ReadExternalTextFile(const char *name, byte **buffer) const;
+    void                Init(void);
 
 private:
-    long            HashFileName(const char *fname, int hashSize) const;
-    kpf_t           *root;
-    char            *base;
+    long                HashFileName(const char *fname, int hashSize) const;
+    kpf_t               *root;
+    char                *base;
 };
 
 extern kexFileSystem fileSystem;

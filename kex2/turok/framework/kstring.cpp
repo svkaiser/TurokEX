@@ -77,7 +77,9 @@ kexStr::kexStr(const char *string) {
     if(string == NULL)
         return;
 
-    CopyNew(string, strlen(string));
+    int len = strlen(string);
+    CopyNew(string, len);
+    charPtr[len] = '\0';
 }
 
 //
