@@ -151,7 +151,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\openal\include\&quot;;&quot;$(OutDir)\SDL\include\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\sound\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\menu\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDir)\turok\jsapi\&quot;;&quot;$(OutDir)\turok\parse\&quot;;&quot;$(OutDir)\turok\game\&quot;"
+				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\openal\include\&quot;;&quot;$(OutDir)\SDL\include\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\sound\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDir)\turok\jsapi\&quot;;&quot;$(OutDir)\turok\parse\&quot;;&quot;$(OutDir)\turok\game\&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -317,18 +317,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="menu"
-				>
-				<File
-					RelativePath="..\turok\menu\menu_items.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\menu\menu_main.cpp"
-					>
-				</File>
-			</Filter>
-			<Filter
 				Name="framework"
 				>
 				<File
@@ -373,6 +361,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\network.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\object.cpp"
 					>
 				</File>
 				<File
@@ -662,14 +654,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="menu"
-				>
-				<File
-					RelativePath="..\turok\menu\menu.h"
-					>
-				</File>
-			</Filter>
-			<Filter
 				Name="framework"
 				>
 				<File
@@ -730,6 +714,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\network.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\object.h"
 					>
 				</File>
 				<File

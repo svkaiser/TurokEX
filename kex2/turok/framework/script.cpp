@@ -75,19 +75,9 @@ kexParser parser;
 // kexLexer::kexLexer
 //
 
-kexLexer::kexLexer(const char *filename) {
-    if(cvarDeveloper.GetBool()) {
-        buffsize = fileSystem.ReadExternalTextFile(filename, (byte**)(&buffer));
-
-        if(buffsize <= 0)
-            buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), PU_STATIC);
-    }
-    else
-        buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), PU_STATIC);
-
-    if(buffsize <= 0)
-        return;
-
+kexLexer::kexLexer(const char *filename, char *buf, int bufSize) {
+    buffer          = buf;
+    buffsize        = bufSize;
     pointer_start   = buffer;
     pointer_end     = buffer + buffsize;
     linepos         = 1;
@@ -102,8 +92,9 @@ kexLexer::kexLexer(const char *filename) {
 //
 
 kexLexer::~kexLexer(void) {
-    Z_Free(buffer);
-
+    if(buffer) {
+        Z_Free(buffer);
+    }
     buffer          = NULL;
     buffsize        = 0;
     pointer_start   = NULL;
@@ -813,12 +804,12 @@ void kexParser::PopFileName(void) {
 // kexParser::PushLexer
 //
 
-void kexParser::PushLexer(const char *filename) {
+void kexParser::PushLexer(const char *filename, char *buf, int bufSize) {
     if(numLexers >= MAX_NESTED_PARSERS) {
         Error("Reached max number of nested lexers (%i)", numLexers);
     }
 
-    lexers[numLexers] = new kexLexer(filename);
+    lexers[numLexers] = new kexLexer(filename, buf, bufSize);
     currentLexer = lexers[numLexers];
 
     numLexers++;
@@ -864,14 +855,25 @@ kexLexer *kexParser::Open(const char* filename) {
     SC_DebugPrintf("opening %s\n", filename);
 #endif
 
-    // push out a new lexer
-    PushLexer(filename);
-    
-    if(currentLexer->BufferSize() <= 0) {
-        PopLexer();
+    int buffsize;
+    byte *buffer;
+
+    if(cvarDeveloper.GetBool()) {
+        buffsize = fileSystem.ReadExternalTextFile(filename, (byte**)(&buffer));
+
+        if(buffsize <= 0)
+            buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), PU_STATIC);
+    }
+    else
+        buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), PU_STATIC);
+
+    if(buffsize <= 0) {
+        common.Warning("kexParser::Open: %s not found\n", filename);
         return NULL;
     }
 
+    // push out a new lexer
+    PushLexer(filename, (char*)buffer, buffsize);
     PushFileName(filename);
 
     return currentLexer;

@@ -109,15 +109,15 @@ void kexServer::AddClient(ENetEvent *sev) {
 
             ENetPacket *packet;
 
-            if(!(packet = Packet_New()))
+            if(!(packet = packetManager.Create()))
                 return;
 
             common.Printf("%s connected...\n",
                 GetPeerAddress(sev));
 
-            Packet_Write8(packet, sp_clientinfo);
-            Packet_Write8(packet, clients[i].client_id);
-            Packet_Send(packet, clients[i].peer);
+            packetManager.Write8(packet, sp_clientinfo);
+            packetManager.Write8(packet, clients[i].client_id);
+            packetManager.Send(packet, clients[i].peer);
             return;
         }
     }
@@ -160,7 +160,7 @@ void kexServer::CreateHost(void) {
 //
 
 void kexServer::ClientCommand(ENetEvent *sev, ENetPacket *packet) {
-    char *cmd = Packet_ReadString(packet);
+    char *cmd = packetManager.ReadString(packet);
     svclient_t *svcl;
 
     svcl = &clients[GetClientID(sev->peer)];
@@ -174,12 +174,12 @@ void kexServer::ClientCommand(ENetEvent *sev, ENetPacket *packet) {
 void kexServer::SendMessage(ENetEvent *sev, int type) {
     ENetPacket *packet;
 
-    if(!(packet = Packet_New()))
+    if(!(packet = packetManager.Create()))
         return;
 
-    Packet_Write8(packet, sp_msg);
-    Packet_Write8(packet, type);
-    Packet_Send(packet, sev->peer);
+    packetManager.Write8(packet, sp_msg);
+    packetManager.Write8(packet, type);
+    packetManager.Send(packet, sev->peer);
 }
 
 //
@@ -189,11 +189,11 @@ void kexServer::SendMessage(ENetEvent *sev, int type) {
 void kexServer::SendAcknowledgement(ENetEvent *sev) {
     ENetPacket *packet;
 
-    if(!(packet = Packet_New()))
+    if(!(packet = packetManager.Create()))
         return;
 
-    Packet_Write8(packet, sp_ping);
-    Packet_Send(packet, sev->peer);
+    packetManager.Write8(packet, sp_ping);
+    packetManager.Send(packet, sev->peer);
 }
 
 //
@@ -204,7 +204,7 @@ void kexServer::ProcessPackets(const ENetPacket *packet) {
     unsigned int type = 0;
     ENetEvent *netEvent = GetEvent();
 
-    Packet_Read8((ENetPacket*)packet, &type);
+    packetManager.Read8((ENetPacket*)packet, &type);
 
     switch(type)
     {
@@ -216,7 +216,7 @@ void kexServer::ProcessPackets(const ENetPacket *packet) {
 
     case cp_say:
         common.Printf("%s: %s\n", GetPeerAddress(netEvent),
-            Packet_ReadString((ENetPacket*)packet));
+            packetManager.ReadString((ENetPacket*)packet));
         break;
 
     case cp_cmd:
@@ -278,21 +278,21 @@ void kexServer::SendMoveData(svclient_t *svcl) {
     if(svcl->state != SVC_STATE_INGAME)
         return;
 
-    if(!(packet = Packet_New()))
+    if(!(packet = packetManager.Create()))
         return;
     
-    Packet_Write8(packet, sp_pmove);
-    Packet_Write32(packet, server.tics);
-    Packet_WriteVector(packet, svcl->pmove.origin);
-    Packet_WriteVector(packet, svcl->pmove.velocity);
-    Packet_Write32(packet, svcl->pmove.flags);
-    Packet_Write32(packet, svcl->pmove.movetype);
-    Packet_Write32(packet, svcl->pmove.plane);
-    Packet_Write32(packet, svcl->ns.ingoing);
-    Packet_Write32(packet, svcl->ns.outgoing);
+    packetManager.Write8(packet, sp_pmove);
+    packetManager.Write32(packet, server.tics);
+    packetManager.WriteVector(packet, svcl->pmove.origin);
+    packetManager.WriteVector(packet, svcl->pmove.velocity);
+    packetManager.Write32(packet, svcl->pmove.flags);
+    packetManager.Write32(packet, svcl->pmove.movetype);
+    packetManager.Write32(packet, svcl->pmove.plane);
+    packetManager.Write32(packet, svcl->ns.ingoing);
+    packetManager.Write32(packet, svcl->ns.outgoing);
     svcl->ns.outgoing++;
 
-    Packet_Send(packet, svcl->peer);*/
+    packetManager.Send(packet, svcl->peer);*/
 }
 
 //

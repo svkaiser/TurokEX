@@ -42,7 +42,7 @@ JS_FASTNATIVE_BEGIN(Net, newPacket)
 {
     ENetPacket *packet;
 
-    if(packet = Packet_New())
+    if(packet = packetManager.Create())
     {
         JSObject *object;
 
@@ -271,13 +271,13 @@ JS_FINALIZE_FUNC(Packet)
         return JS_TRUE;                                 \
     }
 
-JS_WRITE_PACKET_FUNC(write8, Packet_Write8);
-JS_WRITE_PACKET_FUNC(write16, Packet_Write16);
-JS_WRITE_PACKET_FUNC(write32, Packet_Write32);
+JS_WRITE_PACKET_FUNC(write8, packetManager.Write8);
+JS_WRITE_PACKET_FUNC(write16, packetManager.Write16);
+JS_WRITE_PACKET_FUNC(write32, packetManager.Write32);
 
-JS_READINT_PACKET_FUNC(read8, Packet_Read8);
-JS_READINT_PACKET_FUNC(read16, Packet_Read16);
-JS_READINT_PACKET_FUNC(read32, Packet_Read32);
+JS_READINT_PACKET_FUNC(read8, packetManager.Read8);
+JS_READINT_PACKET_FUNC(read16, packetManager.Read8);
+JS_READINT_PACKET_FUNC(read32, packetManager.Read32);
 
 JS_FASTNATIVE_BEGIN(Packet, writeString)
 {
@@ -299,7 +299,7 @@ JS_FASTNATIVE_BEGIN(Packet, writeString)
         return JS_FALSE;
     }
 
-    Packet_WriteString(packet, bytes);
+    packetManager.WriteString(packet, bytes);
     JS_free(cx, bytes);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
@@ -315,7 +315,7 @@ JS_FASTNATIVE_BEGIN(Packet, readString)
 
     JS_GETPACKET(JS_THIS_OBJECT(cx, vp));
 
-    JS_RETURNSTRING(vp, Packet_ReadString(packet));
+    JS_RETURNSTRING(vp, packetManager.ReadString(packet));
     return JS_TRUE;
 }
 
@@ -331,7 +331,7 @@ JS_FASTNATIVE_BEGIN(Packet, writeVector)
     JS_GETOBJECT(object, v, 0);
     JS_GETVECTOR2(object, vec);
 
-    Packet_WriteVector(packet, vec);
+    packetManager.WriteVector(packet, vec);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
@@ -346,7 +346,7 @@ JS_FASTNATIVE_BEGIN(Packet, readVector)
     v = JS_ARGV(cx, vp);
 
     JS_GETPACKET(JS_THIS_OBJECT(cx, vp));
-    Packet_ReadVector(packet, &vec);
+    packetManager.ReadVector(packet, &vec);
 
     JS_NEWVECTOR2(vec);
     return JS_TRUE;
@@ -366,7 +366,7 @@ JS_FASTNATIVE_BEGIN(Packet, writeFloat)
     JS_GETPACKET(JS_THIS_OBJECT(cx, vp));
     JS_GETNUMBER(val, v, 0);
 
-    Packet_WriteFloat(packet, (float)val);
+    packetManager.WriteFloat(packet, (float)val);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);
     return JS_TRUE;
@@ -381,7 +381,7 @@ JS_FASTNATIVE_BEGIN(Packet, readFloat)
     v = JS_ARGV(cx, vp);
 
     JS_GETPACKET(JS_THIS_OBJECT(cx, vp));
-    Packet_ReadFloat(packet, &val);
+    packetManager.ReadFloat(packet, &val);
 
     J_NewDoubleEx(cx, (jsdouble)val, vp);
     return JS_TRUE;
@@ -409,7 +409,7 @@ JS_FASTNATIVE_BEGIN(Packet, send)
         JS_GETNETPEER(obj);
     }
 
-    Packet_Send(packet, peer);
+    packetManager.Send(packet, peer);
     JS_SetPrivate(cx, JS_THIS_OBJECT(cx, vp), NULL);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);

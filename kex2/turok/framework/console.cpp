@@ -36,6 +36,8 @@
 #include "render.h"
 #include "console.h"
 
+kexCvar cvarDisplayConsole("con_alwaysShowConsole", CVF_BOOL|CVF_CONFIG, "0", "TODO");
+
 kexConsole console;
 
 //
@@ -108,6 +110,7 @@ void kexConsole::OutputTextLine(rcolor color, const char *text) {
         for(unsigned int i = 0; i < CON_BUFFER_SIZE-1; i++) {
             memset(scrollBackStr[i], 0, CON_LINE_LENGTH);
             strcpy(scrollBackStr[i], scrollBackStr[i+1]);
+            lineColor[i] = lineColor[i+1];
         }
 
         scrollBackLines = CON_BUFFER_SIZE-1;
@@ -715,9 +718,10 @@ void kexConsole::Init(void) {
 
 // TODO - TEMP/PLACEHOLDER
 void kexConsole::Draw(void) {
-    if(state == CON_STATE_UP)
+    if(state == CON_STATE_UP && !cvarDisplayConsole.GetBool())
         return;
 
+    bool bOverlay = (state == CON_STATE_UP && cvarDisplayConsole.GetBool());
     canvas_t canvas;
 
     float w = (float)video_width;
@@ -731,22 +735,26 @@ void kexConsole::Draw(void) {
     dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    Canvas_SetDrawColor(&canvas, 4, 8, 16);
-    Canvas_SetDrawAlpha(&canvas, 192);
-    Canvas_DrawTile(&canvas, white, 0, 0, w, h);
-
-    Canvas_SetDrawColor(&canvas, 255, 255, 255);
-    Canvas_SetDrawAlpha(&canvas, 255);
     Canvas_SetFont(&canvas, &textFont);
-    Canvas_DrawString(&canvas, "> ", 0, h-15, false);
+    Canvas_SetDrawAlpha(&canvas, 128);
 
-    if(bShowPrompt) {
-        Canvas_DrawString(&canvas, "_", 16 +
-            Font_StringWidth(&textFont, typeStr, 1.0f, typeStrPos), h-15, false);
-    }
+    if(!bOverlay) {
+        Canvas_SetDrawColor(&canvas, 4, 8, 16);
+        Canvas_SetDrawAlpha(&canvas, 192);
+        Canvas_DrawTile(&canvas, white, 0, 0, w, h);
 
-    if(strlen(typeStr) > 0) {
-        Canvas_DrawString(&canvas, typeStr, 16, h-15, false);
+        Canvas_SetDrawColor(&canvas, 255, 255, 255);
+        Canvas_SetDrawAlpha(&canvas, 255);
+        Canvas_DrawString(&canvas, "> ", 0, h-15, false);
+
+        if(bShowPrompt) {
+            Canvas_DrawString(&canvas, "_", 16 +
+                Font_StringWidth(&textFont, typeStr, 1.0f, typeStrPos), h-15, false);
+        }
+
+        if(strlen(typeStr) > 0) {
+            Canvas_DrawString(&canvas, typeStr, 16, h-15, false);
+        }
     }
 
     if(scrollBackLines > 0) {
@@ -756,6 +764,10 @@ void kexConsole::Draw(void) {
             if(scy < 0)
                 break;
 
+            Canvas_SetDrawColor(&canvas,
+                (lineColor[i] >> 0 ) & 0xff,
+                (lineColor[i] >> 8 ) & 0xff,
+                (lineColor[i] >> 16) & 0xff);
             Canvas_DrawString(&canvas, scrollBackStr[i], 0, scy, false);
             scy -= 16;
         }
@@ -763,8 +775,10 @@ void kexConsole::Draw(void) {
 
     GL_SetState(GLSTATE_BLEND, 0);
 
-    Canvas_SetDrawColor(&canvas, 0, 128, 255);
-    Canvas_SetDrawAlpha(&canvas, 255);
-    Canvas_DrawTile(&canvas, white, 0, h-17, w, 1);
-    Canvas_DrawTile(&canvas, white, 0, h, w, 1);
+    if(!bOverlay) {
+        Canvas_SetDrawColor(&canvas, 0, 128, 255);
+        Canvas_SetDrawAlpha(&canvas, 255);
+        Canvas_DrawTile(&canvas, white, 0, h-17, w, 1);
+        Canvas_DrawTile(&canvas, white, 0, h, w, 1);
+    }
 }

@@ -21,7 +21,7 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION: Packets for sending across networks (based off of Chocolate Doom)
+// DESCRIPTION: Packet manager that handles reading and writing of ENet packets
 //
 //-----------------------------------------------------------------------------
 
@@ -29,255 +29,203 @@
 #include "common.h"
 #include "zone.h"
 #include "kernel.h"
+#include "packet.h"
+
+kexPacketManager packetManager;
 
 //
-// Packet_Read8
+// kexPacketManager::kexPacketManager
 //
 
-kbool Packet_Read8(ENetPacket *packet, unsigned int *data)
-{
-    if(packet->pos + 1 > packet->dataLength)
-    {
+kexPacketManager::kexPacketManager(void) {
+}
+
+//
+// kexPacketManager::~kexPacketManager
+//
+
+kexPacketManager::~kexPacketManager(void) {
+}
+
+//
+// kexPacketManager::Read8
+//
+
+bool kexPacketManager::Read8(ENetPacket *packet, unsigned int *data) {
+    if(packet->pos + 1 > packet->dataLength) {
         return false;
     }
-
     *data = packet->data[packet->pos];
     packet->pos += 1;
-
     return true;
 }
 
 //
-// Packet_Read16
+// kexPacketManager::Read16
 //
 
-kbool Packet_Read16(ENetPacket *packet, unsigned int *data)
-{
-    byte *p;
-
-    if(packet->pos + 2 > packet->dataLength)
-    {
+bool kexPacketManager::Read16(ENetPacket *packet, unsigned int *data) {
+    if(packet->pos + 2 > packet->dataLength) {
         return false;
     }
-
-    p = packet->data + packet->pos;
-
+    byte *p = packet->data + packet->pos;
     *data = (p[0] << 8) | p[1];
     packet->pos += 2;
-
     return true;
 }
 
 //
-// Packet_Read32
+// kexPacketManager::Read32
 //
 
-kbool Packet_Read32(ENetPacket *packet, unsigned int *data)
-{
-    byte *p;
-
-    if(packet->pos + 4 > packet->dataLength)
-    {
+bool kexPacketManager::Read32(ENetPacket *packet, unsigned int *data) {
+    if(packet->pos + 4 > packet->dataLength) {
         return false;
     }
-
-    p = packet->data + packet->pos;
-
+    byte *p = packet->data + packet->pos;
     *data = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
     packet->pos += 4;
-    
     return true;
 }
 
 //
-// Packet_ReadFloat
+// kexPacketManager::ReadFloat
 //
 
-kbool Packet_ReadFloat(ENetPacket *packet, float *data)
-{
+bool kexPacketManager::ReadFloat(ENetPacket *packet, float *data) {
     fint_t fi;
-
-    if(!Packet_Read32(packet, (unsigned int*)&fi.i))
+    if(!Read32(packet, (unsigned int*)&fi.i))
         return false;
-
     *data = fi.f;
-    
     return true;
 }
 
 //
-// Packet_ReadVector
+// kexPacketManager::ReadVector
 //
 
-kbool Packet_ReadVector(ENetPacket *packet, vec3_t *data)
-{
-    if(!Packet_ReadFloat(packet, &(*data)[0]))
+bool kexPacketManager::ReadVector(ENetPacket *packet, vec3_t *data) {
+    if(!ReadFloat(packet, &(*data)[0]))
         return false;
-
-    if(!Packet_ReadFloat(packet, &(*data)[1]))
+    if(!ReadFloat(packet, &(*data)[1]))
         return false;
-
-    if(!Packet_ReadFloat(packet, &(*data)[2]))
+    if(!ReadFloat(packet, &(*data)[2]))
         return false;
-    
     return true;
 }
 
 //
-// Packet_ReadString
+// kexPacketManager::ReadString
 //
 
-char *Packet_ReadString(ENetPacket *packet)
-{
-    char *start;
-
-    start = (char*)packet->data + packet->pos;
-
+char *kexPacketManager::ReadString(ENetPacket *packet) {
+    char *start = (char*)packet->data + packet->pos;
     // Search forward for a NUL character
-    while(packet->pos < packet->dataLength && packet->data[packet->pos] != '\0')
-    {
+    while(packet->pos < packet->dataLength && packet->data[packet->pos] != '\0') {
         packet->pos++;
     }
-
-    if(packet->pos >= packet->dataLength)
-    {
+    if(packet->pos >= packet->dataLength) {
         // Reached the end of the packet
         return NULL;
     }
-
     // packet->data[packet->pos] == '\0': We have reached a terminating
     // NULL.  Skip past this NULL and continue reading immediately 
     // after it.
     packet->pos++;
-    
     return start;
 }
 
 //
-// Packet_Write8
+// kexPacketManager::Write8
 //
 
-void Packet_Write8(ENetPacket *packet, unsigned int i)
-{
-    if(packet->dataLength + 1 > packet->dataLength)
-    {
+void kexPacketManager::Write8(ENetPacket *packet, unsigned int i) {
+    if(packet->dataLength + 1 > packet->dataLength) {
         enet_packet_resize(packet, packet->dataLength + 1);
     }
-
     packet->data[packet->pos] = i;
     packet->pos += 1;
 }
 
 //
-// Packet_Write16
+// kexPacketManager::Write16
 //
 
-void Packet_Write16(ENetPacket *packet, unsigned int i)
-{
-    byte *p;
-
-    if(packet->dataLength + 2 > packet->dataLength)
-    {
+void kexPacketManager::Write16(ENetPacket *packet, unsigned int i) {
+    if(packet->dataLength + 2 > packet->dataLength) {
         enet_packet_resize(packet, packet->dataLength + 2);
     }
-
-    p = packet->data + packet->pos;
-
+    byte *p = packet->data + packet->pos;
     p[0] = (i >> 8) & 0xff;
     p[1] = i & 0xff;
-
     packet->pos += 2;
 }
 
 //
-// Packet_Write32
+// kexPacketManager::Write32
 //
 
-void Packet_Write32(ENetPacket *packet, unsigned int i)
-{
-    byte *p;
-
-    if(packet->dataLength + 4 > packet->dataLength)
-    {
+void kexPacketManager::Write32(ENetPacket *packet, unsigned int i) {
+    if(packet->dataLength + 4 > packet->dataLength) {
         enet_packet_resize(packet, packet->dataLength + 4);
     }
-
-    p = packet->data + packet->pos;
-
+    byte *p = packet->data + packet->pos;
     p[0] = (i >> 24) & 0xff;
     p[1] = (i >> 16) & 0xff;
     p[2] = (i >> 8) & 0xff;
     p[3] = i & 0xff;
-
     packet->pos += 4;
 }
 
 //
-// Packet_WriteFloat
+// kexPacketManager::WriteFloat
 //
 
-void Packet_WriteFloat(ENetPacket *packet, float i)
-{
+void kexPacketManager::WriteFloat(ENetPacket *packet, float i) {
     fint_t fi;
-
     fi.f = i;
-    Packet_Write32(packet, fi.i);
+    Write32(packet, fi.i);
 }
 
 //
-// Packet_WriteVector
+// kexPacketManager::WriteVector
 //
 
-void Packet_WriteVector(ENetPacket *packet, vec3_t vec)
-{
-    Packet_WriteFloat(packet, vec[0]);
-    Packet_WriteFloat(packet, vec[1]);
-    Packet_WriteFloat(packet, vec[2]);
+void kexPacketManager::WriteVector(ENetPacket *packet, vec3_t vec) {
+    WriteFloat(packet, vec[0]);
+    WriteFloat(packet, vec[1]);
+    WriteFloat(packet, vec[2]);
 }
 
 //
-// Packet_WriteString
+// kexPacketManager::WriteString
 //
 
-void Packet_WriteString(ENetPacket *packet, char *string)
-{
-    byte *p;
-    unsigned int len;
-    char *string2;
-
-    string2 = Z_Strdupa(string);
-    len = strlen(string2) + 1;
-
+void kexPacketManager::WriteString(ENetPacket *packet, char *string) {
+    char *string2 = Z_Strdupa(string);
+    unsigned int len = strlen(string2) + 1;
     // Increase the packet size until large enough to hold the string
-    if(packet->dataLength + len > packet->dataLength)
-    {
+    if(packet->dataLength + len > packet->dataLength) {
         enet_packet_resize(packet, packet->dataLength + len);
     }
-
-    p = packet->data + packet->pos;
-
+    byte *p = packet->data + packet->pos;
     strcpy((char*)p, string2);
     packet->pos += len;
 }
 
 //
-// Packet_Send
+// kexPacketManager::Send
 //
 
-void Packet_Send(ENetPacket *packet, ENetPeer *peer)
-{
+void kexPacketManager::Send(ENetPacket *packet, ENetPeer *peer) {
     packet->pos = 0;
     enet_peer_send(peer, 0, packet);
 }
 
 //
-// Packet_New
+// kexPacketManager::Create
 //
 
-ENetPacket *Packet_New(void)
-{
-    ENetPacket *packet;
-
-    packet = enet_packet_create(NULL, 0, ENET_PACKET_FLAG_RELIABLE);
-    return packet;
+ENetPacket *kexPacketManager::Create(void) {
+    return enet_packet_create(NULL, 0, ENET_PACKET_FLAG_RELIABLE);
 }

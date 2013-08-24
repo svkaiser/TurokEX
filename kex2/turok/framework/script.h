@@ -70,7 +70,7 @@ typedef struct
 
 class kexLexer {
 public:
-                        kexLexer(const char *filename);
+                        kexLexer(const char *filename, char *buf, int bufSize);
                         ~kexLexer(void);
 
     bool                CheckState(void);
@@ -135,7 +135,7 @@ public:
     kexLexer            *Open(const char *filename);
     void                Close(void);
     void                Error(const char *msg, ...);
-    void                PushLexer(const char *filename);
+    void                PushLexer(const char *filename, char *buf, int bufSize);
     void                PopLexer(void);
     void                PushFileName(const char *name);
     void                PopFileName(void);

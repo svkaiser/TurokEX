@@ -25,19 +25,27 @@
 
 #include "enet/enet.h"
 
-kbool Packet_Read8(ENetPacket *packet, unsigned int *data);
-kbool Packet_Read16(ENetPacket *packet, unsigned int *data);
-kbool Packet_Read32(ENetPacket *packet, unsigned int *data);
-kbool Packet_ReadFloat(ENetPacket *packet, float *data);
-kbool Packet_ReadVector(ENetPacket *packet, vec3_t *data);
-char *Packet_ReadString(ENetPacket *packet);
-void Packet_Write8(ENetPacket *packet, unsigned int i);
-void Packet_Write16(ENetPacket *packet, unsigned int i);
-void Packet_Write32(ENetPacket *packet, unsigned int i);
-void Packet_WriteFloat(ENetPacket *packet, float i);
-void Packet_WriteVector(ENetPacket *packet, vec3_t vec);
-void Packet_WriteString(ENetPacket *packet, char *string);
-void Packet_Send(ENetPacket *packet, ENetPeer *peer);
-ENetPacket *Packet_New(void);
+class kexPacketManager {
+public:
+                kexPacketManager(void);
+                ~kexPacketManager(void);
+
+    bool        Read8(ENetPacket *packet, unsigned int *data);
+    bool        Read16(ENetPacket *packet, unsigned int *data);
+    bool        Read32(ENetPacket *packet, unsigned int *data);
+    bool        ReadFloat(ENetPacket *packet, float *data);
+    bool        ReadVector(ENetPacket *packet, vec3_t *data);
+    char        *ReadString(ENetPacket *packet);
+    void        Write8(ENetPacket *packet, unsigned int i);
+    void        Write16(ENetPacket *packet, unsigned int i);
+    void        Write32(ENetPacket *packet, unsigned int i);
+    void        WriteFloat(ENetPacket *packet, float i);
+    void        WriteVector(ENetPacket *packet, vec3_t vec);
+    void        WriteString(ENetPacket *packet, char *string);
+    void        Send(ENetPacket *packet, ENetPeer *peer);
+    ENetPacket  *Create(void);
+};
+
+extern kexPacketManager packetManager;
 
 #endif

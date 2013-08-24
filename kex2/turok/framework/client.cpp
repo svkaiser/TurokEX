@@ -107,7 +107,7 @@ void kexClient::Connect(const char *address) {
 void kexClient::ProcessPackets(const ENetPacket *packet) {
     unsigned int type = 0;
 
-    Packet_Read8((ENetPacket*)packet, &type);
+    packetManager.Read8((ENetPacket*)packet, &type);
 
     switch(type)
     {
@@ -116,7 +116,7 @@ void kexClient::ProcessPackets(const ENetPacket *packet) {
         break;
 
     case sp_clientinfo:
-        Packet_Read8((ENetPacket*)packet, &id);
+        packetManager.Read8((ENetPacket*)packet, &id);
         player->info.id = id;
         SetState(CL_STATE_READY);
         common.DPrintf("CL_ReadClientInfo: ID is %i\n", id);
@@ -204,12 +204,12 @@ void kexClient::Run(const int msec) {
 void kexClient::MessageServer(char *string) {
     ENetPacket *packet;
 
-    if(!(packet = Packet_New()))
+    if(!(packet = packetManager.Create()))
         return;
 
-    Packet_Write8(packet, cp_msgserver);
-    Packet_WriteString(packet, string);
-    Packet_Send(packet, GetPeer());
+    packetManager.Write8(packet, cp_msgserver);
+    packetManager.WriteString(packet, string);
+    packetManager.Send(packet, GetPeer());
 }
 
 //
@@ -281,11 +281,11 @@ void kexClient::ProcessEvents(void) {
 static void FCmd_Ping(void) {
     ENetPacket *packet;
 
-    if(!(packet = Packet_New()))
+    if(!(packet = packetManager.Create()))
         return;
 
-    Packet_Write8(packet, cp_ping);
-    Packet_Send(packet, client.GetPeer());
+    packetManager.Write8(packet, cp_ping);
+    packetManager.Send(packet, client.GetPeer());
 }
 
 //
@@ -298,12 +298,12 @@ static void FCmd_Say(void) {
     if(command.GetArgc() < 2)
         return;
 
-    if(!(packet = Packet_New()))
+    if(!(packet = packetManager.Create()))
         return;
 
-    Packet_Write8(packet, cp_say);
-    Packet_WriteString(packet, command.GetArgv(1));
-    Packet_Send(packet, client.GetPeer());
+    packetManager.Write8(packet, cp_say);
+    packetManager.WriteString(packet, command.GetArgv(1));
+    packetManager.Send(packet, client.GetPeer());
 }
 
 //

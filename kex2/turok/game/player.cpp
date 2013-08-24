@@ -123,15 +123,15 @@ void P_NewPlayerConnected(ENetEvent *sev)
             P_ResetNetSeq(info);
             memset(&info->cmd, 0, sizeof(ticcmd_t));
 
-            if(!(packet = Packet_New()))
+            if(!(packet = packetManager.Create()))
                 return;
 
             common.Printf("%s connected...\n",
                 server.GetPeerAddress(sev));
 
-            Packet_Write8(packet, sp_clientinfo);
-            Packet_Write8(packet, info->id);
-            Packet_Send(packet, info->peer);
+            packetManager.Write8(packet, sp_clientinfo);
+            packetManager.Write8(packet, info->id);
+            packetManager.Send(packet, info->peer);
             return;
         }
     }
@@ -184,10 +184,10 @@ void P_BuildCommands(void)
     ctrl->mousex = 0;
     ctrl->mousey = 0;
 
-    if(!(packet = Packet_New()))
+    if(!(packet = packetManager.Create()))
         return;
 
-    Packet_Write8(packet, cp_cmd);
+    packetManager.Write8(packet, cp_cmd);
 
     numactions = 0;
 
@@ -197,27 +197,27 @@ void P_BuildCommands(void)
             numactions++;
     }
 
-    Packet_Write32(packet, cmd->mouse[0].i);
-    Packet_Write32(packet, cmd->mouse[1].i);
-    Packet_Write32(packet, cmd->timestamp.i);
-    Packet_Write32(packet, cmd->frametime.i);
-    Packet_Write32(packet, numactions);
+    packetManager.Write32(packet, cmd->mouse[0].i);
+    packetManager.Write32(packet, cmd->mouse[1].i);
+    packetManager.Write32(packet, cmd->timestamp.i);
+    packetManager.Write32(packet, cmd->frametime.i);
+    packetManager.Write32(packet, numactions);
 
     for(i = 0; i < MAXACTIONS; i++)
     {
         if(cmd->buttons[i])
         {
-            Packet_Write8(packet, i);
-            Packet_Write8(packet, cmd->heldtime[i]);
+            packetManager.Write8(packet, i);
+            packetManager.Write8(packet, cmd->heldtime[i]);
         }
     }
 
-    Packet_Write32(packet, pinfo->netseq.ingoing);
-    Packet_Write32(packet, pinfo->netseq.outgoing);
+    packetManager.Write32(packet, pinfo->netseq.ingoing);
+    packetManager.Write32(packet, pinfo->netseq.outgoing);
 
     pinfo->netseq.outgoing++;
 
-    Packet_Send(packet, pinfo->peer);
+    packetManager.Send(packet, pinfo->peer);
 }
 
 //
@@ -234,26 +234,25 @@ void P_RunCommand(ENetEvent *sev, ENetPacket *packet)
     netplayer = &netPlayers[server.GetClientID(sev->peer)];
     cmd = &netplayer->info.cmd;
 
-    Packet_Read32(packet, (unsigned int*)&cmd->mouse[0].i);
-    Packet_Read32(packet, (unsigned int*)&cmd->mouse[1].i);
-    Packet_Read32(packet, (unsigned int*)&cmd->timestamp.i);
-    Packet_Read32(packet, (unsigned int*)&cmd->frametime.i);
-
-    Packet_Read32(packet, (unsigned int*)&numactions);
+    packetManager.Read32(packet, (unsigned int*)&cmd->mouse[0].i);
+    packetManager.Read32(packet, (unsigned int*)&cmd->mouse[1].i);
+    packetManager.Read32(packet, (unsigned int*)&cmd->timestamp.i);
+    packetManager.Read32(packet, (unsigned int*)&cmd->frametime.i);
+    packetManager.Read32(packet, (unsigned int*)&numactions);
 
     for(i = 0; i < numactions; i++)
     {
         int btn = 0;
         int held = 0;
 
-        Packet_Read8(packet, (unsigned int*)&btn);
+        packetManager.Read8(packet, (unsigned int*)&btn);
         cmd->buttons[btn] = true;
-        Packet_Read8(packet, (unsigned int*)&held);
+        packetManager.Read8(packet, (unsigned int*)&held);
         cmd->heldtime[btn] = held;
     }
 
-    Packet_Read32(packet, (unsigned int*)&netplayer->info.netseq.acks);
-    Packet_Read32(packet, (unsigned int*)&netplayer->info.netseq.ingoing);
+    packetManager.Read32(packet, (unsigned int*)&netplayer->info.netseq.acks);
+    packetManager.Read32(packet, (unsigned int*)&netplayer->info.netseq.ingoing);
 
     // TODO - PROCESS MOVEMENT
 }
