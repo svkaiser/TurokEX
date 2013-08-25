@@ -1217,6 +1217,9 @@ void Actor_UpdateModel(gActor_t *actor, const char *model)
 
                 mesh = &node->meshes[k];
 
+                if(mesh->numsections == 0)
+                    continue;
+
                 actor->textureSwaps[j][k] = (char**)Z_Calloc(sizeof(char*) *
                     mesh->numsections, PU_ACTOR, NULL);
             }

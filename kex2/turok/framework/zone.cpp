@@ -26,7 +26,7 @@
 //-----------------------------------------------------------------------------
 
 #include <stdlib.h>
-
+#include <assert.h>
 #include "shared.h"
 #include "common.h"
 #include "zone.h"
@@ -287,6 +287,8 @@ void *(Z_Malloc)(int size, int tag, void **user, const char *file, int line)
     if(user == NULL && tag >= PU_PURGELEVEL)
         common.Error("Z_Malloc: an owner is required for purgable blocks (%s:%d)", file, line);
     
+    assert(size > 0);
+
     // Malloc a block of the required size
     
     newblock = NULL;

@@ -414,7 +414,7 @@ static void Snd_UpdateSources(void)
 
                 if(sndSrc->actor && sndSrc->actor != client.playerActor)
                 {
-                    alSourcef(sndSrc->handle, AL_ROLLOFF_FACTOR, sndSrc->sfx->rolloffFactor);
+                    //alSourcef(sndSrc->handle, AL_ROLLOFF_FACTOR, sndSrc->sfx->rolloffFactor);
                     alSourcei(sndSrc->handle, AL_SOURCE_RELATIVE, AL_FALSE);
                     alSource3f(sndSrc->handle, AL_POSITION,
                         SND_VECTOR2METRICS(sndSrc->actor->origin));

@@ -132,6 +132,13 @@ static void Kmesh_ParseSectionBlock(mdlmesh_t *mesh, kexLexer *lexer) {
     unsigned int i;
     kbool nested = false;
 
+    if(mesh->numsections == 0) {
+        mesh->sections = NULL;
+        lexer->ExpectTokenListID(mdltokens, scmdl_sections);
+        lexer->ExpectNextToken(TK_LBRACK);
+        lexer->ExpectNextToken(TK_RBRACK);
+        return;
+    }
     mesh->sections = (mdlsection_t*)Z_Calloc(sizeof(mdlsection_t) *
         mesh->numsections, PU_MODEL, 0);
 

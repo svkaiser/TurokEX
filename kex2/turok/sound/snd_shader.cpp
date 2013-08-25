@@ -93,11 +93,15 @@ static void Snd_ParseShaderScript(sndShader_t *snd, kexLexer *lexer)
 
     if(snd->numsfx == 0) {
         snd->sfx = NULL;
+        lexer->ExpectNextToken(TK_RSQBRACK);
+        lexer->ExpectNextToken(TK_EQUAL);
+        lexer->ExpectNextToken(TK_LBRACK);
+        lexer->ExpectNextToken(TK_RBRACK);
         return;
     }
 
     snd->sfx = (sfx_t*)Z_Calloc(sizeof(sfx_t) * snd->numsfx, PU_SOUND, 0);
-    snd->sfx->rolloffFactor = 4.0f;
+    snd->sfx->rolloffFactor = 8.0f;
 
     lexer->ExpectNextToken(TK_RSQBRACK);
     lexer->ExpectNextToken(TK_EQUAL);
