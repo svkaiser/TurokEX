@@ -23,6 +23,8 @@
 #ifndef __INPUT_H__
 #define __INPUT_H__
 
+#include "SDL.h"
+
 // Input event types.
 typedef enum {
     ev_keydown,
@@ -42,6 +44,9 @@ typedef struct {
     int         data3;  // mouse/joystick y move
     int         data4;  // misc data
 } event_t;
+
+#define SDL_BUTTON_WHEELUP SDL_BUTTON_X1
+#define SDL_BUTTON_WHEELDOWN SDL_BUTTON_X2
 
 class kexInput {
 public:

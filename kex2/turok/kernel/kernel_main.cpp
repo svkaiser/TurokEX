@@ -46,6 +46,9 @@
 kexCvar cvarDeveloper("developer", CVF_BOOL|CVF_CONFIG, "0", "Developer mode");
 kexCvar cvarFixedTime("fixedtime", CVF_INT|CVF_CONFIG, "0", "TODO");
 
+SDL_Window *window      = NULL;
+SDL_GLContext glContext = NULL;
+
 //
 // Sys_Sleep
 //
@@ -76,6 +79,16 @@ void Sys_Shutdown(void) {
 #ifdef _WIN32
     Sys_DestroyConsole();
 #endif
+
+    if(glContext) {
+        SDL_GL_DeleteContext(glContext);
+        glContext = NULL;
+    }
+
+    if(window) {
+        SDL_DestroyWindow(window);
+        window = NULL;
+    }
 
     SDL_Quit();
 
@@ -123,8 +136,6 @@ static void Sys_Init(void) {
 #ifdef _DEBUG
     f |= SDL_INIT_NOPARACHUTE;
 #endif
-    
-    putenv("SDL_VIDEO_CENTERED=1");
 
     if(SDL_Init(f) < 0) {
         common.Error("Failed to initialize SDL");
@@ -132,8 +143,6 @@ static void Sys_Init(void) {
     }
     
     SDL_ShowCursor(0);
-    SDL_WM_SetCaption(kva("Kex Engine - Version Date: %s", __DATE__),
-        "Kex Engine");
 
     Z_Init();
 

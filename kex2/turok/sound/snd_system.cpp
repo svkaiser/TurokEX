@@ -47,6 +47,7 @@ int nSndSources = 0;
 unsigned long sndTime = 0;
 
 static wave_t *wave_hashlist[MAX_HASH];
+static bool bKillSoundThread = false;
 
 #define SND_METRICS 0.0035f
 #define SND_VECTOR2METRICS(vec) \
@@ -64,7 +65,11 @@ void Snd_Shutdown(void)
 {
     int i;
 
-    SDL_KillThread(snd_thread);
+    Snd_EnterCriticalSection();
+    bKillSoundThread = true;
+    Snd_ExitCriticalSection();
+
+    SDL_WaitThread(snd_thread, NULL);
     SDL_DestroyMutex(snd_mutex);
 
     for(i = 0; i < nSndSources; i++)
@@ -414,7 +419,7 @@ static void Snd_UpdateSources(void)
 
                 if(sndSrc->actor && sndSrc->actor != client.playerActor)
                 {
-                    //alSourcef(sndSrc->handle, AL_ROLLOFF_FACTOR, sndSrc->sfx->rolloffFactor);
+                    alSourcef(sndSrc->handle, AL_ROLLOFF_FACTOR, sndSrc->sfx->rolloffFactor);
                     alSourcei(sndSrc->handle, AL_SOURCE_RELATIVE, AL_FALSE);
                     alSource3f(sndSrc->handle, AL_POSITION,
                         SND_VECTOR2METRICS(sndSrc->actor->origin));
@@ -513,6 +518,9 @@ static int SDLCALL Thread_SoundHandler(void *param)
 
         if(delay > 0)
             Sys_Sleep(delay);
+
+        if(bKillSoundThread)
+            break;
     }
 
     return 0;
@@ -640,7 +648,8 @@ void Snd_Init(void)
     alListener3f(AL_POSITION, 0, 0, 0);
 
     snd_mutex = SDL_CreateMutex();
-    snd_thread = SDL_CreateThread(Thread_SoundHandler, NULL);
+    bKillSoundThread = false;
+    snd_thread = SDL_CreateThread(Thread_SoundHandler, "SoundThread", NULL);
 
     command.Add("printsoundinfo", FCmd_SoundInfo);
     command.Add("playsound", FCmd_LoadTestSound);

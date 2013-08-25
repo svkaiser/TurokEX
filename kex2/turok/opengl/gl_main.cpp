@@ -59,10 +59,10 @@ extern kexCvar cvarVidDepthSize;
 extern kexCvar cvarVidBuffSize;
 extern kexCvar cvarVidStencilSize;
 
-int	ViewWindowX = 0;
-int	ViewWindowY = 0;
-int	ViewWidth	= 0;
-int	ViewHeight	= 0;
+int ViewWindowX = 0;
+int ViewWindowY = 0;
+int ViewWidth   = 0;
+int ViewHeight  = 0;
 
 int gl_max_texture_units;
 int gl_max_texture_size;
@@ -163,7 +163,7 @@ void GL_SetOrtho(void)
 void GL_SwapBuffers(void)
 {
     dglFinish();
-    SDL_GL_SwapBuffers();
+    SDL_GL_SwapWindow(window);
 }
 
 //
@@ -577,15 +577,24 @@ void GL_Init(void)
     SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, cvarVidBuffSize.GetInt());
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, cvarVidDepthSize.GetInt());
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, cvarVidStencilSize.GetInt());
-    SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, cvarVidVSync.GetBool());
+    SDL_GL_SetSwapInterval(cvarVidVSync.GetBool());
     
-    flags |= SDL_OPENGL;
+    flags |= SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS;
     
     if(!video_windowed)
-        flags |= SDL_FULLSCREEN;
+        flags |= SDL_WINDOW_FULLSCREEN;
+
+    window = SDL_CreateWindow(
+        kva("Kex Engine - Version Date: %s", __DATE__),
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        video_width, video_height, flags);
     
-    if(SDL_SetVideoMode(video_width, video_height, 32, flags) == NULL)
-        common.Error("GL_Init: Failed to set opengl");
+    if(window == NULL) {
+        common.Error("GL_Init: Failed to create window");
+    }
+
+    if((glContext = SDL_GL_CreateContext(window)) == NULL)
+        common.Error("GL_Init: Failed to create opengl context");
 
     gl_vendor = (const char*)dglGetString(GL_VENDOR);
     common.Printf("GL_VENDOR: %s\n", gl_vendor);
@@ -617,7 +626,7 @@ void GL_Init(void)
     dglEnable(GL_SCISSOR_TEST);
     dglEnable(GL_DITHER);
     dglTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
-	dglTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
+    dglTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
     dglColorMaterial(GL_FRONT, GL_DIFFUSE);
     dglColorMaterial(GL_BACK, GL_DIFFUSE);
     

@@ -29,7 +29,7 @@
 //
 // KEYS
 //
-#define MAX_KEYS SDLK_LAST
+#define MAX_KEYS 512
 
 #define CKF_GAMEPAD     0x1
 #define CKF_UP          0x4000

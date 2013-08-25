@@ -114,12 +114,12 @@ int kexInput::GetButtonState(Uint8 buttonstate) const {
 //
 
 void kexInput::UpdateFocus(void) {
-    Uint8 state;
-    state = SDL_GetAppState();
+    Uint32 flags;
+    flags = SDL_GetWindowFlags(window);
     
     // We should have input (keyboard) focus and be visible 
     // (not minimised)
-    bWindowFocused = (state & SDL_APPINPUTFOCUS) && (state & SDL_APPACTIVE);
+    bWindowFocused = (flags & SDL_WINDOW_INPUT_FOCUS) && (flags & SDL_WINDOW_MOUSE_FOCUS);
 }
 
 //
@@ -171,28 +171,32 @@ void kexInput::GetEvent(const SDL_Event *Event) {
             if(!bWindowFocused)
                 break;
             
-            if(Event->button.button == SDL_BUTTON_WHEELUP) {
-                event.type = ev_mousewheel;
-                event.data1 = SDL_BUTTON_WHEELUP;
-            }
-            else if(Event->button.button == SDL_BUTTON_WHEELDOWN) {
-                event.type = ev_mousewheel;
-                event.data1 = SDL_BUTTON_WHEELDOWN;
-            }
-            else {
-                event.type = Event->type ==
-                    SDL_MOUSEBUTTONUP ? ev_mouseup : ev_mousedown;
-                event.data1 = Event->button.button;
-            }
-            
+            event.type = Event->type ==
+                SDL_MOUSEBUTTONUP ? ev_mouseup : ev_mousedown;
+            event.data1 = Event->button.button;
             event.data2 = event.data3 = 0;
             client.PostEvent(&event);
         }
         break;
-        
-    case SDL_ACTIVEEVENT:
-    case SDL_VIDEOEXPOSE:
-        UpdateFocus();
+
+    case SDL_MOUSEWHEEL: {
+           if(!bWindowFocused)
+               break;
+           
+           event.type = ev_mousewheel;
+           event.data1 = Event->wheel.y > 0 ? SDL_BUTTON_WHEELUP : SDL_BUTTON_WHEELDOWN;
+           event.data2 = event.data3 = 0;
+           client.PostEvent(&event);
+        }
+        break;
+    
+    case SDL_WINDOWEVENT:
+        if(Event->window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
+            UpdateFocus();
+        else if(Event->window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
+            bWindowFocused = false;
+            bGrabbed = false;
+        }
         break;
         
     case SDL_QUIT:
@@ -272,8 +276,7 @@ void kexInput::MoveMouse(int x, int y) {
 
 void kexInput::ActivateMouse(void) {
     SDL_SetCursor(cursors[1]);
-    SDL_WM_GrabInput(SDL_GRAB_ON);
-    SDL_ShowCursor(0);
+    SDL_SetRelativeMouseMode(SDL_TRUE);
 }
 
 //
@@ -282,8 +285,7 @@ void kexInput::ActivateMouse(void) {
 
 void kexInput::DeactivateMouse(void) {
     SDL_SetCursor(cursors[0]);
-    SDL_WM_GrabInput(SDL_GRAB_OFF);
-    SDL_ShowCursor(1);
+    SDL_SetRelativeMouseMode(SDL_FALSE);
 }
 
 //
@@ -312,7 +314,7 @@ void kexInput::UpdateGrab(void) {
 
 void kexInput::CenterMouse(void) {
     // Warp the the screen center
-    SDL_WarpMouse((unsigned short)(video_width/2), (unsigned short)(video_height/2));
+    SDL_WarpMouseInWindow(window, (unsigned short)(video_width/2), (unsigned short)(video_height/2));
     
     // Clear any relative movement caused by warping
     SDL_PumpEvents();

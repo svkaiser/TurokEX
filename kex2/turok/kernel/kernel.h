@@ -42,6 +42,9 @@ void Kernel_Main(int argc, char **argv);
 #define FIXED_WIDTH     320
 #define FIXED_HEIGHT    240
 
+extern SDL_Window *window;
+extern SDL_GLContext glContext;
+
 extern int video_width;
 extern int video_height;
 extern float video_ratio;

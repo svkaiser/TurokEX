@@ -38,7 +38,7 @@ kexCvar cvarVidHeight("v_height", CVF_INT|CVF_CONFIG, "480", "TODO");
 kexCvar cvarVidWindowed("v_windowed", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 kexCvar cvarVidVSync("v_vsync", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 kexCvar cvarVidDepthSize("v_depthsize", CVF_INT|CVF_CONFIG, "24", "TODO");
-kexCvar cvarVidStencilSize("v_stencilsize", CVF_INT|CVF_CONFIG, "24", "TODO");
+kexCvar cvarVidStencilSize("v_stencilsize", CVF_INT|CVF_CONFIG, "8", "TODO");
 kexCvar cvarVidBuffSize("v_buffersize", CVF_INT|CVF_CONFIG, "32", "TODO");
 
 //
@@ -93,11 +93,12 @@ void V_SetupScreen(void)
         cvarVidDepthSize.Set(24);
     }
 
-    if(cvarVidStencilSize.GetInt() != 8 &&
+    // TODO
+    if(cvarVidStencilSize.GetInt() != 8/* &&
         cvarVidStencilSize.GetInt() != 16 &&
-        cvarVidStencilSize.GetInt() != 24)
+        cvarVidStencilSize.GetInt() != 24*/)
     {
-        cvarVidStencilSize.Set(24);
+        cvarVidStencilSize.Set(8);
     }
     
     if(cvarVidBuffSize.GetInt() != 8 &&

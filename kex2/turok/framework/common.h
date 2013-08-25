@@ -23,6 +23,8 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
+#include <stdio.h>
+#include <stdlib.h>
 #include "SDL_endian.h"
 #include "shared.h"
 
