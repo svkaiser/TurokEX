@@ -308,7 +308,7 @@ void *(Z_Malloc)(int size, int tag, void **user, const char *file, int line)
     newblock->id = ZONEID;
     newblock->user = user;
     newblock->size = size;
-    newblock->ms = Sys_GetMilliseconds();
+    newblock->ms = sysMain.GetMS();
     
     Z_InsertBlock(newblock);
     
@@ -512,7 +512,7 @@ void (Z_Touch)(void *ptr, const char *file, int line)
     if(block->id != ZONEID)
         common.Error("Z_Touch: touched a pointer without ZONEID (%s:%d)", file, line);
 
-    block->ms = Sys_GetMilliseconds();
+    block->ms = sysMain.GetMS();
 #ifdef ZONEFILE
     Z_LogPrintf("* Z_Touch(ptr=%p, file=%s:%d)\n", ptr, file, line);
 #endif
@@ -638,7 +638,7 @@ void Z_CleanupTag(int tag)
 
     for(block = allocated_blocks[tag]; block != NULL; block = block->next)
     {
-        if(Sys_GetMilliseconds() - block->ms > 10000)
+        if(sysMain.GetMS() - block->ms > 10000)
         {
             memblock_t *next_block = block->prev;
 

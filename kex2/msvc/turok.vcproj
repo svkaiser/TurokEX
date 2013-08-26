@@ -245,18 +245,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="kernel"
-				>
-				<File
-					RelativePath="..\turok\kernel\kernel_main.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\kernel\kernel_video.cpp"
-					>
-				</File>
-			</Filter>
-			<Filter
 				Name="opengl"
 				>
 				<File
@@ -352,6 +340,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\framework\keymap.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\kstring.cpp"
 					>
 				</File>
@@ -377,6 +369,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\server.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\system.cpp"
 					>
 				</File>
 				<File
@@ -614,14 +610,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="kernel"
-				>
-				<File
-					RelativePath="..\turok\kernel\kernel.h"
-					>
-				</File>
-			</Filter>
-			<Filter
 				Name="server"
 				>
 				<File
@@ -697,6 +685,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\framework\keymap.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\keywds.h"
 					>
 				</File>
@@ -734,6 +726,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\shared.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\system.h"
 					>
 				</File>
 				<File

@@ -29,7 +29,7 @@
 #include "jsobj.h"
 #include "js_shared.h"
 #include "common.h"
-#include "kernel.h"
+#include "system.h"
 #include "packet.h"
 #include "client.h"
 #include "server.h"

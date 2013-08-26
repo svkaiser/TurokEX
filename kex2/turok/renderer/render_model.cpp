@@ -25,7 +25,7 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "kernel.h"
+#include "system.h"
 #include "zone.h"
 #include "gl.h"
 #include "client.h"
@@ -270,7 +270,7 @@ static void FCmd_LoadTestModel(void)
         return;
     }
 
-    time = Sys_GetMilliseconds();
+    time = sysMain.GetMS();
 
     model = Kmesh_Load(command.GetArgv(1));
     if(model == NULL)
@@ -279,7 +279,7 @@ static void FCmd_LoadTestModel(void)
     }
 
     common.DPrintf("\nloadtime: %f seconds\n\n",
-        (float)(Sys_GetMilliseconds() - time) / 1000.0f);
+        (float)(sysMain.GetMS() - time) / 1000.0f);
 }
 
 //

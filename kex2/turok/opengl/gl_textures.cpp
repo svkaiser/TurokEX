@@ -27,7 +27,7 @@
 #include "common.h"
 #include "gl.h"
 #include "zone.h"
-#include "kernel.h"
+#include "system.h"
 
 static texture_t *tex_hashlist[MAX_HASH];
 static texture_t *tex_default;

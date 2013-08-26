@@ -148,8 +148,8 @@ void Canvas_DrawFixedTile(canvas_t *canvas, texture_t *texture,
     float rw;
     float rh;
 
-    ratiox = (float)FIXED_WIDTH / video_width;
-    ratioy = (float)FIXED_HEIGHT / video_height;
+    ratiox = (float)FIXED_WIDTH / sysMain.VideoWidth();
+    ratioy = (float)FIXED_HEIGHT / sysMain.VideoHeight();
     rx = x / ratiox;
     rw = (float)texture->width / ratiox;
     ry = y / ratioy;
@@ -322,8 +322,8 @@ void Canvas_DrawFixedString(canvas_t *canvas, const char *string, float x, float
     float ry;
     float oldScale;
 
-    ratiox = (float)FIXED_WIDTH / video_width;
-    ratioy = (float)FIXED_HEIGHT / video_height;
+    ratiox = (float)FIXED_WIDTH / sysMain.VideoWidth();
+    ratioy = (float)FIXED_HEIGHT / sysMain.VideoHeight();
     rx = x / ratiox;
     ry = y / ratioy;
 
@@ -351,7 +351,7 @@ void Canvas_DrawActor(canvas_t *canvas, gActor_t *actor)
     // setup projection matrix
     dglMatrixMode(GL_PROJECTION);
     dglLoadIdentity();
-    Mtx_ViewFrustum(video_width, video_height, 45, 32, -1);
+    Mtx_ViewFrustum(sysMain.VideoWidth(), sysMain.VideoHeight(), 45, 32, -1);
 
     // setup modelview matrix
     dglMatrixMode(GL_MODELVIEW);
@@ -556,7 +556,7 @@ void Canvas_DrawPlaneOutlines(canvas_t *canvas)
     // setup projection matrix
     dglMatrixMode(GL_PROJECTION);
     dglLoadIdentity();
-    Mtx_ViewFrustum(video_width, video_height, 45, 32, -1);
+    Mtx_ViewFrustum(sysMain.VideoWidth(), sysMain.VideoHeight(), 45, 32, -1);
 
     zoom = -2048;
 

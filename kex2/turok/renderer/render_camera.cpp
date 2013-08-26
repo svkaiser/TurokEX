@@ -61,7 +61,7 @@ void R_RenderCameraView(void)
     if(dglIsEnabled(GL_FOG))
         dglGetFloatv(GL_FOG_END, &zfar);
 
-    Mtx_ViewFrustum(video_width, video_height, cvarClientFOV.GetFloat(), 0.1f, zfar);
+    Mtx_ViewFrustum(sysMain.VideoWidth(), sysMain.VideoHeight(), cvarClientFOV.GetFloat(), 0.1f, zfar);
 
     // setup modelview matrix
     dglMatrixMode(GL_MODELVIEW);

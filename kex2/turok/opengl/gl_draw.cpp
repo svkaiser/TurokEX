@@ -26,7 +26,7 @@
 
 #include "common.h"
 #include "gl.h"
-#include "kernel.h"
+#include "system.h"
 #include "zone.h"
 
 static vtx_t vtxstring[1024];
@@ -503,8 +503,8 @@ float Draw_BigText(float x, float y, byte alpha, kbool centered,
         return 0;
     }
 
-    ratiox = (float)FIXED_WIDTH / video_width;
-    ratioy = (float)FIXED_HEIGHT / video_height;
+    ratiox = (float)FIXED_WIDTH / sysMain.VideoWidth();
+    ratioy = (float)FIXED_HEIGHT / sysMain.VideoHeight();
 
     len = strlen(string);
 
@@ -743,8 +743,8 @@ void Draw_Pic(const char *pic, float x, float y, byte alpha, float scale)
         return;
     }
 
-    ratiox = (float)FIXED_WIDTH / video_width;
-    ratioy = (float)FIXED_HEIGHT / video_height;
+    ratiox = (float)FIXED_WIDTH / sysMain.VideoWidth();
+    ratioy = (float)FIXED_HEIGHT / sysMain.VideoHeight();
     rx = x / ratiox;
     rw = (float)tex->width / ratiox;
     ry = y / ratioy;

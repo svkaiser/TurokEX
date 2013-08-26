@@ -26,6 +26,7 @@
 #include <string.h>
 #include "common.h"
 #include "keywds.h"
+#include "array.h"
 
 class kexStr {
 public:
@@ -80,5 +81,8 @@ protected:
     int                 length;
     int                 bufferLength;
 };
+
+typedef kexArray<kexStr>    kexStrList;
+typedef kexArray<kexStr*>   kexStrListMem;
 
 #endif

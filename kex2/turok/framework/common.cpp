@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include "common.h"
 #include "zone.h"
-#include "kernel.h"
+#include "system.h"
 #include "filesystem.h"
 #include "console.h"
 
@@ -192,12 +192,12 @@ void kexCommon::WriteConfigFile(void) {
 //
 
 unsigned int kexCommon::HashFileName(const char *name) {
-    unsigned int hash   = 1315423911;
-    unsigned int i      = 0;
+    unsigned int hash   = 0;
     char *str           = (char*)name;
+    char c;
 
-    for(i = 0; i < strlen(name)-1 && *str != '\0'; str++, i++) {
-        hash ^= ((hash << 5) + toupper((int)*str) + (hash >> 2));
+    while((c = *str++)) {
+        hash = c + (hash << 6) + (hash << 16) - hash;
     }
 
     return hash & (MAX_HASH-1);

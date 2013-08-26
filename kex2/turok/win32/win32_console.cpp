@@ -32,7 +32,7 @@
 
 #include "SDL.h"
 #include "shared.h"
-#include "kernel.h"
+#include "system.h"
 
 #define EDIT_ID     100
 #define ENTER_ID    102
@@ -351,7 +351,7 @@ void Sys_Error(const char *string)
             DispatchMessage(&msg);
         }
 
-        Sys_Sleep(100);
+        sysMain.Sleep(100);
     }
 }
 

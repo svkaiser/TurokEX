@@ -27,7 +27,7 @@
 #include "js.h"
 #include "js_shared.h"
 #include "common.h"
-#include "kernel.h"
+#include "system.h"
 #include "client.h"
 #include "mathlib.h"
 

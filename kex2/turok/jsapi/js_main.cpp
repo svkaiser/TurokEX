@@ -28,7 +28,7 @@
 #include "js_shared.h"
 #include "common.h"
 #include "zone.h"
-#include "kernel.h"
+#include "system.h"
 #include "js_class.h"
 #include "debug.h"
 #include "client.h"
@@ -596,7 +596,7 @@ void J_GarbageCollect(void)
     JPool_ReleaseObjects(&objPoolInputEvent);
 
     if(cvarDeveloper.GetBool())
-        js_GCTime = Sys_GetMilliseconds();
+        js_GCTime = sysMain.GetMS();
 
     JS_MaybeGC(js_context);
 
@@ -606,7 +606,7 @@ void J_GarbageCollect(void)
 
     if(cvarDeveloper.GetBool())
     {
-        js_GCTime = Sys_GetMilliseconds() - js_GCTime;
+        js_GCTime = sysMain.GetMS() - js_GCTime;
         if(js_GCTime > (unsigned int)(((1.0f / cvarClientFPS.GetFloat()) * 1000) / 4))
         {
             common.DPrintf("GC hitch: %ims\n", js_GCTime);
@@ -681,7 +681,7 @@ void J_LogScript(JSFunction *func, JSScript *scr, JSContext *const_cx, JSBool en
  
     /* output information about the trace */
     common.Printf("%s JavaScript function: %s at time: %i",
-        entExit, nameStr, Sys_GetMilliseconds());
+        entExit, nameStr, sysMain.GetMS());
 }
 #endif
 

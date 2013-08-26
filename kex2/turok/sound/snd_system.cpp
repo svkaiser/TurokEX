@@ -517,7 +517,7 @@ static int SDLCALL Thread_SoundHandler(void *param)
         delay = sndTime - (SDL_GetTicks() - start);
 
         if(delay > 0)
-            Sys_Sleep(delay);
+            sysMain.Sleep(delay);
 
         if(bKillSoundThread)
             break;

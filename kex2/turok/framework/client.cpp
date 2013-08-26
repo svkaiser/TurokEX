@@ -28,7 +28,7 @@
 #include "common.h"
 #include "packet.h"
 #include "client.h"
-#include "kernel.h"
+#include "system.h"
 #include "render.h"
 #include "gl.h"
 #include "js.h"

@@ -27,7 +27,7 @@
 #include "js.h"
 #include "js_shared.h"
 #include "common.h"
-#include "kernel.h"
+#include "system.h"
 #include "zone.h"
 #include "array.h"
 #include "kstring.h"
@@ -139,7 +139,7 @@ void kexConsole::Print(rcolor color, const char *text) {
     if(cvarDeveloper.GetBool()) {
         /*memset(con_lastOutputBuffer, 0, 512);
         strcpy(con_lastOutputBuffer, kva("%f : %s",
-            (Sys_GetMilliseconds() / 1000.0f), s));*/
+            (sysMain.GetMS() / 1000.0f), s));*/
     }
 
     while(strLength > 0) {
@@ -272,7 +272,7 @@ void kexConsole::CheckStickyKeys(const event_t *ev) {
     switch(ev->type) {
     case ev_keydown:
         bKeyHeld = true;
-        timePressed = Sys_GetMilliseconds();
+        timePressed = sysMain.GetMS();
         break;
     case ev_keyup:
         bKeyHeld = false;
@@ -323,7 +323,7 @@ void kexConsole::ParseKey(int c) {
 //
 
 void kexConsole::StickyKeyTick(void) {
-    if(bKeyHeld && ((Sys_GetMilliseconds() - timePressed) >= CON_STICKY_TIME))
+    if(bKeyHeld && ((sysMain.GetMS() - timePressed) >= CON_STICKY_TIME))
         ParseKey(lastKeyPressed);
 }
 
@@ -724,8 +724,8 @@ void kexConsole::Draw(void) {
     bool bOverlay = (state == CON_STATE_UP && cvarDisplayConsole.GetBool());
     canvas_t canvas;
 
-    float w = (float)video_width;
-    float h = (float)video_height * 0.6875f;
+    float w = (float)sysMain.VideoWidth();
+    float h = (float)sysMain.VideoHeight() * 0.6875f;
 
     GL_SetState(GLSTATE_BLEND, 1);
 

@@ -24,7 +24,7 @@
 #define _CLIENT_H_
 
 #include "enet/enet.h"
-#include "kernel.h"
+#include "system.h"
 #include "actor.h"
 #include "game.h"
 #include "player.h"

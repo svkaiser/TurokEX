@@ -31,7 +31,7 @@
 #include "type.h"
 #include "gl.h"
 #include "zone.h"
-#include "kernel.h"
+#include "system.h"
 
 #define GL_MAX_INDICES  0x10000
 #define GL_MAX_VERTICES 0x10000
@@ -151,7 +151,7 @@ void GL_SetOrtho(void)
 {
     dglMatrixMode(GL_MODELVIEW);
     dglLoadIdentity();
-    dglOrtho(0, video_width, video_height, 0, -1, 1);
+    dglOrtho(0, sysMain.VideoWidth(), sysMain.VideoHeight(), 0, -1, 1);
     dglMatrixMode(GL_PROJECTION);
     dglLoadIdentity();
 }
@@ -163,7 +163,7 @@ void GL_SetOrtho(void)
 void GL_SwapBuffers(void)
 {
     dglFinish();
-    SDL_GL_SwapWindow(window);
+    sysMain.SwapBuffers();
 }
 
 //
@@ -228,8 +228,8 @@ dtexture GL_ScreenToTexture(void)
     dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     
-    width = Tex_PadDims(video_width);
-    height = Tex_PadDims(video_height);
+    width = Tex_PadDims(sysMain.VideoWidth());
+    height = Tex_PadDims(sysMain.VideoHeight());
 
     dglTexImage2D(
         GL_TEXTURE_2D,
@@ -281,14 +281,14 @@ void GL_SetTextureFilter(void)
 
 static void CalcViewSize(void)
 {
-    ViewWidth = video_width;
-    ViewHeight = video_height;
+    ViewWidth = sysMain.VideoWidth();
+    ViewHeight = sysMain.VideoHeight();
 
     widescreen = !fcmp(((float)ViewWidth / (float)ViewHeight), (4.0f / 3.0f));
 
-    ViewWindowX = (video_width - ViewWidth) / 2;
+    ViewWindowX = (sysMain.VideoWidth() - ViewWidth) / 2;
 
-    if(ViewWidth == video_width)
+    if(ViewWidth == sysMain.VideoWidth())
         ViewWindowY = 0;
     else
         ViewWindowY = (ViewHeight) / 2;
@@ -561,41 +561,6 @@ void GL_DrawElements(unsigned int count, vtx_t *vtx)
 
 void GL_Init(void)
 {
-    uint32 flags = 0;
-
-    V_SetupScreen();
-
-    SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_ACCUM_RED_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_ACCUM_GREEN_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_ACCUM_BLUE_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_ACCUM_ALPHA_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_BUFFER_SIZE, cvarVidBuffSize.GetInt());
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, cvarVidDepthSize.GetInt());
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, cvarVidStencilSize.GetInt());
-    SDL_GL_SetSwapInterval(cvarVidVSync.GetBool());
-    
-    flags |= SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_INPUT_FOCUS | SDL_WINDOW_MOUSE_FOCUS;
-    
-    if(!video_windowed)
-        flags |= SDL_WINDOW_FULLSCREEN;
-
-    window = SDL_CreateWindow(
-        kva("Kex Engine - Version Date: %s", __DATE__),
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        video_width, video_height, flags);
-    
-    if(window == NULL) {
-        common.Error("GL_Init: Failed to create window");
-    }
-
-    if((glContext = SDL_GL_CreateContext(window)) == NULL)
-        common.Error("GL_Init: Failed to create opengl context");
-
     gl_vendor = (const char*)dglGetString(GL_VENDOR);
     common.Printf("GL_VENDOR: %s\n", gl_vendor);
     gl_renderer = (const char*)dglGetString(GL_RENDERER);
@@ -609,7 +574,7 @@ void GL_Init(void)
     
     CalcViewSize();
 
-    dglViewport(0, 0, video_width, video_height);
+    dglViewport(0, 0, sysMain.VideoWidth(), sysMain.VideoHeight());
     dglClearDepth(1.0f);
     dglClearStencil(0);
     dglDisable(GL_TEXTURE_2D);

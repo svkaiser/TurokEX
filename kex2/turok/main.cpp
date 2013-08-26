@@ -25,7 +25,7 @@
 //-----------------------------------------------------------------------------
 
 #include "SDL.h"
-#include "kernel.h"
+#include "system.h"
 #include "common.h"
 
 //
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 
 int Kex_Main(int argc, char *argv[])
 {
-    Kernel_Main(argc, argv);
+    sysMain.Main(argc, argv);
     return 0;
 }
 

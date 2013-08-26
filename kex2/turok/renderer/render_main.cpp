@@ -27,7 +27,7 @@
 #include "SDL_opengl.h"
 #include "common.h"
 #include "gl.h"
-#include "kernel.h"
+#include "system.h"
 #include "render.h"
 #include "mathlib.h"
 #include "client.h"
@@ -878,7 +878,7 @@ static void R_DrawSkies(void)
     // new projection
     dglMatrixMode(GL_PROJECTION);
     dglLoadIdentity();
-    Mtx_ViewFrustum(video_width, video_height, cl_fov.value, 0.1f);
+    Mtx_ViewFrustum(sysMain.VideoWidth(), sysMain.VideoHeight(), cl_fov.value, 0.1f);
 
     // new model matrix
     dglMatrixMode(GL_MODELVIEW);
@@ -1050,13 +1050,13 @@ static void R_ScreenShot(void)
     if(shotnum >= 1000)
         return;
 
-    if((video_height % 2))  // height must be power of 2
+    if((sysMain.VideoHeight() % 2))  // height must be power of 2
         return;
 
-    if(!(buff = GL_GetScreenBuffer(0, 0, video_width, video_height, false)))
+    if(!(buff = GL_GetScreenBuffer(0, 0, sysMain.VideoWidth(), sysMain.VideoHeight(), false)))
         return;
 
-    Img_WriteTGA(name, buff, video_width, video_height);
+    Img_WriteTGA(name, buff, sysMain.VideoWidth(), sysMain.VideoHeight());
     common.Printf("Saved Screenshot %s\n", name);
 }
 

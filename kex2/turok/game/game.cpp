@@ -27,7 +27,7 @@
 #include "common.h"
 #include "client.h"
 #include "server.h"
-#include "kernel.h"
+#include "system.h"
 #include "mathlib.h"
 #include "level.h"
 #include "zone.h"

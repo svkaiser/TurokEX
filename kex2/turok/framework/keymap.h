@@ -1,7 +1,7 @@
 // Emacs style mode select   -*- C++ -*- 
 //-----------------------------------------------------------------------------
 //
-// Copyright(C) 2007-2012 Samuel Villarreal
+// Copyright(C) 2013 Samuel Villarreal
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -20,35 +20,33 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef _KERNEL_H_
-#define _KERNEL_H_
+#ifndef __KEYMAP_H__
+#define __KEYMAP_H__
 
-#include "SDL.h"
-#include "shared.h"
-#include "input.h"
-#include "keyinput.h"
+class kexHashKey {
+public:
+                            kexHashKey(const char *key, const char *value);
+                            ~kexHashKey(void);
 
-//
-// SYSTEM
-//
-void Sys_Sleep(unsigned long usecs);
-void Sys_Shutdown(void);
-int Sys_GetMilliseconds(void);
-void Kernel_Main(int argc, char **argv);
+    const char              *GetName(void) { return key.c_str(); }
+    const char              *GetString(void) { return value.c_str(); }
 
-//
-// VIDEO
-//
-#define FIXED_WIDTH     320
-#define FIXED_HEIGHT    240
+private:
+    kexStr                  key;
+    kexStr                  value;
+};
 
-extern SDL_Window *window;
-extern SDL_GLContext glContext;
+class kexKeyMap {
+public:
+                            kexKeyMap(void);
+                            ~kexKeyMap(void);
 
-extern int video_width;
-extern int video_height;
-extern float video_ratio;
-extern kbool video_windowed;
-void V_SetupScreen(void);
+    void                    Add(const char *key, const char *value);
+    kexHashKey              *Find(const char *name);
+    void                    Empty(void);
+
+private:
+    kexArray<kexHashKey*>   hashlist[MAX_HASH];
+};
 
 #endif

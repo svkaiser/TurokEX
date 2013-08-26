@@ -30,7 +30,7 @@
 #include "mathlib.h"
 #include "gl.h"
 #include "zone.h"
-#include "kernel.h"
+#include "system.h"
 
 JSObject *js_objMatrix;
 
@@ -387,7 +387,7 @@ static JSBool matrix_setProjection(JSContext *cx, JSObject *obj, uintN argc,
 
     dglMatrixMode(GL_PROJECTION);
     dglLoadIdentity();
-    Mtx_ViewFrustum(video_width, video_height,
+    Mtx_ViewFrustum(sysMain.VideoWidth(), sysMain.VideoHeight(),
         (float)fov, (float)znear, -1);
 
     return JS_TRUE;

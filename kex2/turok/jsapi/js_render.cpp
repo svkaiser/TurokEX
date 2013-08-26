@@ -57,9 +57,9 @@ JS_PROP_FUNC_GET(NRender)
             obj = J_NewObjectEx(cx, NULL, NULL, NULL);
 
             JS_AddRoot(cx, &obj);
-            JS_DefineProperty(cx, obj, "width",  INT_TO_JSVAL(video_width),
+            JS_DefineProperty(cx, obj, "width",  INT_TO_JSVAL(sysMain.VideoWidth()),
                 NULL, NULL, JSPROP_ENUMERATE);
-            JS_DefineProperty(cx, obj, "height", INT_TO_JSVAL(video_height),
+            JS_DefineProperty(cx, obj, "height", INT_TO_JSVAL(sysMain.VideoHeight()),
                 NULL, NULL, JSPROP_ENUMERATE);
             JS_RemoveRoot(cx, &obj);
 

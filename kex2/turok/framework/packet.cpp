@@ -28,7 +28,7 @@
 #include "enet/enet.h"
 #include "common.h"
 #include "zone.h"
-#include "kernel.h"
+#include "system.h"
 #include "packet.h"
 
 kexPacketManager packetManager;

@@ -28,7 +28,7 @@
 
 #include "SDL.h"
 #include "common.h"
-#include "kernel.h"
+#include "system.h"
 #include "client.h"
 #include "input.h"
 
@@ -115,7 +115,7 @@ int kexInput::GetButtonState(Uint8 buttonstate) const {
 
 void kexInput::UpdateFocus(void) {
     Uint32 flags;
-    flags = SDL_GetWindowFlags(window);
+    flags = sysMain.GetWindowFlags();
     
     // We should have input (keyboard) focus and be visible 
     // (not minimised)
@@ -200,7 +200,7 @@ void kexInput::GetEvent(const SDL_Event *Event) {
         break;
         
     case SDL_QUIT:
-        Sys_Shutdown();
+        sysMain.Shutdown();
         break;
         
     default:
@@ -236,7 +236,7 @@ bool kexInput::MouseShouldBeGrabbed(void) const {
         return true;
     }
 
-    if(!video_windowed) {
+    if(!sysMain.IsWindowed()) {
         return true;
     }
 
@@ -314,7 +314,9 @@ void kexInput::UpdateGrab(void) {
 
 void kexInput::CenterMouse(void) {
     // Warp the the screen center
-    SDL_WarpMouseInWindow(window, (unsigned short)(video_width/2), (unsigned short)(video_height/2));
+    SDL_WarpMouseInWindow(sysMain.Window(),
+        (unsigned short)(sysMain.VideoWidth()/2),
+        (unsigned short)(sysMain.VideoHeight()/2));
     
     // Clear any relative movement caused by warping
     SDL_PumpEvents();

@@ -27,7 +27,7 @@
 #include "js.h"
 #include "js_shared.h"
 #include "common.h"
-#include "kernel.h"
+#include "system.h"
 #include "client.h"
 #include "zone.h"
 #include "gl.h"
@@ -100,8 +100,8 @@ JS_FASTNATIVE_BEGIN(Sys, error)
 
 JS_FASTNATIVE_BEGIN(Sys, ms)
 {
-    //return JS_NewNumberValue(cx, Sys_GetMilliseconds(), vp);
-    JS_SET_RVAL(cx, vp, INT_TO_JSVAL(Sys_GetMilliseconds()));
+    //return JS_NewNumberValue(cx, sysMain.GetMS(), vp);
+    JS_SET_RVAL(cx, vp, INT_TO_JSVAL(sysMain.GetMS()));
     return JS_TRUE;
 }
 

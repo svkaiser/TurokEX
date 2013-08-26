@@ -100,11 +100,12 @@ void kexFileSystem::Shutdown(void) {
 //
 
 long kexFileSystem::HashFileName(const char *fname, int hashSize) const {
-    unsigned int hash   = 1315423911;
+    unsigned int hash   = 0;
     char *str           = (char*)fname;
+    char c;
 
-    for(unsigned int i = 0; i < strlen(fname)-1 && *str != '\0'; str++, i++) {
-        hash ^= ((hash << 5) + toupper((int)*str) + (hash >> 2));
+    while((c = *str++)) {
+        hash = c + (hash << 6) + (hash << 16) - hash;
     }
 
     return hash & (hashSize-1);
@@ -227,8 +228,8 @@ int kexFileSystem::OpenFile(const char *filename, byte **data, int tag) const {
 // kexFileSystem::GetMatchingFiles
 //
 
-kexArray<kexStr*> *kexFileSystem::GetMatchingFiles(const char *search) {
-    kexArray<kexStr*> *strlist = new kexArray<kexStr*>(true);
+kexStrListMem *kexFileSystem::GetMatchingFiles(const char *search) {
+    kexStrListMem *strlist = new kexStrListMem(true);
 
     for(kpf_t *pack = root; pack; pack = pack->next) {
         for(unsigned int i = 0; i < pack->numfiles; i++) {

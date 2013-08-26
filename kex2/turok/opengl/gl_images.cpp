@@ -30,7 +30,7 @@
 #include "type.h"
 #include "gl.h"
 #include "zone.h"
-#include "kernel.h"
+#include "system.h"
 #include "filesystem.h"
 
 kexCvar cvarGamma("gl_gamma", CVF_FLOAT|CVF_CONFIG, "0", "TODO");

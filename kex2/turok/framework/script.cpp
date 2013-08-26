@@ -26,7 +26,7 @@
 
 #include <string.h>
 #include "common.h"
-#include "kernel.h"
+#include "system.h"
 #include "zone.h"
 #include "script.h"
 #include "filesystem.h"
