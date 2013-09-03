@@ -25,6 +25,7 @@
 
 #include <math.h>
 #include "shared.h"
+#include "kstring.h"
 
 #ifdef M_PI
 #undef M_PI
@@ -144,6 +145,139 @@ float Random_CFloat(void);
 // BOUNDING BOX OPERATIONS
 //
 void BBox_Transform(bbox_t srcBox, mtx_t matrix, bbox_t *out);
+
+class kexVec3;
+
+class kexQuat {
+public:
+                            kexQuat();
+
+                            explicit kexQuat(const float angle, const float x, const float y, const float z);
+                            explicit kexQuat(const float angle, kexVec3 &vector);
+
+    void                    Set(const float x, const float y, const float z, const float w);
+    void                    Clear(void);
+    float                   Dot(const kexQuat &quat) const;
+    float                   UnitSq(void) const;
+    float                   Unit(void) const;
+    kexQuat                 &Normalize(void);
+    kexQuat                 Slerp(const kexQuat &quat, float movement) const;
+
+    kexQuat                 operator-(void) const;
+    kexQuat                 operator+(const kexQuat &quat);
+    kexQuat                 &operator+=(const kexQuat &quat);
+    kexQuat                 operator-(const kexQuat &quat);
+    kexQuat                 &operator-=(const kexQuat &quat);
+    kexQuat                 operator*(const kexQuat &quat);
+    kexQuat                 operator*(const float val) const;
+    kexQuat                 &operator*=(const kexQuat &quat);
+    kexQuat                 &operator*=(const float val);
+    kexQuat                 &operator=(const kexQuat &quat);
+
+    float                   x;
+    float                   y;
+    float                   z;
+    float                   w;
+
+    static void             ObjectConstruct1(kexQuat *thisq);
+    static void             ObjectConstruct2(float a, float x, float y, float z, kexVec3 *thisq);
+    static void             ObjectConstruct3(float a, kexVec3 &in, kexQuat *thisq);
+    static void             ObjectConstructCopy(const kexQuat &in, kexQuat *thisq);
+};
+
+class kexVec3 {
+public:
+                            kexVec3();
+                            explicit kexVec3(const float x, const float y, const float z);
+
+    void                    Set(const float x, const float y, const float z);
+    void                    Clear(void);
+    float                   Dot(const kexVec3 &vec) const;
+    static float            Dot(const kexVec3 &vec1, const kexVec3 &vec2);
+    kexVec3                 Cross(const kexVec3 &vec) const;
+    kexVec3                 &Cross(const kexVec3 &vec1, const kexVec3 &vec2);
+    float                   UnitSq(void) const;
+    float                   Unit(void) const;
+    float                   DistanceSq(const kexVec3 &vec) const;
+    float                   Distance(const kexVec3 &vec) const;
+    kexVec3                 &Normalize(void);
+    kexVec3                 PointAt(kexVec3 &location) const;
+    kexVec3                 Lerp(const kexVec3 &next, float movement) const;
+    kexVec3                 &Lerp(const kexVec3 &start, const kexVec3 &next, float movement);
+    kexQuat                 ToQuat(void);
+    float                   ToYaw(void) const;
+    float                   ToPitch(void) const;
+    kexStr                  ToString(void) const;
+
+    kexVec3                 operator+(const kexVec3 &vec);
+    kexVec3                 operator-(void) const;
+    kexVec3                 operator-(const kexVec3 &vec) const;
+    kexVec3                 operator*(const kexVec3 &vec);
+    kexVec3                 operator*(const float val);
+    kexVec3                 operator/(const kexVec3 &vec);
+    kexVec3                 operator/(const float val);
+    kexVec3                 operator|(const kexQuat &quat);
+    kexVec3                 &operator=(const kexVec3 &vec);
+    kexVec3                 &operator+=(const kexVec3 &vec);
+    kexVec3                 &operator-=(const kexVec3 &vec);
+    kexVec3                 &operator*=(const kexVec3 &vec);
+    kexVec3                 &operator*=(const float val);
+    kexVec3                 &operator/=(const kexVec3 &vec);
+    kexVec3                 &operator/=(const float val);
+    kexVec3                 &operator|=(const kexQuat &quat);
+
+    static const kexVec3    vecForward;
+    static const kexVec3    vecUp;
+    static const kexVec3    vecRight;
+
+    float                   x;
+    float                   y;
+    float                   z;
+
+    static void             ObjectConstruct1(kexVec3 *thisvec);
+    static void             ObjectConstruct2(float x, float y, float z, kexVec3 *thisvec);
+    static void             ObjectConstructCopy(const kexVec3 &in, kexVec3 *thisvec);
+};
+
+class kexVec4 {
+public:
+                            kexVec4();
+                            explicit kexVec4(const float x, const float y, const float z, const float w);
+
+    void                    Set(const float x, const float y, const float z, const float w);
+    void                    Clear(void);
+    
+    const kexVec3           &ToVec3(void) const;
+    kexVec3                 &ToVec3(void);
+
+    float                   x;
+    float                   y;
+    float                   z;
+    float                   w;
+};
+
+class kexMatrix {
+public:
+                        kexMatrix();
+                        kexMatrix(const kexMatrix &mtx);
+                        kexMatrix(const float x, const float y, const float z);
+    kexMatrix           &Identity(void);
+    kexMatrix           &Identity(const float x, const float y, const float z);
+    kexMatrix           &SetTranslation(const float x, const float y, const float z);
+    kexMatrix           &SetTranslation(const kexVec3 &vector);
+    kexMatrix           &AddTranslation(const float x, const float y, const float z);
+    kexMatrix           &AddTranslation(const kexVec3 &vector);
+    kexMatrix           &Scale(const float x, const float y, const float z);
+    kexMatrix           &Scale(const kexVec3 &vector);
+    static kexMatrix    Scale(const kexMatrix &mtx, const float x, const float y, const float z);
+    kexMatrix           &Transpose(void);
+    static kexMatrix    Transpose(const kexMatrix &mtx);
+    
+    kexMatrix           operator*(const kexVec3 vector);
+    kexMatrix           &operator*=(const kexVec3 vector);
+    
+    kexVec4             vectors[4];
+};
 
 #endif
 

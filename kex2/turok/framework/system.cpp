@@ -42,6 +42,7 @@
 #include "debug.h"
 #include "filesystem.h"
 #include "console.h"
+#include "scriptAPI/scriptSystem.h"
 
 kexCvar cvarDeveloper("developer", CVF_BOOL|CVF_CONFIG, "0", "Developer mode");
 kexCvar cvarFixedTime("fixedtime", CVF_INT|CVF_CONFIG, "0", "TODO");
@@ -141,6 +142,8 @@ void kexSystem::Shutdown(void) {
     Tex_Shutdown();
     R_Shutdown();
     G_Shutdown();
+
+    scriptManager.Shutdown();
     fileSystem.Shutdown();
     client.Shutdown();
     server.Shutdown();
@@ -373,6 +376,7 @@ void kexSystem::Main(int argc, char **argv) {
     common.Printf("Debug System Initialized\n");
 
     fileSystem.Init();
+    scriptManager.Init();
 
     Snd_Init();
     common.Printf("Sound System Initialized (%s)\n", Snd_GetDeviceName());

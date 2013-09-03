@@ -554,6 +554,127 @@ static void Map_GetAreaLinkCount(void)
 }
 
 //
+// Map_ImportObjToKNav
+//
+
+static void Map_ImportObjToKNav(const char *filename) {
+    kexLexer *lexer;
+    filepath_t file;
+
+    sprintf(file, filename);
+
+    if(lexer = parser.Open(file)) {
+        int numpoints = 0;
+        float *verts = NULL;
+        int pointRover = 0;
+        int *faces = NULL;
+        int numfaces = 0;
+        int faceRover = 0;
+
+        while(lexer->CheckState()) {
+            lexer->Find();
+
+            switch(lexer->TokenType()) {
+            case TK_NONE:
+            case TK_EOF:
+                break;
+            case TK_IDENIFIER:
+                if(!strcmp(lexer->Token(), "o")) {
+                    lexer->Find();
+                }
+                else if(!strcmp(lexer->Token(), "v")) {
+                    numpoints++;
+                    verts = (float*)Z_Realloc(verts,
+                        sizeof(float) * (numpoints * 3), PU_STATIC, 0);
+
+                    verts[pointRover++] = (float)lexer->GetFloat() * 256.0f;
+                    verts[pointRover++] = (float)lexer->GetFloat() * 256.0f;
+                    verts[pointRover++] = (float)lexer->GetFloat() * 256.0f;
+                }
+                else if(!strcmp(lexer->Token(), "f")) {
+                    numfaces++;
+                    faces = (int*)Z_Realloc(faces,
+                        sizeof(int) * (numfaces * 3), PU_STATIC, 0);
+
+                    faces[faceRover++] = lexer->GetNumber() - 1;
+                    faces[faceRover++] = lexer->GetNumber() - 1;
+                    faces[faceRover++] = lexer->GetNumber() - 1;
+                }
+                break;
+            }
+        }
+
+        parser.Close();
+
+        int *links = (int*)Z_Calloc(sizeof(int) * (numfaces * 3), PU_STATIC, 0);
+        memset(links, -1, sizeof(int) * (numfaces * 3));
+
+        for(int i = 0; i < numfaces * 3; i += 3) {
+            int *face = &faces[i];
+
+            for(int j = 0; j < 3; j++) {
+                if(links[i + j] != -1)
+                    continue;
+
+                int link1 = face[j];
+                int link2 = face[(j + 1) % 3];
+                bool ok = false;
+
+                for(int k = 0; k < numfaces * 3; k += 3) {
+                    if(k == i)
+                        continue;
+
+                    int *nface = &faces[k];
+
+                    for(int l = 0; l < 3; l++) {
+                        int nlink1 = nface[l];
+                        int nlink2 = nface[(l + 1) % 3];
+
+                        if(link2 == nlink1 && link1 == nlink2) {
+                            links[i + j] = (k / 3);
+                            links[k + l] = (i / 3); 
+                            ok = true;
+                            break;
+                        }
+                    }
+
+                    if(ok == true)
+                        break;
+                }
+            }
+        }
+
+        FILE *f = fopen("out.kcm", "w");
+        fprintf(f, "numpoints = %i\n", numpoints);
+        fprintf(f, "numleafs = %i\n", numfaces);
+        fprintf(f, "points = {\n");
+        for(int i = 0; i < numpoints; i++) {
+            fprintf(f, "%f %f %f 0.0\n",
+                verts[i * 3 + 0],
+                verts[i * 3 + 1],
+                verts[i * 3 + 2]);
+        }
+        fprintf(f, "}\n");
+        fprintf(f, "leafs = {\n");
+        for(int i = 0; i < numfaces; i++) {
+            fprintf(f, "0 0 %i %i %i %i %i %i\n",
+                faces[i * 3 + 0],
+                faces[i * 3 + 1],
+                faces[i * 3 + 2],
+                links[i * 3 + 0],
+                links[i * 3 + 1],
+                links[i * 3 + 2]);
+        }
+        fprintf(f, "}\n");
+        fclose(f);
+
+        Z_Free(verts);
+        Z_Free(faces);
+        Z_Free(links);
+    }
+}
+
+//
 // Map_Tick
 //
 
@@ -766,6 +887,17 @@ static void FCmd_SpawnActor(void)
 }
 
 //
+// FCmd_ImportObjToKNav
+//
+
+static void FCmd_ImportObjToKNav(void) {
+    if(command.GetArgc() <= 0)
+        return;
+
+    Map_ImportObjToKNav(command.GetArgv(1));
+}
+
+//
 // Map_Init
 //
 
@@ -778,6 +910,7 @@ void Map_Init(void)
     command.Add("loadmap", FCmd_LoadTestMap);
     command.Add("unloadmap", FCmd_UnloadMap);
     command.Add("spawnactor", FCmd_SpawnActor);
+    command.Add("importObjToKNav", FCmd_ImportObjToKNav);
 
     Debug_RegisterPerfStatVar((float*)&numAreaActors, "Area Link Count", false);
 }

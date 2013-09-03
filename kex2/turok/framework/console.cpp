@@ -132,7 +132,7 @@ void kexConsole::OutputTextLine(rcolor color, const char *text) {
 //
 
 void kexConsole::Print(rcolor color, const char *text) {
-    unsigned int strLength = strlen(text);
+    int strLength = strlen(text);
     char *curText = (char*)text;
     char tmpChar[CON_LINE_LENGTH];
 

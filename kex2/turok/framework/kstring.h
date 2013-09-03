@@ -24,8 +24,6 @@
 #define __KSTRING_H__
 
 #include <string.h>
-#include "common.h"
-#include "keywds.h"
 #include "array.h"
 
 class kexStr {
@@ -37,6 +35,7 @@ public:
 
     void                CheckSize(int size, bool bKeepString);
     int                 IndexOf(const char *pattern) const;
+    int                 IndexOf(const kexStr &pattern) const;
     kexStr              &Concat(const char *string);
     kexStr              &Concat(const char *string, int len);
     kexStr              &NormalizeSlashes(void);
@@ -57,6 +56,8 @@ public:
     kexStr              operator+(const kexStr &str);
     kexStr              operator+(const char *str);
     kexStr              operator+(const bool b);
+    kexStr              operator+(const int i);
+    kexStr              operator+(const float f);
     kexStr              &operator+=(const kexStr &str);
     kexStr              &operator+=(const char *str);
     kexStr              &operator+=(const bool b);
@@ -66,6 +67,11 @@ public:
     
     static bool         Compare(const kexStr &a, const kexStr &b);
     static int          IndexOf(const char *string, const char *pattern);
+
+    static void         ObjectConstruct(kexStr *thisstring);
+    static void         ObjectConstructCopy(const kexStr &in, kexStr *thisstring);
+    static kexStr       ObjectFactory(unsigned int byteLength, const char *s);
+    static void         ObjectDeconstruct(kexStr *thisstring);
 
 private:
     void                Resize(int size, bool bKeepString);
@@ -82,7 +88,7 @@ protected:
     int                 bufferLength;
 };
 
-typedef kexArray<kexStr>    kexStrList;
-typedef kexArray<kexStr*>   kexStrListMem;
+typedef kexArray<kexStr>        kexStrList;
+typedef kexPtrArray<kexStr*>    kexStrListMem;
 
 #endif

@@ -151,7 +151,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\openal\include\&quot;;&quot;$(OutDir)\SDL2\include\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\sound\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDir)\turok\jsapi\&quot;;&quot;$(OutDir)\turok\parse\&quot;;&quot;$(OutDir)\turok\game\&quot;"
+				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\openal\include\&quot;;&quot;$(OutDir)\SDL2\include\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\angelscript\angelscript\include&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\sound\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDir)\turok\jsapi\&quot;;&quot;$(OutDir)\turok\parse\&quot;;&quot;$(OutDir)\turok\game\&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -178,7 +178,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="SDL2.lib SDL2main.lib opengl32.lib glu32.lib enet.lib ws2_32.lib winmm.lib js32.lib openal32.lib eaxguid.lib"
+				AdditionalOptions="/LTCG"
+				AdditionalDependencies="SDL2.lib SDL2main.lib opengl32.lib glu32.lib enet.lib angelscript.lib ws2_32.lib winmm.lib js32.lib openal32.lib eaxguid.lib"
 				OutputFile="$(OutDir)\msvc\bin\KEX2.EXE"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -299,6 +300,10 @@
 					RelativePath="..\turok\renderer\render_shadows.cpp"
 					>
 				</File>
+				<File
+					RelativePath="..\turok\renderer\renderSystem.cpp"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="framework"
@@ -405,6 +410,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\math\plane.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\math\quaternion.cpp"
 					>
 				</File>
 				<File
@@ -595,6 +604,18 @@
 					RelativePath="..\turok\game\player.cpp"
 					>
 				</File>
+				<Filter
+					Name="scriptAPI"
+					>
+					<File
+						RelativePath="..\turok\game\scriptAPI\scriptSystem.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\game\scriptAPI\systemObject.cpp"
+						>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 		<Filter
@@ -634,6 +655,10 @@
 				>
 				<File
 					RelativePath="..\turok\renderer\render.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\renderSystem.h"
 					>
 				</File>
 			</Filter>
@@ -820,6 +845,14 @@
 					RelativePath="..\turok\game\player.h"
 					>
 				</File>
+				<Filter
+					Name="scriptAPI"
+					>
+					<File
+						RelativePath="..\turok\game\scriptAPI\scriptSystem.h"
+						>
+					</File>
+				</Filter>
 			</Filter>
 		</Filter>
 		<Filter

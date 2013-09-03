@@ -24,8 +24,8 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "common.h"
 #include <math.h>
+#include "common.h"
 #include "mathlib.h"
 
 //
@@ -533,3 +533,491 @@ void Vec_PointToAxis(vec3_t out, vec3_t p1, vec3_t p2)
     out[2] = (float)cos(an1);
 }
 
+const kexVec3 kexVec3::vecRight(1, 0, 0);
+const kexVec3 kexVec3::vecUp(0, 1, 0);
+const kexVec3 kexVec3::vecForward(0, 0, 1);
+
+//
+// kexVec3::kexVec3
+//
+
+kexVec3::kexVec3() {
+    Clear();
+}
+
+//
+// kexVec3::kexVec3
+//
+
+kexVec3::kexVec3(const float x, const float y, const float z) {
+    Set(x, y, z);
+}
+
+//
+// kexVec3::Set
+//
+
+void kexVec3::Set(const float x, const float y, const float z) {
+    this->x = x;
+    this->y = y;
+    this->z = z;
+}
+
+//
+// kexVec3::Clear
+//
+
+void kexVec3::Clear(void) {
+    x = y = z = 0.0f;
+}
+
+//
+// kexVec3::Dot
+//
+
+float kexVec3::Dot(const kexVec3 &vec) const {
+    return (x * vec.x + y * vec.y + z * vec.z);
+}
+
+//
+// kexVec3::Dot
+//
+
+float kexVec3::Dot(const kexVec3 &vec1, const kexVec3 &vec2) {
+    return (vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z);
+}
+
+//
+// kexVec3::Cross
+//
+
+kexVec3 kexVec3::Cross(const kexVec3 &vec) const {
+    return kexVec3(
+        vec.z * y - z * vec.y,
+        vec.x * z - x * vec.z,
+        x * vec.y - vec.x * y
+    );
+}
+
+//
+// kexVec3::Cross
+//
+
+kexVec3 &kexVec3::Cross(const kexVec3 &vec1, const kexVec3 &vec2) {
+    x = vec2.z * vec1.y - vec1.z * vec2.y;
+    y = vec2.x * vec1.z - vec1.x * vec2.z;
+    z = vec1.x * vec2.y - vec2.x * vec1.y;
+
+    return *this;
+}
+
+//
+// kexVec3::UnitSq
+//
+
+float kexVec3::UnitSq(void) const {
+    return x * x + y * y + z * z;
+}
+
+//
+// kexVec3::Unit
+//
+
+float kexVec3::Unit(void) const {
+    return (float)sqrt(UnitSq());
+}
+
+//
+// kexVec3::DistanceSq
+//
+
+float kexVec3::DistanceSq(const kexVec3 &vec) const {
+    return (
+        (x - vec.x) * (x - vec.x) +
+        (y - vec.y) * (y - vec.y) +
+        (z - vec.z) * (z - vec.z)
+    );
+}
+
+//
+// kexVec3::Distance
+//
+
+float kexVec3::Distance(const kexVec3 &vec) const {
+    return (float)sqrt(DistanceSq(vec));
+}
+
+//
+// kexVec3::Normalize
+//
+
+kexVec3 &kexVec3::Normalize(void) {
+    float d = Unit();
+    if(d != 0.0f) {
+        d = 1.0f / d;
+        *this *= d;
+    }
+    return *this;
+}
+
+//
+// kexVec3::PointAt
+//
+
+kexVec3 kexVec3::PointAt(kexVec3 &location) const {
+    float an1 = (float)atan2(location.x - x, location.z - z);
+    float an2 = (float)atan2(location.Distance(*this), location.y - y);
+
+    return kexVec3(
+        (float)sin(an1),
+        (float)cos(an2),
+        (float)cos(an1)
+    );
+}
+
+//
+// kexVec3::Lerp
+//
+
+kexVec3 kexVec3::Lerp(const kexVec3 &next, float movement) const {
+    return (next - *this) * movement + *this;
+}
+
+//
+// kexVec3::Lerp
+//
+
+kexVec3 &kexVec3::Lerp(const kexVec3 &start, const kexVec3 &next, float movement) {
+    *this = (next - start) * movement + start;
+    return *this;
+}
+
+//
+// kexVec3::ToQuat
+//
+
+kexQuat kexVec3::ToQuat(void) {
+    float d = Unit();
+
+    if(d == 0.0f)
+        return kexQuat();
+
+    kexVec3 scv = *this * (1.0f / d);
+    float angle = (float)acos(scv.z);
+
+    return kexQuat(angle, vecForward.Cross(scv).Normalize());
+}
+
+//
+// kexVec3::ToYaw
+//
+
+float kexVec3::ToYaw(void) const {
+    float d = x * x + z * z;
+
+    if(d == 0.0f)
+        return 0.0f;
+
+    float an = -(z / (float)sqrt(d));
+
+    if(an >  1.0f) an =  1.0f;
+    if(an < -1.0f) an = -1.0f;
+
+    if(-x <= 0.0f) {
+        return -(float)acos(an);
+    }
+
+    return (float)acos(an);
+}
+
+//
+// kexVec3::ToPitch
+//
+
+float kexVec3::ToPitch(void) const {
+    float d = UnitSq();
+    
+    if(d == 0.0f)
+        return 0.0f;
+        
+    return (float)acos(y / (float)sqrt(d));
+}
+
+//
+// kexVec3::ToString
+//
+
+kexStr kexVec3::ToString(void) const {
+    kexStr str;
+    str = str + x + " " + y + " " + z;
+    return str;
+}
+
+//
+// kexVec3::operator+
+//
+
+kexVec3 kexVec3::operator+(const kexVec3 &vec) {
+    return kexVec3(x + vec.x, y + vec.y, z + vec.z);
+}
+
+//
+// kexVec3::operator+=
+//
+
+kexVec3 &kexVec3::operator+=(const kexVec3 &vec) {
+    x += vec.x;
+    y += vec.y;
+    z += vec.z;
+    return *this;
+}
+
+//
+// kexVec3::operator-
+//
+
+kexVec3 kexVec3::operator-(const kexVec3 &vec) const {
+    return kexVec3(x - vec.x, y - vec.y, z - vec.z);
+}
+
+//
+// kexVec3::operator-
+//
+
+kexVec3 kexVec3::operator-(void) const {
+    return kexVec3(-x, -y, -z);
+}
+
+//
+// kexVec3::operator-=
+//
+
+kexVec3 &kexVec3::operator-=(const kexVec3 &vec) {
+    x -= vec.x;
+    y -= vec.y;
+    z -= vec.z;
+    return *this;
+}
+
+//
+// kexVec3::operator*
+//
+
+kexVec3 kexVec3::operator*(const kexVec3 &vec) {
+    return kexVec3(x * vec.x, y * vec.y, z * vec.z);
+}
+
+//
+// kexVec3::operator*=
+//
+
+kexVec3 &kexVec3::operator*=(const kexVec3 &vec) {
+    x *= vec.x;
+    y *= vec.y;
+    z *= vec.z;
+    return *this;
+}
+
+//
+// kexVec3::operator*
+//
+
+kexVec3 kexVec3::operator*(const float val) {
+    return kexVec3(x * val, y * val, z * val);
+}
+
+//
+// kexVec3::operator*=
+//
+
+kexVec3 &kexVec3::operator*=(const float val) {
+    x *= val;
+    y *= val;
+    z *= val;
+    return *this;
+}
+
+//
+// kexVec3::operator/
+//
+
+kexVec3 kexVec3::operator/(const kexVec3 &vec) {
+    return kexVec3(x / vec.x, y / vec.y, z / vec.z);
+}
+
+//
+// kexVec3::operator/=
+//
+
+kexVec3 &kexVec3::operator/=(const kexVec3 &vec) {
+    x /= vec.x;
+    y /= vec.y;
+    z /= vec.z;
+    return *this;
+}
+
+//
+// kexVec3::operator/
+//
+
+kexVec3 kexVec3::operator/(const float val) {
+    return kexVec3(x / val, y / val, z / val);
+}
+
+//
+// kexVec3::operator/=
+//
+
+kexVec3 &kexVec3::operator/=(const float val) {
+    x /= val;
+    y /= val;
+    z /= val;
+    return *this;
+}
+
+//
+// kexVec3::operator|
+//
+
+kexVec3 kexVec3::operator|(const kexQuat &quat) {
+    float xx = quat.x * quat.x;
+    float yx = quat.y * quat.x;
+    float zx = quat.z * quat.x;
+    float wx = quat.w * quat.x;
+    float yy = quat.y * quat.y;
+    float zy = quat.z * quat.y;
+    float wy = quat.w * quat.y;
+    float zz = quat.z * quat.z;
+    float wz = quat.w * quat.z;
+    float ww = quat.w * quat.w;
+
+    return kexVec3(
+        ((yx + yx) - (wz + wz)) * y +
+        ((wy + wy + zx + zx)) * z +
+        (((ww + xx) - yy) - zz) * x,
+        ((yy + (ww - xx)) - zz) * y +
+        ((zy + zy) - (wx + wx)) * z +
+        ((wz + wz) + (yx + yx)) * x,
+        ((wx + wx) + (zy + zy)) * y +
+        (((ww - xx) - yy) + zz) * z +
+        ((zx + zx) - (wy + wy)) * x
+    );
+}
+
+//
+// kexVec3::operator|=
+//
+
+kexVec3 &kexVec3::operator|=(const kexQuat &quat) {
+    float xx = quat.x * quat.x;
+    float yx = quat.y * quat.x;
+    float zx = quat.z * quat.x;
+    float wx = quat.w * quat.x;
+    float yy = quat.y * quat.y;
+    float zy = quat.z * quat.y;
+    float wy = quat.w * quat.y;
+    float zz = quat.z * quat.z;
+    float wz = quat.w * quat.z;
+    float ww = quat.w * quat.w;
+    float vx = x;
+    float vy = y;
+    float vz = z;
+
+    x = ((yx + yx) - (wz + wz)) * vy +
+        ((wy + wy + zx + zx)) * vz +
+        (((ww + xx) - yy) - zz) * vx;
+    y = ((yy + (ww - xx)) - zz) * vy +
+        ((zy + zy) - (wx + wx)) * vz +
+        ((wz + wz) + (yx + yx)) * vx;
+    z = ((wx + wx) + (zy + zy)) * vy +
+        (((ww - xx) - yy) + zz) * vz +
+        ((zx + zx) - (wy + wy)) * vx;
+
+    return *this;
+}
+
+//
+// kexVec3::operator=
+//
+
+kexVec3 &kexVec3::operator=(const kexVec3 &vec) {
+    x = vec.x;
+    y = vec.y;
+    z = vec.z;
+    return *this;
+}
+
+//
+// kexVec3::ObjectConstruct1
+//
+
+void kexVec3::ObjectConstruct1(kexVec3 *thisvec) {
+    new(thisvec)kexVec3();
+}
+
+//
+// kexVec3::ObjectConstruct2
+//
+
+void kexVec3::ObjectConstruct2(float x, float y, float z, kexVec3 *thisvec) {
+    new(thisvec)kexVec3(x, y, z);
+}
+
+//
+// kexVec3::ObjectConstructCopy
+//
+
+void kexVec3::ObjectConstructCopy(const kexVec3 &in, kexVec3 *thisvec) {
+    new(thisvec)kexVec3(in);
+}
+
+//
+// kexVec4::kexVec4
+//
+
+kexVec4::kexVec4() {
+    Clear();
+}
+
+//
+// kexVec4::kexVec4
+//
+
+kexVec4::kexVec4(const float x, const float y, const float z, const float w) {
+    Set(x, y, z, w);
+}
+
+//
+// kexVec4::Set
+//
+
+void kexVec4::Set(const float x, const float y, const float z, const float w) {
+    this->x = x;
+    this->y = y;
+    this->z = z;
+    this->w = w;
+}
+
+//
+// kexVec4::Clear
+//
+
+void kexVec4::Clear(void) {
+    x = y = z = w = 0.0f;
+}
+
+//
+// kexVec4::ToVec3
+//
+
+kexVec3 const &kexVec4::ToVec3(void) const {
+    return *reinterpret_cast<const kexVec3*>(this);
+}
+
+//
+// kexVec4::ToVec3
+//
+
+kexVec3 &kexVec4::ToVec3(void) {
+    return *reinterpret_cast<kexVec3*>(this);
+}

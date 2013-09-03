@@ -140,7 +140,6 @@ void kexCommand::Execute(const char *buffer) {
                 }
 
                 b_rover++;
-
                 continue;
             }
 
@@ -186,8 +185,7 @@ void kexCommand::Execute(const char *buffer) {
 
                 // a token as been found; increment argc
                 if(!havetoken) {
-                    if(++cmd_argc >= CMD_MAX_ARGV)
-                    {
+                    if(++cmd_argc >= CMD_MAX_ARGV) {
                         break;
                     }
 

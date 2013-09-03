@@ -75,7 +75,7 @@ void kexKeyMap::Add(const char *key, const char *value) {
 
 void kexKeyMap::Empty(void) {
     for(int i = 0; i < MAX_HASH; i++)
-        hashlist[i].~kexArray();
+        hashlist[i].~kexPtrArray();
 }
 
 //
@@ -84,7 +84,7 @@ void kexKeyMap::Empty(void) {
 
 kexHashKey *kexKeyMap::Find(const char *name) {
     kexHashKey *k;
-    kexArray<kexHashKey*> *keyList;
+    kexPtrArray<kexHashKey*> *keyList;
 
     keyList = &hashlist[common.HashFileName(name)];
 

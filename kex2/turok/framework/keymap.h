@@ -25,28 +25,28 @@
 
 class kexHashKey {
 public:
-                            kexHashKey(const char *key, const char *value);
-                            ~kexHashKey(void);
+                                kexHashKey(const char *key, const char *value);
+                                ~kexHashKey(void);
 
-    const char              *GetName(void) { return key.c_str(); }
-    const char              *GetString(void) { return value.c_str(); }
+    const char                  *GetName(void) { return key.c_str(); }
+    const char                  *GetString(void) { return value.c_str(); }
 
 private:
-    kexStr                  key;
-    kexStr                  value;
+    kexStr                      key;
+    kexStr                      value;
 };
 
 class kexKeyMap {
 public:
-                            kexKeyMap(void);
-                            ~kexKeyMap(void);
+                                kexKeyMap(void);
+                                ~kexKeyMap(void);
 
-    void                    Add(const char *key, const char *value);
-    kexHashKey              *Find(const char *name);
-    void                    Empty(void);
+    void                        Add(const char *key, const char *value);
+    kexHashKey                  *Find(const char *name);
+    void                        Empty(void);
 
 private:
-    kexArray<kexHashKey*>   hashlist[MAX_HASH];
+    kexPtrArray<kexHashKey*>    hashlist[MAX_HASH];
 };
 
 #endif

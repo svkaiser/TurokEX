@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <new>
 #include "SDL_endian.h"
 #include "shared.h"
 

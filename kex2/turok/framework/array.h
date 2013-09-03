@@ -23,6 +23,8 @@
 #ifndef __KEXARRAY_H__
 #define __KEXARRAY_H__
 
+#include <assert.h>
+
 template<class type>
 class kexArray {
 public:
@@ -40,10 +42,21 @@ public:
     void                IsPointer(bool IsPointer) { bPointer = IsPointer; }
     type                GetData(const int index) { return data[index]; }
 
-private:
+    type                &operator[](unsigned int index);
+
+protected:
     type                *data;
     unsigned int        length;
     bool                bPointer;
+};
+
+template <class type>
+class kexPtrArray : public kexArray<type> {
+public:
+                    kexPtrArray(void);
+                    ~kexPtrArray(void);
+
+    void            DeleteContents(void);
 };
 
 //
@@ -71,22 +84,8 @@ kexArray<type>::kexArray(bool bIsPointer) {
 //
 template<class type>
 kexArray<type>::~kexArray() {
-    if(bPointer)
-        EmptyContents();
-
     if(data)
         delete[] data;
-}
-
-//
-// kexArray::EmptyContents
-//
-template<class type>
-void kexArray<type>::EmptyContents(void) {
-    for(unsigned int i = 0; i < length; i++) {
-        delete data[i];
-        data[i] = NULL;
-    }
 }
 
 //
@@ -197,6 +196,42 @@ void kexArray<type>::Splice(const unsigned int start, unsigned int len) {
     delete[] data;
     data = tmp;
     length = length - len;
+}
+
+//
+// kexArray::operator[]
+//
+template <class type>
+type &kexArray<type>::operator[](unsigned int index) {
+    assert(index < length);
+    return data[index];
+}
+
+//
+// kexPtrArray::kexPtrArray
+//
+template <class type>
+kexPtrArray<type>::kexPtrArray(void) {
+    bPointer = true;
+}
+
+//
+// kexPtrArray::~kexPtrArray
+//
+template<class type>
+kexPtrArray<type>::~kexPtrArray() {
+    DeleteContents();
+}
+
+//
+// kexPtrArray::EmptyContents
+//
+template<class type>
+void kexPtrArray<type>::DeleteContents(void) {
+    for(unsigned int i = 0; i < length; i++) {
+        delete data[i];
+        data[i] = NULL;
+    }
 }
 
 #endif

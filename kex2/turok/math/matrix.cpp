@@ -685,3 +685,190 @@ void Mtx_ApplyRotation(vec4_t rot, mtx_t out)
     out[14] = 0;
     out[15] = 1;
 }
+
+//
+// kexMatrix::kexMatrix
+//
+
+kexMatrix::kexMatrix() {
+    Identity();
+}
+
+//
+// kexMatrix::kexMatrix
+//
+
+kexMatrix::kexMatrix(const kexMatrix &mtx) {
+    for(int i = 0; i < 4; i++) {
+        vectors[i].x = mtx.vectors[i].x;
+        vectors[i].y = mtx.vectors[i].y;
+        vectors[i].z = mtx.vectors[i].z;
+        vectors[i].w = mtx.vectors[i].w;
+    }
+}
+
+//
+// kexMatrix::kexMatrix
+//
+
+kexMatrix::kexMatrix(const float x, const float y, const float z) {
+    Identity(x, y, z);
+}
+
+//
+// kexMatrix::Identity
+//
+
+kexMatrix &kexMatrix::Identity(void) {
+    vectors[0].Set(1, 0, 0, 0);
+    vectors[1].Set(0, 1, 0, 0);
+    vectors[2].Set(0, 0, 1, 0);
+    vectors[3].Set(0, 0, 0, 1);
+
+    return *this;
+}
+
+//
+// kexMatrix::Identity
+//
+
+kexMatrix &kexMatrix::Identity(const float x, const float y, const float z) {
+    vectors[0].Set(x, 0, 0, 0);
+    vectors[1].Set(0, y, 0, 0);
+    vectors[2].Set(0, 0, z, 0);
+    vectors[3].Set(0, 0, 0, 1);
+
+    return *this;
+}
+
+//
+// kexMatrix::SetTranslation
+//
+
+kexMatrix &kexMatrix::SetTranslation(const float x, const float y, const float z) {
+    vectors[3].ToVec3().Set(x, y, z);
+    return *this;
+}
+
+//
+// kexMatrix::SetTranslation
+//
+
+kexMatrix &kexMatrix::SetTranslation(const kexVec3 &vector) {
+    vectors[3].ToVec3() = vector;
+    return *this;
+}
+
+//
+// kexMatrix::AddTranslation
+//
+
+kexMatrix &kexMatrix::AddTranslation(const float x, const float y, const float z) {
+    vectors[3].x += x;
+    vectors[3].y += y;
+    vectors[3].z += z;
+    return *this;
+}
+
+//
+// kexMatrix::AddTranslation
+//
+
+kexMatrix &kexMatrix::AddTranslation(const kexVec3 &vector) {
+    vectors[3].ToVec3() += vector;
+    return *this;
+}
+
+//
+// kexMatrix::Scale
+//
+
+kexMatrix &kexMatrix::Scale(const float x, const float y, const float z) {
+    for(int i = 0; i < 3; i++) {
+        vectors[i].x *= x;
+        vectors[i].y *= y;
+        vectors[i].z *= z;
+    }
+
+    return *this;
+}
+
+//
+// kexMatrix::Scale
+//
+
+kexMatrix &kexMatrix::Scale(const kexVec3 &vector) {
+    for(int i = 0; i < 3; i++)
+        vectors[i].ToVec3() *= vector;
+
+    return *this;
+}
+
+//
+// kexMatrix::Scale
+//
+
+kexMatrix kexMatrix::Scale(const kexMatrix &mtx, const float x, const float y, const float z) {
+    kexMatrix out;
+    for(int i = 0; i < 3; i++) {
+        out.vectors[i].x = mtx.vectors[i].x * x;
+        out.vectors[i].y = mtx.vectors[i].y * y;
+        out.vectors[i].z = mtx.vectors[i].z * z;
+    }
+
+    return out;
+}
+
+//
+// kexMatrix::Transpose
+//
+
+kexMatrix &kexMatrix::Transpose(void) {
+    kexVec3 v1 = vectors[1].ToVec3();
+    kexVec3 v2 = vectors[2].ToVec3();
+    
+    vectors[1].ToVec3() = v2;
+    vectors[2].ToVec3() = v1;
+    return *this;
+}
+
+//
+// kexMatrix::Transpose
+//
+
+kexMatrix kexMatrix::Transpose(const kexMatrix &mtx) {
+    kexMatrix out;
+    
+    out.vectors[0].ToVec3() = mtx.vectors[0].ToVec3();
+    out.vectors[1].ToVec3() = mtx.vectors[2].ToVec3();
+    out.vectors[2].ToVec3() = mtx.vectors[1].ToVec3();
+    out.vectors[3].ToVec3() = mtx.vectors[3].ToVec3();
+
+    return out;
+}
+
+//
+// kexMatrix::operator*
+//
+
+kexMatrix kexMatrix::operator*(const kexVec3 vector) {
+    kexMatrix out(*this);
+    
+    out.vectors[3].ToVec3() +=
+        vectors[0].ToVec3() * vector.x +
+        vectors[1].ToVec3() * vector.y +
+        vectors[2].ToVec3() * vector.z;
+    return out;
+}
+
+//
+// kexMatrix::operator*=
+//
+
+kexMatrix &kexMatrix::operator*=(const kexVec3 vector) {
+    vectors[3].ToVec3() +=
+        vectors[0].ToVec3() * vector.x +
+        vectors[1].ToVec3() * vector.y +
+        vectors[2].ToVec3() * vector.z;
+    return *this;
+}

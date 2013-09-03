@@ -77,9 +77,7 @@ kexStr::kexStr(const char *string) {
     if(string == NULL)
         return;
 
-    int len = strlen(string);
-    CopyNew(string, len);
-    charPtr[len] = '\0';
+    CopyNew(string, strlen(string));
 }
 
 //
@@ -236,6 +234,32 @@ kexStr kexStr::operator+(const bool b) {
 }
 
 //
+// kexStr::operator+
+//
+
+kexStr kexStr::operator+(const int i) {
+    kexStr out(*this);
+
+    char tmp[64];
+    sprintf(tmp, "%i", i);
+    
+    return out.Concat(tmp);
+}
+
+//
+// kexStr::operator+
+//
+
+kexStr kexStr::operator+(const float f) {
+    kexStr out(*this);
+
+    char tmp[64];
+    sprintf(tmp, "%f", f);
+    
+    return out.Concat(tmp);
+}
+
+//
 // kexStr::operator+=
 //
 
@@ -329,6 +353,14 @@ int kexStr::IndexOf(const char *string, const char *pattern) {
     }
 
     return -1;
+}
+
+//
+// kexStr::IndexOf
+//
+
+int kexStr::IndexOf(const kexStr &pattern) const {
+    return IndexOf(pattern.c_str());
 }
 
 //
@@ -470,4 +502,36 @@ bool kexStr::Compare(const kexStr &a, const kexStr &b) {
         return (*s2 - *s1) != 0;
         
     return false;
+}
+
+//
+// kexStr::ObjectConstruct
+//
+
+void kexStr::ObjectConstruct(kexStr *thisstring) {
+    new(thisstring)kexStr();
+}
+
+//
+// kexStr::ObjectConstructCopy
+//
+
+void kexStr::ObjectConstructCopy(const kexStr &in, kexStr *thisstring) {
+    new(thisstring)kexStr(in);
+}
+
+//
+// kexStr::ObjectFactory
+//
+
+kexStr kexStr::ObjectFactory(unsigned int byteLength, const char *s) {
+    return kexStr(s);
+}
+
+//
+// kexStr::ObjectDeconstruct
+//
+
+void kexStr::ObjectDeconstruct(kexStr *thisstring) {
+    thisstring->~kexStr();
 }

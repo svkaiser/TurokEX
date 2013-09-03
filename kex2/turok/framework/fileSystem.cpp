@@ -229,7 +229,7 @@ int kexFileSystem::OpenFile(const char *filename, byte **data, int tag) const {
 //
 
 kexStrListMem *kexFileSystem::GetMatchingFiles(const char *search) {
-    kexStrListMem *strlist = new kexStrListMem(true);
+    kexStrListMem *strlist = new kexStrListMem();
 
     for(kpf_t *pack = root; pack; pack = pack->next) {
         for(unsigned int i = 0; i < pack->numfiles; i++) {

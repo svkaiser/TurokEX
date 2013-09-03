@@ -27,24 +27,6 @@
 #include "array.h"
 #include "kstring.h"
 
-typedef struct {
-    char            name[MAX_FILEPATH];
-    unsigned long   position;
-    unz_file_info   info;
-    void*           cache;
-} file_t;
-
-typedef struct kpf_s {
-    unzFile         *filehandle;
-    unsigned int    numfiles;
-    char            filename[MAX_FILEPATH];
-    file_t          *files;
-    file_t          ***hashes;
-    unsigned int    *hashcount;
-    unsigned int    hashentries;
-    struct kpf_s    *next;
-} kpf_t;
-
 class kexFileSystem {
 public:
                         kexFileSystem();
@@ -60,6 +42,25 @@ public:
 
 private:
     long                HashFileName(const char *fname, int hashSize) const;
+
+    typedef struct {
+        char            name[MAX_FILEPATH];
+        unsigned long   position;
+        unz_file_info   info;
+        void*           cache;
+    } file_t;
+
+    typedef struct kpf_s {
+        unzFile         *filehandle;
+        unsigned int    numfiles;
+        char            filename[MAX_FILEPATH];
+        file_t          *files;
+        file_t          ***hashes;
+        unsigned int    *hashcount;
+        unsigned int    hashentries;
+        struct kpf_s    *next;
+    } kpf_t;
+
     kpf_t               *root;
     char                *base;
 };
