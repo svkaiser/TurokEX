@@ -39,7 +39,7 @@ public:
 
 private:
     void                RegisterBasicTypes(void);
-    void                RegisterNameSpaces(void);
+    void                RegisterObjects(void);
 
     static void         MessageCallback(const asSMessageInfo *msg, void *param);
 
@@ -58,6 +58,46 @@ public:
     static void         DPrintf(const kexStr &str);
     static void         Error(const kexStr &str);
     static const int    GetMS(void);
+};
+
+class kexScriptObjHandle  {
+public:
+                        kexScriptObjHandle();
+                        kexScriptObjHandle(const kexScriptObjHandle &other);
+                        kexScriptObjHandle(void *ref, asIObjectType *type);
+                        ~kexScriptObjHandle();
+
+    kexScriptObjHandle  &operator=(const kexScriptObjHandle &other);
+    void                Set(void *ref, asIObjectType *type);
+
+    bool                operator==(const kexScriptObjHandle &o) const;
+    bool                operator!=(const kexScriptObjHandle &o) const;
+    bool                Equals(void *ref, int typeId) const;
+
+    void                Cast(void **outRef, int typeId);
+    asIObjectType       *GetType(void);
+
+    static void         Init(void);
+    static void         ObjectConstruct(kexScriptObjHandle *self) { new(self)kexScriptObjHandle(); }
+    static void         ObjectConstruct(kexScriptObjHandle *self, const kexScriptObjHandle &other) {
+                            new(self)kexScriptObjHandle(other);
+                        }
+    static void         ObjectConstruct(kexScriptObjHandle *self, void *ref, int typeID) {
+                            new(self)kexScriptObjHandle(ref, typeID);
+                        }
+    static void         ObjectDeconstruct(kexScriptObjHandle *self) { self->~kexScriptObjHandle(); }
+
+protected:
+    void                ReleaseHandle(void);
+    void                AddRefHandle(void);
+
+    // These shouldn't be called directly by the 
+    // application as they requires an active context
+    kexScriptObjHandle(void *ref, int typeId);
+    kexScriptObjHandle &Assign(void *ref, int typeId);
+
+    void                *m_ref;
+    asIObjectType       *m_type;
 };
 
 #endif

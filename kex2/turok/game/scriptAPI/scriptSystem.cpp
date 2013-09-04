@@ -101,7 +101,7 @@ void kexScriptManager::Init(void) {
     ctx = engine->CreateContext();
 
     RegisterBasicTypes();
-    RegisterNameSpaces();
+    RegisterObjects();
 
     command.Add("call", FCmd_Call);
     common.Printf("Script System Initialized\n");
@@ -154,11 +154,12 @@ void kexScriptManager::CallExternalScript(const char *file, const char *function
 }
 
 //
-// kexScriptManager::RegisterNameSpaces
+// kexScriptManager::RegisterObjects
 //
 
-void kexScriptManager::RegisterNameSpaces(void) {
+void kexScriptManager::RegisterObjects(void) {
     kexScriptObjSystem::Init();
+    kexScriptObjHandle::Init();
 }
 
 //

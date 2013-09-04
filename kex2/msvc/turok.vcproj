@@ -608,6 +608,10 @@
 					Name="scriptAPI"
 					>
 					<File
+						RelativePath="..\turok\game\scriptAPI\refObject.cpp"
+						>
+					</File>
+					<File
 						RelativePath="..\turok\game\scriptAPI\scriptSystem.cpp"
 						>
 					</File>

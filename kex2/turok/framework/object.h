@@ -41,7 +41,8 @@ public:                                                 \
 
 #define DEFINE_CLASS(classname, supername)              \
     kexRTTI classname::info(#classname, #supername,     \
-        classname::Create);                             \
+        classname::Create,                              \
+        (void(kexObject::*)(void))&classname::Spawn);   \
     kexRTTI *classname::GetInfo(void) const {           \
         return &(classname::info);                      \
     }
@@ -61,16 +62,20 @@ public:                                                 \
 class kexObject;
 class kexRTTI;
 
+typedef void(kexObject::*spawnObjFunc_t)(void);
+
 class kexRTTI {
 public:
                             kexRTTI(const char *classname, const char *supername,
-                                kexObject *(*Create)(void));
+                                kexObject *(*Create)(void),
+                                void(kexObject::*Spawn)(void));
                             ~kexRTTI(void);
                             
     void                    Init(void);
     void                    Destroy(void);
     bool                    InstanceOf(const kexRTTI *objInfo) const;
     kexObject               *(*Create)(void);
+    void                    (kexObject::*Spawn)(void);
     
     int                     type_id;
     const char              *classname;
@@ -80,11 +85,14 @@ public:
 };
 
 BEGIN_CLASS(kexObject);
-    virtual                 ~kexObject(void);
+                            ~kexObject(void);
     
     const char              *GetClassName(void) const;
     const char              *GetSuperName(void) const;
     bool                    InstanceOf(const kexRTTI *objInfo) const;
+    void                    CallSpawn(void);
+    void                    Spawn(void);
+    spawnObjFunc_t          ExecSpawnFunction(kexRTTI *objInfo);
     
     static void             Init(void);
     static void             Shutdown(void);

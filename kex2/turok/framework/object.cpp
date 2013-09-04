@@ -32,12 +32,22 @@
 //
 
 kexRTTI::kexRTTI(const char *classname, const char *supername,
-    kexObject *(*Create)(void)) {
-    this->classname = classname;
-    this->supername = supername;
-    this->Create = Create;
-    this->type_id = ++kexObject::roverID;
-    this->super = kexObject::Get(supername);
+    kexObject *(*Create)(void), void(kexObject::*Spawn)(void)) {
+    this->classname     = classname;
+    this->supername     = supername;
+    this->Create        = Create;
+    this->Spawn         = Spawn;
+    this->type_id       = ++kexObject::roverID;
+    this->super         = kexObject::Get(supername);
+
+    // link all classes with supers to this class if not referenced yet
+    for(kexRTTI *rtti = kexObject::root; rtti != NULL; rtti = rtti->next) {
+        if(rtti->super == NULL &&
+            !strcmp(rtti->supername, this->classname) &&
+            strcmp(rtti->classname, "kexObject")) {
+                rtti->super = this;
+        }
+    }
     
     if(kexObject::root == NULL) {
         this->next = NULL;
@@ -129,6 +139,40 @@ void kexObject::Shutdown(void) {
     }
     
     bInitialized = false;
+}
+
+//
+// kexObject::ExecSpawnFunction
+//
+
+spawnObjFunc_t kexObject::ExecSpawnFunction(kexRTTI *objInfo) {
+    spawnObjFunc_t func;
+
+    if(objInfo->super) {
+        if((func = ExecSpawnFunction(objInfo->super)) == objInfo->Spawn) {
+            return func;
+        }
+    }
+
+    func = objInfo->Spawn;
+    (this->*objInfo->Spawn)();
+
+    return func;
+}
+
+//
+// kexObject::CallSpawn
+//
+
+void kexObject::CallSpawn(void) {
+    ExecSpawnFunction(GetInfo());
+}
+
+//
+// kexObject::Spawn
+//
+
+void kexObject::Spawn(void) {
 }
 
 //

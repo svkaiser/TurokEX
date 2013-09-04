@@ -33,18 +33,37 @@
 
 void kexScriptObjSystem::Init(void) {
     scriptManager.Engine()->SetDefaultNamespace("Sys");
-    scriptManager.Engine()->RegisterGlobalFunction("void Print(const kStr &in)",
-        asFUNCTION(Printf), asCALL_CDECL);
-    scriptManager.Engine()->RegisterGlobalFunction("void Log(const kStr &in)",
-        asFUNCTION(DPrintf), asCALL_CDECL);
-    scriptManager.Engine()->RegisterGlobalFunction("void CPrint(int, const kStr &in)",
-        asFUNCTION(CPrintf), asCALL_CDECL);
-    scriptManager.Engine()->RegisterGlobalFunction("void Warning(const kStr &in)",
-        asFUNCTION(Warning), asCALL_CDECL);
-    scriptManager.Engine()->RegisterGlobalFunction("void Error(const kStr &in)",
-        asFUNCTION(Error), asCALL_CDECL);
-    scriptManager.Engine()->RegisterGlobalFunction("const int GetMS(void)",
-        asFUNCTION(GetMS), asCALL_CDECL);
+
+    scriptManager.Engine()->RegisterGlobalFunction(
+        "void Print(const kStr &in)",
+        asFUNCTION(Printf),
+        asCALL_CDECL);
+
+    scriptManager.Engine()->RegisterGlobalFunction(
+        "void Log(const kStr &in)",
+        asFUNCTION(DPrintf),
+        asCALL_CDECL);
+
+    scriptManager.Engine()->RegisterGlobalFunction(
+        "void CPrint(int, const kStr &in)",
+        asFUNCTION(CPrintf),
+        asCALL_CDECL);
+
+    scriptManager.Engine()->RegisterGlobalFunction(
+        "void Warning(const kStr &in)",
+        asFUNCTION(Warning),
+        asCALL_CDECL);
+
+    scriptManager.Engine()->RegisterGlobalFunction(
+        "void Error(const kStr &in)",
+        asFUNCTION(Error),
+        asCALL_CDECL);
+
+    scriptManager.Engine()->RegisterGlobalFunction(
+        "const int GetMS(void)",
+        asFUNCTION(GetMS),
+        asCALL_CDECL);
+
     scriptManager.Engine()->SetDefaultNamespace("");
 }
 
