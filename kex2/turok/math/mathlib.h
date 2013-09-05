@@ -279,5 +279,18 @@ public:
     kexVec4             vectors[4];
 };
 
+class kexPluecker {
+public:
+                        kexPluecker();
+                        kexPluecker(const kexVec3 &start, const kexVec3 &end, bool bRay = false);
+
+    void                Clear(void);
+    void                SetLine(const kexVec3 &start, const kexVec3 &end);
+    void                SetRay(const kexVec3 &start, const kexVec3 &dir);
+    float               InnerProduct(const kexPluecker &pluecker) const;
+
+    float               p[6];
+};
+
 #endif
 

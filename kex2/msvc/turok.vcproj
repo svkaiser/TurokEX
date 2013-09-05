@@ -413,6 +413,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\math\pluecker.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\math\quaternion.cpp"
 					>
 				</File>
