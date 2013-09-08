@@ -690,7 +690,7 @@ void Mtx_ApplyRotation(vec4_t rot, mtx_t out)
 // kexMatrix::kexMatrix
 //
 
-kexMatrix::kexMatrix() {
+kexMatrix::kexMatrix(void) {
     Identity();
 }
 

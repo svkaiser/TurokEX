@@ -414,7 +414,7 @@ static void DrawPlaneOutline(plane_t *plane, int idx, float zoom)
 
         if(area->triggerSound)
             outlineColor = RGBA(255, 0, 160, 255);
-        else if(plane->flags & CLF_ONESIDED)
+        else if(plane->flags & (CLF_ONESIDED|AAF_UNKNOWN1000))
             outlineColor = RGBA(128, 96, 64, 255);
         else if(area->flags & AAF_WATER)
             outlineColor = RGBA(0, 0, 255, 255);

@@ -60,17 +60,11 @@ int numFxCount = 0;
 static float wpn_thudoffset = 0;
 static mtx_t mtx_rotation;
 
-static double viewMatrix[16];
-static double projMatrix[16];
+static mtx_t viewMatrix;
+static mtx_t projMatrix;
 static float frustum[6][4];
 
 kbool showorigin = false;
-
-#define CALCMATRIX(a, b, c, d, e, f, g, h)  \
-    (float)(viewMatrix[a] * projMatrix[b] + \
-    viewMatrix[c] * projMatrix[d] +         \
-    viewMatrix[e] * projMatrix[f] +         \
-    viewMatrix[g] * projMatrix[h])
 
 //
 // R_SetupClipFrustum
@@ -80,28 +74,10 @@ void R_SetupClipFrustum(void)
 {
    mtx_t clip;
 
-   dglGetDoublev(GL_PROJECTION_MATRIX, projMatrix);
-   dglGetDoublev(GL_MODELVIEW_MATRIX, viewMatrix);
+   dglGetFloatv(GL_PROJECTION_MATRIX, projMatrix);
+   dglGetFloatv(GL_MODELVIEW_MATRIX, viewMatrix);
 
-   clip[0]  = CALCMATRIX(0, 0, 1, 4, 2, 8, 3, 12);
-   clip[1]  = CALCMATRIX(0, 1, 1, 5, 2, 9, 3, 13);
-   clip[2]  = CALCMATRIX(0, 2, 1, 6, 2, 10, 3, 14);
-   clip[3]  = CALCMATRIX(0, 3, 1, 7, 2, 11, 3, 15);
-
-   clip[4]  = CALCMATRIX(4, 0, 5, 4, 6, 8, 7, 12);
-   clip[5]  = CALCMATRIX(4, 1, 5, 5, 6, 9, 7, 13);
-   clip[6]  = CALCMATRIX(4, 2, 5, 6, 6, 10, 7, 14);
-   clip[7]  = CALCMATRIX(4, 3, 5, 7, 6, 11, 7, 15);
-
-   clip[8]  = CALCMATRIX(8, 0, 9, 4, 10, 8, 11, 12);
-   clip[9]  = CALCMATRIX(8, 1, 9, 5, 10, 9, 11, 13);
-   clip[10] = CALCMATRIX(8, 2, 9, 6, 10, 10, 11, 14);
-   clip[11] = CALCMATRIX(8, 3, 9, 7, 10, 11, 11, 15);
-
-   clip[12] = CALCMATRIX(12, 0, 13, 4, 14, 8, 15, 12);
-   clip[13] = CALCMATRIX(12, 1, 13, 5, 14, 9, 15, 13);
-   clip[14] = CALCMATRIX(12, 2, 13, 6, 14, 10, 15, 14);
-   clip[15] = CALCMATRIX(12, 3, 13, 7, 14, 11, 15, 15);
+   Mtx_Multiply(clip, viewMatrix, projMatrix);
 
    // Right plane
    frustum[0][0] = clip[ 3] - clip[ 0];

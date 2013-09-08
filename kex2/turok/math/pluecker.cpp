@@ -32,7 +32,7 @@
 // kexPluecker::kexPluecker
 //
 
-kexPluecker::kexPluecker() {
+kexPluecker::kexPluecker(void) {
     Clear();
 }
 

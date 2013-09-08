@@ -541,7 +541,7 @@ const kexVec3 kexVec3::vecForward(0, 0, 1);
 // kexVec3::kexVec3
 //
 
-kexVec3::kexVec3() {
+kexVec3::kexVec3(void) {
     Clear();
 }
 
@@ -975,7 +975,7 @@ void kexVec3::ObjectConstructCopy(const kexVec3 &in, kexVec3 *thisvec) {
 // kexVec4::kexVec4
 //
 
-kexVec4::kexVec4() {
+kexVec4::kexVec4(void) {
     Clear();
 }
 

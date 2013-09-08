@@ -150,7 +150,7 @@ class kexVec3;
 
 class kexQuat {
 public:
-                            kexQuat();
+                            kexQuat(void);
 
                             explicit kexQuat(const float angle, const float x, const float y, const float z);
                             explicit kexQuat(const float angle, kexVec3 &vector);
@@ -187,7 +187,7 @@ public:
 
 class kexVec3 {
 public:
-                            kexVec3();
+                            kexVec3(void);
                             explicit kexVec3(const float x, const float y, const float z);
 
     void                    Set(const float x, const float y, const float z);
@@ -241,7 +241,7 @@ public:
 
 class kexVec4 {
 public:
-                            kexVec4();
+                            kexVec4(void);
                             explicit kexVec4(const float x, const float y, const float z, const float w);
 
     void                    Set(const float x, const float y, const float z, const float w);
@@ -258,38 +258,109 @@ public:
 
 class kexMatrix {
 public:
-                        kexMatrix();
-                        kexMatrix(const kexMatrix &mtx);
-                        kexMatrix(const float x, const float y, const float z);
-    kexMatrix           &Identity(void);
-    kexMatrix           &Identity(const float x, const float y, const float z);
-    kexMatrix           &SetTranslation(const float x, const float y, const float z);
-    kexMatrix           &SetTranslation(const kexVec3 &vector);
-    kexMatrix           &AddTranslation(const float x, const float y, const float z);
-    kexMatrix           &AddTranslation(const kexVec3 &vector);
-    kexMatrix           &Scale(const float x, const float y, const float z);
-    kexMatrix           &Scale(const kexVec3 &vector);
-    static kexMatrix    Scale(const kexMatrix &mtx, const float x, const float y, const float z);
-    kexMatrix           &Transpose(void);
-    static kexMatrix    Transpose(const kexMatrix &mtx);
+                            kexMatrix(void);
+                            kexMatrix(const kexMatrix &mtx);
+                            kexMatrix(const float x, const float y, const float z);
+
+    kexMatrix               &Identity(void);
+    kexMatrix               &Identity(const float x, const float y, const float z);
+    kexMatrix               &SetTranslation(const float x, const float y, const float z);
+    kexMatrix               &SetTranslation(const kexVec3 &vector);
+    kexMatrix               &AddTranslation(const float x, const float y, const float z);
+    kexMatrix               &AddTranslation(const kexVec3 &vector);
+    kexMatrix               &Scale(const float x, const float y, const float z);
+    kexMatrix               &Scale(const kexVec3 &vector);
+    static kexMatrix        Scale(const kexMatrix &mtx, const float x, const float y, const float z);
+    kexMatrix               &Transpose(void);
+    static kexMatrix        Transpose(const kexMatrix &mtx);
     
-    kexMatrix           operator*(const kexVec3 vector);
-    kexMatrix           &operator*=(const kexVec3 vector);
+    kexMatrix               operator*(const kexVec3 vector);
+    kexMatrix               &operator*=(const kexVec3 vector);
     
-    kexVec4             vectors[4];
+    kexVec4                 vectors[4];
 };
 
 class kexPluecker {
 public:
-                        kexPluecker();
-                        kexPluecker(const kexVec3 &start, const kexVec3 &end, bool bRay = false);
+                            kexPluecker(void);
+                            kexPluecker(const kexVec3 &start, const kexVec3 &end, bool bRay = false);
 
-    void                Clear(void);
-    void                SetLine(const kexVec3 &start, const kexVec3 &end);
-    void                SetRay(const kexVec3 &start, const kexVec3 &dir);
-    float               InnerProduct(const kexPluecker &pluecker) const;
+    void                    Clear(void);
+    void                    SetLine(const kexVec3 &start, const kexVec3 &end);
+    void                    SetRay(const kexVec3 &start, const kexVec3 &dir);
+    float                   InnerProduct(const kexPluecker &pluecker) const;
 
-    float               p[6];
+    float                   p[6];
+};
+
+class kexPlane {
+public:
+                            kexPlane(void);
+                            kexPlane(const float a, const float b, const float c, const float d);
+                            kexPlane(const kexVec3 &pt1, const kexVec3 &pt2, const kexVec3 &pt3);
+                            kexPlane(const kexVec3 &normal, const kexVec3 &point);
+                            kexPlane(const kexPlane &plane);
+
+    const kexVec3           &Normal(void) const;
+    kexVec3                 &Normal(void);
+    kexPlane                &SetNormal(const kexVec3 &normal);
+    kexPlane                &SetNormal(const kexVec3 &pt1, const kexVec3 &pt2, const kexVec3 &pt3);
+    float                   Distance(const kexVec3 &point);
+    kexPlane                &SetDistance(const kexVec3 &point);
+    bool                    IsFacing(const float yaw);
+    float                   ToYaw(void);
+    float                   ToPitch(void);
+    kexQuat                 ToQuat(void);
+    const kexVec4           &ToVec4(void) const;
+    kexVec4                 &ToVec4(void);
+    kexVec3                 GetInclination(void);
+    float                   TestLineIntersect(const kexVec3 &start, const kexVec3 &end, const float radius);
+
+    kexPlane                &operator|(const kexQuat &quat);
+    kexPlane                &operator|=(const kexQuat &quat);
+    kexPlane                &operator|(const kexMatrix &mtx);
+    kexPlane                &operator|=(const kexMatrix &mtx);
+
+    static void             ObjectConstruct(kexPlane *p);
+    static void             ObjectConstruct(const float a, const float b, const float c, const float d,
+                                            kexPlane *p);
+    static void             ObjectConstruct(const kexVec3 &pt1, const kexVec3 &pt2, const kexVec3 &pt3,
+                                            kexPlane *p);
+    static void             ObjectConstruct(const kexVec3 &normal, const kexVec3 &point, kexPlane *p);
+    static void             ObjectConstructCopy(const kexPlane &in, kexPlane *p);
+
+private:
+    float                   a;
+    float                   b;
+    float                   c;
+    float                   d;
+};
+
+class kexAngle {
+public:
+                            kexAngle(void);
+                            kexAngle(const float yaw, const float pitch, const float roll);
+                            kexAngle(const kexVec3 &vector);
+
+    kexAngle                &Round(void);
+    kexAngle                &Clamp180(void);
+    kexAngle                Diff(kexAngle &angle);
+    void                    ToAxis(kexVec3 *forward, kexVec3 *up, kexVec3 *right);
+    const kexVec3           &ToVec3(void) const;
+    kexVec3                 &ToVec3(void);
+
+    kexAngle                operator+(const kexAngle &angle);
+    kexAngle                operator-(const kexAngle &angle);
+    kexAngle                &operator+=(const kexAngle &angle);
+    kexAngle                &operator-=(const kexAngle &angle);
+    kexAngle                &operator=(const kexAngle &angle);
+    kexAngle                operator-(void);
+    float                   operator[](int index) const;
+    float                   operator[](int index);
+
+    float                   yaw;
+    float                   pitch;
+    float                   roll;
 };
 
 #endif

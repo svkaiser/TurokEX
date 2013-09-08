@@ -32,7 +32,7 @@
 // kexQuat::kexQuat
 //
 
-kexQuat::kexQuat() {
+kexQuat::kexQuat(void) {
     Clear();
 }
 
