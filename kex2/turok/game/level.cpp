@@ -25,7 +25,7 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "actor.h"
+#include "actor_old.h"
 #include "level.h"
 #include "zone.h"
 #include "script.h"

@@ -31,11 +31,12 @@
 #include "gl.h"
 #include "fx.h"
 #include "ai.h"
-#include "actor.h"
+#include "actor_old.h"
 #include "client.h"
 #include "level.h"
 #include "sound.h"
 #include "parse.h"
+#include "fileSystem.h"
 
 fx_t fxRoot;
 fx_t *fxRover;
@@ -881,4 +882,23 @@ void FX_Init(void)
 {
     command.Add("spawnfx", FCmd_SpawnFX);
     FX_ClearLinks();
+
+    kexStrListMem *fxList = fileSystem.GetMatchingFiles("fx/");
+    for(unsigned int i = 0; i < fxList->Length(); i++) {
+        fxfile_t *fxfile = Kfx_Load(fxList->GetData(i)->c_str());
+
+        if(!fxfile)
+            continue;
+
+        for(unsigned int j = 0; j < fxfile->numfx; j++) {
+            fxinfo_t *info;
+
+            info = &fxfile->info[j];
+
+            for(int k = 0; k < info->numTextures; k++)
+                Tex_CacheTextureFile(info->textures[k], DGL_CLAMP, true);
+        }
+    }
+
+    delete fxList;
 }

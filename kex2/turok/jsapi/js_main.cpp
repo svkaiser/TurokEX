@@ -42,6 +42,7 @@ static JSRuntime    *js_runtime     = NULL;
 static js_scrobj_t  *js_rootscript  = NULL;
 
 static unsigned int js_GCTime = 0;
+static unsigned int js_GCInterval = 0;
 
 JSContext   *js_context = NULL;
 JSObject    *js_gobject = NULL;
@@ -598,7 +599,11 @@ void J_GarbageCollect(void)
     if(cvarDeveloper.GetBool())
         js_GCTime = sysMain.GetMS();
 
-    JS_MaybeGC(js_context);
+    if(++js_GCInterval >= 2000) {
+        JS_GC(js_context);
+        js_GCInterval = 0;
+    }
+    //JS_MaybeGC(js_context);
 
 #ifdef JS_LOGNEWOBJECTS
     common.Printf("Garbage Collect...\n\n");
@@ -846,6 +851,15 @@ static void FCmd_JSExec(void)
 }
 
 //
+// FCmd_JSForceGC
+//
+
+static void FCmd_JSForceGC(void)
+{
+    JS_GC(js_context);
+}
+
+//
 // J_Init
 //
 
@@ -919,10 +933,12 @@ void J_Init(void)
     command.Add("jsfile", FCmd_JSFile);
     command.Add("jsload", FCmd_JSLoad);
     command.Add("jsexec", FCmd_JSExec);
+    command.Add("jsforcegc", FCmd_JSForceGC);
 #if 0
     command.Add("jslog", FCmd_LogJS);
 #endif
 
     Debug_RegisterPerfStatVar((float*)&js_GCTime, "Script GC Time", false);
+    Debug_RegisterPerfStatVar((float*)&js_GCInterval, "GC Interval", false);
 }
 

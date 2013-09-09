@@ -27,7 +27,7 @@
 #include "js.h"
 #include "js_shared.h"
 #include "common.h"
-#include "actor.h"
+#include "actor_old.h"
 
 JS_CLASSOBJECT(Component);
 

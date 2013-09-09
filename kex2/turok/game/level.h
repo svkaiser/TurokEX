@@ -23,7 +23,7 @@
 #ifndef _LEVEL_H_
 #define _LEVEL_H_
 
-#include "actor.h"
+#include "actor_old.h"
 
 typedef enum
 {

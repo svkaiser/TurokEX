@@ -27,7 +27,7 @@
 #include "common.h"
 #include "mathlib.h"
 #include "game.h"
-#include "actor.h"
+#include "actor_old.h"
 #include "level.h"
 
 #define TRYMOVE_COUNT   3

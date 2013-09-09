@@ -26,7 +26,7 @@
 
 #include "common.h"
 #include "mathlib.h"
-#include "actor.h"
+#include "actor_old.h"
 #include "game.h"
 
 #define EPSILON_FLOOR   0.5f

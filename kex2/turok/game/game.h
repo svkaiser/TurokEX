@@ -24,7 +24,7 @@
 #define __GAME_H__
 
 #include "client.h"
-#include "actor.h"
+#include "actor_old.h"
 
 #define ONPLANE_EPSILON     0.512f
 #define VELOCITY_EPSILON    0.0001f

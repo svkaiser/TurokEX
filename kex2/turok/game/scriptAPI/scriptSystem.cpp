@@ -59,13 +59,22 @@ kexScriptManager scriptManager;
 //
 
 static void FCmd_Call(void) {
-    if(command.GetArgc() < 3) {
-        common.Printf("Usage: call <\"name\"> <\"function declaration\">\n");
+    if(command.GetArgc() < 2) {
+        common.Printf("Usage: call <\"name\">\n");
         return;
     }
     scriptManager.CallExternalScript(
         command.GetArgv(1),
-        command.GetArgv(2));
+        "void main(void)");
+}
+
+//
+// FCmd_MemUsage
+//
+
+static void FCmd_MemUsage(void) {
+    common.CPrintf(RGBA(0, 255, 255, 255), "Script Memory Usage:\n");
+    common.CPrintf(COLOR_YELLOW, "%ikb\n", Z_TagUsage(PU_SCRIPT) >> 10);
 }
 
 //
@@ -85,10 +94,31 @@ kexScriptManager::~kexScriptManager(void) {
 }
 
 //
+// kexScriptManager::MemAlloc
+//
+
+void *kexScriptManager::MemAlloc(size_t size) {
+    return Z_Calloc(size, PU_SCRIPT, 0);
+}
+
+//
+// kexScriptManager::MemFree
+//
+
+void kexScriptManager::MemFree(void *ptr) {
+    Z_Free(ptr);
+}
+
+//
 // kexScriptManager::Init
 //
 
 void kexScriptManager::Init(void) {
+    if(asSetGlobalMemoryFunctions(kexScriptManager::MemAlloc, kexScriptManager::MemFree) == -1) {
+            common.Error("kexScriptManager::Init: Unable to register memory functions\n");
+            return;
+    }
+
     if(!(engine = asCreateScriptEngine(ANGELSCRIPT_VERSION))) {
         common.Error("kexScriptManager::Init: Unable to register script engine\n");
         return;
@@ -100,10 +130,13 @@ void kexScriptManager::Init(void) {
 
     ctx = engine->CreateContext();
 
+    kexComponent::Init();
+
     RegisterBasicTypes();
     RegisterObjects();
 
     command.Add("call", FCmd_Call);
+    command.Add("scriptMem", FCmd_MemUsage);
     common.Printf("Script System Initialized\n");
 }
 
@@ -114,6 +147,8 @@ void kexScriptManager::Init(void) {
 void kexScriptManager::Shutdown(void) {
     ctx->Release();
     engine->Release();
+
+    Z_FreeTags(PU_SCRIPT, PU_SCRIPT);
 }
 
 //
@@ -158,8 +193,10 @@ void kexScriptManager::CallExternalScript(const char *file, const char *function
 //
 
 void kexScriptManager::RegisterObjects(void) {
-    kexScriptObjSystem::Init();
     kexScriptObjHandle::Init();
+    kexScriptObjSystem::Init();
+    kexScriptObjClient::Init();
+    kexScriptObjInput::Init();
 }
 
 //

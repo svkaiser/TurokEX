@@ -25,7 +25,7 @@
 
 #include "enet/enet.h"
 #include "system.h"
-#include "actor.h"
+#include "actor_old.h"
 #include "game.h"
 #include "player.h"
 #include "network.h"

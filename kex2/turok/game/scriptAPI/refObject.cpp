@@ -112,8 +112,9 @@ void kexScriptObjHandle::Init(void) {
 //
 
 kexScriptObjHandle::kexScriptObjHandle() {
-    m_ref  = 0;
-    m_type = 0;
+    m_ref   = 0;
+    m_type  = 0;
+    owner   = NULL;
 }
 
 //
@@ -121,8 +122,10 @@ kexScriptObjHandle::kexScriptObjHandle() {
 //
 
 kexScriptObjHandle::kexScriptObjHandle(const kexScriptObjHandle &other) {
-    m_ref  = other.m_ref;
-    m_type = other.m_type;
+    m_ref   = other.m_ref;
+    m_type  = other.m_type;
+    owner   = other.owner;
+
     AddRefHandle();
 }
 
@@ -131,8 +134,10 @@ kexScriptObjHandle::kexScriptObjHandle(const kexScriptObjHandle &other) {
 //
 
 kexScriptObjHandle::kexScriptObjHandle(void *ref, asIObjectType *type) {
-    m_ref  = ref;
-    m_type = type;
+    m_ref   = ref;
+    m_type  = type;
+    owner   = NULL;
+
     AddRefHandle();
 }
 
@@ -143,8 +148,10 @@ kexScriptObjHandle::kexScriptObjHandle(void *ref, asIObjectType *type) {
 // directly as it requires an active script context
 //
 kexScriptObjHandle::kexScriptObjHandle(void *ref, int typeId) {
-    m_ref  = 0;
-    m_type = 0;
+    m_ref   = 0;
+    m_type  = 0;
+    owner   = NULL;
+
     Assign(ref, typeId);
 }
 
@@ -165,8 +172,9 @@ void kexScriptObjHandle::ReleaseHandle(void) {
         asIScriptEngine *engine = m_type->GetEngine();
         engine->ReleaseScriptObject(m_ref, m_type);
 
-        m_ref  = 0;
-        m_type = 0;
+        m_ref   = 0;
+        m_type  = 0;
+        owner   = NULL;
     }
 }
 
@@ -192,8 +200,9 @@ kexScriptObjHandle &kexScriptObjHandle::operator=(const kexScriptObjHandle &othe
 
     ReleaseHandle();
 
-    m_ref  = other.m_ref;
-    m_type = other.m_type;
+    m_ref   = other.m_ref;
+    m_type  = other.m_type;
+    owner   = other.owner;
 
     AddRefHandle();
     return *this;
@@ -258,7 +267,8 @@ kexScriptObjHandle &kexScriptObjHandle::Assign(void *ref, int typeId) {
 
 bool kexScriptObjHandle::operator==(const kexScriptObjHandle &o) const {
     if(m_ref  == o.m_ref &&
-        m_type == o.m_type)
+        m_type == o.m_type &&
+        owner == o.owner)
         return true;
 
     //

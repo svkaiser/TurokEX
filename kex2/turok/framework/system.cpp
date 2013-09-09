@@ -386,9 +386,6 @@ void kexSystem::Main(int argc, char **argv) {
     server.Init();
     client.Init();
 
-    R_Init();
-    common.Printf("Renderer Initialized\n");
-
     command.Add("quit", FCmd_Quit);
 
     G_Init();
@@ -401,6 +398,9 @@ void kexSystem::Main(int argc, char **argv) {
 
     GL_Init();
     common.Printf("OpenGL Initialized\n");
+
+    R_Init();
+    common.Printf("Renderer Initialized\n");
 
     common.Printf("Running kernel...\n");
     MainLoop();

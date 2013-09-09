@@ -28,7 +28,7 @@
 #include "js_shared.h"
 #include "common.h"
 #include "mathlib.h"
-#include "actor.h"
+#include "actor_old.h"
 #include "client.h"
 #include "zone.h"
 #include "ai.h"

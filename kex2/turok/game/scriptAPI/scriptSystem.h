@@ -27,77 +27,127 @@
 
 class kexScriptManager {
 public:
-                        kexScriptManager(void);
-                        ~kexScriptManager(void);
+                            kexScriptManager(void);
+                            ~kexScriptManager(void);
 
-    void                Init(void);
-    void                Shutdown(void);
-    void                CallExternalScript(const char *file, const char *function);
+    void                    Init(void);
+    void                    Shutdown(void);
+    void                    CallExternalScript(const char *file, const char *function);
 
-    asIScriptEngine     *Engine(void) { return engine; }
-    asIScriptContext    *Context(void) { return ctx; }
+    static void             *MemAlloc(size_t size);
+    static void             MemFree(void *ptr);
+
+    asIScriptEngine         *Engine(void) { return engine; }
+    asIScriptContext        *Context(void) { return ctx; }
 
 private:
-    void                RegisterBasicTypes(void);
-    void                RegisterObjects(void);
+    void                    RegisterBasicTypes(void);
+    void                    RegisterObjects(void);
 
-    static void         MessageCallback(const asSMessageInfo *msg, void *param);
+    static void             MessageCallback(const asSMessageInfo *msg, void *param);
 
-    asIScriptEngine     *engine;
-    asIScriptContext    *ctx;
+    asIScriptEngine         *engine;
+    asIScriptContext        *ctx;
 };
 
 extern kexScriptManager scriptManager;
 
 class kexScriptObjSystem {
 public:
-    static void         Init(void);
-    static void         Printf(const kexStr &str);
-    static void         CPrintf(rcolor color, const kexStr &str);
-    static void         Warning(const kexStr &str);
-    static void         DPrintf(const kexStr &str);
-    static void         Error(const kexStr &str);
-    static const int    GetMS(void);
+    static void             Init(void);
+    static void             Printf(const kexStr &str);
+    static void             CPrintf(rcolor color, const kexStr &str);
+    static void             Warning(const kexStr &str);
+    static void             DPrintf(const kexStr &str);
+    static void             Error(const kexStr &str);
+    static const int        GetMS(void);
 };
+
+class kexScriptObjClient {
+public:
+    static void             Init(void);
+    static bool             IsLocal(void);
+    static int              GetState(void);
+};
+
+class kexScriptObjInput {
+public:
+    static void             Init(void);
+    static void             AddInputKey(const int id, const char *key);
+};
+
+class kexActor;
 
 class kexScriptObjHandle  {
 public:
-                        kexScriptObjHandle();
-                        kexScriptObjHandle(const kexScriptObjHandle &other);
-                        kexScriptObjHandle(void *ref, asIObjectType *type);
-                        ~kexScriptObjHandle();
+                            kexScriptObjHandle();
+                            kexScriptObjHandle(const kexScriptObjHandle &other);
+                            kexScriptObjHandle(void *ref, asIObjectType *type);
+                            ~kexScriptObjHandle();
 
-    kexScriptObjHandle  &operator=(const kexScriptObjHandle &other);
-    void                Set(void *ref, asIObjectType *type);
+    kexScriptObjHandle      &operator=(const kexScriptObjHandle &other);
+    void                    Set(void *ref, asIObjectType *type);
 
-    bool                operator==(const kexScriptObjHandle &o) const;
-    bool                operator!=(const kexScriptObjHandle &o) const;
-    bool                Equals(void *ref, int typeId) const;
+    bool                    operator==(const kexScriptObjHandle &o) const;
+    bool                    operator!=(const kexScriptObjHandle &o) const;
+    bool                    Equals(void *ref, int typeId) const;
 
-    void                Cast(void **outRef, int typeId);
-    asIObjectType       *GetType(void);
+    void                    Cast(void **outRef, int typeId);
+    asIObjectType           *GetType(void);
 
-    static void         Init(void);
-    static void         ObjectConstruct(kexScriptObjHandle *self) { new(self)kexScriptObjHandle(); }
-    static void         ObjectConstruct(kexScriptObjHandle *self, const kexScriptObjHandle &other) {
-                            new(self)kexScriptObjHandle(other);
-                        }
-    static void         ObjectConstruct(kexScriptObjHandle *self, void *ref, int typeID) {
-                            new(self)kexScriptObjHandle(ref, typeID);
-                        }
-    static void         ObjectDeconstruct(kexScriptObjHandle *self) { self->~kexScriptObjHandle(); }
+    kexActor                *owner;
+
+    static void             Init(void);
+    static void             ObjectConstruct(kexScriptObjHandle *self) { new(self)kexScriptObjHandle(); }
+    static void             ObjectConstruct(kexScriptObjHandle *self, const kexScriptObjHandle &other) {
+                                new(self)kexScriptObjHandle(other);
+                            }
+    static void             ObjectConstruct(kexScriptObjHandle *self, void *ref, int typeID) {
+                                new(self)kexScriptObjHandle(ref, typeID);
+                            }
+    static void             ObjectDeconstruct(kexScriptObjHandle *self) { self->~kexScriptObjHandle(); }
 
 protected:
-    void                ReleaseHandle(void);
-    void                AddRefHandle(void);
+    void                    ReleaseHandle(void);
+    void                    AddRefHandle(void);
 
-    // These shouldn't be called directly by the 
-    // application as they requires an active context
-    kexScriptObjHandle(void *ref, int typeId);
-    kexScriptObjHandle &Assign(void *ref, int typeId);
+                            // These shouldn't be called directly by the 
+                            // application as they requires an active context
+                            kexScriptObjHandle(void *ref, int typeId);
+                            kexScriptObjHandle &Assign(void *ref, int typeId);
 
-    void                *m_ref;
-    asIObjectType       *m_type;
+    void                    *m_ref;
+    asIObjectType           *m_type;
+};
+
+class kexComponent {
+public:
+                            kexComponent(void);
+                            ~kexComponent(void);
+
+    void                    Spawn(const char *className);
+    bool                    CallConstructor(const char *decl);
+    bool                    CallFunction(asIScriptFunction *func);
+    bool                    CallFunction(const char *decl, int *val);
+    kexScriptObjHandle      &Handle(void) { return objHandle; }
+    const asIScriptObject   *ScriptObject(void) const { return obj; }
+    void                    SetOwner(kexActor *actor) { objHandle.owner = actor; }
+    kexActor                *GetOwner(void) const { return static_cast<kexActor*>(objHandle.owner); }
+
+    static void             Init(void);
+
+private:
+    kexScriptObjHandle      objHandle;
+    asIScriptObject         *obj;
+    asIObjectType           *type;
+    asIScriptModule         *mod;
+
+    asIScriptFunction       *onThink;
+    asIScriptFunction       *onTouch;
+    asIScriptFunction       *onDamage;
+    asIScriptFunction       *onPreDraw;
+    asIScriptFunction       *onDraw;
+    asIScriptFunction       *onPostDraw;
 };
 
 #endif

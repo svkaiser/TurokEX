@@ -27,7 +27,7 @@
 #include "SDL_opengl.h"
 #include "common.h"
 #include "gl.h"
-#include "actor.h"
+#include "actor_old.h"
 #include "render.h"
 #include "client.h"
 

@@ -147,7 +147,7 @@ void Z_PrintStats(void)
     Draw_Text(32, 192, COLOR_GREEN, 1, "Actors: %ikb\n", Z_TagUsage(PU_ACTOR) >> 10);
     Draw_Text(32, 208, COLOR_GREEN, 1, "Sound: %ikb\n", Z_TagUsage(PU_SOUND) >> 10);
     Draw_Text(32, 224, COLOR_GREEN, 1, "Cache: %ikb\n", Z_TagUsage(PU_CACHE) >> 10);
-    Draw_Text(32, 240, COLOR_GREEN, 1, "Script: %ikb\n", Z_TagUsage(PU_JSOBJ) >> 10);
+    Draw_Text(32, 240, COLOR_GREEN, 1, "Script: %ikb\n", Z_TagUsage(PU_SCRIPT) >> 10);
 }
 
 //

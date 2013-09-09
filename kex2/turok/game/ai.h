@@ -23,7 +23,7 @@
 #ifndef _AI_H_
 #define _AI_H_
 
-#include "actor.h"
+#include "actor_old.h"
 
 typedef enum
 {
