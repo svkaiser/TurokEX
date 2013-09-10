@@ -95,7 +95,7 @@ unsigned int kexServer::GetClientID(ENetPeer *peer) const {
 // kexServer::AddClient
 //
 
-void kexServer::AddClient(ENetEvent *sev) {
+/*void kexServer::AddClient(ENetEvent *sev) {
     for(int i = 0; i < maxClients; i++)
     {
         if(clients[i].state == SVC_STATE_INACTIVE)
@@ -123,7 +123,7 @@ void kexServer::AddClient(ENetEvent *sev) {
     }
 
     SendMessage(sev, sm_full);
-}
+}*/
 
 //
 // kexServer::CreateHost

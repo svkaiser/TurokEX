@@ -585,6 +585,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\actor_old.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\ai.cpp"
 					>
 				</File>
@@ -611,6 +615,18 @@
 				<Filter
 					Name="scriptAPI"
 					>
+					<File
+						RelativePath="..\turok\game\scriptAPI\clientObject.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\game\scriptAPI\component.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\game\scriptAPI\inputObject.cpp"
+						>
+					</File>
 					<File
 						RelativePath="..\turok\game\scriptAPI\refObject.cpp"
 						>
@@ -831,6 +847,10 @@
 				>
 				<File
 					RelativePath="..\turok\game\actor.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\actor_old.h"
 					>
 				</File>
 				<File

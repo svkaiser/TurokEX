@@ -32,8 +32,6 @@
 
 kexInputKey inputKey;
 
-control_t control;
-
 typedef struct {
     int		code;
     char	*name;

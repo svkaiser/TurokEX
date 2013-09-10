@@ -264,7 +264,7 @@ float kexInput::AccelerateMouse(int val) const {
 void kexInput::MoveMouse(int x, int y) {
     control_t *ctrl;
     
-    ctrl = &control;
+    ctrl = inputKey.Controls();
 
     ctrl->mousex += ((AccelerateMouse(x) * cvarMSensitivityX.GetFloat()) / 128.0f);
     ctrl->mousey += ((AccelerateMouse(y) * cvarMSensitivityY.GetFloat()) / 128.0f);

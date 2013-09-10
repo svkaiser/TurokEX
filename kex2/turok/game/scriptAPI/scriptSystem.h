@@ -95,7 +95,7 @@ public:
     void                    Cast(void **outRef, int typeId);
     asIObjectType           *GetType(void);
 
-    kexActor                *owner;
+    void                    *owner;
 
     static void             Init(void);
     static void             ObjectConstruct(kexScriptObjHandle *self) { new(self)kexScriptObjHandle(); }

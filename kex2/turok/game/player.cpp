@@ -90,7 +90,7 @@ kbool P_Responder(event_t *ev)
 // P_GetNetPlayer
 //
 
-netPlayer_t *P_GetNetPlayer(ENetPeer *peer)
+/*netPlayer_t *P_GetNetPlayer(ENetPeer *peer)
 {
     for(int i = 0; i < server.GetMaxClients(); i++)
     {
@@ -102,7 +102,7 @@ netPlayer_t *P_GetNetPlayer(ENetPeer *peer)
     }
 
    return &netPlayers[0];
-}
+}*/
 
 //
 // P_NewPlayerConnected
@@ -157,7 +157,7 @@ void P_BuildCommands(void)
 
     pinfo = &localPlayer.info;
     cmd = &pinfo->cmd;
-    ctrl = &control;
+    ctrl = inputKey.Controls();
 
     for(i = 0; i < MAXACTIONS; i++)
         cmd->buttons[i] = false;
@@ -531,3 +531,184 @@ void P_SpawnLocalPlayer(void)
     client.player = &localPlayer;
 }
 
+DECLARE_ABSTRACT_CLASS(kexPlayer, kexWorldActor)
+
+//
+// kexPlayer::kexPlayer
+//
+
+kexPlayer::kexPlayer(void) {
+    ResetNetSequence();
+}
+
+//
+// kexPlayer::~kexPlayer
+//
+
+kexPlayer::~kexPlayer(void) {
+}
+
+//
+// kexPlayer::ResetNetSequence
+//
+
+void kexPlayer::ResetNetSequence(void) {
+    netseq.ingoing = 0;
+    netseq.outgoing = 1;
+}
+
+DECLARE_CLASS(kexLocalPlayer, kexPlayer)
+
+//
+// kexLocalPlayer::kexLocalPlayer
+//
+
+kexLocalPlayer::kexLocalPlayer(void) {
+}
+
+//
+// kexLocalPlayer::~kexLocalPlayer
+//
+
+kexLocalPlayer::~kexLocalPlayer(void) {
+}
+
+//
+// kexLocalPlayer::RespondToInput
+//
+
+bool kexLocalPlayer::RespondToInput(event_t *ev) {
+    if(console.ProcessInput(ev))
+        return true;
+
+    switch(ev->type) {
+    case ev_mouse:
+        inputSystem.MoveMouse(ev->data2, ev->data3);
+        return true;
+
+    case ev_keydown:
+        inputKey.ExecuteCommand(ev->data1, false);
+        return true;
+
+    case ev_keyup:
+        inputKey.ExecuteCommand(ev->data1, true);
+        return true;
+
+    case ev_mousedown:
+        inputKey.ExecuteCommand(ev->data1, false);
+        return true;
+
+    case ev_mouseup:
+        inputKey.ExecuteCommand(ev->data1, true);
+        return true;
+    }
+
+    return false;
+}
+
+//
+// kexLocalPlayer::BuildCommands
+//
+
+void kexLocalPlayer::BuildCommands(void) {
+    ENetPacket *packet;
+    ticcmd_t *buildCmd;
+    control_t *ctrl;
+    int numactions;
+    int i;
+
+    if(client.GetState() != CL_STATE_INGAME)
+        return;
+
+    buildCmd = &cmd;
+    ctrl = inputKey.Controls();
+
+    for(i = 0; i < MAXACTIONS; i++) {
+        buildCmd->buttons[i] = false;
+    }
+
+    for(i = 0; i < MAXACTIONS; i++) {
+        buildCmd->buttons[i] = (ctrl->actions[i]) ? true : false;
+        if(buildCmd->buttons[i] == 1) {
+            if(buildCmd->heldtime[i] < 255) {
+                buildCmd->heldtime[i]++;
+            }
+            else {
+                buildCmd->heldtime[i] = 255;
+            }
+        }
+        else {
+            buildCmd->heldtime[i] = 0;
+        }
+    }
+
+    buildCmd->timestamp.i = client.GetTime();
+    buildCmd->frametime.f = client.GetRunTime();
+    buildCmd->mouse[0].f = ctrl->mousex;
+    buildCmd->mouse[1].f = ctrl->mousey;
+
+    ctrl->mousex = 0;
+    ctrl->mousey = 0;
+
+    if(!(packet = packetManager.Create()))
+        return;
+
+    packetManager.Write8(packet, cp_cmd);
+
+    numactions = 0;
+
+    for(i = 0; i < MAXACTIONS; i++) {
+        if(buildCmd->buttons[i]) {
+            numactions++;
+        }
+    }
+
+    packetManager.Write32(packet, buildCmd->mouse[0].i);
+    packetManager.Write32(packet, buildCmd->mouse[1].i);
+    packetManager.Write32(packet, buildCmd->timestamp.i);
+    packetManager.Write32(packet, buildCmd->frametime.i);
+    packetManager.Write32(packet, numactions);
+
+    for(i = 0; i < MAXACTIONS; i++) {
+        if(buildCmd->buttons[i]) {
+            packetManager.Write8(packet, i);
+            packetManager.Write8(packet, buildCmd->heldtime[i]);
+        }
+    }
+
+    packetManager.Write32(packet, netseq.ingoing);
+    packetManager.Write32(packet, netseq.outgoing);
+    netseq.outgoing++;
+
+    packetManager.Send(packet, peer);
+}
+
+//
+// kexLocalPlayer::LocalTick
+//
+
+void kexLocalPlayer::LocalTick(void) {
+}
+
+DECLARE_CLASS(kexNetPlayer, kexPlayer)
+
+//
+// kexNetPlayer::kexNetPlayer
+//
+
+kexNetPlayer::kexNetPlayer(void) {
+}
+
+//
+// kexNetPlayer::~kexNetPlayer
+//
+
+kexNetPlayer::~kexNetPlayer(void) {
+}
+
+//
+// kexNetPlayer::kexNetPlayer
+//
+
+void kexNetPlayer::Tick(void) {
+}

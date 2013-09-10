@@ -38,23 +38,23 @@ public:
     virtual void        OnDisconnect(void);
     virtual void        OnRecieve(void);
     
-    d_inline void       SetHost(ENetHost *_host) { host = _host; }
-    d_inline void       SetTime(int _time) { time = _time; }
-    d_inline void       SetState(int _state) { state = _state; }
-    d_inline void       SetEvent(ENetEvent _event) { netEvent = _event; }
-    d_inline void       SetRunTime(float _runTime) { runTime = _runTime; }
-    d_inline void       SetTicks(int _ticks) { ticks = _ticks; }
+    void                SetHost(ENetHost *_host) { host = _host; }
+    void                SetTime(int _time) { time = _time; }
+    void                SetState(int _state) { state = _state; }
+    void                SetEvent(ENetEvent _event) { netEvent = _event; }
+    void                SetRunTime(float _runTime) { runTime = _runTime; }
+    void                SetTicks(int _ticks) { ticks = _ticks; }
 
-    d_inline ENetHost   *GetHost(void) { return host; }
-    d_inline int        GetTime(void) { return time; }
-    d_inline int        GetState(void) { return state; }
-    d_inline ENetEvent  *GetEvent(void) { return &netEvent; }
-    d_inline float      GetRunTime(void) { return runTime; }
-    d_inline int        GetTicks(void) { return ticks; }
+    ENetHost            *GetHost(void) { return host; }
+    int                 GetTime(void) { return time; }
+    int                 GetState(void) { return state; }
+    ENetEvent           *GetEvent(void) { return &netEvent; }
+    float               GetRunTime(void) { return runTime; }
+    int                 GetTicks(void) { return ticks; }
 
-    d_inline void       UpdateTicks(void) { ticks++; }
-    d_inline void       DestroyPacket(void) { enet_packet_destroy(netEvent.packet); }
-    d_inline void       DestroyHost(void) { enet_host_destroy(host); host = NULL; }
+    void                UpdateTicks(void) { ticks++; }
+    void                DestroyPacket(void) { enet_packet_destroy(netEvent.packet); }
+    void                DestroyHost(void) { enet_host_destroy(host); host = NULL; }
 
 private:
     ENetHost            *host;

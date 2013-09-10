@@ -29,8 +29,6 @@
 
 DECLARE_ABSTRACT_CLASS(kexActor, kexObject)
 
-unsigned int kexActor::id = 0;
-
 //
 // kexActor::kexActor
 //
@@ -39,17 +37,12 @@ kexActor::kexActor(void) {
     this->mass          = 1200;
     this->friction      = 1.0f;
     this->airFriction   = 1.0f;
-    this->radius        = 30.72f;
-    this->baseHeight    = 30.72f;
-    this->viewHeight    = 16.384f;
-    this->centerHeight  = 10.24f;
     this->refCount      = 0;
     this->bStatic       = true;
     this->bCollision    = false;
     this->bTouch        = false;
     this->bClientOnly   = false;
     this->bHidden       = false;
-    this->bRotor        = false;
 }
 
 //
@@ -78,28 +71,6 @@ void kexActor::Tick(void) {
 //
 
 void kexActor::Remove(void) {
-}
-
-//
-// kexActor::Parse
-//
-
-void kexActor::Parse(kexLexer *lexer) {
-}
-
-//
-// kexActor::UpdateTransform
-//
-
-void kexActor::UpdateTransform(void) {
-}
-
-//
-// kexActor::Event
-//
-
-bool kexActor::Event(const char *function, long *args, unsigned int nargs) {
-    return false;
 }
 
 //
@@ -132,3 +103,68 @@ void kexActor::SetTarget(kexActor *targ) {
         target->AddRef();
 }
 
+DECLARE_CLASS(kexWorldActor, kexActor)
+
+unsigned int kexWorldActor::id = 0;
+
+//
+// kexWorldActor::kexWorldActor
+//
+
+kexWorldActor::kexWorldActor(void) {
+    this->radius        = 30.72f;
+    this->baseHeight    = 30.72f;
+    this->viewHeight    = 16.384f;
+    this->centerHeight  = 10.24f;
+    this->bRotor        = false;
+}
+
+//
+// kexWorldActor::~kexWorldActor
+//
+
+kexWorldActor::~kexWorldActor(void) {
+}
+
+//
+// kexWorldActor::LocalTick
+//
+
+void kexWorldActor::LocalTick(void) {
+}
+
+//
+// kexWorldActor::Tick
+//
+
+void kexWorldActor::Tick(void) {
+}
+
+//
+// kexWorldActor::Remove
+//
+
+void kexWorldActor::Remove(void) {
+}
+
+//
+// kexWorldActor::Parse
+//
+
+void kexWorldActor::Parse(kexLexer *lexer) {
+}
+
+//
+// kexWorldActor::UpdateTransform
+//
+
+void kexWorldActor::UpdateTransform(void) {
+}
+
+//
+// kexWorldActor::Event
+//
+
+bool kexWorldActor::Event(const char *function, long *args, unsigned int nargs) {
+    return false;
+}

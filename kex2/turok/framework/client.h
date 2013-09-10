@@ -66,18 +66,22 @@ public:
     event_t             *GetEvent(void);
     void                ProcessEvents(void);
 
-    d_inline void       SetPeer(ENetPeer *_peer) { peer = _peer; }
-    d_inline ENetPeer   *GetPeer(void) { return peer; }
-    d_inline bool       IsLocal(void) { return bLocal; }
+    void                SetPeer(ENetPeer *_peer) { peer = _peer; }
+    ENetPeer            *GetPeer(void) { return peer; }
+    bool                IsLocal(void) { return bLocal; }
+    kexLocalPlayer      &LocalPlayer(void) { return playerClient; }
 
     unsigned int        id;
+    // TODO - REMOVE
     gActor_t            *playerActor;
+    // TODO - REMOVE
     localPlayer_t       *player;
     int                 curtime;
 
 private:
     bool                bLocal;
     ENetPeer            *peer;
+    kexLocalPlayer      playerClient;
     event_t             events[MAXEVENTS];
     int                 eventhead;
     int                 eventtail;

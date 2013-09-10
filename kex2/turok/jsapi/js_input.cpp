@@ -112,7 +112,7 @@ JS_FASTNATIVE_BEGIN(NInput, getActions)
 
     for(i = 0; i < MAXACTIONS; i++)
     {
-        eval = INT_TO_JSVAL(control.actions[i]);
+        eval = INT_TO_JSVAL(inputKey.Controls()->actions[i]);
         JS_SetElement(cx, arr, i, &eval);
     }
 

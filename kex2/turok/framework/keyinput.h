@@ -80,9 +80,11 @@ public:
     void            ListBindings(void);
     void            HandleControl(int ctrl);
     int             GetAsciiKey(char c, bool bShift) { return keycode[bShift][c]; }
+    control_t       *Controls(void) { return &control; }
 
 private:
     char            keycode[2][MAX_KEYS];
+    control_t       control;
     keycmd_t        keycmds[MAX_KEYS];
     bool            bShiftdown;
     bool            keydown[MAX_KEYS];

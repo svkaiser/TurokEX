@@ -24,6 +24,7 @@
 #define _PLAYER_H_
 
 #include "common.h"
+#include "actor.h"
 
 typedef struct
 {
@@ -63,12 +64,94 @@ extern netPlayer_t netPlayers[MAX_PLAYERS];
 void P_ResetNetSeq(playerInfo_t *info);
 void P_RunCommand(ENetEvent *sev, ENetPacket *packet);
 void P_NewPlayerConnected(ENetEvent *sev);
-netPlayer_t *P_GetNetPlayer(ENetPeer *peer);
+//netPlayer_t *P_GetNetPlayer(ENetPeer *peer);
 void P_SpawnLocalPlayer(void);
 void P_BuildCommands(void);
 int P_LocalPlayerEvent(const char *eventName);
 void P_SaveLocalComponentData(void);
 void P_LocalPlayerTick(void);
 kbool P_Responder(event_t *ev);
+
+BEGIN_EXTENDED_CLASS(kexPlayer, kexActor);
+public:
+                        kexPlayer(void);
+                        ~kexPlayer(void);
+
+    void                ResetNetSequence(void);
+
+    kexVec3             &Acceleration(void) { return acceleration; }
+    float               MoveTime(void) { return moveTime; }
+    ticcmd_t            *Cmd(void) { return &cmd; }
+    gObject_t           *ScriptObject(void) { return scriptObject; }
+
+    typedef struct {
+        kexVec3         origin;
+        kexVec3         velocity;
+        kexVec3         accel;
+        kexAngle        angles;
+        float           moveTime;
+        float           frameTime;
+        float           timeStamp;
+    } worldState_t;
+
+    typedef struct
+    {
+        int             ingoing;
+        int             outgoing;
+        int             acks;
+    } netSequence_t;
+
+protected:
+    kexVec3             acceleration;
+    float               moveTime;
+    netSequence_t       netseq;
+    ticcmd_t            cmd;
+    int                 id;
+    char                *name;
+    ENetPeer            *peer;
+    char                *jsonData;
+    worldState_t        worldState;
+    gObject_t           *scriptObject;
+END_CLASS();
+
+BEGIN_EXTENDED_CLASS(kexLocalPlayer, kexPlayer);
+public:
+                        kexLocalPlayer(void);
+                        ~kexLocalPlayer(void);
+
+    virtual void        LocalTick(void);
+
+    bool                RespondToInput(event_t *ev);
+    void                BuildCommands(void);
+
+    //kexActor            *Camera(void) { return camera; }
+    kexVec3             &MoveDiff(void) { return moveDiff; }
+
+    // TODO
+    gActor_t            *actor;
+    gActor_t            *camera;
+
+private:
+    //kexActor            *camera;
+    int                 latency[NETBACKUPS];
+    kexVec3             moveDiff;
+    kexVec3             oldMoves[NETBACKUPS];
+    ticcmd_t            oldCmds[NETBACKUPS];
+END_CLASS();
+
+BEGIN_EXTENDED_CLASS(kexNetPlayer, kexPlayer);
+public:
+                        kexNetPlayer(void);
+                        ~kexNetPlayer(void);
+
+    virtual void        Tick(void);
+    int                 State(void) { return state; }
+
+    // TODO
+    gActor_t            *actor;
+
+private:
+    int                 state;
+END_CLASS();
 
 #endif

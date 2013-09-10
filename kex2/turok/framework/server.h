@@ -71,11 +71,11 @@ public:
     virtual void        OnConnect(void);
     virtual void        OnDisconnect(void);
 
-    d_inline bool       IsLocal(void) { return bLocal; }
-    d_inline int        GetElaspedTime(void) { return elaspedTime; }
-    d_inline void       SetElaspedTime(int _time) { elaspedTime = _time; }
-    d_inline int        GetMaxClients(void) { return maxClients; }
-    d_inline void       SetMaxClients(int _max) { maxClients = _max; }
+    bool                IsLocal(void) { return bLocal; }
+    int                 GetElaspedTime(void) { return elaspedTime; }
+    void                SetElaspedTime(int _time) { elaspedTime = _time; }
+    int                 GetMaxClients(void) { return maxClients; }
+    void                SetMaxClients(int _max) { maxClients = _max; }
 
     char                *GetPeerAddress(ENetEvent *sev);
     void                SendMoveData(svclient_t *svcl);
@@ -84,13 +84,15 @@ public:
 
 private:
     void                SendClientMessages(void);
-    void                AddClient(ENetEvent *sev);
+    //void                AddClient(ENetEvent *sev);
     void                ClientCommand(ENetEvent *sev, ENetPacket *packet);
     void                SendAcknowledgement(ENetEvent *sev);
 
+    kexNetPlayer        players[MAX_PLAYERS];
     bool                bLocal;
     int                 maxClients;
     int                 elaspedTime;
+    // TODO - REMOVE
     svclient_t          clients[MAX_PLAYERS];
 };
 

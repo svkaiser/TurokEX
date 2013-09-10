@@ -35,13 +35,9 @@ public:
     virtual void        LocalTick(void);
     virtual void        Tick(void);
     virtual void        Remove(void);
-    virtual void        Parse(kexLexer *lexer);
-    virtual void        UpdateTransform(void);
 
-    bool                Event(const char *function, long *args, unsigned int nargs);
     void                SetTarget(kexActor *targ);
 
-    kexComponent        *Component(void) { return &component; }
     kexVec3             &GetOrigin(void) { return origin; }
     void                SetOrigin(const kexVec3 &org) { origin = org; }
     kexVec3             &GetVelocity(void) { return velocity; }
@@ -51,7 +47,6 @@ protected:
     int                 AddRef(void);
     int                 RemoveRef(void);
 
-    kexComponent        component;
     kexVec3             origin;
     kexQuat             rotation;
     kexVec3             velocity;
@@ -60,29 +55,19 @@ protected:
     bool                bTouch;
     bool                bClientOnly;
     bool                bHidden;
-    bool                bRotor;
-    kexAngle            angles;
-    kexStr              name;
-    float               radius;
-    float               height;
-    float               baseHeight;
-    float               centerHeight;
-    float               viewHeight;
+    bbox_t              bbox;
+    bbox_t              baseBBox;
     float               friction;
     float               airFriction;
     float               mass;
     float               bounceDamp;
     float               cullDistance;
     unsigned int        targetID;
-    float               rotorSpeed;
-    float               rotorFriction;
-    kexVec3             rotorVector;
     kexActor            *owner;
     kexActor            *target;
     kexMatrix           matrix;
     kexMatrix           rotMatrix;
-    kexVec3             *nodeOffsets_t;
-    kexVec3             *nodeOffsets_r;
+    kmodel_t            *model;
     kexVec3             scale;
     float               timestamp;
     float               tickDistance;
@@ -95,6 +80,37 @@ private:
     int                 refCount;
     bool                bStale;
     bool                bCulled;
+END_CLASS();
+
+BEGIN_EXTENDED_CLASS(kexWorldActor, kexActor);
+public:
+                        kexWorldActor(void);
+                        ~kexWorldActor(void);
+
+    virtual void        LocalTick(void);
+    virtual void        Tick(void);
+    virtual void        Remove(void);
+    virtual void        Parse(kexLexer *lexer);
+    virtual void        UpdateTransform(void);
+
+    bool                Event(const char *function, long *args, unsigned int nargs);
+
+protected:
+    gObject_t           *components;
+    gObject_t           *iterator;
+    bool                bRotor;
+    kexAngle            angles;
+    kexStr              name;
+    float               radius;
+    float               height;
+    float               baseHeight;
+    float               centerHeight;
+    float               viewHeight;
+    float               rotorSpeed;
+    float               rotorFriction;
+    kexVec3             rotorVector;
+    kexVec3             *nodeOffsets_t;
+    kexVec3             *nodeOffsets_r;
 
     static unsigned int id;
 END_CLASS();
