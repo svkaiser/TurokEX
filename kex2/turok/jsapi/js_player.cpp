@@ -45,24 +45,24 @@ JS_PROP_FUNC_GET(ClientPlayer)
     switch(JSVAL_TO_INT(id))
     {
     case 0:
-        JS_NEWOBJECT_SETPRIVATE(&client.player->worldState, &WorldState_class);
+        JS_NEWOBJECT_SETPRIVATE(&client.LocalPlayer().worldState, &WorldState_class);
         return JS_TRUE;
 
     case 1:
-        JS_NEWOBJECTPOOL(client.player->actor, GameActor);
+        JS_NEWOBJECTPOOL(client.LocalPlayer().actor, GameActor);
         //JS_NEWOBJECT_SETPRIVATE(client.player->actor, &GameActor_class);
         return JS_TRUE;
 
     case 2:
-        JS_NEWOBJECTPOOL(client.player->camera, GameActor);
+        JS_NEWOBJECTPOOL(client.LocalPlayer().camera, GameActor);
         return JS_TRUE;
 
     case 3:
-        JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(client.player->playerObject));
+        JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(client.LocalPlayer().GetScriptObject()));
         return JS_TRUE;
 
     case 4:
-        JS_NEWOBJECT_SETPRIVATE(&client.player->info.cmd, &Command_class);
+        JS_NEWOBJECT_SETPRIVATE(client.LocalPlayer().Cmd(), &Command_class);
         return JS_TRUE;
 
     default:

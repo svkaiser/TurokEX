@@ -82,48 +82,14 @@ char *kexServer::GetPeerAddress(ENetEvent *sev) {
 
 unsigned int kexServer::GetClientID(ENetPeer *peer) const {
     for(int i = 0; i < maxClients; i++) {
-        if(clients[i].state == SVC_STATE_INACTIVE)
+        if(players[i].GetState() == SVC_STATE_INACTIVE)
             continue;
-        if(peer->connectID == clients[i].client_id)
+        if(peer->connectID == players[i].GetID())
             return i;
     }
 
    return 0;
 }
-
-//
-// kexServer::AddClient
-//
-
-/*void kexServer::AddClient(ENetEvent *sev) {
-    for(int i = 0; i < maxClients; i++)
-    {
-        if(clients[i].state == SVC_STATE_INACTIVE)
-        {
-            clients[i].state = SVC_STATE_ACTIVE;
-            clients[i].peer = sev->peer;
-            clients[i].client_id = sev->peer->connectID;
-            clients[i].ns.ingoing = 0;
-            clients[i].ns.outgoing = 1;
-            memset(&clients[i].cmd, 0, sizeof(ticcmd_t));
-
-            ENetPacket *packet;
-
-            if(!(packet = packetManager.Create()))
-                return;
-
-            common.Printf("%s connected...\n",
-                GetPeerAddress(sev));
-
-            packetManager.Write8(packet, sp_clientinfo);
-            packetManager.Write8(packet, clients[i].client_id);
-            packetManager.Send(packet, clients[i].peer);
-            return;
-        }
-    }
-
-    SendMessage(sev, sm_full);
-}*/
 
 //
 // kexServer::CreateHost
@@ -161,10 +127,10 @@ void kexServer::CreateHost(void) {
 
 void kexServer::ClientCommand(ENetEvent *sev, ENetPacket *packet) {
     char *cmd = packetManager.ReadString(packet);
-    svclient_t *svcl;
+    /*svclient_t *svcl;
 
     svcl = &clients[GetClientID(sev->peer)];
-    common.DPrintf("client command: %s (%s)\n", cmd, GetPeerAddress(sev));
+    common.DPrintf("client command: %s (%s)\n", cmd, GetPeerAddress(sev));*/
 }
 
 //
@@ -243,11 +209,10 @@ void kexServer::ProcessPackets(const ENetPacket *packet) {
 //
 
 void kexServer::SendClientMessages(void) {
-    for(int i = 0; i < maxClients; i++)
-    {
-        if(clients[i].state != SVC_STATE_INACTIVE) {
+    for(int i = 0; i < maxClients; i++) {
+        /*if(players[i].State() != SVC_STATE_INACTIVE) {
             SendMoveData(&clients[i]);
-        }
+        }*/
     }
 }
 
@@ -256,7 +221,32 @@ void kexServer::SendClientMessages(void) {
 //
 
 void kexServer::OnConnect(void) {
-    P_NewPlayerConnected(GetEvent());
+    ENetEvent *sev = GetEvent();
+    for(int i = 0; i < GetMaxClients(); i++) {
+        if(players[i].GetState() == SVC_STATE_INACTIVE) {
+            kexNetPlayer *player = &players[i];
+            ENetPacket *packet;
+
+            player->SetState(SVC_STATE_ACTIVE);
+            player->SetPeer(sev->peer);
+            player->SetID(sev->peer->connectID);
+            player->ResetNetSequence();
+            player->ResetTicCommand();
+
+            if(!(packet = packetManager.Create()))
+                return;
+
+            common.Printf("%s connected...\n",
+                GetPeerAddress(sev));
+
+            packetManager.Write8(packet, sp_clientinfo);
+            packetManager.Write8(packet, player->GetID());
+            packetManager.Send(packet, player->GetPeer());
+            return;
+        }
+    }
+
+    SendMessage(sev, sm_full);
 }
 
 //
@@ -272,8 +262,8 @@ void kexServer::OnDisconnect(void) {
 // kexServer::SendMoveData
 //
 
-void kexServer::SendMoveData(svclient_t *svcl) {
-    /*ENetPacket *packet;
+/*void kexServer::SendMoveData(svclient_t *svcl) {
+    ENetPacket *packet;
 
     if(svcl->state != SVC_STATE_INGAME)
         return;
@@ -292,8 +282,8 @@ void kexServer::SendMoveData(svclient_t *svcl) {
     packetManager.Write32(packet, svcl->ns.outgoing);
     svcl->ns.outgoing++;
 
-    packetManager.Send(packet, svcl->peer);*/
-}
+    packetManager.Send(packet, svcl->peer);
+}*/
 
 //
 // kexServer::Run
@@ -308,11 +298,10 @@ void kexServer::Run(int msec) {
 
     CheckMessages();
 
-    if(GetRunTime() < GetTime())
-    {
-        if(GetTime() - GetRunTime() > SERVER_RUNTIME)
+    if(GetRunTime() < GetTime()) {
+        if(GetTime() - GetRunTime() > SERVER_RUNTIME) {
             SetRunTime((float)GetTime() - SERVER_RUNTIME);
-
+        }
         return;
     }
 
@@ -321,8 +310,9 @@ void kexServer::Run(int msec) {
 
     G_Ticker();
 
-    if(GetTime() < GetRunTime())
+    if(GetTime() < GetRunTime()) {
         SetRunTime((float)GetTime());
+    }
 }
 
 //

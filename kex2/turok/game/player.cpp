@@ -38,195 +38,13 @@
 #include "zone.h"
 #include "console.h"
 
-localPlayer_t localPlayer;
-netPlayer_t netPlayers[MAX_PLAYERS];
-
-//
-// P_ResetNetSeq
-//
-
-void P_ResetNetSeq(playerInfo_t *info)
-{
-    info->netseq.ingoing = 0;
-    info->netseq.outgoing = 1;
-}
-
-//
-// P_Responder
-//
-
-kbool P_Responder(event_t *ev)
-{
-    if(console.ProcessInput(ev))
-        return true;
-
-    switch(ev->type)
-    {
-    case ev_mouse:
-        inputSystem.MoveMouse(ev->data2, ev->data3);
-        return true;
-
-    case ev_keydown:
-        inputKey.ExecuteCommand(ev->data1, false);
-        return true;
-
-    case ev_keyup:
-        inputKey.ExecuteCommand(ev->data1, true);
-        return true;
-
-    case ev_mousedown:
-        inputKey.ExecuteCommand(ev->data1, false);
-        return true;
-
-    case ev_mouseup:
-        inputKey.ExecuteCommand(ev->data1, true);
-        return true;
-    }
-
-    return false;
-}
-
-//
-// P_GetNetPlayer
-//
-
-/*netPlayer_t *P_GetNetPlayer(ENetPeer *peer)
-{
-    for(int i = 0; i < server.GetMaxClients(); i++)
-    {
-        if(netPlayers[i].state == SVC_STATE_INACTIVE)
-            continue;
-
-        if(peer->connectID == netPlayers[i].info.id)
-            return &netPlayers[i];
-    }
-
-   return &netPlayers[0];
-}*/
-
-//
-// P_NewPlayerConnected
-//
-
-void P_NewPlayerConnected(ENetEvent *sev)
-{
-    for(int i = 0; i < server.GetMaxClients(); i++)
-    {
-        if(netPlayers[i].state == SVC_STATE_INACTIVE)
-        {
-            playerInfo_t *info = &netPlayers[i].info;
-            ENetPacket *packet;
-
-            netPlayers[i].state = SVC_STATE_ACTIVE;
-            info->peer = sev->peer;
-            info->id = sev->peer->connectID;
-            P_ResetNetSeq(info);
-            memset(&info->cmd, 0, sizeof(ticcmd_t));
-
-            if(!(packet = packetManager.Create()))
-                return;
-
-            common.Printf("%s connected...\n",
-                server.GetPeerAddress(sev));
-
-            packetManager.Write8(packet, sp_clientinfo);
-            packetManager.Write8(packet, info->id);
-            packetManager.Send(packet, info->peer);
-            return;
-        }
-    }
-
-    server.SendMessage(sev, sm_full);
-}
-
-//
-// P_BuildCommands
-//
-
-void P_BuildCommands(void)
-{
-    ENetPacket *packet;
-    playerInfo_t *pinfo;
-    ticcmd_t *cmd;
-    control_t *ctrl;
-    int numactions;
-    int i;
-
-    if(client.GetState() != CL_STATE_INGAME)
-        return;
-
-    pinfo = &localPlayer.info;
-    cmd = &pinfo->cmd;
-    ctrl = inputKey.Controls();
-
-    for(i = 0; i < MAXACTIONS; i++)
-        cmd->buttons[i] = false;
-
-    for(i = 0; i < MAXACTIONS; i++)
-    {
-        cmd->buttons[i] = (ctrl->actions[i]) ? true : false;
-        if(cmd->buttons[i] == 1)
-        {
-            if(cmd->heldtime[i] < 255)
-                cmd->heldtime[i]++;
-            else
-                cmd->heldtime[i] = 255;
-        }
-        else
-            cmd->heldtime[i] = 0;
-    }
-
-    cmd->timestamp.i = client.GetTime();
-    cmd->frametime.f = client.GetRunTime();
-    cmd->mouse[0].f = ctrl->mousex;
-    cmd->mouse[1].f = ctrl->mousey;
-
-    ctrl->mousex = 0;
-    ctrl->mousey = 0;
-
-    if(!(packet = packetManager.Create()))
-        return;
-
-    packetManager.Write8(packet, cp_cmd);
-
-    numactions = 0;
-
-    for(i = 0; i < MAXACTIONS; i++)
-    {
-        if(cmd->buttons[i])
-            numactions++;
-    }
-
-    packetManager.Write32(packet, cmd->mouse[0].i);
-    packetManager.Write32(packet, cmd->mouse[1].i);
-    packetManager.Write32(packet, cmd->timestamp.i);
-    packetManager.Write32(packet, cmd->frametime.i);
-    packetManager.Write32(packet, numactions);
-
-    for(i = 0; i < MAXACTIONS; i++)
-    {
-        if(cmd->buttons[i])
-        {
-            packetManager.Write8(packet, i);
-            packetManager.Write8(packet, cmd->heldtime[i]);
-        }
-    }
-
-    packetManager.Write32(packet, pinfo->netseq.ingoing);
-    packetManager.Write32(packet, pinfo->netseq.outgoing);
-
-    pinfo->netseq.outgoing++;
-
-    packetManager.Send(packet, pinfo->peer);
-}
-
 //
 // P_RunCommand
 //
 
 void P_RunCommand(ENetEvent *sev, ENetPacket *packet)
 {
-    netPlayer_t *netplayer;
+    /*netPlayer_t *netplayer;
     ticcmd_t *cmd;
     int numactions;
     int i;
@@ -252,93 +70,9 @@ void P_RunCommand(ENetEvent *sev, ENetPacket *packet)
     }
 
     packetManager.Read32(packet, (unsigned int*)&netplayer->info.netseq.acks);
-    packetManager.Read32(packet, (unsigned int*)&netplayer->info.netseq.ingoing);
+    packetManager.Read32(packet, (unsigned int*)&netplayer->info.netseq.ingoing);*/
 
     // TODO - PROCESS MOVEMENT
-}
-
-//
-// P_LocalPlayerEvent
-//
-
-int P_LocalPlayerEvent(const char *eventName)
-{
-    gObject_t *function;
-    JSContext *cx;
-    jsval val;
-    jsval rval;
-
-    if(client.GetState() != CL_STATE_INGAME)
-        return 0;
-
-    cx = js_context;
-
-    if(!JS_GetProperty(cx, localPlayer.playerObject, eventName, &val))
-        return 0;
-    if(!JS_ValueToObject(cx, val, &function))
-        return 0;
-
-    JS_CallFunctionValue(cx, localPlayer.playerObject,
-        OBJECT_TO_JSVAL(function), 0, NULL, &rval);
-
-    return rval;
-}
-
-//
-// P_SaveLocalComponentData
-//
-
-void P_SaveLocalComponentData(void)
-{
-    jsval val;
-
-    val = (jsval)P_LocalPlayerEvent("serialize");
-
-    if(val == 0)
-        return;
-
-    if(JSVAL_IS_STRING(val))
-    {
-        JSString *str;
-
-        if(str = JS_ValueToString(js_context, val))
-        {
-            // free the old string
-            if(localPlayer.info.jsonData != NULL)
-                JS_free(js_context, localPlayer.info.jsonData);
-
-            localPlayer.info.jsonData = JS_EncodeString(js_context, str);
-        }
-    }
-}
-
-//
-// P_RestoreLocalComponentData
-//
-
-void P_RestoreLocalComponentData(void)
-{
-    gObject_t *function;
-    JSContext *cx;
-    jsval val;
-    jsval rval;
-
-    if(localPlayer.info.jsonData == NULL)
-        return;
-
-    cx = js_context;
-
-    if(!JS_GetProperty(cx, localPlayer.playerObject, "deSerialize", &val))
-        return;
-    if(!JS_ValueToObject(cx, val, &function))
-        return;
-
-    val = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, localPlayer.info.jsonData));
-
-    JS_CallFunctionValue(cx, localPlayer.playerObject,
-        OBJECT_TO_JSVAL(function), 1, &val, &rval);
-
-    return;
 }
 
 //
@@ -348,27 +82,29 @@ void P_RestoreLocalComponentData(void)
 void P_LocalPlayerTick(void)
 {
     worldState_t *ws;
-    playerInfo_t *info;
     gActor_t *actor;
+    gActor_t *camera;
     int current;
     plane_t *plane;
     int area_idx;
+    ticcmd_t *cmd;
 
     if(client.GetState() != CL_STATE_INGAME)
         return;
 
-    ws = &localPlayer.worldState;
-    info = &localPlayer.info;
-    actor = localPlayer.actor;
+    ws = &client.LocalPlayer().worldState;
+    actor = client.LocalPlayer().actor;
+    camera = client.LocalPlayer().camera;
     plane = Map_IndexToPlane(actor->plane);
 
     area_idx = plane ? plane->area_id : -1;
 
-    ws->timeStamp = (float)info->cmd.timestamp.i;
-    ws->frameTime = info->cmd.frametime.f;
+    cmd = client.LocalPlayer().Cmd();
+    ws->timeStamp = (float)cmd->timestamp.i;
+    ws->frameTime = cmd->frametime.f;
 
     Map_UnlinkActorFromWorld(actor);
-    Map_UnlinkActorFromWorld(localPlayer.camera);
+    Map_UnlinkActorFromWorld(camera);
 
     // update controller in case movement was corrected by server
     Vec_Copy3(ws->origin, actor->origin);
@@ -380,7 +116,7 @@ void P_LocalPlayerTick(void)
     // TODO
     actor->velocity[1] = 0;
 
-    P_LocalPlayerEvent("onLocalTick");
+    client.LocalPlayer().PlayerEvent("onLocalTick");
 
     JPool_ReleaseObjects(&objPoolVector);
     JPool_ReleaseObjects(&objPoolGameActor);
@@ -394,10 +130,10 @@ void P_LocalPlayerTick(void)
 
     // TODO - AREA/LOCALTICK
 
-    current = (info->netseq.outgoing-1) & (NETBACKUPS-1);
-    Vec_Copy3(localPlayer.oldMoves[current], ws->origin);
-    localPlayer.oldCmds[current] = info->cmd;
-    localPlayer.latency[current] = client.GetTime();
+    current = (client.LocalPlayer().NetSeq()->outgoing-1) & (NETBACKUPS-1);
+    //Vec_Copy3(localPlayer.oldMoves[current], ws->origin);
+    //localPlayer.oldCmds[current] = info->cmd;
+    //localPlayer.latency[current] = client.GetTime();
     actor->plane = (ws->plane - gLevel.planes);
 
     Ang_Clamp(&ws->angles[0]);
@@ -408,10 +144,10 @@ void P_LocalPlayerTick(void)
     Vec_Copy3(actor->angles, ws->angles);
 
     Map_LinkActorToWorld(actor);
-    Map_LinkActorToWorld(localPlayer.camera);
+    Map_LinkActorToWorld(camera);
 
     Actor_UpdateTransform(actor);
-    Actor_UpdateTransform(localPlayer.camera);
+    Actor_UpdateTransform(camera);
 
     if(actor->classFlags & AC_PLAYER)
     {
@@ -480,23 +216,22 @@ void P_SpawnLocalPlayer(void)
     pStart->height = pStart->baseHeight * 0.72f;
     pStart->physics |= PF_TOUCHACTORS;
 
-    client.playerActor = pStart;
-    localPlayer.actor = pStart;
-    localPlayer.playerObject = pObject;
+    client.LocalPlayer().actor = pStart;
+    client.LocalPlayer().SetScriptObject(pObject);
 
-    ws = &localPlayer.worldState;
+    ws = &client.LocalPlayer().worldState;
 
     Vec_Copy3(ws->origin, pStart->origin);
     Vec_Copy3(ws->angles, pStart->angles);
     Vec_Set3(ws->velocity, 0, 0, 0);
     Vec_Set3(ws->accel, 0, 0, 0);
-    ws->actor = localPlayer.actor;
+    ws->actor = client.LocalPlayer().actor;
 
     if(pStart->plane != -1)
         ws->plane = &gLevel.planes[pStart->plane];
 
     // de-serialize data if it exists
-    P_RestoreLocalComponentData();
+    client.LocalPlayer().DeSerializeScriptObject();
 
     // update actor position if the world state was
     // modified in any way
@@ -519,16 +254,14 @@ void P_SpawnLocalPlayer(void)
     camera->bStatic = false;
     camera->bClientOnly = true;
     camera->plane = -1;
-    camera->owner = localPlayer.actor;
+    camera->owner = client.LocalPlayer().actor;
     strcpy(camera->name, "Camera");
     Vec_Set3(camera->scale, 1, 1, 1);
     Vec_Copy3(camera->origin, pStart->origin);
     Vec_Copy3(camera->angles, pStart->angles);
     Vec_Copy4(camera->rotation, pStart->rotation);
     Map_AddActor(&gLevel, camera);
-    localPlayer.camera = camera;
-
-    client.player = &localPlayer;
+    client.LocalPlayer().camera = camera;
 }
 
 DECLARE_ABSTRACT_CLASS(kexPlayer, kexWorldActor)
@@ -539,6 +272,7 @@ DECLARE_ABSTRACT_CLASS(kexPlayer, kexWorldActor)
 
 kexPlayer::kexPlayer(void) {
     ResetNetSequence();
+    ResetTicCommand();
 }
 
 //
@@ -557,6 +291,14 @@ void kexPlayer::ResetNetSequence(void) {
     netseq.outgoing = 1;
 }
 
+//
+// kexPlayer::ResetTicCommand
+//
+
+void kexPlayer::ResetTicCommand(void) {
+    memset(&cmd, 0, sizeof(ticcmd_t));
+}
+
 DECLARE_CLASS(kexLocalPlayer, kexPlayer)
 
 //
@@ -571,13 +313,15 @@ kexLocalPlayer::kexLocalPlayer(void) {
 //
 
 kexLocalPlayer::~kexLocalPlayer(void) {
+    if(jsonData != NULL)
+        JS_free(js_context, jsonData);
 }
 
 //
-// kexLocalPlayer::RespondToInput
+// kexLocalPlayer::ProcessInput
 //
 
-bool kexLocalPlayer::RespondToInput(event_t *ev) {
+bool kexLocalPlayer::ProcessInput(event_t *ev) {
     if(console.ProcessInput(ev))
         return true;
 
@@ -587,17 +331,11 @@ bool kexLocalPlayer::RespondToInput(event_t *ev) {
         return true;
 
     case ev_keydown:
-        inputKey.ExecuteCommand(ev->data1, false);
-        return true;
-
-    case ev_keyup:
-        inputKey.ExecuteCommand(ev->data1, true);
-        return true;
-
     case ev_mousedown:
         inputKey.ExecuteCommand(ev->data1, false);
         return true;
 
+    case ev_keyup:
     case ev_mouseup:
         inputKey.ExecuteCommand(ev->data1, true);
         return true;
@@ -681,6 +419,81 @@ void kexLocalPlayer::BuildCommands(void) {
     netseq.outgoing++;
 
     packetManager.Send(packet, peer);
+}
+
+//
+// kexLocalPlayer::PlayerEvent
+//
+
+int kexLocalPlayer::PlayerEvent(const char *eventName) {
+    gObject_t *function;
+    JSContext *cx;
+    jsval val;
+    jsval rval;
+
+    if(client.GetState() != CL_STATE_INGAME)
+        return 0;
+
+    cx = js_context;
+
+    if(!JS_GetProperty(cx, scriptObject, eventName, &val))
+        return 0;
+    if(!JS_ValueToObject(cx, val, &function))
+        return 0;
+
+    JS_CallFunctionValue(cx, scriptObject,
+        OBJECT_TO_JSVAL(function), 0, NULL, &rval);
+
+    return rval;
+}
+
+//
+// kexLocalPlayer::SerializeScriptObject
+//
+
+void kexLocalPlayer::SerializeScriptObject(void) {
+    jsval val = (jsval)PlayerEvent("serialize");
+
+    if(val == 0)
+        return;
+
+    if(JSVAL_IS_STRING(val)) {
+        JSString *str;
+
+        if(str = JS_ValueToString(js_context, val)) {
+            // free the old string
+            if(jsonData != NULL)
+                JS_free(js_context, jsonData);
+
+            jsonData = JS_EncodeString(js_context, str);
+        }
+    }
+}
+
+//
+// kexLocalPlayer::DeSerializeScriptObject
+//
+
+void kexLocalPlayer::DeSerializeScriptObject(void) {
+    gObject_t *function;
+    JSContext *cx;
+    jsval val;
+    jsval rval;
+
+    if(jsonData == NULL)
+        return;
+
+    cx = js_context;
+
+    if(!JS_GetProperty(cx, scriptObject, "deSerialize", &val))
+        return;
+    if(!JS_ValueToObject(cx, val, &function))
+        return;
+
+    val = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, jsonData));
+
+    JS_CallFunctionValue(cx, scriptObject,
+        OBJECT_TO_JSVAL(function), 1, &val, &rval);
 }
 
 //

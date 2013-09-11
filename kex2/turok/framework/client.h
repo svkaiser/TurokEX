@@ -72,10 +72,6 @@ public:
     kexLocalPlayer      &LocalPlayer(void) { return playerClient; }
 
     unsigned int        id;
-    // TODO - REMOVE
-    gActor_t            *playerActor;
-    // TODO - REMOVE
-    localPlayer_t       *player;
     int                 curtime;
 
 private:

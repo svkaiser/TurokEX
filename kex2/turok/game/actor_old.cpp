@@ -294,7 +294,7 @@ static kbool Actor_AlignToPlane(gActor_t *actor)
 {
     if(!actor->bStatic && actor->physics & PF_SLIDEMOVE &&
         actor->plane != -1 && actor->bOrientOnSlope &&
-        client.playerActor != actor /*TODO*/)
+        client.LocalPlayer().actor != actor /*TODO*/)
     {
         plane_t *plane = &gLevel.planes[actor->plane];
         mtx_t m1;
@@ -780,8 +780,8 @@ void Actor_LocalTick(void)
 
         if(!actor->ai && actor->animState.track.anim != NULL && actor->tickDistance != 0)
         {
-            float x = actor->origin[0] - client.playerActor->origin[0];
-            float z = actor->origin[2] - client.playerActor->origin[2];
+            float x = actor->origin[0] - client.LocalPlayer().actor->origin[0];
+            float z = actor->origin[2] - client.LocalPlayer().actor->origin[2];
 
             if(x*x+z*z >= (actor->tickDistance * 2.048f))
                 actor->animState.flags |= ANF_PAUSED;
@@ -792,7 +792,7 @@ void Actor_LocalTick(void)
         Mdl_UpdateAnimState(&actor->animState);
 
         // TODO
-        if(client.playerActor == actor)
+        if(client.LocalPlayer().actor == actor)
             continue;
 
         if(actor->components && !actor->bCulled)
@@ -820,7 +820,7 @@ void Actor_Tick(void)
             continue;
 
         // TODO
-        if(client.playerActor == actor)
+        if(client.LocalPlayer().actor == actor)
             continue;
 
         actor->timestamp = ((float)server.GetElaspedTime() -

@@ -173,6 +173,7 @@ public:
     kexQuat                 &operator*=(const kexQuat &quat);
     kexQuat                 &operator*=(const float val);
     kexQuat                 &operator=(const kexQuat &quat);
+    kexQuat                 &operator=(const float *vecs);
 
     float                   x;
     float                   y;
@@ -218,6 +219,7 @@ public:
     kexVec3                 operator/(const float val);
     kexVec3                 operator|(const kexQuat &quat);
     kexVec3                 &operator=(const kexVec3 &vec);
+    kexVec3                 &operator=(const float *vecs);
     kexVec3                 &operator+=(const kexVec3 &vec);
     kexVec3                 &operator-=(const kexVec3 &vec);
     kexVec3                 &operator*=(const kexVec3 &vec);
@@ -354,6 +356,7 @@ public:
     kexAngle                &operator+=(const kexAngle &angle);
     kexAngle                &operator-=(const kexAngle &angle);
     kexAngle                &operator=(const kexAngle &angle);
+    kexAngle                &operator=(const float *vecs);
     kexAngle                operator-(void);
     float                   operator[](int index) const;
     float                   operator[](int index);

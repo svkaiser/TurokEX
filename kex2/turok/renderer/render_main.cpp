@@ -541,7 +541,7 @@ void R_DrawActors(void)
 
         if(cvarRenderCull.GetBool() && actor->cullDistance != 0)
         {
-            if(Vec_Length3(client.player->camera->origin,
+            if(Vec_Length3(client.LocalPlayer().camera->origin,
                 actor->origin) >= actor->cullDistance)
             {
                 actor->bCulled = true;
@@ -556,7 +556,7 @@ void R_DrawActors(void)
         Vec_Add(box.min, box.min, actor->origin);
         Vec_Add(box.max, box.max, actor->origin);
 
-        if(actor != client.player->camera->owner)
+        if(actor != client.LocalPlayer().camera->owner)
         {
             actor->bCulled = !R_FrustumTestBox(box);
 
@@ -595,7 +595,7 @@ void R_DrawActors(void)
                     R_DrawBoundingBox(box, 255, 0, 0);
             }
 
-            if(showorigin && actor != client.player->camera->owner)
+            if(showorigin && actor != client.LocalPlayer().camera->owner)
             {
                 vec3_t vec;
 
@@ -607,7 +607,7 @@ void R_DrawActors(void)
                 R_DrawOrigin(vec, 16.0f);
                 dglPopMatrix();
             }
-            if(showradius && actor != client.player->camera->owner)
+            if(showradius && actor != client.LocalPlayer().camera->owner)
             {
                 R_DrawRadius(
                     actor->origin[0],
@@ -681,7 +681,7 @@ void R_DrawStatics(void)
 
             if(cvarRenderCull.GetBool() && actor->cullDistance != 0)
             {
-                if(Vec_Length3(client.player->camera->origin,
+                if(Vec_Length3(client.LocalPlayer().camera->origin,
                     actor->origin) >= actor->cullDistance)
                 {
                     actor->bCulled = true;
@@ -940,7 +940,7 @@ static void R_SetupWorldLight(void)
 
 void R_DrawFrame(void)
 {
-    P_LocalPlayerEvent("onPreRender");
+    client.LocalPlayer().PlayerEvent("onPreRender");
 
     if(showcollision)
         dglDisable(GL_FOG);
@@ -971,7 +971,7 @@ void R_DrawFrame(void)
     dglCullFace(GL_FRONT);
     R_DrawFX();
 
-    P_LocalPlayerEvent("onRender");
+    client.LocalPlayer().PlayerEvent("onRender");
 
     dglEnableClientState(GL_COLOR_ARRAY);
     dglAlphaFunc(GL_GEQUAL, 0.01f);
@@ -998,7 +998,7 @@ void R_DrawFrame(void)
 
     GL_SetOrtho();
 
-    P_LocalPlayerEvent("onPostRender");
+    client.LocalPlayer().PlayerEvent("onPostRender");
 
     R_MorphModel(&morphmodels[0]);
     R_MorphModel(&morphmodels[1]);

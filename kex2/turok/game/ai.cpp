@@ -397,13 +397,13 @@ void AI_FindPlayers(ai_t *ai)
 {
     ai->flags &= ~AIF_SEEPLAYER;
 
-    if(AI_CanSeeTarget(ai, client.playerActor))
+    if(AI_CanSeeTarget(ai, client.LocalPlayer().actor))
     {
         if(!ai->target)
         {
             jsval val;
 
-            Actor_SetTarget(&ai->target, client.playerActor);
+            Actor_SetTarget(&ai->target, client.LocalPlayer().actor);
 
             if(Actor_ToVal(ai->target, &val))
                 Actor_CallEvent(ai->owner, "onTargetFound", &val, 1);
@@ -433,7 +433,7 @@ void AI_CheckSleepRange(ai_t *ai)
 {
     // TODO - Handle network players
     if(Vec_Length2(ai->owner->origin,
-        client.playerActor->origin) > ai->activeDistance)
+        client.LocalPlayer().actor->origin) > ai->activeDistance)
     {
         if(!(ai->flags & AIF_DORMANT))
         {

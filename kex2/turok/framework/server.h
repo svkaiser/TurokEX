@@ -45,21 +45,6 @@ typedef enum
 
 #define SERVER_RUNTIME  16
 
-//
-// svclient - server-side client controller
-// may contain non-persistent player/client data.
-// used to communicate data between server
-// and client
-//
-struct svclient_s
-{
-    ENetPeer            *peer;
-    unsigned int        client_id;
-    int                 state;
-    ticcmd_t            cmd;
-    netsequence_t       ns;
-};
-
 class kexServer : public kexNetwork {
 public:
     virtual void        Init(void);
@@ -78,13 +63,12 @@ public:
     void                SetMaxClients(int _max) { maxClients = _max; }
 
     char                *GetPeerAddress(ENetEvent *sev);
-    void                SendMoveData(svclient_t *svcl);
+    //void                SendMoveData(svclient_t *svcl);
     void                SendMessage(ENetEvent *sev, int type);
     unsigned int        GetClientID(ENetPeer *peer) const;
 
 private:
     void                SendClientMessages(void);
-    //void                AddClient(ENetEvent *sev);
     void                ClientCommand(ENetEvent *sev, ENetPacket *packet);
     void                SendAcknowledgement(ENetEvent *sev);
 
@@ -92,8 +76,6 @@ private:
     bool                bLocal;
     int                 maxClients;
     int                 elaspedTime;
-    // TODO - REMOVE
-    svclient_t          clients[MAX_PLAYERS];
 };
 
 extern kexServer server;

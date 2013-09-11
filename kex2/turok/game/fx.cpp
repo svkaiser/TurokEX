@@ -147,7 +147,7 @@ static fx_t *FX_SpawnChild(fx_t *parent, const char *file)
             Mtx_IdentityY(mtx3, DEG2RAD(90));
             break;
         default:
-            Mtx_ApplyRotation(client.playerActor->rotation, mtx3);
+            Mtx_ApplyRotation(client.LocalPlayer().actor->rotation, mtx3);
             break;
         }
 
@@ -231,11 +231,11 @@ static void FX_DestroyEvent(fx_t *fx, fxEvent_t *fxEvent, gActor_t *hitActor)
 
 static void FX_SetDistance(fx_t *fx)
 {
-    float s = (float)sin(client.playerActor->angles[0]);
-    float c = (float)cos(client.playerActor->angles[0]);
+    float s = (float)sin(client.LocalPlayer().actor->angles[0]);
+    float c = (float)cos(client.LocalPlayer().actor->angles[0]);
 
-    fx->dist = (int)((fx->origin[0] - client.playerActor->origin[0]) * s +
-        (fx->origin[2] - client.playerActor->origin[2]) * c) * 0.5f;
+    fx->dist = (int)((fx->origin[0] - client.LocalPlayer().actor->origin[0]) * s +
+        (fx->origin[2] - client.LocalPlayer().actor->origin[2]) * c) * 0.5f;
 }
 
 //
@@ -856,22 +856,22 @@ static void FCmd_SpawnFX(void)
     if(command.GetArgc() < 2)
         return;
 
-    if(client.playerActor == NULL)
+    if(client.LocalPlayer().actor == NULL)
         return;
 
-    if(!(plane = Map_FindClosestPlane(client.playerActor->origin)))
+    if(!(plane = Map_FindClosestPlane(client.LocalPlayer().actor->origin)))
         return;
 
     Vec_Set3(vec,
-        client.playerActor->rotation[0],
-        client.playerActor->rotation[1],
-        client.playerActor->rotation[2]);
+        client.LocalPlayer().actor->rotation[0],
+        client.LocalPlayer().actor->rotation[1],
+        client.LocalPlayer().actor->rotation[2]);
 
     FX_Spawn(command.GetArgv(1),
-        client.playerActor,
+        client.LocalPlayer().actor,
         vec,
-        client.playerActor->origin,
-        client.playerActor->rotation, plane);
+        client.LocalPlayer().actor->origin,
+        client.LocalPlayer().actor->rotation, plane);
 }
 
 //

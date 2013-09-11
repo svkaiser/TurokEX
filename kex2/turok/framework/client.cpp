@@ -88,8 +88,9 @@ void kexClient::Connect(const char *address) {
     enet_address_set_host(&addr, address);
     addr.port = cvarClientPort.GetInt();
     SetPeer(enet_host_connect(GetHost(), &addr, 2, 0));
-    player->info.peer = GetPeer();
+    playerClient.SetPeer(GetPeer());
     enet_address_get_host_ip(&addr, ip, 32);
+    
     common.Printf("Connecting to %s:%u...\n", ip, addr.port);
 
     if(GetPeer() == NULL) {
@@ -109,15 +110,14 @@ void kexClient::ProcessPackets(const ENetPacket *packet) {
 
     packetManager.Read8((ENetPacket*)packet, &type);
 
-    switch(type)
-    {
+    switch(type) {
     case sp_ping:
         common.Printf("Recieved acknowledgement from server\n");
         break;
 
     case sp_clientinfo:
         packetManager.Read8((ENetPacket*)packet, &id);
-        player->info.id = id;
+        playerClient.SetID(id);
         SetState(CL_STATE_READY);
         common.DPrintf("CL_ReadClientInfo: ID is %i\n", id);
         break;
@@ -136,7 +136,7 @@ void kexClient::ProcessPackets(const ENetPacket *packet) {
 
 void kexClient::OnConnect(void) {
     SetState(CL_STATE_CONNECTED);
-    P_ResetNetSeq(&client.player->info);
+    playerClient.ResetNetSequence();
 }
 
 //
@@ -165,33 +165,47 @@ void kexClient::Run(const int msec) {
 
     curtime = 0;
 
+    // check for new packets
     CheckMessages();
 
+    // check for new inputs
     inputSystem.PollInput();
 
+    // handle input events
     ProcessEvents();
 
-    P_BuildCommands();
+    // prep and send input information to server
+    playerClient.BuildCommands();
 
+    // update local player
     P_LocalPlayerTick();
-
+    //playerClient.LocalTick();
+    
+    // update console
     console.Tick();
-
+    
+    // update all local particles
     FX_Ticker();
+    
+    // update all actor animations
+    Actor_LocalTick();
 
-    //TEMP
-    G_ClientThink();
-
+    // draw scene
     R_DrawFrame();
 
+    // update debug stats
     Debug_DrawStats();
 
+    // update console display
     console.Draw();
 
+    // wrap up all rendering and swap buffers
     R_FinishFrame();
 
+    // update all sound sources
     Snd_UpdateListener();
 
+    // update all debug variables
     Debug_UpdateStatFrame();
 
     UpdateTicks();
@@ -268,7 +282,7 @@ void kexClient::ProcessEvents(void) {
 
         // TODO - TEMP
         eventtail = (--eventtail)&(MAXEVENTS-1);
-        P_Responder(GetEvent());
+        playerClient.ProcessInput(GetEvent());
 
         oldev = ev;
     }
@@ -328,8 +342,6 @@ void kexClient::Init(void) {
     curtime = 0;
     id = -1;
     bLocal = (common.CheckParam("-client") == 0);
-    playerActor = NULL;
-    player = &localPlayer;
     
     SetTime(0);
     SetTicks(0);

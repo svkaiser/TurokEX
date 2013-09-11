@@ -26,51 +26,25 @@
 #include "common.h"
 #include "actor.h"
 
-typedef struct
-{
-    netsequence_t   netseq;
-    char            *name;
-    ticcmd_t        cmd;
-    ENetPeer        *peer;
-    int             id;
-    char            *jsonData;
-} playerInfo_t;
-
-typedef struct
-{
-    playerInfo_t    info;
-    worldState_t    worldState;
-    gActor_t        *actor;
-    gActor_t        *camera;
-    int             latency[NETBACKUPS];
-    vec3_t          moveDiff;
-    vec3_t          oldMoves[NETBACKUPS];
-    ticcmd_t        oldCmds[NETBACKUPS];
-    gObject_t       *playerObject;
-} localPlayer_t;
-
-typedef struct
-{
-    playerInfo_t    info;
-    worldState_t    worldState;
-    gActor_t        *actor;
-    gObject_t       *playerObject;
-    int             state;
-} netPlayer_t;
-
-extern localPlayer_t localPlayer;
-extern netPlayer_t netPlayers[MAX_PLAYERS];
-
-void P_ResetNetSeq(playerInfo_t *info);
 void P_RunCommand(ENetEvent *sev, ENetPacket *packet);
-void P_NewPlayerConnected(ENetEvent *sev);
-//netPlayer_t *P_GetNetPlayer(ENetPeer *peer);
 void P_SpawnLocalPlayer(void);
-void P_BuildCommands(void);
-int P_LocalPlayerEvent(const char *eventName);
-void P_SaveLocalComponentData(void);
 void P_LocalPlayerTick(void);
-kbool P_Responder(event_t *ev);
+
+typedef struct {
+    kexVec3         origin;
+    kexVec3         velocity;
+    kexVec3         accel;
+    kexAngle        angles;
+    float           moveTime;
+    float           frameTime;
+    float           timeStamp;
+} moveState_t;
+
+typedef struct {
+    int             ingoing;
+    int             outgoing;
+    int             acks;
+} netSequence_t;
 
 BEGIN_EXTENDED_CLASS(kexPlayer, kexActor);
 public:
@@ -78,28 +52,21 @@ public:
                         ~kexPlayer(void);
 
     void                ResetNetSequence(void);
+    void                ResetTicCommand(void);
 
     kexVec3             &Acceleration(void) { return acceleration; }
     float               MoveTime(void) { return moveTime; }
     ticcmd_t            *Cmd(void) { return &cmd; }
-    gObject_t           *ScriptObject(void) { return scriptObject; }
+    gObject_t           *GetScriptObject(void) const { return scriptObject; }
+    void                SetScriptObject(gObject_t *obj) { scriptObject = obj; }
+    ENetPeer            *GetPeer(void) { return peer; }
+    void                SetPeer(ENetPeer *_peer) { peer = _peer; }
+    int                 GetID(void) const { return id; }
+    void                SetID(const int _id) { id = _id; }
+    netSequence_t       *NetSeq(void) { return &netseq; }
 
-    typedef struct {
-        kexVec3         origin;
-        kexVec3         velocity;
-        kexVec3         accel;
-        kexAngle        angles;
-        float           moveTime;
-        float           frameTime;
-        float           timeStamp;
-    } worldState_t;
-
-    typedef struct
-    {
-        int             ingoing;
-        int             outgoing;
-        int             acks;
-    } netSequence_t;
+    // TODO - REMOVE
+    worldState_t        worldState;
 
 protected:
     kexVec3             acceleration;
@@ -110,7 +77,7 @@ protected:
     char                *name;
     ENetPeer            *peer;
     char                *jsonData;
-    worldState_t        worldState;
+    moveState_t         moveState;
     gObject_t           *scriptObject;
 END_CLASS();
 
@@ -121,8 +88,11 @@ public:
 
     virtual void        LocalTick(void);
 
-    bool                RespondToInput(event_t *ev);
+    bool                ProcessInput(event_t *ev);
     void                BuildCommands(void);
+    int                 PlayerEvent(const char *eventName);
+    void                SerializeScriptObject(void);
+    void                DeSerializeScriptObject(void);
 
     //kexActor            *Camera(void) { return camera; }
     kexVec3             &MoveDiff(void) { return moveDiff; }
@@ -145,7 +115,8 @@ public:
                         ~kexNetPlayer(void);
 
     virtual void        Tick(void);
-    int                 State(void) { return state; }
+    int                 GetState(void) const { return state; }
+    void                SetState(const int s) { state = s; }
 
     // TODO
     gActor_t            *actor;

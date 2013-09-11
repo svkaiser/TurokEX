@@ -66,7 +66,7 @@ void R_DrawFX(void)
 
     numFxCount = 0;
 
-    if(client.playerActor == NULL)
+    if(client.LocalPlayer().actor == NULL)
         return;
 
     GL_SetState(GLSTATE_BLEND, true);
@@ -147,13 +147,13 @@ void R_DrawFX(void)
             {
                 vec4_t rot;
 
-                Vec_SetQuaternion(rot, client.player->camera->angles[0], 0, 1, 0);
+                Vec_SetQuaternion(rot, client.LocalPlayer().camera->angles[0], 0, 1, 0);
                 Mtx_ApplyRotation(rot, mtx);
                 GL_SetState(GLSTATE_CULL, true);
             }
             break;
         default:
-            Mtx_ApplyRotation(client.player->camera->rotation, mtx);
+            Mtx_ApplyRotation(client.LocalPlayer().camera->rotation, mtx);
             GL_SetState(GLSTATE_CULL, true);
             break;
         }

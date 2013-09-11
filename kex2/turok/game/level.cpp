@@ -537,10 +537,10 @@ static void Map_GetAreaLinkCount(void)
 
     numAreaActors = 0;
 
-    if(client.playerActor->plane <= -1)
+    if(client.LocalPlayer().actor->plane <= -1)
         return;
 
-    area = Map_GetArea(Map_IndexToPlane(client.playerActor->plane));
+    area = Map_GetArea(Map_IndexToPlane(client.LocalPlayer().actor->plane));
 
     if(area == NULL)
         return;
@@ -776,7 +776,7 @@ void Map_Unload(void)
     Snd_StopAll();
 
     JS_CallFunctionName(js_context, js_objGame, "onLevelUnLoad", 0, NULL, &val);
-    P_SaveLocalComponentData();
+    client.LocalPlayer().SerializeScriptObject();
 
     gLevel.loaded = false;
     client.SetState(CL_STATE_CHANGINGLEVEL);
@@ -883,7 +883,7 @@ static void FCmd_SpawnActor(void)
     y       = (float)atof(command.GetArgv(3));
     z       = (float)atof(command.GetArgv(4));
 
-    actor = Map_SpawnActor(name, x, y, z, client.player->actor->angles[0], 0, -1);
+    actor = Map_SpawnActor(name, x, y, z, client.LocalPlayer().actor->angles[0], 0, -1);
 }
 
 //

@@ -408,6 +408,17 @@ kexAngle &kexAngle::operator=(const kexAngle &angle) {
 }
 
 //
+// kexAngle::operator=
+//
+
+kexAngle &kexAngle::operator=(const float *vecs) {
+    yaw     = vecs[0];
+    pitch   = vecs[1];
+    roll    = vecs[2];
+    return *this;
+}
+
+//
 // kexAngle::operator[]
 //
 

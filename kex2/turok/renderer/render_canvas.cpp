@@ -450,8 +450,8 @@ static void DrawPlaneOutline(plane_t *plane, int idx, float zoom)
         if(plane->flags & CLF_CHECKHEIGHT)
         {
             c[3] = 1.0f - 
-                ((float)fabs(client.playerActor->origin[1] -
-                Plane_GetDistance(plane, client.playerActor->origin)) / 512);
+                ((float)fabs(client.LocalPlayer().actor->origin[1] -
+                Plane_GetDistance(plane, client.LocalPlayer().actor->origin)) / 512);
 
             if(c[3] < 0) c[3] = 0;
             if(c[3] > 1) c[3] = 1;
@@ -459,9 +459,9 @@ static void DrawPlaneOutline(plane_t *plane, int idx, float zoom)
 
         dglColor4fv(c);
 
-        Vec_Sub(pos, plane->points[(idx+0)%3], client.playerActor->origin);
+        Vec_Sub(pos, plane->points[(idx+0)%3], client.LocalPlayer().actor->origin);
         dglVertex3f(pos[0], zoom, pos[2]);
-        Vec_Sub(pos, plane->points[(idx+1)%3], client.playerActor->origin);
+        Vec_Sub(pos, plane->points[(idx+1)%3], client.LocalPlayer().actor->origin);
         dglVertex3f(pos[0], zoom, pos[2]);
     }
 }
@@ -480,8 +480,8 @@ static void RecursiveDrawPlaneOutline(plane_t *plane, float zoom)
     dx = (plane->points[0][0] + plane->points[1][0] + plane->points[2][0]) / 3;
     dz = (plane->points[0][2] + plane->points[1][2] + plane->points[2][2]) / 3;
 
-    dx = client.playerActor->origin[0] - dx;
-    dz = client.playerActor->origin[2] - dz;
+    dx = client.LocalPlayer().actor->origin[0] - dx;
+    dz = client.LocalPlayer().actor->origin[2] - dz;
 
     if(dx*dx+dz*dz >= 4194304.0f)
         return;
@@ -544,7 +544,7 @@ void Canvas_DrawPlaneOutlines(canvas_t *canvas)
     plane_t *plane;
     float zoom;
 
-    camera = client.player->actor;
+    camera = client.LocalPlayer().actor;
     plane = Map_IndexToPlane(camera->plane);
 
     GL_BindTextureName("textures/white.tga");

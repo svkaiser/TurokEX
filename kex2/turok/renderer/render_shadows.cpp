@@ -177,7 +177,7 @@ void R_CreateShadows(mdlsection_t *section)
     float groundDist;
     gActor_t *camera;
     
-    camera = client.player->camera;
+    camera = client.LocalPlayer().camera;
 
     //if(numVertexes >= (MAX_VERTICES / 2))
         //return;

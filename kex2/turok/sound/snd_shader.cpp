@@ -300,7 +300,7 @@ void Snd_PlayShaderDirect(sndShader_t *shader, gActor_t *actor)
         if(src->sfx->bLerpFreq)
             src->pitch = src->sfx->freqLerpStart;
 
-        if(actor != NULL && client.playerActor != actor)
+        if(actor != NULL && client.LocalPlayer().actor != actor)
         {
             alSource3f(src->handle, AL_POSITION,
                 actor->origin[0],
@@ -321,7 +321,7 @@ void Snd_PlayShader(const char *name, gActor_t *actor)
     sndShader_t *shader;
 
     // TODO
-    if(actor && Vec_Length3(client.playerActor->origin,
+    if(actor && Vec_Length3(client.LocalPlayer().actor->origin,
         actor->origin) >= 4096)
         return;
     

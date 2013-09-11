@@ -72,7 +72,7 @@ JS_PROP_FUNC_GET(NClient)
         return JS_TRUE;
 
     case CL_PLAYERACTOR:
-        JS_NEWOBJECTPOOL(client.playerActor, GameActor);
+        JS_NEWOBJECTPOOL(client.LocalPlayer().actor, GameActor);
         return JS_TRUE;
 
     default:
@@ -114,7 +114,7 @@ JS_PROP_FUNC_SET(NClient)
             if(!(actor = (gActor_t*)JS_GetInstancePrivate(cx, object, &GameActor_class, NULL)))
                 return JS_TRUE;
 
-            client.playerActor = actor;
+            client.LocalPlayer().actor = actor;
             return JS_TRUE;
         }
 

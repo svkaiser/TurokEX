@@ -44,7 +44,7 @@ void R_RenderCameraView(void)
     gActor_t *camera;
     float zfar;
 
-    camera = client.player->camera;
+    camera = client.LocalPlayer().camera;
 
     if(camera == NULL)
         return;

@@ -335,15 +335,15 @@ void Snd_FreeSource(sndSource_t *src)
 
 void Snd_UpdateListener(void)
 {
-    if(client.playerActor)
+    if(client.LocalPlayer().actor)
     {
         ALfloat orientation[6];
-        float sy = (float)sin(client.player->camera->angles[0]);
-        float cy = (float)cos(client.player->camera->angles[0]);
-        float sp = (float)sin(client.player->camera->angles[1]);
-        float cp = (float)cos(client.player->camera->angles[1]);
-        float sr = (float)sin(client.player->camera->angles[2]);
-        float cr = (float)cos(client.player->camera->angles[2]);
+        float sy = (float)sin(client.LocalPlayer().camera->angles[0]);
+        float cy = (float)cos(client.LocalPlayer().camera->angles[0]);
+        float sp = (float)sin(client.LocalPlayer().camera->angles[1]);
+        float cp = (float)cos(client.LocalPlayer().camera->angles[1]);
+        float sr = (float)sin(client.LocalPlayer().camera->angles[2]);
+        float cr = (float)cos(client.LocalPlayer().camera->angles[2]);
         
         orientation[0] = sy * cp;
         orientation[1] = -sp;
@@ -356,7 +356,7 @@ void Snd_UpdateListener(void)
 
         alListenerfv(AL_ORIENTATION, orientation);
         alListener3f(AL_POSITION,
-            SND_VECTOR2METRICS(client.player->camera->origin));
+            SND_VECTOR2METRICS(client.LocalPlayer().camera->origin));
 
         Snd_ExitCriticalSection();
     }
@@ -417,7 +417,7 @@ static void Snd_UpdateSources(void)
                 if(cvarPitchShift.GetBool())
                     alSourcef(sndSrc->handle, AL_PITCH, sndSrc->sfx->dbFreq);
 
-                if(sndSrc->actor && sndSrc->actor != client.playerActor)
+                if(sndSrc->actor && sndSrc->actor != client.LocalPlayer().actor)
                 {
                     alSourcef(sndSrc->handle, AL_ROLLOFF_FACTOR, sndSrc->sfx->rolloffFactor);
                     alSourcei(sndSrc->handle, AL_SOURCE_RELATIVE, AL_FALSE);

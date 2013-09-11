@@ -948,6 +948,17 @@ kexVec3 &kexVec3::operator=(const kexVec3 &vec) {
 }
 
 //
+// kexVec3::operator=
+//
+
+kexVec3 &kexVec3::operator=(const float *vecs) {
+    x = vecs[0];
+    y = vecs[1];
+    z = vecs[2];
+    return *this;
+}
+
+//
 // kexVec3::ObjectConstruct1
 //
 
