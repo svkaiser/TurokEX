@@ -42,6 +42,11 @@ public:
     void                SetOrigin(const kexVec3 &org) { origin = org; }
     kexVec3             &GetVelocity(void) { return velocity; }
     void                SetVelocity(const kexVec3 &vel) { velocity = vel; }
+    kexQuat             &GetRotation(void) { return rotation; }
+    void                SetRotation(const kexQuat &rot) { rotation = rot; }
+    kexActor            *GetOwner(void) { return owner; }
+    void                SetOwner(kexActor *actor) { owner = actor; }
+    kexActor            *GetTarget(void) { return target; }
 
 protected:
     int                 AddRef(void);
@@ -69,17 +74,17 @@ protected:
     kexMatrix           rotMatrix;
     kmodel_t            *model;
     kexVec3             scale;
-    float               timestamp;
+    float               timeStamp;
     float               tickDistance;
     float               tickIntervals;
     float               nextTickInterval;
     unsigned int        physics;
     int                 waterlevel;
+    bool                bCulled;
 
 private:
     int                 refCount;
     bool                bStale;
-    bool                bCulled;
 END_CLASS();
 
 BEGIN_EXTENDED_CLASS(kexWorldActor, kexActor);
@@ -92,11 +97,23 @@ public:
     virtual void        Remove(void);
     virtual void        Parse(kexLexer *lexer);
     virtual void        UpdateTransform(void);
+    virtual void        OnTouch(kexWorldActor *instigator);
+    virtual void        Think(void);
 
     bool                Event(const char *function, long *args, unsigned int nargs);
+    bool                ToJSVal(long *val);
+    bool                AlignToSurface(void);
+    float               GroundDistance(void);
+    bool                OnGround(void);
+    kexVec3             ToLocalOrigin(const float x, const float y, const float z);
+    kexVec3             ToLocalOrigin(const kexVec3 &org);
+    void                SpawnFX(const char *fxName, const float x, const float y, const float z);
+
+private:
+    void                CreateComponent(void);
 
 protected:
-    gObject_t           *components;
+    gObject_t           *component;
     gObject_t           *iterator;
     bool                bRotor;
     kexAngle            angles;
@@ -106,6 +123,7 @@ protected:
     float               baseHeight;
     float               centerHeight;
     float               viewHeight;
+    kexQuat             lerpRotation;
     float               rotorSpeed;
     float               rotorFriction;
     kexVec3             rotorVector;

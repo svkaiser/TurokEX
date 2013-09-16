@@ -716,6 +716,75 @@ kexMatrix::kexMatrix(const float x, const float y, const float z) {
 }
 
 //
+// kexMatrix::kexMatrix
+//
+
+kexMatrix::kexMatrix(const kexQuat &quat) {
+    float xx = quat.x * quat.x;
+    float yx = quat.y * quat.x;
+    float zx = quat.z * quat.x;
+    float wx = quat.w * quat.x;
+    float yy = quat.y * quat.y;
+    float zy = quat.z * quat.y;
+    float wy = quat.w * quat.y;
+    float zz = quat.z * quat.z;
+    float wz = quat.w * quat.z;
+    float ww = quat.w * quat.w;
+
+    vectors[0].Set(
+        ((ww + xx) - yy) - zz,
+        (wz + wz) + (yx + yx),
+        (zx + zx) - (wy + wy),
+        0);
+    vectors[1].Set(
+        (yx + yx) - (wz + wz),
+        (yy + (ww - xx)) - zz,
+        (wx + wx) + (zy + zy),
+        0);
+    vectors[2].Set(
+        (wy + wy + zx + zx),
+        (zy + zy) - (wx + wx),
+        ((ww - xx) - yy) + zz,
+        0);
+    vectors[3].Set(0, 0, 0, 1);
+}
+
+//
+// kexMatrix::kexMatrix
+//
+
+kexMatrix::kexMatrix(const float angle, const int axis) {
+    float s;
+    float c;
+
+    s = (float)sin(angle);
+    c = (float)cos(angle);
+    
+    Identity();
+
+    switch(axis) {
+    case 0:
+        this->vectors[0].x = c;
+        this->vectors[0].z = -s;
+        this->vectors[3].x = s;
+        this->vectors[3].z = c;
+        break;
+    case 1:
+        this->vectors[1].y = c;
+        this->vectors[1].z = s;
+        this->vectors[2].y = -s;
+        this->vectors[2].z = c;
+        break;
+    case 2:
+        this->vectors[0].x = c;
+        this->vectors[0].y = s;
+        this->vectors[1].x = -s;
+        this->vectors[1].y = c;
+        break;
+    }
+}
+
+//
 // kexMatrix::Identity
 //
 
@@ -851,7 +920,7 @@ kexMatrix kexMatrix::Transpose(const kexMatrix &mtx) {
 // kexMatrix::operator*
 //
 
-kexMatrix kexMatrix::operator*(const kexVec3 vector) {
+kexMatrix kexMatrix::operator*(const kexVec3 &vector) {
     kexMatrix out(*this);
     
     out.vectors[3].ToVec3() +=
@@ -865,10 +934,62 @@ kexMatrix kexMatrix::operator*(const kexVec3 vector) {
 // kexMatrix::operator*=
 //
 
-kexMatrix &kexMatrix::operator*=(const kexVec3 vector) {
+kexMatrix &kexMatrix::operator*=(const kexVec3 &vector) {
     vectors[3].ToVec3() +=
         vectors[0].ToVec3() * vector.x +
         vectors[1].ToVec3() * vector.y +
         vectors[2].ToVec3() * vector.z;
     return *this;
 }
+
+//
+// kexMatrix::ToFloatPtr
+//
+
+float *kexMatrix::ToFloatPtr(void) {
+    return reinterpret_cast<float*>(vectors);
+}
+
+//
+// kexMatrix::operator*
+//
+
+kexMatrix kexMatrix::operator*(kexMatrix &matrix) {
+    kexMatrix out;
+    float *m1 = ToFloatPtr();
+    float *m2 = matrix.ToFloatPtr();
+    float *mOut = out.ToFloatPtr();
+    
+    mOut[ 0] = m1[ 1] * m2[ 4] + m2[ 8] * m1[ 2] + m1[ 3] * m2[12] + m1[ 0] * m2[ 0];
+    mOut[ 1] = m1[ 0] * m2[ 1] + m2[ 5] * m1[ 1] + m2[ 9] * m1[ 2] + m2[13] * m1[ 3];
+    mOut[ 2] = m1[ 0] * m2[ 2] + m2[10] * m1[ 2] + m2[14] * m1[ 3] + m2[ 6] * m1[ 1];
+    mOut[ 3] = m1[ 0] * m2[ 3] + m2[15] * m1[ 3] + m2[ 7] * m1[ 1] + m2[11] * m1[ 2];
+    mOut[ 4] = m2[ 0] * m1[ 4] + m1[ 7] * m2[12] + m1[ 5] * m2[ 4] + m1[ 6] * m2[ 8];
+    mOut[ 5] = m1[ 4] * m2[ 1] + m1[ 5] * m2[ 5] + m1[ 7] * m2[13] + m1[ 6] * m2[ 9];
+    mOut[ 6] = m1[ 5] * m2[ 6] + m1[ 7] * m2[14] + m1[ 4] * m2[ 2] + m1[ 6] * m2[10];
+    mOut[ 7] = m1[ 6] * m2[11] + m1[ 7] * m2[15] + m1[ 5] * m2[ 7] + m1[ 4] * m2[ 3];
+    mOut[ 8] = m2[ 0] * m1[ 8] + m1[10] * m2[ 8] + m1[11] * m2[12] + m1[ 9] * m2[ 4];
+    mOut[ 9] = m1[ 8] * m2[ 1] + m1[10] * m2[ 9] + m1[11] * m2[13] + m1[ 9] * m2[ 5];
+    mOut[10] = m1[ 9] * m2[ 6] + m1[10] * m2[10] + m1[11] * m2[14] + m1[ 8] * m2[ 2];
+    mOut[11] = m1[ 9] * m2[ 7] + m1[11] * m2[15] + m1[10] * m2[11] + m1[ 8] * m2[ 3];
+    mOut[12] = m2[ 0] * m1[12] + m2[12] * m1[15] + m2[ 4] * m1[13] + m2[ 8] * m1[14];
+    mOut[13] = m2[13] * m1[15] + m2[ 1] * m1[12] + m2[ 9] * m1[14] + m2[ 5] * m1[13];
+    mOut[14] = m2[ 6] * m1[13] + m2[14] * m1[15] + m2[10] * m1[14] + m2[ 2] * m1[12];
+    mOut[15] = m2[ 3] * m1[12] + m2[ 7] * m1[13] + m2[11] * m1[14] + m2[15] * m1[15];
+    
+    return out;
+}
+
+//
+// kexMatrix::operator=
+//
+
+kexMatrix &kexMatrix::operator=(const kexMatrix &matrix) {
+    vectors[0] = matrix.vectors[0];
+    vectors[1] = matrix.vectors[1];
+    vectors[2] = matrix.vectors[2];
+    vectors[3] = matrix.vectors[3];
+    
+    return *this;
+}
+

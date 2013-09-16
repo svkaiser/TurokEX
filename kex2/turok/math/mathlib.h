@@ -147,6 +147,7 @@ float Random_CFloat(void);
 void BBox_Transform(bbox_t srcBox, mtx_t matrix, bbox_t *out);
 
 class kexVec3;
+class kexMatrix;
 
 class kexQuat {
 public:
@@ -154,6 +155,7 @@ public:
 
                             explicit kexQuat(const float angle, const float x, const float y, const float z);
                             explicit kexQuat(const float angle, kexVec3 &vector);
+                            explicit kexQuat(const float angle, const kexVec3 &vector);
 
     void                    Set(const float x, const float y, const float z, const float w);
     void                    Clear(void);
@@ -218,6 +220,7 @@ public:
     kexVec3                 operator/(const kexVec3 &vec);
     kexVec3                 operator/(const float val);
     kexVec3                 operator|(const kexQuat &quat);
+    kexVec3                 operator|(const kexMatrix &mtx);
     kexVec3                 &operator=(const kexVec3 &vec);
     kexVec3                 &operator=(const float *vecs);
     kexVec3                 &operator+=(const kexVec3 &vec);
@@ -227,6 +230,7 @@ public:
     kexVec3                 &operator/=(const kexVec3 &vec);
     kexVec3                 &operator/=(const float val);
     kexVec3                 &operator|=(const kexQuat &quat);
+    kexVec3                 &operator|=(const kexMatrix &mtx);
 
     static const kexVec3    vecForward;
     static const kexVec3    vecUp;
@@ -263,6 +267,8 @@ public:
                             kexMatrix(void);
                             kexMatrix(const kexMatrix &mtx);
                             kexMatrix(const float x, const float y, const float z);
+                            kexMatrix(const kexQuat &quat);
+                            kexMatrix(const float angle, const int axis);
 
     kexMatrix               &Identity(void);
     kexMatrix               &Identity(const float x, const float y, const float z);
@@ -275,9 +281,12 @@ public:
     static kexMatrix        Scale(const kexMatrix &mtx, const float x, const float y, const float z);
     kexMatrix               &Transpose(void);
     static kexMatrix        Transpose(const kexMatrix &mtx);
+    float                   *ToFloatPtr(void);
     
-    kexMatrix               operator*(const kexVec3 vector);
-    kexMatrix               &operator*=(const kexVec3 vector);
+    kexMatrix               operator*(const kexVec3 &vector);
+    kexMatrix               &operator*=(const kexVec3 &vector);
+    kexMatrix               operator*(kexMatrix &matrix);
+    kexMatrix               &operator=(const kexMatrix &matrix);
     
     kexVec4                 vectors[4];
 };

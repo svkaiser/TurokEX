@@ -26,6 +26,11 @@
 
 #include "common.h"
 #include "actor.h"
+#include "game.h"
+#include "js.h"
+#include "jsobj.h"
+#include "js_shared.h"
+#include "js_class.h"
 
 DECLARE_ABSTRACT_CLASS(kexActor, kexObject)
 
@@ -43,6 +48,8 @@ kexActor::kexActor(void) {
     this->bTouch        = false;
     this->bClientOnly   = false;
     this->bHidden       = false;
+    
+    this->scale.Set(1, 1, 1);
 }
 
 //
@@ -159,6 +166,76 @@ void kexWorldActor::Parse(kexLexer *lexer) {
 //
 
 void kexWorldActor::UpdateTransform(void) {
+    if(bRotor) {
+        angles.yaw      += (rotorVector.y * rotorSpeed * timeStamp);
+        angles.pitch    += (rotorVector.x * rotorSpeed * timeStamp);
+        angles.roll     += (rotorVector.z * rotorSpeed * timeStamp);
+    }
+
+    if(!bStatic || bRotor) {
+        angles.Clamp180();
+        rotation =
+            kexQuat(angles.pitch, kexVec3::vecRight) *
+            (kexQuat(angles.yaw, kexVec3::vecUp) *
+            kexQuat(angles.roll, kexVec3::vecForward));
+    }
+
+    if(!AlignToSurface())
+        matrix = kexMatrix(rotation);
+
+    rotMatrix = matrix;
+    matrix.Scale(scale);
+    matrix.AddTranslation(origin);
+
+    if(!bStatic) {
+        BBox_Transform(baseBBox, rotMatrix.ToFloatPtr(), &bbox);
+    }
+}
+
+//
+// kexWorldActor::GroundDistance
+//
+
+float kexWorldActor::GroundDistance(void) {
+    return 0;
+}
+
+//
+// kexWorldActor::OnGround
+//
+
+bool kexWorldActor::OnGround(void) {
+    return GroundDistance() <= ONPLANE_EPSILON;
+}
+
+//
+// kexWorldActor::ToLocalOrigin
+//
+
+kexVec3 kexWorldActor::ToLocalOrigin(const float x, const float y, const float z) {
+    kexMatrix mtx(DEG2RAD(-90), 1);
+    mtx.Scale(-1, 1, 1);
+    
+    return ((kexVec3(x, y, z) | mtx) | matrix);
+}
+
+//
+// kexWorldActor::ToLocalOrigin
+//
+
+kexVec3 kexWorldActor::ToLocalOrigin(const kexVec3 &org) {
+    return ToLocalOrigin(org.x, org.y, org.z);
+}
+
+//
+// kexWorldActor::SpawnFX
+//
+
+void kexWorldActor::SpawnFX(const char *fxName, const float x, const float y, const float z) {
+    if(bStatic || bCulled)
+        return;
+        
+    //TODO
 }
 
 //
@@ -166,5 +243,62 @@ void kexWorldActor::UpdateTransform(void) {
 //
 
 bool kexWorldActor::Event(const char *function, long *args, unsigned int nargs) {
+    return false;
+}
+
+//
+// kexWorldActor::CreateComponent
+//
+
+void kexWorldActor::CreateComponent(void) {
+    if(!(component = J_NewObjectEx(js_context, NULL, NULL, NULL)))
+        return;
+
+    JS_AddRoot(js_context, &component);
+}
+
+//
+// kexWorldActor::ToJSVal
+//
+
+bool kexWorldActor::ToJSVal(long *val) {
+    gObject_t *aObject;
+    
+    *val = JSVAL_NULL;
+
+    if(!(aObject = JPool_GetFree(&objPoolGameActor, &GameActor_class)) ||
+        !(JS_SetPrivate(js_context, aObject, this))) {
+        return false;
+    }
+
+    *val = (jsval)OBJECT_TO_JSVAL(aObject);
+    return true;
+}
+
+//
+// kexWorldActor::OnTouch
+//
+
+void kexWorldActor::OnTouch(kexWorldActor *instigator) {
+    jsval val;
+
+    if(bStatic || !bTouch || !instigator->ToJSVal(&val))
+        return;
+
+    Event("onTouch", &val, 1);
+}
+
+//
+// kexWorldActor::Think
+//
+
+void kexWorldActor::Think(void) {
+}
+
+//
+// kexWorldActor::AlignToSurface
+//
+
+bool kexWorldActor::AlignToSurface(void) {
     return false;
 }

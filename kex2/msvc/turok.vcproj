@@ -151,7 +151,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\openal\include\&quot;;&quot;$(OutDir)\SDL2\include\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\angelscript\angelscript\include&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\sound\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDir)\turok\jsapi\&quot;;&quot;$(OutDir)\turok\parse\&quot;;&quot;$(OutDir)\turok\game\&quot;"
+				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\openal\include\&quot;;&quot;$(OutDir)\SDL2\include\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\angelscript\angelscript\include&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\sound\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDir)\turok\jsapi\&quot;;&quot;$(OutDir)\turok\parse\&quot;;&quot;$(OutDir)\turok\game\&quot;;&quot;$(OutDir)\turok\geometry\&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -641,6 +641,14 @@
 					</File>
 				</Filter>
 			</Filter>
+			<Filter
+				Name="geometry"
+				>
+				<File
+					RelativePath="..\turok\geometry\triangle.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -881,6 +889,14 @@
 						>
 					</File>
 				</Filter>
+			</Filter>
+			<Filter
+				Name="geometry"
+				>
+				<File
+					RelativePath="..\turok\geometry\triangle.h"
+					>
+				</File>
 			</Filter>
 		</Filter>
 		<Filter

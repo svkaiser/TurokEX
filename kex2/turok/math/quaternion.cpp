@@ -65,6 +65,20 @@ kexQuat::kexQuat(const float angle, kexVec3 &vector) {
 }
 
 //
+// kexQuat::kexQuat
+//
+
+kexQuat::kexQuat(const float angle, const kexVec3 &vector) {
+    float s = (float)sin(angle * 0.5f);
+    float c = (float)cos(angle * 0.5f);
+
+    this->x = vector.x * s;
+    this->y = vector.y * s;
+    this->z = vector.z * s;
+    this->w = c;
+}
+
+//
 // kexQuat::Set
 //
 

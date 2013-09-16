@@ -905,6 +905,17 @@ kexVec3 kexVec3::operator|(const kexQuat &quat) {
 }
 
 //
+// kexVec3::operator|
+//
+
+kexVec3 kexVec3::operator|(const kexMatrix &mtx) {
+    return kexVec3(
+        mtx.vectors[1].x * y + mtx.vectors[2].x * z + mtx.vectors[0].x * x + mtx.vectors[3].x,
+        mtx.vectors[1].y * y + mtx.vectors[2].y * z + mtx.vectors[0].y * x + mtx.vectors[3].y,
+        mtx.vectors[1].z * y + mtx.vectors[2].z * z + mtx.vectors[0].z * x + mtx.vectors[3].z);
+}
+
+//
 // kexVec3::operator|=
 //
 
@@ -932,6 +943,22 @@ kexVec3 &kexVec3::operator|=(const kexQuat &quat) {
     z = ((wx + wx) + (zy + zy)) * vy +
         (((ww - xx) - yy) + zz) * vz +
         ((zx + zx) - (wy + wy)) * vx;
+
+    return *this;
+}
+
+//
+// kexVec3::operator|=
+//
+
+kexVec3 &kexVec3::operator|=(const kexMatrix &mtx) {
+    float _x = x;
+    float _y = y;
+    float _z = z;
+    
+    x = mtx.vectors[1].x * _y + mtx.vectors[2].x * _z + mtx.vectors[0].x * _x + mtx.vectors[3].x;
+    y = mtx.vectors[1].y * _y + mtx.vectors[2].y * _z + mtx.vectors[0].y * _x + mtx.vectors[3].y;
+    z = mtx.vectors[1].z * _y + mtx.vectors[2].z * _z + mtx.vectors[0].z * _x + mtx.vectors[3].z;
 
     return *this;
 }
