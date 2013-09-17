@@ -47,6 +47,8 @@ public:
     kexActor            *GetOwner(void) { return owner; }
     void                SetOwner(kexActor *actor) { owner = actor; }
     kexActor            *GetTarget(void) { return target; }
+    kexAngle            &GetAngles(void) { return angles; }
+    void                SetAngles(const kexAngle &an) { angles = an; }
 
 protected:
     int                 AddRef(void);
@@ -55,13 +57,14 @@ protected:
     kexVec3             origin;
     kexQuat             rotation;
     kexVec3             velocity;
+    kexAngle            angles;
     bool                bStatic;
     bool                bCollision;
     bool                bTouch;
     bool                bClientOnly;
     bool                bHidden;
-    bbox_t              bbox;
-    bbox_t              baseBBox;
+    kexBBox             bbox;
+    kexBBox             baseBBox;
     float               friction;
     float               airFriction;
     float               mass;
@@ -116,7 +119,6 @@ protected:
     gObject_t           *component;
     gObject_t           *iterator;
     bool                bRotor;
-    kexAngle            angles;
     kexStr              name;
     float               radius;
     float               height;

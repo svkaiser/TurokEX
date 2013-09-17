@@ -229,7 +229,7 @@ kexPtrArray<type>::~kexPtrArray() {
 template<class type>
 void kexPtrArray<type>::DeleteContents(void) {
     for(unsigned int i = 0; i < length; i++) {
-        delete data[i];
+        delete (void*)data[i];
         data[i] = NULL;
     }
 }

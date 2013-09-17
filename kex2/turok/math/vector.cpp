@@ -986,6 +986,24 @@ kexVec3 &kexVec3::operator=(const float *vecs) {
 }
 
 //
+// kexVec3::operator[]
+//
+
+float kexVec3::operator[](int index) const {
+    assert(index >= 0 && index < 3);
+    return (&x)[index];
+}
+
+//
+// kexVec3::operator[]
+//
+
+float kexVec3::operator[](int index) {
+    assert(index >= 0 && index < 3);
+    return (&x)[index];
+}
+
+//
 // kexVec3::ObjectConstruct1
 //
 
@@ -1058,4 +1076,22 @@ kexVec3 const &kexVec4::ToVec3(void) const {
 
 kexVec3 &kexVec4::ToVec3(void) {
     return *reinterpret_cast<kexVec3*>(this);
+}
+
+//
+// kexVec4::operator[]
+//
+
+float kexVec4::operator[](int index) const {
+    assert(index >= 0 && index < 3);
+    return (&x)[index];
+}
+
+//
+// kexVec4::operator[]
+//
+
+float kexVec4::operator[](int index) {
+    assert(index >= 0 && index < 3);
+    return (&x)[index];
 }

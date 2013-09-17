@@ -21,6 +21,10 @@
 //-----------------------------------------------------------------------------
 //
 // DESCRIPTION: Triangle class
+//              Triangles are represented as three vector points
+//              and a plane. Each edge of a kexTri may contain a pointer
+//              that links to another triangle, which is useful for
+//              collision detection.
 //
 //-----------------------------------------------------------------------------
 
@@ -41,6 +45,7 @@ kexTri::kexTri(void) {
 
 //
 // kexTri::SetPoint
+// assumes that *p contains 3 floats
 //
 
 void kexTri::SetPoint(const int idx, float *p) {
@@ -55,6 +60,10 @@ const float kexTri::GetDistance(const kexVec3 &pos) const {
     float dist = 0;
     kexVec3 n = plane.Normal();
     
+    //
+    // if the plane is standing straight up (aka its a wall) then
+    // get the sum of the height from all 3 points
+    //
     if(n.y == 0) {
         dist = (
             point[0]->y +

@@ -188,7 +188,7 @@ void kexWorldActor::UpdateTransform(void) {
     matrix.AddTranslation(origin);
 
     if(!bStatic) {
-        BBox_Transform(baseBBox, rotMatrix.ToFloatPtr(), &bbox);
+        bbox = (baseBBox | rotMatrix);
     }
 }
 

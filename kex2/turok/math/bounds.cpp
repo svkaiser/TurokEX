@@ -71,3 +71,143 @@ void BBox_Transform(bbox_t srcBox, mtx_t matrix, bbox_t *out)
     Vec_Copy3(out->min, box.min);
     Vec_Copy3(out->max, box.max);
 }
+
+//
+// kexBBox::kexBBox
+//
+
+kexBBox::kexBBox(void) {
+    Clear();
+}
+
+//
+// kexBBox::kexBBox
+//
+
+kexBBox::kexBBox(const kexVec3 &vMin, const kexVec3 &vMax) {
+    this->min = vMin;
+    this->max = vMax;
+}
+
+//
+// kexBBox::Clear
+//
+
+void kexBBox::Clear(void) {
+    min.Clear();
+    max.Clear();
+}
+
+//
+// kexBBox::Center
+//
+
+kexVec3 kexBBox::Center(void) const {
+    return kexVec3(
+        (max.x - min.x) * 0.5f,
+        (max.y - min.y) * 0.5f,
+        (max.z - min.z) * 0.5f);
+}
+
+//
+// kexBBox::operator|
+//
+
+kexBBox kexBBox::operator|(const kexMatrix &matrix) const {
+    kexVec3 c  = Center();
+    kexVec3 ct = c | matrix;
+    
+    kexMatrix mtx(matrix);
+    
+    for(int i = 0; i < 3; i++) {
+        mtx.vectors[i].x = (float)fabs(mtx.vectors[i].x);
+        mtx.vectors[i].y = (float)fabs(mtx.vectors[i].y);
+        mtx.vectors[i].z = (float)fabs(mtx.vectors[i].z);
+    }
+    
+    kexVec3 ht = c | mtx;
+    
+    return kexBBox(ct - ht, ct + ht);
+}
+
+//
+// kexBBox::operator|=
+//
+
+kexBBox &kexBBox::operator|=(const kexMatrix &matrix) {
+    kexVec3 c  = Center();
+    kexVec3 ct = c | matrix;
+    
+    kexMatrix mtx(matrix);
+    
+    for(int i = 0; i < 3; i++) {
+        mtx.vectors[i].x = (float)fabs(mtx.vectors[i].x);
+        mtx.vectors[i].y = (float)fabs(mtx.vectors[i].y);
+        mtx.vectors[i].z = (float)fabs(mtx.vectors[i].z);
+    }
+    
+    kexVec3 ht = c | mtx;
+    
+    min = (ct - ht);
+    max = (ct + ht);
+    
+    return *this;
+}
+
+//
+// kexBBox::operator=
+//
+
+kexBBox &kexBBox::operator=(const kexBBox &bbox) {
+    min = bbox.min;
+    max = bbox.max;
+
+    return *this;
+}
+
+//
+// kexBBox::RayIntersect
+//
+
+bool kexBBox::RayIntersect(const kexVec3 &start, const kexVec3 &dir, float &frac) {
+    frac = 1.0f;
+    
+    int side = 0;
+    int misses = 0;
+    int v = -1;
+    float f;
+    
+    for(int i = 0; i < 3; i++) {
+        if(start[i] < min[i])
+            side = 0;
+        else if(start[i] > max[i])
+            side = 1;
+        else {
+            misses++;
+            continue;
+        }
+        if(dir[i] == 0)
+            continue;
+            
+        f = (start[i] - side ? max[i] : min[i]);
+        if((float)fabs(f) > (float)fabs(frac * dir[i])) {
+            v = i;
+            frac = -(f / dir[i]);
+        }
+    }
+    
+    if(v == -1) {
+        frac = 1.0f;
+        return (misses == 3);
+    }
+    
+    int v1 = (v+1)%3;
+    int v2 = (v+2)%3;
+    
+    float t0 = start[v1] + frac * dir[v1];
+    float t1 = start[v2] + frac * dir[v2];
+    
+    return (
+        t0 >= min[v1] && t0 <= max[v1] &&
+        t1 >= min[v2] && t1 <= max[v2]);
+}

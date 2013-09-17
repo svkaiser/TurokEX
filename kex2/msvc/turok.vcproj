@@ -593,6 +593,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\camera.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\fx.cpp"
 					>
 				</File>
@@ -610,6 +614,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\game\player.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\world.cpp"
 					>
 				</File>
 				<Filter
@@ -659,14 +667,6 @@
 				>
 				<File
 					RelativePath="..\turok\win32\opndir.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="server"
-				>
-				<File
-					RelativePath="..\turok\server\server.h"
 					>
 				</File>
 			</Filter>
@@ -866,6 +866,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\camera.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\fx.h"
 					>
 				</File>
@@ -879,6 +883,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\game\player.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\world.h"
 					>
 				</File>
 				<Filter

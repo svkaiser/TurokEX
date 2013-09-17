@@ -231,6 +231,8 @@ public:
     kexVec3                 &operator/=(const float val);
     kexVec3                 &operator|=(const kexQuat &quat);
     kexVec3                 &operator|=(const kexMatrix &mtx);
+    float                   operator[](int index) const;
+    float                   operator[](int index);
 
     static const kexVec3    vecForward;
     static const kexVec3    vecUp;
@@ -255,6 +257,8 @@ public:
     
     const kexVec3           &ToVec3(void) const;
     kexVec3                 &ToVec3(void);
+    float                   operator[](int index) const;
+    float                   operator[](int index);
 
     float                   x;
     float                   y;
@@ -373,6 +377,23 @@ public:
     float                   yaw;
     float                   pitch;
     float                   roll;
+};
+
+class kexBBox {
+public:
+                            kexBBox(void);
+                            explicit kexBBox(const kexVec3 &vMin, const kexVec3 &vMax);
+                        
+    void                    Clear(void);
+    kexVec3                 Center(void) const;
+    
+    kexBBox                 operator|(const kexMatrix &matrix) const;
+    kexBBox                 &operator|=(const kexMatrix &matrix);
+    kexBBox                 &operator=(const kexBBox &bbox);
+    bool                    RayIntersect(const kexVec3 &start, const kexVec3 &dir, float &frac);
+                        
+    kexVec3                 min;
+    kexVec3                 max;
 };
 
 #endif
