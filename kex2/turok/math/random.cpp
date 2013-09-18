@@ -25,6 +25,7 @@
 //-----------------------------------------------------------------------------
 
 #include <math.h>
+#include <stdlib.h>
 #include "mathlib.h"
 
 #define RANDOM_MAX  0x7FFF
@@ -78,5 +79,59 @@ float Random_Float(void)
 float Random_CFloat(void)
 {
     return (float)(Random_Max(20000) - 10000) * 0.0001f;
+}
+
+int kexRand::seed = 0;
+
+//
+// kexRand::SetSeed
+//
+
+void kexRand::SetSeed(const int randSeed) {
+    seed = randSeed;
+}
+
+//
+// kexRand::SysRand
+//
+
+int kexRand::SysRand(void) {
+    return rand();
+}
+
+//
+// kexRand::Int
+//
+
+int kexRand::Int(void) {
+    seed = 1479838765 - 1471521965 * seed;
+    return seed & RANDOM_MAX;
+}
+
+//
+// kexRand::Max
+//
+
+int kexRand::Max(const int max) {
+    if(max == 0)
+        return 0;
+        
+    return Int() % max;
+}
+
+//
+// kexRand::Float
+//
+
+float kexRand::Float(void) {
+    return (float)Max(RANDOM_MAX+1) / ((float)RANDOM_MAX+1);
+}
+
+//
+// kexRand::CFloat
+//
+
+float kexRand::CFloat(void) {
+    return (float)(Max(20000) - 10000) * 0.0001f;
 }
 

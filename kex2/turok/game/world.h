@@ -29,10 +29,9 @@
 #include "camera.h"
 
 typedef struct {
-    kexVec3                         min;
-    kexVec3                         max;
+    kexBBox                         box;
     kexLinklist<kexWorldActor>      staticActors;
-    kexPtrArray<kexWorldActor>      linkedActors;
+    kexLinklist<kexWorldActor>      linkedActors;
 } gridBound_t;
 
 class kexWorld {
@@ -46,15 +45,17 @@ public:
     void                            Load(const char *mapFile);
     void                            Unload(void);
     const char                      *GetMapFileFromID(const int id);
+    kexWorldActor                   *ConstructActor(const char *className);
+    void                            AddActor(kexWorldActor *actor);
+    kexWorldActor                   *SpawnActor(const char *className,
+                                        const kexVec3 &origin, const kexAngle &angles);
+    void                            RemoveActor(kexWorldActor *actor);
 
     bool                            IsLoaded(void) const { return bLoaded; }
     float                           DeltaTime(void) { return deltaTime; }
     kexCamera                       *Camera(void) { return &camera; };
 
 private:
-    void                            PreLoad(void);
-    void                            PostLoad(void);
-    
     bool                            bLoaded;
     bool                            bReadyUnload;
     kexLinklist<kexWorldActor>      actors;

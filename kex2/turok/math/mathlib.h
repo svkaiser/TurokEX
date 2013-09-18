@@ -146,6 +146,19 @@ float Random_CFloat(void);
 //
 void BBox_Transform(bbox_t srcBox, mtx_t matrix, bbox_t *out);
 
+class kexRand {
+public:
+    static void             SetSeed(const int randSeed);
+    static int              SysRand(void);
+    static int              Int(void);
+    static int              Max(const int max);
+    static float            Float(void);
+    static float            CFloat(void);
+    
+private:
+    static int              seed;
+};
+
 class kexVec3;
 class kexMatrix;
 
@@ -233,6 +246,8 @@ public:
     kexVec3                 &operator|=(const kexMatrix &mtx);
     float                   operator[](int index) const;
     float                   operator[](int index);
+
+    operator                float *(void) { return reinterpret_cast<float*>(&x); }
 
     static const kexVec3    vecForward;
     static const kexVec3    vecUp;

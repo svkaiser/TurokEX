@@ -25,114 +25,119 @@
 
 #include "common.h"
 #include "script.h"
+#include "linkedlist.h"
 #include "scriptAPI/scriptSystem.h"
 
 BEGIN_EXTENDED_CLASS(kexActor, kexObject);
 public:
-                        kexActor(void);
-                        ~kexActor(void);
+                                kexActor(void);
+                                ~kexActor(void);
 
-    virtual void        LocalTick(void);
-    virtual void        Tick(void);
-    virtual void        Remove(void);
+    virtual void                LocalTick(void);
+    virtual void                Tick(void);
+    virtual void                Remove(void);
 
-    void                SetTarget(kexActor *targ);
+    void                        SetTarget(kexActor *targ);
 
-    kexVec3             &GetOrigin(void) { return origin; }
-    void                SetOrigin(const kexVec3 &org) { origin = org; }
-    kexVec3             &GetVelocity(void) { return velocity; }
-    void                SetVelocity(const kexVec3 &vel) { velocity = vel; }
-    kexQuat             &GetRotation(void) { return rotation; }
-    void                SetRotation(const kexQuat &rot) { rotation = rot; }
-    kexActor            *GetOwner(void) { return owner; }
-    void                SetOwner(kexActor *actor) { owner = actor; }
-    kexActor            *GetTarget(void) { return target; }
-    kexAngle            &GetAngles(void) { return angles; }
-    void                SetAngles(const kexAngle &an) { angles = an; }
+    kexVec3                     &GetOrigin(void) { return origin; }
+    void                        SetOrigin(const kexVec3 &org) { origin = org; }
+    kexVec3                     &GetVelocity(void) { return velocity; }
+    void                        SetVelocity(const kexVec3 &vel) { velocity = vel; }
+    kexQuat                     &GetRotation(void) { return rotation; }
+    void                        SetRotation(const kexQuat &rot) { rotation = rot; }
+    kexActor                    *GetOwner(void) { return owner; }
+    void                        SetOwner(kexActor *actor) { owner = actor; }
+    kexActor                    *GetTarget(void) { return target; }
+    kexAngle                    &GetAngles(void) { return angles; }
+    void                        SetAngles(const kexAngle &an) { angles = an; }
+    const int                   RefCount(void) const { return refCount; }
 
 protected:
-    int                 AddRef(void);
-    int                 RemoveRef(void);
+    int                         AddRef(void);
+    int                         RemoveRef(void);
 
-    kexVec3             origin;
-    kexQuat             rotation;
-    kexVec3             velocity;
-    kexAngle            angles;
-    bool                bStatic;
-    bool                bCollision;
-    bool                bTouch;
-    bool                bClientOnly;
-    bool                bHidden;
-    kexBBox             bbox;
-    kexBBox             baseBBox;
-    float               friction;
-    float               airFriction;
-    float               mass;
-    float               bounceDamp;
-    float               cullDistance;
-    unsigned int        targetID;
-    kexActor            *owner;
-    kexActor            *target;
-    kexMatrix           matrix;
-    kexMatrix           rotMatrix;
-    kmodel_t            *model;
-    kexVec3             scale;
-    float               timeStamp;
-    float               tickDistance;
-    float               tickIntervals;
-    float               nextTickInterval;
-    unsigned int        physics;
-    int                 waterlevel;
-    bool                bCulled;
+    kexVec3                     origin;
+    kexQuat                     rotation;
+    kexVec3                     velocity;
+    kexAngle                    angles;
+    bool                        bStatic;
+    bool                        bCollision;
+    bool                        bTouch;
+    bool                        bClientOnly;
+    bool                        bHidden;
+    kexBBox                     bbox;
+    kexBBox                     baseBBox;
+    float                       friction;
+    float                       airFriction;
+    float                       mass;
+    float                       bounceDamp;
+    float                       cullDistance;
+    unsigned int                targetID;
+    kexActor                    *owner;
+    kexActor                    *target;
+    kexMatrix                   matrix;
+    kexMatrix                   rotMatrix;
+    kmodel_t                    *model;
+    kexVec3                     scale;
+    float                       timeStamp;
+    float                       tickDistance;
+    float                       tickIntervals;
+    float                       nextTickInterval;
+    unsigned int                physics;
+    int                         waterlevel;
+    bool                        bCulled;
 
 private:
-    int                 refCount;
-    bool                bStale;
+    int                         refCount;
+    bool                        bStale;
 END_CLASS();
 
 BEGIN_EXTENDED_CLASS(kexWorldActor, kexActor);
 public:
-                        kexWorldActor(void);
-                        ~kexWorldActor(void);
+                                kexWorldActor(void);
+                                ~kexWorldActor(void);
 
-    virtual void        LocalTick(void);
-    virtual void        Tick(void);
-    virtual void        Remove(void);
-    virtual void        Parse(kexLexer *lexer);
-    virtual void        UpdateTransform(void);
-    virtual void        OnTouch(kexWorldActor *instigator);
-    virtual void        Think(void);
+    virtual void                LocalTick(void);
+    virtual void                Tick(void);
+    virtual void                Remove(void);
+    virtual void                Parse(kexLexer *lexer);
+    virtual void                UpdateTransform(void);
+    virtual void                OnTouch(kexWorldActor *instigator);
+    virtual void                Think(void);
 
-    bool                Event(const char *function, long *args, unsigned int nargs);
-    bool                ToJSVal(long *val);
-    bool                AlignToSurface(void);
-    float               GroundDistance(void);
-    bool                OnGround(void);
-    kexVec3             ToLocalOrigin(const float x, const float y, const float z);
-    kexVec3             ToLocalOrigin(const kexVec3 &org);
-    void                SpawnFX(const char *fxName, const float x, const float y, const float z);
+    bool                        Event(const char *function, long *args, unsigned int nargs);
+    bool                        ToJSVal(long *val);
+    bool                        AlignToSurface(void);
+    float                       GroundDistance(void);
+    bool                        OnGround(void);
+    kexVec3                     ToLocalOrigin(const float x, const float y, const float z);
+    kexVec3                     ToLocalOrigin(const kexVec3 &org);
+    void                        SpawnFX(const char *fxName, const float x, const float y, const float z);
+
+    kexLinklist<kexWorldActor>  worldLink;
+    kexLinklist<kexWorldActor>  gridLink;
 
 private:
-    void                CreateComponent(void);
+    void                        CreateComponent(void);
 
 protected:
-    gObject_t           *component;
-    gObject_t           *iterator;
-    bool                bRotor;
-    kexStr              name;
-    float               radius;
-    float               height;
-    float               baseHeight;
-    float               centerHeight;
-    float               viewHeight;
-    kexQuat             lerpRotation;
-    float               rotorSpeed;
-    float               rotorFriction;
-    kexVec3             rotorVector;
-    kexVec3             *nodeOffsets_t;
-    kexVec3             *nodeOffsets_r;
+    gObject_t                   *component;
+    gObject_t                   *iterator;
+    bool                        bRotor;
+    kexStr                      name;
+    float                       radius;
+    float                       height;
+    float                       baseHeight;
+    float                       centerHeight;
+    float                       viewHeight;
+    kexQuat                     lerpRotation;
+    float                       rotorSpeed;
+    float                       rotorFriction;
+    kexVec3                     rotorVector;
+    kexVec3                     *nodeOffsets_t;
+    kexVec3                     *nodeOffsets_r;
 
-    static unsigned int id;
+    static unsigned int         id;
 END_CLASS();
 
 #endif
