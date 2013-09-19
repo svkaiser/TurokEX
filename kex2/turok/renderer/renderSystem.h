@@ -23,6 +23,42 @@
 #ifndef __RENDERSYS_H__
 #define __RENDERSYS_H__
 
+typedef enum {
+    GLFUNC_LEQUAL   = 0,
+    GLFUNC_GEQUAL,
+    GLFUNC_EQUAL,
+    GLFUNC_ALWAYS,
+    GLFUNC_NEVER,
+} glFunctions_t;
+
+typedef enum {
+    GLCULL_FRONT    = 0,
+    GLCULL_BACK
+} glCullType_e;
+
+typedef enum {
+    GLSRC_ZERO      = 0,
+    GLSRC_ONE,
+    GLSRC_DST_COLOR,
+    GLSRC_ONE_MINUS_DST_COLOR,
+    GLSRC_SRC_ALPHA,
+    GLSRC_ONE_MINUS_SRC_ALPHA,
+    GLSRC_DST_ALPHA,
+    GLSRC_ONE_MINUS_DST_ALPHA,
+    GLSRC_ALPHA_SATURATE,
+} glSrcBlend_e;
+
+typedef enum {
+    GLDST_ZERO      = 0,
+    GLDST_ONE,
+    GLDST_SRC_COLOR,
+    GLDST_ONE_MINUS_SRC_COLOR,
+    GLDST_SRC_ALPHA,
+    GLDST_ONE_MINUS_SRC_ALPHA,
+    GLDST_DST_ALPHA,
+    GLDST_ONE_MINUS_DST_ALPHA,
+} glDstBlend_e;
+
 class kexRenderSystem {
 public:
 
@@ -37,7 +73,9 @@ public:
     byte                *GetScreenBuffer(int x, int y, int width, int height, bool bFlip);
     dtexture            ScreenToTexture(void);
     void                SetState(int bits, bool bEnable);
-    void                SetFunc(int type, int func, float val);
+    void                SetAlphaFunc(int func, float val);
+    void                SetDepth(int func);
+    void                SetBlend(int src, int dest);
     void                SetEnv(int env);
     void                SetCull(int type);
     void                SetTextureUnit(int unit);
@@ -76,7 +114,9 @@ private:
     typedef struct {
         int             glStateBits;
         int             depthFunction;
-        int             blendFunction;
+        int             blendSrc;
+        int             blendDest;
+        int             cullType;
         int             alphaFunction;
         float           alphaFuncThreshold;
         int             currentUnit;
@@ -84,6 +124,12 @@ private:
     } glState_t;
 
     glState_t           glState;
+    
+    const char          *gl_vendor;
+    const char          *gl_renderer;
+    const char          *gl_version;
+    
+    void                SetViewDimensions(void);    
 };
 
 extern kexRenderSystem renderSystem;

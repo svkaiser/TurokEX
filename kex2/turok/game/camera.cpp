@@ -41,7 +41,7 @@ kexCamera::kexCamera(void) {
     this->fov           = 45.0f;
     this->bLetterBox    = false;
     this->bFixedFOV     = false;
-    this->aspect        = 320.0f/240.0f;
+    this->aspect        = 4.0f/3.0f;
 }
 
 //
