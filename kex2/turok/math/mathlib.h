@@ -38,6 +38,8 @@
 #define DEG2RAD(x) ((x) * M_RAD)
 #define RAD2DEG(x) ((x) * M_DEG)
 
+#define FLOATSIGNBIT(f)  ((*(const unsigned long*)&(f)) >> 31)
+
 //
 // VECTOR OPERATIONS
 //
@@ -269,6 +271,7 @@ public:
 
     void                    Set(const float x, const float y, const float z, const float w);
     void                    Clear(void);
+    float                   *ToFloatPtr(void);
     
     const kexVec3           &ToVec3(void) const;
     kexVec3                 &ToVec3(void);

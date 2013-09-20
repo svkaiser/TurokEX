@@ -269,6 +269,10 @@
 				Name="renderer"
 				>
 				<File
+					RelativePath="..\turok\renderer\frustum.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\render_camera.cpp"
 					>
 				</File>
@@ -685,6 +689,10 @@
 			<Filter
 				Name="renderer"
 				>
+				<File
+					RelativePath="..\turok\renderer\frustum.h"
+					>
+				</File>
 				<File
 					RelativePath="..\turok\renderer\render.h"
 					>

@@ -1079,6 +1079,14 @@ kexVec3 &kexVec4::ToVec3(void) {
 }
 
 //
+// kexVec4::ToFloatPtr
+//
+
+float *kexVec4::ToFloatPtr(void) {
+    return reinterpret_cast<float*>(&x);
+}
+
+//
 // kexVec4::operator[]
 //
 

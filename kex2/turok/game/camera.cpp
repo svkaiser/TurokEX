@@ -64,9 +64,7 @@ void kexCamera::UpdateAspect(void) {
 //
 
 void kexCamera::SetupMatrices(void) {
-    //
     // projection
-    //
     projMatrix.Identity();
 
     float camFov    = (float)bFixedFOV ? fov : cvarClientFOV.GetFloat();
@@ -94,9 +92,7 @@ void kexCamera::SetupMatrices(void) {
     projMatrix.vectors[3].y = 0;
     projMatrix.vectors[3].w = 0;
     
-    //
     // model
-    //
     modelMatrix.Identity();
 
     kexQuat yaw(-angles.yaw + M_PI, kexVec3::vecUp);
@@ -106,6 +102,9 @@ void kexCamera::SetupMatrices(void) {
     
     modelMatrix = kexMatrix((yaw * roll) * pitch);
     modelMatrix.AddTranslation(-(origin | modelMatrix));
+
+    // frustum
+    viewFrustum.TransformToView(projMatrix, modelMatrix);
 }
 
 //
