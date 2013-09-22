@@ -411,6 +411,17 @@ kexAngle &kexAngle::operator=(const kexAngle &angle) {
 // kexAngle::operator=
 //
 
+kexAngle &kexAngle::operator=(const kexVec3 &vector) {
+    yaw     = vector.x;
+    pitch   = vector.y;
+    roll    = vector.z;
+    return *this;
+}
+
+//
+// kexAngle::operator=
+//
+
 kexAngle &kexAngle::operator=(const float *vecs) {
     yaw     = vecs[0];
     pitch   = vecs[1];

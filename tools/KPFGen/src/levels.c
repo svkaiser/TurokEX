@@ -30,6 +30,7 @@
 #include "zone.h"
 
 //#define FORMAT_BINARY
+//#define OLD_FORMAT
 
 extern const char *sndfxnames[];
 void AddTexture(byte *data, int size, const char *path);
@@ -606,7 +607,11 @@ static void ProcessTextureOverrides(short model, int textureid)
     if(ncount <= 0)
         return;
 
+#ifdef OLD_FORMAT
     Com_Strcat("textureSwaps =\n");
+#else
+    Com_Strcat("textureSwaps\n");
+#endif
     Com_Strcat("{\n");
 
     for(j = 0; j < ncount; j++)
@@ -625,11 +630,11 @@ static void ProcessTextureOverrides(short model, int textureid)
 
                 if(textureid >= texindexes[texid])
                 {
-                    Com_Strcat("\"-\"");
+                    Com_Strcat("\"-\" ");
                 }
                 else
                 {
-                    Com_Strcat("\"textures/tex%04d_%02d.tga\"",
+                    Com_Strcat("\"textures/tex%04d_%02d.tga\" ",
                         texid, textureid);
                 }
             }
@@ -1232,6 +1237,7 @@ static void ProcessScriptedActorProperties(mapactor_t *actor, attribute_t *attr)
 // ProcessActors
 //
 
+#ifdef OLD_FORMAT
 static void ProcessActors(byte *data)
 {
     int size = Com_GetCartOffset(data, CHUNK_ACTORS_SIZE, 0);
@@ -1695,6 +1701,39 @@ static void ProcessActors(byte *data)
     Com_Strcat("}\n");
 #endif
 }
+#else
+static void ProcessActors(byte *data)
+{
+    int size = Com_GetCartOffset(data, CHUNK_ACTORS_SIZE, 0);
+    int count = Com_GetCartOffset(data, CHUNK_ACTORS_COUNT, 0);
+    int i;
+
+    for(i = 0; i < count; i++)
+    {
+        mapactor_t *actor = (mapactor_t*)(data + 8 + (i * size));
+        attribute_t *attr = GetAttribute(actor->attribute);
+        int variant = abs(attr->variant1);
+        
+        switch(actor->type)
+        {
+        case OT_TUROK:
+            Com_Strcat("actor \"kexPlayerLocation\"\n");
+            Com_Strcat("{\n");
+            Com_Strcat("origin { %f %f %f }\n",
+                actor->xyz[0], actor->xyz[1], actor->xyz[2]);
+            Com_Strcat("scale { %f %f %f }\n",
+                actor->scale[0], actor->scale[1], actor->scale[2]);
+            Com_Strcat("angles { %f 0.0 0.0 }\n",
+                ((((-(float)actor->angle / 180.0f) * M_RAD) + M_PI) / M_RAD) * M_RAD);
+            Com_Strcat("bStatic 0\n");
+            Com_Strcat("component \"TurokPlayer\"\n");
+            Com_Strcat("}\n");
+        }
+
+        Com_UpdateDataProgress();
+    }
+}
+#endif
 
 //
 // ProcessLevelKey
@@ -1724,6 +1763,7 @@ static void ProcessLevelKey(mapinsttype3_t *mapinst, int id)
 static void ProcessStaticInstances2(byte *data, byte *data2);
 static void ProcessInstances(byte *data, int offs);
 
+#ifdef OLD_FORMAT
 static void ProcessGridBounds(byte *data, byte *inst)
 {
     byte *grid = Com_GetCartData(data, CHUNK_LEVELGRID_BOUNDS, 0);
@@ -1850,6 +1890,103 @@ static void ProcessGridBounds(byte *data, byte *inst)
     Com_Strcat("}\n");
 #endif
 }
+#else
+static void ProcessGridBounds(byte *data, byte *inst)
+{
+    byte *grid = Com_GetCartData(data, CHUNK_LEVELGRID_BOUNDS, 0);
+    int size = Com_GetCartOffset(grid, CHUNK_GRIDBOUNDS_SIZE, 0);
+    int count = Com_GetCartOffset(grid, CHUNK_GRIDBOUNDS_COUNT, 0);
+    int total = count;
+    int stride;
+    int i;
+
+    // some gridbounds can contain bad or empty data....UGH
+    if(count > 1)
+    {
+        total = 0;
+
+        for(i = 0; i < count; i++)
+        {
+            float tmp;
+            char tmp2[32];
+
+            int gsize;
+            byte *rncdata = Com_GetCartData(inst, CHUNK_INSTGROUP_OFFSET(i), &gsize);
+            byte *group = RNC_ParseFile(rncdata, gsize, 0);
+
+            tmp = *(float*)((int*)(grid + 8 + 0  + (i * size)));
+            sprintf(tmp2, "%f", tmp);
+            if(strstr(tmp2, "#INF"))
+            {
+                Com_Free(&group);
+                continue;
+            }
+
+            tmp = *(float*)((int*)(grid + 8 + 4  + (i * size)));
+            sprintf(tmp2, "%f", tmp);
+            if(strstr(tmp2, "#INF"))
+            {
+                Com_Free(&group);
+                continue;
+            }
+
+            tmp = *(float*)((int*)(grid + 8 + 8  + (i * size)));
+            sprintf(tmp2, "%f", tmp);
+            if(strstr(tmp2, "#INF"))
+            {
+                Com_Free(&group);
+                continue;
+            }
+
+            tmp = *(float*)((int*)(grid + 8 + 12 + (i * size)));
+            sprintf(tmp2, "%f", tmp);
+            if(strstr(tmp2, "#INF"))
+            {
+                Com_Free(&group);
+                continue;
+            }
+
+            if(Com_GetCartOffset(group, CHUNK_INSTANCE_SIZE, 0) &&
+                Com_GetCartOffset(group, CHUNK_INSTANCE_COUNT, 0))
+            {
+                total++;
+            }
+
+            Com_Free(&group);
+        }
+    }
+
+    stride = 0;
+
+    for(i = 0; i < count; i++)
+    {
+        int gsize;
+        byte *rncdata = Com_GetCartData(inst, CHUNK_INSTGROUP_OFFSET(i), &gsize);
+        byte *group = RNC_ParseFile(rncdata, gsize, 0);
+
+        if(Com_GetCartOffset(group, CHUNK_INSTANCE_SIZE, 0) &&
+            Com_GetCartOffset(group, CHUNK_INSTANCE_COUNT, 0))
+        {
+            float min_x = *(float*)((int*)(grid + 8 + 0  + (i * size)));
+            float min_z = *(float*)((int*)(grid + 8 + 4  + (i * size)));
+            float max_x = *(float*)((int*)(grid + 8 + 8  + (i * size)));
+            float max_z = *(float*)((int*)(grid + 8 + 12 + (i * size)));
+
+            Com_Strcat("gridbound { %f -32768 %f } { %f 32768 %f }\n", min_x, min_z, max_x, max_z);
+            Com_Strcat("{\n");
+
+            ProcessStaticInstances2(
+                Com_GetCartData(group, CHUNK_STATICINST_GROUP2, 0),
+                Com_GetCartData(group, CHUNK_STATICINST_GROUP3, 0));
+
+            Com_Strcat("}\n");
+        }
+
+        Com_Free(&group);
+        Com_UpdateDataProgress();
+    }
+}
+#endif
 
 //
 // ProcessInstances
@@ -2431,6 +2568,7 @@ static void ProcessStaticInstances1(byte *data)
 // ProcessEmitterActor
 //
 
+#ifdef OLD_FORMAT
 static void ProcessEmitterActor(const char *name)
 {
     Com_Strcat("components[1] =\n");
@@ -2443,11 +2581,43 @@ static void ProcessEmitterActor(const char *name)
     Com_Strcat("EndObject\n");
     Com_Strcat("}\n");
 }
+#else
+static void ProcessEmitterActor(mapinsttype2_t *mapinst, const char *name)
+{
+    float rotvec[4];
+
+    rotvec[0] = (float)mapinst->angle[0] * ANGLE_INSTANCE;
+    rotvec[1] = (float)mapinst->angle[1] * ANGLE_INSTANCE;
+    rotvec[2] = (float)mapinst->angle[2] * ANGLE_INSTANCE;
+    rotvec[3] = (float)mapinst->angle[3] * ANGLE_INSTANCE;
+
+    Com_Strcat("actor \"kexEmitter\"\n");
+    Com_Strcat("{\n");
+    Com_Strcat("fx \"%s\"\n", name);
+    Com_Strcat("bAutoStart 1\n");
+    Com_Strcat("bStatic 0\n");
+    Com_Strcat("origin { %f %f %f }\n",
+        mapinst->xyz[0], mapinst->xyz[1], mapinst->xyz[2]);
+    Com_Strcat("scale { %f %f %f }\n",
+        mapinst->scale[0], mapinst->scale[1], mapinst->scale[2]);
+    Com_Strcat("rotation { %f %f %f %f }\n",
+        rotvec[0], rotvec[1], rotvec[2], rotvec[3]);
+    Com_Strcat("bounds { %f %f %f %f %f %f }\n",
+        CoerceFloat(mapinst->bbox[0]),
+        CoerceFloat(mapinst->bbox[1]),
+        CoerceFloat(mapinst->bbox[2]),
+        CoerceFloat(mapinst->bbox[3]),
+        CoerceFloat(mapinst->bbox[4]),
+        CoerceFloat(mapinst->bbox[5]));
+    Com_Strcat("}\n");
+}
+#endif
 
 //
 // ProcessStaticInstances2
 //
 
+#ifdef OLD_FORMAT
 static void ProcessStaticInstances2(byte *data, byte *data2)
 {
     int size;
@@ -2671,6 +2841,152 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
     free(kmapInfo.staticStride);
 #endif
 }
+#else
+static void ProcessStaticInstances2(byte *data, byte *data2)
+{
+    int size;
+    int count;
+    int total;
+    int i;
+
+    size = Com_GetCartOffset(data, CHUNK_INSTANCE_SIZE, 0);
+    count = Com_GetCartOffset(data, CHUNK_INSTANCE_COUNT, 0);
+    total = (count+Com_GetCartOffset(data2, CHUNK_INSTANCE_COUNT, 0));
+
+    DC_DecodeData(data, decode_buffer, 0);
+    memcpy(data, decode_buffer, (size * count) + 8);
+
+    for(i = 0; i < count; i++)
+    {
+        mapinsttype2_t *mapinst = (mapinsttype2_t*)(data + 8 + (i * size));
+        float rotvec[4];
+        float bboxUnit;
+        dboolean bStatic = true;
+
+        switch(mapinst->model)
+        {
+        case 9:
+            ProcessEmitterActor(mapinst, "fx/fx_263.kfx");
+            break;
+
+        case 10:
+            ProcessEmitterActor(mapinst, "fx/fx_347.kfx");
+            break;
+
+        case 11:
+            ProcessEmitterActor(mapinst, "fx/ambience_bubbles01.kfx");
+            break;
+
+        case 12:
+            ProcessEmitterActor(mapinst, "fx/fx_171.kfx");
+            break;
+
+        case 13:
+            ProcessEmitterActor(mapinst, "fx/fx_262.kfx");
+            break;
+
+        case 14:
+            ProcessEmitterActor(mapinst, "fx/fx_353.kfx");
+            break;
+
+        case 25:
+            ProcessEmitterActor(mapinst, "fx/fx_169.kfx");
+            break;
+
+        case 26:
+            ProcessEmitterActor(mapinst, "fx/ambience_tall_fire2.kfx");
+            break;
+
+        case 28:
+            ProcessEmitterActor(mapinst, "fx/ambience_thunderstorm.kfx");
+            break;
+
+        case 29:
+            ProcessEmitterActor(mapinst, "fx/ambience_tall_fire1.kfx");
+            break;
+
+        case 32:
+            ProcessEmitterActor(mapinst, "fx/fx_342.kfx");
+            break;
+
+        case 33:
+            ProcessEmitterActor(mapinst, "fx/fx_153.kfx");
+            break;
+
+        case 34:
+            ProcessEmitterActor(mapinst, "fx/fx_188.kfx");
+            break;
+
+        case 35:
+            ProcessEmitterActor(mapinst, "fx/ambience_underwater_bubbles.kfx");
+            break;
+
+        case 331:
+            ProcessEmitterActor(mapinst, "fx/fx_263.kfx");
+            break;
+
+        case 347:
+            ProcessEmitterActor(mapinst, "fx/fx_171.kfx");
+            break;
+
+        case 348:
+            ProcessEmitterActor(mapinst, "fx/fx_262.kfx");
+            break;
+
+        case 349:
+            ProcessEmitterActor(mapinst, "fx/ambience_waterfall_steam.kfx");
+            break;
+
+        case 412:
+            ProcessEmitterActor(mapinst, "fx/fx_170.kfx");
+            break;
+
+        case 555:
+            ProcessEmitterActor(mapinst, "fx/fx_083.kfx");
+            break;
+        default:
+            Com_Strcat("actor \"kexWorldActor\"\n");
+            Com_Strcat("{\n");
+            rotvec[0] = (float)mapinst->angle[0] * ANGLE_INSTANCE;
+            rotvec[1] = (float)mapinst->angle[1] * ANGLE_INSTANCE;
+            rotvec[2] = (float)mapinst->angle[2] * ANGLE_INSTANCE;
+            rotvec[3] = (float)mapinst->angle[3] * ANGLE_INSTANCE;
+            Com_Strcat("mesh \"models/mdl%03d/mdl%03d.kmesh\"\n",
+                mapinst->model, mapinst->model);
+            Com_Strcat("bounds { %f %f %f } { %f %f %f }\n",
+                CoerceFloat(mapinst->bbox[0]),
+                CoerceFloat(mapinst->bbox[1]),
+                CoerceFloat(mapinst->bbox[2]),
+                CoerceFloat(mapinst->bbox[3]),
+                CoerceFloat(mapinst->bbox[4]),
+                CoerceFloat(mapinst->bbox[5]));
+
+            bboxUnit = (float)sqrt(
+                CoerceFloat(mapinst->bbox[0])*CoerceFloat(mapinst->bbox[0])+
+                CoerceFloat(mapinst->bbox[2])*CoerceFloat(mapinst->bbox[2])+
+                CoerceFloat(mapinst->bbox[3])*CoerceFloat(mapinst->bbox[3])+
+                CoerceFloat(mapinst->bbox[5])*CoerceFloat(mapinst->bbox[5]));
+
+            ProcessTextureOverrides(mapinst->model, GetAttribute(mapinst->attribute)->texture);
+            Com_Strcat("bCollision %i\n",
+                GetAttribute(mapinst->attribute)->behavior1 & 1);
+
+            Com_Strcat("origin { %f %f %f }\n",
+                mapinst->xyz[0], mapinst->xyz[1], mapinst->xyz[2]);
+            Com_Strcat("scale { %f %f %f }\n",
+                mapinst->scale[0], mapinst->scale[1], mapinst->scale[2]);
+            Com_Strcat("rotation { %f %f %f %f }\n",
+                rotvec[0], rotvec[1], rotvec[2], rotvec[3]);
+
+            Com_Strcat("bStatic 1\n");
+            Com_Strcat("radius %f\n", GetAttribute(mapinst->attribute)->width);
+            Com_Strcat("height %f\n", GetAttribute(mapinst->attribute)->height);
+            Com_Strcat("cullDistance %f\n", bboxUnit + 4096.0f);
+            Com_Strcat("}\n");
+        }
+    }
+}
+#endif
 
 //
 // ProcessInstanceGroups
@@ -2813,7 +3129,9 @@ static void ProcessLevel(byte *data, int index)
 
     ProcessActors(actors);
     ProcessGridBounds(grid, inst);
+#ifdef OLD_FORMAT
     ProcessAreas(areadata);
+#endif
 
 #ifndef FORMAT_BINARY
     sprintf(name, "maps/map%02d/map%02d.kmap", index, index);
@@ -2848,7 +3166,9 @@ static void AddLevel(byte *data, int index)
 
     level = Com_GetCartData(data, CHUNK_LEVEL_OFFSET(index), 0);
 
+#ifdef OLD_FORMAT
     ProcessNavigation(level, index);
+#endif
     ProcessLevel(level, index);
     ProcessSkyTexture(level, index);
 }
@@ -2892,6 +3212,36 @@ void LV_StoreLevels(void)
     typedata = (short*)Com_GetCartData(cartfile, CHUNK_DIRECTORY_TYPES, 0);
 
     PK_AddFolder("maps/");
+
+    /*const char *mapnames[] =
+    {
+        "campainger",
+        "outro",
+        "credits",
+        "trexboss",
+        "hubA",
+        "hubB",
+        "jungleA",
+        "jungleB",
+        "cityA",
+        "cityB",
+        "ruinsA",
+        "ruinsB",
+        "catacombsA",
+        "catacombsB",
+        "villageA",
+        "villageB",
+        "villageC",
+        "lostlandA",
+        "lostlandB",
+        "lostlandC",
+        "lostlandD",
+        "finalA",
+        "finalB",
+        "finalC",
+        "finalD",
+        "finalE"
+    };*/
 
     for(i = 0; i < numlevels; i++)
     {

@@ -31,31 +31,69 @@ void P_SpawnLocalPlayer(void);
 void P_LocalPlayerTick(void);
 
 typedef struct {
-    kexVec3         origin;
-    kexVec3         velocity;
-    kexVec3         accel;
-    kexAngle        angles;
-    float           moveTime;
-    float           frameTime;
-    float           timeStamp;
+    kexVec3             origin;
+    kexVec3             velocity;
+    kexVec3             accel;
+    kexAngle            angles;
+    float               moveTime;
+    float               frameTime;
+    float               timeStamp;
 } moveState_t;
 
 typedef struct {
-    int             ingoing;
-    int             outgoing;
-    int             acks;
+    int                 ingoing;
+    int                 outgoing;
+    int                 acks;
 } netSequence_t;
 
-BEGIN_EXTENDED_CLASS(kexPlayer, kexActor);
+typedef struct {
+    kexVec3             accelSpeed;
+    kexVec3             deaccelSpeed;
+    kexVec3             forwardSpeed;
+    kexVec3             backwardSpeed;
+} playerMove_t;
+
+BEGIN_EXTENDED_CLASS(kexPlayerLocation, kexWorldActor);
+public:
+                        kexPlayerLocation(void);
+                        ~kexPlayerLocation(void);
+
+    virtual void        Parse(kexLexer *lexer);
+
+    const int           GetID(void) const { return id; }
+
+private:
+    int                 id;
+END_CLASS();
+
+BEGIN_EXTENDED_CLASS(kexPlayer, kexWorldActor);
 public:
                         kexPlayer(void);
                         ~kexPlayer(void);
 
     void                ResetNetSequence(void);
     void                ResetTicCommand(void);
+    void                Accelerate(const playerMove_t *move, int direction, int axis);
 
-    kexVec3             &Acceleration(void) { return acceleration; }
-    float               MoveTime(void) { return moveTime; }
+    playerMove_t        *GroundMove(void) { return &groundMove; }
+    playerMove_t        *AirMove(void) { return &airMove; }
+    playerMove_t        *SwimMove(void) { return &swimMove; }
+    playerMove_t        *ClimbMove(void) { return &climbMove; }
+    playerMove_t        *CrawlMove(void) { return &crawlMove; }
+    playerMove_t        *FlyMove(void) { return &flyMove; }
+    playerMove_t        *NoClipMove(void) { return &noClipMove; }
+
+    kexVec3             &GetAcceleration(void) { return acceleration; }
+    void                SetAcceleration(const kexVec3 &accel) { acceleration = accel; }
+    float               GetMaxPitch(void) { return maxPitch; }
+    void                SetMaxPitch(const float p) { maxPitch = p; }
+    bool                GetAllowCrawl(void) { return bAllowCrawl; }
+    void                SetAllowCrawl(const bool b) { bAllowCrawl = b; }
+    float               GetCrawlHeight(void) { return crawlHeight; }
+    void                SetCrawlHeight(const float f) { crawlHeight = f; }
+    float               GetMoveTime(void) { return moveTime; }
+    void                SetMoveTime(const float t) { moveTime = t; }
+    
     ticcmd_t            *Cmd(void) { return &cmd; }
     gObject_t           *GetScriptObject(void) const { return scriptObject; }
     void                SetScriptObject(gObject_t *obj) { scriptObject = obj; }
@@ -70,6 +108,16 @@ public:
 
 protected:
     kexVec3             acceleration;
+    playerMove_t        groundMove;
+    playerMove_t        airMove;
+    playerMove_t        swimMove;
+    playerMove_t        climbMove;
+    playerMove_t        crawlMove;
+    playerMove_t        flyMove;
+    playerMove_t        noClipMove;
+    float               maxPitch;
+    bool                bAllowCrawl;
+    float               crawlHeight;
     float               moveTime;
     netSequence_t       netseq;
     ticcmd_t            cmd;

@@ -162,6 +162,7 @@ private:
 };
 
 class kexVec3;
+class kexVec4;
 class kexMatrix;
 
 class kexQuat {
@@ -190,6 +191,7 @@ public:
     kexQuat                 &operator*=(const kexQuat &quat);
     kexQuat                 &operator*=(const float val);
     kexQuat                 &operator=(const kexQuat &quat);
+    kexQuat                 &operator=(const kexVec4 &vec);
     kexQuat                 &operator=(const float *vecs);
 
     float                   x;
@@ -387,6 +389,7 @@ public:
     kexAngle                &operator+=(const kexAngle &angle);
     kexAngle                &operator-=(const kexAngle &angle);
     kexAngle                &operator=(const kexAngle &angle);
+    kexAngle                &operator=(const kexVec3 &vector);
     kexAngle                &operator=(const float *vecs);
     kexAngle                operator-(void);
     float                   operator[](int index) const;

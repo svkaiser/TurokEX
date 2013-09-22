@@ -93,6 +93,9 @@ BEGIN_CLASS(kexObject);
     void                    CallSpawn(void);
     void                    Spawn(void);
     spawnObjFunc_t          ExecSpawnFunction(kexRTTI *objInfo);
+
+    void                    *operator new(size_t s);
+    void                    operator delete(void *ptr);
     
     static void             Init(void);
     static void             Shutdown(void);

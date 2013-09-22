@@ -38,6 +38,7 @@
 #include "debug.h"
 #include "network.h"
 #include "console.h"
+#include "world.h"
 
 static int clientFPS;
 
@@ -102,6 +103,22 @@ void kexClient::Connect(const char *address) {
 }
 
 //
+// kexClient::PrepareMapChange
+//
+
+void kexClient::PrepareMapChange(const ENetPacket *packet) {
+    // TEMP
+    unsigned int mapID;
+
+    packetManager.Read8((ENetPacket*)packet, &mapID);
+    client.SetState(CL_STATE_CHANGINGLEVEL);
+
+    localWorld.Load(kva("maps/map%02d/map%02d.kmap", mapID, mapID));
+    client.SetState(CL_STATE_INGAME);
+    localWorld.SpawnLocalPlayer();
+}
+
+//
 // kexClient::ProcessPackets
 //
 
@@ -120,6 +137,10 @@ void kexClient::ProcessPackets(const ENetPacket *packet) {
         playerClient.SetID(id);
         SetState(CL_STATE_READY);
         common.DPrintf("CL_ReadClientInfo: ID is %i\n", id);
+        break;
+
+    case sp_changemap:
+        PrepareMapChange(packet);
         break;
 
     default:
@@ -178,8 +199,8 @@ void kexClient::Run(const int msec) {
     playerClient.BuildCommands();
 
     // update local player
-    P_LocalPlayerTick();
-    //playerClient.LocalTick();
+    //P_LocalPlayerTick();
+    playerClient.LocalTick();
     
     // update console
     console.Tick();
@@ -188,7 +209,8 @@ void kexClient::Run(const int msec) {
     FX_Ticker();
     
     // update all actor animations
-    Actor_LocalTick();
+    //Actor_LocalTick();
+    localWorld.LocalTick();
 
     // draw scene
     R_DrawFrame();

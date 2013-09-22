@@ -46,7 +46,7 @@ enum {
     scmap_glight_ambience,
     scmap_glight_modelamb,
     scmap_actor,
-    scmap_gridbounds,
+    scmap_gridbound,
     scmap_end
 };
 
@@ -58,7 +58,7 @@ static const sctokens_t maptokens[scmap_end+1] = {
     { scmap_glight_ambience,    "global_light_ambience" },
     { scmap_glight_modelamb,    "global_model_ambience" },
     { scmap_actor,              "actor"                 },
-    { scmap_gridbounds,         "gridbounds"            },
+    { scmap_gridbound,          "gridbound"             },
     { -1,                       NULL                    }
 };
 
@@ -103,11 +103,10 @@ const char *kexWorld::GetMapFileFromID(const int id) {
 //
 
 void kexWorld::Tick(void) {
-    if(bLoaded == false)
-    {
-        if(nextMapID >= 0)
+    if(bLoaded == false) {
+        if(nextMapID >= 0) {
             Load(GetMapFileFromID(nextMapID));
-
+        }
         return;
     }
 
@@ -115,8 +114,9 @@ void kexWorld::Tick(void) {
     time = (float)(ticks * SERVER_RUNTIME);
     deltaTime = (float)server.GetElaspedTime();
 
-    if(bReadyUnload)
+    if(bReadyUnload) {
         Unload();
+    }
 }
 
 //
@@ -134,11 +134,15 @@ kexWorldActor *kexWorld::ConstructActor(const char *className) {
     kexObject *obj;
     kexRTTI *objType;
     
-    if(!(objType = kexObject::Get(className)))
+    if(!(objType = kexObject::Get(className))) {
+        common.Error("kexWorld::ConstructActor: unknown class (\"%s\")\n", className);
         return NULL;
+    }
         
-    if(!(obj = objType->Create()))
+    if(!(obj = objType->Create())) {
+        common.Error("kexWorld::ConstructActor: could not spawn (\"%s\")\n", className);
         return NULL;
+    }
     
     return static_cast<kexWorldActor*>(obj);
 }
@@ -159,8 +163,16 @@ void kexWorld::AddActor(kexWorldActor *actor) {
 void kexWorld::RemoveActor(kexWorldActor *actor) {
     if(actor->RefCount() > 0)
         return;
+
+    kexWorldActor *next = actorRover->worldLink.Next();
         
     actor->worldLink.Remove();
+
+   /* Note that actorRover is guaranteed to point to us,
+    * and since we're freeing our memory, we had better change that. So
+    * point it to actor->prev, so the iterator will correctly move on to
+    * actor->prev->next = actor->next */
+    actorRover = actor->worldLink.Prev();
     actor->Remove();
 }
 
@@ -180,6 +192,77 @@ kexWorldActor *kexWorld::SpawnActor(const char *className, const kexVec3 &origin
     
     AddActor(actor);
     return actor;
+}
+
+//
+// kexLocalPlayer::SpawnLocalPlayer
+//
+
+void kexWorld::SpawnLocalPlayer(void) {
+    for(kexWorldActor *actor = actors.Next();
+        actor != NULL; actor = actor->worldLink.Next()) {
+        
+        // find a kexPlayerLocation and see if its not occupied
+        if(actor->GetOwner() != NULL || !actor->InstanceOf(&kexPlayerLocation::info))
+            continue;
+
+        kexLocalPlayer *localPlayer = &client.LocalPlayer();
+        
+        // set client's position
+        localPlayer->SetOrigin(actor->GetOrigin());
+        localPlayer->SetAngles(actor->GetAngles());
+        localPlayer->GetVelocity().Clear();
+        localPlayer->GetAcceleration().Clear();
+
+        localPlayer->SetScriptObject(actor->Component());
+        
+        // client now owns this player location and world camera
+        actor->SetOwner(static_cast<kexActor*>(localPlayer));
+        camera.SetOwner(static_cast<kexActor*>(localPlayer));
+
+        localPlayer->CallSpawn();
+        return;
+    }
+    
+    common.Error("kexLocalPlayer::SetPlayerActor: no player locations found\n");
+}
+
+//
+// kexWorld::ParseGridBound
+//
+
+void kexWorld::ParseGridBound(kexLexer *lexer) {
+    gridBound_t *grid = new gridBound_t;
+
+    grid->box.min = lexer->GetVector3();
+    grid->box.max = lexer->GetVector3();
+
+    // read into nested block
+    lexer->ExpectNextToken(TK_LBRACK);
+    lexer->Find();
+
+    kexWorldActor *actor;
+
+    while(lexer->TokenType() != TK_RBRACK) {
+        switch(lexer->GetIDForTokenList(maptokens, lexer->Token())) {
+        case scmap_actor:
+            lexer->GetString();
+            actor = ConstructActor(lexer->StringToken());
+            actor->Parse(lexer);
+            grid->staticActors.Add(actor->worldLink);
+            actor->CallSpawn();
+            break;
+        default:
+            if(lexer->TokenType() == TK_IDENIFIER) {
+                parser.Error("kexWorld::ParseGridBound: unknown token: %s\n",
+                    lexer->Token());
+            }
+            break;
+        }
+        lexer->Find();
+    }
+
+    gridBounds.Push(grid);
 }
 
 //
@@ -220,39 +303,40 @@ void kexWorld::Load(const char *mapFile) {
                 lexer->GetString();
                 title = lexer->StringToken();
                 break;
-
             case scmap_mapID:
                 lexer->AssignFromTokenList(maptokens, (unsigned int*)&mapID,
                     scmap_mapID, false);
                 break;
-
             case scmap_glight_origin:
                 lexer->AssignVectorFromTokenList(maptokens,
                     worldLightOrigin.ToVec3(), scmap_glight_origin, false);
                 break;
-
             case scmap_glight_color:
                 lexer->AssignVectorFromTokenList(maptokens,
                     worldLightColor.ToVec3(), scmap_glight_color, false);
                 break;
-
             case scmap_glight_ambience:
                 lexer->AssignVectorFromTokenList(maptokens,
                     worldLightAmbience.ToVec3(), scmap_glight_ambience, false);
                 break;
-
             case scmap_glight_modelamb:
                 lexer->AssignVectorFromTokenList(maptokens,
                     worldLightModelAmbience.ToVec3(), scmap_glight_modelamb, false);
                 break;
-                
             case scmap_actor:
                 lexer->GetString();
-                
                 actor = ConstructActor(lexer->StringToken());
                 actor->Parse(lexer);
-                
                 AddActor(actor);
+                break;
+            case scmap_gridbound:
+                ParseGridBound(lexer);
+                break;
+            default:
+                if(lexer->TokenType() == TK_IDENIFIER) {
+                    parser.Error("kexWorld::Load: unknown token: %s\n",
+                        lexer->Token());
+                }
                 break;
             }
             break;
@@ -263,9 +347,6 @@ void kexWorld::Load(const char *mapFile) {
     
     nextMapID = -1;
     bLoaded = true;
-    
-    P_SpawnLocalPlayer();
-    client.SetState(CL_STATE_INGAME);
 }
 
 //

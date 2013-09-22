@@ -155,6 +155,7 @@ typedef enum
     sp_msg,
     sp_pmove,
     sp_weaponinfo,
+    sp_changemap,
     NUMSERVERPACKETS
 } sv_packets_t;
 

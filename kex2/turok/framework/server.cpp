@@ -32,6 +32,7 @@
 #include "game.h"
 #include "type.h"
 #include "js.h"
+#include "world.h"
 
 kexCvar cvarServerAddress("sv_address", CVF_STRING|CVF_CONFIG, "localhost", "TODO");
 kexCvar cvarServerPort("sv_port", CVF_INT|CVF_CONFIG, "58304", "TODO");
@@ -41,6 +42,23 @@ kexCvar cvarServerInWidth("sv_inwidth", CVF_INT|CVF_CONFIG, "0", "TODO");
 kexCvar cvarServerOutWidth("sv_outwidth", CVF_INT|CVF_CONFIG, "0", "TODO");
 
 kexServer server;
+
+//
+// FCmd_LoadTestMap
+//
+
+static void FCmd_Map(void) {
+    int map;
+
+    if(server.GetState() != SV_STATE_ACTIVE)
+        return;
+
+    if(command.GetArgc() < 2)
+        return;
+
+    map = atoi(command.GetArgv(1));
+    server.NotifyMapChange(map);
+}
 
 //
 // kexServer::Destroy
@@ -259,6 +277,29 @@ void kexServer::OnDisconnect(void) {
 }
 
 //
+// kexServer::NotifyMapChange
+//
+
+void kexServer::NotifyMapChange(const int mapID) {
+    ENetEvent *sev = GetEvent();
+
+    for(int i = 0; i < GetMaxClients(); i++) {
+        if(players[i].GetState() == SVC_STATE_ACTIVE) {
+            kexNetPlayer *player = &players[i];
+            ENetPacket *packet;
+
+            if(!(packet = packetManager.Create()))
+                continue;
+
+            packetManager.Write8(packet, sp_changemap);
+            // TEMP
+            packetManager.Write8(packet, mapID);
+            packetManager.Send(packet, player->GetPeer());
+        }
+    }
+}
+
+//
 // kexServer::SendMoveData
 //
 
@@ -308,7 +349,9 @@ void kexServer::Run(int msec) {
     SetTicks(GetTicks() + 1);
     SetTime(GetTicks() * SERVER_RUNTIME);
 
-    G_Ticker();
+    //G_Ticker();
+    // TODO
+    localWorld.Tick();
 
     if(GetTime() < GetRunTime()) {
         SetRunTime((float)GetTime());
@@ -332,4 +375,6 @@ void kexServer::Init(void) {
     SetTime(0);
     SetRunTime(0);
     SetState(SV_STATE_UNAVAILABLE);
+
+    command.Add("map", FCmd_Map);
 }

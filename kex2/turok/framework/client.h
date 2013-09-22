@@ -75,6 +75,8 @@ public:
     int                 curtime;
 
 private:
+    void                PrepareMapChange(const ENetPacket *packet);
+
     bool                bLocal;
     ENetPeer            *peer;
     kexLocalPlayer      playerClient;

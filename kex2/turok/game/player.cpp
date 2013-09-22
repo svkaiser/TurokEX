@@ -35,6 +35,7 @@
 #include "server.h"
 #include "actor_old.h"
 #include "player.h"
+#include "world.h"
 #include "zone.h"
 #include "console.h"
 
@@ -264,6 +265,48 @@ void P_SpawnLocalPlayer(void)
     client.LocalPlayer().camera = camera;
 }
 
+enum {
+    scplocation_id = 0,
+    scplocation_end
+};
+
+static const sctokens_t playerLocationTokens[scplocation_end+1] = {
+    { scplocation_id,           "id"                    },
+    { -1,                       NULL                    }
+};
+
+DECLARE_CLASS(kexPlayerLocation, kexWorldActor)
+
+//
+// kexPlayerLocation::kexPlayerLocation
+//
+
+kexPlayerLocation::kexPlayerLocation(void) {
+    this->id = 0;
+}
+
+//
+// kexPlayerLocation::Parse
+//
+
+void kexPlayerLocation::Parse(kexLexer *lexer) {
+    // read into nested block
+    lexer->ExpectNextToken(TK_LBRACK);
+    lexer->Find();
+
+    while(lexer->TokenType() != TK_RBRACK) {
+        switch(lexer->GetIDForTokenList(playerLocationTokens, lexer->Token())) {
+        case scplocation_id:
+            this->id = lexer->GetNumber();
+            break;
+        default:
+            ParseDefault(lexer);
+            break;
+        }
+        lexer->Find();
+    }
+}
+
 DECLARE_ABSTRACT_CLASS(kexPlayer, kexWorldActor)
 
 //
@@ -273,6 +316,10 @@ DECLARE_ABSTRACT_CLASS(kexPlayer, kexWorldActor)
 kexPlayer::kexPlayer(void) {
     ResetNetSequence();
     ResetTicCommand();
+    
+    jsonData        = NULL;
+    name            = NULL;
+    scriptObject    = NULL;
 }
 
 //
@@ -297,6 +344,52 @@ void kexPlayer::ResetNetSequence(void) {
 
 void kexPlayer::ResetTicCommand(void) {
     memset(&cmd, 0, sizeof(ticcmd_t));
+}
+
+//
+// kexPlayer::Accelerate
+//
+
+void kexPlayer::Accelerate(const playerMove_t *move, int direction, int axis) {
+    float time = 0;
+#define LERP_ACCEL(m, v)                                        \
+    time = move->accelSpeed[v] * (60.0f * cmd.frametime.f);     \
+    if(time > 1) lerp = move->m[v];                             \
+    else { lerp = (move->m[v] - acceleration[v]) *              \
+    time + acceleration[v]; }
+
+#define LERP_DEACCEL(v)                                         \
+    time = move->deaccelSpeed[v] * (60.0f * cmd.frametime.f);   \
+    if(time > 1) lerp = move->deaccelSpeed[v];                  \
+    else { lerp = (0 - acceleration[v]) *                       \
+    time + acceleration[v]; }
+    
+    float lerp = acceleration[axis];
+    
+    if(direction == 1) {
+        LERP_ACCEL(forwardSpeed, axis);
+    }
+    else if(direction == -1) {
+        LERP_ACCEL(backwardSpeed, axis);
+    }
+    else {
+        LERP_DEACCEL(axis);
+    }
+    
+    switch(axis) {
+    case 0:
+        acceleration.x = lerp;
+        break;
+    case 1:
+        acceleration.y = lerp;
+        break;
+    case 2:
+        acceleration.z = lerp;
+        break;
+    }
+    
+#undef LERP_ACCEL
+#undef LERP_DEACCEL
 }
 
 DECLARE_CLASS(kexLocalPlayer, kexPlayer)
@@ -440,6 +533,8 @@ int kexLocalPlayer::PlayerEvent(const char *eventName) {
         return 0;
     if(!JS_ValueToObject(cx, val, &function))
         return 0;
+    if(!function || !JS_ObjectIsFunction(cx, function))
+        return 0;
 
     JS_CallFunctionValue(cx, scriptObject,
         OBJECT_TO_JSVAL(function), 0, NULL, &rval);
@@ -501,6 +596,8 @@ void kexLocalPlayer::DeSerializeScriptObject(void) {
 //
 
 void kexLocalPlayer::LocalTick(void) {
+    if(client.GetState() != CL_STATE_INGAME)
+        return;
 }
 
 DECLARE_CLASS(kexNetPlayer, kexPlayer)

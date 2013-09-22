@@ -31,6 +31,9 @@
 #include "jsobj.h"
 #include "js_shared.h"
 #include "js_class.h"
+#include "zone.h"
+#include "parse.h"
+#include "server.h"
 
 DECLARE_ABSTRACT_CLASS(kexActor, kexObject)
 
@@ -48,6 +51,9 @@ kexActor::kexActor(void) {
     this->bTouch        = false;
     this->bClientOnly   = false;
     this->bHidden       = false;
+    this->owner         = NULL;
+    this->target        = NULL;
+    this->model         = NULL;
     
     this->scale.Set(1, 1, 1);
 }
@@ -110,6 +116,74 @@ void kexActor::SetTarget(kexActor *targ) {
         target->AddRef();
 }
 
+enum {
+    scactor_name = 0,
+    scactor_mesh,
+    scactor_bounds,
+    scactor_textureSwaps,
+    scactor_component,
+    scactor_bCollision,
+    scactor_bHidden,
+    scactor_bStatic,
+    scactor_bTouch,
+    scactor_bOrientOnSlope,
+    scactor_bRotor,
+    scactor_origin,
+    scactor_scale,
+    scactor_angles,
+    scactor_rotation,
+    scactor_radius,
+    scactor_height,
+    scactor_centerheight,
+    scactor_viewheight,
+    scactor_targetID,
+    scactor_modelVariant,
+    scactor_cullDistance,
+    scactor_friction,
+    scactor_mass,
+    scactor_bounceDamp,
+    scactor_physics,
+    scactor_rotorSpeed,
+    scactor_rotorVector,
+    scactor_rotorFriction,
+    scactor_tickDistance,
+    scactor_end
+};
+
+static const sctokens_t mapactortokens[scactor_end+1] = {
+    { scactor_name,             "name"              },
+    { scactor_mesh,             "mesh"              },
+    { scactor_bounds,           "bounds"            },
+    { scactor_textureSwaps,     "textureSwaps"      },
+    { scactor_component,        "component"         },
+    { scactor_bCollision,       "bCollision"        },
+    { scactor_bHidden,          "bHidden"           },
+    { scactor_bStatic,          "bStatic"           },
+    { scactor_bTouch,           "bTouch"            },
+    { scactor_bOrientOnSlope,   "bOrientOnSlope"    },
+    { scactor_bRotor,           "bRotor"            },
+    { scactor_origin,           "origin"            },
+    { scactor_scale,            "scale"             },
+    { scactor_angles,           "angles"            },
+    { scactor_rotation,         "rotation"          },
+    { scactor_radius,           "radius"            },
+    { scactor_height,           "height"            },
+    { scactor_centerheight,     "centerheight"      },
+    { scactor_viewheight,       "viewheight"        },
+    { scactor_targetID,         "targetID"          },
+    { scactor_modelVariant,     "modelVariant"      },
+    { scactor_cullDistance,     "cullDistance"      },
+    { scactor_friction,         "friction"          },
+    { scactor_mass,             "mass"              },
+    { scactor_bounceDamp,       "bounceDamp"        },
+    { scactor_physics,          "physics"           },
+    { scactor_rotorSpeed,       "rotorSpeed"        },
+    { scactor_rotorVector,      "rotorVector"       },
+    { scactor_rotorFriction,    "rotorFriction"     },
+    { scactor_tickDistance,     "tickDistance"      },
+    { -1,                       NULL                }
+};
+
 DECLARE_CLASS(kexWorldActor, kexActor)
 
 unsigned int kexWorldActor::id = 0;
@@ -119,11 +193,18 @@ unsigned int kexWorldActor::id = 0;
 //
 
 kexWorldActor::kexWorldActor(void) {
-    this->radius        = 30.72f;
-    this->baseHeight    = 30.72f;
-    this->viewHeight    = 16.384f;
-    this->centerHeight  = 10.24f;
-    this->bRotor        = false;
+    this->baseBBox.min.Set(-32, -32, -32);
+    this->baseBBox.max.Set(32, 32, 32);
+
+    this->worldLink.SetData(this);
+
+    this->radius            = 30.72f;
+    this->baseHeight        = 30.72f;
+    this->viewHeight        = 16.384f;
+    this->centerHeight      = 10.24f;
+    this->bRotor            = false;
+    this->bOrientOnSlope    = false;
+    this->bbox              = baseBBox;
 }
 
 //
@@ -148,6 +229,23 @@ void kexWorldActor::Tick(void) {
 }
 
 //
+// kexWorldActor::Spawn
+//
+
+void kexWorldActor::Spawn(void) {
+    rotation.Normalize();
+    UpdateTransform();
+
+    timeStamp = (float)server.GetRunTime();
+    height = bStatic ? baseHeight : 0;
+
+    if(bTouch) {
+        bCollision = false;
+        viewHeight = baseHeight * 0.5f;
+    }
+}
+
+//
 // kexWorldActor::Remove
 //
 
@@ -155,10 +253,155 @@ void kexWorldActor::Remove(void) {
 }
 
 //
+// kexWorldActor::ParseDefault
+//
+
+void kexWorldActor::ParseDefault(kexLexer *lexer) {
+    switch(lexer->GetIDForTokenList(mapactortokens, lexer->Token())) {
+    case scactor_name:
+        lexer->GetString();
+        name = lexer->StringToken();
+        break;
+    case scactor_mesh:
+        lexer->GetString();
+        SetModel(lexer->StringToken());
+        break;
+    case scactor_origin:
+        origin = lexer->GetVector3();
+        break;
+    case scactor_angles:
+        angles = lexer->GetVector3();
+        break;
+    case scactor_scale:
+        scale = lexer->GetVector3();
+        break;
+    case scactor_rotation:
+        rotation = lexer->GetVector4();
+        break;
+    case scactor_bounds:
+        baseBBox.min = lexer->GetVector3();
+        baseBBox.max = lexer->GetVector3();
+        bbox = baseBBox;
+        break;
+    case scactor_textureSwaps:
+        if(model == NULL)
+            parser.Error("kexWorldActor::ParseDefault: attempted to parse \"textureSwaps\" token while model is null\n");
+
+        // texture swap block
+        lexer->ExpectNextToken(TK_LBRACK);
+        for(unsigned int j = 0; j < (int)model->numnodes; j++) {
+            mdlnode_t *node = &model->nodes[j];
+
+            // node block
+            lexer->ExpectNextToken(TK_LBRACK);
+            for(unsigned int k = 0; k < node->nummeshes; k++) {
+                mdlmesh_t *mesh = &node->meshes[k];
+
+                // mesh block
+                lexer->ExpectNextToken(TK_LBRACK);
+                for(unsigned int l = 0; l < mesh->numsections; l++) {
+                    // parse sections
+                    lexer->GetString();
+                    textureSwaps[j][k][l] = Z_Strdup(lexer->StringToken(), PU_ACTOR, NULL);
+                }
+                // end mesh block
+                lexer->ExpectNextToken(TK_RBRACK);
+            }
+            // end node block
+            lexer->ExpectNextToken(TK_RBRACK);
+        }
+        // end texture swap block
+        lexer->ExpectNextToken(TK_RBRACK);
+        break;
+    case scactor_component:
+        lexer->GetString();
+        CreateComponent(lexer->StringToken());
+        break;
+    case scactor_bCollision:
+        bCollision = (lexer->GetNumber() > 0);
+        break;
+    case scactor_bHidden:
+        bHidden = (lexer->GetNumber() > 0);
+        break;
+    case scactor_bStatic:
+        bStatic = (lexer->GetNumber() > 0);
+        break;
+    case scactor_bTouch:
+        bTouch = (lexer->GetNumber() > 0);
+        break;
+    case scactor_bOrientOnSlope:
+        bOrientOnSlope = (lexer->GetNumber() > 0);
+        break;
+    case scactor_bRotor:
+        bRotor = (lexer->GetNumber() > 0);
+        break;
+    case scactor_radius:
+        radius = (float)lexer->GetFloat();
+        break;
+    case scactor_height:
+        baseHeight = (float)lexer->GetFloat();
+        break;
+    case scactor_centerheight:
+        centerHeight = (float)lexer->GetFloat();
+        break;
+    case scactor_viewheight:
+        viewHeight = (float)lexer->GetFloat();
+        break;
+    case scactor_targetID:
+        targetID = lexer->GetNumber();
+        break;
+    case scactor_modelVariant:
+        variant = lexer->GetNumber();
+        break;
+    case scactor_cullDistance:
+        cullDistance = (float)lexer->GetFloat();
+        break;
+    case scactor_friction:
+        friction = (float)lexer->GetFloat();
+        break;
+    case scactor_mass:
+        mass = (float)lexer->GetFloat();
+        break;
+    case scactor_bounceDamp:
+        bounceDamp = (float)lexer->GetFloat();
+        break;
+    case scactor_physics:
+        physics = lexer->GetNumber();
+        break;
+    case scactor_rotorSpeed:
+        rotorSpeed = (float)lexer->GetFloat();
+        break;
+    case scactor_rotorVector:
+        rotorVector = lexer->GetVector3();
+        break;
+    case scactor_rotorFriction:
+        rotorFriction = (float)lexer->GetFloat();
+        break;
+    case scactor_tickDistance:
+        tickDistance = (float)lexer->GetFloat();
+        break;
+    default:
+        if(lexer->TokenType() == TK_IDENIFIER) {
+            parser.Error("kexWorldActor::ParseDefault: unknown token: %s\n",
+                lexer->Token());
+        }
+        break;
+    }
+}
+
+//
 // kexWorldActor::Parse
 //
 
 void kexWorldActor::Parse(kexLexer *lexer) {
+    // read into nested block
+    lexer->ExpectNextToken(TK_LBRACK);
+    lexer->Find();
+
+    while(lexer->TokenType() != TK_RBRACK) {
+        ParseDefault(lexer);
+        lexer->Find();
+    }
 }
 
 //
@@ -189,6 +432,73 @@ void kexWorldActor::UpdateTransform(void) {
 
     if(!bStatic) {
         bbox = (baseBBox | rotMatrix);
+    }
+}
+
+//
+// kexWorldActor::SetModel
+//
+
+void kexWorldActor::SetModel(const char* modelFile) {
+    if(modelFile)
+        model = Kmesh_Load(modelFile);
+
+    if(model) {
+        unsigned int i;
+        unsigned int j;
+        anim_t *anim;
+        kmodel_t *m;
+
+        m = model;
+
+        // set initial animation
+        // TODO - rename anim00 to something better
+        if(anim = Mdl_GetAnim(m, "anim00"))
+            Mdl_SetAnimState(&animState, anim, 4, ANF_LOOP);
+
+        // allocate node translation offset data
+        nodeOffsets_t = (kexVec3*)Z_Realloc(
+            nodeOffsets_t,
+            sizeof(kexVec3) * m->numnodes,
+            PU_ACTOR,
+            0);
+
+        // allocate node rotation offset data
+        nodeOffsets_r = (kexQuat*)Z_Realloc(
+            nodeOffsets_r,
+            sizeof(kexQuat) * m->numnodes,
+            PU_ACTOR,
+            0);
+
+        // set default rotation offsets
+        for(i = 0; i < m->numnodes; i++)
+            nodeOffsets_r[i].Set(0, 0, 0, 1);
+
+        // allocate data for texture swap array
+        textureSwaps = (char****)Z_Calloc(sizeof(char***) *
+            m->numnodes, PU_ACTOR, NULL);
+
+        for(j = 0; j < m->numnodes; j++) {
+            unsigned int k;
+            mdlnode_t *node;
+
+            node = &m->nodes[j];
+
+            textureSwaps[j] = (char***)Z_Calloc(sizeof(char**) *
+                node->nummeshes, PU_ACTOR, NULL);
+
+            for(k = 0; k < node->nummeshes; k++) {
+                mdlmesh_t *mesh;
+
+                mesh = &node->meshes[k];
+
+                if(mesh->numsections == 0)
+                    continue;
+
+                textureSwaps[j][k] = (char**)Z_Calloc(sizeof(char*) *
+                    mesh->numsections, PU_ACTOR, NULL);
+            }
+        }
     }
 }
 
@@ -250,11 +560,24 @@ bool kexWorldActor::Event(const char *function, long *args, unsigned int nargs) 
 // kexWorldActor::CreateComponent
 //
 
-void kexWorldActor::CreateComponent(void) {
-    if(!(component = J_NewObjectEx(js_context, NULL, NULL, NULL)))
+void kexWorldActor::CreateComponent(const char *name) {
+    jsval val;
+    JSContext *cx;
+    gObject_t *cObject;
+
+    cx = js_context;
+
+    // get prototype
+    if(!JS_GetProperty(cx, js_gobject, name, &val))
+        return;
+    if(!JS_ValueToObject(cx, val, &cObject))
         return;
 
-    JS_AddRoot(js_context, &component);
+    // construct class object
+    if(!(component = classObj.create(cObject)))
+        return;
+
+    JS_AddRoot(cx, &component);
 }
 
 //

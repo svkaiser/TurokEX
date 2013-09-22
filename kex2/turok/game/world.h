@@ -50,16 +50,22 @@ public:
     kexWorldActor                   *SpawnActor(const char *className,
                                         const kexVec3 &origin, const kexAngle &angles);
     void                            RemoveActor(kexWorldActor *actor);
+    void                            SpawnLocalPlayer(void);
 
     bool                            IsLoaded(void) const { return bLoaded; }
     float                           DeltaTime(void) { return deltaTime; }
     kexCamera                       *Camera(void) { return &camera; };
 
-private:
-    bool                            bLoaded;
-    bool                            bReadyUnload;
     kexLinklist<kexWorldActor>      actors;
     kexPtrArray<gridBound_t*>       gridBounds;
+
+    kexWorldActor                   *actorRover;
+
+private:
+    void                            ParseGridBound(kexLexer *lexer);
+
+    bool                            bLoaded;
+    bool                            bReadyUnload;
     int                             mapID;
     int                             nextMapID;
     kexStr                          title;

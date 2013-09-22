@@ -66,6 +66,7 @@ public:
     //void                SendMoveData(svclient_t *svcl);
     void                SendMessage(ENetEvent *sev, int type);
     unsigned int        GetClientID(ENetPeer *peer) const;
+    void                NotifyMapChange(const int mapID);
 
 private:
     void                SendClientMessages(void);

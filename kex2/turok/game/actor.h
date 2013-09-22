@@ -105,6 +105,7 @@ public:
     virtual void                OnTouch(kexWorldActor *instigator);
     virtual void                Think(void);
 
+    void                        Spawn(void);
     bool                        Event(const char *function, long *args, unsigned int nargs);
     bool                        ToJSVal(long *val);
     bool                        AlignToSurface(void);
@@ -113,18 +114,24 @@ public:
     kexVec3                     ToLocalOrigin(const float x, const float y, const float z);
     kexVec3                     ToLocalOrigin(const kexVec3 &org);
     void                        SpawnFX(const char *fxName, const float x, const float y, const float z);
+    void                        SetModel(const char *modelFile);
+
+    gObject_t                   *Component(void) { return component; }
 
     kexLinklist<kexWorldActor>  worldLink;
     kexLinklist<kexWorldActor>  gridLink;
 
 private:
-    void                        CreateComponent(void);
+    void                        CreateComponent(const char *name);
 
 protected:
+    void                        ParseDefault(kexLexer *lexer);
     gObject_t                   *component;
     gObject_t                   *iterator;
     bool                        bRotor;
+    bool                        bOrientOnSlope;
     kexStr                      name;
+    int                         health;
     float                       radius;
     float                       height;
     float                       baseHeight;
@@ -135,7 +142,11 @@ protected:
     float                       rotorFriction;
     kexVec3                     rotorVector;
     kexVec3                     *nodeOffsets_t;
-    kexVec3                     *nodeOffsets_r;
+    kexQuat                     *nodeOffsets_r;
+    animstate_t                 animState;
+    int                         variant;
+    char                        ****textureSwaps;
+    rcolor                      *vertexColors;
 
     static unsigned int         id;
 END_CLASS();

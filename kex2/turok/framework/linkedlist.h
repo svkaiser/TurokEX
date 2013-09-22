@@ -34,8 +34,8 @@ public:
     int             GetCount(void) const;
     void            SetData(type *src);
     type            *GetData(void) const;
-    kexLinklist     *Next(void) const;
-    kexLinklist     *Prev(void) const;
+    type            *Next(void) const;
+    type            *Prev(void) const;
     
 private:
     kexLinklist     *next;
@@ -96,16 +96,16 @@ int kexLinklist<type>::GetCount(void) const {
 // kexLinklist::Next
 //
 template<class type>
-kexLinklist<type> *kexLinklist<type>::Next(void) const {
-    return next;
+type *kexLinklist<type>::Next(void) const {
+    return next->data;
 }
 
 //
 // kexLinklist::Prev
 //
 template<class type>
-kexLinklist<type> *kexLinklist<type>::Prev(void) const {
-    return prev;
+type *kexLinklist<type>::Prev(void) const {
+    return prev->data;
 }
 
 //

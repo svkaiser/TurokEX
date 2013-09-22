@@ -316,6 +316,18 @@ kexQuat &kexQuat::operator=(const kexQuat &quat) {
 // kexQuat::operator=
 //
 
+kexQuat &kexQuat::operator=(const kexVec4 &vec) {
+    x = vec.x;
+    y = vec.y;
+    z = vec.z;
+    w = vec.w;
+    return *this;
+}
+
+//
+// kexQuat::operator=
+//
+
 kexQuat &kexQuat::operator=(const float *vecs) {
     x = vecs[0];
     y = vecs[1];

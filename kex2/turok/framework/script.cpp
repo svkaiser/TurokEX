@@ -186,6 +186,47 @@ double kexLexer::GetFloat(void) {
 }
 
 //
+// kexLexer::GetVector3
+//
+
+kexVec3 kexLexer::GetVector3(void) {
+#ifdef SC_DEBUG
+    SC_DebugPrintf("get vector3 (%s)\n", token);
+#endif
+
+    float x, y, z;
+
+    ExpectNextToken(TK_LBRACK);
+    x = (float)GetFloat();
+    y = (float)GetFloat();
+    z = (float)GetFloat();
+    ExpectNextToken(TK_RBRACK);
+
+    return kexVec3(x, y, z);
+}
+
+//
+// kexLexer::GetVector4
+//
+
+kexVec4 kexLexer::GetVector4(void) {
+#ifdef SC_DEBUG
+    SC_DebugPrintf("get vector4 (%s)\n", token);
+#endif
+
+    float x, y, z, w;
+
+    ExpectNextToken(TK_LBRACK);
+    x = (float)GetFloat();
+    y = (float)GetFloat();
+    z = (float)GetFloat();
+    w = (float)GetFloat();
+    ExpectNextToken(TK_RBRACK);
+
+    return kexVec4(x, y, z, w);
+}
+
+//
 // kexLexer::GetString
 //
 
