@@ -39,6 +39,7 @@ public:
 
     asIScriptEngine         *Engine(void) { return engine; }
     asIScriptContext        *Context(void) { return ctx; }
+    asIScriptModule         *Module(void) { return module; }
 
 private:
     void                    RegisterBasicTypes(void);
@@ -48,33 +49,14 @@ private:
 
     asIScriptEngine         *engine;
     asIScriptContext        *ctx;
+    asIScriptModule         *module;
 };
 
 extern kexScriptManager scriptManager;
 
-class kexScriptObjSystem {
-public:
-    static void             Init(void);
-    static void             Printf(const kexStr &str);
-    static void             CPrintf(rcolor color, const kexStr &str);
-    static void             Warning(const kexStr &str);
-    static void             DPrintf(const kexStr &str);
-    static void             Error(const kexStr &str);
-    static const int        GetMS(void);
-};
-
-class kexScriptObjClient {
-public:
-    static void             Init(void);
-    static bool             IsLocal(void);
-    static int              GetState(void);
-};
-
-class kexScriptObjInput {
-public:
-    static void             Init(void);
-    static void             AddInputKey(const int id, const char *key);
-};
+class kexScriptObjVector    { public: static void Init(void); };
+class kexScriptObjString    { public: static void Init(void); };
+class kexScriptObjAngle     { public: static void Init(void); };
 
 class kexActor;
 
@@ -94,6 +76,7 @@ public:
 
     void                    Cast(void **outRef, int typeId);
     asIObjectType           *GetType(void);
+    void                    Clear(void) { m_ref = m_type = NULL; }
 
     void                    *owner;
 
@@ -130,17 +113,12 @@ public:
     bool                    CallFunction(asIScriptFunction *func);
     bool                    CallFunction(const char *decl, int *val);
     kexScriptObjHandle      &Handle(void) { return objHandle; }
+    const asIObjectType     *ScriptType(void) const { return type; }
     const asIScriptObject   *ScriptObject(void) const { return obj; }
-    void                    SetOwner(kexActor *actor) { objHandle.owner = actor; }
-    kexActor                *GetOwner(void) const { return static_cast<kexActor*>(objHandle.owner); }
+    void                    SetOwner(kexObject *kobj) { objHandle.owner = kobj; }
+    kexObject               *GetOwner(void) const { return static_cast<kexObject*>(objHandle.owner); }
 
     static void             Init(void);
-
-private:
-    kexScriptObjHandle      objHandle;
-    asIScriptObject         *obj;
-    asIObjectType           *type;
-    asIScriptModule         *mod;
 
     asIScriptFunction       *onThink;
     asIScriptFunction       *onTouch;
@@ -148,6 +126,12 @@ private:
     asIScriptFunction       *onPreDraw;
     asIScriptFunction       *onDraw;
     asIScriptFunction       *onPostDraw;
+
+private:
+    kexScriptObjHandle      objHandle;
+    asIScriptObject         *obj;
+    asIObjectType           *type;
+    asIScriptModule         *mod;
 };
 
 #endif

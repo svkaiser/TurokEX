@@ -25,6 +25,7 @@
 //-----------------------------------------------------------------------------
 
 #include <math.h>
+#include "common.h"
 #include "mathlib.h"
 
 #define FULLCIRCLE  (M_PI * 2)
@@ -233,6 +234,16 @@ kexAngle::kexAngle(const kexVec3 &vector) {
     this->roll  = vector.z;
 
     Clamp180();
+}
+
+//
+// kexAngle::kexAngle
+//
+
+kexAngle::kexAngle(const kexAngle &an) {
+    this->yaw   = an.yaw;
+    this->pitch = an.pitch;
+    this->roll  = an.roll;
 }
 
 //
@@ -445,4 +456,36 @@ float kexAngle::operator[](int index) const {
 float kexAngle::operator[](int index) {
     assert(index >= 0 && index < 3);
     return (&yaw)[index];
+}
+
+//
+// kexAngle::ObjectConstruct1
+//
+
+void kexAngle::ObjectConstruct1(kexAngle *an) {
+    new(an)kexAngle();
+}
+
+//
+// kexAngle::ObjectConstruct2
+//
+
+void kexAngle::ObjectConstruct2(const float a, const float b, const float c, kexAngle *an) {
+    new(an)kexAngle(a, b, c);
+}
+
+//
+// kexAngle::ObjectConstruct3
+//
+
+void kexAngle::ObjectConstruct3(const kexVec3 &vec, kexAngle *an) {
+    new(an)kexAngle(vec);
+}
+
+//
+// kexAngle::ObjectConstructCopy
+//
+
+void kexAngle::ObjectConstructCopy(const kexAngle &in, kexAngle *an) {
+    new(an)kexAngle(in);
 }

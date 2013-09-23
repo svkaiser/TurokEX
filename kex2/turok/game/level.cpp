@@ -730,7 +730,7 @@ static void Map_PostLoad(void)
     gLevel.nextMap = -1;
     gLevel.loaded = true;
 
-    P_SpawnLocalPlayer();
+    //P_SpawnLocalPlayer();
     client.SetState(CL_STATE_INGAME);
 
     JS_CallFunctionName(js_context, js_objGame, "onLevelLoad", 0, NULL, &val);

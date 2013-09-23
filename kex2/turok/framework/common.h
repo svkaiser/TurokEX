@@ -87,6 +87,7 @@ kbool fcmp(float f1, float f2);
 class kexCommon {
 public:
     void            Printf(const char *string, ...);
+    void            Printf(const kexStr &str);
     void            CPrintf(rcolor color, const char *string, ...);
     void            Warning(const char *string, ...);
     void            DPrintf(const char *string, ...);
@@ -99,6 +100,8 @@ public:
     void            NormalizeSlashes(char *str);
     void            StripPath(char *name);
     void            StripExt(char *name);
+
+    static void     InitObject(void);
 
 private:
     char            buffer[4096];

@@ -40,6 +40,7 @@ kexComponent::kexComponent(void) {
     this->onPreDraw     = NULL;
     this->onDraw        = NULL;
     this->onPostDraw    = NULL;
+    this->mod           = scriptManager.Module();
 }
 
 //
@@ -47,7 +48,12 @@ kexComponent::kexComponent(void) {
 //
 
 kexComponent::~kexComponent(void) {
-    obj->Release();
+    if(obj && !sysMain.IsShuttingDown()) {
+        obj->Release();
+    }
+    else {
+        objHandle.Clear();
+    }
 }
 
 //
@@ -69,10 +75,21 @@ void kexComponent::Init(void) {
 //
 
 void kexComponent::Spawn(const char *className) {
+    mod = scriptManager.Module();
+
+    if(mod == NULL) {
+        common.Error("kexComponent::Spawn: attempted to spawn %s while no script is loaded", className);
+        return;
+    }
+
     type = scriptManager.Engine()->GetObjectTypeById(mod->GetTypeIdByDecl(className));
 
-    if(type == NULL)
+    if(type == NULL) {
+        common.Warning("kexComponent::Spawn: %s not found\n", className);
         return;
+    }
+
+    CallConstructor((kexStr(className) + " @" + className + "()").c_str());
 
     onThink     = type->GetMethodByDecl("void OnThink(void)");
     onTouch     = type->GetMethodByDecl("void OnTouch(void)");
@@ -80,8 +97,6 @@ void kexComponent::Spawn(const char *className) {
     onPreDraw   = type->GetMethodByDecl("void OnPreDraw(void)");
     onDraw      = type->GetMethodByDecl("void OnDraw(void)");
     onPostDraw  = type->GetMethodByDecl("void OnPostDraw(void)");
-
-    CallConstructor((kexStr(className) + " @" + className + "()").c_str());
 }
 
 //
@@ -93,7 +108,11 @@ bool kexComponent::CallFunction(asIScriptFunction *func) {
         return false;
 
     scriptManager.Context()->Prepare(func);
-    scriptManager.Context()->Execute();
+    scriptManager.Context()->SetObject(obj);
+    if(scriptManager.Context()->Execute() == asEXECUTION_EXCEPTION) {
+        common.Error("%s", scriptManager.Context()->GetExceptionString());
+        return false;
+    }
 
     return true;
 }
@@ -109,12 +128,17 @@ bool kexComponent::CallConstructor(const char *decl) {
     if(state == asEXECUTION_ACTIVE)
         scriptManager.Context()->PushState();
 
-    if(CallFunction(type->GetFactoryByDecl(decl))) {
-        obj = *(asIScriptObject**)scriptManager.Context()->GetAddressOfReturnValue();
-        obj->AddRef();
-        objHandle.Set(obj, type);
-        ok = true;
+    scriptManager.Context()->Prepare(type->GetFactoryByDecl(decl));
+
+    if(scriptManager.Context()->Execute() == asEXECUTION_EXCEPTION) {
+        common.Error("%s", scriptManager.Context()->GetExceptionString());
+        return false;
     }
+
+    obj = *(asIScriptObject**)scriptManager.Context()->GetAddressOfReturnValue();
+    obj->AddRef();
+    objHandle.Set(obj, type);
+    ok = true;
 
     if(state == asEXECUTION_ACTIVE)
         scriptManager.Context()->PopState();

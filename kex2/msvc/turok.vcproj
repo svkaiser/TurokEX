@@ -308,6 +308,10 @@
 					RelativePath="..\turok\renderer\renderSystem.cpp"
 					>
 				</File>
+				<File
+					RelativePath="..\turok\renderer\renderWorld.cpp"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="framework"
@@ -628,15 +632,11 @@
 					Name="scriptAPI"
 					>
 					<File
-						RelativePath="..\turok\game\scriptAPI\clientObject.cpp"
+						RelativePath="..\turok\game\scriptAPI\angleObject.cpp"
 						>
 					</File>
 					<File
 						RelativePath="..\turok\game\scriptAPI\component.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\game\scriptAPI\inputObject.cpp"
 						>
 					</File>
 					<File
@@ -648,7 +648,11 @@
 						>
 					</File>
 					<File
-						RelativePath="..\turok\game\scriptAPI\systemObject.cpp"
+						RelativePath="..\turok\game\scriptAPI\stringObject.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\game\scriptAPI\vectorObject.cpp"
 						>
 					</File>
 				</Filter>
@@ -699,6 +703,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\renderSystem.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\renderWorld.h"
 					>
 				</File>
 			</Filter>

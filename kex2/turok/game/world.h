@@ -60,6 +60,14 @@ public:
     kexPtrArray<gridBound_t*>       gridBounds;
 
     kexWorldActor                   *actorRover;
+    // TEMP
+    kexVec4                         worldLightOrigin;
+    kexVec4                         worldLightColor;
+    kexVec4                         worldLightAmbience;
+    kexVec4                         worldLightModelAmbience;
+    //
+
+    static void                     InitObject(void);
 
 private:
     void                            ParseGridBound(kexLexer *lexer);
@@ -70,13 +78,6 @@ private:
     int                             nextMapID;
     kexStr                          title;
     kexCamera                       camera;
-    
-    // TEMP
-    kexVec4                         worldLightOrigin;
-    kexVec4                         worldLightColor;
-    kexVec4                         worldLightAmbience;
-    kexVec4                         worldLightModelAmbience;
-    //
     
     int                             ticks;
     float                           time;

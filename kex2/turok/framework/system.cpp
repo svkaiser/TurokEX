@@ -82,6 +82,7 @@ static void FCmd_Quit(void) {
 //
 
 kexSystem::kexSystem(void) {
+    bShuttingDown = false;
 }
 
 //
@@ -135,6 +136,8 @@ void kexSystem::DestroyInternalConsole(void) {
 
 void kexSystem::Shutdown(void) {
     common.WriteConfigFile();
+
+    bShuttingDown = true;
 
     J_Shutdown();
     Snd_Shutdown();

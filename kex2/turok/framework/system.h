@@ -51,6 +51,7 @@ public:
     float           VideoRatio(void) { return videoRatio; }
     bool            IsWindowed(void) { return bWindowed; }
     SDL_Window      *Window(void) { return window; }
+    bool            IsShuttingDown(void) { return bShuttingDown; }
 
 private:
     void            InitSDL(void);
@@ -63,6 +64,7 @@ private:
     int             videoHeight;
     float           videoRatio;
     bool            bWindowed;
+    bool            bShuttingDown;
 };
 
 extern kexSystem sysMain;

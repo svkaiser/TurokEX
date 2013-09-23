@@ -58,7 +58,7 @@ JS_PROP_FUNC_GET(ClientPlayer)
         return JS_TRUE;
 
     case 3:
-        JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(client.LocalPlayer().GetScriptObject()));
+        //JS_SET_RVAL(cx, vp, OBJECT_TO_JSVAL(client.LocalPlayer().GetScriptObject()));
         return JS_TRUE;
 
     case 4:

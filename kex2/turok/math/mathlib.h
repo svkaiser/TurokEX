@@ -376,6 +376,7 @@ public:
                             kexAngle(void);
                             kexAngle(const float yaw, const float pitch, const float roll);
                             kexAngle(const kexVec3 &vector);
+                            kexAngle(const kexAngle &an);
 
     kexAngle                &Round(void);
     kexAngle                &Clamp180(void);
@@ -398,6 +399,11 @@ public:
     float                   yaw;
     float                   pitch;
     float                   roll;
+
+    static void             ObjectConstruct1(kexAngle *an);
+    static void             ObjectConstruct2(const float a, const float b, const float c, kexAngle *an);
+    static void             ObjectConstruct3(const kexVec3 &vec, kexAngle *an);
+    static void             ObjectConstructCopy(const kexAngle &in, kexAngle *an);
 };
 
 class kexBBox {

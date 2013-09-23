@@ -104,6 +104,7 @@ void kexRenderSystem::InitOpenGL(void) {
     
     SetState(GLSTATE_TEXTURE0, false);
     SetState(GLSTATE_CULL, true);
+    SetState(GLSTATE_LIGHTING, false);
     SetCull(GLCULL_FRONT);
     SetDepth(GLFUNC_LEQUAL);
     SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);

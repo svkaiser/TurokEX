@@ -54,6 +54,7 @@ kexActor::kexActor(void) {
     this->owner         = NULL;
     this->target        = NULL;
     this->model         = NULL;
+    this->attachment    = NULL;
     
     this->scale.Set(1, 1, 1);
 }
@@ -114,6 +115,34 @@ void kexActor::SetTarget(kexActor *targ) {
     // Set new target and if non-NULL, increase its counter
     if((target = targ))
         target->AddRef();
+}
+
+//
+// kexActor::SetOwner
+//
+
+void kexActor::SetOwner(kexActor *targ) {
+    // If there was a owner already, decrease its refcount
+    if(owner)
+        owner->RemoveRef();
+
+    // Set new owner and if non-NULL, increase its counter
+    if((owner = targ))
+        owner->AddRef();
+}
+
+//
+// kexActor::SetAttachment
+//
+
+void kexActor::SetAttachment(kexActor *targ) {
+    // If there was a attachment already, decrease its refcount
+    if(attachment)
+        attachment->RemoveRef();
+
+    // Set new attachment and if non-NULL, increase its counter
+    if((attachment = targ))
+        attachment->AddRef();
 }
 
 enum {
@@ -578,6 +607,10 @@ void kexWorldActor::CreateComponent(const char *name) {
         return;
 
     JS_AddRoot(cx, &component);
+
+    // TODO
+    scriptComponent.Spawn(name);
+    scriptComponent.SetOwner(this);
 }
 
 //
@@ -624,4 +657,58 @@ void kexWorldActor::Think(void) {
 
 bool kexWorldActor::AlignToSurface(void) {
     return false;
+}
+
+//
+// kexWorldActor::InitObject
+//
+
+void kexWorldActor::InitObject(void) {
+    scriptManager.Engine()->RegisterObjectType(
+        "kActor",
+        sizeof(kexWorldActor),
+        asOBJ_REF);
+
+    scriptManager.Engine()->RegisterObjectBehaviour(
+        "kActor",
+        asBEHAVE_ADDREF,
+        "void f()",
+        asMETHOD(kexWorldActor, AddRef),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectBehaviour(
+        "kActor",
+        asBEHAVE_RELEASE,
+        "void f()",
+        asMETHOD(kexWorldActor, RemoveRef),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kActor",
+        "kVec3 &GetOrigin(void)",
+        asMETHODPR(kexWorldActor, GetOrigin, (void), kexVec3&),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kActor",
+        "void SetOrigin(const kVec3 &in)",
+        asMETHODPR(kexWorldActor, SetOrigin, (const kexVec3 &org), void),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kActor",
+        "kAngle &GetAngles(void)",
+        asMETHODPR(kexWorldActor, GetAngles, (void), kexAngle&),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kActor",
+        "void SetAngles(const kAngle &in)",
+        asMETHODPR(kexWorldActor, SetAngles, (const kexAngle &an), void),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectProperty(
+        "kActor",
+        "ref @obj",
+        asOFFSET(kexWorldActor, scriptComponent.Handle()));
 }

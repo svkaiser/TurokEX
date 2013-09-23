@@ -70,9 +70,12 @@ public:
     ENetPeer            *GetPeer(void) { return peer; }
     bool                IsLocal(void) { return bLocal; }
     kexLocalPlayer      &LocalPlayer(void) { return playerClient; }
+    kexLocalPlayer      *GetLocalPlayerRef(void) { return &playerClient; }
 
     unsigned int        id;
     int                 curtime;
+
+    static void         InitObject(void);
 
 private:
     void                PrepareMapChange(const ENetPacket *packet);

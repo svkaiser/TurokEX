@@ -64,6 +64,13 @@ void kexCamera::UpdateAspect(void) {
 //
 
 void kexCamera::SetupMatrices(void) {
+    if(owner != NULL) {
+        origin = owner->GetOrigin();
+        angles = owner->GetAngles();
+    }
+
+    UpdateAspect();
+
     // projection
     projMatrix.Identity();
 

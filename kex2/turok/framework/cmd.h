@@ -45,13 +45,13 @@ public:
     void                Add(const char *name, gObject_t *object);
     void                Init(void);
     cmd_function_t      *GetFunctions(void);
+    bool                Verify(const char *name);
 
 private:
     const static int    CMD_MAX_ARGV    = 32;
     const static int    CMD_BUFFER_LEN  = 256;
 
     void                ClearArgv(void);
-    bool                Verify(const char *name);
     bool                Run(void);
 
     cmd_function_t      *cmd_functions;

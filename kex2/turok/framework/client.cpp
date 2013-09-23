@@ -39,6 +39,8 @@
 #include "network.h"
 #include "console.h"
 #include "world.h"
+#include "renderSystem.h"
+#include "renderWorld.h"
 
 static int clientFPS;
 
@@ -183,50 +185,37 @@ void kexClient::Run(const int msec) {
     SetTime(GetTime() + curtime);
 
     clientFPS = (int)(1000.0f / (GetRunTime() * 1000.0f));
-
     curtime = 0;
 
     // check for new packets
     CheckMessages();
-
     // check for new inputs
     inputSystem.PollInput();
-
     // handle input events
     ProcessEvents();
-
     // prep and send input information to server
     playerClient.BuildCommands();
-
     // update local player
-    //P_LocalPlayerTick();
     playerClient.LocalTick();
-    
     // update console
     console.Tick();
-    
     // update all local particles
     FX_Ticker();
-    
     // update all actor animations
-    //Actor_LocalTick();
     localWorld.LocalTick();
-
     // draw scene
-    R_DrawFrame();
-
+    renderWorld.RenderScene();
+    // draw 2D canvas
+    renderSystem.SetOrtho();
+    playerClient.PlayerEvent("onPostRender");
     // update debug stats
     Debug_DrawStats();
-
     // update console display
     console.Draw();
-
     // wrap up all rendering and swap buffers
     R_FinishFrame();
-
     // update all sound sources
     Snd_UpdateListener();
-
     // update all debug variables
     Debug_UpdateStatFrame();
 
@@ -308,6 +297,89 @@ void kexClient::ProcessEvents(void) {
 
         oldev = ev;
     }
+}
+
+//
+// kexClient::InitObject
+//
+
+void kexClient::InitObject(void) {
+    scriptManager.Engine()->RegisterObjectType(
+        "kClient",
+        sizeof(kexClient),
+        asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kClient",
+        "int GetState(void)",
+        asMETHODPR(kexClient, GetState, (void), int),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kClient",
+        "bool IsLocal(void)",
+        asMETHODPR(kexClient, IsLocal, (void), bool),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kClient",
+        "float GetRunTime(void)",
+        asMETHODPR(kexClient, GetRunTime, (void), float),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kClient",
+        "int GetTicks(void)",
+        asMETHODPR(kexClient, GetTicks, (void), int),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectProperty(
+        "kClient",
+        "int curTime",
+        asOFFSET(kexClient, curtime));
+
+    scriptManager.Engine()->RegisterObjectProperty(
+        "kClient",
+        "int id",
+        asOFFSET(kexClient, id));
+
+    scriptManager.Engine()->RegisterGlobalProperty("kClient Client", &client);
+
+    scriptManager.Engine()->RegisterEnum("EnumClientState");
+    scriptManager.Engine()->RegisterEnumValue(
+        "EnumClientState",
+        "STATE_UNITIALIZED",
+        CL_STATE_UNINITIALIZED);
+
+    scriptManager.Engine()->RegisterEnumValue(
+        "EnumClientState",
+        "STATE_CONNECTING",
+        CL_STATE_CONNECTING);
+
+    scriptManager.Engine()->RegisterEnumValue(
+        "EnumClientState",
+        "STATE_CONNECTED",
+        CL_STATE_CONNECTED);
+
+    scriptManager.Engine()->RegisterEnumValue(
+        "EnumClientState",
+        "STATE_DISCONNECTED",
+        CL_STATE_DISCONNECTED);
+
+    scriptManager.Engine()->RegisterEnumValue(
+        "EnumClientState",
+        "STATE_READY",
+        CL_STATE_READY);
+
+    scriptManager.Engine()->RegisterEnumValue(
+        "EnumClientState",
+        "STATE_INGAME",
+        CL_STATE_INGAME);
+
+    scriptManager.Engine()->RegisterEnumValue(
+        "EnumClientState",
+        "STATE_CHANGINGLEVEL",
+        CL_STATE_CHANGINGLEVEL);
 }
 
 //

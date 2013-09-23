@@ -31,6 +31,7 @@
 #include "system.h"
 #include "filesystem.h"
 #include "console.h"
+#include "scriptAPI/scriptSystem.h"
 
 int     myargc;
 char**  myargv;
@@ -54,6 +55,14 @@ void kexCommon::Printf(const char *string, ...) {
 
     console.Print(COLOR_WHITE, buffer);
     printf(buffer);
+}
+
+//
+// kexCommon::Printf
+//
+
+void kexCommon::Printf(const kexStr &str) {
+    Printf(str.c_str());
 }
 
 //
@@ -279,6 +288,25 @@ void kexCommon::StripExt(char *name) {
 
         search--;
     }
+}
+
+//
+// kexCommon::InitObject
+//
+
+void kexCommon::InitObject(void) {
+    scriptManager.Engine()->RegisterObjectType(
+        "kCommon",
+        sizeof(kexCommon),
+        asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kCommon",
+        "void Print(const kStr &in)",
+        asMETHODPR(kexCommon, Printf, (const kexStr &str), void),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterGlobalProperty("kCommon Com", &common);
 }
 
 //

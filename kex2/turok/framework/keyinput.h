@@ -72,6 +72,7 @@ public:
     void            Clear(void);
     int             FindAction(const char *name);
     void            AddAction(byte id, const char *name);
+    void            AddAction(byte id, const kexStr &str);
     void            WriteBindings(FILE *file);
     void            ExecuteCommand(char key, bool up);
     int             GetKeyCode(char *key);
@@ -81,6 +82,8 @@ public:
     void            HandleControl(int ctrl);
     int             GetAsciiKey(char c, bool bShift) { return keycode[bShift][c]; }
     control_t       *Controls(void) { return &control; }
+
+    static void     InitObject(void);
 
 private:
     char            keycode[2][MAX_KEYS];

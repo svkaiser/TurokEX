@@ -38,6 +38,8 @@ public:
     virtual void                Remove(void);
 
     void                        SetTarget(kexActor *targ);
+    void                        SetOwner(kexActor *targ);
+    void                        SetAttachment(kexActor *targ);
 
     kexVec3                     &GetOrigin(void) { return origin; }
     void                        SetOrigin(const kexVec3 &org) { origin = org; }
@@ -46,11 +48,21 @@ public:
     kexQuat                     &GetRotation(void) { return rotation; }
     void                        SetRotation(const kexQuat &rot) { rotation = rot; }
     kexActor                    *GetOwner(void) { return owner; }
-    void                        SetOwner(kexActor *actor) { owner = actor; }
     kexActor                    *GetTarget(void) { return target; }
+    kexActor                    *GetAttachment(void) { return attachment; }
     kexAngle                    &GetAngles(void) { return angles; }
     void                        SetAngles(const kexAngle &an) { angles = an; }
     const int                   RefCount(void) const { return refCount; }
+    kexMatrix                   &Matrix(void) { return matrix; }
+    kexBBox                     &BoundingBox(void) { return bbox; }
+    const kmodel_t              *Model(void) const { return model; }
+
+    bool                        bStatic;
+    bool                        bCollision;
+    bool                        bTouch;
+    bool                        bClientOnly;
+    bool                        bHidden;
+    bool                        bCulled;
 
 protected:
     int                         AddRef(void);
@@ -60,11 +72,6 @@ protected:
     kexQuat                     rotation;
     kexVec3                     velocity;
     kexAngle                    angles;
-    bool                        bStatic;
-    bool                        bCollision;
-    bool                        bTouch;
-    bool                        bClientOnly;
-    bool                        bHidden;
     kexBBox                     bbox;
     kexBBox                     baseBBox;
     float                       friction;
@@ -75,6 +82,7 @@ protected:
     unsigned int                targetID;
     kexActor                    *owner;
     kexActor                    *target;
+    kexActor                    *attachment;
     kexMatrix                   matrix;
     kexMatrix                   rotMatrix;
     kmodel_t                    *model;
@@ -85,7 +93,6 @@ protected:
     float                       nextTickInterval;
     unsigned int                physics;
     int                         waterlevel;
-    bool                        bCulled;
 
 private:
     int                         refCount;
@@ -115,14 +122,24 @@ public:
     kexVec3                     ToLocalOrigin(const kexVec3 &org);
     void                        SpawnFX(const char *fxName, const float x, const float y, const float z);
     void                        SetModel(const char *modelFile);
+    void                        CreateComponent(const char *name);
 
     gObject_t                   *Component(void) { return component; }
+    const int                   Variant(void) const { return variant; }
+    kexStr                      &GetName(void) { return name; }
+    void                        SetName(kexStr &str) { name = str; }
+
+    static unsigned int         id;
+
+    static void                 InitObject(void);
 
     kexLinklist<kexWorldActor>  worldLink;
     kexLinklist<kexWorldActor>  gridLink;
 
-private:
-    void                        CreateComponent(const char *name);
+    kexComponent                scriptComponent;
+
+    // TODO - need some sort of skin system
+    char                        ****textureSwaps;
 
 protected:
     void                        ParseDefault(kexLexer *lexer);
@@ -145,10 +162,7 @@ protected:
     kexQuat                     *nodeOffsets_r;
     animstate_t                 animState;
     int                         variant;
-    char                        ****textureSwaps;
     rcolor                      *vertexColors;
-
-    static unsigned int         id;
 END_CLASS();
 
 #endif

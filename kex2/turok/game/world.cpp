@@ -153,7 +153,14 @@ kexWorldActor *kexWorld::ConstructActor(const char *className) {
 
 void kexWorld::AddActor(kexWorldActor *actor) {
     actors.Add(actor->worldLink);
+
+    if(actor->GetName().Length() <= 0) {
+        actor->SetName(kexStr(kva("%s_%i",
+            actor->GetClassName(), kexWorldActor::id)));
+    }
+
     actor->CallSpawn();
+    kexWorldActor::id++;
 }
 
 //
@@ -214,7 +221,8 @@ void kexWorld::SpawnLocalPlayer(void) {
         localPlayer->GetVelocity().Clear();
         localPlayer->GetAcceleration().Clear();
 
-        localPlayer->SetScriptObject(actor->Component());
+        // TODO
+        localPlayer->CreateComponent(static_cast<kexPlayerLocation*>(actor)->playerComponent.c_str());
         
         // client now owns this player location and world camera
         actor->SetOwner(static_cast<kexActor*>(localPlayer));
@@ -354,4 +362,11 @@ void kexWorld::Load(const char *mapFile) {
 //
 
 void kexWorld::Unload(void) {
+}
+
+//
+// kexWorld::InitObject
+//
+
+void kexWorld::InitObject(void) {
 }

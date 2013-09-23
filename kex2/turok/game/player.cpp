@@ -76,202 +76,15 @@ void P_RunCommand(ENetEvent *sev, ENetPacket *packet)
     // TODO - PROCESS MOVEMENT
 }
 
-//
-// P_LocalPlayerTick
-//
-
-void P_LocalPlayerTick(void)
-{
-    worldState_t *ws;
-    gActor_t *actor;
-    gActor_t *camera;
-    int current;
-    plane_t *plane;
-    int area_idx;
-    ticcmd_t *cmd;
-
-    if(client.GetState() != CL_STATE_INGAME)
-        return;
-
-    ws = &client.LocalPlayer().worldState;
-    actor = client.LocalPlayer().actor;
-    camera = client.LocalPlayer().camera;
-    plane = Map_IndexToPlane(actor->plane);
-
-    area_idx = plane ? plane->area_id : -1;
-
-    cmd = client.LocalPlayer().Cmd();
-    ws->timeStamp = (float)cmd->timestamp.i;
-    ws->frameTime = cmd->frametime.f;
-
-    Map_UnlinkActorFromWorld(actor);
-    Map_UnlinkActorFromWorld(camera);
-
-    // update controller in case movement was corrected by server
-    Vec_Copy3(ws->origin, actor->origin);
-    Vec_Add(ws->velocity, ws->velocity, actor->velocity);
-
-    actor->waterlevel = Map_GetWaterLevel(actor->origin,
-        actor->height, plane);
-
-    // TODO
-    actor->velocity[1] = 0;
-
-    client.LocalPlayer().PlayerEvent("onLocalTick");
-
-    JPool_ReleaseObjects(&objPoolVector);
-    JPool_ReleaseObjects(&objPoolGameActor);
-
-    // TODO - handle actual actor movement/clipping here
-    if(Actor_OnGround(actor))
-    {
-        G_ApplyFriction(actor->velocity, actor->friction, false);
-        actor->velocity[1] = 0;
-    }
-
-    // TODO - AREA/LOCALTICK
-
-    current = (client.LocalPlayer().NetSeq()->outgoing-1) & (NETBACKUPS-1);
-    //Vec_Copy3(localPlayer.oldMoves[current], ws->origin);
-    //localPlayer.oldCmds[current] = info->cmd;
-    //localPlayer.latency[current] = client.GetTime();
-    actor->plane = (ws->plane - gLevel.planes);
-
-    Ang_Clamp(&ws->angles[0]);
-    Ang_Clamp(&ws->angles[1]);
-    Ang_Clamp(&ws->angles[2]);
-
-    Vec_Copy3(actor->origin, ws->origin);
-    Vec_Copy3(actor->angles, ws->angles);
-
-    Map_LinkActorToWorld(actor);
-    Map_LinkActorToWorld(camera);
-
-    Actor_UpdateTransform(actor);
-    Actor_UpdateTransform(camera);
-
-    if(actor->classFlags & AC_PLAYER)
-    {
-        if(ws->plane && area_idx != ws->plane->area_id)
-        {
-            Map_CallAreaEvent(Map_GetArea(ws->plane),
-                "onEnter", NULL, 0);
-
-            if(area_idx != -1)
-            {
-                Map_CallAreaEvent(&gLevel.areas[area_idx],
-                "onExit", NULL, 0);
-            }
-        }
-    }
-}
-
-//
-// P_SpawnLocalPlayer
-//
-
-void P_SpawnLocalPlayer(void)
-{
-    jsval val;
-    int playerID;
-    gActor_t *camera;
-    gActor_t *pStart;
-    gObject_t *pObject;
-    worldState_t *ws;
-
-    playerID = -1;
-    pStart = NULL;
-    pObject = NULL;
-
-    for(gLevel.actorRover = gLevel.actorRoot.next;
-        gLevel.actorRover != &gLevel.actorRoot;
-        gLevel.actorRover = gLevel.actorRover->next)
-    {
-        gActor_t *actor = gLevel.actorRover;
-
-        if(actor->components == NULL)
-            continue;
-
-        JS_ITERATOR_START(actor, val);
-        JS_ITERATOR_LOOP(actor, val, "playerID");
-        {
-            if(!(JSVAL_IS_INT(vp)))
-                continue;
-                
-            playerID = INT_TO_JSVAL(vp);
-            pObject = component;
-            break;
-        }
-        JS_ITERATOR_END(actor, val);
-
-        if(playerID != -1)
-        {
-            pStart = actor;
-            break;
-        }
-    }
-
-    if(pStart == NULL)
-        common.Error("P_SpawnLocalPlayer: No player start has been found");
-
-    pStart->height = pStart->baseHeight * 0.72f;
-    pStart->physics |= PF_TOUCHACTORS;
-
-    client.LocalPlayer().actor = pStart;
-    client.LocalPlayer().SetScriptObject(pObject);
-
-    ws = &client.LocalPlayer().worldState;
-
-    Vec_Copy3(ws->origin, pStart->origin);
-    Vec_Copy3(ws->angles, pStart->angles);
-    Vec_Set3(ws->velocity, 0, 0, 0);
-    Vec_Set3(ws->accel, 0, 0, 0);
-    ws->actor = client.LocalPlayer().actor;
-
-    if(pStart->plane != -1)
-        ws->plane = &gLevel.planes[pStart->plane];
-
-    // de-serialize data if it exists
-    client.LocalPlayer().DeSerializeScriptObject();
-
-    // update actor position if the world state was
-    // modified in any way
-    Vec_Copy3(pStart->origin, ws->origin);
-    Vec_Copy3(pStart->angles, ws->angles);
-
-    if(ws->plane != NULL)
-        pStart->plane = (ws->plane-gLevel.planes);
-    else
-        pStart->plane = -1;
-
-    // force-set the player class flag
-    pStart->classFlags |= AC_PLAYER;
-
-    // spawn an actor to be used for the camera
-    camera = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_LEVEL, NULL);
-    camera->bCollision = false;
-    camera->bHidden = true;
-    camera->bTouch = false;
-    camera->bStatic = false;
-    camera->bClientOnly = true;
-    camera->plane = -1;
-    camera->owner = client.LocalPlayer().actor;
-    strcpy(camera->name, "Camera");
-    Vec_Set3(camera->scale, 1, 1, 1);
-    Vec_Copy3(camera->origin, pStart->origin);
-    Vec_Copy3(camera->angles, pStart->angles);
-    Vec_Copy4(camera->rotation, pStart->rotation);
-    Map_AddActor(&gLevel, camera);
-    client.LocalPlayer().camera = camera;
-}
-
 enum {
     scplocation_id = 0,
+    scplocation_component,
     scplocation_end
 };
 
 static const sctokens_t playerLocationTokens[scplocation_end+1] = {
     { scplocation_id,           "id"                    },
+    { scplocation_component,    "component"             },
     { -1,                       NULL                    }
 };
 
@@ -299,6 +112,13 @@ void kexPlayerLocation::Parse(kexLexer *lexer) {
         case scplocation_id:
             this->id = lexer->GetNumber();
             break;
+        case scplocation_component:
+            // instead of creating a component object for this actor, store the
+            // name of the component which will be used to initialize the actual
+            // component for the player later on
+            lexer->GetString();
+            this->playerComponent = lexer->StringToken();
+            break;
         default:
             ParseDefault(lexer);
             break;
@@ -319,7 +139,6 @@ kexPlayer::kexPlayer(void) {
     
     jsonData        = NULL;
     name            = NULL;
-    scriptObject    = NULL;
 }
 
 //
@@ -529,14 +348,14 @@ int kexLocalPlayer::PlayerEvent(const char *eventName) {
 
     cx = js_context;
 
-    if(!JS_GetProperty(cx, scriptObject, eventName, &val))
+    if(!JS_GetProperty(cx, component, eventName, &val))
         return 0;
     if(!JS_ValueToObject(cx, val, &function))
         return 0;
     if(!function || !JS_ObjectIsFunction(cx, function))
         return 0;
 
-    JS_CallFunctionValue(cx, scriptObject,
+    JS_CallFunctionValue(cx, component,
         OBJECT_TO_JSVAL(function), 0, NULL, &rval);
 
     return rval;
@@ -580,15 +399,25 @@ void kexLocalPlayer::DeSerializeScriptObject(void) {
 
     cx = js_context;
 
-    if(!JS_GetProperty(cx, scriptObject, "deSerialize", &val))
+    if(!JS_GetProperty(cx, component, "deSerialize", &val))
         return;
     if(!JS_ValueToObject(cx, val, &function))
         return;
 
     val = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, jsonData));
 
-    JS_CallFunctionValue(cx, scriptObject,
+    JS_CallFunctionValue(cx, component,
         OBJECT_TO_JSVAL(function), 1, &val, &rval);
+}
+
+//
+// kexLocalPlayer::ActionDown
+//
+
+bool kexLocalPlayer::ActionDown(const kexStr &str) {
+    int action = inputKey.FindAction(str.c_str());
+
+    return (action != -1 && cmd.buttons[action]);
 }
 
 //
@@ -598,6 +427,70 @@ void kexLocalPlayer::DeSerializeScriptObject(void) {
 void kexLocalPlayer::LocalTick(void) {
     if(client.GetState() != CL_STATE_INGAME)
         return;
+
+    scriptComponent.CallFunction(scriptComponent.onThink);
+}
+
+//
+// kexLocalPlayer::ToWorldActor
+//
+
+kexWorldActor *kexLocalPlayer::ToWorldActor(void) {
+    return static_cast<kexWorldActor*>(this);
+}
+
+//
+// kexLocalPlayer::InitObject
+//
+
+void kexLocalPlayer::InitObject(void) {
+    scriptManager.Engine()->RegisterObjectType(
+        "kLocalPlayer",
+        sizeof(kexLocalPlayer),
+        asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kLocalPlayer",
+        "bool ActionDown(const kStr &in)",
+        asMETHODPR(kexLocalPlayer, ActionDown, (const kexStr&), bool),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kLocalPlayer",
+        "kAngle &GetAngles(void)",
+        asMETHODPR(kexLocalPlayer, GetAngles, (void), kexAngle&),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kLocalPlayer",
+        "void SetAngles(const kAngle &in)",
+        asMETHODPR(kexLocalPlayer, SetAngles, (const kexAngle &an), void),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectProperty(
+        "kLocalPlayer",
+        "float cmdMouseX",
+        asOFFSET(kexLocalPlayer, cmd.mouse[0].f));
+
+    scriptManager.Engine()->RegisterObjectProperty(
+        "kLocalPlayer",
+        "float cmdMouseY",
+        asOFFSET(kexLocalPlayer, cmd.mouse[1].f));
+
+    scriptManager.Engine()->RegisterObjectProperty(
+        "kLocalPlayer",
+        "ref @obj",
+        asOFFSET(kexLocalPlayer, scriptComponent.Handle()));
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kLocalPlayer",
+        "kActor @ToActor(void)",
+        asMETHODPR(kexLocalPlayer, ToWorldActor, (void), kexWorldActor*),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterGlobalProperty(
+        "kLocalPlayer LocalPlayer",
+        client.GetLocalPlayerRef());
 }
 
 DECLARE_CLASS(kexNetPlayer, kexPlayer)
