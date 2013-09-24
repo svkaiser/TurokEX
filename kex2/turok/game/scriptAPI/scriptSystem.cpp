@@ -144,17 +144,12 @@ void kexScriptManager::Init(void) {
     RegisterBasicTypes();
     RegisterObjects();
 
-    // TODO - TEMP
-    unsigned int size;
-    char *data = NULL;
-
-    if((size = fileSystem.ReadExternalTextFile("scripts/main.txt", (byte**)&data)) == -1) {
-        common.Error("kexScriptManager::Init: could not load scripts/main.txt");
-        return;
-    }
+    // TODO
+    ProcessScript("scripts/main.txt");
+    scriptBuffer += "\0";
 
     module = engine->GetModule("main", asGM_CREATE_IF_NOT_EXISTS);
-    module->AddScriptSection("Section", &data[0], size);
+    module->AddScriptSection("Section", &scriptBuffer.c_str()[0], scriptBuffer.Length());
     module->Build();
 
     asIScriptFunction *func = module->GetFunctionByDecl("void main(void)");
@@ -165,8 +160,6 @@ void kexScriptManager::Init(void) {
             common.Error("%s", ctx->GetExceptionString());
         }
     }
-
-    Z_Free(data);
 
     command.Add("call", FCmd_Call);
     command.Add("scriptMem", FCmd_MemUsage);
@@ -182,6 +175,63 @@ void kexScriptManager::Shutdown(void) {
     engine->Release();
 
     Z_FreeTags(PU_SCRIPT, PU_SCRIPT);
+}
+
+//
+// kexScriptManager::HasScriptFile
+//
+
+bool kexScriptManager::HasScriptFile(const char *file) {
+    kexStr fileName(file);
+    
+    fileName.StripExtension().StripPath();
+    
+    for(unsigned int i = 0; i < scriptFiles.Length(); i++) {
+        if(!strcmp(scriptFiles[i].c_str(), fileName.c_str())) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+//
+// kexScriptManager::ProcessScript
+//
+
+void kexScriptManager::ProcessScript(const char *file) {
+    kexLexer *lexer;
+    
+    if(!(lexer = parser.Open(file))) {
+        common.Error("kexScriptManager::Init: could not load %s", file);
+        return;
+    }
+    
+    while(lexer->CheckState()) {
+        char ch = lexer->GetChar();
+        
+        if(ch == '#') {
+            lexer->Find();
+            if(!strcmp(lexer->Token(), "include")) {
+                lexer->GetString();
+                char *file = lexer->StringToken();
+                
+                if(!HasScriptFile(file)) {
+                    ProcessScript(file);
+                    scriptFiles.Push(kexStr(file).StripExtension().StripPath());
+                }
+                continue;
+            }
+            else {
+                parser.Error("kexScriptManager::ProcessScript: unknown token: %s\n",
+                    lexer->Token());
+            }
+        }
+        
+        scriptBuffer += ch;
+    }
+    
+    parser.Close();
 }
 
 //
@@ -231,6 +281,7 @@ void kexScriptManager::RegisterObjects(void) {
     kexClient::InitObject();
     kexInputKey::InitObject();
     kexWorldActor::InitObject();
+    kexCamera::InitObject();
     kexLocalPlayer::InitObject();
     kexWorld::InitObject();
 }

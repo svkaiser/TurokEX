@@ -37,9 +37,12 @@ public:
     virtual void                Tick(void);
     virtual void                Remove(void);
 
+    int                         AddRef(void);
+    int                         RemoveRef(void);
     void                        SetTarget(kexActor *targ);
     void                        SetOwner(kexActor *targ);
     void                        SetAttachment(kexActor *targ);
+    void                        AttachmentTransform(void);
 
     kexVec3                     &GetOrigin(void) { return origin; }
     void                        SetOrigin(const kexVec3 &org) { origin = org; }
@@ -47,9 +50,13 @@ public:
     void                        SetVelocity(const kexVec3 &vel) { velocity = vel; }
     kexQuat                     &GetRotation(void) { return rotation; }
     void                        SetRotation(const kexQuat &rot) { rotation = rot; }
+    kexVec3                     &GetScale(void) { return scale; }
+    void                        SetScale(const kexVec3 &vel) { scale = vel; }
     kexActor                    *GetOwner(void) { return owner; }
     kexActor                    *GetTarget(void) { return target; }
     kexActor                    *GetAttachment(void) { return attachment; }
+    kexVec3                     &GetAttachOffset(void) { return attachOffset; }
+    void                        SetAttachOffset(const kexVec3 &vec) { attachOffset = vec; }
     kexAngle                    &GetAngles(void) { return angles; }
     void                        SetAngles(const kexAngle &an) { angles = an; }
     const int                   RefCount(void) const { return refCount; }
@@ -63,11 +70,9 @@ public:
     bool                        bClientOnly;
     bool                        bHidden;
     bool                        bCulled;
+    bool                        bAttachRelativeAngles;
 
 protected:
-    int                         AddRef(void);
-    int                         RemoveRef(void);
-
     kexVec3                     origin;
     kexQuat                     rotation;
     kexVec3                     velocity;
@@ -93,6 +98,7 @@ protected:
     float                       nextTickInterval;
     unsigned int                physics;
     int                         waterlevel;
+    kexVec3                     attachOffset;
 
 private:
     int                         refCount;

@@ -51,10 +51,10 @@ typedef struct {
     kexVec3                 backwardSpeed;
 } playerMove_t;
 
-BEGIN_EXTENDED_CLASS(kexPlayerLocation, kexWorldActor);
+BEGIN_EXTENDED_CLASS(kexPlayerPuppet, kexWorldActor);
 public:
-                            kexPlayerLocation(void);
-                            ~kexPlayerLocation(void);
+                            kexPlayerPuppet(void);
+                            ~kexPlayerPuppet(void);
 
     virtual void            Parse(kexLexer *lexer);
 
@@ -73,6 +73,8 @@ public:
     void                    ResetNetSequence(void);
     void                    ResetTicCommand(void);
     void                    Accelerate(const playerMove_t *move, int direction, int axis);
+    void                    PossessPuppet(kexPlayerPuppet *puppetActor);
+    void                    UnpossessPuppet(void);
 
     playerMove_t            *GroundMove(void) { return &groundMove; }
     playerMove_t            *AirMove(void) { return &airMove; }
@@ -84,8 +86,6 @@ public:
 
     kexVec3                 &GetAcceleration(void) { return acceleration; }
     void                    SetAcceleration(const kexVec3 &accel) { acceleration = accel; }
-    float                   GetMaxPitch(void) { return maxPitch; }
-    void                    SetMaxPitch(const float p) { maxPitch = p; }
     bool                    GetAllowCrawl(void) { return bAllowCrawl; }
     void                    SetAllowCrawl(const bool b) { bAllowCrawl = b; }
     float                   GetCrawlHeight(void) { return crawlHeight; }
@@ -94,6 +94,8 @@ public:
     void                    SetMoveTime(const float t) { moveTime = t; }
     
     ticcmd_t                *Cmd(void) { return &cmd; }
+    kexPlayerPuppet         *Puppet(void) { return puppet; }
+    kexWorldActor           *PuppetToActor(void);
     ENetPeer                *GetPeer(void) { return peer; }
     void                    SetPeer(ENetPeer *_peer) { peer = _peer; }
     int                     GetID(void) const { return id; }
@@ -102,10 +104,9 @@ public:
 
     // TODO - REMOVE
     worldState_t            worldState;
-
-    ticcmd_t                cmd;
-
+    
 protected:
+    kexPlayerPuppet         *puppet;
     kexVec3                 acceleration;
     playerMove_t            groundMove;
     playerMove_t            airMove;
@@ -114,7 +115,7 @@ protected:
     playerMove_t            crawlMove;
     playerMove_t            flyMove;
     playerMove_t            noClipMove;
-    float                   maxPitch;
+    ticcmd_t                cmd;
     bool                    bAllowCrawl;
     float                   crawlHeight;
     float                   moveTime;
@@ -124,6 +125,8 @@ protected:
     ENetPeer                *peer;
     char                    *jsonData;
     moveState_t             moveState;
+    float                   frameTime;
+    float                   timeStamp;
 END_CLASS();
 
 BEGIN_EXTENDED_CLASS(kexLocalPlayer, kexPlayer);
@@ -133,6 +136,7 @@ public:
 
     virtual void            LocalTick(void);
 
+    void                    Spawn(void);
     bool                    ProcessInput(event_t *ev);
     void                    BuildCommands(void);
     int                     PlayerEvent(const char *eventName);
@@ -142,13 +146,13 @@ public:
 
     //kexActor               *Camera(void) { return camera; }
     kexVec3                 &MoveDiff(void) { return moveDiff; }
+    kexWorldActor           *ToWorldActor(void) { return static_cast<kexWorldActor*>(this); }
 
     // TODO
     gActor_t                *actor;
     gActor_t                *camera;
 
     static void             InitObject(void);
-    kexWorldActor           *ToWorldActor(void);
 
 private:
     //kexActor              *camera;

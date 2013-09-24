@@ -35,6 +35,7 @@ kexComponent::kexComponent(void) {
     this->obj           = NULL;
     this->type          = NULL;
     this->onThink       = NULL;
+    this->onSpawn       = NULL;
     this->onTouch       = NULL;
     this->onDamage      = NULL;
     this->onPreDraw     = NULL;
@@ -63,6 +64,7 @@ kexComponent::~kexComponent(void) {
 void kexComponent::Init(void) {
     scriptManager.Engine()->RegisterInterface("Component");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnThink(void)");
+    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnSpawn(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnTouch(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnDamage(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnPreDraw(void)");
@@ -92,6 +94,7 @@ void kexComponent::Spawn(const char *className) {
     CallConstructor((kexStr(className) + " @" + className + "()").c_str());
 
     onThink     = type->GetMethodByDecl("void OnThink(void)");
+    onSpawn     = type->GetMethodByDecl("void OnSpawn(void)");
     onTouch     = type->GetMethodByDecl("void OnTouch(void)");
     onDamage    = type->GetMethodByDecl("void OnDamage(void)");
     onPreDraw   = type->GetMethodByDecl("void OnPreDraw(void)");

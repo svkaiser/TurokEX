@@ -40,6 +40,8 @@ public:
     kexMatrix           &ModelView(void) { return modelMatrix; }
     const kexFrustum    &Frustum(void) const { return viewFrustum; }
 
+    static void         InitObject(void);
+
 private:
     kexMatrix           projMatrix;
     kexMatrix           modelMatrix;

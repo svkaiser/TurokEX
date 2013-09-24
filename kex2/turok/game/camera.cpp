@@ -64,11 +64,6 @@ void kexCamera::UpdateAspect(void) {
 //
 
 void kexCamera::SetupMatrices(void) {
-    if(owner != NULL) {
-        origin = owner->GetOrigin();
-        angles = owner->GetAngles();
-    }
-
     UpdateAspect();
 
     // projection
@@ -119,4 +114,67 @@ void kexCamera::SetupMatrices(void) {
 //
 
 void kexCamera::LocalTick(void) {
+    AttachmentTransform();
+}
+
+//
+// kexCamera::InitObject
+//
+
+void kexCamera::InitObject(void) {
+    scriptManager.Engine()->RegisterObjectType(
+        "kCamera",
+        sizeof(kexCamera),
+        asOBJ_REF);
+
+    scriptManager.Engine()->RegisterObjectBehaviour(
+        "kCamera",
+        asBEHAVE_ADDREF,
+        "void f()",
+        asMETHOD(kexCamera, AddRef),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectBehaviour(
+        "kCamera",
+        asBEHAVE_RELEASE,
+        "void f()",
+        asMETHOD(kexCamera, RemoveRef),
+        asCALL_THISCALL);
+
+#define OBJMETHOD(str, a, b, c)                     \
+    scriptManager.Engine()->RegisterObjectMethod(   \
+        "kCamera",                                  \
+        str,                                        \
+        asMETHODPR(kexCamera, a, b, c),             \
+        asCALL_THISCALL)
+
+    OBJMETHOD("kVec3 &GetOrigin(void)", GetOrigin, (void), kexVec3&);
+    OBJMETHOD("void SetOrigin(const kVec3 &in)", SetOrigin, (const kexVec3 &org), void);
+    OBJMETHOD("void SetTarget(kActor@)", SetTarget, (kexActor *targ), void);
+    OBJMETHOD("kActor @GetTarget(void)", GetTarget, (void), kexActor*);
+    OBJMETHOD("void SetAttachment(kActor@)", SetAttachment, (kexActor *targ), void);
+    OBJMETHOD("kActor @GetAttachment(void)", GetAttachment, (void), kexActor*);
+    OBJMETHOD("void SetOwner(kActor@)", SetOwner, (kexActor *targ), void);
+    OBJMETHOD("kActor @GetOwner(void)", GetOwner, (void), kexActor*);
+    OBJMETHOD("kQuat &GetRotation(void)", GetRotation, (void), kexQuat&);
+    OBJMETHOD("void SetRotation(const kQuat &in)", SetRotation, (const kexQuat &rot), void);
+    OBJMETHOD("kAngle &GetAngles(void)", GetAngles, (void), kexAngle&);
+    OBJMETHOD("void SetAngles(const kAngle &in)", SetAngles, (const kexAngle &an), void);
+    OBJMETHOD("kVec3 &GetAttachOffset(void)", GetAttachOffset, (void), kexVec3&);
+    OBJMETHOD("void SetAttachOffset(const kVec3 &in)", SetAttachOffset, (const kexVec3 &vec), void);
+
+#define OBJPROPERTY(str, p)                         \
+    scriptManager.Engine()->RegisterObjectProperty( \
+        "kCamera",                                  \
+        str,                                        \
+        asOFFSET(kexCamera, p))
+
+    OBJPROPERTY("float zFar", zFar);
+    OBJPROPERTY("float zNear", zNear);
+    OBJPROPERTY("float fov", fov);
+    OBJPROPERTY("float aspect", aspect);
+    OBJPROPERTY("bool bLetterBox", bLetterBox);
+    OBJPROPERTY("bool bFixedFOV", bFixedFOV);
+    OBJPROPERTY("bool bCollision", bCollision);
+    OBJPROPERTY("bool bAttachRelativeAngles", bAttachRelativeAngles);
 }

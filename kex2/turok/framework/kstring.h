@@ -60,6 +60,7 @@ public:
     kexStr              operator+(const float f);
     kexStr              &operator+=(const kexStr &str);
     kexStr              &operator+=(const char *str);
+    kexStr              &operator+=(const char c);
     kexStr              &operator+=(const bool b);
 
     operator            const char *(void) const { return c_str(); }

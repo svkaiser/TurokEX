@@ -280,6 +280,33 @@ void kexRenderWorld::DrawStaticActors(void) {
 //
 
 void kexRenderWorld::DrawActors(void) {
+    kexFrustum frustum = world->Camera()->Frustum();
+
+    for(kexWorldActor *actor = world->actors.Next();
+        actor != NULL; actor = actor->worldLink.Next()) {
+            if(actor->bHidden)
+                continue;
+
+            kexBBox box;
+
+            box.min = actor->BoundingBox().min * actor->GetScale() + actor->GetOrigin();
+            box.max = actor->BoundingBox().max * actor->GetScale() + actor->GetOrigin();
+
+            kexVec3 c = box.Center();
+
+            box.min.x += c.x;
+            box.max.x += c.x;
+            box.min.z += c.z;
+            box.max.z += c.z;
+
+            actor->bCulled = !frustum.TestBoundingBox(box);
+
+            if(actor->bCulled)
+                continue;
+
+            // TEMP
+            DrawBoundingBox(box, 255, 0, 0);
+    }
 }
 
 //

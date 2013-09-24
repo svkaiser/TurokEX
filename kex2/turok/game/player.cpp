@@ -88,21 +88,21 @@ static const sctokens_t playerLocationTokens[scplocation_end+1] = {
     { -1,                       NULL                    }
 };
 
-DECLARE_CLASS(kexPlayerLocation, kexWorldActor)
+DECLARE_CLASS(kexPlayerPuppet, kexWorldActor)
 
 //
-// kexPlayerLocation::kexPlayerLocation
+// kexPlayerPuppet::kexPlayerPuppet
 //
 
-kexPlayerLocation::kexPlayerLocation(void) {
+kexPlayerPuppet::kexPlayerPuppet(void) {
     this->id = 0;
 }
 
 //
-// kexPlayerLocation::Parse
+// kexPlayerPuppet::Parse
 //
 
-void kexPlayerLocation::Parse(kexLexer *lexer) {
+void kexPlayerPuppet::Parse(kexLexer *lexer) {
     // read into nested block
     lexer->ExpectNextToken(TK_LBRACK);
     lexer->Find();
@@ -123,6 +123,7 @@ void kexPlayerLocation::Parse(kexLexer *lexer) {
             ParseDefault(lexer);
             break;
         }
+        
         lexer->Find();
     }
 }
@@ -209,6 +210,48 @@ void kexPlayer::Accelerate(const playerMove_t *move, int direction, int axis) {
     
 #undef LERP_ACCEL
 #undef LERP_DEACCEL
+}
+
+//
+// kexPlayer::PossessPuppet
+//
+
+void kexPlayer::PossessPuppet(kexPlayerPuppet *puppetActor) {
+    if(puppetActor == NULL) {
+        return;
+    }
+    
+    puppet = puppetActor;
+    // TODO - what if we possess another puppet mid-game?
+    CreateComponent(puppet->playerComponent.c_str());
+    
+    puppet->AddRef();
+    puppet->SetOwner(static_cast<kexActor*>(this));
+}
+
+//
+// kexPlayer::UnpossessPuppet
+//
+
+void kexPlayer::UnpossessPuppet(void) {
+    if(puppet == NULL) {
+        return;
+    }
+    
+    puppet->SetOwner(NULL);
+    puppet->RemoveRef();
+    
+    this->puppet = NULL;
+    // TODO - destroy component
+}
+
+//
+// kexPlayer::PuppetToActor
+//
+
+kexWorldActor *kexPlayer::PuppetToActor(void) {
+    puppet->AddRef();
+    return static_cast<kexWorldActor*>(puppet);
 }
 
 DECLARE_CLASS(kexLocalPlayer, kexPlayer)
@@ -421,6 +464,14 @@ bool kexLocalPlayer::ActionDown(const kexStr &str) {
 }
 
 //
+// kexLocalPlayer::Spawn
+//
+
+void kexLocalPlayer::Spawn(void) {
+    scriptComponent.CallFunction(scriptComponent.onSpawn);
+}
+
+//
 // kexLocalPlayer::LocalTick
 //
 
@@ -428,15 +479,20 @@ void kexLocalPlayer::LocalTick(void) {
     if(client.GetState() != CL_STATE_INGAME)
         return;
 
+    timeStamp = (float)cmd.timestamp.i;
+    frameTime = cmd.frametime.f;
+
     scriptComponent.CallFunction(scriptComponent.onThink);
-}
 
-//
-// kexLocalPlayer::ToWorldActor
-//
+    int current = (netseq.outgoing-1) & (NETBACKUPS-1);
 
-kexWorldActor *kexLocalPlayer::ToWorldActor(void) {
-    return static_cast<kexWorldActor*>(this);
+    oldMoves[current] = puppet->GetOrigin();
+    latency[current] = client.GetTime();
+
+    angles = puppet->GetAngles();
+    origin = puppet->GetOrigin();
+
+    angles.Clamp180();
 }
 
 //
@@ -449,44 +505,34 @@ void kexLocalPlayer::InitObject(void) {
         sizeof(kexLocalPlayer),
         asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS);
 
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kLocalPlayer",
-        "bool ActionDown(const kStr &in)",
-        asMETHODPR(kexLocalPlayer, ActionDown, (const kexStr&), bool),
-        asCALL_THISCALL);
+#define OBJMETHOD(str, a, b, c)                     \
+    scriptManager.Engine()->RegisterObjectMethod(   \
+        "kLocalPlayer",                             \
+        str,                                        \
+        asMETHODPR(kexLocalPlayer, a, b, c),        \
+        asCALL_THISCALL)
 
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kLocalPlayer",
-        "kAngle &GetAngles(void)",
-        asMETHODPR(kexLocalPlayer, GetAngles, (void), kexAngle&),
-        asCALL_THISCALL);
+    OBJMETHOD("bool ActionDown(const kStr &in)", ActionDown, (const kexStr&), bool);
+    OBJMETHOD("kActor @ToActor(void)", ToWorldActor, (void), kexWorldActor*);
+    OBJMETHOD("kActor @Puppet(void)", PuppetToActor, (void), kexWorldActor*);
+    OBJMETHOD("kVec3 &GetAcceleration(void)", GetAcceleration, (void), kexVec3&);
+    OBJMETHOD("void SetAcceleration(const kVec3 &in)", SetAcceleration, (const kexVec3&), void);
+    OBJMETHOD("float GetCrawlHeight(void)", GetCrawlHeight, (void), float);
+    OBJMETHOD("void SetCrawlHeight(const float)", SetCrawlHeight, (const float f), void);
 
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kLocalPlayer",
-        "void SetAngles(const kAngle &in)",
-        asMETHODPR(kexLocalPlayer, SetAngles, (const kexAngle &an), void),
-        asCALL_THISCALL);
+#define OBJPROPERTY(str, p)                         \
+    scriptManager.Engine()->RegisterObjectProperty( \
+        "kLocalPlayer",                             \
+        str,                                        \
+        asOFFSET(kexLocalPlayer, p))
 
-    scriptManager.Engine()->RegisterObjectProperty(
-        "kLocalPlayer",
-        "float cmdMouseX",
-        asOFFSET(kexLocalPlayer, cmd.mouse[0].f));
+    OBJPROPERTY("float cmdMouseX", cmd.mouse[0].f);
+    OBJPROPERTY("float cmdMouseY", cmd.mouse[1].f);
+    OBJPROPERTY("ref @obj", scriptComponent.Handle());
+    OBJPROPERTY("bool bAllowCrawl", bAllowCrawl);
 
-    scriptManager.Engine()->RegisterObjectProperty(
-        "kLocalPlayer",
-        "float cmdMouseY",
-        asOFFSET(kexLocalPlayer, cmd.mouse[1].f));
-
-    scriptManager.Engine()->RegisterObjectProperty(
-        "kLocalPlayer",
-        "ref @obj",
-        asOFFSET(kexLocalPlayer, scriptComponent.Handle()));
-
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kLocalPlayer",
-        "kActor @ToActor(void)",
-        asMETHODPR(kexLocalPlayer, ToWorldActor, (void), kexWorldActor*),
-        asCALL_THISCALL);
+#undef OBJMETHOD
+#undef OBJPROPERTY
 
     scriptManager.Engine()->RegisterGlobalProperty(
         "kLocalPlayer LocalPlayer",

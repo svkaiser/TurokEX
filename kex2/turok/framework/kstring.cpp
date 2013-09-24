@@ -279,6 +279,14 @@ kexStr &kexStr::operator+=(const char *str) {
 // kexStr::operator+=
 //
 
+kexStr &kexStr::operator+=(const char c) {
+    return Concat(&c);
+}
+
+//
+// kexStr::operator+=
+//
+
 kexStr &kexStr::operator+=(const bool b) {
     return Concat(b ? "true" : "false");
 }

@@ -379,7 +379,6 @@ void kexSystem::Main(int argc, char **argv) {
     common.Printf("Debug System Initialized\n");
 
     fileSystem.Init();
-    scriptManager.Init();
 
     Snd_Init();
     common.Printf("Sound System Initialized (%s)\n", Snd_GetDeviceName());
@@ -396,6 +395,8 @@ void kexSystem::Main(int argc, char **argv) {
 
     common.ReadConfigFile("config.cfg");
     common.ReadConfigFile("autoexec.cfg");
+
+    scriptManager.Init();
 
     InitVideo();
 

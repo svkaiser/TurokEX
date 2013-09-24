@@ -145,6 +145,20 @@ void kexActor::SetAttachment(kexActor *targ) {
         attachment->AddRef();
 }
 
+//
+// kexActor::AttachmentTransform
+//
+
+void kexActor::AttachmentTransform(void) {
+    if(attachment != NULL) {
+        // TODO
+        if(bAttachRelativeAngles) {
+            origin = attachment->GetOrigin() + attachOffset;
+            angles = attachment->GetAngles();
+        }
+    }
+}
+
 enum {
     scactor_name = 0,
     scactor_mesh,
@@ -683,32 +697,54 @@ void kexWorldActor::InitObject(void) {
         asMETHOD(kexWorldActor, RemoveRef),
         asCALL_THISCALL);
 
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kActor",
-        "kVec3 &GetOrigin(void)",
-        asMETHODPR(kexWorldActor, GetOrigin, (void), kexVec3&),
-        asCALL_THISCALL);
+#define OBJMETHOD(str, a, b, c)                     \
+    scriptManager.Engine()->RegisterObjectMethod(   \
+        "kActor",                                   \
+        str,                                        \
+        asMETHODPR(kexWorldActor, a, b, c),         \
+        asCALL_THISCALL)
 
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kActor",
-        "void SetOrigin(const kVec3 &in)",
-        asMETHODPR(kexWorldActor, SetOrigin, (const kexVec3 &org), void),
-        asCALL_THISCALL);
+    OBJMETHOD("kVec3 &GetOrigin(void)", GetOrigin, (void), kexVec3&);
+    OBJMETHOD("void SetOrigin(const kVec3 &in)", SetOrigin, (const kexVec3 &org), void);
+    OBJMETHOD("kVec3 &GetVelocity(void)", GetVelocity, (void), kexVec3&);
+    OBJMETHOD("void SetTarget(kActor@)", SetTarget, (kexActor *targ), void);
+    OBJMETHOD("kActor @GetTarget(void)", GetTarget, (void), kexActor*);
+    OBJMETHOD("void SetAttachment(kActor@)", SetAttachment, (kexActor *targ), void);
+    OBJMETHOD("kActor @GetAttachment(void)", GetAttachment, (void), kexActor*);
+    OBJMETHOD("void SetOwner(kActor@)", SetOwner, (kexActor *targ), void);
+    OBJMETHOD("kActor @GetOwner(void)", GetOwner, (void), kexActor*);
+    OBJMETHOD("kQuat &GetRotation(void)", GetRotation, (void), kexQuat&);
+    OBJMETHOD("void SetRotation(const kQuat &in)", SetRotation, (const kexQuat &rot), void);
+    OBJMETHOD("kAngle &GetAngles(void)", GetAngles, (void), kexAngle&);
+    OBJMETHOD("void SetAngles(const kAngle &in)", SetAngles, (const kexAngle &an), void);
+    OBJMETHOD("kVec3 &GetAttachOffset(void)", GetAttachOffset, (void), kexVec3&);
+    OBJMETHOD("void SetAttachOffset(const kVec3 &in)", SetAttachOffset, (const kexVec3 &vec), void);
 
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kActor",
-        "kAngle &GetAngles(void)",
-        asMETHODPR(kexWorldActor, GetAngles, (void), kexAngle&),
-        asCALL_THISCALL);
+#define OBJPROPERTY(str, p)                         \
+    scriptManager.Engine()->RegisterObjectProperty( \
+        "kActor",                                   \
+        str,                                        \
+        asOFFSET(kexWorldActor, p))
 
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kActor",
-        "void SetAngles(const kAngle &in)",
-        asMETHODPR(kexWorldActor, SetAngles, (const kexAngle &an), void),
-        asCALL_THISCALL);
-
-    scriptManager.Engine()->RegisterObjectProperty(
-        "kActor",
-        "ref @obj",
-        asOFFSET(kexWorldActor, scriptComponent.Handle()));
+    OBJPROPERTY("ref @obj", scriptComponent.Handle());
+    OBJPROPERTY("bool bStatic", bStatic);
+    OBJPROPERTY("bool bCollision", bCollision);
+    OBJPROPERTY("bool bTouch", bTouch);
+    OBJPROPERTY("bool bHidden", bHidden);
+    OBJPROPERTY("bool bClientOnly", bClientOnly);
+    OBJPROPERTY("bool bCulled", bCulled);
+    OBJPROPERTY("bool bAttachRelativeAngles", bAttachRelativeAngles);
+    OBJPROPERTY("int health", health);
+    OBJPROPERTY("float radius", radius);
+    OBJPROPERTY("float height", height);
+    OBJPROPERTY("float baseHeight", baseHeight);
+    OBJPROPERTY("float centerHeight", centerHeight);
+    OBJPROPERTY("float viewHeight", viewHeight);
+    OBJPROPERTY("kQuat lerpRotation", lerpRotation);
+    OBJPROPERTY("float rotorSpeed", rotorSpeed);
+    OBJPROPERTY("float rotorFriction", rotorFriction);
+    OBJPROPERTY("kVec3 rotorVector", rotorVector);
+        
+#undef OBJMETHOD
+#undef OBJPROPERTY
 }

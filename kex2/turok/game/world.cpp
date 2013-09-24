@@ -124,6 +124,7 @@ void kexWorld::Tick(void) {
 //
 
 void kexWorld::LocalTick(void) {
+    camera.LocalTick();
 }
 
 //
@@ -209,8 +210,8 @@ void kexWorld::SpawnLocalPlayer(void) {
     for(kexWorldActor *actor = actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
         
-        // find a kexPlayerLocation and see if its not occupied
-        if(actor->GetOwner() != NULL || !actor->InstanceOf(&kexPlayerLocation::info))
+        // find a kexPlayerPuppet and see if its not occupied
+        if(actor->GetOwner() != NULL || !actor->InstanceOf(&kexPlayerPuppet::info))
             continue;
 
         kexLocalPlayer *localPlayer = &client.LocalPlayer();
@@ -220,14 +221,9 @@ void kexWorld::SpawnLocalPlayer(void) {
         localPlayer->SetAngles(actor->GetAngles());
         localPlayer->GetVelocity().Clear();
         localPlayer->GetAcceleration().Clear();
-
-        // TODO
-        localPlayer->CreateComponent(static_cast<kexPlayerLocation*>(actor)->playerComponent.c_str());
         
-        // client now owns this player location and world camera
-        actor->SetOwner(static_cast<kexActor*>(localPlayer));
-        camera.SetOwner(static_cast<kexActor*>(localPlayer));
-
+        // take control of this actor
+        localPlayer->PossessPuppet(static_cast<kexPlayerPuppet*>(actor));
         localPlayer->CallSpawn();
         return;
     }
@@ -369,4 +365,24 @@ void kexWorld::Unload(void) {
 //
 
 void kexWorld::InitObject(void) {
+    scriptManager.Engine()->RegisterObjectType(
+        "kWorld",
+        sizeof(kexWorld),
+        asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS);
+        
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "kCamera @Camera(void)",
+        asMETHODPR(kexWorld, Camera, (void), kexCamera*),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "float DeltaTime(void)",
+        asMETHODPR(kexWorld, DeltaTime, (void), float),
+        asCALL_THISCALL);
+        
+    scriptManager.Engine()->RegisterGlobalProperty(
+        "kWorld LocalWorld",
+        &localWorld);
 }

@@ -189,33 +189,47 @@ void kexClient::Run(const int msec) {
 
     // check for new packets
     CheckMessages();
+
     // check for new inputs
     inputSystem.PollInput();
+
     // handle input events
     ProcessEvents();
+
     // prep and send input information to server
     playerClient.BuildCommands();
+
     // update local player
     playerClient.LocalTick();
+
     // update console
     console.Tick();
+
     // update all local particles
     FX_Ticker();
+
     // update all actor animations
     localWorld.LocalTick();
+
     // draw scene
     renderWorld.RenderScene();
+
     // draw 2D canvas
     renderSystem.SetOrtho();
     playerClient.PlayerEvent("onPostRender");
+
     // update debug stats
     Debug_DrawStats();
+
     // update console display
     console.Draw();
+
     // wrap up all rendering and swap buffers
     R_FinishFrame();
+
     // update all sound sources
     Snd_UpdateListener();
+
     // update all debug variables
     Debug_UpdateStatFrame();
 
@@ -346,40 +360,13 @@ void kexClient::InitObject(void) {
     scriptManager.Engine()->RegisterGlobalProperty("kClient Client", &client);
 
     scriptManager.Engine()->RegisterEnum("EnumClientState");
-    scriptManager.Engine()->RegisterEnumValue(
-        "EnumClientState",
-        "STATE_UNITIALIZED",
-        CL_STATE_UNINITIALIZED);
-
-    scriptManager.Engine()->RegisterEnumValue(
-        "EnumClientState",
-        "STATE_CONNECTING",
-        CL_STATE_CONNECTING);
-
-    scriptManager.Engine()->RegisterEnumValue(
-        "EnumClientState",
-        "STATE_CONNECTED",
-        CL_STATE_CONNECTED);
-
-    scriptManager.Engine()->RegisterEnumValue(
-        "EnumClientState",
-        "STATE_DISCONNECTED",
-        CL_STATE_DISCONNECTED);
-
-    scriptManager.Engine()->RegisterEnumValue(
-        "EnumClientState",
-        "STATE_READY",
-        CL_STATE_READY);
-
-    scriptManager.Engine()->RegisterEnumValue(
-        "EnumClientState",
-        "STATE_INGAME",
-        CL_STATE_INGAME);
-
-    scriptManager.Engine()->RegisterEnumValue(
-        "EnumClientState",
-        "STATE_CHANGINGLEVEL",
-        CL_STATE_CHANGINGLEVEL);
+    scriptManager.Engine()->RegisterEnumValue("EnumClientState", "STATE_UNITIALIZED", CL_STATE_UNINITIALIZED);
+    scriptManager.Engine()->RegisterEnumValue("EnumClientState", "STATE_CONNECTING", CL_STATE_CONNECTING);
+    scriptManager.Engine()->RegisterEnumValue("EnumClientState", "STATE_CONNECTED", CL_STATE_CONNECTED);
+    scriptManager.Engine()->RegisterEnumValue("EnumClientState", "STATE_DISCONNECTED", CL_STATE_DISCONNECTED);
+    scriptManager.Engine()->RegisterEnumValue("EnumClientState", "STATE_READY", CL_STATE_READY);
+    scriptManager.Engine()->RegisterEnumValue("EnumClientState", "STATE_INGAME", CL_STATE_INGAME);
+    scriptManager.Engine()->RegisterEnumValue("EnumClientState", "STATE_CHANGINGLEVEL", CL_STATE_CHANGINGLEVEL);
 }
 
 //

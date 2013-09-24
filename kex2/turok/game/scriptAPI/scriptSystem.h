@@ -42,11 +42,16 @@ public:
     asIScriptModule         *Module(void) { return module; }
 
 private:
+    void                    ProcessScript(const char *file);
+    bool                    HasScriptFile(const char *file);
     void                    RegisterBasicTypes(void);
     void                    RegisterObjects(void);
 
     static void             MessageCallback(const asSMessageInfo *msg, void *param);
 
+    kexStrList              scriptFiles;
+    kexStr                  scriptBuffer;
+    
     asIScriptEngine         *engine;
     asIScriptContext        *ctx;
     asIScriptModule         *module;
@@ -121,6 +126,7 @@ public:
     static void             Init(void);
 
     asIScriptFunction       *onThink;
+    asIScriptFunction       *onSpawn;
     asIScriptFunction       *onTouch;
     asIScriptFunction       *onDamage;
     asIScriptFunction       *onPreDraw;
