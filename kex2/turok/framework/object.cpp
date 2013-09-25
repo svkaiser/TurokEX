@@ -223,11 +223,27 @@ const char *kexObject::GetClassName(void) const {
 }
 
 //
+// kexObject::GetClassString
+//
+
+const kexStr kexObject::GetClassString(void) const {
+    return kexStr(GetClassName());
+}
+
+//
 // kexObject::GetSuperName
 //
 
 const char *kexObject::GetSuperName(void) const {
     return GetInfo()->supername;
+}
+
+//
+// kexObject::GetSuperString
+//
+
+const kexStr kexObject::GetSuperString(void) const {
+    return kexStr(GetSuperName());
 }
 
 //

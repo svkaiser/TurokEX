@@ -66,6 +66,24 @@ void kexScriptObjAngle::Init(void) {
         asFUNCTION(kexAngle::ObjectConstructCopy),
         asCALL_CDECL_OBJLAST);
 
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kAngle",
+        "kVec3 ToForwardAxis(void)",
+        asMETHODPR(kexAngle, ToForwardAxis, (void), kexVec3),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kAngle",
+        "kVec3 ToUpAxis(void)",
+        asMETHODPR(kexAngle, ToUpAxis, (void), kexVec3),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kAngle",
+        "kVec3 ToRightAxis(void)",
+        asMETHODPR(kexAngle, ToRightAxis, (void), kexVec3),
+        asCALL_THISCALL);
+
     scriptManager.Engine()->RegisterObjectProperty("kAngle", "float yaw", asOFFSET(kexAngle, yaw));
     scriptManager.Engine()->RegisterObjectProperty("kAngle", "float pitch", asOFFSET(kexAngle, pitch));
     scriptManager.Engine()->RegisterObjectProperty("kAngle", "float roll", asOFFSET(kexAngle, roll));

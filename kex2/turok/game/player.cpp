@@ -40,6 +40,67 @@
 #include "console.h"
 
 //
+// kexPlayerMove::Accelerate
+//
+
+void kexPlayerMove::Accelerate(int direction, int axis, const float deltaTime) {
+    float time = 0;
+    float lerp = 0;
+
+    switch(axis) {
+    case 0:
+        lerp = accelRef->x;
+        break;
+    case 1:
+        lerp = accelRef->y;
+        break;
+    case 2:
+        lerp = accelRef->z;
+        break;
+    }
+    
+    if(direction == 1) {
+        time = accelSpeed[axis] * (60.0f * deltaTime);
+        if(time > 1) {
+            lerp = forwardSpeed[axis];
+        }
+        else {
+            lerp = (forwardSpeed[axis] - lerp) * time + lerp;
+        }
+    }
+    else if(direction == -1) {
+        time = accelSpeed[axis] * (60.0f * deltaTime);
+        if(time > 1) {
+            lerp = backwardSpeed[axis];
+        }
+        else {
+            lerp = (backwardSpeed[axis] - lerp) * time + lerp;
+        }
+    }
+    else {
+        time = deaccelSpeed[axis] * (60.0f * deltaTime);
+        if(time > 1) {
+            lerp = 0;
+        }
+        else {
+            lerp = (0 - lerp) * time + lerp;
+        }
+    }
+    
+    switch(axis) {
+    case 0:
+        accelRef->x = lerp;
+        break;
+    case 1:
+        accelRef->y = lerp;
+        break;
+    case 2:
+        accelRef->z = lerp;
+        break;
+    }
+}
+
+//
 // P_RunCommand
 //
 
@@ -137,9 +198,18 @@ DECLARE_ABSTRACT_CLASS(kexPlayer, kexWorldActor)
 kexPlayer::kexPlayer(void) {
     ResetNetSequence();
     ResetTicCommand();
+
+    acceleration.Clear();
     
-    jsonData        = NULL;
-    name            = NULL;
+    this->jsonData              = NULL;
+    this->name                  = NULL;
+    this->groundMove.accelRef   = &this->acceleration;
+    this->swimMove.accelRef     = &this->acceleration;
+    this->climbMove.accelRef    = &this->acceleration;
+    this->airMove.accelRef      = &this->acceleration;
+    this->crawlMove.accelRef    = &this->acceleration;
+    this->flyMove.accelRef      = &this->acceleration;
+    this->noClipMove.accelRef   = &this->acceleration;
 }
 
 //
@@ -164,52 +234,6 @@ void kexPlayer::ResetNetSequence(void) {
 
 void kexPlayer::ResetTicCommand(void) {
     memset(&cmd, 0, sizeof(ticcmd_t));
-}
-
-//
-// kexPlayer::Accelerate
-//
-
-void kexPlayer::Accelerate(const playerMove_t *move, int direction, int axis) {
-    float time = 0;
-#define LERP_ACCEL(m, v)                                        \
-    time = move->accelSpeed[v] * (60.0f * cmd.frametime.f);     \
-    if(time > 1) lerp = move->m[v];                             \
-    else { lerp = (move->m[v] - acceleration[v]) *              \
-    time + acceleration[v]; }
-
-#define LERP_DEACCEL(v)                                         \
-    time = move->deaccelSpeed[v] * (60.0f * cmd.frametime.f);   \
-    if(time > 1) lerp = move->deaccelSpeed[v];                  \
-    else { lerp = (0 - acceleration[v]) *                       \
-    time + acceleration[v]; }
-    
-    float lerp = acceleration[axis];
-    
-    if(direction == 1) {
-        LERP_ACCEL(forwardSpeed, axis);
-    }
-    else if(direction == -1) {
-        LERP_ACCEL(backwardSpeed, axis);
-    }
-    else {
-        LERP_DEACCEL(axis);
-    }
-    
-    switch(axis) {
-    case 0:
-        acceleration.x = lerp;
-        break;
-    case 1:
-        acceleration.y = lerp;
-        break;
-    case 2:
-        acceleration.z = lerp;
-        break;
-    }
-    
-#undef LERP_ACCEL
-#undef LERP_DEACCEL
 }
 
 //
@@ -503,6 +527,32 @@ void kexLocalPlayer::InitObject(void) {
     scriptManager.Engine()->RegisterObjectType(
         "kLocalPlayer",
         sizeof(kexLocalPlayer),
+        asOBJ_REF);
+
+    scriptManager.Engine()->RegisterObjectBehaviour(
+        "kLocalPlayer",
+        asBEHAVE_ADDREF,
+        "void f()",
+        asMETHOD(kexLocalPlayer, AddRef),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectBehaviour(
+        "kLocalPlayer",
+        asBEHAVE_RELEASE,
+        "void f()",
+        asMETHOD(kexLocalPlayer, RemoveRef),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectBehaviour(
+        "kActor",
+        asBEHAVE_REF_CAST,
+        "kLocalPlayer@ f()",
+        asFUNCTION((kexScriptManager::RefCast<kexLocalPlayer, kexActor>)),
+        asCALL_CDECL_OBJLAST);
+
+    scriptManager.Engine()->RegisterObjectType(
+        "kPlayerMove",
+        sizeof(kexPlayerMove),
         asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS);
 
 #define OBJMETHOD(str, a, b, c)                     \
@@ -519,6 +569,12 @@ void kexLocalPlayer::InitObject(void) {
     OBJMETHOD("void SetAcceleration(const kVec3 &in)", SetAcceleration, (const kexVec3&), void);
     OBJMETHOD("float GetCrawlHeight(void)", GetCrawlHeight, (void), float);
     OBJMETHOD("void SetCrawlHeight(const float)", SetCrawlHeight, (const float f), void);
+    OBJMETHOD("kPlayerMove &GroundMove(void)", GroundMove, (void), kexPlayerMove&);
+    OBJMETHOD("kPlayerMove &AirMove(void)", AirMove, (void), kexPlayerMove&);
+    OBJMETHOD("kPlayerMove &SwimMove(void)", SwimMove, (void), kexPlayerMove&);
+    OBJMETHOD("kPlayerMove &CrawlMove(void)", CrawlMove, (void), kexPlayerMove&);
+    OBJMETHOD("kPlayerMove &FlyMove(void)", FlyMove, (void), kexPlayerMove&);
+    OBJMETHOD("kPlayerMove &NoClipMove(void)", NoClipMove, (void), kexPlayerMove&);
 
 #define OBJPROPERTY(str, p)                         \
     scriptManager.Engine()->RegisterObjectProperty( \
@@ -528,6 +584,7 @@ void kexLocalPlayer::InitObject(void) {
 
     OBJPROPERTY("float cmdMouseX", cmd.mouse[0].f);
     OBJPROPERTY("float cmdMouseY", cmd.mouse[1].f);
+    OBJPROPERTY("float deltaTime", cmd.frametime.f);
     OBJPROPERTY("ref @obj", scriptComponent.Handle());
     OBJPROPERTY("bool bAllowCrawl", bAllowCrawl);
 
@@ -537,6 +594,30 @@ void kexLocalPlayer::InitObject(void) {
     scriptManager.Engine()->RegisterGlobalProperty(
         "kLocalPlayer LocalPlayer",
         client.GetLocalPlayerRef());
+
+#define OBJMETHOD(str, a, b, c)                     \
+    scriptManager.Engine()->RegisterObjectMethod(   \
+        "kPlayerMove",                              \
+        str,                                        \
+        asMETHODPR(kexPlayerMove, a, b, c),         \
+        asCALL_THISCALL)
+
+    OBJMETHOD("void Accelerate(int, int, const float)",
+        Accelerate, (int, int, const float), void);
+        
+#define OBJPROPERTY(str, p)                         \
+    scriptManager.Engine()->RegisterObjectProperty( \
+        "kPlayerMove",                              \
+        str,                                        \
+        asOFFSET(kexPlayerMove, p))
+
+    OBJPROPERTY("kVec3 accelSpeed", accelSpeed);
+    OBJPROPERTY("kVec3 deaccelSpeed", deaccelSpeed);
+    OBJPROPERTY("kVec3 forwardSpeed", forwardSpeed);
+    OBJPROPERTY("kVec3 backwardSpeed", backwardSpeed);
+
+#undef OBJMETHOD
+#undef OBJPROPERTY
 }
 
 DECLARE_CLASS(kexNetPlayer, kexPlayer)

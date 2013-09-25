@@ -28,6 +28,24 @@
 #include "linkedlist.h"
 #include "scriptAPI/scriptSystem.h"
 
+class kexAttachment {
+public:
+    void                        Transform(void);
+    void                        AttachToActor(kexActor *targ);
+    kexVec3                     &GetAttachOffset(void) { return attachOffset; }
+    void                        SetAttachOffset(const kexVec3 &vec) { attachOffset = vec; }
+    kexActor                    *GetOwner(void) { return owner; }
+    void                        SetOwner(kexActor *o) { owner = o; }
+    kexActor                    *GetAttachedActor(void) { return actor; }
+    
+    bool                        bAttachRelativeAngles;
+
+private:
+    kexVec3                     attachOffset;
+    kexActor                    *actor;
+    kexActor                    *owner;
+};
+
 BEGIN_EXTENDED_CLASS(kexActor, kexObject);
 public:
                                 kexActor(void);
@@ -41,8 +59,6 @@ public:
     int                         RemoveRef(void);
     void                        SetTarget(kexActor *targ);
     void                        SetOwner(kexActor *targ);
-    void                        SetAttachment(kexActor *targ);
-    void                        AttachmentTransform(void);
 
     kexVec3                     &GetOrigin(void) { return origin; }
     void                        SetOrigin(const kexVec3 &org) { origin = org; }
@@ -54,9 +70,7 @@ public:
     void                        SetScale(const kexVec3 &vel) { scale = vel; }
     kexActor                    *GetOwner(void) { return owner; }
     kexActor                    *GetTarget(void) { return target; }
-    kexActor                    *GetAttachment(void) { return attachment; }
-    kexVec3                     &GetAttachOffset(void) { return attachOffset; }
-    void                        SetAttachOffset(const kexVec3 &vec) { attachOffset = vec; }
+    kexAttachment               &Attachment(void) { return attachment; }
     kexAngle                    &GetAngles(void) { return angles; }
     void                        SetAngles(const kexAngle &an) { angles = an; }
     const int                   RefCount(void) const { return refCount; }
@@ -70,7 +84,49 @@ public:
     bool                        bClientOnly;
     bool                        bHidden;
     bool                        bCulled;
-    bool                        bAttachRelativeAngles;
+
+    //
+    // template for registering default script actor methods and properties
+    //
+    template<class type>
+    static void                 RegisterBaseProperties(const char *scriptClass) {
+    #define OBJMETHOD(str, a, b, c)                     \
+        scriptManager.Engine()->RegisterObjectMethod(   \
+            scriptClass,                                \
+            str,                                        \
+            asMETHODPR(type, a, b, c),                  \
+            asCALL_THISCALL)
+
+        OBJMETHOD("kVec3 &GetOrigin(void)", GetOrigin, (void), kexVec3&);
+        OBJMETHOD("void SetOrigin(const kVec3 &in)", SetOrigin, (const kexVec3 &org), void);
+        OBJMETHOD("kVec3 &GetVelocity(void)", GetVelocity, (void), kexVec3&);
+        OBJMETHOD("void SetTarget(kActor@)", SetTarget, (kexActor *targ), void);
+        OBJMETHOD("kActor @GetTarget(void)", GetTarget, (void), kexActor*);
+        OBJMETHOD("void SetOwner(kActor@)", SetOwner, (kexActor *targ), void);
+        OBJMETHOD("kActor @GetOwner(void)", GetOwner, (void), kexActor*);
+        OBJMETHOD("kQuat &GetRotation(void)", GetRotation, (void), kexQuat&);
+        OBJMETHOD("void SetRotation(const kQuat &in)", SetRotation, (const kexQuat &rot), void);
+        OBJMETHOD("kAngle &GetAngles(void)", GetAngles, (void), kexAngle&);
+        OBJMETHOD("void SetAngles(const kAngle &in)", SetAngles, (const kexAngle &an), void);
+        OBJMETHOD("kAttachment &Attachment(void)", Attachment, (void), kexAttachment&);
+        OBJMETHOD("const kStr ClassName(void) const", GetClassString, (void) const, const kexStr);
+
+    #define OBJPROPERTY(str, p)                         \
+        scriptManager.Engine()->RegisterObjectProperty( \
+            scriptClass,                                \
+            str,                                        \
+            asOFFSET(type, p))
+
+        OBJPROPERTY("bool bStatic", bStatic);
+        OBJPROPERTY("bool bCollision", bCollision);
+        OBJPROPERTY("bool bTouch", bTouch);
+        OBJPROPERTY("bool bHidden", bHidden);
+        OBJPROPERTY("bool bClientOnly", bClientOnly);
+        OBJPROPERTY("bool bCulled", bCulled);
+
+    #undef OBJMETHOD
+    #undef OBJPROPERTY
+    }
 
 protected:
     kexVec3                     origin;
@@ -87,7 +143,7 @@ protected:
     unsigned int                targetID;
     kexActor                    *owner;
     kexActor                    *target;
-    kexActor                    *attachment;
+    kexAttachment               attachment;
     kexMatrix                   matrix;
     kexMatrix                   rotMatrix;
     kmodel_t                    *model;
@@ -98,7 +154,6 @@ protected:
     float                       nextTickInterval;
     unsigned int                physics;
     int                         waterlevel;
-    kexVec3                     attachOffset;
 
 private:
     int                         refCount;

@@ -91,7 +91,7 @@ void kexComponent::Spawn(const char *className) {
         return;
     }
 
-    CallConstructor((kexStr(className) + " @" + className + "()").c_str());
+    CallConstructor((kexStr(className) + " @" + className + "(kActor@)").c_str());
 
     onThink     = type->GetMethodByDecl("void OnThink(void)");
     onSpawn     = type->GetMethodByDecl("void OnSpawn(void)");
@@ -132,6 +132,7 @@ bool kexComponent::CallConstructor(const char *decl) {
         scriptManager.Context()->PushState();
 
     scriptManager.Context()->Prepare(type->GetFactoryByDecl(decl));
+    scriptManager.Context()->SetArgObject(0, objHandle.owner);
 
     if(scriptManager.Context()->Execute() == asEXECUTION_EXCEPTION) {
         common.Error("%s", scriptManager.Context()->GetExceptionString());

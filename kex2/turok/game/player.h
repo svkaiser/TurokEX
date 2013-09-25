@@ -29,27 +29,21 @@
 void P_RunCommand(ENetEvent *sev, ENetPacket *packet);
 
 typedef struct {
-    kexVec3                 origin;
-    kexVec3                 velocity;
-    kexVec3                 accel;
-    kexAngle                angles;
-    float                   moveTime;
-    float                   frameTime;
-    float                   timeStamp;
-} moveState_t;
-
-typedef struct {
     int                     ingoing;
     int                     outgoing;
     int                     acks;
 } netSequence_t;
 
-typedef struct {
+class kexPlayerMove {
+public:
     kexVec3                 accelSpeed;
     kexVec3                 deaccelSpeed;
     kexVec3                 forwardSpeed;
     kexVec3                 backwardSpeed;
-} playerMove_t;
+    kexVec3                 *accelRef;
+    
+    void                    Accelerate(int direction, int axis, const float deltaTime);
+};
 
 BEGIN_EXTENDED_CLASS(kexPlayerPuppet, kexWorldActor);
 public:
@@ -72,17 +66,16 @@ public:
 
     void                    ResetNetSequence(void);
     void                    ResetTicCommand(void);
-    void                    Accelerate(const playerMove_t *move, int direction, int axis);
     void                    PossessPuppet(kexPlayerPuppet *puppetActor);
     void                    UnpossessPuppet(void);
 
-    playerMove_t            *GroundMove(void) { return &groundMove; }
-    playerMove_t            *AirMove(void) { return &airMove; }
-    playerMove_t            *SwimMove(void) { return &swimMove; }
-    playerMove_t            *ClimbMove(void) { return &climbMove; }
-    playerMove_t            *CrawlMove(void) { return &crawlMove; }
-    playerMove_t            *FlyMove(void) { return &flyMove; }
-    playerMove_t            *NoClipMove(void) { return &noClipMove; }
+    kexPlayerMove           &GroundMove(void) { return groundMove; }
+    kexPlayerMove           &AirMove(void) { return airMove; }
+    kexPlayerMove           &SwimMove(void) { return swimMove; }
+    kexPlayerMove           &ClimbMove(void) { return climbMove; }
+    kexPlayerMove           &CrawlMove(void) { return crawlMove; }
+    kexPlayerMove           &FlyMove(void) { return flyMove; }
+    kexPlayerMove           &NoClipMove(void) { return noClipMove; }
 
     kexVec3                 &GetAcceleration(void) { return acceleration; }
     void                    SetAcceleration(const kexVec3 &accel) { acceleration = accel; }
@@ -108,13 +101,13 @@ public:
 protected:
     kexPlayerPuppet         *puppet;
     kexVec3                 acceleration;
-    playerMove_t            groundMove;
-    playerMove_t            airMove;
-    playerMove_t            swimMove;
-    playerMove_t            climbMove;
-    playerMove_t            crawlMove;
-    playerMove_t            flyMove;
-    playerMove_t            noClipMove;
+    kexPlayerMove           groundMove;
+    kexPlayerMove           airMove;
+    kexPlayerMove           swimMove;
+    kexPlayerMove           climbMove;
+    kexPlayerMove           crawlMove;
+    kexPlayerMove           flyMove;
+    kexPlayerMove           noClipMove;
     ticcmd_t                cmd;
     bool                    bAllowCrawl;
     float                   crawlHeight;
@@ -124,7 +117,6 @@ protected:
     char                    *name;
     ENetPeer                *peer;
     char                    *jsonData;
-    moveState_t             moveState;
     float                   frameTime;
     float                   timeStamp;
 END_CLASS();

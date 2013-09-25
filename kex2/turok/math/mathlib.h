@@ -382,6 +382,9 @@ public:
     kexAngle                &Clamp180(void);
     kexAngle                Diff(kexAngle &angle);
     void                    ToAxis(kexVec3 *forward, kexVec3 *up, kexVec3 *right);
+    kexVec3                 ToForwardAxis(void);
+    kexVec3                 ToUpAxis(void);
+    kexVec3                 ToRightAxis(void);
     const kexVec3           &ToVec3(void) const;
     kexVec3                 &ToVec3(void);
 

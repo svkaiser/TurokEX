@@ -333,16 +333,49 @@ void kexAngle::ToAxis(kexVec3 *forward, kexVec3 *up, kexVec3 *right) {
         forward->y  = -sp;
         forward->z  = cy * cp;
     }
-    if(up) {
-        up->x       = sr * sp * sy + cr * cy;
-        up->y       = sr * cp;
-        up->z       = sr * sp * cy + cr * -sy;
-    }
     if(right) {
-        right->x    = cr * sp * sy + -sr * cy;
-        right->y    = cr * cp;
-        right->z    = cr * sp * cy + -sr * -sy;
+        right->x    = sr * sp * sy + cr * cy;
+        right->y    = sr * cp;
+        right->z    = sr * sp * cy + cr * -sy;
     }
+    if(up) {
+        up->x       = cr * sp * sy + -sr * cy;
+        up->y       = cr * cp;
+        up->z       = cr * sp * cy + -sr * -sy;
+    }
+}
+
+//
+// kexAngle::ToForwardAxis
+//
+
+kexVec3 kexAngle::ToForwardAxis(void) {
+    kexVec3 vec;
+
+    ToAxis(&vec, NULL, NULL);
+    return vec;
+}
+
+//
+// kexAngle::ToUpAxis
+//
+
+kexVec3 kexAngle::ToUpAxis(void) {
+    kexVec3 vec;
+
+    ToAxis(NULL, &vec, NULL);
+    return vec;
+}
+
+//
+// kexAngle::ToRightAxis
+//
+
+kexVec3 kexAngle::ToRightAxis(void) {
+    kexVec3 vec;
+
+    ToAxis(NULL, NULL, &vec);
+    return vec;
 }
 
 //

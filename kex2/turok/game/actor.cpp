@@ -35,6 +35,34 @@
 #include "parse.h"
 #include "server.h"
 
+//
+// kexAttachment::AttachToActor
+//
+
+void kexAttachment::AttachToActor(kexActor *targ) {
+    // If there was a attachment already, decrease its refcount
+    if(actor)
+        actor->RemoveRef();
+
+    // Set new attachment and if non-NULL, increase its counter
+    if((actor = targ))
+        actor->AddRef();
+}
+
+//
+// kexAttachment::Transform
+//
+
+void kexAttachment::Transform(void) {
+    if(actor != NULL) {
+        // TODO
+        if(bAttachRelativeAngles) {
+            owner->SetOrigin(actor->GetOrigin() + attachOffset);
+            owner->SetAngles(actor->GetAngles());
+        }
+    }
+}
+
 DECLARE_ABSTRACT_CLASS(kexActor, kexObject)
 
 //
@@ -54,8 +82,8 @@ kexActor::kexActor(void) {
     this->owner         = NULL;
     this->target        = NULL;
     this->model         = NULL;
-    this->attachment    = NULL;
     
+    this->attachment.SetOwner(this);
     this->scale.Set(1, 1, 1);
 }
 
@@ -129,34 +157,6 @@ void kexActor::SetOwner(kexActor *targ) {
     // Set new owner and if non-NULL, increase its counter
     if((owner = targ))
         owner->AddRef();
-}
-
-//
-// kexActor::SetAttachment
-//
-
-void kexActor::SetAttachment(kexActor *targ) {
-    // If there was a attachment already, decrease its refcount
-    if(attachment)
-        attachment->RemoveRef();
-
-    // Set new attachment and if non-NULL, increase its counter
-    if((attachment = targ))
-        attachment->AddRef();
-}
-
-//
-// kexActor::AttachmentTransform
-//
-
-void kexActor::AttachmentTransform(void) {
-    if(attachment != NULL) {
-        // TODO
-        if(bAttachRelativeAngles) {
-            origin = attachment->GetOrigin() + attachOffset;
-            angles = attachment->GetAngles();
-        }
-    }
 }
 
 enum {
@@ -240,6 +240,7 @@ kexWorldActor::kexWorldActor(void) {
     this->baseBBox.max.Set(32, 32, 32);
 
     this->worldLink.SetData(this);
+    this->scriptComponent.SetOwner(this);
 
     this->radius            = 30.72f;
     this->baseHeight        = 30.72f;
@@ -624,7 +625,6 @@ void kexWorldActor::CreateComponent(const char *name) {
 
     // TODO
     scriptComponent.Spawn(name);
-    scriptComponent.SetOwner(this);
 }
 
 //
@@ -682,6 +682,11 @@ void kexWorldActor::InitObject(void) {
         "kActor",
         sizeof(kexWorldActor),
         asOBJ_REF);
+        
+    scriptManager.Engine()->RegisterObjectType(
+        "kAttachment",
+        sizeof(kexAttachment),
+        asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS);
 
     scriptManager.Engine()->RegisterObjectBehaviour(
         "kActor",
@@ -697,28 +702,7 @@ void kexWorldActor::InitObject(void) {
         asMETHOD(kexWorldActor, RemoveRef),
         asCALL_THISCALL);
 
-#define OBJMETHOD(str, a, b, c)                     \
-    scriptManager.Engine()->RegisterObjectMethod(   \
-        "kActor",                                   \
-        str,                                        \
-        asMETHODPR(kexWorldActor, a, b, c),         \
-        asCALL_THISCALL)
-
-    OBJMETHOD("kVec3 &GetOrigin(void)", GetOrigin, (void), kexVec3&);
-    OBJMETHOD("void SetOrigin(const kVec3 &in)", SetOrigin, (const kexVec3 &org), void);
-    OBJMETHOD("kVec3 &GetVelocity(void)", GetVelocity, (void), kexVec3&);
-    OBJMETHOD("void SetTarget(kActor@)", SetTarget, (kexActor *targ), void);
-    OBJMETHOD("kActor @GetTarget(void)", GetTarget, (void), kexActor*);
-    OBJMETHOD("void SetAttachment(kActor@)", SetAttachment, (kexActor *targ), void);
-    OBJMETHOD("kActor @GetAttachment(void)", GetAttachment, (void), kexActor*);
-    OBJMETHOD("void SetOwner(kActor@)", SetOwner, (kexActor *targ), void);
-    OBJMETHOD("kActor @GetOwner(void)", GetOwner, (void), kexActor*);
-    OBJMETHOD("kQuat &GetRotation(void)", GetRotation, (void), kexQuat&);
-    OBJMETHOD("void SetRotation(const kQuat &in)", SetRotation, (const kexQuat &rot), void);
-    OBJMETHOD("kAngle &GetAngles(void)", GetAngles, (void), kexAngle&);
-    OBJMETHOD("void SetAngles(const kAngle &in)", SetAngles, (const kexAngle &an), void);
-    OBJMETHOD("kVec3 &GetAttachOffset(void)", GetAttachOffset, (void), kexVec3&);
-    OBJMETHOD("void SetAttachOffset(const kVec3 &in)", SetAttachOffset, (const kexVec3 &vec), void);
+    kexActor::RegisterBaseProperties<kexWorldActor>("kActor");
 
 #define OBJPROPERTY(str, p)                         \
     scriptManager.Engine()->RegisterObjectProperty( \
@@ -727,13 +711,6 @@ void kexWorldActor::InitObject(void) {
         asOFFSET(kexWorldActor, p))
 
     OBJPROPERTY("ref @obj", scriptComponent.Handle());
-    OBJPROPERTY("bool bStatic", bStatic);
-    OBJPROPERTY("bool bCollision", bCollision);
-    OBJPROPERTY("bool bTouch", bTouch);
-    OBJPROPERTY("bool bHidden", bHidden);
-    OBJPROPERTY("bool bClientOnly", bClientOnly);
-    OBJPROPERTY("bool bCulled", bCulled);
-    OBJPROPERTY("bool bAttachRelativeAngles", bAttachRelativeAngles);
     OBJPROPERTY("int health", health);
     OBJPROPERTY("float radius", radius);
     OBJPROPERTY("float height", height);
@@ -744,7 +721,32 @@ void kexWorldActor::InitObject(void) {
     OBJPROPERTY("float rotorSpeed", rotorSpeed);
     OBJPROPERTY("float rotorFriction", rotorFriction);
     OBJPROPERTY("kVec3 rotorVector", rotorVector);
-        
+
+#undef OBJPROPERTY
+
+#define OBJMETHOD(str, a, b, c)                     \
+    scriptManager.Engine()->RegisterObjectMethod(   \
+        "kAttachment",                              \
+        str,                                        \
+        asMETHODPR(kexAttachment, a, b, c),         \
+        asCALL_THISCALL)
+
+    OBJMETHOD("void Transform(void)", Transform, (void), void);
+    OBJMETHOD("void AttachToActor(kActor@)", AttachToActor, (kexActor *targ), void);
+    OBJMETHOD("kVec3 &GetAttachOffset(void)", GetAttachOffset, (void), kexVec3&);
+    OBJMETHOD("void SetAttachOffset(const kVec3 &in)", SetAttachOffset, (const kexVec3 &vec), void);
+    OBJMETHOD("kActor @GetOwner(void)", GetOwner, (void), kexActor*);
+    OBJMETHOD("void SetOwner(kActor@)", SetOwner, (kexActor *o), void);
+    OBJMETHOD("kActor @GetAttachedActor(void)", GetAttachedActor, (void), kexActor*);
+
+#define OBJPROPERTY(str, p)                         \
+    scriptManager.Engine()->RegisterObjectProperty( \
+        "kAttachment",                              \
+        str,                                        \
+        asOFFSET(kexAttachment, p))
+
+    OBJPROPERTY("bool bAttachRelativeAngles", bAttachRelativeAngles);
+
 #undef OBJMETHOD
 #undef OBJPROPERTY
 }

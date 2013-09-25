@@ -37,6 +37,9 @@ public:
     static void             *MemAlloc(size_t size);
     static void             MemFree(void *ptr);
 
+    template<class derived, class base>
+    static derived          *RefCast(base *c) { return static_cast<derived*>(c); }
+
     asIScriptEngine         *Engine(void) { return engine; }
     asIScriptContext        *Context(void) { return ctx; }
     asIScriptModule         *Module(void) { return module; }
@@ -120,7 +123,7 @@ public:
     kexScriptObjHandle      &Handle(void) { return objHandle; }
     const asIObjectType     *ScriptType(void) const { return type; }
     const asIScriptObject   *ScriptObject(void) const { return obj; }
-    void                    SetOwner(kexObject *kobj) { objHandle.owner = kobj; }
+    void                    SetOwner(kexActor *kobj) { objHandle.owner = kobj; }
     kexObject               *GetOwner(void) const { return static_cast<kexObject*>(objHandle.owner); }
 
     static void             Init(void);
