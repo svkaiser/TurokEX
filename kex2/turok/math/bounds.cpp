@@ -104,9 +104,9 @@ void kexBBox::Clear(void) {
 
 kexVec3 kexBBox::Center(void) const {
     return kexVec3(
-        (max.x - min.x) * 0.5f,
-        (max.y - min.y) * 0.5f,
-        (max.z - min.z) * 0.5f);
+        (max.x + min.x) * 0.5f,
+        (max.y + min.y) * 0.5f,
+        (max.z + min.z) * 0.5f);
 }
 
 //

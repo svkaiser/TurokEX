@@ -661,6 +661,10 @@
 				Name="geometry"
 				>
 				<File
+					RelativePath="..\turok\geometry\clipmesh.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\geometry\triangle.cpp"
 					>
 				</File>
@@ -917,6 +921,10 @@
 			<Filter
 				Name="geometry"
 				>
+				<File
+					RelativePath="..\turok\geometry\clipmesh.h"
+					>
+				</File>
 				<File
 					RelativePath="..\turok\geometry\triangle.h"
 					>

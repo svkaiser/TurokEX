@@ -1,7 +1,7 @@
 // Emacs style mode select   -*- C++ -*- 
 //-----------------------------------------------------------------------------
 //
-// Copyright(C) 2012 Samuel Villarreal
+// Copyright(C) 2013 Samuel Villarreal
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -19,62 +19,32 @@
 // 02111-1307, USA.
 //
 //-----------------------------------------------------------------------------
-//
-// DESCRIPTION: Main game code
-//
-//-----------------------------------------------------------------------------
 
-#include "common.h"
-#include "client.h"
-#include "server.h"
-#include "system.h"
+#ifndef __CLIPMESH_H__
+#define __CLIPMESH_H__
+
 #include "mathlib.h"
-#include "level.h"
-#include "zone.h"
-#include "game.h"
-#include "packet.h"
-#include "js.h"
-#include "js_shared.h"
+#include "triangle.h"
 
-//
-// G_Shutdown
-//
+class kexClipMesh {
+public:
+                        kexClipMesh(void);
+                        ~kexClipMesh(void);
+                        
+    void                CreateBox(const kexBBox &bbox);
+    void                CreateTetrahedron(const kexBBox &bbox);
+    void                CreateOctahedron(const kexBBox &bbox);
+    void                CreateDodecahedron(const kexBBox &bbox);
+    void                DebugDraw(void);
 
-void G_Shutdown(void)
-{
-    Z_FreeTags(PU_LEVEL, PU_LEVEL);
-    Z_FreeTags(PU_ACTOR, PU_ACTOR);
-    Z_FreeTags(PU_CM, PU_CM);
-}
+private:
+    unsigned int        numPoints;    
+    kexVec3             *points;
+    unsigned int        numIndices;
+    word                *indices;
+    unsigned int        numTriangles;
+    kexTri              *triangles;
+    kexVec3             origin;
+};
 
-//
-// G_Ticker
-//
-
-void G_Ticker(void)
-{
-    Actor_Tick();
-    Map_Tick();
-}
-
-//
-// G_ClientThink
-//
-
-void G_ClientThink(void)
-{
-    Actor_LocalTick();
-}
-
-//
-// G_Init
-//
-
-void G_Init(void)
-{
-    jsval val;
-
-    Map_Init();
-    JS_CallFunctionName(js_context, js_objGame, "main", 0, NULL, &val);
-}
-
+#endif

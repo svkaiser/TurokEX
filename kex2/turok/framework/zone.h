@@ -60,6 +60,7 @@ enum
    PU_AI,
    PU_SCRIPT,
    PU_OBJECT,
+   PU_CM,
    PU_CACHE,   // block is cached (may be implicitly freed at any time!)
    PU_MAX      // Must always be last -- killough
 };
