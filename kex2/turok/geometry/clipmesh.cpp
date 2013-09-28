@@ -110,17 +110,6 @@ void kexClipMesh::CreateBox(const kexBBox &bbox) {
     points[7].x = bbox.min[0];
     points[7].y = bbox.max[1];
     points[7].z = bbox.min[2];
-    
-    for(unsigned int i = 0; i < numTriangles; i++) {
-        triangles[i].point[0] = &points[indices[i * 3 + 0]];
-        triangles[i].point[1] = &points[indices[i * 3 + 1]];
-        triangles[i].point[2] = &points[indices[i * 3 + 2]];
-        triangles[i].plane.SetNormal(
-            *triangles[i].point[0],
-            *triangles[i].point[1],
-            *triangles[i].point[2]);
-        triangles[i].plane.SetDistance(*triangles[i].point[0]);
-    }
 }
 
 //
@@ -195,17 +184,6 @@ void kexClipMesh::CreateOctahedron(const kexBBox &bbox) {
     points[3] = origin + kexVec3(0, -s.y, 0);
     points[4] = origin + kexVec3(0, 0, s.z);
     points[5] = origin + kexVec3(0, 0, -s.z);
-
-    for(unsigned int i = 0; i < numTriangles; i++) {
-        triangles[i].point[0] = &points[indices[i * 3 + 0]];
-        triangles[i].point[1] = &points[indices[i * 3 + 1]];
-        triangles[i].point[2] = &points[indices[i * 3 + 2]];
-        triangles[i].plane.SetNormal(
-            *triangles[i].point[0],
-            *triangles[i].point[1],
-            *triangles[i].point[2]);
-        triangles[i].plane.SetDistance(*triangles[i].point[0]);
-    }
 }
 
 //
@@ -300,6 +278,31 @@ void kexClipMesh::CreateDodecahedron(const kexBBox &bbox) {
     points[17].Set(origin[0]       , origin[1] + c[1], origin[2] + b[0]);
     points[18].Set(origin[0]       , origin[1] - c[1], origin[2] - b[0]);
     points[19].Set(origin[0]       , origin[1] - c[1], origin[2] + b[0]);
+}
+
+//
+// kexClipMesh::CreateShapeFromBounds
+//
+
+void kexClipMesh::CreateShapeFromBounds(const kexBBox &bbox) {
+    switch(type) {
+    case CMT_BOX:
+        CreateBox(bbox);
+        break;
+    case CMT_TETRAHEDRON:
+        CreateTetrahedron(bbox);
+        break;
+    case CMT_OCTAHEDRON:
+        CreateOctahedron(bbox);
+        break;
+    case CMT_DODECAHEDRON:
+        CreateDodecahedron(bbox);
+        break;
+    case CMT_CONVEXHULL:
+    case CMT_MESH:
+    case CMT_CUSTOM:
+        return;
+    }
 
     for(unsigned int i = 0; i < numTriangles; i++) {
         triangles[i].point[0] = &points[indices[i * 3 + 0]];

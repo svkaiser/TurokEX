@@ -26,25 +26,41 @@
 #include "mathlib.h"
 #include "triangle.h"
 
+typedef enum {
+    CMT_BOX             = 0,
+    CMT_TETRAHEDRON     = 1,
+    CMT_OCTAHEDRON      = 2,
+    CMT_DODECAHEDRON    = 3,
+    CMT_CONVEXHULL      = 4,
+    CMT_MESH            = 5,
+    CMT_CUSTOM          = 6
+} clipMeshType_t;
+
 class kexClipMesh {
 public:
-                        kexClipMesh(void);
-                        ~kexClipMesh(void);
+                            kexClipMesh(void);
+                            ~kexClipMesh(void);
                         
-    void                CreateBox(const kexBBox &bbox);
-    void                CreateTetrahedron(const kexBBox &bbox);
-    void                CreateOctahedron(const kexBBox &bbox);
-    void                CreateDodecahedron(const kexBBox &bbox);
-    void                DebugDraw(void);
+    void                    DebugDraw(void);
+    void                    CreateShapeFromBounds(const kexBBox &bbox);
+
+    const clipMeshType_t    GetType(void) const { return type; }
+    void                    SetType(const clipMeshType_t _type) { type = _type; }
 
 private:
-    unsigned int        numPoints;    
-    kexVec3             *points;
-    unsigned int        numIndices;
-    word                *indices;
-    unsigned int        numTriangles;
-    kexTri              *triangles;
-    kexVec3             origin;
+    void                    CreateBox(const kexBBox &bbox);
+    void                    CreateTetrahedron(const kexBBox &bbox);
+    void                    CreateOctahedron(const kexBBox &bbox);
+    void                    CreateDodecahedron(const kexBBox &bbox);
+
+    unsigned int            numPoints;    
+    kexVec3                 *points;
+    unsigned int            numIndices;
+    word                    *indices;
+    unsigned int            numTriangles;
+    kexTri                  *triangles;
+    kexVec3                 origin;
+    clipMeshType_t          type;
 };
 
 #endif
