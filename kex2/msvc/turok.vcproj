@@ -902,6 +902,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\physics.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\player.h"
 					>
 				</File>

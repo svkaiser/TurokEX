@@ -70,9 +70,6 @@ DECLARE_ABSTRACT_CLASS(kexActor, kexObject)
 //
 
 kexActor::kexActor(void) {
-    this->mass          = 1200;
-    this->friction      = 1.0f;
-    this->airFriction   = 1.0f;
     this->refCount      = 0;
     this->bStatic       = true;
     this->bCollision    = false;
@@ -82,8 +79,11 @@ kexActor::kexActor(void) {
     this->owner         = NULL;
     this->target        = NULL;
     this->model         = NULL;
+    this->gridBound     = NULL;
     
     this->attachment.SetOwner(this);
+    this->physics.SetOwner(this);
+
     this->scale.Set(1, 1, 1);
 }
 
@@ -169,8 +169,6 @@ enum {
     scactor_bHidden,
     scactor_bStatic,
     scactor_bTouch,
-    scactor_bOrientOnSlope,
-    scactor_bRotor,
     scactor_origin,
     scactor_scale,
     scactor_angles,
@@ -182,14 +180,9 @@ enum {
     scactor_targetID,
     scactor_modelVariant,
     scactor_cullDistance,
-    scactor_friction,
-    scactor_mass,
-    scactor_bounceDamp,
-    scactor_physics,
-    scactor_rotorSpeed,
-    scactor_rotorVector,
-    scactor_rotorFriction,
     scactor_tickDistance,
+    scactor_physics,
+    scactor_clipmesh,
     scactor_end
 };
 
@@ -203,8 +196,6 @@ static const sctokens_t mapactortokens[scactor_end+1] = {
     { scactor_bHidden,          "bHidden"           },
     { scactor_bStatic,          "bStatic"           },
     { scactor_bTouch,           "bTouch"            },
-    { scactor_bOrientOnSlope,   "bOrientOnSlope"    },
-    { scactor_bRotor,           "bRotor"            },
     { scactor_origin,           "origin"            },
     { scactor_scale,            "scale"             },
     { scactor_angles,           "angles"            },
@@ -216,14 +207,9 @@ static const sctokens_t mapactortokens[scactor_end+1] = {
     { scactor_targetID,         "targetID"          },
     { scactor_modelVariant,     "modelVariant"      },
     { scactor_cullDistance,     "cullDistance"      },
-    { scactor_friction,         "friction"          },
-    { scactor_mass,             "mass"              },
-    { scactor_bounceDamp,       "bounceDamp"        },
-    { scactor_physics,          "physics"           },
-    { scactor_rotorSpeed,       "rotorSpeed"        },
-    { scactor_rotorVector,      "rotorVector"       },
-    { scactor_rotorFriction,    "rotorFriction"     },
     { scactor_tickDistance,     "tickDistance"      },
+    { scactor_physics,          "physics"           },
+    { scactor_clipmesh,         "clipMesh"          },
     { -1,                       NULL                }
 };
 
@@ -241,13 +227,12 @@ kexWorldActor::kexWorldActor(void) {
 
     this->worldLink.SetData(this);
     this->scriptComponent.SetOwner(this);
+    this->clipMesh.SetOwner(this);
 
     this->radius            = 30.72f;
     this->baseHeight        = 30.72f;
     this->viewHeight        = 16.384f;
     this->centerHeight      = 10.24f;
-    this->bRotor            = false;
-    this->bOrientOnSlope    = false;
     this->bbox              = baseBBox;
 }
 
@@ -287,6 +272,9 @@ void kexWorldActor::Spawn(void) {
         bCollision = false;
         viewHeight = baseHeight * 0.5f;
     }
+
+    clipMesh.CreateShape();
+    clipMesh.Transform();
 }
 
 //
@@ -373,12 +361,6 @@ void kexWorldActor::ParseDefault(kexLexer *lexer) {
     case scactor_bTouch:
         bTouch = (lexer->GetNumber() > 0);
         break;
-    case scactor_bOrientOnSlope:
-        bOrientOnSlope = (lexer->GetNumber() > 0);
-        break;
-    case scactor_bRotor:
-        bRotor = (lexer->GetNumber() > 0);
-        break;
     case scactor_radius:
         radius = (float)lexer->GetFloat();
         break;
@@ -400,29 +382,14 @@ void kexWorldActor::ParseDefault(kexLexer *lexer) {
     case scactor_cullDistance:
         cullDistance = (float)lexer->GetFloat();
         break;
-    case scactor_friction:
-        friction = (float)lexer->GetFloat();
-        break;
-    case scactor_mass:
-        mass = (float)lexer->GetFloat();
-        break;
-    case scactor_bounceDamp:
-        bounceDamp = (float)lexer->GetFloat();
-        break;
-    case scactor_physics:
-        physics = lexer->GetNumber();
-        break;
-    case scactor_rotorSpeed:
-        rotorSpeed = (float)lexer->GetFloat();
-        break;
-    case scactor_rotorVector:
-        rotorVector = lexer->GetVector3();
-        break;
-    case scactor_rotorFriction:
-        rotorFriction = (float)lexer->GetFloat();
-        break;
     case scactor_tickDistance:
         tickDistance = (float)lexer->GetFloat();
+        break;
+    case scactor_physics:
+        physics.Parse(lexer);
+        break;
+    case scactor_clipmesh:
+        clipMesh.Parse(lexer);
         break;
     default:
         if(lexer->TokenType() == TK_IDENIFIER) {
@@ -453,13 +420,13 @@ void kexWorldActor::Parse(kexLexer *lexer) {
 //
 
 void kexWorldActor::UpdateTransform(void) {
-    if(bRotor) {
-        angles.yaw      += (rotorVector.y * rotorSpeed * timeStamp);
-        angles.pitch    += (rotorVector.x * rotorSpeed * timeStamp);
-        angles.roll     += (rotorVector.z * rotorSpeed * timeStamp);
+    if(physics.bRotor) {
+        angles.yaw      += (physics.rotorVector.y * physics.rotorSpeed * timeStamp);
+        angles.pitch    += (physics.rotorVector.x * physics.rotorSpeed * timeStamp);
+        angles.roll     += (physics.rotorVector.z * physics.rotorSpeed * timeStamp);
     }
 
-    if(!bStatic || bRotor) {
+    if(!bStatic || physics.bRotor) {
         angles.Clamp180();
         rotation =
             kexQuat(angles.pitch, kexVec3::vecRight) *
@@ -718,9 +685,6 @@ void kexWorldActor::InitObject(void) {
     OBJPROPERTY("float centerHeight", centerHeight);
     OBJPROPERTY("float viewHeight", viewHeight);
     OBJPROPERTY("kQuat lerpRotation", lerpRotation);
-    OBJPROPERTY("float rotorSpeed", rotorSpeed);
-    OBJPROPERTY("float rotorFriction", rotorFriction);
-    OBJPROPERTY("kVec3 rotorVector", rotorVector);
 
 #undef OBJPROPERTY
 

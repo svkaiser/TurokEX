@@ -36,6 +36,7 @@ public:
     type            *GetData(void) const;
     type            *Next(void) const;
     type            *Prev(void) const;
+    bool            Contains(type *check);
     
 private:
     kexLinklist     *next;
@@ -122,6 +123,19 @@ void kexLinklist<type>::SetData(type *src) {
 template<class type>
 type *kexLinklist<type>::GetData(void) const {
     return data;
+}
+
+//
+// kexLinklist::Contains
+//
+template<class type>
+bool kexLinklist<type>::Contains(type *check) {
+    for(kexLinklist<type> *link = next; link != this; link = link->next) {
+        if(data == check) {
+            return true;
+        }
+    }
+    return false;
 }
 
 #endif

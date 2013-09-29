@@ -110,6 +110,51 @@ kexVec3 kexBBox::Center(void) const {
 }
 
 //
+// kexBBox::Radius
+//
+
+float kexBBox::Radius(void) const {
+    return (max - Center()).Unit();
+}
+
+//
+// kexBBox::PointInside
+//
+
+bool kexBBox::PointInside(const kexVec3 &vec) const {
+    return !(vec[0] < min[0] || vec[1] < min[1] || vec[2] < min[2] ||
+             vec[0] > max[0] || vec[1] > max[1] || vec[2] > max[2]);
+}
+
+//
+// kexBBox::IntersectingBox
+//
+
+bool kexBBox::IntersectingBox(const kexBBox &box) const {
+    return !(box.max[0] < min[0] || box.max[1] < min[1] || box.max[2] < min[2] ||
+             box.min[0] > max[0] || box.min[1] > max[1] || box.min[2] > max[2]);
+}
+
+//
+// kexBBox::operator+
+//
+
+kexBBox kexBBox::operator+(const float radius) const {
+    kexVec3 vmin = min;
+    kexVec3 vmax = max;
+
+    vmin.x -= radius;
+    vmin.y -= radius;
+    vmin.z -= radius;
+
+    vmax.x += radius;
+    vmax.y += radius;
+    vmax.z += radius;
+
+    return kexBBox(vmin, vmax);
+}
+
+//
 // kexBBox::operator|
 //
 

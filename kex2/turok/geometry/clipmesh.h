@@ -24,43 +24,58 @@
 #define __CLIPMESH_H__
 
 #include "mathlib.h"
+#include "script.h"
 #include "triangle.h"
 
 typedef enum {
-    CMT_BOX             = 0,
-    CMT_TETRAHEDRON     = 1,
-    CMT_OCTAHEDRON      = 2,
-    CMT_DODECAHEDRON    = 3,
-    CMT_CONVEXHULL      = 4,
-    CMT_MESH            = 5,
-    CMT_CUSTOM          = 6
+    CMT_NONE            = 0,
+    CMT_BOX             = 1,
+    CMT_TETRAHEDRON     = 2,
+    CMT_OCTAHEDRON      = 3,
+    CMT_DODECAHEDRON    = 4,
+    CMT_CONVEXHULL      = 5,
+    CMT_MESH            = 6,
+    CMT_CUSTOM          = 7
 } clipMeshType_t;
+
+class kexWorldActor;
 
 class kexClipMesh {
 public:
                             kexClipMesh(void);
                             ~kexClipMesh(void);
-                        
+
+    void                    Parse(kexLexer *lexer);
     void                    DebugDraw(void);
-    void                    CreateShapeFromBounds(const kexBBox &bbox);
+    void                    CreateShape(void);
+    void                    Transform(void);
 
     const clipMeshType_t    GetType(void) const { return type; }
     void                    SetType(const clipMeshType_t _type) { type = _type; }
+    kexWorldActor           *GetOwner(void) { return owner; }
+    void                    SetOwner(kexWorldActor *actor) { owner = actor; }
 
 private:
     void                    CreateBox(const kexBBox &bbox);
     void                    CreateTetrahedron(const kexBBox &bbox);
     void                    CreateOctahedron(const kexBBox &bbox);
     void                    CreateDodecahedron(const kexBBox &bbox);
+    void                    CreateMeshFromModel(void);
 
-    unsigned int            numPoints;    
-    kexVec3                 *points;
-    unsigned int            numIndices;
-    word                    *indices;
-    unsigned int            numTriangles;
-    kexTri                  *triangles;
+    typedef struct {
+        unsigned int        numPoints;    
+        kexVec3             *points;
+        unsigned int        numIndices;
+        word                *indices;
+        unsigned int        numTriangles;
+        kexTri              *triangles;
+    } cmGroup_t;
+
+    unsigned int            numGroups;
+    cmGroup_t               *cmGroups;
     kexVec3                 origin;
     clipMeshType_t          type;
+    kexWorldActor           *owner;
 };
 
 #endif

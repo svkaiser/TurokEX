@@ -28,60 +28,64 @@
 #include "linkedlist.h"
 #include "camera.h"
 
-typedef struct {
-    kexBBox                         box;
-    kexLinklist<kexWorldActor>      staticActors;
-    kexLinklist<kexWorldActor>      linkedActors;
+typedef struct gridBound_s {
+    kexBBox                             box;
+    kexLinklist<kexWorldActor>          staticActors;
+    kexLinklist<kexWorldActor>          linkedActors;
+    kexPtrArray<struct gridBound_s*>    linkedBounds;
 } gridBound_t;
 
 class kexWorld {
 public:
-                                    kexWorld(void);
-                                    ~kexWorld(void);
+                                        kexWorld(void);
+                                        ~kexWorld(void);
 
-    void                            Init(void);
-    void                            Tick(void);
-    void                            LocalTick(void);
-    void                            Load(const char *mapFile);
-    void                            Unload(void);
-    const char                      *GetMapFileFromID(const int id);
-    kexWorldActor                   *ConstructActor(const char *className);
-    void                            AddActor(kexWorldActor *actor);
-    kexWorldActor                   *SpawnActor(const char *className,
-                                        const kexVec3 &origin, const kexAngle &angles);
-    void                            RemoveActor(kexWorldActor *actor);
-    void                            SpawnLocalPlayer(void);
+    void                                Init(void);
+    void                                Tick(void);
+    void                                LocalTick(void);
+    void                                Load(const char *mapFile);
+    void                                Unload(void);
+    const char                          *GetMapFileFromID(const int id);
+    kexWorldActor                       *ConstructActor(const char *className);
+    void                                AddActor(kexWorldActor *actor);
+    kexWorldActor                       *SpawnActor(const char *className,
+                                            const kexVec3 &origin, const kexAngle &angles);
+    void                                RemoveActor(kexWorldActor *actor);
+    void                                SpawnLocalPlayer(void);
 
-    bool                            IsLoaded(void) const { return bLoaded; }
-    float                           DeltaTime(void) { return deltaTime; }
-    kexCamera                       *Camera(void) { return &camera; };
+    bool                                IsLoaded(void) const { return bLoaded; }
+    float                               DeltaTime(void) { return deltaTime; }
+    kexCamera                           *Camera(void) { return &camera; };
+    kexVec3                             &GetGravity(void) { return gravity; }
+    void                                SetGravity(const kexVec3 &in) { gravity = in; }
 
-    kexLinklist<kexWorldActor>      actors;
-    kexPtrArray<gridBound_t*>       gridBounds;
+    kexLinklist<kexWorldActor>          actors;
+    kexPtrArray<gridBound_t*>           gridBounds;
 
-    kexWorldActor                   *actorRover;
+    kexWorldActor                       *actorRover;
     // TEMP
-    kexVec4                         worldLightOrigin;
-    kexVec4                         worldLightColor;
-    kexVec4                         worldLightAmbience;
-    kexVec4                         worldLightModelAmbience;
+    kexVec4                             worldLightOrigin;
+    kexVec4                             worldLightColor;
+    kexVec4                             worldLightAmbience;
+    kexVec4                             worldLightModelAmbience;
     //
 
-    static void                     InitObject(void);
+    static void                         InitObject(void);
 
 private:
-    void                            ParseGridBound(kexLexer *lexer);
+    void                                ParseGridBound(kexLexer *lexer);
+    void                                LinkGridBounds(void);
 
-    bool                            bLoaded;
-    bool                            bReadyUnload;
-    int                             mapID;
-    int                             nextMapID;
-    kexStr                          title;
-    kexCamera                       camera;
-    
-    int                             ticks;
-    float                           time;
-    float                           deltaTime;
+    bool                                bLoaded;
+    bool                                bReadyUnload;
+    int                                 mapID;
+    int                                 nextMapID;
+    kexStr                              title;
+    kexCamera                           camera;
+    kexVec3                             gravity;
+    int                                 ticks;
+    float                               time;
+    float                               deltaTime;
 };
 
 extern kexWorld localWorld;

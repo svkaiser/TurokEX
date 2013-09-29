@@ -29,6 +29,7 @@
 #include "fileSystem.h"
 #include "zone.h"
 #include "world.h"
+#include "physics.h"
 #include "scriptAPI/scriptSystem.h"
 
 kexScriptManager scriptManager;
@@ -284,6 +285,7 @@ void kexScriptManager::RegisterObjects(void) {
     kexCamera::InitObject();
     kexLocalPlayer::InitObject();
     kexWorld::InitObject();
+    kexPhysics::InitObject();
 }
 
 //

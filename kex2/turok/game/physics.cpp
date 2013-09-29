@@ -29,6 +29,305 @@
 #include "game.h"
 #include "actor_old.h"
 #include "level.h"
+#include "world.h"
+#include "physics.h"
+
+enum {
+    scPhysics_mass = 0,
+    scPhysics_friction,
+    scPhysics_airFriction,
+    scPhysics_bounceDamp,
+    scPhysics_rotorSpeed,
+    scPhysics_rotorFriction,
+    scPhysics_bRotor,
+    scPhysics_bOrientOnSlope,
+    scPhysics_rotorVector,
+    scPhysics_end
+};
+
+static const sctokens_t physicsTokens[scPhysics_end+1] = {
+    { scPhysics_mass,           "mass"                  },
+    { scPhysics_friction,       "friction"              },
+    { scPhysics_airFriction,    "airFriction"           },
+    { scPhysics_bounceDamp,     "bounceDamp"            },
+    { scPhysics_rotorSpeed,     "rotorSpeed"            },
+    { scPhysics_rotorFriction,  "rotorFriction"         },
+    { scPhysics_bRotor,         "bRotor"                },
+    { scPhysics_bOrientOnSlope, "bOrientOnSlope"        },
+    { scPhysics_rotorVector,    "rotorVector"           },
+    { -1,                       NULL                    }
+};
+
+//
+// kexPhysics::kexPhysics
+//
+
+kexPhysics::kexPhysics(void) {
+    this->owner             = NULL;
+    this->hitMesh           = NULL;
+    this->hitTri            = NULL;
+    this->mass              = 1200;
+    this->friction          = 1;
+    this->airFriction       = 1;
+    this->bounceDamp        = 0;
+    this->rotorSpeed        = 0;
+    this->rotorFriction     = 1;
+    this->bRotor            = false;
+    this->bOrientOnSlope    = false;
+    this->waterLevel        = WLT_INVALID;
+
+    this->rotorVector.Clear();
+    this->velocity.Clear();
+}
+
+//
+// kexPhysics::~kexPhysics
+//
+
+kexPhysics::~kexPhysics(void) {
+}
+
+//
+// kexPhysics::Parse
+//
+
+void kexPhysics::Parse(kexLexer *lexer) {
+    // read into nested block
+    lexer->ExpectNextToken(TK_LBRACK);
+    lexer->Find();
+
+    while(lexer->TokenType() != TK_RBRACK) {
+        switch(lexer->GetIDForTokenList(physicsTokens, lexer->Token())) {
+        case scPhysics_mass:
+            this->mass = (float)lexer->GetFloat();
+            break;
+        case scPhysics_friction:
+            this->friction = (float)lexer->GetFloat();
+            break;
+        case scPhysics_airFriction:
+            this->airFriction = (float)lexer->GetFloat();
+            break;
+        case scPhysics_bounceDamp:
+            this->bounceDamp = (float)lexer->GetFloat();
+            break;
+        case scPhysics_rotorSpeed:
+            this->rotorSpeed = (float)lexer->GetFloat();
+            break;
+        case scPhysics_rotorFriction:
+            this->rotorFriction = (float)lexer->GetFloat();
+            break;
+        case scPhysics_bRotor:
+            this->bRotor = (lexer->GetNumber() > 0);
+            break;
+        case scPhysics_bOrientOnSlope:
+            this->bRotor = (lexer->GetNumber() > 0);
+            break;
+        case scPhysics_rotorVector:
+            this->rotorVector = lexer->GetVector3();
+            break;
+        default:
+            if(lexer->TokenType() == TK_IDENIFIER) {
+                parser.Error("kexPhysics::Parse: unknown token: %s\n",
+                    lexer->Token());
+            }
+            break;
+        }
+        
+        lexer->Find();
+    }
+}
+
+//
+// kexPhysics::GroundDistance
+//
+
+float kexPhysics::GroundDistance(void) {
+    kexVec3 org = owner->GetOrigin();
+    return org.y - hitTri->GetDistance(org);
+}
+
+//
+// kexPhysics::OnGround
+//
+
+bool kexPhysics::OnGround(void) {
+    return GroundDistance() <= ONPLANE_EPSILON;
+}
+
+//
+// kexPhysics::ImpactVelocity
+//
+
+void kexPhysics::ImpactVelocity(kexVec3 &normal, const float force) {
+    kexVec3 dir = velocity;
+    float d = velocity.Unit();
+    float bounce = force;
+
+    if(bounceDamp != 0) {
+        if(d >= 1.05f) {
+            bounce = (1 + force);
+
+            if(d < 16.8f && force < 1.0f)
+                bounce = 0.2f;
+        }
+    }
+
+    velocity = dir - (normal * (dir.Dot(normal) * bounce));
+
+    if(d != 0) {
+        velocity *= (dir.Unit() / d);
+    }
+}
+
+//
+// kexPhysics::ProjectOnCrease
+//
+
+void kexPhysics::ProjectOnCrease(const kexVec3 &n1, const kexVec3 &n2) {
+    kexVec3 dir = n1.Cross(n2).Normalize();
+    velocity = (dir * (velocity.Dot(dir)));
+}
+
+//
+// kexPhysics::ApplyGravity
+//
+
+void kexPhysics::ApplyGravity(const float timeDelta) {
+    if(GroundDistance() > 0.01f)
+        velocity -= (localWorld.GetGravity() * (mass * timeDelta));
+}
+
+//
+// kexPhysics::ApplyFriction
+//
+
+void kexPhysics::ApplyFriction(void) {
+    float speed;
+
+    speed = velocity.Unit();
+
+    if(speed < VELOCITY_EPSILON) {
+        velocity.x = 0;
+        velocity.z = 0;
+    }
+    else {
+        float clipspeed = speed - (speed * friction);
+
+        if(clipspeed < 0) {
+            clipspeed = 0;
+        }
+
+        clipspeed /= speed;
+
+        // de-accelerate velocity
+        velocity.x = velocity.x * clipspeed;
+        velocity.z = velocity.z * clipspeed;
+    }
+
+    speed = velocity.y;
+
+    if(speed < VELOCITY_EPSILON) {
+        velocity.y = 0;
+    }
+    else {
+        float clipspeed = speed - (speed * airFriction);
+
+        if(clipspeed < 0) {
+            clipspeed = 0;
+        }
+
+        clipspeed /= speed;
+
+        // de-accelerate velocity
+        velocity.y = velocity.y * clipspeed;
+    }
+}
+
+//
+// kexPhysics::Think
+//
+
+void kexPhysics::Think(const float timeDelta) {
+    if(owner == NULL || owner->bCollision == false) {
+        return;
+    }
+
+    owner->SetOrigin(owner->GetOrigin() + (velocity * timeDelta));
+    ApplyFriction();
+}
+
+//
+// kexPhysics::InitObject
+//
+
+void kexPhysics::InitObject(void) {
+    scriptManager.Engine()->RegisterObjectType(
+        "kPhysics",
+        sizeof(kexPhysics),
+        asOBJ_REF | asOBJ_NOCOUNT);
+
+#define OBJMETHOD(str, a, b, c)                     \
+    scriptManager.Engine()->RegisterObjectMethod(   \
+        "kPhysics",                                 \
+        str,                                        \
+        asMETHODPR(kexPhysics, a, b, c),            \
+        asCALL_THISCALL)
+
+    OBJMETHOD("kActor @GetOwner(void)", GetOwner, (void), kexActor*);
+    OBJMETHOD("void SetOwner(kActor@)", SetOwner, (kexActor *o), void);
+    OBJMETHOD("kVec3 &GetVelocity(void)", GetVelocity, (void), kexVec3&);
+    OBJMETHOD("void SetVelocity(const kVec3 &in)", SetVelocity, (const kexVec3 &vel), void);
+
+#define OBJPROPERTY(str, p)                         \
+    scriptManager.Engine()->RegisterObjectProperty( \
+        "kPhysics",                                 \
+        str,                                        \
+        asOFFSET(kexPhysics, p))
+
+    OBJPROPERTY("bool bRotor", bRotor);
+    OBJPROPERTY("bool bOrientOnSlope", bOrientOnSlope);
+    OBJPROPERTY("float friction", friction);
+    OBJPROPERTY("float airFriction", airFriction);
+    OBJPROPERTY("float mass", mass);
+    OBJPROPERTY("float bounceDamp", bounceDamp);
+    OBJPROPERTY("float rotorSpeed", rotorSpeed);
+    OBJPROPERTY("float rotorFriction", rotorFriction);
+    OBJPROPERTY("kVec3 rotorVector", rotorVector);
+
+#undef OBJMETHOD
+#undef OBJPROPERTY
+
+    scriptManager.Engine()->RegisterEnum("EnumWaterLevelType");
+    scriptManager.Engine()->RegisterEnumValue("EnumWaterLevelType","WLT_INVALID", WLT_INVALID);
+    scriptManager.Engine()->RegisterEnumValue("EnumWaterLevelType","WLT_OVER", WLT_OVER);
+    scriptManager.Engine()->RegisterEnumValue("EnumWaterLevelType","WLT_BETWEEN", WLT_BETWEEN);
+    scriptManager.Engine()->RegisterEnumValue("EnumWaterLevelType","WLT_UNDER", WLT_UNDER);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kActor",
+        "kPhysics @Physics(void)",
+        asMETHODPR(kexWorldActor, Physics, (void), kexPhysics*),
+        asCALL_THISCALL);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #define TRYMOVE_COUNT   3
 

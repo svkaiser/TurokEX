@@ -1172,7 +1172,7 @@ void R_Shutdown(void)
 
 void R_Init(void)
 {
-    command.Add("showcollision", FCmd_ShowCollision);
+    //command.Add("showcollision", FCmd_ShowCollision);
     command.Add("showbbox", FCmd_ShowBoundingBox);
     command.Add("showgrid", FCmd_ShowGrid);
     command.Add("showorigin", FCmd_ShowOrigin);

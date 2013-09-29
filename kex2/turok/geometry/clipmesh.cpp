@@ -27,19 +27,28 @@
 #include "common.h"
 #include "zone.h"
 #include "clipmesh.h"
+#include "actor.h"
 #include "renderSystem.h"
+
+enum {
+    scClipMesh_type = 0,
+    scClipMesh_end
+};
+
+static const sctokens_t clipMeshTokens[scClipMesh_end+1] = {
+    { scClipMesh_type,           "type"                 },
+    { -1,                       NULL                    }
+};
 
 //
 // kexClipMesh::kexClipMesh
 //
 
 kexClipMesh::kexClipMesh(void) {
-    this->numPoints     = 0;
-    this->points        = NULL;
-    this->numIndices    = 0;
-    this->indices       = NULL;
-    this->numTriangles  = 0;
-    this->triangles     = NULL;
+    this->numGroups = 0;
+    this->owner     = NULL;
+    this->cmGroups  = NULL;
+    this->type      = CMT_NONE;
 
     this->origin.Set(0, 0, 0);
 }
@@ -49,18 +58,53 @@ kexClipMesh::kexClipMesh(void) {
 //
 
 kexClipMesh::~kexClipMesh(void) {
-    this->numPoints     = 0;
-    this->numIndices    = 0;
-    this->numTriangles  = 0;
-    
-    if(this->points) {
-        Z_Free(this->points);
+    if(this->cmGroups) {
+        for(unsigned int i = 0; i < this->numGroups; i++) {
+            this->cmGroups[i].numPoints     = 0;
+            this->cmGroups[i].numIndices    = 0;
+            this->cmGroups[i].numTriangles  = 0;
+            if(this->cmGroups[i].points) {
+                Z_Free(this->cmGroups[i].points);
+                this->cmGroups[i].points = NULL;
+            }
+            if(this->cmGroups[i].indices) {
+                Z_Free(this->cmGroups[i].indices);
+                this->cmGroups[i].indices = NULL;
+            }
+            if(this->cmGroups[i].triangles) {
+                Z_Free(this->cmGroups[i].triangles);
+                this->cmGroups[i].triangles = NULL;
+            }
+        }
+
+        this->numGroups = 0;
+        Z_Free(this->cmGroups);
     }
-    if(this->indices) {
-        Z_Free(this->indices);
-    }
-    if(this->triangles) {
-        Z_Free(this->triangles);
+}
+
+//
+// kexClipMesh::Parse
+//
+
+void kexClipMesh::Parse(kexLexer *lexer) {
+    // read into nested block
+    lexer->ExpectNextToken(TK_LBRACK);
+    lexer->Find();
+
+    while(lexer->TokenType() != TK_RBRACK) {
+        switch(lexer->GetIDForTokenList(clipMeshTokens, lexer->Token())) {
+        case scClipMesh_type:
+            type = (clipMeshType_t)lexer->GetNumber();
+            break;
+        default:
+            if(lexer->TokenType() == TK_IDENIFIER) {
+                parser.Error("kexClipMesh::Parse: unknown token: %s\n",
+                    lexer->Token());
+            }
+            break;
+        }
+
+        lexer->Find();
     }
 }
 
@@ -69,13 +113,20 @@ kexClipMesh::~kexClipMesh(void) {
 //
 
 void kexClipMesh::CreateBox(const kexBBox &bbox) {
-    numPoints       = 8;
-    numIndices      = 36;
-    numTriangles    = 12;
-    origin          = bbox.Center();
-    points          = (kexVec3*)Z_Calloc(sizeof(kexVec3) * numPoints, PU_CM, NULL);
-    indices         = (word*)Z_Calloc(sizeof(word) * numIndices, PU_CM, NULL);
-    triangles       = (kexTri*)Z_Calloc(sizeof(kexTri) * numTriangles, PU_CM, NULL);
+    cmGroup_t *cmGroup;
+
+    origin                  = bbox.Center();
+    numGroups               = 1;
+    cmGroups                = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+    cmGroup                 = &cmGroups[0];
+    cmGroup->numPoints      = 8;
+    cmGroup->numIndices     = 36;
+    cmGroup->numTriangles   = 12;
+    cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
+    cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
+    cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
+    word *indices           = cmGroup->indices;
+    kexVec3 *points         = cmGroup->points;
     
     indices[ 0] = 0; indices[ 1] = 1; indices[ 2] = 3;
     indices[ 3] = 4; indices[ 4] = 7; indices[ 5] = 5;
@@ -121,15 +172,21 @@ void kexClipMesh::CreateTetrahedron(const kexBBox &bbox) {
     float c2 = 0.8164965809f;
     float c3 = -0.3333333333f;
     kexVec3 s;
+    cmGroup_t *cmGroup;
 
-    numPoints       = 4;
-    numIndices      = 12;
-    numTriangles    = 4;
-    origin          = bbox.Center();
-    s               = bbox.max - origin;
-    points          = (kexVec3*)Z_Calloc(sizeof(kexVec3) * numPoints, PU_CM, NULL);
-    indices         = (word*)Z_Calloc(sizeof(word) * numIndices, PU_CM, NULL);
-    triangles       = (kexTri*)Z_Calloc(sizeof(kexTri) * numTriangles, PU_CM, NULL);
+    origin                  = bbox.Center();
+    s                       = bbox.max - origin;
+    numGroups               = 1;
+    cmGroups                = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+    cmGroup                 = &cmGroups[0];
+    cmGroup->numPoints      = 4;
+    cmGroup->numIndices     = 12;
+    cmGroup->numTriangles   = 4;
+    cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
+    cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
+    cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
+    word *indices           = cmGroup->indices;
+    kexVec3 *points         = cmGroup->points;
 
     indices[ 0] = 0; indices[ 1] = 1; indices[ 2] = 2;
     indices[ 3] = 0; indices[ 4] = 2; indices[ 5] = 3;
@@ -140,17 +197,6 @@ void kexClipMesh::CreateTetrahedron(const kexBBox &bbox) {
     points[1] = origin + kexVec3(2.0f * c1 * s.x, 0, c3 * s.z);
     points[2] = origin + kexVec3(-c1 * s.x, c2 * s.y, c3 * s.z);
     points[3] = origin + kexVec3(-c1 * s.x, -c2 * s.y, c3 * s.z);
-
-    for(unsigned int i = 0; i < numTriangles; i++) {
-        triangles[i].point[0] = &points[indices[i * 3 + 0]];
-        triangles[i].point[1] = &points[indices[i * 3 + 1]];
-        triangles[i].point[2] = &points[indices[i * 3 + 2]];
-        triangles[i].plane.SetNormal(
-            *triangles[i].point[0],
-            *triangles[i].point[1],
-            *triangles[i].point[2]);
-        triangles[i].plane.SetDistance(*triangles[i].point[0]);
-    }
 }
 
 //
@@ -159,15 +205,21 @@ void kexClipMesh::CreateTetrahedron(const kexBBox &bbox) {
 
 void kexClipMesh::CreateOctahedron(const kexBBox &bbox) {
     kexVec3 s;
+    cmGroup_t *cmGroup;
 
-    numPoints       = 6;
-    numIndices      = 24;
-    numTriangles    = 8;
-    origin          = bbox.Center();
-    s               = bbox.max - origin;
-    points          = (kexVec3*)Z_Calloc(sizeof(kexVec3) * numPoints, PU_CM, NULL);
-    indices         = (word*)Z_Calloc(sizeof(word) * numIndices, PU_CM, NULL);
-    triangles       = (kexTri*)Z_Calloc(sizeof(kexTri) * numTriangles, PU_CM, NULL);
+    origin                  = bbox.Center();
+    s                       = bbox.max - origin;
+    numGroups               = 1;
+    cmGroups                = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+    cmGroup                 = &cmGroups[0];
+    cmGroup->numPoints      = 6;
+    cmGroup->numIndices     = 24;
+    cmGroup->numTriangles   = 8;
+    cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
+    cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
+    cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
+    word *indices           = cmGroup->indices;
+    kexVec3 *points         = cmGroup->points;
 
     indices[ 0] = 4; indices[ 1] = 0; indices[ 2] = 2;
     indices[ 3] = 4; indices[ 4] = 2; indices[ 5] = 1;
@@ -191,13 +243,20 @@ void kexClipMesh::CreateOctahedron(const kexBBox &bbox) {
 //
 
 void kexClipMesh::CreateDodecahedron(const kexBBox &bbox) {
-    numPoints       = 20;
-    numIndices      = 108;
-    numTriangles    = 36;
-    origin          = bbox.Center();
-    points          = (kexVec3*)Z_Calloc(sizeof(kexVec3) * numPoints, PU_CM, NULL);
-    indices         = (word*)Z_Calloc(sizeof(word) * numIndices, PU_CM, NULL);
-    triangles       = (kexTri*)Z_Calloc(sizeof(kexTri) * numTriangles, PU_CM, NULL);
+    cmGroup_t *cmGroup;
+
+    origin                  = bbox.Center();
+    numGroups               = 1;
+    cmGroups                = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+    cmGroup                 = &cmGroups[0];
+    cmGroup->numPoints      = 20;
+    cmGroup->numIndices     = 108;
+    cmGroup->numTriangles   = 36;
+    cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
+    cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
+    cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
+    word *indices           = cmGroup->indices;
+    kexVec3 *points         = cmGroup->points;
 
     indices[ 0] = 0;   indices[ 1] = 8;  indices[ 2] = 4;
     indices[ 3] = 8;   indices[ 4] = 9;  indices[ 5] = 4;
@@ -281,38 +340,149 @@ void kexClipMesh::CreateDodecahedron(const kexBBox &bbox) {
 }
 
 //
-// kexClipMesh::CreateShapeFromBounds
+// kexClipMesh::CreateMeshFromModel
 //
 
-void kexClipMesh::CreateShapeFromBounds(const kexBBox &bbox) {
-    switch(type) {
-    case CMT_BOX:
-        CreateBox(bbox);
-        break;
-    case CMT_TETRAHEDRON:
-        CreateTetrahedron(bbox);
-        break;
-    case CMT_OCTAHEDRON:
-        CreateOctahedron(bbox);
-        break;
-    case CMT_DODECAHEDRON:
-        CreateDodecahedron(bbox);
-        break;
-    case CMT_CONVEXHULL:
-    case CMT_MESH:
-    case CMT_CUSTOM:
+void kexClipMesh::CreateMeshFromModel(void) {
+    const kmodel_t *model = owner->Model();
+
+    if(model == NULL) {
         return;
     }
 
-    for(unsigned int i = 0; i < numTriangles; i++) {
-        triangles[i].point[0] = &points[indices[i * 3 + 0]];
-        triangles[i].point[1] = &points[indices[i * 3 + 1]];
-        triangles[i].point[2] = &points[indices[i * 3 + 2]];
-        triangles[i].plane.SetNormal(
-            *triangles[i].point[0],
-            *triangles[i].point[1],
-            *triangles[i].point[2]);
-        triangles[i].plane.SetDistance(*triangles[i].point[0]);
+    // TODO - support variants and child nodes
+    mdlmesh_t *mesh = &model->nodes[0].meshes[0];
+
+    origin      = owner->BoundingBox().Center();
+    numGroups   = mesh->numsections;
+    cmGroups    = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+
+    for(unsigned int i = 0; i < mesh->numsections; i++) {
+        mdlsection_t *sec       = &mesh->sections[i];
+        cmGroup_t *cmGroup      = &cmGroups[i];
+        cmGroup->numIndices     = sec->numtris;
+        cmGroup->numPoints      = sec->numverts;
+        cmGroup->numTriangles   = sec->numtris / 3;
+        cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
+        cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
+        cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
+
+        for(unsigned int k = 0; k < cmGroup->numIndices; k++) {
+            cmGroup->indices[k] = sec->tris[k];
+        }
+
+        for(unsigned int v = 0; v < cmGroup->numPoints; v++) {
+            cmGroup->points[v].x = sec->xyz[v][0];
+            cmGroup->points[v].y = sec->xyz[v][1];
+            cmGroup->points[v].z = sec->xyz[v][2];
+        }
+    }
+}
+
+//
+// kexClipMesh::Transform
+//
+
+void kexClipMesh::Transform(void) {
+    if(owner == NULL) {
+        return;
+    }
+
+    kexMatrix mtx = owner->Matrix();
+
+    for(unsigned int g = 0; g < numGroups; g++) {
+        cmGroup_t *cmGroup = &cmGroups[g];
+
+        for(unsigned int i = 0; i < cmGroup->numPoints; i++) {
+            cmGroup->points[i] |= mtx;
+        }
+    }
+}
+
+//
+// kexClipMesh::CreateShape
+//
+
+void kexClipMesh::CreateShape(void) {
+    if(owner == NULL) {
+        return;
+    }
+
+    switch(type) {
+    case CMT_BOX:
+        CreateBox(owner->BoundingBox());
+        break;
+    case CMT_TETRAHEDRON:
+        CreateTetrahedron(owner->BoundingBox());
+        break;
+    case CMT_OCTAHEDRON:
+        CreateOctahedron(owner->BoundingBox());
+        break;
+    case CMT_DODECAHEDRON:
+        CreateDodecahedron(owner->BoundingBox());
+        break;
+    case CMT_MESH:
+        CreateMeshFromModel();
+        break;
+    case CMT_CONVEXHULL:    // TODO
+    case CMT_CUSTOM:        // TODO
+        return;
+    default:
+        return;
+    }
+
+    for(unsigned int g = 0; g < numGroups; g++) {
+        cmGroup_t *cmGroup = &cmGroups[g];
+
+        // setup triangle data
+        for(unsigned int i = 0; i < cmGroup->numTriangles; i++) {
+            kexTri *tri = &cmGroup->triangles[i];
+
+            tri->point[0] = &cmGroup->points[cmGroup->indices[i * 3 + 0]];
+            tri->point[1] = &cmGroup->points[cmGroup->indices[i * 3 + 1]];
+            tri->point[2] = &cmGroup->points[cmGroup->indices[i * 3 + 2]];
+            tri->plane.SetNormal(
+                *tri->point[0],
+                *tri->point[1],
+                *tri->point[2]);
+            tri->plane.SetDistance(*tri->point[0]);
+
+            // link triangle edges
+            for(int j = 0; j < 3; j++) {
+                if(tri->edgeLink[j] != NULL)
+                    continue;
+
+                kexVec3 *pt1 = tri->point[j];
+                kexVec3 *pt2 = tri->point[(j+1)%3];
+                bool ok = false;
+
+                // scan through all triangles for matching edges
+                for(unsigned int k = 0; k < cmGroup->numTriangles; k++) {
+                    // don't check itself
+                    if(k == i) {
+                        continue;
+                    }
+
+                    kexTri *nTri = &cmGroup->triangles[k];
+
+                    for(int n = 0; n < 3; n++) {
+                        kexVec3 *nPt1 = nTri->point[n];
+                        kexVec3 *nPt2 = nTri->point[(n+1)%3];
+
+                        // points share an edge so link it
+                        if(pt1 == nPt1 && pt2 == nPt2) {
+                            tri->edgeLink[j] = nTri;
+                            ok = true;
+                            break;
+                        }
+                    }
+
+                    if(ok == true) {
+                        break;
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -321,23 +491,39 @@ void kexClipMesh::CreateShapeFromBounds(const kexBBox &bbox) {
 //
 
 void kexClipMesh::DebugDraw(void) {
+    if(owner == NULL || type == CMT_NONE) {
+        return;
+    }
     renderSystem.SetState(GLSTATE_TEXTURE0, false);
     renderSystem.SetState(GLSTATE_BLEND, true);
     renderSystem.SetState(GLSTATE_ALPHATEST, true);
     renderSystem.SetState(GLSTATE_LIGHTING, false);
 
-    dglColor4ub(0xFF, 0, 0, 128);
-
     dglDisableClientState(GL_NORMAL_ARRAY);
     dglDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    dglVertexPointer(3, GL_FLOAT, sizeof(kexVec3), reinterpret_cast<float*>(&points[0].x));
-    dglDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_SHORT, indices);
+    for(unsigned int i = 0; i < numGroups; i++) {
+        cmGroup_t *cmGroup = &cmGroups[i];
 
-    dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
-    dglDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_SHORT, indices);
-    dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        dglColor4ub(
+            0xFF - (0x50 * (i & 3)),
+            0xFF * (i & 1),
+            0x50 * (i & 3),
+            192);
+
+        dglVertexPointer(3, GL_FLOAT, sizeof(kexVec3),
+            reinterpret_cast<float*>(&cmGroup->points[0].x));
+        dglDrawElements(GL_TRIANGLES, cmGroup->numIndices,
+            GL_UNSIGNED_SHORT, cmGroup->indices);
+
+        dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
+
+        dglDrawElements(GL_TRIANGLES, cmGroup->numIndices,
+            GL_UNSIGNED_SHORT, cmGroup->indices);
+
+        dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
 
     dglEnableClientState(GL_NORMAL_ARRAY);
     dglEnableClientState(GL_TEXTURE_COORD_ARRAY);

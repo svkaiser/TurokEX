@@ -35,6 +35,18 @@
 kexRenderWorld renderWorld;
 
 //
+// FCmd_ShowClipMesh
+//
+
+static void FCmd_ShowCollision(void)
+{
+    if(command.GetArgc() < 1)
+        return;
+
+    renderWorld.bShowClipMesh ^= 1;
+}
+
+//
 // kexRenderWorld::kexRenderWorld
 //
 
@@ -47,6 +59,15 @@ kexRenderWorld::kexRenderWorld(void) {
     this->bShowOrigin   = false;
     this->bShowRadius   = false;
     this->bWireframe    = false;
+    this->bShowClipMesh = false;
+}
+
+//
+// kexRenderWorld::Init
+//
+
+void kexRenderWorld::Init(void) {
+    command.Add("showcollision", FCmd_ShowCollision);
 }
 
 //
@@ -54,8 +75,11 @@ kexRenderWorld::kexRenderWorld(void) {
 //
 
 void kexRenderWorld::RenderScene(void) {
-    if(!world->IsLoaded())
+    if(!world->IsLoaded()) {
+        dglClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+        dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         return;
+    }
 
     client.LocalPlayer().PlayerEvent("onPreRender");
 
@@ -271,6 +295,10 @@ void kexRenderWorld::DrawStaticActors(void) {
                 dglMultMatrixf(actor->Matrix().ToFloatPtr());
                 TraverseDrawActorNode(actor, &actor->Model()->nodes[0], NULL);
                 dglPopMatrix();
+
+                if(bShowClipMesh) {
+                    actor->ClipMesh().DebugDraw();
+                }
         }
     }
 }
@@ -291,13 +319,6 @@ void kexRenderWorld::DrawActors(void) {
 
             box.min = actor->BoundingBox().min * actor->GetScale() + actor->GetOrigin();
             box.max = actor->BoundingBox().max * actor->GetScale() + actor->GetOrigin();
-
-            kexVec3 c = box.Center();
-
-            box.min.x += c.x;
-            box.max.x += c.x;
-            box.min.z += c.z;
-            box.max.z += c.z;
 
             actor->bCulled = !frustum.TestBoundingBox(box);
 

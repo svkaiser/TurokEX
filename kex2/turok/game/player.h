@@ -51,6 +51,7 @@ public:
                             ~kexPlayerPuppet(void);
 
     virtual void            Parse(kexLexer *lexer);
+    virtual void            LocalTick(void);
 
     const int               GetID(void) const { return id; }
     kexStr                  playerComponent;

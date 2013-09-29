@@ -26,12 +26,15 @@
 #include "common.h"
 #include "script.h"
 #include "linkedlist.h"
+#include "clipmesh.h"
+#include "physics.h"
 #include "scriptAPI/scriptSystem.h"
 
 class kexAttachment {
 public:
     void                        Transform(void);
     void                        AttachToActor(kexActor *targ);
+
     kexVec3                     &GetAttachOffset(void) { return attachOffset; }
     void                        SetAttachOffset(const kexVec3 &vec) { attachOffset = vec; }
     kexActor                    *GetOwner(void) { return owner; }
@@ -62,8 +65,6 @@ public:
 
     kexVec3                     &GetOrigin(void) { return origin; }
     void                        SetOrigin(const kexVec3 &org) { origin = org; }
-    kexVec3                     &GetVelocity(void) { return velocity; }
-    void                        SetVelocity(const kexVec3 &vel) { velocity = vel; }
     kexQuat                     &GetRotation(void) { return rotation; }
     void                        SetRotation(const kexQuat &rot) { rotation = rot; }
     kexVec3                     &GetScale(void) { return scale; }
@@ -71,12 +72,15 @@ public:
     kexActor                    *GetOwner(void) { return owner; }
     kexActor                    *GetTarget(void) { return target; }
     kexAttachment               &Attachment(void) { return attachment; }
+    kexPhysics                  *Physics(void) { return &physics; }
     kexAngle                    &GetAngles(void) { return angles; }
     void                        SetAngles(const kexAngle &an) { angles = an; }
     const int                   RefCount(void) const { return refCount; }
     kexMatrix                   &Matrix(void) { return matrix; }
     kexBBox                     &BoundingBox(void) { return bbox; }
     const kmodel_t              *Model(void) const { return model; }
+
+    struct gridBound_s          *gridBound;
 
     bool                        bStatic;
     bool                        bCollision;
@@ -99,7 +103,6 @@ public:
 
         OBJMETHOD("kVec3 &GetOrigin(void)", GetOrigin, (void), kexVec3&);
         OBJMETHOD("void SetOrigin(const kVec3 &in)", SetOrigin, (const kexVec3 &org), void);
-        OBJMETHOD("kVec3 &GetVelocity(void)", GetVelocity, (void), kexVec3&);
         OBJMETHOD("void SetTarget(kActor@)", SetTarget, (kexActor *targ), void);
         OBJMETHOD("kActor @GetTarget(void)", GetTarget, (void), kexActor*);
         OBJMETHOD("void SetOwner(kActor@)", SetOwner, (kexActor *targ), void);
@@ -131,19 +134,15 @@ public:
 protected:
     kexVec3                     origin;
     kexQuat                     rotation;
-    kexVec3                     velocity;
     kexAngle                    angles;
     kexBBox                     bbox;
     kexBBox                     baseBBox;
-    float                       friction;
-    float                       airFriction;
-    float                       mass;
-    float                       bounceDamp;
     float                       cullDistance;
     unsigned int                targetID;
     kexActor                    *owner;
     kexActor                    *target;
     kexAttachment               attachment;
+    kexPhysics                  physics;
     kexMatrix                   matrix;
     kexMatrix                   rotMatrix;
     kmodel_t                    *model;
@@ -152,13 +151,14 @@ protected:
     float                       tickDistance;
     float                       tickIntervals;
     float                       nextTickInterval;
-    unsigned int                physics;
     int                         waterlevel;
 
 private:
     int                         refCount;
     bool                        bStale;
 END_CLASS();
+
+class kexClipMesh;
 
 BEGIN_EXTENDED_CLASS(kexWorldActor, kexActor);
 public:
@@ -189,14 +189,13 @@ public:
     const int                   Variant(void) const { return variant; }
     kexStr                      &GetName(void) { return name; }
     void                        SetName(kexStr &str) { name = str; }
+    kexClipMesh                 &ClipMesh(void) { return clipMesh; }
 
     static unsigned int         id;
 
     static void                 InitObject(void);
 
     kexLinklist<kexWorldActor>  worldLink;
-    kexLinklist<kexWorldActor>  gridLink;
-
     kexComponent                scriptComponent;
 
     // TODO - need some sort of skin system
@@ -204,10 +203,10 @@ public:
 
 protected:
     void                        ParseDefault(kexLexer *lexer);
+
     gObject_t                   *component;
     gObject_t                   *iterator;
-    bool                        bRotor;
-    bool                        bOrientOnSlope;
+    kexClipMesh                 clipMesh;
     kexStr                      name;
     int                         health;
     float                       radius;
@@ -216,9 +215,6 @@ protected:
     float                       centerHeight;
     float                       viewHeight;
     kexQuat                     lerpRotation;
-    float                       rotorSpeed;
-    float                       rotorFriction;
-    kexVec3                     rotorVector;
     kexVec3                     *nodeOffsets_t;
     kexQuat                     *nodeOffsets_r;
     animstate_t                 animState;

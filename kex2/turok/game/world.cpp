@@ -74,6 +74,8 @@ kexWorld::kexWorld(void) {
     this->ticks         = 0;
     this->time          = 0;
     this->deltaTime     = 0;
+
+    this->gravity.Set(0, -1, 0);
 }
 
 //
@@ -116,6 +118,7 @@ void kexWorld::Tick(void) {
 
     if(bReadyUnload) {
         Unload();
+        return;
     }
 }
 
@@ -219,7 +222,6 @@ void kexWorld::SpawnLocalPlayer(void) {
         // set client's position
         localPlayer->SetOrigin(actor->GetOrigin());
         localPlayer->SetAngles(actor->GetAngles());
-        localPlayer->GetVelocity().Clear();
         localPlayer->GetAcceleration().Clear();
         
         // take control of this actor
@@ -267,6 +269,28 @@ void kexWorld::ParseGridBound(kexLexer *lexer) {
     }
 
     gridBounds.Push(grid);
+}
+
+//
+// kexWorld::LinkGridBounds
+//
+
+void kexWorld::LinkGridBounds(void) {
+    for(unsigned int i = 0; i < gridBounds.Length(); i++) {
+        gridBound_t *grid = gridBounds[i];
+
+        for(unsigned int j = 0; j < gridBounds.Length(); j++) {
+            gridBound_t *nGrid = gridBounds[j];
+
+            if(grid == nGrid) {
+                continue;
+            }
+
+            if(grid->box.IntersectingBox(nGrid->box)) {
+                grid->linkedBounds.Push(nGrid);
+            }
+        }
+    }
 }
 
 //
@@ -351,6 +375,8 @@ void kexWorld::Load(const char *mapFile) {
     
     nextMapID = -1;
     bLoaded = true;
+
+    LinkGridBounds();
 }
 
 //

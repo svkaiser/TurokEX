@@ -156,6 +156,7 @@ DECLARE_CLASS(kexPlayerPuppet, kexWorldActor)
 //
 
 kexPlayerPuppet::kexPlayerPuppet(void) {
+    this->bCollision = true;
     this->id = 0;
 }
 
@@ -187,6 +188,13 @@ void kexPlayerPuppet::Parse(kexLexer *lexer) {
         
         lexer->Find();
     }
+}
+
+//
+// kexPlayerPuppet::LocalTick
+//
+
+void kexPlayerPuppet::LocalTick(void) {
 }
 
 DECLARE_ABSTRACT_CLASS(kexPlayer, kexWorldActor)
@@ -512,6 +520,8 @@ void kexLocalPlayer::LocalTick(void) {
 
     oldMoves[current] = puppet->GetOrigin();
     latency[current] = client.GetTime();
+
+    puppet->Physics()->Think(frameTime);
 
     angles = puppet->GetAngles();
     origin = puppet->GetOrigin();

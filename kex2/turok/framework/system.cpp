@@ -42,6 +42,7 @@
 #include "debug.h"
 #include "filesystem.h"
 #include "console.h"
+#include "renderWorld.h"
 #include "scriptAPI/scriptSystem.h"
 
 kexCvar cvarDeveloper("developer", CVF_BOOL|CVF_CONFIG, "0", "Developer mode");
@@ -405,6 +406,8 @@ void kexSystem::Main(int argc, char **argv) {
 
     R_Init();
     common.Printf("Renderer Initialized\n");
+
+    kexRenderWorld::Init();
 
     common.Printf("Running kernel...\n");
     MainLoop();

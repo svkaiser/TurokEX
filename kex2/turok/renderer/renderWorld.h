@@ -31,6 +31,17 @@ public:
 
     void            RenderScene(void);
 
+    static void     Init(void);
+
+    bool            bShowBBox;
+    bool            bShowGrid;
+    bool            bShowNormals;
+    bool            bShowRadius;
+    bool            bShowNodes;
+    bool            bShowOrigin;
+    bool            bWireframe;
+    bool            bShowClipMesh;
+
 private:
     void            SetupGlobalLight(void);
     void            DrawStaticActors(void);
@@ -43,13 +54,6 @@ private:
     void            DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b);
 
     kexWorld        *world;
-    bool            bShowBBox;
-    bool            bShowGrid;
-    bool            bShowNormals;
-    bool            bShowRadius;
-    bool            bShowNodes;
-    bool            bShowOrigin;
-    bool            bWireframe;
 };
 
 extern kexRenderWorld renderWorld;

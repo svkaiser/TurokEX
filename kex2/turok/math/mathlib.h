@@ -416,7 +416,11 @@ public:
                         
     void                    Clear(void);
     kexVec3                 Center(void) const;
+    float                   Radius(void) const;
+    bool                    PointInside(const kexVec3 &vec) const;
+    bool                    IntersectingBox(const kexBBox &box) const;
     
+    kexBBox                 operator+(const float radius) const;
     kexBBox                 operator|(const kexMatrix &matrix) const;
     kexBBox                 &operator|=(const kexMatrix &matrix);
     kexBBox                 &operator=(const kexBBox &bbox);
