@@ -26,6 +26,7 @@
 #include "mathlib.h"
 #include "script.h"
 #include "triangle.h"
+#include "physics.h"
 
 typedef enum {
     CMT_NONE            = 0,
@@ -49,6 +50,10 @@ public:
     void                    DebugDraw(void);
     void                    CreateShape(void);
     void                    Transform(void);
+    bool                    Trace(kexPhysics *physics,
+                                  const kexVec3 &start,
+                                  const kexVec3 &end,
+                                  const kexVec3 &dir);
 
     const clipMeshType_t    GetType(void) const { return type; }
     void                    SetType(const clipMeshType_t _type) { type = _type; }

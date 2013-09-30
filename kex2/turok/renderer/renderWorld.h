@@ -52,6 +52,8 @@ private:
                         const mdlnode_t *node, animstate_t *animstate);
 
     void            DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b);
+    void            DrawRadius(float x, float y, float z, float radius, float height,
+                               byte r, byte g, byte b);
 
     kexWorld        *world;
 };

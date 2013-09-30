@@ -179,11 +179,17 @@ public:
     bool                        AlignToSurface(void);
     float                       GroundDistance(void);
     bool                        OnGround(void);
+    float                       Radius(void) { return radius; }
+    float                       Height(void) { return height; }
     kexVec3                     ToLocalOrigin(const float x, const float y, const float z);
     kexVec3                     ToLocalOrigin(const kexVec3 &org);
     void                        SpawnFX(const char *fxName, const float x, const float y, const float z);
     void                        SetModel(const char *modelFile);
     void                        CreateComponent(const char *name);
+    bool                        Trace(kexPhysics *physics,
+                                      const kexVec3 &start,
+                                      const kexVec3 &end,
+                                      const kexVec3 &dir);
 
     gObject_t                   *Component(void) { return component; }
     const int                   Variant(void) const { return variant; }
@@ -200,6 +206,7 @@ public:
 
     // TODO - need some sort of skin system
     char                        ****textureSwaps;
+    bool                        bTraced;
 
 protected:
     void                        ParseDefault(kexLexer *lexer);

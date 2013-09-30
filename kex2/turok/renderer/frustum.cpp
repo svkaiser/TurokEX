@@ -107,7 +107,7 @@ bool kexFrustum::TestTriangle(const kexTri &triangle) {
             bits |= (FLOATSIGNBIT(d) << j);
         }
        
-        if(bits != 0x15) {
+        if(bits != 0x7) {
             continue;
         }
        

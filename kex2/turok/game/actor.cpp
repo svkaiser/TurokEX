@@ -234,6 +234,7 @@ kexWorldActor::kexWorldActor(void) {
     this->viewHeight        = 16.384f;
     this->centerHeight      = 10.24f;
     this->bbox              = baseBBox;
+    this->bTraced           = false;
 }
 
 //
@@ -592,6 +593,52 @@ void kexWorldActor::CreateComponent(const char *name) {
 
     // TODO
     scriptComponent.Spawn(name);
+}
+
+//
+// kexWorldActor::Trace
+//
+
+bool kexWorldActor::Trace(kexPhysics *physics,
+                          const kexVec3 &start,
+                          const kexVec3 &end,
+                          const kexVec3 &dir) {
+    kexVec3 org = (origin - start);
+
+    if(dir.Dot(org) <= 0) {
+        return false;
+    }
+
+    float len = dir.Unit();
+
+    if(len == 0) {
+        return false;
+    }
+
+    kexVec3 nDir    = (dir * (1.0f / len));
+    float cp        = nDir.Dot(org);
+    kexVec3 cDist   = (org - (nDir * cp));
+    float rd        = radius * radius - cDist.UnitSq();
+
+    if(rd <= 0) {
+        return false;
+    }
+
+    float frac = (cp - (float)sqrt(rd)) * (1.0f / len);
+
+    if(frac <= 1.0f && frac < physics->traceInfo.fraction) {
+        if(frac < 0) {
+            frac = 0;
+        }
+        physics->traceInfo.hitActor = this;
+        physics->traceInfo.fraction = frac;
+        physics->traceInfo.hitVector = start - (dir * frac);
+        physics->traceInfo.hitNormal = (start - origin);
+        physics->traceInfo.hitNormal.Normalize();
+        return true;
+    }
+
+    return false;
 }
 
 //

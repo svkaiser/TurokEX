@@ -128,39 +128,41 @@ void kexClipMesh::CreateBox(const kexBBox &bbox) {
     word *indices           = cmGroup->indices;
     kexVec3 *points         = cmGroup->points;
     
-    indices[ 0] = 0; indices[ 1] = 1; indices[ 2] = 3;
-    indices[ 3] = 4; indices[ 4] = 7; indices[ 5] = 5;
-    indices[ 6] = 0; indices[ 7] = 4; indices[ 8] = 1;
-    indices[ 9] = 1; indices[10] = 5; indices[11] = 6;
-    indices[12] = 2; indices[13] = 6; indices[14] = 7;
-    indices[15] = 4; indices[16] = 0; indices[17] = 3;
-    indices[18] = 1; indices[19] = 2; indices[20] = 3;
-    indices[21] = 7; indices[22] = 6; indices[23] = 5;
-    indices[24] = 2; indices[25] = 1; indices[26] = 6;
-    indices[27] = 3; indices[28] = 2; indices[29] = 7;
-    indices[30] = 7; indices[31] = 4; indices[32] = 3;
-    indices[33] = 4; indices[34] = 5; indices[35] = 1;
+    indices[ 0] = 3; indices[ 1] = 1; indices[ 2] = 0;
+    indices[ 3] = 5; indices[ 4] = 7; indices[ 5] = 4;
+    indices[ 6] = 1; indices[ 7] = 4; indices[ 8] = 0;
+    indices[ 9] = 6; indices[10] = 5; indices[11] = 1;
+    indices[12] = 7; indices[13] = 6; indices[14] = 2;
+    indices[15] = 3; indices[16] = 0; indices[17] = 4;
+    indices[18] = 3; indices[19] = 2; indices[20] = 1;
+    indices[21] = 5; indices[22] = 6; indices[23] = 7;
+    indices[24] = 6; indices[25] = 1; indices[26] = 2;
+    indices[27] = 7; indices[28] = 2; indices[29] = 3;
+    indices[30] = 3; indices[31] = 4; indices[32] = 7;
+    indices[33] = 1; indices[34] = 5; indices[35] = 4;
+
+    kexBBox newBox = bbox + -bbox.Radius();
     
-    points[0].x = bbox.max[0];
-    points[0].y = bbox.min[1];
-    points[0].z = bbox.min[2];
-    points[1].x = bbox.max[0];
-    points[1].y = bbox.min[1];
-    points[1].z = bbox.max[2];
-    points[2].x = bbox.min[0];
-    points[2].y = bbox.min[1];
-    points[2].z = bbox.max[2];
-    points[3]   = bbox.min;
-    points[4].x = bbox.max[0];
-    points[4].y = bbox.max[1];
-    points[4].z = bbox.min[2];
-    points[5]   = bbox.max;
-    points[6].x = bbox.min[0];
-    points[6].y = bbox.max[1];
-    points[6].z = bbox.max[2];
-    points[7].x = bbox.min[0];
-    points[7].y = bbox.max[1];
-    points[7].z = bbox.min[2];
+    points[0].x = newBox.max[0];
+    points[0].y = newBox.min[1];
+    points[0].z = newBox.min[2];
+    points[1].x = newBox.max[0];
+    points[1].y = newBox.min[1];
+    points[1].z = newBox.max[2];
+    points[2].x = newBox.min[0];
+    points[2].y = newBox.min[1];
+    points[2].z = newBox.max[2];
+    points[3]   = newBox.min;
+    points[4].x = newBox.max[0];
+    points[4].y = newBox.max[1];
+    points[4].z = newBox.min[2];
+    points[5]   = newBox.max;
+    points[6].x = newBox.min[0];
+    points[6].y = newBox.max[1];
+    points[6].z = newBox.max[2];
+    points[7].x = newBox.min[0];
+    points[7].y = newBox.max[1];
+    points[7].z = newBox.min[2];
 }
 
 //
@@ -487,6 +489,84 @@ void kexClipMesh::CreateShape(void) {
 }
 
 //
+// kexClipMesh::Trace
+//
+
+bool kexClipMesh::Trace(kexPhysics *physics,
+                        const kexVec3 &start,
+                        const kexVec3 &end,
+                        const kexVec3 &dir) {
+    kexPluecker r;
+    float frac = 1;
+    r.SetRay(start, dir);
+
+    float radius = static_cast<kexWorldActor*>(physics->GetOwner())->Radius();
+
+    for(unsigned int i = 0; i < numGroups; i++) {
+        cmGroup_t *cmGroup = &cmGroups[i];
+
+        for(unsigned int j = 0; j < cmGroup->numTriangles; j++) {
+            if(dir.Dot(cmGroup->triangles[j].plane.Normal()) >= 0) {
+                continue;
+            }
+
+            kexPluecker l;
+            byte bits = 0;
+
+            kexTri *tri = &cmGroup->triangles[j];
+
+            for(int k = 0; k < 3; k++) {
+                kexVec3 *pt1 = tri->point[(1+k)%3];
+                kexVec3 *pt2 = tri->point[(0+k)%3];
+
+                kexVec3 edge;
+
+                edge.x = pt1->x - pt2->x;
+                edge.y = pt1->y - pt2->y;
+                edge.z = pt1->z - pt2->z;
+
+                l.SetLine(*pt1, *pt2);
+                float pd = l.InnerProduct(r);
+                float r = (float)sqrt(edge.UnitSq()*(radius*radius));
+                float rpd = pd - r;
+
+                bits |= (FLOATSIGNBIT(rpd) << k);
+            }
+
+            if(bits != 0x7) {
+                continue;
+            }
+
+            float d = tri->point[0]->Dot(tri->plane.Normal());
+
+            float d1 = start.Dot(tri->plane.Normal()) - (d + radius);
+            float d2 = end.Dot(tri->plane.Normal()) - (d + radius);
+
+            if(d1 <= d2)
+                continue;
+
+            if(d1 < 0)
+                continue;
+
+            if(d2 > 0)
+                continue;
+
+            frac = (d1 / (d1 - d2));
+            if(frac < 0 || frac >= physics->traceInfo.fraction)
+                continue;
+
+            physics->traceInfo.fraction = frac;
+            physics->traceInfo.hitNormal = tri->plane.Normal();
+            physics->traceInfo.hitMesh = this;
+            physics->traceInfo.hitTri = tri;
+            physics->traceInfo.hitVector = (start + ((end - start) * frac));
+        }
+    }
+
+    return (frac != 1);
+}
+
+//
 // kexClipMesh::DebugDraw
 //
 
@@ -494,6 +574,7 @@ void kexClipMesh::DebugDraw(void) {
     if(owner == NULL || type == CMT_NONE) {
         return;
     }
+    renderSystem.SetState(GLSTATE_CULL, true);
     renderSystem.SetState(GLSTATE_TEXTURE0, false);
     renderSystem.SetState(GLSTATE_BLEND, true);
     renderSystem.SetState(GLSTATE_ALPHATEST, true);

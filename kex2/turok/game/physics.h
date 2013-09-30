@@ -47,7 +47,6 @@ public:
     float                   GroundDistance(void);
     bool                    OnGround(void);
     void                    ImpactVelocity(kexVec3 &normal, const float force);
-    void                    ApplyGravity(const float timeDelta);
     void                    ApplyFriction(void);
     void                    ProjectOnCrease(const kexVec3 &n1, const kexVec3 &n2);
     void                    Think(const float timeDelta);
@@ -56,10 +55,6 @@ public:
     void                    SetVelocity(const kexVec3 &vel) { velocity = vel; }
     kexActor                *GetOwner(void) { return owner; }
     void                    SetOwner(kexActor *actor) { owner = actor; }
-    kexClipMesh             *GetHitMesh(void) { return hitMesh; }
-    void                    SetHitMesh(kexClipMesh *mesh) { hitMesh = mesh; }
-    kexTri                  *GetHitTri(void) const { return hitTri; }
-    void                    SetHitTri(kexTri *tri) { hitTri = tri; }
 
     static void             InitObject(void);
 
@@ -75,9 +70,18 @@ public:
     kexVec3                 rotorVector;
     waterLevelType_t        waterLevel;
 
+    typedef struct {
+        kexClipMesh         *hitMesh;
+        kexTri              *hitTri;
+        kexActor            *hitActor;
+        kexVec3             hitNormal;
+        kexVec3             hitVector;
+        float               fraction;
+    } traceInfo_t;
+
+    traceInfo_t             traceInfo;
+
 private:
-    kexClipMesh             *hitMesh;
-    kexTri                  *hitTri;
     kexActor                *owner;
 };
 

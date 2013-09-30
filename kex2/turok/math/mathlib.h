@@ -230,10 +230,13 @@ public:
     kexStr                  ToString(void) const;
 
     kexVec3                 operator+(const kexVec3 &vec);
+    kexVec3                 operator+(const kexVec3 &vec) const;
+    kexVec3                 operator+(kexVec3 &vec);
     kexVec3                 operator-(void) const;
     kexVec3                 operator-(const kexVec3 &vec) const;
     kexVec3                 operator*(const kexVec3 &vec);
     kexVec3                 operator*(const float val);
+    kexVec3                 operator*(const float val) const;
     kexVec3                 operator/(const kexVec3 &vec);
     kexVec3                 operator/(const float val);
     kexVec3                 operator|(const kexQuat &quat);
@@ -419,12 +422,13 @@ public:
     float                   Radius(void) const;
     bool                    PointInside(const kexVec3 &vec) const;
     bool                    IntersectingBox(const kexBBox &box) const;
+    bool                    RayIntersect(const kexVec3 &start, const kexVec3 &dir, float &frac);
+    bool                    LineIntersect(const kexVec3 &start, const kexVec3 &end);
     
     kexBBox                 operator+(const float radius) const;
     kexBBox                 operator|(const kexMatrix &matrix) const;
     kexBBox                 &operator|=(const kexMatrix &matrix);
     kexBBox                 &operator=(const kexBBox &bbox);
-    bool                    RayIntersect(const kexVec3 &start, const kexVec3 &dir, float &frac);
                         
     kexVec3                 min;
     kexVec3                 max;

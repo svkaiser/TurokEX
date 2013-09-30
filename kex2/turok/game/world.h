@@ -33,6 +33,7 @@ typedef struct gridBound_s {
     kexLinklist<kexWorldActor>          staticActors;
     kexLinklist<kexWorldActor>          linkedActors;
     kexPtrArray<struct gridBound_s*>    linkedBounds;
+    bool                                bTraced;
 } gridBound_t;
 
 class kexWorld {
@@ -52,6 +53,10 @@ public:
                                             const kexVec3 &origin, const kexAngle &angles);
     void                                RemoveActor(kexWorldActor *actor);
     void                                SpawnLocalPlayer(void);
+    void                                Trace(kexPhysics *physics,
+                                              const kexVec3 &start,
+                                              const kexVec3 &end,
+                                              const kexVec3 &dir);
 
     bool                                IsLoaded(void) const { return bLoaded; }
     float                               DeltaTime(void) { return deltaTime; }

@@ -234,6 +234,49 @@ void kexWorld::SpawnLocalPlayer(void) {
 }
 
 //
+// kexWorld::Trace
+//
+
+void kexWorld::Trace(kexPhysics *physics,
+                     const kexVec3 &start,
+                     const kexVec3 &end,
+                     const kexVec3 &dir) {
+    for(unsigned int i = 0; i < gridBounds.Length(); i++) {
+        gridBound_t *grid = gridBounds[i];
+
+        grid->bTraced = false;
+
+        if(grid->box.LineIntersect(start, end)) {
+            grid->bTraced = true;
+
+            for(kexWorldActor *actor = grid->staticActors.Next();
+                actor != NULL; actor = actor->worldLink.Next()) {
+                    if(actor->bHidden || !actor->bCollision)
+                        continue;
+
+                    kexBBox box;
+
+                    box.min = actor->BoundingBox().min + actor->GetOrigin();
+                    box.max = actor->BoundingBox().max + actor->GetOrigin();
+
+                    if(box.LineIntersect(start, end)) {
+                        actor->bTraced = true;
+
+                        // do simple sphere intersection test if no collision
+                        // mesh is present
+                        if(actor->ClipMesh().GetType() == CMT_NONE) {
+                            actor->Trace(physics, start, end, dir);
+                        }
+                        else {
+                            actor->ClipMesh().Trace(physics, start, end, dir);
+                        }
+                    }
+            }
+        }
+    }
+}
+
+//
 // kexWorld::ParseGridBound
 //
 

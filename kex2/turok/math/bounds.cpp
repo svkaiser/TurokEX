@@ -215,8 +215,6 @@ kexBBox &kexBBox::operator=(const kexBBox &bbox) {
 //
 
 bool kexBBox::RayIntersect(const kexVec3 &start, const kexVec3 &dir, float &frac) {
-    frac = 1.0f;
-    
     int side = 0;
     int misses = 0;
     int v = -1;
@@ -235,14 +233,14 @@ bool kexBBox::RayIntersect(const kexVec3 &start, const kexVec3 &dir, float &frac
             continue;
             
         f = (start[i] - side ? max[i] : min[i]);
-        if((float)fabs(f) > (float)fabs(frac * dir[i])) {
+        if(v < 0 || (float)fabs(f) > (float)fabs(frac * dir[i])) {
             v = i;
-            frac = -(f / dir[i]);
+            frac = (f / dir[i]) * (side ? 1 : -1);
         }
     }
     
     if(v == -1) {
-        frac = 1.0f;
+        frac = 0.0f;
         return (misses == 3);
     }
     
@@ -255,4 +253,48 @@ bool kexBBox::RayIntersect(const kexVec3 &start, const kexVec3 &dir, float &frac
     return (
         t0 >= min[v1] && t0 <= max[v1] &&
         t1 >= min[v2] && t1 <= max[v2]);
+}
+
+//
+// kexBBox:LineIntersect
+//
+
+bool kexBBox::LineIntersect(const kexVec3 &start, const kexVec3 &end) {
+    float ld[3];
+    kexVec3 center = Center();
+    kexVec3 extents = max - center;
+    kexVec3 lineDir = (end - start) * 0.5f;
+    kexVec3 lineCenter = lineDir + start;
+    kexVec3 dir = lineCenter - center;
+
+    ld[0] = (float)fabs(lineDir[0]);
+    if((float)fabs(dir[0]) > extents[0] + ld[0]) {
+        return false;
+    }
+
+    ld[1] = (float)fabs(lineDir[1]);
+    if((float)fabs(dir[1]) > extents[1] + ld[1]) {
+        return false;
+    }
+
+    ld[2] = (float)fabs(lineDir[2]);
+    if((float)fabs(dir[2]) > extents[2] + ld[2]) {
+        return false;
+    }
+
+    kexVec3 cross = lineDir.Cross(dir);
+
+    if((float)fabs(cross[0]) > extents[1] * ld[2] + extents[2] * ld[1]) {
+        return false;
+    }
+
+    if((float)fabs(cross[1]) > extents[0] * ld[2] + extents[2] * ld[0]) {
+        return false;
+    }
+
+    if((float)fabs(cross[2]) > extents[0] * ld[1] + extents[1] * ld[0]) {
+        return false;
+    }
+
+    return true;
 }

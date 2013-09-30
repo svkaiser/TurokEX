@@ -35,15 +35,51 @@
 kexRenderWorld renderWorld;
 
 //
-// FCmd_ShowClipMesh
+// FCmd_ShowCollision
 //
 
-static void FCmd_ShowCollision(void)
-{
-    if(command.GetArgc() < 1)
+static void FCmd_ShowCollision(void) {
+    if(command.GetArgc() < 1) {
         return;
+    }
 
     renderWorld.bShowClipMesh ^= 1;
+}
+
+//
+// FCmd_ShowGridBounds
+//
+
+static void FCmd_ShowGridBounds(void) {
+    if(command.GetArgc() < 1) {
+        return;
+    }
+
+    renderWorld.bShowGrid ^= 1;
+}
+
+//
+// FCmd_ShowBoundingBox
+//
+
+static void FCmd_ShowBoundingBox(void) {
+    if(command.GetArgc() < 1) {
+        return;
+    }
+
+    renderWorld.bShowBBox ^= 1;
+}
+
+//
+// FCmd_ShowRadius
+//
+
+static void FCmd_ShowRadius(void) {
+    if(command.GetArgc() < 1) {
+        return;
+    }
+
+    renderWorld.bShowRadius ^= 1;
 }
 
 //
@@ -68,6 +104,9 @@ kexRenderWorld::kexRenderWorld(void) {
 
 void kexRenderWorld::Init(void) {
     command.Add("showcollision", FCmd_ShowCollision);
+    command.Add("showgridbounds", FCmd_ShowGridBounds);
+    command.Add("showbbox", FCmd_ShowBoundingBox);
+    command.Add("showradius", FCmd_ShowRadius);
 }
 
 //
@@ -299,6 +338,29 @@ void kexRenderWorld::DrawStaticActors(void) {
                 if(bShowClipMesh) {
                     actor->ClipMesh().DebugDraw();
                 }
+                if(bShowBBox) {
+                    if(actor->bTraced) {
+                        DrawBoundingBox(box, 255, 0, 0);
+                        actor->bTraced = false;
+                    }
+                    else {
+                        DrawBoundingBox(box, 255, 255, 0);
+                    }
+                }
+                if(bShowRadius && actor->bCollision) {
+                    kexVec3 org = actor->GetOrigin();
+                    DrawRadius(org[0], org[1], org[2],
+                        actor->Radius(), actor->Height(), 255, 128, 128);
+                }
+        }
+
+        if(bShowGrid) {
+            if(grid->bTraced) {
+                DrawBoundingBox(grid->box, 255, 0, 0);
+            }
+            else {
+                DrawBoundingBox(grid->box, 224, 224, 224);
+            }
         }
     }
 }
@@ -326,7 +388,7 @@ void kexRenderWorld::DrawActors(void) {
                 continue;
 
             // TEMP
-            DrawBoundingBox(box, 255, 0, 0);
+            //DrawBoundingBox(box, 255, 0, 0);
     }
 }
 
@@ -389,6 +451,48 @@ void kexRenderWorld::DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b
     
     if(!bWireframe)
         dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    renderSystem.SetState(GLSTATE_TEXTURE0, true);
+    renderSystem.SetState(GLSTATE_CULL, true);
+    renderSystem.SetState(GLSTATE_BLEND, false);
+    renderSystem.SetState(GLSTATE_LIGHTING, true);
+}
+
+//
+// kexRenderWorld::DrawRadius
+//
+
+void kexRenderWorld::DrawRadius(float x, float y, float z, float radius, float height,
+                  byte r, byte g, byte b) {
+    float an;
+    int i;
+
+    renderSystem.SetState(GLSTATE_TEXTURE0, false);
+    renderSystem.SetState(GLSTATE_CULL, false);
+    renderSystem.SetState(GLSTATE_BLEND, true);
+    renderSystem.SetState(GLSTATE_LIGHTING, false);
+
+    an = DEG2RAD(360 / 32);
+
+    dglBegin(GL_LINES);
+    dglColor4ub(r, g, b, 255);
+
+    for(i = 0; i < 32; i++)
+    {
+        float s1 = (float)sin(an * i);
+        float c1 = (float)cos(an * i);
+        float s2 = (float)sin(an * ((i+1)%31));
+        float c2 = (float)cos(an * ((i+1)%31));
+
+        dglVertex3f(x + (radius * s1), y, z + (radius * c1));
+        dglVertex3f(x + (radius * s1), y + height, z + (radius * c1));
+        dglVertex3f(x + (radius * s1), y, z + (radius * c1));
+        dglVertex3f(x + (radius * s2), y, z + (radius * c2));
+        dglVertex3f(x + (radius * s1), y + height, z + (radius * c1));
+        dglVertex3f(x + (radius * s2), y + height, z + (radius * c2));
+    }
+
+    dglEnd();
 
     renderSystem.SetState(GLSTATE_TEXTURE0, true);
     renderSystem.SetState(GLSTATE_CULL, true);

@@ -32,6 +32,8 @@
 #include "world.h"
 #include "physics.h"
 
+#define TRYMOVE_COUNT   3
+
 enum {
     scPhysics_mass = 0,
     scPhysics_friction,
@@ -63,19 +65,21 @@ static const sctokens_t physicsTokens[scPhysics_end+1] = {
 //
 
 kexPhysics::kexPhysics(void) {
-    this->owner             = NULL;
-    this->hitMesh           = NULL;
-    this->hitTri            = NULL;
-    this->mass              = 1200;
-    this->friction          = 1;
-    this->airFriction       = 1;
-    this->bounceDamp        = 0;
-    this->rotorSpeed        = 0;
-    this->rotorFriction     = 1;
-    this->bRotor            = false;
-    this->bOrientOnSlope    = false;
-    this->waterLevel        = WLT_INVALID;
+    this->mass                  = 1200;
+    this->friction              = 1;
+    this->airFriction           = 0;
+    this->bounceDamp            = 0;
+    this->rotorSpeed            = 0;
+    this->rotorFriction         = 1;
+    this->bRotor                = false;
+    this->bOrientOnSlope        = false;
+    this->waterLevel            = WLT_INVALID;
+    this->traceInfo.hitMesh     = NULL;
+    this->traceInfo.hitTri      = NULL;
+    this->traceInfo.hitActor    = NULL;
 
+    this->traceInfo.hitVector.Clear();
+    this->traceInfo.hitNormal.Clear();
     this->rotorVector.Clear();
     this->velocity.Clear();
 }
@@ -143,7 +147,7 @@ void kexPhysics::Parse(kexLexer *lexer) {
 
 float kexPhysics::GroundDistance(void) {
     kexVec3 org = owner->GetOrigin();
-    return org.y - hitTri->GetDistance(org);
+    return org.y - traceInfo.hitTri->GetDistance(org);
 }
 
 //
@@ -151,7 +155,14 @@ float kexPhysics::GroundDistance(void) {
 //
 
 bool kexPhysics::OnGround(void) {
-    return GroundDistance() <= ONPLANE_EPSILON;
+    if(traceInfo.hitTri == NULL) {
+        return false;
+    }
+    if(traceInfo.hitTri->plane.Normal().y <= 0.5f) {
+        return false;
+    }
+    return GroundDistance() <=
+        static_cast<kexWorldActor*>(owner)->Radius() + ONPLANE_EPSILON;
 }
 
 //
@@ -189,15 +200,6 @@ void kexPhysics::ProjectOnCrease(const kexVec3 &n1, const kexVec3 &n2) {
 }
 
 //
-// kexPhysics::ApplyGravity
-//
-
-void kexPhysics::ApplyGravity(const float timeDelta) {
-    if(GroundDistance() > 0.01f)
-        velocity -= (localWorld.GetGravity() * (mass * timeDelta));
-}
-
-//
 // kexPhysics::ApplyFriction
 //
 
@@ -224,6 +226,10 @@ void kexPhysics::ApplyFriction(void) {
         velocity.z = velocity.z * clipspeed;
     }
 
+    if(airFriction == 0) {
+        return;
+    }
+
     speed = velocity.y;
 
     if(speed < VELOCITY_EPSILON) {
@@ -248,8 +254,78 @@ void kexPhysics::ApplyFriction(void) {
 //
 
 void kexPhysics::Think(const float timeDelta) {
-    if(owner == NULL || owner->bCollision == false) {
+    if(owner == NULL || owner->bStatic == true) {
         return;
+    }
+
+    kexVec3 oldVelocity = velocity;
+    kexVec3 start = owner->GetOrigin();
+    kexVec3 end;
+    kexVec3 direction;
+    kexVec3 normals[TRYMOVE_COUNT];
+    int moves = 0;
+    int hits;
+    bool bClipped = false;
+
+    velocity += (localWorld.GetGravity() * (mass * timeDelta));
+
+    for(int i = 0; i < TRYMOVE_COUNT; i++) {
+        end = start + (velocity * timeDelta);
+
+        direction = (end - start);
+        direction.Normalize();
+
+        traceInfo.fraction = 1.0f;
+        traceInfo.hitActor  = NULL;
+        traceInfo.hitVector.Clear();
+        traceInfo.hitNormal.Clear();
+
+        //
+        // trace through world
+        //
+        localWorld.Trace(this, start, end, direction);
+
+        if(traceInfo.fraction == 1) {
+            // went the entire distance
+            break;
+        }
+
+        bClipped = true;
+        normals[moves++] = traceInfo.hitNormal;
+
+        //
+        // try all interacted normals
+        //
+        for(hits = 0; hits < moves; hits++) {
+            if(velocity.Dot(normals[hits]) >= 0) {
+                continue;
+            }
+
+            ImpactVelocity(normals[hits], 1.001f);
+
+            //
+            // try bumping against another plane
+            //
+            for(int j = 0; j < moves; j++) {
+                if(j != hits && velocity.Dot(normals[j]) < 0) {
+                    // slide along the crease between two planes
+                    ProjectOnCrease(normals[hits], normals[j]);
+
+                    // see if it bumps into a third plane
+                    for(int k = 0; k < moves; k++) {
+                        if(k != j && k != hits && velocity.Dot(normals[k]) < 0) {
+                            // force a dead stop
+                            velocity.Clear();
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if(bClipped && velocity.y < 0 && OnGround()) {
+        velocity.y = 0;
     }
 
     owner->SetOrigin(owner->GetOrigin() + (velocity * timeDelta));
@@ -317,6 +393,7 @@ void kexPhysics::InitObject(void) {
 
 
 
+/********************* OLD CODE ***************************/
 
 
 
@@ -324,12 +401,6 @@ void kexPhysics::InitObject(void) {
 
 
 
-
-
-
-
-
-#define TRYMOVE_COUNT   3
 
 //
 // G_ClipVelocity
