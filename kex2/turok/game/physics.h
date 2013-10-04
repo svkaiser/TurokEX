@@ -46,10 +46,12 @@ public:
     void                    Parse(kexLexer *lexer);
     float                   GroundDistance(void);
     bool                    OnGround(void);
+    bool                    OnSteepSlope(void);
     void                    ImpactVelocity(kexVec3 &normal, const float force);
     void                    ApplyFriction(void);
     void                    ProjectOnCrease(const kexVec3 &n1, const kexVec3 &n2);
     void                    Think(const float timeDelta);
+    void                    ClearTraceInfo(void);
 
     kexVec3                 &GetVelocity(void) { return velocity; }
     void                    SetVelocity(const kexVec3 &vel) { velocity = vel; }
@@ -69,6 +71,8 @@ public:
     float                   rotorFriction;
     kexVec3                 rotorVector;
     waterLevelType_t        waterLevel;
+    kexTri                  *groundGeom;
+    bool                    bOnGround;
 
     typedef struct {
         kexClipMesh         *hitMesh;

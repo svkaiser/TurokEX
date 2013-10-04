@@ -259,6 +259,8 @@ void kexWorld::Trace(kexPhysics *physics,
                     box.min = actor->BoundingBox().min + actor->GetOrigin();
                     box.max = actor->BoundingBox().max + actor->GetOrigin();
 
+                    box = box + (box.Radius() * 0.5f);
+
                     if(box.LineIntersect(start, end)) {
                         actor->bTraced = true;
 

@@ -496,6 +496,23 @@ bool kexLocalPlayer::ActionDown(const kexStr &str) {
 }
 
 //
+// kexLocalPlayer::ActionHeldTime
+//
+
+int kexLocalPlayer::ActionHeldTime(const kexStr &str) {
+    int action = inputKey.FindAction(str.c_str());
+    int heldtime = 0;
+
+    if(action != -1) {
+        heldtime = (cmd.heldtime[action] - 1);
+        if(heldtime < 0)
+            heldtime = 0;
+    }
+
+    return heldtime;
+}
+
+//
 // kexLocalPlayer::Spawn
 //
 
@@ -573,6 +590,7 @@ void kexLocalPlayer::InitObject(void) {
         asCALL_THISCALL)
 
     OBJMETHOD("bool ActionDown(const kStr &in)", ActionDown, (const kexStr&), bool);
+    OBJMETHOD("int ActionHeldTime(const kStr &in)", ActionHeldTime, (const kexStr&), int);
     OBJMETHOD("kActor @ToActor(void)", ToWorldActor, (void), kexWorldActor*);
     OBJMETHOD("kActor @Puppet(void)", PuppetToActor, (void), kexWorldActor*);
     OBJMETHOD("kVec3 &GetAcceleration(void)", GetAcceleration, (void), kexVec3&);

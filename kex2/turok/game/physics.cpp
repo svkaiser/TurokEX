@@ -32,7 +32,7 @@
 #include "world.h"
 #include "physics.h"
 
-#define TRYMOVE_COUNT   3
+#define TRYMOVE_COUNT   5
 
 enum {
     scPhysics_mass = 0,
@@ -65,7 +65,7 @@ static const sctokens_t physicsTokens[scPhysics_end+1] = {
 //
 
 kexPhysics::kexPhysics(void) {
-    this->mass                  = 1200;
+    this->mass                  = 1800;
     this->friction              = 1;
     this->airFriction           = 0;
     this->bounceDamp            = 0;
@@ -73,10 +73,12 @@ kexPhysics::kexPhysics(void) {
     this->rotorFriction         = 1;
     this->bRotor                = false;
     this->bOrientOnSlope        = false;
+    this->bOnGround             = false;
     this->waterLevel            = WLT_INVALID;
     this->traceInfo.hitMesh     = NULL;
     this->traceInfo.hitTri      = NULL;
     this->traceInfo.hitActor    = NULL;
+    this->groundGeom            = NULL;
 
     this->traceInfo.hitVector.Clear();
     this->traceInfo.hitNormal.Clear();
@@ -146,8 +148,22 @@ void kexPhysics::Parse(kexLexer *lexer) {
 //
 
 float kexPhysics::GroundDistance(void) {
+    if(groundGeom == NULL) {
+        return 0;
+    }
     kexVec3 org = owner->GetOrigin();
-    return org.y - traceInfo.hitTri->GetDistance(org);
+    return org.y - groundGeom->GetDistance(org);
+}
+
+//
+// kexPhysics::OnSteepSlope
+//
+
+bool kexPhysics::OnSteepSlope(void) {
+    if(groundGeom == NULL) {
+        return false;
+    }
+    return (groundGeom->plane.Normal().Dot(-localWorld.GetGravity()) <= 0.5f);
 }
 
 //
@@ -155,14 +171,13 @@ float kexPhysics::GroundDistance(void) {
 //
 
 bool kexPhysics::OnGround(void) {
-    if(traceInfo.hitTri == NULL) {
+    if(groundGeom == NULL) {
         return false;
     }
-    if(traceInfo.hitTri->plane.Normal().y <= 0.5f) {
+    if(OnSteepSlope()) {
         return false;
     }
-    return GroundDistance() <=
-        static_cast<kexWorldActor*>(owner)->Radius() + ONPLANE_EPSILON;
+    return GroundDistance() <= ONPLANE_EPSILON;
 }
 
 //
@@ -250,11 +265,28 @@ void kexPhysics::ApplyFriction(void) {
 }
 
 //
+// kexPhysics::ClearTraceInfo
+//
+
+void kexPhysics::ClearTraceInfo(void) {
+    traceInfo.fraction = 1.0f;
+    traceInfo.hitActor = NULL;
+    traceInfo.hitTri = NULL;
+    traceInfo.hitMesh = NULL;
+    traceInfo.hitVector.Clear();
+    traceInfo.hitNormal.Clear();
+}
+
+//
 // kexPhysics::Think
 //
 
 void kexPhysics::Think(const float timeDelta) {
-    if(owner == NULL || owner->bStatic == true) {
+    if(owner == NULL) {
+        return;
+    }
+
+    if(owner->bStatic == true) {
         return;
     }
 
@@ -262,12 +294,31 @@ void kexPhysics::Think(const float timeDelta) {
     kexVec3 start = owner->GetOrigin();
     kexVec3 end;
     kexVec3 direction;
-    kexVec3 normals[TRYMOVE_COUNT];
+    kexVec3 normals[TRYMOVE_COUNT+2];
     int moves = 0;
     int hits;
-    bool bClipped = false;
+    kexVec3 gravity;
+    float massAmount = (mass * timeDelta);
 
-    velocity += (localWorld.GetGravity() * (mass * timeDelta));
+    ClearTraceInfo();
+    gravity = localWorld.GetGravity();
+
+    localWorld.Trace(this, start, (gravity * mass) * mass, gravity);
+    groundGeom = traceInfo.hitTri;
+
+    bOnGround = OnGround();
+
+    if(!bOnGround) {
+        velocity += (gravity * massAmount);
+    }
+    else {
+        if(velocity.Dot(groundGeom->plane.Normal()) < 0) {
+            ImpactVelocity(groundGeom->plane.Normal(), 1);
+        }
+        normals[moves++] = groundGeom->plane.Normal();
+    }
+
+    normals[moves++] = velocity;
 
     for(int i = 0; i < TRYMOVE_COUNT; i++) {
         end = start + (velocity * timeDelta);
@@ -275,57 +326,60 @@ void kexPhysics::Think(const float timeDelta) {
         direction = (end - start);
         direction.Normalize();
 
-        traceInfo.fraction = 1.0f;
-        traceInfo.hitActor  = NULL;
-        traceInfo.hitVector.Clear();
-        traceInfo.hitNormal.Clear();
+        ClearTraceInfo();
 
-        //
         // trace through world
-        //
         localWorld.Trace(this, start, end, direction);
 
-        if(traceInfo.fraction == 1) {
+        if(traceInfo.fraction >= 1) {
             // went the entire distance
             break;
         }
 
-        bClipped = true;
         normals[moves++] = traceInfo.hitNormal;
 
-        //
         // try all interacted normals
-        //
         for(hits = 0; hits < moves; hits++) {
             if(velocity.Dot(normals[hits]) >= 0) {
                 continue;
             }
 
-            ImpactVelocity(normals[hits], 1.001f);
+            kexVec3 v = velocity * traceInfo.fraction;
+            ImpactVelocity(normals[hits], 1.01f);
+            velocity += v;
 
-            //
+            if(traceInfo.hitTri == groundGeom) {
+                if(normals[hits].Dot(-gravity) <= 0.5f && velocity.y > 0) {
+                    velocity -= (traceInfo.hitTri->plane.GetInclination() * (velocity.y + 200));
+                }
+            }
+
             // try bumping against another plane
-            //
             for(int j = 0; j < moves; j++) {
-                if(j != hits && velocity.Dot(normals[j]) < 0) {
-                    // slide along the crease between two planes
-                    ProjectOnCrease(normals[hits], normals[j]);
+                if(j == hits || velocity.Dot(normals[j]) >= 0) {
+                    continue;
+                }
 
-                    // see if it bumps into a third plane
-                    for(int k = 0; k < moves; k++) {
-                        if(k != j && k != hits && velocity.Dot(normals[k]) < 0) {
-                            // force a dead stop
-                            velocity.Clear();
-                            return;
-                        }
+                // bump into second plane
+                ImpactVelocity(normals[j], 1.01f);
+
+                if(velocity.Dot(normals[hits]) >= 0) {
+                    continue;
+                }
+
+                // slide along the crease between two planes
+                ProjectOnCrease(normals[hits], normals[j]);
+
+                // see if it bumps into a third plane
+                for(int k = 0; k < moves; k++) {
+                    if(k != j && k != hits && velocity.Dot(normals[k]) < 0) {
+                        // force a dead stop
+                        velocity.Clear();
+                        return;
                     }
                 }
             }
         }
-    }
-
-    if(bClipped && velocity.y < 0 && OnGround()) {
-        velocity.y = 0;
     }
 
     owner->SetOrigin(owner->GetOrigin() + (velocity * timeDelta));
@@ -353,6 +407,9 @@ void kexPhysics::InitObject(void) {
     OBJMETHOD("void SetOwner(kActor@)", SetOwner, (kexActor *o), void);
     OBJMETHOD("kVec3 &GetVelocity(void)", GetVelocity, (void), kexVec3&);
     OBJMETHOD("void SetVelocity(const kVec3 &in)", SetVelocity, (const kexVec3 &vel), void);
+    OBJMETHOD("bool OnGround(void)", OnGround, (void), bool);
+    OBJMETHOD("bool OnSteepSlope(void)", OnSteepSlope, (void), bool);
+    OBJMETHOD("float GroundDistance(void)", GroundDistance, (void), float);
 
 #define OBJPROPERTY(str, p)                         \
     scriptManager.Engine()->RegisterObjectProperty( \

@@ -33,6 +33,7 @@ public:
     void                    Init(void);
     void                    Shutdown(void);
     void                    CallExternalScript(const char *file, const char *function);
+    void                    CallCommand(const char *decl);
 
     static void             *MemAlloc(size_t size);
     static void             MemFree(void *ptr);

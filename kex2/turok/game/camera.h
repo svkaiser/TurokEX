@@ -39,6 +39,8 @@ public:
     kexMatrix           &Projection(void) { return projMatrix; }
     kexMatrix           &ModelView(void) { return modelMatrix; }
     const kexFrustum    &Frustum(void) const { return viewFrustum; }
+    kexAngle            &GetOffsetAngle(void) { return offsetAngle; }
+    void                SetOffsetAngle(const kexAngle &an) { offsetAngle = an; }
 
     static void         InitObject(void);
 
@@ -46,6 +48,7 @@ private:
     kexMatrix           projMatrix;
     kexMatrix           modelMatrix;
     kexFrustum          viewFrustum;
+    kexAngle            offsetAngle;
     float               zFar;
     float               zNear;
     float               fov;

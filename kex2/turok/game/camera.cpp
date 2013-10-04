@@ -97,9 +97,9 @@ void kexCamera::SetupMatrices(void) {
     // model
     modelMatrix.Identity();
 
-    kexQuat yaw(-angles.yaw + M_PI, kexVec3::vecUp);
-    kexQuat pitch(angles.pitch, kexVec3::vecRight);
-    kexQuat roll(angles.roll,
+    kexQuat yaw(-(angles.yaw + offsetAngle.yaw) + M_PI, kexVec3::vecUp);
+    kexQuat pitch(angles.pitch + offsetAngle.pitch, kexVec3::vecRight);
+    kexQuat roll(angles.roll + offsetAngle.roll,
         kexVec3(0, (float)sin(angles.pitch), (float)cos(angles.pitch)));
     
     modelMatrix = kexMatrix((yaw * roll) * pitch);
@@ -143,10 +143,20 @@ void kexCamera::InitObject(void) {
 
     kexActor::RegisterBaseProperties<kexCamera>("kCamera");
 
-#define OBJPROPERTY(str, p)                         \
-    scriptManager.Engine()->RegisterObjectProperty( \
-        "kCamera",                                  \
-        str,                                        \
+#define OBJMETHOD(str, a, b, c)                         \
+        scriptManager.Engine()->RegisterObjectMethod(   \
+            "kCamera",                                  \
+            str,                                        \
+            asMETHODPR(kexCamera, a, b, c),             \
+            asCALL_THISCALL)
+
+    OBJMETHOD("kAngle &GetOffsetAngle(void)", GetOffsetAngle, (void), kexAngle&);
+    OBJMETHOD("void SetOffsetAngle(const kAngle &in)", SetOffsetAngle, (const kexAngle &an), void);
+
+#define OBJPROPERTY(str, p)                             \
+    scriptManager.Engine()->RegisterObjectProperty(     \
+        "kCamera",                                      \
+        str,                                            \
         asOFFSET(kexCamera, p))
 
     OBJPROPERTY("float zFar", zFar);
@@ -156,5 +166,6 @@ void kexCamera::InitObject(void) {
     OBJPROPERTY("bool bLetterBox", bLetterBox);
     OBJPROPERTY("bool bFixedFOV", bFixedFOV);
 
+#undef OBJMETHOD
 #undef OBJPROPERTY
 }

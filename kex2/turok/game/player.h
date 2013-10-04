@@ -136,6 +136,7 @@ public:
     void                    SerializeScriptObject(void);
     void                    DeSerializeScriptObject(void);
     bool                    ActionDown(const kexStr &str);
+    int                     ActionHeldTime(const kexStr &str);
 
     //kexActor               *Camera(void) { return camera; }
     kexVec3                 &MoveDiff(void) { return moveDiff; }

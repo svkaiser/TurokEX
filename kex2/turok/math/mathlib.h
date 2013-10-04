@@ -367,7 +367,6 @@ public:
     static void             ObjectConstruct(const kexVec3 &normal, const kexVec3 &point, kexPlane *p);
     static void             ObjectConstructCopy(const kexPlane &in, kexPlane *p);
 
-private:
     float                   a;
     float                   b;
     float                   c;

@@ -40,12 +40,10 @@ kexScriptManager scriptManager;
 
 static void FCmd_Call(void) {
     if(command.GetArgc() < 2) {
-        common.Printf("Usage: call <\"name\">\n");
+        common.Printf("Usage: call <\"function name\">\n");
         return;
     }
-    scriptManager.CallExternalScript(
-        command.GetArgv(1),
-        "void main(void)");
+    scriptManager.CallCommand(kva("void %s(void)", command.GetArgv(1)));
 }
 
 //
@@ -270,6 +268,29 @@ void kexScriptManager::CallExternalScript(const char *file, const char *function
         return;
     }
     common.Warning("No function declared as %s\n", function);
+}
+
+//
+// kexScriptManager::CallCommand
+//
+
+void kexScriptManager::CallCommand(const char *decl) {
+    asIScriptFunction *func = module->GetFunctionByDecl(decl);
+
+    if(func != 0) {
+        int state = ctx->GetState();
+
+        if(state == asEXECUTION_ACTIVE)
+            ctx->PushState();
+
+        ctx->Prepare(func);
+        if(ctx->Execute() == asEXECUTION_EXCEPTION) {
+            common.Error("%s", ctx->GetExceptionString());
+        }
+
+        if(state == asEXECUTION_ACTIVE)
+            ctx->PopState();
+    }
 }
 
 //
