@@ -47,9 +47,9 @@ private:
     void            DrawStaticActors(void);
     void            DrawActors(void);
     void            DrawFX(void);
-    void            DrawSurface(const mdlsection_t *section, const char *texturePath);
-    void            TraverseDrawActorNode(const kexWorldActor *actor,
-                        const mdlnode_t *node, animstate_t *animstate);
+    void            DrawSurface(const surface_t *surface, const char *texturePath);
+    void            TraverseDrawActorNode(kexWorldActor *actor,
+                        const modelNode_t *node, kexAnimState *animState);
 
     void            DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b);
     void            DrawRadius(float x, float y, float z, float radius, float height,

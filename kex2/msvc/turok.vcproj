@@ -269,6 +269,10 @@
 				Name="renderer"
 				>
 				<File
+					RelativePath="..\turok\renderer\animation.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\frustum.cpp"
 					>
 				</File>
@@ -302,6 +306,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\render_shadows.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\renderModel.cpp"
 					>
 				</File>
 				<File
@@ -698,11 +706,19 @@
 				Name="renderer"
 				>
 				<File
+					RelativePath="..\turok\renderer\animation.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\frustum.h"
 					>
 				</File>
 				<File
 					RelativePath="..\turok\renderer\render.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\renderModel.h"
 					>
 				</File>
 				<File

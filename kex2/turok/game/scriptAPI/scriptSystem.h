@@ -50,6 +50,7 @@ private:
     bool                    HasScriptFile(const char *file);
     void                    RegisterBasicTypes(void);
     void                    RegisterObjects(void);
+    void                    RegisterMath(void);
 
     static void             MessageCallback(const asSMessageInfo *msg, void *param);
 

@@ -543,6 +543,8 @@ void kexLocalPlayer::LocalTick(void) {
     angles = puppet->GetAngles();
     origin = puppet->GetOrigin();
 
+    puppet->UpdateTransform();
+
     angles.Clamp180();
 }
 

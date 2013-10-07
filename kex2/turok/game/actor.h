@@ -25,6 +25,8 @@
 
 #include "common.h"
 #include "script.h"
+#include "renderModel.h"
+#include "animation.h"
 #include "linkedlist.h"
 #include "clipmesh.h"
 #include "physics.h"
@@ -34,6 +36,7 @@ class kexAttachment {
 public:
     void                        Transform(void);
     void                        AttachToActor(kexActor *targ);
+    void                        DettachActor(void);
 
     kexVec3                     &GetAttachOffset(void) { return attachOffset; }
     void                        SetAttachOffset(const kexVec3 &vec) { attachOffset = vec; }
@@ -78,7 +81,7 @@ public:
     const int                   RefCount(void) const { return refCount; }
     kexMatrix                   &Matrix(void) { return matrix; }
     kexBBox                     &BoundingBox(void) { return bbox; }
-    const kmodel_t              *Model(void) const { return model; }
+    const kexModel_t            *Model(void) const { return model; }
 
     struct gridBound_s          *gridBound;
 
@@ -145,7 +148,7 @@ protected:
     kexPhysics                  physics;
     kexMatrix                   matrix;
     kexMatrix                   rotMatrix;
-    kmodel_t                    *model;
+    kexModel_t                  *model;
     kexVec3                     scale;
     float                       timeStamp;
     float                       tickDistance;
@@ -196,6 +199,9 @@ public:
     kexStr                      &GetName(void) { return name; }
     void                        SetName(kexStr &str) { name = str; }
     kexClipMesh                 &ClipMesh(void) { return clipMesh; }
+    kexVec3                     *GetNodeTranslations(void) { return nodeOffsets_t; }
+    kexQuat                     *GetNodeRotations(void) { return nodeOffsets_r; }
+    kexAnimState                *AnimState(void) { return &animState; }
 
     static unsigned int         id;
 
@@ -224,7 +230,7 @@ protected:
     kexQuat                     lerpRotation;
     kexVec3                     *nodeOffsets_t;
     kexQuat                     *nodeOffsets_r;
-    animstate_t                 animState;
+    kexAnimState                animState;
     int                         variant;
     rcolor                      *vertexColors;
 END_CLASS();

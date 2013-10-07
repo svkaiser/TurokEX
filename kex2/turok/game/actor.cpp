@@ -50,6 +50,14 @@ void kexAttachment::AttachToActor(kexActor *targ) {
 }
 
 //
+// kexAttachment::DettachActor
+//
+
+void kexAttachment::DettachActor(void) {
+    AttachToActor(NULL);
+}
+
+//
 // kexAttachment::Transform
 //
 
@@ -322,17 +330,17 @@ void kexWorldActor::ParseDefault(kexLexer *lexer) {
 
         // texture swap block
         lexer->ExpectNextToken(TK_LBRACK);
-        for(unsigned int j = 0; j < (int)model->numnodes; j++) {
-            mdlnode_t *node = &model->nodes[j];
+        for(unsigned int j = 0; j < (int)model->numNodes; j++) {
+            modelNode_t *node = &model->nodes[j];
 
             // node block
             lexer->ExpectNextToken(TK_LBRACK);
-            for(unsigned int k = 0; k < node->nummeshes; k++) {
-                mdlmesh_t *mesh = &node->meshes[k];
+            for(unsigned int k = 0; k < node->numSurfaceGroups; k++) {
+                surfaceGroup_t *group = &node->surfaceGroups[k];
 
                 // mesh block
                 lexer->ExpectNextToken(TK_LBRACK);
-                for(unsigned int l = 0; l < mesh->numsections; l++) {
+                for(unsigned int l = 0; l < group->numSurfaces; l++) {
                     // parse sections
                     lexer->GetString();
                     textureSwaps[j][k][l] = Z_Strdup(lexer->StringToken(), PU_ACTOR, NULL);
@@ -453,62 +461,63 @@ void kexWorldActor::UpdateTransform(void) {
 
 void kexWorldActor::SetModel(const char* modelFile) {
     if(modelFile)
-        model = Kmesh_Load(modelFile);
+        model = modelManager.LoadModel(modelFile);
 
     if(model) {
         unsigned int i;
         unsigned int j;
-        anim_t *anim;
-        kmodel_t *m;
+        kexAnim_t *anim;
+        kexModel_t *m;
 
         m = model;
 
         // set initial animation
         // TODO - rename anim00 to something better
-        if(anim = Mdl_GetAnim(m, "anim00"))
-            Mdl_SetAnimState(&animState, anim, 4, ANF_LOOP);
+        if(anim = kexAnimState::GetAnim(m, "anim00")) {
+            animState.Set(anim, 4, ANF_LOOP);
+        }
 
         // allocate node translation offset data
         nodeOffsets_t = (kexVec3*)Z_Realloc(
             nodeOffsets_t,
-            sizeof(kexVec3) * m->numnodes,
+            sizeof(kexVec3) * m->numNodes,
             PU_ACTOR,
             0);
 
         // allocate node rotation offset data
         nodeOffsets_r = (kexQuat*)Z_Realloc(
             nodeOffsets_r,
-            sizeof(kexQuat) * m->numnodes,
+            sizeof(kexQuat) * m->numNodes,
             PU_ACTOR,
             0);
 
         // set default rotation offsets
-        for(i = 0; i < m->numnodes; i++)
+        for(i = 0; i < m->numNodes; i++)
             nodeOffsets_r[i].Set(0, 0, 0, 1);
 
         // allocate data for texture swap array
         textureSwaps = (char****)Z_Calloc(sizeof(char***) *
-            m->numnodes, PU_ACTOR, NULL);
+            m->numNodes, PU_ACTOR, NULL);
 
-        for(j = 0; j < m->numnodes; j++) {
+        for(j = 0; j < m->numNodes; j++) {
             unsigned int k;
-            mdlnode_t *node;
+            modelNode_t *node;
 
             node = &m->nodes[j];
 
             textureSwaps[j] = (char***)Z_Calloc(sizeof(char**) *
-                node->nummeshes, PU_ACTOR, NULL);
+                node->numSurfaceGroups, PU_ACTOR, NULL);
 
-            for(k = 0; k < node->nummeshes; k++) {
-                mdlmesh_t *mesh;
+            for(k = 0; k < node->numSurfaceGroups; k++) {
+                surfaceGroup_t *group;
 
-                mesh = &node->meshes[k];
+                group = &node->surfaceGroups[k];
 
-                if(mesh->numsections == 0)
+                if(group->numSurfaces == 0)
                     continue;
 
                 textureSwaps[j][k] = (char**)Z_Calloc(sizeof(char*) *
-                    mesh->numsections, PU_ACTOR, NULL);
+                    group->numSurfaces, PU_ACTOR, NULL);
             }
         }
     }
@@ -744,6 +753,7 @@ void kexWorldActor::InitObject(void) {
 
     OBJMETHOD("void Transform(void)", Transform, (void), void);
     OBJMETHOD("void AttachToActor(kActor@)", AttachToActor, (kexActor *targ), void);
+    OBJMETHOD("void DettachActor(void)", DettachActor, (void), void);
     OBJMETHOD("kVec3 &GetAttachOffset(void)", GetAttachOffset, (void), kexVec3&);
     OBJMETHOD("void SetAttachOffset(const kVec3 &in)", SetAttachOffset, (const kexVec3 &vec), void);
     OBJMETHOD("kActor @GetOwner(void)", GetOwner, (void), kexActor*);

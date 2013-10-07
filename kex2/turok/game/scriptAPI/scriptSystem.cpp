@@ -142,6 +142,7 @@ void kexScriptManager::Init(void) {
 
     RegisterBasicTypes();
     RegisterObjects();
+    RegisterMath();
 
     // TODO
     ProcessScript("scripts/main.txt");
@@ -291,6 +292,22 @@ void kexScriptManager::CallCommand(const char *decl) {
         if(state == asEXECUTION_ACTIVE)
             ctx->PopState();
     }
+}
+
+//
+// kexScriptManager::RegisterMath
+//
+
+void kexScriptManager::RegisterMath(void) {
+    engine->SetDefaultNamespace("Math");
+    engine->RegisterGlobalFunction("float Sin(float)", asFUNCTION(sinf), asCALL_CDECL);
+    engine->RegisterGlobalFunction("float Cos(float)", asFUNCTION(cosf), asCALL_CDECL);
+    engine->RegisterGlobalFunction("float Tan(float)", asFUNCTION(tanf), asCALL_CDECL);
+    engine->RegisterGlobalFunction("float ATan2(float)", asFUNCTION(atan2f), asCALL_CDECL);
+    engine->RegisterGlobalFunction("float Fabs(float)", asFUNCTION(fabsf), asCALL_CDECL);
+    engine->RegisterGlobalFunction("float Acos(float)", asFUNCTION(acosf), asCALL_CDECL);
+    engine->RegisterGlobalFunction("float Sqrt(float)", asFUNCTION(sqrtf), asCALL_CDECL);
+    engine->SetDefaultNamespace("");
 }
 
 //

@@ -27,6 +27,7 @@
 #include "common.h"
 #include "client.h"
 #include "mathlib.h"
+#include "renderModel.h"
 #include "actor.h"
 #include "world.h"
 #include "renderSystem.h"
@@ -182,22 +183,22 @@ void kexRenderWorld::SetupGlobalLight(void) {
 // kexRenderWorld::DrawSurface
 //
 
-void kexRenderWorld::DrawSurface(const mdlsection_t *section, const char *texturePath) {
+void kexRenderWorld::DrawSurface(const surface_t *surface, const char *texturePath) {
     texture_t *tex;
     rcolor color;
 
     if(texturePath == NULL) {
-        texturePath = section->texpath;
+        texturePath = surface->texturePath;
     }
 
-    renderSystem.SetState(GLSTATE_CULL, (section->flags & MDF_NOCULLFACES) == 0);
-    renderSystem.SetState(GLSTATE_BLEND, (section->flags & (MDF_MASKED|MDF_TRANSPARENT1)) != 0);
-    renderSystem.SetState(GLSTATE_ALPHATEST, (section->flags & (MDF_MASKED|MDF_TRANSPARENT1)) != 0);
-    renderSystem.SetState(GLSTATE_TEXGEN_S, (section->flags & MDF_SHINYSURFACE) != 0);
-    renderSystem.SetState(GLSTATE_TEXGEN_T, (section->flags & MDF_SHINYSURFACE) != 0);
+    renderSystem.SetState(GLSTATE_CULL, (surface->flags & MDF_NOCULLFACES) == 0);
+    renderSystem.SetState(GLSTATE_BLEND, (surface->flags & (MDF_MASKED|MDF_TRANSPARENT1)) != 0);
+    renderSystem.SetState(GLSTATE_ALPHATEST, (surface->flags & (MDF_MASKED|MDF_TRANSPARENT1)) != 0);
+    renderSystem.SetState(GLSTATE_TEXGEN_S, (surface->flags & MDF_SHINYSURFACE) != 0);
+    renderSystem.SetState(GLSTATE_TEXGEN_T, (surface->flags & MDF_SHINYSURFACE) != 0);
 
-    if(section->flags & MDF_COLORIZE) {
-        color = section->color1;
+    if(surface->flags & MDF_COLORIZE) {
+        color = surface->color1;
         renderSystem.SetState(GLSTATE_LIGHTING, false);
     }
     else {
@@ -205,19 +206,19 @@ void kexRenderWorld::DrawSurface(const mdlsection_t *section, const char *textur
         renderSystem.SetState(GLSTATE_LIGHTING, true);
     }
 
-    if(section->flags & MDF_MASKED) {
+    if(surface->flags & MDF_MASKED) {
         renderSystem.SetAlphaFunc(GLFUNC_GEQUAL, 0.6525f);
     }
     else {
         renderSystem.SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
     }
 
-    dglNormalPointer(GL_FLOAT, sizeof(float)*3, section->normals);
-    dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, section->coords);
-    dglVertexPointer(3, GL_FLOAT, sizeof(vec3_t), section->xyz);
+    dglNormalPointer(GL_FLOAT, sizeof(float)*3, surface->normals);
+    dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, surface->coords);
+    dglVertexPointer(3, GL_FLOAT, sizeof(kexVec3), surface->vertices);
 
     tex = Tex_CacheTextureFile(texturePath, GL_REPEAT,
-        section->flags & MDF_MASKED);
+        surface->flags & MDF_MASKED);
 
     if(tex) {
         renderSystem.SetState(GLSTATE_LIGHTING, true);
@@ -226,10 +227,10 @@ void kexRenderWorld::DrawSurface(const mdlsection_t *section, const char *textur
     else {
         renderSystem.SetState(GLSTATE_LIGHTING, false);
         GL_BindTextureName("textures/white.tga");
-        color = section->color1;
+        color = surface->color1;
     }
 
-    if(section->flags & MDF_TRANSPARENT1) {
+    if(surface->flags & MDF_TRANSPARENT1) {
         renderSystem.SetState(GLSTATE_LIGHTING, false);
         color = color & 0xffffff;
         color |= (160 << 24);
@@ -237,51 +238,105 @@ void kexRenderWorld::DrawSurface(const mdlsection_t *section, const char *textur
 
     dglColor4ubv((byte*)&color);
 
-    dglDrawElements(GL_TRIANGLES, section->numtris, GL_UNSIGNED_SHORT, section->tris);
+    dglDrawElements(GL_TRIANGLES, surface->numIndices, GL_UNSIGNED_SHORT, surface->indices);
 }
 
 //
 // kexRenderWorld::TraverseDrawActorNode
 //
 
-void kexRenderWorld::TraverseDrawActorNode(const kexWorldActor *actor,
-                                           const mdlnode_t *node,
-                                           animstate_t *animstate) {
+void kexRenderWorld::TraverseDrawActorNode(kexWorldActor *actor,
+                                           const modelNode_t *node,
+                                           kexAnimState *animState) {
     unsigned int i;
-    const kmodel_t *model = actor->Model();
+    const kexModel_t *model = actor->Model();
     int nodenum = node - model->nodes;
 
-    if(animstate != NULL) {
-        anim_t *anim;
-        anim_t *prevanim;
+    if(animState != NULL) {
+        kexAnim_t *anim;
+        kexAnim_t *prevanim;
         int frame;
         int nextframe;
         float delta;
 
         dglPushMatrix();
 
-        anim        = animstate->track.anim;
-        prevanim    = animstate->prevtrack.anim;
-        frame       = animstate->track.frame;
-        nextframe   = animstate->track.nextframe;
-        delta       = animstate->deltatime;
+        anim        = animState->track.anim;
+        prevanim    = animState->prevTrack.anim;
+        frame       = animState->track.frame;
+        nextframe   = animState->track.nextFrame;
+        delta       = animState->deltaTime;
 
-        if(anim && frame < (int)anim->numframes) {
+        if(anim && frame < (int)anim->numFrames) {
+            kexQuat r1 = animState->GetRotation(anim, nodenum, frame);
+            kexQuat r2 = animState->GetRotation(anim, nodenum, nextframe);
+            kexVec3 t1 = animState->GetTranslation(anim, nodenum, frame);
+            kexVec3 t2 = animState->GetTranslation(anim, nodenum, nextframe);
+
+            kexQuat rot_cur;
+            kexQuat rot_next;
+            kexVec3 pos_cur;
+            kexVec3 pos_next;
+
+            if(!(animState->flags & ANF_BLEND)) {
+                rot_cur     = r1;
+                rot_next    = r2;
+                pos_cur     = t1;
+                pos_next    = t2;
+            }
+            else {
+                frame       = animState->prevTrack.frame;
+                nextframe   = animState->prevTrack.nextFrame;
+
+                rot_cur     = r1.Slerp(animState->GetRotation(prevanim, nodenum, frame), delta);
+                rot_next    = r2.Slerp(animState->GetRotation(prevanim, nodenum, nextframe), delta);
+                pos_cur     = t1.Lerp(animState->GetTranslation(prevanim, nodenum, frame), delta);
+                pos_next    = t2.Lerp(animState->GetTranslation(prevanim, nodenum, nextframe), delta);
+            }
+
+            kexQuat rot = rot_cur.Slerp(rot_next, delta);
+            kexVec3 pos = pos_cur.Lerp(pos_next, delta);
+
+            if(nodenum == 0) {
+                if(animState->flags & ANF_ROOTMOTION) {
+                    if(nextframe >= frame && animState->frameTime > 0) {
+                        kexMatrix mtx(DEG2RAD(-90), 1);
+                        mtx.Scale(-1, 1, 1);
+
+                        kexVec3 offs = (pos_next - pos_cur) | mtx;
+                        animState->baseOffset = -pos_cur[2] * actor->GetScale()[1];
+                        animState->rootMotion = (offs * actor->GetScale()) *
+                            (60.0f / animState->frameTime);
+                    }
+                }
+
+                if(animState->flags & ANF_ROOTMOTION ||
+                    animState->prevFlags & ANF_ROOTMOTION) {
+                    pos.x = 0;
+                    pos.y = 0;
+                }
+            }
+
+            rot *= actor->GetNodeRotations()[nodenum];
+            kexMatrix translation(rot);
+            translation.AddTranslation(pos);
+
+            dglMultMatrixf(translation.ToFloatPtr());
         }
     }
 
-    if(node->nummeshes > 0) {
+    if(node->numSurfaceGroups > 0) {
         unsigned int var;
 
-        var = (actor->Variant() >= (int)node->numvariants) ?
+        var = (actor->Variant() >= (int)node->numVariants) ?
             0 : node->variants[actor->Variant()];
 
-        if(var >= node->nummeshes) {
+        if(var >= node->numSurfaceGroups) {
             var = 0;
         }
 
-        for(i = 0; i < node->meshes[var].numsections; i++) {
-            mdlsection_t *section = &node->meshes[var].sections[i];
+        for(i = 0; i < node->surfaceGroups[var].numSurfaces; i++) {
+            surface_t *surface = &node->surfaceGroups[var].surfaces[i];
             char *texturepath = NULL;
 
             if(actor->textureSwaps != NULL) {
@@ -291,16 +346,16 @@ void kexRenderWorld::TraverseDrawActorNode(const kexWorldActor *actor,
                     texturepath = meshTexture;
             }
 
-            DrawSurface(section, texturepath);
+            DrawSurface(surface, texturepath);
         }
     }
 
-    for(i = 0; i < node->numchildren; i++) {
+    for(i = 0; i < node->numChildren; i++) {
         TraverseDrawActorNode(actor,
-            &model->nodes[node->children[i]], animstate);
+            &model->nodes[node->children[i]], animState);
     }
 
-    if(animstate != NULL) {
+    if(animState != NULL) {
         dglPopMatrix();
     }
 }
@@ -371,6 +426,8 @@ void kexRenderWorld::DrawStaticActors(void) {
 
 void kexRenderWorld::DrawActors(void) {
     kexFrustum frustum = world->Camera()->Frustum();
+    kexMatrix mtx(DEG2RAD(-90), 1);
+    mtx.Scale(-1, 1, 1);
 
     for(kexWorldActor *actor = world->actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
@@ -387,8 +444,33 @@ void kexRenderWorld::DrawActors(void) {
             if(actor->bCulled)
                 continue;
 
-            // TEMP
-            //DrawBoundingBox(box, 255, 0, 0);
+            if(actor->Model()) {
+                dglPushMatrix();
+                dglMultMatrixf(actor->Matrix().ToFloatPtr());
+                dglPushMatrix();
+
+                dglMultMatrixf(mtx.ToFloatPtr());
+
+                TraverseDrawActorNode(actor, &actor->Model()->nodes[0], actor->AnimState());
+
+                dglPopMatrix();
+                dglPopMatrix();
+            }
+
+            if(bShowBBox) {
+                if(actor->bTraced) {
+                    DrawBoundingBox(box, 255, 0, 0);
+                    actor->bTraced = false;
+                }
+                else {
+                    DrawBoundingBox(box, 255, 128, 128);
+                }
+            }
+            if(bShowRadius && actor->bCollision) {
+                kexVec3 org = actor->GetOrigin();
+                DrawRadius(org[0], org[1], org[2],
+                    actor->Radius(), actor->Height(), 255, 128, 128);
+            }
     }
 }
 

@@ -1073,6 +1073,7 @@ static void ProcessAreas(byte *data)
 // ProcessNavigation
 //
 
+#ifdef OLD_FORMAT
 static void ProcessNavigation(byte *data, int index)
 {
     byte *rncdata;
@@ -1161,6 +1162,93 @@ static void ProcessNavigation(byte *data, int index)
     Com_Free(&buffer);
 #endif
 }
+#else
+static void ProcessNavigation(byte *data, int index)
+{
+    byte *rncdata;
+    byte *info;
+    byte *points;
+    byte *leafs;
+    int size;
+    int outsize;
+    char name[256];
+    byte *buffer = NULL;
+    int leafSize;
+    int leafCount;
+    int i;
+    int *ptRover;
+    int numPoints;
+
+    Com_StrcatClear();
+
+    rncdata = Com_GetCartData(data, CHUNK_LVROOT_INFO, &size);
+    info = RNC_ParseFile(rncdata, size, &outsize);
+
+    points = Com_GetCartData(info, CHUNK_LEVELINFO_POINTS, &size);
+    DC_DecodeData(points, decode_buffer, 0);
+    memcpy(points, decode_buffer, size);
+
+    leafs = Com_GetCartData(info, CHUNK_LEVELIFNO_LEAFS, &size);
+    DC_DecodeData(leafs, decode_buffer, 0);
+    memcpy(leafs, decode_buffer, size);
+
+    Com_Strcat("model { numnodes = 1 nodes {{ numchildren = 0 numvariants = 1 variants = { 0 } numgroups = 1\n");
+    Com_Strcat("groups {{ numsections = 1 sections {{ texture = \"textures/default.tga\" rgba = 0 0 0 255\n");
+
+    Com_SetDataProgress(Com_GetCartOffset(points, CHUNK_POINTS_COUNT, 0) +
+        Com_GetCartOffset(leafs, CHUNK_LEAFS_COUNT, 0));
+
+    leafSize = Com_GetCartOffset(leafs, CHUNK_LEAFS_SIZE, 0);
+    leafCount = Com_GetCartOffset(leafs, CHUNK_LEAFS_COUNT, 0);
+
+    Com_Strcat("numtriangles = %i\n", leafCount);
+    Com_Strcat("triangles = {\n");
+
+    for(i = 0; i < leafCount; i++)
+    {
+        mapleaf_t *leaf = (mapleaf_t*)(leafs + 8 + (i * leafSize));
+
+        Com_Strcat("%i %i %i\n", leaf->pt1, leaf->pt2, leaf->pt3);
+        Com_UpdateDataProgress();
+    }
+
+    Com_Strcat("}\n");
+
+    ptRover = (int*)(points + 8);
+    numPoints = Com_GetCartOffset(points, CHUNK_POINTS_COUNT, 0);
+
+    Com_Strcat("numvertices = %i\n", numPoints);
+    Com_Strcat("vertices = {\n");
+
+    Com_Strcat("xyz = {\n");
+    for(i = 0; i < numPoints; i++)
+    {
+        Com_Strcat("%f %f %f\n",
+            (float)ptRover[0] * 0.029296875f,
+            (float)ptRover[1] * 0.029296875f,
+            (float)ptRover[2] * 0.029296875f);
+
+        ptRover += 4;
+        Com_UpdateDataProgress();
+    }
+    Com_Strcat("}\n");
+
+    Com_Strcat("coords = {\n");
+    for(i = 0; i < numPoints; i++)
+        Com_Strcat("0 0\n");
+    Com_Strcat("}\n");
+
+    Com_Strcat("normals = {\n");
+    for(i = 0; i < numPoints; i++)
+        Com_Strcat("0 0 0\n");
+    Com_Strcat("}}}}}}}}}\n");
+
+    sprintf(name, "maps/map%02d/mapCollision%02d.kmesh", index, index);
+    Com_StrcatAddToFile(name);
+
+    Com_Free(&info);
+}
+#endif
 
 //
 // ProcessAIBehavior
@@ -1717,7 +1805,7 @@ static void ProcessActors(byte *data)
         switch(actor->type)
         {
         case OT_TUROK:
-            Com_Strcat("actor \"kexPlayerLocation\"\n");
+            Com_Strcat("actor \"kexPlayerPuppet\"\n");
             Com_Strcat("{\n");
             Com_Strcat("origin { %f %f %f }\n",
                 actor->xyz[0], actor->xyz[1], actor->xyz[2]);
@@ -1726,6 +1814,20 @@ static void ProcessActors(byte *data)
             Com_Strcat("angles { %f 0.0 0.0 }\n",
                 ((((-(float)actor->angle / 180.0f) * M_RAD) + M_PI) / M_RAD) * M_RAD);
             Com_Strcat("bStatic 0\n");
+            Com_Strcat("mesh \"models/mdl%03d/mdl%03d.kmesh\"\n",
+                actor->model, actor->model);
+            Com_Strcat("bounds { %f %f %f } { %f %f %f }\n",
+                mdlboxes[actor->model][0],
+                mdlboxes[actor->model][1],
+                mdlboxes[actor->model][2],
+                mdlboxes[actor->model][3],
+                mdlboxes[actor->model][4],
+                mdlboxes[actor->model][5]);
+            Com_Strcat("radius %f\n", attr->width);
+            Com_Strcat("height %f\n", attr->height);
+            Com_Strcat("centerheight %f\n", attr->centerHeight);
+            Com_Strcat("viewheight %f\n", attr->viewHeight);
+            Com_Strcat("id 0\n");
             Com_Strcat("component \"TurokPlayer\"\n");
             Com_Strcat("}\n");
         }
@@ -3166,9 +3268,7 @@ static void AddLevel(byte *data, int index)
 
     level = Com_GetCartData(data, CHUNK_LEVEL_OFFSET(index), 0);
 
-#ifdef OLD_FORMAT
     ProcessNavigation(level, index);
-#endif
     ProcessLevel(level, index);
     ProcessSkyTexture(level, index);
 }

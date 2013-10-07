@@ -241,8 +241,25 @@ void kexPhysics::ApplyFriction(void) {
         velocity.z = velocity.z * clipspeed;
     }
 
+    float yFriction = 0;
+
     if(airFriction == 0) {
-        return;
+        if(groundGeom == NULL) {
+            return;
+        }
+
+        if(GroundDistance() > ONPLANE_EPSILON) {
+            return;
+        }
+
+        if(OnSteepSlope() && velocity.Dot(groundGeom->plane.Normal()) <= 0) {
+            return;
+        }
+
+        yFriction = friction;
+    }
+    else {
+        yFriction = airFriction;
     }
 
     speed = velocity.y;
@@ -251,7 +268,7 @@ void kexPhysics::ApplyFriction(void) {
         velocity.y = 0;
     }
     else {
-        float clipspeed = speed - (speed * airFriction);
+        float clipspeed = speed - (speed * yFriction);
 
         if(clipspeed < 0) {
             clipspeed = 0;
@@ -293,6 +310,7 @@ void kexPhysics::Think(const float timeDelta) {
     kexVec3 oldVelocity = velocity;
     kexVec3 start = owner->GetOrigin();
     kexVec3 end;
+    kexVec3 fracVel;
     kexVec3 direction;
     kexVec3 normals[TRYMOVE_COUNT+2];
     int moves = 0;
@@ -312,9 +330,11 @@ void kexPhysics::Think(const float timeDelta) {
         velocity += (gravity * massAmount);
     }
     else {
-        if(velocity.Dot(groundGeom->plane.Normal()) < 0) {
-            ImpactVelocity(groundGeom->plane.Normal(), 1);
+        ImpactVelocity(groundGeom->plane.Normal(), 1);
+        if(oldVelocity.y > 0) {
+            velocity.y = oldVelocity.y;
         }
+
         normals[moves++] = groundGeom->plane.Normal();
     }
 
@@ -337,6 +357,7 @@ void kexPhysics::Think(const float timeDelta) {
         }
 
         normals[moves++] = traceInfo.hitNormal;
+        fracVel = velocity * traceInfo.fraction;
 
         // try all interacted normals
         for(hits = 0; hits < moves; hits++) {
@@ -344,15 +365,9 @@ void kexPhysics::Think(const float timeDelta) {
                 continue;
             }
 
-            kexVec3 v = velocity * traceInfo.fraction;
             ImpactVelocity(normals[hits], 1.01f);
-            velocity += v;
-
-            if(traceInfo.hitTri == groundGeom) {
-                if(normals[hits].Dot(-gravity) <= 0.5f && velocity.y > 0) {
-                    velocity -= (traceInfo.hitTri->plane.GetInclination() * (velocity.y + 200));
-                }
-            }
+            velocity += fracVel;
+            fracVel = velocity * traceInfo.fraction;
 
             // try bumping against another plane
             for(int j = 0; j < moves; j++) {
@@ -362,6 +377,8 @@ void kexPhysics::Think(const float timeDelta) {
 
                 // bump into second plane
                 ImpactVelocity(normals[j], 1.01f);
+                velocity += fracVel;
+                fracVel = velocity * traceInfo.fraction;
 
                 if(velocity.Dot(normals[hits]) >= 0) {
                     continue;

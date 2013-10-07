@@ -344,37 +344,37 @@ void kexClipMesh::CreateDodecahedron(const kexBBox &bbox) {
 //
 
 void kexClipMesh::CreateMeshFromModel(void) {
-    const kmodel_t *model = owner->Model();
+    const kexModel_t *model = owner->Model();
 
     if(model == NULL) {
         return;
     }
 
     // TODO - support variants and child nodes
-    mdlmesh_t *mesh = &model->nodes[0].meshes[0];
+    surfaceGroup_t *group = &model->nodes[0].surfaceGroups[0];
 
     origin      = owner->BoundingBox().Center();
-    numGroups   = mesh->numsections;
+    numGroups   = group->numSurfaces;
     cmGroups    = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
 
-    for(unsigned int i = 0; i < mesh->numsections; i++) {
-        mdlsection_t *sec       = &mesh->sections[i];
+    for(unsigned int i = 0; i < numGroups; i++) {
+        surface_t *surface      = &group->surfaces[i];
         cmGroup_t *cmGroup      = &cmGroups[i];
-        cmGroup->numIndices     = sec->numtris;
-        cmGroup->numPoints      = sec->numverts;
-        cmGroup->numTriangles   = sec->numtris / 3;
+        cmGroup->numIndices     = surface->numIndices;
+        cmGroup->numPoints      = surface->numVerts;
+        cmGroup->numTriangles   = surface->numIndices / 3;
         cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
         cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
         cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
 
         for(unsigned int k = 0; k < cmGroup->numIndices; k++) {
-            cmGroup->indices[k] = sec->tris[k];
+            cmGroup->indices[k] = surface->indices[k];
         }
 
         for(unsigned int v = 0; v < cmGroup->numPoints; v++) {
-            cmGroup->points[v].x = sec->xyz[v][0];
-            cmGroup->points[v].y = sec->xyz[v][1];
-            cmGroup->points[v].z = sec->xyz[v][2];
+            cmGroup->points[v].x = surface->vertices[v][0];
+            cmGroup->points[v].y = surface->vertices[v][1];
+            cmGroup->points[v].z = surface->vertices[v][2];
         }
     }
 }

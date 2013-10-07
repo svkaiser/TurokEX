@@ -347,10 +347,11 @@ void kexClient::InitObject(void) {
         asMETHODPR(kexClient, GetTicks, (void), int),
         asCALL_THISCALL);
 
-    scriptManager.Engine()->RegisterObjectProperty(
+    scriptManager.Engine()->RegisterObjectMethod(
         "kClient",
-        "int curTime",
-        asOFFSET(kexClient, curtime));
+        "int GetTime(void)",
+        asMETHODPR(kexClient, GetTime, (void), int),
+        asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectProperty(
         "kClient",
