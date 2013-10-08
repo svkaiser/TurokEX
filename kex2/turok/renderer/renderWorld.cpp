@@ -328,8 +328,13 @@ void kexRenderWorld::TraverseDrawActorNode(kexWorldActor *actor,
     if(node->numSurfaceGroups > 0) {
         unsigned int var;
 
-        var = (actor->Variant() >= (int)node->numVariants) ?
-            0 : node->variants[actor->Variant()];
+        if(node->variants == NULL) {
+            var = 0;
+        }
+        else {
+            var = (actor->Variant() >= (int)node->numVariants) ?
+                0 : node->variants[actor->Variant()];
+        }
 
         if(var >= node->numSurfaceGroups) {
             var = 0;

@@ -373,6 +373,121 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
 //
 
 void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
+    kexArray<float>points;
+    kexArray<float>coords;
+    kexArray<float>normals;
+    kexArray<int>indices;
+    int numObjects = 0;
+    int numGroups = 0;
+
+    while(lexer->CheckState()) {
+        lexer->Find();
+
+        if(lexer->TokenType() != TK_IDENIFIER) {
+            continue;
+        }
+
+        if(!strcmp(lexer->Token(), "o")) {
+            // TODO
+            lexer->Find();
+            numObjects++;
+        }
+        else if(!strcmp(lexer->Token(), "g")) {
+            // TODO
+            lexer->Find();
+            numGroups++;
+        }
+        else if(!strcmp(lexer->Token(), "v")) {
+            points.Push((float)lexer->GetFloat() * 256.0f);
+            points.Push((float)lexer->GetFloat() * 256.0f);
+            points.Push((float)lexer->GetFloat() * 256.0f);
+        }
+        // TODO
+        /*else if(!strcmp(lexer->Token(), "vt")) {
+            coords.Push((float)lexer->GetFloat());
+            coords.Push((float)lexer->GetFloat());
+        }
+        else if(!strcmp(lexer->Token(), "vn")) {
+            normals.Push((float)lexer->GetFloat());
+            normals.Push((float)lexer->GetFloat());
+            normals.Push((float)lexer->GetFloat());
+        }*/
+        else if(!strcmp(lexer->Token(), "f")) {
+            indices.Push(lexer->GetNumber());
+            indices.Push(lexer->GetNumber());
+            indices.Push(lexer->GetNumber());
+        }
+    }
+
+    // TODO
+    if(numObjects == 0) {
+        numObjects = 1;
+    }
+
+    if(numGroups == 0) {
+        numGroups = 1;
+    }
+
+    model->numNodes = numObjects;
+    model->nodes = (modelNode_t*)Z_Calloc(sizeof(modelNode_t) *
+        model->numNodes, PU_MODEL, 0);
+
+    // objects
+    for(unsigned int i = 0; i < model->numNodes; i++) {
+        modelNode_t *node = &model->nodes[i];
+        node->numChildren = 0;
+        node->numVariants = 1;
+        // TODO
+        node->numSurfaceGroups = numGroups;
+        node->surfaceGroups = (surfaceGroup_t*)Z_Calloc(sizeof(surfaceGroup_t) *
+            node->numSurfaceGroups, PU_MODEL, 0);
+
+        // surface groups
+        for(unsigned int j = 0; j < node->numSurfaceGroups; j++) {
+            surfaceGroup_t *group = &node->surfaceGroups[j];
+            // TODO
+            group->numSurfaces = 1;
+            group->surfaces = (surface_t*)Z_Calloc(sizeof(surface_t) *
+                group->numSurfaces, PU_MODEL, 0);
+
+            // surfaces
+            for(unsigned int k = 0; k < group->numSurfaces; k++) {
+                surface_t *surface = &group->surfaces[k];
+                surface->color1 = 0xFFFFFFFF;
+                surface->flags |= MDF_SOLID;
+
+                surface->numIndices = indices.Length();
+                surface->indices = (word*)Z_Calloc(sizeof(word) *
+                    surface->numIndices, PU_MODEL, 0);
+
+                for(unsigned int ind = 0; ind < surface->numIndices; ind++) {
+                    surface->indices[ind] = indices[ind] - 1;
+                }
+
+                surface->numVerts = points.Length() / 3;
+                surface->vertices = (kexVec3*)Z_Calloc(sizeof(kexVec3) *
+                    surface->numVerts, PU_MODEL, 0);
+                surface->coords = (float*)Z_Calloc(sizeof(float) *
+                    surface->numVerts * 2, PU_MODEL, 0);
+                surface->normals = (float*)Z_Calloc(sizeof(float) *
+                    surface->numVerts * 3, PU_MODEL, 0);
+
+                for(unsigned int v = 0; v < surface->numVerts; v++) {
+                    surface->vertices[v].x = points[v * 3 + 0];
+                    surface->vertices[v].y = points[v * 3 + 1];
+                    surface->vertices[v].z = points[v * 3 + 2];
+                    // TODO
+                    /*surface->coords[v * 2 + 0] = coords[v * 2 + 0];
+                    surface->coords[v * 2 + 1] = coords[v * 2 + 1];
+                    surface->normals[v * 2 + 0] = normals[v * 2 + 0];
+                    surface->normals[v * 2 + 1] = normals[v * 2 + 1];
+                    surface->normals[v * 2 + 2] = normals[v * 2 + 2];*/
+                }
+
+                strcpy(surface->texturePath, "textures/default.tga");
+            }
+        }
+    }
 }
 
 //
