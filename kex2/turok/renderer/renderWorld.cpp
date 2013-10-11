@@ -377,8 +377,12 @@ void kexRenderWorld::DrawStaticActors(void) {
 
         for(kexWorldActor *actor = grid->staticActors.Next();
             actor != NULL; actor = actor->worldLink.Next()) {
-                if(actor->bHidden)
+                if(actor->bHidden) {
+                    if(bShowClipMesh) {
+                        actor->ClipMesh().DebugDraw();
+                    }
                     continue;
+                }
 
                 kexBBox box;
 

@@ -184,9 +184,9 @@ bool kexPhysics::OnGround(void) {
 // kexPhysics::ImpactVelocity
 //
 
-void kexPhysics::ImpactVelocity(kexVec3 &normal, const float force) {
-    kexVec3 dir = velocity;
-    float d = velocity.Unit();
+void kexPhysics::ImpactVelocity(kexVec3 &vel, kexVec3 &normal, const float force) {
+    kexVec3 dir = vel;
+    float d = vel.Unit();
     float bounce = force;
 
     if(bounceDamp != 0) {
@@ -198,10 +198,10 @@ void kexPhysics::ImpactVelocity(kexVec3 &normal, const float force) {
         }
     }
 
-    velocity = dir - (normal * (dir.Dot(normal) * bounce));
+    vel = dir - (normal * (dir.Dot(normal) * bounce));
 
     if(d != 0) {
-        velocity *= (dir.Unit() / d);
+        vel *= (dir.Unit() / d);
     }
 }
 
@@ -209,9 +209,9 @@ void kexPhysics::ImpactVelocity(kexVec3 &normal, const float force) {
 // kexPhysics::ProjectOnCrease
 //
 
-void kexPhysics::ProjectOnCrease(const kexVec3 &n1, const kexVec3 &n2) {
+void kexPhysics::ProjectOnCrease(kexVec3 &vel, const kexVec3 &n1, const kexVec3 &n2) {
     kexVec3 dir = n1.Cross(n2).Normalize();
-    velocity = (dir * (velocity.Dot(dir)));
+    vel = (dir * (velocity.Dot(dir)));
 }
 
 //
@@ -302,7 +302,6 @@ void kexPhysics::Think(const float timeDelta) {
     if(owner == NULL) {
         return;
     }
-
     if(owner->bStatic == true) {
         return;
     }
@@ -310,11 +309,12 @@ void kexPhysics::Think(const float timeDelta) {
     kexVec3 oldVelocity = velocity;
     kexVec3 start = owner->GetOrigin();
     kexVec3 end;
-    kexVec3 fracVel;
     kexVec3 direction;
-    kexVec3 normals[TRYMOVE_COUNT+2];
+    kexVec3 vel;
+    kexVec3 normals[TRYMOVE_COUNT+1];
     int moves = 0;
     int hits;
+    float time = timeDelta;
     kexVec3 gravity;
     float massAmount = (mass * timeDelta);
 
@@ -330,18 +330,24 @@ void kexPhysics::Think(const float timeDelta) {
         velocity += (gravity * massAmount);
     }
     else {
-        ImpactVelocity(groundGeom->plane.Normal(), 1);
+        ImpactVelocity(velocity, groundGeom->plane.Normal(), 1.024f);
         if(oldVelocity.y > 0) {
             velocity.y = oldVelocity.y;
+        }
+
+        float ovl;
+        float nvl;
+
+        if((ovl = oldVelocity.UnitSq()) > 1.0f && (nvl = velocity.UnitSq()) > 1.0f) {
+            velocity *= (float)sqrt(ovl / nvl);
         }
 
         normals[moves++] = groundGeom->plane.Normal();
     }
 
-    normals[moves++] = velocity;
-
     for(int i = 0; i < TRYMOVE_COUNT; i++) {
-        end = start + (velocity * timeDelta);
+        start = owner->GetOrigin();
+        end = start + (velocity * time);
 
         direction = (end - start);
         direction.Normalize();
@@ -350,14 +356,38 @@ void kexPhysics::Think(const float timeDelta) {
 
         // trace through world
         localWorld.Trace(this, start, end, direction);
+        time -= (time * traceInfo.fraction);
 
         if(traceInfo.fraction >= 1) {
             // went the entire distance
+            owner->SetOrigin(end);
             break;
         }
 
+        owner->SetOrigin(traceInfo.hitVector);
+
+        if(traceInfo.hitActor == NULL) {
+            // don't climb on steep slopes
+            if(traceInfo.hitNormal.Dot(gravity) >= -0.5f) {
+                traceInfo.hitNormal.y = 0;
+            }
+
+            // nudge origin away from plane
+            owner->SetOrigin(owner->GetOrigin() + (traceInfo.hitNormal * 0.125f));
+
+            for(hits = 0; hits < moves; hits++) {
+                if(traceInfo.hitNormal.Dot(normals[hits]) > 0.95f) {
+                    velocity += traceInfo.hitNormal;
+                    break;
+                }
+            }
+
+            if(hits != moves) {
+                continue;
+            }
+        }
+
         normals[moves++] = traceInfo.hitNormal;
-        fracVel = velocity * traceInfo.fraction;
 
         // try all interacted normals
         for(hits = 0; hits < moves; hits++) {
@@ -365,41 +395,40 @@ void kexPhysics::Think(const float timeDelta) {
                 continue;
             }
 
-            ImpactVelocity(normals[hits], 1.01f);
-            velocity += fracVel;
-            fracVel = velocity * traceInfo.fraction;
+            vel = velocity;
+            ImpactVelocity(vel, normals[hits], 1.024f);
 
             // try bumping against another plane
             for(int j = 0; j < moves; j++) {
-                if(j == hits || velocity.Dot(normals[j]) >= 0) {
+                if(j == hits || vel.Dot(normals[j]) >= 0) {
                     continue;
                 }
 
                 // bump into second plane
-                ImpactVelocity(normals[j], 1.01f);
-                velocity += fracVel;
-                fracVel = velocity * traceInfo.fraction;
+                ImpactVelocity(vel, normals[j], 1.024f);
 
-                if(velocity.Dot(normals[hits]) >= 0) {
+                if(vel.Dot(normals[hits]) >= 0) {
                     continue;
                 }
 
                 // slide along the crease between two planes
-                ProjectOnCrease(normals[hits], normals[j]);
+                ProjectOnCrease(vel, normals[hits], normals[j]);
 
                 // see if it bumps into a third plane
                 for(int k = 0; k < moves; k++) {
-                    if(k != j && k != hits && velocity.Dot(normals[k]) < 0) {
+                    if(k != j && k != hits && vel.Dot(normals[k]) < 0) {
                         // force a dead stop
                         velocity.Clear();
                         return;
                     }
                 }
             }
+
+            velocity = vel;
+            break;
         }
     }
 
-    owner->SetOrigin(owner->GetOrigin() + (velocity * timeDelta));
     ApplyFriction();
 }
 

@@ -251,7 +251,7 @@ void kexWorld::Trace(kexPhysics *physics,
 
             for(kexWorldActor *actor = grid->staticActors.Next();
                 actor != NULL; actor = actor->worldLink.Next()) {
-                    if(actor->bHidden || !actor->bCollision)
+                    if(!actor->bCollision)
                         continue;
 
                     kexBBox box;

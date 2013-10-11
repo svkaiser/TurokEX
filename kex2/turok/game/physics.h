@@ -47,9 +47,9 @@ public:
     float                   GroundDistance(void);
     bool                    OnGround(void);
     bool                    OnSteepSlope(void);
-    void                    ImpactVelocity(kexVec3 &normal, const float force);
+    void                    ImpactVelocity(kexVec3 &vel, kexVec3 &normal, const float force);
     void                    ApplyFriction(void);
-    void                    ProjectOnCrease(const kexVec3 &n1, const kexVec3 &n2);
+    void                    ProjectOnCrease(kexVec3 &vel, const kexVec3 &n1, const kexVec3 &n2);
     void                    Think(const float timeDelta);
     void                    ClearTraceInfo(void);
 

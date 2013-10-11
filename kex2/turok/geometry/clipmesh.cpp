@@ -506,6 +506,9 @@ bool kexClipMesh::Trace(kexPhysics *physics,
                         const kexVec3 &end,
                         const kexVec3 &dir) {
     float frac = 1;
+    kexVec3 c;
+    kexVec3 pt1;
+    kexVec3 pt2;
 
     for(unsigned int i = 0; i < numGroups; i++) {
         cmGroup_t *cmGroup = &cmGroups[i];
@@ -533,9 +536,13 @@ bool kexClipMesh::Trace(kexPhysics *physics,
             kexVec3 hit = start + ((end - start) * frac);
             bool ok = true;
 
+            c = tri->GetCenterPoint();
+
             for(int k = 0; k < 3; k++) {
-                kexVec3 dp1 = *tri->point[(k+0)%3] - hit;
-                kexVec3 dp2 = *tri->point[(k+1)%3] - hit;
+                pt1 = *tri->point[(k+0)%3];
+                pt2 = *tri->point[(k+1)%3];
+                kexVec3 dp1 = (pt1 + ((pt1 - c).Normalize()) * 30.72f) - hit;
+                kexVec3 dp2 = (pt2 + ((pt2 - c).Normalize()) * 30.72f) - hit;
                 if(tri->plane.Normal().Dot(dp1.Cross(dp2)) < 0) {
                     ok = false;
                     break;
