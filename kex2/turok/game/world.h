@@ -49,8 +49,10 @@ public:
     const char                          *GetMapFileFromID(const int id);
     kexWorldActor                       *ConstructActor(const char *className);
     void                                AddActor(kexWorldActor *actor);
-    kexWorldActor                       *SpawnActor(const char *className,
+    kexWorldActor                       *SpawnActor(const char *className, const char *component,
                                             const kexVec3 &origin, const kexAngle &angles);
+    kexWorldActor                       *SpawnActor(kexStr &className, kexStr &component,
+                                            kexVec3 &origin, kexAngle &angles);
     void                                RemoveActor(kexWorldActor *actor);
     void                                SpawnLocalPlayer(void);
     void                                Trace(kexPhysics *physics,

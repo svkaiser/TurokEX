@@ -352,7 +352,6 @@ public:
     const kexVec4           &ToVec4(void) const;
     kexVec4                 &ToVec4(void);
     kexVec3                 GetInclination(void);
-    float                   TestLineIntersect(const kexVec3 &start, const kexVec3 &end, const float radius);
 
     kexPlane                &operator|(const kexQuat &quat);
     kexPlane                &operator|=(const kexQuat &quat);
@@ -421,7 +420,6 @@ public:
     float                   Radius(void) const;
     bool                    PointInside(const kexVec3 &vec) const;
     bool                    IntersectingBox(const kexBBox &box) const;
-    bool                    RayIntersect(const kexVec3 &start, const kexVec3 &dir, float &frac);
     bool                    LineIntersect(const kexVec3 &start, const kexVec3 &end);
     
     kexBBox                 operator+(const float radius) const;

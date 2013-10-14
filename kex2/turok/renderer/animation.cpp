@@ -31,6 +31,8 @@
 #include "renderModel.h"
 #include "animation.h"
 
+#define ANIM_CLOCK_SPEED    60
+
 enum {
     scanim_anim = 0,
     scanim_numframes,
@@ -189,15 +191,15 @@ bool kexAnimState::CheckAnimID(const kexModel_t *model, const int id) {
 // kexAnimState::Set
 //
 
-void kexAnimState::Set(const kexAnim_t *anim, float time, int flags) {
-    time                    = (float)client.GetTicks() + time;
+void kexAnimState::Set(const kexAnim_t *anim, float animTime, int animFlags) {
+    time                    = (float)client.GetTicks() + animTime;
     deltaTime               = 0;
     blendTime               = 0;
     playTime                = 0;
-    frameTime               = time;
+    frameTime               = animTime;
     track.frame             = 0;
     track.nextFrame         = 1;
-    flags                   = flags;
+    flags                   = animFlags;
     prevFlags               = 0;
     prevTrack.frame         = 0;
     prevTrack.nextFrame     = 0;
@@ -211,14 +213,14 @@ void kexAnimState::Set(const kexAnim_t *anim, float time, int flags) {
 // kexAnimState::Blend
 //
 
-void kexAnimState::Blend(const kexAnim_t *anim, float time, float blendTime, int flags) {
+void kexAnimState::Blend(const kexAnim_t *anim, float animTime, float blendTime, int animFlags) {
     bool bSameAnim = (anim == track.anim);
 
     if(flags & ANF_NOINTERRUPT && !(flags & ANF_STOPPED)) {
         return;
     }
 
-    if(bSameAnim && !(flags & ANF_STOPPED) && flags == flags) {
+    if(bSameAnim && !(flags & ANF_STOPPED) && animFlags == flags) {
         return;
     }
 
@@ -228,14 +230,14 @@ void kexAnimState::Blend(const kexAnim_t *anim, float time, float blendTime, int
     }
 
     prevFlags               = flags;
-    flags                   = flags | ANF_BLEND;
+    flags                   = animFlags | ANF_BLEND;
     prevTrack.frame         = track.frame;
     prevTrack.nextFrame     = track.nextFrame;
     track.frame             = bSameAnim ? anim->loopFrame : 0;
     track.nextFrame         = bSameAnim ? (anim->loopFrame+1) : 1;
     time                    = (float)client.GetTicks() + blendTime;
     playTime                = 0;
-    frameTime               = time;
+    frameTime               = animTime;
     blendTime               = blendTime;
     deltaTime               = 0;
     prevTrack.anim          = track.anim;
@@ -260,10 +262,9 @@ void kexAnimState::Update(void) {
         return;
     }
 
-    float blend = (flags & ANF_BLEND) ?
-            blendTime : frameTime;
+    float blend = (flags & ANF_BLEND) ? blendTime : frameTime;
 
-    deltaTime += ((client.GetRunTime()*60)/blend);
+    deltaTime += ((client.GetRunTime()*ANIM_CLOCK_SPEED)/blend);
 
     if(deltaTime > 1) {
         time = (float)client.GetTicks() + frameTime;

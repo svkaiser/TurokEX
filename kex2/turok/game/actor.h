@@ -32,6 +32,13 @@
 #include "physics.h"
 #include "scriptAPI/scriptSystem.h"
 
+//-----------------------------------------------------------------------------
+//
+// kexAttachment - each actor thats attached is counted towards its
+// reference counter
+//
+//-----------------------------------------------------------------------------
+
 class kexAttachment {
 public:
     void                        Transform(void);
@@ -52,6 +59,12 @@ private:
     kexActor                    *owner;
 };
 
+//-----------------------------------------------------------------------------
+//
+// kexActor - base class for all actor types
+//
+//-----------------------------------------------------------------------------
+
 BEGIN_EXTENDED_CLASS(kexActor, kexObject);
 public:
                                 kexActor(void);
@@ -65,6 +78,8 @@ public:
     int                         RemoveRef(void);
     void                        SetTarget(kexActor *targ);
     void                        SetOwner(kexActor *targ);
+
+    void                        SetBoundingBox(const kexVec3 &min, const kexVec3 &max);
 
     kexVec3                     &GetOrigin(void) { return origin; }
     void                        SetOrigin(const kexVec3 &org) { origin = org; }
@@ -85,12 +100,12 @@ public:
 
     struct gridBound_s          *gridBound;
 
-    bool                        bStatic;
-    bool                        bCollision;
-    bool                        bTouch;
-    bool                        bClientOnly;
-    bool                        bHidden;
-    bool                        bCulled;
+    bool                        bStatic;        // no tick/think behavior
+    bool                        bCollision;     // handle collision with this actor
+    bool                        bTouch;         // can be touched/picked up by other actors
+    bool                        bClientOnly;    // ignored by server / only updated by LocalTick
+    bool                        bHidden;        // don't draw by renderer
+    bool                        bCulled;        // currently culled by frustum or distance
 
     //
     // template for registering default script actor methods and properties
@@ -116,6 +131,8 @@ public:
         OBJMETHOD("void SetAngles(const kAngle &in)", SetAngles, (const kexAngle &an), void);
         OBJMETHOD("kAttachment &Attachment(void)", Attachment, (void), kexAttachment&);
         OBJMETHOD("const kStr ClassName(void) const", GetClassString, (void) const, const kexStr);
+        OBJMETHOD("void SetBoundingBox(const kVec3 &in, const kVec3 &in)",
+            SetBoundingBox, (const kexVec3 &min, const kexVec3 &max), void);
 
     #define OBJPROPERTY(str, p)                         \
         scriptManager.Engine()->RegisterObjectProperty( \
@@ -135,18 +152,18 @@ public:
     }
 
 protected:
-    kexVec3                     origin;
-    kexQuat                     rotation;
-    kexAngle                    angles;
-    kexBBox                     bbox;
-    kexBBox                     baseBBox;
+    kexVec3                     origin;         // (xyz) position
+    kexQuat                     rotation;       // rotations in quaternions
+    kexAngle                    angles;         // yaw, pitch, roll
+    kexBBox                     bbox;           // bounding box
+    kexBBox                     baseBBox;       // unmodified bounding box
     float                       cullDistance;
     unsigned int                targetID;
     kexActor                    *owner;
     kexActor                    *target;
-    kexAttachment               attachment;
-    kexPhysics                  physics;
-    kexMatrix                   matrix;
+    kexAttachment               attachment;     // attachment object
+    kexPhysics                  physics;        // physics object
+    kexMatrix                   matrix;         // modelview matrix
     kexMatrix                   rotMatrix;
     kexModel_t                  *model;
     kexVec3                     scale;
@@ -158,10 +175,17 @@ protected:
 
 private:
     int                         refCount;
-    bool                        bStale;
+    bool                        bStale;         // freed on next game tick
 END_CLASS();
 
 class kexClipMesh;
+
+//-----------------------------------------------------------------------------
+//
+// kexWorldActor - common actor type used by game world. majority of the level
+// content is made up of these types of actors
+//
+//-----------------------------------------------------------------------------
 
 BEGIN_EXTENDED_CLASS(kexWorldActor, kexActor);
 public:
@@ -180,14 +204,14 @@ public:
     bool                        Event(const char *function, long *args, unsigned int nargs);
     bool                        ToJSVal(long *val);
     bool                        AlignToSurface(void);
-    float                       GroundDistance(void);
-    bool                        OnGround(void);
     float                       Radius(void) { return radius; }
     float                       Height(void) { return height; }
+    float                       BaseHeight(void) { return baseHeight; }
     kexVec3                     ToLocalOrigin(const float x, const float y, const float z);
     kexVec3                     ToLocalOrigin(const kexVec3 &org);
     void                        SpawnFX(const char *fxName, const float x, const float y, const float z);
     void                        SetModel(const char *modelFile);
+    void                        SetModel(const kexStr &modelFile);
     void                        CreateComponent(const char *name);
     bool                        Trace(kexPhysics *physics,
                                       const kexVec3 &start,
@@ -233,6 +257,19 @@ protected:
     kexAnimState                animState;
     int                         variant;
     rcolor                      *vertexColors;
+END_CLASS();
+
+//-----------------------------------------------------------------------------
+//
+// kexViewActor - special actors that will only render to client projection
+// typically used to draw on to the player hud (weapons, etc)
+//
+//-----------------------------------------------------------------------------
+
+BEGIN_EXTENDED_CLASS(kexViewActor, kexWorldActor);
+public:
+                                kexViewActor(void);
+                                ~kexViewActor(void);
 END_CLASS();
 
 #endif

@@ -45,6 +45,7 @@ public:
     void            DestroyInternalConsole(void);
     void            SwapBuffers(void);
     int             GetWindowFlags(void);
+    void            Log(const char *fmt, ...);
 
     int             VideoWidth(void) { return videoWidth; }
     int             VideoHeight(void) { return videoHeight; }
@@ -65,6 +66,8 @@ private:
     float           videoRatio;
     bool            bWindowed;
     bool            bShuttingDown;
+    FILE            *f_stdout;
+    FILE            *f_stderr;
 };
 
 extern kexSystem sysMain;

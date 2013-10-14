@@ -120,6 +120,14 @@ void kexWorld::Tick(void) {
         Unload();
         return;
     }
+
+    for(actorRover = actors.Next(); actorRover != NULL;
+        actorRover = actorRover->worldLink.Next()) {
+        if(actorRover->bClientOnly || actorRover->bStatic) {
+            continue;
+        }
+        actorRover->Tick();
+    }
 }
 
 //
@@ -128,6 +136,14 @@ void kexWorld::Tick(void) {
 
 void kexWorld::LocalTick(void) {
     camera.LocalTick();
+
+    for(actorRover = actors.Next(); actorRover != NULL;
+        actorRover = actorRover->worldLink.Next()) {
+        if(actorRover->bStatic) {
+            continue;
+        }
+        actorRover->LocalTick();
+    }
 }
 
 //
@@ -188,21 +204,43 @@ void kexWorld::RemoveActor(kexWorldActor *actor) {
 }
 
 //
-// kexWorld:SpawnActor
-//
+// kexWorld::SpawnActor
+// 
 
-kexWorldActor *kexWorld::SpawnActor(const char *className, const kexVec3 &origin, const kexAngle &angles) {
+kexWorldActor *kexWorld::SpawnActor(const char *className, const char *component,
+                                    const kexVec3 &origin, const kexAngle &angles) {
     
     kexWorldActor *actor = ConstructActor(className);
     
     if(actor == NULL)
         return NULL;
-        
+
+    if(component != NULL) {
+        actor->CreateComponent(component);
+    }
+
     actor->SetOrigin(origin);
     actor->SetAngles(angles);
     
     AddActor(actor);
     return actor;
+}
+
+//
+// kexWorld::SpawnActor
+//
+
+kexWorldActor *kexWorld::SpawnActor(kexStr &className, kexStr &component,
+                                    kexVec3 &origin, kexAngle &angles) {
+    const char *componentName;
+
+    if(component.Length() <= 0) {
+        componentName = NULL;
+    }
+    else {
+        componentName = component.c_str();
+    }
+    return SpawnActor(className.c_str(), componentName, origin, angles);
 }
 
 //
@@ -451,6 +489,14 @@ void kexWorld::InitObject(void) {
         "kWorld",
         "float DeltaTime(void)",
         asMETHODPR(kexWorld, DeltaTime, (void), float),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "kActor @SpawnActor(kStr &in, kStr &in, kVec3 &in, kAngle &in)",
+        asMETHODPR(kexWorld, SpawnActor,
+        (kexStr &className, kexStr &component,
+        kexVec3 &origin, kexAngle &angles), kexWorldActor*),
         asCALL_THISCALL);
         
     scriptManager.Engine()->RegisterGlobalProperty(

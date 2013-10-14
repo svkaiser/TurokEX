@@ -80,7 +80,6 @@ private:
     bool                bShowPrompt;
     int                 outputLength;
     font_t              textFont;
-    FILE                *log;
 };
 
 extern kexConsole console;

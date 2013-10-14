@@ -24,6 +24,8 @@
 //
 //-----------------------------------------------------------------------------
 
+#include <time.h>
+
 #include "SDL.h"
 
 #include "common.h"
@@ -168,6 +170,9 @@ void kexSystem::Shutdown(void) {
 
     SDL_Quit();
 
+    fclose(f_stdout);
+    fclose(f_stderr);
+
     exit(0);
 }
 
@@ -209,6 +214,35 @@ void kexSystem::InitSDL(void) {
 
     command.Add("showconsole", FCmd_ShowWinConsole);
     common.Printf("SDL Initialized\n");
+}
+
+//
+// kexSystem::Log
+//
+
+void kexSystem::Log(const char *fmt, ...) {
+#define MAX_LOGMESSAGE_LENGTH   3584
+    va_list list;
+    time_t copy;
+    static char buffer[64];
+    struct tm *local;
+    char logMessage[MAX_LOGMESSAGE_LENGTH];
+
+    SDL_memset(logMessage, 0, MAX_LOGMESSAGE_LENGTH);
+    va_start(list, fmt);
+    SDL_vsnprintf(logMessage, MAX_LOGMESSAGE_LENGTH - 1, fmt, list);
+    va_end(list);
+
+#ifdef _WIN32
+    Sys_Printf(logMessage);
+#endif
+
+    SDL_memset(buffer, 0, sizeof(buffer));
+    copy = time(0);
+    local = localtime(&copy);
+    strftime(buffer, sizeof(buffer), "%X", local);
+
+    printf("%s: %s", buffer, logMessage);
 }
 
 //
@@ -364,6 +398,9 @@ void kexSystem::MainLoop(void) {
 void kexSystem::Main(int argc, char **argv) {
     myargc = argc;
     myargv = argv;
+
+    f_stdout = freopen("stdout.txt", "wt", stdout);
+    f_stderr = freopen("stderr.txt", "wt", stderr);
 
     SpawnInternalConsole();
 

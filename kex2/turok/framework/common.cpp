@@ -49,12 +49,8 @@ void kexCommon::Printf(const char *string, ...) {
     vsprintf(buffer, string, va);
     va_end(va);
 
-#ifdef _WIN32
-    Sys_Printf(buffer);
-#endif
-
     console.Print(COLOR_WHITE, buffer);
-    printf(buffer);
+    sysMain.Log(buffer);
 }
 
 //
@@ -76,12 +72,8 @@ void kexCommon::CPrintf(rcolor color, const char *string, ...) {
     vsprintf(buffer, string, va);
     va_end(va);
 
-#ifdef _WIN32
-    Sys_Printf(buffer);
-#endif
-
     console.Print(color, buffer);
-    printf(buffer);
+    sysMain.Log(buffer);
 }
 
 //
@@ -95,12 +87,8 @@ void kexCommon::Warning(const char *string, ...) {
     vsprintf(buffer, string, va);
     va_end(va);
 
-#ifdef _WIN32
-    Sys_Printf(buffer);
-#endif
-
     console.Print(COLOR_YELLOW, buffer);
-    printf(buffer);
+    sysMain.Log(buffer);
 }
 
 //
@@ -134,11 +122,11 @@ void kexCommon::Error(const char* string, ...) {
     fprintf(stderr, "Error - %s\n", buffer);
     fflush(stderr);
 
+    sysMain.Log(buffer);
+
 #ifdef _WIN32
     Sys_Error(buffer);
 #endif
-
-    printf(buffer);
 
     exit(0);    // just in case...
 }

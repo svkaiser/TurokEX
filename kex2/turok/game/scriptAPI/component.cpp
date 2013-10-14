@@ -110,12 +110,20 @@ bool kexComponent::CallFunction(asIScriptFunction *func) {
     if(func == NULL)
         return false;
 
+    int state = scriptManager.Context()->GetState();
+
+    if(state == asEXECUTION_ACTIVE)
+        scriptManager.Context()->PushState();
+
     scriptManager.Context()->Prepare(func);
     scriptManager.Context()->SetObject(obj);
     if(scriptManager.Context()->Execute() == asEXECUTION_EXCEPTION) {
         common.Error("%s", scriptManager.Context()->GetExceptionString());
         return false;
     }
+
+    if(state == asEXECUTION_ACTIVE)
+        scriptManager.Context()->PopState();
 
     return true;
 }

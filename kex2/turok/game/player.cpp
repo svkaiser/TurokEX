@@ -225,6 +225,7 @@ kexPlayer::kexPlayer(void) {
 //
 
 kexPlayer::~kexPlayer(void) {
+    UnpossessPuppet();
 }
 
 //

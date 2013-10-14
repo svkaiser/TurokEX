@@ -36,7 +36,8 @@ typedef enum {
     CMT_DODECAHEDRON    = 4,
     CMT_CONVEXHULL      = 5,
     CMT_MESH            = 6,
-    CMT_CUSTOM          = 7
+    CMT_CYLINDER        = 7,
+    CMT_CUSTOM          = 8
 } clipMeshType_t;
 
 class kexWorldActor;
@@ -65,6 +66,7 @@ private:
     void                    CreateTetrahedron(const kexBBox &bbox);
     void                    CreateOctahedron(const kexBBox &bbox);
     void                    CreateDodecahedron(const kexBBox &bbox);
+    void                    CreateCylinder(const kexBBox &bbox);
     void                    CreateMeshFromModel(void);
 
     typedef struct {

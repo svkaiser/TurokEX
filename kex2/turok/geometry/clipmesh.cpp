@@ -340,6 +340,83 @@ void kexClipMesh::CreateDodecahedron(const kexBBox &bbox) {
 }
 
 //
+// kexClipMesh::CreateCylinder
+//
+
+void kexClipMesh::CreateCylinder(const kexBBox &bbox) {
+    cmGroup_t *cmGroup;
+
+    origin                  = bbox.Center();
+    numGroups               = 1;
+    cmGroups                = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+    cmGroup                 = &cmGroups[0];
+    cmGroup->numPoints      = 16;
+    cmGroup->numIndices     = 84;
+    cmGroup->numTriangles   = 28;
+    cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
+    cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
+    cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
+    word *indices           = cmGroup->indices;
+    kexVec3 *points         = cmGroup->points;
+
+    points[ 0].Set(0.000000f, -0.500000f, -1.000000f);
+    points[ 1].Set(0.000000f, 0.500000f, -1.000000f);
+    points[ 2].Set(0.707107f, -0.500000f, -0.707107f);
+    points[ 3].Set(0.707107f, 0.500000f, -0.707107f);
+    points[ 4].Set(1.000000f, -0.500000f, 0.000000f);
+    points[ 5].Set(1.000000f, 0.500000f, 0.000000f);
+    points[ 6].Set(0.707107f, -0.500000f, 0.707107f);
+    points[ 7].Set(0.707107f, 0.500000f, 0.707107f);
+    points[ 8].Set(-0.000000f, -0.500000f, 1.000000f);
+    points[ 9].Set(-0.000000f, 0.500000f, 1.000000f);
+    points[10].Set(-0.707107f, -0.500000f, 0.707107f);
+    points[11].Set(-0.707107f, 0.500000f, 0.707107f);
+    points[12].Set(-1.000000f, -0.500000f, -0.000000f);
+    points[13].Set(-1.000000f, 0.500000f, -0.000000f);
+    points[14].Set(-0.707107f, -0.500000f, -0.707107f);
+    points[15].Set(-0.707107f, 0.500000f, -0.707107f);
+
+    for(unsigned int i = 0; i < cmGroup->numPoints; i++) {
+        points[i].x *= owner->Radius();
+        points[i].z *= owner->Radius();
+    }
+
+    points[ 0].y = points[ 2].y = points[ 4].y = points[ 6].y =
+    points[ 8].y = points[10].y = points[12].y = points[14].y = -owner->Height();
+    points[ 1].y = points[ 3].y = points[ 5].y = points[ 7].y =
+    points[ 9].y = points[11].y = points[13].y = points[15].y =  owner->Height();
+
+    indices[ 0] = 0;  indices[ 1] = 1;  indices[ 2] = 3;
+    indices[ 3] = 2;  indices[ 4] = 3;  indices[ 5] = 5;
+    indices[ 6] = 4;  indices[ 7] = 5;  indices[ 8] = 7;
+    indices[ 9] = 6;  indices[10] = 7;  indices[11] = 9;
+    indices[12] = 8;  indices[13] = 9;  indices[14] = 11;
+    indices[15] = 10; indices[16] = 11; indices[17] = 13;
+    indices[18] = 11; indices[19] = 15; indices[20] = 13;
+    indices[21] = 14; indices[22] = 15; indices[23] = 1;
+    indices[24] = 12; indices[25] = 13; indices[26] = 15;
+    indices[27] = 2;  indices[28] = 4;  indices[29] = 6;
+    indices[30] = 2;  indices[31] = 0;  indices[32] = 3;
+    indices[33] = 4;  indices[34] = 2;  indices[35] = 5;
+    indices[36] = 6;  indices[37] = 4;  indices[38] = 7;
+    indices[39] = 8;  indices[40] = 6;  indices[41] = 9;
+    indices[42] = 10; indices[43] = 8;  indices[44] = 11;
+    indices[45] = 12; indices[46] = 10; indices[47] = 13;
+    indices[48] = 1;  indices[49] = 15; indices[50] = 11;
+    indices[51] = 1;  indices[52] = 11; indices[53] = 5;
+    indices[54] = 9;  indices[55] = 7;  indices[56] = 11;
+    indices[57] = 3;  indices[58] = 1;  indices[59] = 5;
+    indices[60] = 7;  indices[61] = 5;  indices[62] = 11;
+    indices[63] = 0;  indices[64] = 14; indices[65] = 1;
+    indices[66] = 14; indices[67] = 12; indices[68] = 15;
+    indices[69] = 0;  indices[70] = 2;  indices[71] = 6;
+    indices[72] = 10; indices[73] = 6;  indices[74] = 8;
+    indices[75] = 0;  indices[76] = 6;  indices[77] = 10;
+    indices[78] = 14; indices[79] = 0;  indices[80] = 10;
+    indices[81] = 12; indices[82] = 14; indices[83] = 10;
+}
+
+//
 // kexClipMesh::CreateMeshFromModel
 //
 
@@ -434,6 +511,9 @@ void kexClipMesh::CreateShape(void) {
         break;
     case CMT_MESH:
         CreateMeshFromModel();
+        break;
+    case CMT_CYLINDER:
+        CreateCylinder(owner->BoundingBox());
         break;
     case CMT_CONVEXHULL:    // TODO
     case CMT_CUSTOM:        // TODO
@@ -541,8 +621,8 @@ bool kexClipMesh::Trace(kexPhysics *physics,
             for(int k = 0; k < 3; k++) {
                 pt1 = *tri->point[(k+0)%3];
                 pt2 = *tri->point[(k+1)%3];
-                kexVec3 dp1 = (pt1 + ((pt1 - c).Normalize()) * 30.72f) - hit;
-                kexVec3 dp2 = (pt2 + ((pt2 - c).Normalize()) * 30.72f) - hit;
+                kexVec3 dp1 = (pt1 + ((pt1 - c).Normalize()) * 1.024f) - hit;
+                kexVec3 dp2 = (pt2 + ((pt2 - c).Normalize()) * 1.024f) - hit;
                 if(tri->plane.Normal().Dot(dp1.Cross(dp2)) < 0) {
                     ok = false;
                     break;

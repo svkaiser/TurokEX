@@ -66,8 +66,8 @@ public:
 
     void                    Reset(void);
     void                    Update(void);
-    void                    Set(const kexAnim_t *anim, float time, int flags);
-    void                    Blend(const kexAnim_t *anim, float time, float blendTime, int flags);
+    void                    Set(const kexAnim_t *anim, float animTime, int animFlags);
+    void                    Blend(const kexAnim_t *anim, float animTime, float blendTime, int animFlags);
 
     static kexQuat          GetRotation(kexAnim_t *anim, int nodeNum, int frame);
     static kexVec3          GetTranslation(kexAnim_t *anim, int nodeNum, int frame);

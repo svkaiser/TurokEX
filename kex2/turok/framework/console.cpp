@@ -37,7 +37,6 @@
 #include "console.h"
 
 kexCvar cvarDisplayConsole("con_alwaysShowConsole", CVF_BOOL|CVF_CONFIG, "0", "TODO");
-kexCvar cvarConsoleLog("con_logToFile", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 
 kexConsole console;
 
@@ -68,7 +67,6 @@ kexConsole::kexConsole(void) {
     this->timePressed       = 0;
     this->bShowPrompt       = true;
     this->outputLength      = 0;
-    this->log               = NULL;
 
     ClearOutput();
 }
@@ -79,10 +77,6 @@ kexConsole::kexConsole(void) {
 
 kexConsole::~kexConsole(void) {
     ClearOutput();
-
-    if(log != NULL) {
-        fclose(log);
-    }
 }
 
 //
@@ -160,18 +154,6 @@ void kexConsole::Print(rcolor color, const char *text) {
 
         curText = (char*)&text[lineLength+1];
         strLength -= (lineLength+1);
-    }
-
-    if(cvarConsoleLog.GetBool()) {
-        if(log == NULL) {
-            if(!(log = fopen("con_out.txt", "w"))) {
-                return;
-            }
-        }
-
-        if(log != NULL) {
-            fprintf(log, text);
-        }
     }
 }
 

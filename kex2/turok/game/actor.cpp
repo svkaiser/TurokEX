@@ -167,6 +167,15 @@ void kexActor::SetOwner(kexActor *targ) {
         owner->AddRef();
 }
 
+//
+// kexActor::SetBoundingBox
+//
+
+void kexActor::SetBoundingBox(const kexVec3 &min, const kexVec3 &max) {
+    bbox.min = min;
+    bbox.max = max;
+}
+
 enum {
     scactor_name = 0,
     scactor_mesh,
@@ -257,6 +266,7 @@ kexWorldActor::~kexWorldActor(void) {
 //
 
 void kexWorldActor::LocalTick(void) {
+    animState.Update();
 }
 
 //
@@ -284,6 +294,8 @@ void kexWorldActor::Spawn(void) {
 
     clipMesh.CreateShape();
     clipMesh.Transform();
+
+    scriptComponent.CallFunction(scriptComponent.onSpawn);
 }
 
 //
@@ -524,19 +536,11 @@ void kexWorldActor::SetModel(const char* modelFile) {
 }
 
 //
-// kexWorldActor::GroundDistance
+// kexWorldActor::SetModel
 //
 
-float kexWorldActor::GroundDistance(void) {
-    return 0;
-}
-
-//
-// kexWorldActor::OnGround
-//
-
-bool kexWorldActor::OnGround(void) {
-    return GroundDistance() <= ONPLANE_EPSILON;
+void kexWorldActor::SetModel(const kexStr &modelFile) {
+    SetModel(modelFile.c_str());
 }
 
 //
@@ -582,6 +586,9 @@ bool kexWorldActor::Event(const char *function, long *args, unsigned int nargs) 
 //
 
 void kexWorldActor::CreateComponent(const char *name) {
+    // TODO
+    scriptComponent.Spawn(name);
+
     jsval val;
     JSContext *cx;
     gObject_t *cObject;
@@ -593,15 +600,14 @@ void kexWorldActor::CreateComponent(const char *name) {
         return;
     if(!JS_ValueToObject(cx, val, &cObject))
         return;
+    if(cObject == NULL)
+        return;
 
     // construct class object
     if(!(component = classObj.create(cObject)))
         return;
 
     JS_AddRoot(cx, &component);
-
-    // TODO
-    scriptComponent.Spawn(name);
 }
 
 //
@@ -727,6 +733,15 @@ void kexWorldActor::InitObject(void) {
 
     kexActor::RegisterBaseProperties<kexWorldActor>("kActor");
 
+#define OBJMETHOD(str, a, b, c)                     \
+    scriptManager.Engine()->RegisterObjectMethod(   \
+        "kActor",                                   \
+        str,                                        \
+        asMETHODPR(kexWorldActor, a, b, c),         \
+        asCALL_THISCALL)
+
+    OBJMETHOD("void SetModel(const kStr &in)", SetModel, (const kexStr &modelFile), void);
+
 #define OBJPROPERTY(str, p)                         \
     scriptManager.Engine()->RegisterObjectProperty( \
         "kActor",                                   \
@@ -742,6 +757,7 @@ void kexWorldActor::InitObject(void) {
     OBJPROPERTY("float viewHeight", viewHeight);
     OBJPROPERTY("kQuat lerpRotation", lerpRotation);
 
+#undef OBJMETHOD
 #undef OBJPROPERTY
 
 #define OBJMETHOD(str, a, b, c)                     \
@@ -770,4 +786,23 @@ void kexWorldActor::InitObject(void) {
 
 #undef OBJMETHOD
 #undef OBJPROPERTY
+}
+
+DECLARE_CLASS(kexViewActor, kexWorldActor)
+
+//
+// kexViewActor::kexViewActor
+//
+
+kexViewActor::kexViewActor(void) {
+    this->bClientOnly = true;
+    this->bCollision = false;
+    this->bTouch = false;
+}
+
+//
+// kexViewActor::~kexViewActor
+//
+
+kexViewActor::~kexViewActor(void) {
 }

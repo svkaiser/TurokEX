@@ -211,51 +211,6 @@ kexBBox &kexBBox::operator=(const kexBBox &bbox) {
 }
 
 //
-// kexBBox::RayIntersect
-//
-
-bool kexBBox::RayIntersect(const kexVec3 &start, const kexVec3 &dir, float &frac) {
-    int side = 0;
-    int misses = 0;
-    int v = -1;
-    float f;
-    
-    for(int i = 0; i < 3; i++) {
-        if(start[i] < min[i])
-            side = 0;
-        else if(start[i] > max[i])
-            side = 1;
-        else {
-            misses++;
-            continue;
-        }
-        if(dir[i] == 0)
-            continue;
-            
-        f = (start[i] - side ? max[i] : min[i]);
-        if(v < 0 || (float)fabs(f) > (float)fabs(frac * dir[i])) {
-            v = i;
-            frac = (f / dir[i]) * (side ? 1 : -1);
-        }
-    }
-    
-    if(v == -1) {
-        frac = 0.0f;
-        return (misses == 3);
-    }
-    
-    int v1 = (v+1)%3;
-    int v2 = (v+2)%3;
-    
-    float t0 = start[v1] + frac * dir[v1];
-    float t1 = start[v2] + frac * dir[v2];
-    
-    return (
-        t0 >= min[v1] && t0 <= max[v1] &&
-        t1 >= min[v2] && t1 <= max[v2]);
-}
-
-//
 // kexBBox:LineIntersect
 //
 

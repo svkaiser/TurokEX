@@ -191,7 +191,7 @@ void kexPhysics::ImpactVelocity(kexVec3 &vel, kexVec3 &normal, const float force
 
     if(bounceDamp != 0) {
         if(d >= 1.05f) {
-            bounce = (1 + force);
+            bounce = (force + bounceDamp);
 
             if(d < 16.8f && force < 1.0f)
                 bounce = 0.2f;
@@ -311,7 +311,7 @@ void kexPhysics::Think(const float timeDelta) {
     kexVec3 end;
     kexVec3 direction;
     kexVec3 vel;
-    kexVec3 normals[TRYMOVE_COUNT+1];
+    kexVec3 normals[TRYMOVE_COUNT];
     int moves = 0;
     int hits;
     float time = timeDelta;
@@ -330,19 +330,11 @@ void kexPhysics::Think(const float timeDelta) {
         velocity += (gravity * massAmount);
     }
     else {
-        ImpactVelocity(velocity, groundGeom->plane.Normal(), 1.024f);
-        if(oldVelocity.y > 0) {
-            velocity.y = oldVelocity.y;
+        if(velocity.Dot(groundGeom->plane.Normal()) <= 1.024f) {
+            ImpactVelocity(velocity, groundGeom->plane.Normal(), 1.024f);
+
+            normals[moves++] = traceInfo.hitNormal;
         }
-
-        float ovl;
-        float nvl;
-
-        if((ovl = oldVelocity.UnitSq()) > 1.0f && (nvl = velocity.UnitSq()) > 1.0f) {
-            velocity *= (float)sqrt(ovl / nvl);
-        }
-
-        normals[moves++] = groundGeom->plane.Normal();
     }
 
     for(int i = 0; i < TRYMOVE_COUNT; i++) {
@@ -367,24 +359,17 @@ void kexPhysics::Think(const float timeDelta) {
         owner->SetOrigin(traceInfo.hitVector);
 
         if(traceInfo.hitActor == NULL) {
+            // nudge origin away from plane
+            owner->SetOrigin(owner->GetOrigin() + (traceInfo.hitNormal * 0.125f));
+
             // don't climb on steep slopes
             if(traceInfo.hitNormal.Dot(gravity) >= -0.5f) {
                 traceInfo.hitNormal.y = 0;
             }
+        }
 
-            // nudge origin away from plane
-            owner->SetOrigin(owner->GetOrigin() + (traceInfo.hitNormal * 0.125f));
-
-            for(hits = 0; hits < moves; hits++) {
-                if(traceInfo.hitNormal.Dot(normals[hits]) > 0.95f) {
-                    velocity += traceInfo.hitNormal;
-                    break;
-                }
-            }
-
-            if(hits != moves) {
-                continue;
-            }
+        if(moves >= TRYMOVE_COUNT) {
+            break;
         }
 
         normals[moves++] = traceInfo.hitNormal;
