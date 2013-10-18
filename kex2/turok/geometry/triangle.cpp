@@ -31,16 +31,21 @@
 #include "common.h"
 #include "triangle.h"
 
+int kexTri::globalID = 0;
+
 //
 // kexTri::kexTri
 //
 
 kexTri::kexTri(void) {
     for(int i = 0; i < 3; i++) {
-        point[i] = NULL;
-        edgeLink[i] = NULL;
-        bEdgeBlock[i] = true;
+        this->point[i] = NULL;
+        this->edgeLink[i] = NULL;
+        this->bEdgeBlock[i] = true;
     }
+
+    this->id = kexTri::globalID++;
+    this->bTraced = false;
 }
 
 //
@@ -50,6 +55,34 @@ kexTri::kexTri(void) {
 
 void kexTri::SetPoint(const int idx, float *p) {
     point[idx] = reinterpret_cast<kexVec3*>(p);
+}
+
+//
+// kexTri::SetBounds
+//
+
+void kexTri::SetBounds(void) {
+    float lowx = M_INFINITY;
+    float lowy = M_INFINITY;
+    float lowz = M_INFINITY;
+    float hix = -M_INFINITY;
+    float hiy = -M_INFINITY;
+    float hiz = -M_INFINITY;
+
+    bounds.min.Clear();
+    bounds.max.Clear();
+
+    for(int i = 0; i < 3; i++) {
+        if(point[i]->x < lowx) lowx = point[i]->x;
+        if(point[i]->y < lowy) lowy = point[i]->y;
+        if(point[i]->z < lowz) lowz = point[i]->z;
+        if(point[i]->x > hix) hix = point[i]->x;
+        if(point[i]->y > hiy) hiy = point[i]->y;
+        if(point[i]->z > hiz) hiz = point[i]->z;
+    }
+
+    bounds.min.Set(lowx, lowy, lowz);
+    bounds.max.Set(hix, hiy, hiz);
 }
 
 //

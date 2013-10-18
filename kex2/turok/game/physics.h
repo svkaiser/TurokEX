@@ -38,6 +38,22 @@ typedef enum {
 class kexActor;
 class kexClipMesh;
 
+typedef struct {
+    kexVec3                 start;
+    kexVec3                 end;
+    kexVec3                 dir;
+    kexClipMesh             *hitMesh;
+    kexTri                  *hitTri;
+    kexActor                *hitActor;
+    kexVec3                 hitNormal;
+    kexVec3                 hitVector;
+    float                   fraction;
+    bool                    bUseBBox;
+    kexBBox                 bbox;
+    kexBBox                 localBBox;
+    kexActor                *owner;
+} traceInfo_t;
+
 class kexPhysics {
 public:
                             kexPhysics(void);
@@ -51,7 +67,6 @@ public:
     void                    ApplyFriction(void);
     void                    ProjectOnCrease(kexVec3 &vel, const kexVec3 &n1, const kexVec3 &n2);
     void                    Think(const float timeDelta);
-    void                    ClearTraceInfo(void);
 
     kexVec3                 &GetVelocity(void) { return velocity; }
     void                    SetVelocity(const kexVec3 &vel) { velocity = vel; }
@@ -73,17 +88,6 @@ public:
     waterLevelType_t        waterLevel;
     kexTri                  *groundGeom;
     bool                    bOnGround;
-
-    typedef struct {
-        kexClipMesh         *hitMesh;
-        kexTri              *hitTri;
-        kexActor            *hitActor;
-        kexVec3             hitNormal;
-        kexVec3             hitVector;
-        float               fraction;
-    } traceInfo_t;
-
-    traceInfo_t             traceInfo;
 
 private:
     kexActor                *owner;

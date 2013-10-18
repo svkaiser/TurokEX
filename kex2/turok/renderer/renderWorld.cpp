@@ -394,10 +394,12 @@ void kexRenderWorld::DrawStaticActors(void) {
                 if(actor->bCulled)
                     continue;
 
-                dglPushMatrix();
-                dglMultMatrixf(actor->Matrix().ToFloatPtr());
-                TraverseDrawActorNode(actor, &actor->Model()->nodes[0], NULL);
-                dglPopMatrix();
+                if(!bShowClipMesh) {
+                    dglPushMatrix();
+                    dglMultMatrixf(actor->Matrix().ToFloatPtr());
+                    TraverseDrawActorNode(actor, &actor->Model()->nodes[0], NULL);
+                    dglPopMatrix();
+                }
 
                 if(bShowClipMesh) {
                     actor->ClipMesh().DebugDraw();

@@ -34,11 +34,19 @@ public:
     kexTri          *edgeLink[3];
     bool            bEdgeBlock[3];
     kexPlane        plane;
+    kexBBox         bounds;
     
     void            SetPoint(const int idx, float *p);
+    void            SetBounds(void);
     const float     GetDistance(const kexVec3 &pos) const;
     const float     GetEdgeYaw(const int idx) const;
     const kexVec3   GetCenterPoint(void) const;
+
+    // debugging
+    int             id;
+    bool            bTraced;
+
+    static int      globalID;
 };
 
 #endif

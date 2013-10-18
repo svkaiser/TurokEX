@@ -213,10 +213,7 @@ public:
     void                        SetModel(const char *modelFile);
     void                        SetModel(const kexStr &modelFile);
     void                        CreateComponent(const char *name);
-    bool                        Trace(kexPhysics *physics,
-                                      const kexVec3 &start,
-                                      const kexVec3 &end,
-                                      const kexVec3 &dir);
+    bool                        Trace(traceInfo_t *trace);
 
     gObject_t                   *Component(void) { return component; }
     const int                   Variant(void) const { return variant; }

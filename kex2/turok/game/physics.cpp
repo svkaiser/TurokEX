@@ -75,13 +75,8 @@ kexPhysics::kexPhysics(void) {
     this->bOrientOnSlope        = false;
     this->bOnGround             = false;
     this->waterLevel            = WLT_INVALID;
-    this->traceInfo.hitMesh     = NULL;
-    this->traceInfo.hitTri      = NULL;
-    this->traceInfo.hitActor    = NULL;
     this->groundGeom            = NULL;
 
-    this->traceInfo.hitVector.Clear();
-    this->traceInfo.hitNormal.Clear();
     this->rotorVector.Clear();
     this->velocity.Clear();
 }
@@ -282,19 +277,6 @@ void kexPhysics::ApplyFriction(void) {
 }
 
 //
-// kexPhysics::ClearTraceInfo
-//
-
-void kexPhysics::ClearTraceInfo(void) {
-    traceInfo.fraction = 1.0f;
-    traceInfo.hitActor = NULL;
-    traceInfo.hitTri = NULL;
-    traceInfo.hitMesh = NULL;
-    traceInfo.hitVector.Clear();
-    traceInfo.hitNormal.Clear();
-}
-
-//
 // kexPhysics::Think
 //
 
@@ -306,6 +288,7 @@ void kexPhysics::Think(const float timeDelta) {
         return;
     }
 
+    traceInfo_t trace;
     kexVec3 oldVelocity = velocity;
     kexVec3 start = owner->GetOrigin();
     kexVec3 end;
@@ -317,23 +300,45 @@ void kexPhysics::Think(const float timeDelta) {
     float time = timeDelta;
     kexVec3 gravity;
     float massAmount = (mass * timeDelta);
+    float radius = static_cast<kexWorldActor*>(owner)->Radius();
+    float height = static_cast<kexWorldActor*>(owner)->BaseHeight();
 
-    ClearTraceInfo();
     gravity = localWorld.GetGravity();
 
-    localWorld.Trace(this, start, (gravity * mass) * mass, gravity);
-    groundGeom = traceInfo.hitTri;
+    trace.owner = owner;
+    trace.bUseBBox = true;
+    trace.localBBox.min.Set(-(radius * 0.5f), 0, -(radius * 0.5f));
+    trace.localBBox.max.Set(radius * 0.5f, height, radius * 0.5f);
+    trace.bbox = trace.localBBox;
+    trace.bbox.min += start;
+    trace.bbox.max += start;
+
+    trace.fraction = 1.0f;
+    trace.hitActor = NULL;
+    trace.hitTri = NULL;
+    trace.hitMesh = NULL;
+    trace.hitVector.Clear();
+    trace.hitNormal.Clear();
+    trace.start = start;
+    trace.end = (gravity * mass) * mass;
+    trace.dir = gravity;
+
+    // need to determine if we're standing on the ground or not
+    localWorld.Trace(&trace);
+    groundGeom = trace.hitTri;
 
     bOnGround = OnGround();
 
+    // handle freefall if not touching the ground
     if(!bOnGround) {
         velocity += (gravity * massAmount);
     }
     else {
+        // project along the ground plane
         if(velocity.Dot(groundGeom->plane.Normal()) <= 1.024f) {
             ImpactVelocity(velocity, groundGeom->plane.Normal(), 1.024f);
 
-            normals[moves++] = traceInfo.hitNormal;
+            normals[moves++] = trace.hitNormal;
         }
     }
 
@@ -344,27 +349,35 @@ void kexPhysics::Think(const float timeDelta) {
         direction = (end - start);
         direction.Normalize();
 
-        ClearTraceInfo();
+        trace.fraction = 1.0f;
+        trace.hitActor = NULL;
+        trace.hitTri = NULL;
+        trace.hitMesh = NULL;
+        trace.hitVector.Clear();
+        trace.hitNormal.Clear();
+        trace.start = start;
+        trace.end = end;
+        trace.dir = direction;
 
         // trace through world
-        localWorld.Trace(this, start, end, direction);
-        time -= (time * traceInfo.fraction);
+        localWorld.Trace(&trace);
+        time -= (time * trace.fraction);
 
-        if(traceInfo.fraction >= 1) {
+        if(trace.fraction >= 1) {
             // went the entire distance
             owner->SetOrigin(end);
             break;
         }
 
-        owner->SetOrigin(traceInfo.hitVector);
+        owner->SetOrigin(trace.hitVector);
 
-        if(traceInfo.hitActor == NULL) {
+        if(trace.hitActor == NULL) {
             // nudge origin away from plane
-            owner->SetOrigin(owner->GetOrigin() + (traceInfo.hitNormal * 0.125f));
+            owner->SetOrigin(owner->GetOrigin() + (trace.hitNormal * 0.125f));
 
             // don't climb on steep slopes
-            if(traceInfo.hitNormal.Dot(gravity) >= -0.5f) {
-                traceInfo.hitNormal.y = 0;
+            if(trace.hitNormal.Dot(gravity) >= -0.5f) {
+                trace.hitNormal.y = 0;
             }
         }
 
@@ -372,7 +385,7 @@ void kexPhysics::Think(const float timeDelta) {
             break;
         }
 
-        normals[moves++] = traceInfo.hitNormal;
+        normals[moves++] = trace.hitNormal;
 
         // try all interacted normals
         for(hits = 0; hits < moves; hits++) {

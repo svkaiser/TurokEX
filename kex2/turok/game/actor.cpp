@@ -614,23 +614,20 @@ void kexWorldActor::CreateComponent(const char *name) {
 // kexWorldActor::Trace
 //
 
-bool kexWorldActor::Trace(kexPhysics *physics,
-                          const kexVec3 &start,
-                          const kexVec3 &end,
-                          const kexVec3 &dir) {
-    kexVec3 org = (origin - start);
+bool kexWorldActor::Trace(traceInfo_t *trace) {
+    kexVec3 org = (origin - trace->start);
 
-    if(dir.Dot(org) <= 0) {
+    if(trace->dir.Dot(org) <= 0) {
         return false;
     }
 
-    float len = dir.Unit();
+    float len = trace->dir.Unit();
 
     if(len == 0) {
         return false;
     }
 
-    kexVec3 nDir    = (dir * (1.0f / len));
+    kexVec3 nDir    = (trace->dir * (1.0f / len));
     float cp        = nDir.Dot(org);
     kexVec3 cDist   = (org - (nDir * cp));
     float rd        = radius * radius - cDist.UnitSq();
@@ -641,15 +638,15 @@ bool kexWorldActor::Trace(kexPhysics *physics,
 
     float frac = (cp - (float)sqrt(rd)) * (1.0f / len);
 
-    if(frac <= 1.0f && frac < physics->traceInfo.fraction) {
+    if(frac <= 1.0f && frac < trace->fraction) {
         if(frac < 0) {
             frac = 0;
         }
-        physics->traceInfo.hitActor = this;
-        physics->traceInfo.fraction = frac;
-        physics->traceInfo.hitVector = start - (dir * frac);
-        physics->traceInfo.hitNormal = (start - origin);
-        physics->traceInfo.hitNormal.Normalize();
+        trace->hitActor = this;
+        trace->fraction = frac;
+        trace->hitVector = trace->start - (trace->dir * frac);
+        trace->hitNormal = (trace->start - origin);
+        trace->hitNormal.Normalize();
         return true;
     }
 

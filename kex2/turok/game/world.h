@@ -55,10 +55,7 @@ public:
                                             kexVec3 &origin, kexAngle &angles);
     void                                RemoveActor(kexWorldActor *actor);
     void                                SpawnLocalPlayer(void);
-    void                                Trace(kexPhysics *physics,
-                                              const kexVec3 &start,
-                                              const kexVec3 &end,
-                                              const kexVec3 &dir);
+    void                                Trace(traceInfo_t *trace);
 
     bool                                IsLoaded(void) const { return bLoaded; }
     float                               DeltaTime(void) { return deltaTime; }

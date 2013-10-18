@@ -30,6 +30,9 @@ public:
                     kexRenderWorld(void);
 
     void            RenderScene(void);
+    void            DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b);
+    void            DrawRadius(float x, float y, float z, float radius, float height,
+                               byte r, byte g, byte b);
 
     static void     Init(void);
 
@@ -50,10 +53,6 @@ private:
     void            DrawSurface(const surface_t *surface, const char *texturePath);
     void            TraverseDrawActorNode(kexWorldActor *actor,
                         const modelNode_t *node, kexAnimState *animState);
-
-    void            DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b);
-    void            DrawRadius(float x, float y, float z, float radius, float height,
-                               byte r, byte g, byte b);
 
     kexWorld        *world;
 };

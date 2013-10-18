@@ -275,16 +275,13 @@ void kexWorld::SpawnLocalPlayer(void) {
 // kexWorld::Trace
 //
 
-void kexWorld::Trace(kexPhysics *physics,
-                     const kexVec3 &start,
-                     const kexVec3 &end,
-                     const kexVec3 &dir) {
+void kexWorld::Trace(traceInfo_t *trace) {
     for(unsigned int i = 0; i < gridBounds.Length(); i++) {
         gridBound_t *grid = gridBounds[i];
 
         grid->bTraced = false;
 
-        if(grid->box.LineIntersect(start, end)) {
+        if(grid->box.LineIntersect(trace->start, trace->end)) {
             grid->bTraced = true;
 
             for(kexWorldActor *actor = grid->staticActors.Next();
@@ -299,16 +296,16 @@ void kexWorld::Trace(kexPhysics *physics,
 
                     box = box + (box.Radius() * 0.5f);
 
-                    if(box.LineIntersect(start, end)) {
+                    if(box.LineIntersect(trace->start, trace->end)) {
                         actor->bTraced = true;
 
                         // do simple sphere intersection test if no collision
                         // mesh is present
                         if(actor->ClipMesh().GetType() == CMT_NONE) {
-                            actor->Trace(physics, start, end, dir);
+                            actor->Trace(trace);
                         }
                         else {
-                            actor->ClipMesh().Trace(physics, start, end, dir);
+                            actor->ClipMesh().Trace(trace);
                         }
                     }
             }

@@ -51,10 +51,7 @@ public:
     void                    DebugDraw(void);
     void                    CreateShape(void);
     void                    Transform(void);
-    bool                    Trace(kexPhysics *physics,
-                                  const kexVec3 &start,
-                                  const kexVec3 &end,
-                                  const kexVec3 &dir);
+    bool                    Trace(traceInfo_t *trace);
 
     const clipMeshType_t    GetType(void) const { return type; }
     void                    SetType(const clipMeshType_t _type) { type = _type; }

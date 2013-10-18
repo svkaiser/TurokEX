@@ -29,6 +29,7 @@
 #include "clipmesh.h"
 #include "actor.h"
 #include "renderSystem.h"
+#include "renderWorld.h"
 
 enum {
     scClipMesh_type = 0,
@@ -36,7 +37,7 @@ enum {
 };
 
 static const sctokens_t clipMeshTokens[scClipMesh_end+1] = {
-    { scClipMesh_type,           "type"                 },
+    { scClipMesh_type,          "type"                  },
     { -1,                       NULL                    }
 };
 
@@ -482,6 +483,7 @@ void kexClipMesh::Transform(void) {
                     *tri->point[2]);
 
                 tri->plane.SetDistance(*tri->point[0]);
+                tri->SetBounds();
             }
         }
     }
@@ -529,6 +531,8 @@ void kexClipMesh::CreateShape(void) {
         for(unsigned int i = 0; i < cmGroup->numTriangles; i++) {
             kexTri *tri = &cmGroup->triangles[i];
 
+            tri->id = kexTri::globalID++;
+
             tri->point[0] = &cmGroup->points[cmGroup->indices[i * 3 + 0]];
             tri->point[1] = &cmGroup->points[cmGroup->indices[i * 3 + 1]];
             tri->point[2] = &cmGroup->points[cmGroup->indices[i * 3 + 2]];
@@ -537,6 +541,7 @@ void kexClipMesh::CreateShape(void) {
                 *tri->point[1],
                 *tri->point[2]);
             tri->plane.SetDistance(*tri->point[0]);
+            tri->SetBounds();
 
             // link triangle edges
             for(int j = 0; j < 3; j++) {
@@ -581,50 +586,129 @@ void kexClipMesh::CreateShape(void) {
 // kexClipMesh::Trace
 //
 
-bool kexClipMesh::Trace(kexPhysics *physics,
-                        const kexVec3 &start,
-                        const kexVec3 &end,
-                        const kexVec3 &dir) {
+bool kexClipMesh::Trace(traceInfo_t *trace) {
     float frac = 1;
-    kexVec3 c;
-    kexVec3 pt1;
-    kexVec3 pt2;
+    float r = 0;
+    float bxRadius = 1.024f;
+    
+    if(trace->bUseBBox) {
+        bxRadius = trace->localBBox.Radius() * 0.5f;
+    }
 
     for(unsigned int i = 0; i < numGroups; i++) {
         cmGroup_t *cmGroup = &cmGroups[i];
 
         for(unsigned int j = 0; j < cmGroup->numTriangles; j++) {
             kexTri *tri = &cmGroup->triangles[j];
+            float dist;
+            float distStart;
+            float distEnd;
+            kexVec3 dp1;
+            kexVec3 dp2;
+            kexVec3 pt1;
+            kexVec3 pt2;
+            kexVec3 pt3;
+            kexVec3 hit;
+            kexVec3 offset;
+            bool ok;
+            kexVec3 cp;
+            kexVec3 edge;
+            float eSq;
+            float rSq;
 
-            if(tri->plane.Distance(dir) >= 0) {
+#if 0
+            // check if trace bounds overlap triangle's bounds
+            if(trace->bUseBBox && !trace->bbox.IntersectingBox(tri->bounds + bxRadius)) {
+                continue;
+            }
+#endif
+
+            // direction must be facing the plane
+            if(tri->plane.Distance(trace->dir) >= 0) {
                 continue;
             }
 
-            float d = tri->plane.d;
+            if(trace->bUseBBox) {
+                offset.x = tri->plane.a < 0 ? trace->localBBox.max.x : trace->localBBox.min.x;
+                offset.y = tri->plane.b < 0 ? trace->localBBox.max.y : trace->localBBox.min.y;
+                offset.z = tri->plane.c < 0 ? trace->localBBox.max.z : trace->localBBox.min.z;
 
-            float d1 = tri->plane.Distance(start) - d;
-            float d2 = tri->plane.Distance(end) - d;
+                r = -offset.Dot(tri->plane.Normal());
+            }
 
-            if(d1 <= d2 || d1 < 0 || d2 > 0)
+            dist = tri->plane.d + r;
+
+            distStart = tri->plane.Distance(trace->start) - dist;
+            distEnd = tri->plane.Distance(trace->end) - dist;
+
+            if(distStart <= distEnd || distStart < 0 || distEnd > 0) {
                 continue;
+            }
 
-            frac = (d1 / (d1 - d2));
+            frac = (distStart / (distStart - distEnd));
 
-            if(frac < 0 || frac >= physics->traceInfo.fraction)
+            if(frac < 0) {
+                if(trace->bUseBBox == false) {
+                    continue;
+                }
+
+                frac = 0;
+            }
+
+            // check if something closer was hit
+            if(frac >= trace->fraction) {
                 continue;
+            }
 
-            kexVec3 hit = start + ((end - start) * frac);
-            bool ok = true;
+            hit = trace->start + ((trace->end - trace->start) * frac);
+            ok = true;
 
-            c = tri->GetCenterPoint();
+            // check if hit vector lies within the triangle's edges
+            rSq = ((bxRadius*0.75f) * (bxRadius*0.75f));
 
             for(int k = 0; k < 3; k++) {
                 pt1 = *tri->point[(k+0)%3];
                 pt2 = *tri->point[(k+1)%3];
-                kexVec3 dp1 = (pt1 + ((pt1 - c).Normalize()) * 1.024f) - hit;
-                kexVec3 dp2 = (pt2 + ((pt2 - c).Normalize()) * 1.024f) - hit;
-                if(tri->plane.Normal().Dot(dp1.Cross(dp2)) < 0) {
-                    ok = false;
+                pt3 = *tri->point[(k+2)%3];
+
+                dp1 = pt1 - hit;
+                dp2 = pt2 - hit;
+
+                cp = dp1.Cross(dp2);
+
+                if(tri->plane.Normal().Dot(cp) < 0) {
+                    if(!trace->bUseBBox) {
+                        ok = false;
+                        break;
+                    }
+
+                    edge = pt1 - pt2;
+                    eSq = edge.UnitSq();
+
+                    if(cp.UnitSq() > eSq * rSq) {
+                        ok = false;
+                        break;
+                    }
+
+                    float d = edge.Dot(dp1);
+
+                    if(d < 0) {
+                        edge = pt1 - pt3;
+                        if(edge.Dot(dp1) < 0 && dp1.UnitSq() > rSq) {
+                            ok = false;
+                            break;
+                        }
+                    }
+                    else if(d > eSq) {
+                        edge = pt2 - pt3;
+                        if(edge.Dot(dp2) < 0 && dp2.UnitSq() > rSq) {
+                            ok = false;
+                            break;
+                        }
+                    }
+                }
+
+                if(ok == false) {
                     break;
                 }
             }
@@ -633,11 +717,13 @@ bool kexClipMesh::Trace(kexPhysics *physics,
                 continue;
             }
 
-            physics->traceInfo.fraction = frac;
-            physics->traceInfo.hitNormal = tri->plane.Normal();
-            physics->traceInfo.hitMesh = this;
-            physics->traceInfo.hitTri = tri;
-            physics->traceInfo.hitVector = hit;
+            tri->bTraced = true;
+
+            trace->fraction = frac;
+            trace->hitNormal = tri->plane.Normal();
+            trace->hitMesh = this;
+            trace->hitTri = tri;
+            trace->hitVector = hit;
         }
     }
 
@@ -657,6 +743,7 @@ void kexClipMesh::DebugDraw(void) {
     renderSystem.SetState(GLSTATE_BLEND, true);
     renderSystem.SetState(GLSTATE_ALPHATEST, true);
     renderSystem.SetState(GLSTATE_LIGHTING, false);
+    //renderSystem.SetState(GLSTATE_DEPTHTEST, false);
 
     dglDisableClientState(GL_NORMAL_ARRAY);
     dglDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -668,7 +755,7 @@ void kexClipMesh::DebugDraw(void) {
             0xFF - (0x50 * (i & 3)),
             0xFF * (i & 1),
             0x50 * (i & 3),
-            192);
+            128);
 
         dglVertexPointer(3, GL_FLOAT, sizeof(kexVec3),
             reinterpret_cast<float*>(&cmGroup->points[0].x));
@@ -682,6 +769,23 @@ void kexClipMesh::DebugDraw(void) {
             GL_UNSIGNED_SHORT, cmGroup->indices);
 
         dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        for(unsigned int j = 0; j < cmGroup->numTriangles; j++) {
+            kexTri *tri = &cmGroup->triangles[j];
+
+            if(tri->bTraced == false) {
+                continue;
+            }
+
+            dglColor4ub(0xFF, 0xFF, 0xFF, 80);
+            dglBegin(GL_TRIANGLES);
+            dglVertex3f((*tri->point[0]).x, (*tri->point[0]).y, (*tri->point[0]).z);
+            dglVertex3f((*tri->point[1]).x, (*tri->point[1]).y, (*tri->point[1]).z);
+            dglVertex3f((*tri->point[2]).x, (*tri->point[2]).y, (*tri->point[2]).z);
+            dglEnd();
+
+            tri->bTraced = false;
+        }
     }
 
     dglEnableClientState(GL_NORMAL_ARRAY);
@@ -691,4 +795,14 @@ void kexClipMesh::DebugDraw(void) {
     renderSystem.SetState(GLSTATE_BLEND, false);
     renderSystem.SetState(GLSTATE_ALPHATEST, false);
     renderSystem.SetState(GLSTATE_LIGHTING, true);
+    //renderSystem.SetState(GLSTATE_DEPTHTEST, true);
+#if 0
+    for(unsigned int i = 0; i < numGroups; i++) {
+        cmGroup_t *cmGroup = &cmGroups[i];
+
+        for(unsigned int j = 0; j < cmGroup->numTriangles; j++) {
+            renderWorld.DrawBoundingBox(cmGroup->triangles[j].bounds, 255, 255, 0);
+        }
+    }
+#endif
 }
