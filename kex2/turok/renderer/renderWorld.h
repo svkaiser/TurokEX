@@ -47,8 +47,9 @@ public:
 
 private:
     void            SetupGlobalLight(void);
-    void            DrawStaticActors(void);
     void            DrawActors(void);
+    void            DrawStaticActors(void);
+    void            DrawViewActors(void);
     void            DrawFX(void);
     void            DrawSurface(const surface_t *surface, const char *texturePath);
     void            TraverseDrawActorNode(kexWorldActor *actor,

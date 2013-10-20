@@ -80,6 +80,12 @@ void kexScriptObjVector::Init(void) {
 
     scriptManager.Engine()->RegisterObjectMethod(
         "kVec3",
+        "void Set(const float, const float, const float)",
+        asMETHODPR(kexVec3, Set, (const float, const float, const float), void),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kVec3",
         "kVec3 opAdd(const kVec3 &in)",
         asMETHODPR(kexVec3, operator+, (const kexVec3&), kexVec3),
         asCALL_THISCALL);

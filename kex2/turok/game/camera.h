@@ -32,10 +32,13 @@ public:
                         ~kexCamera(void);
 
     virtual void        LocalTick(void);
+    virtual void        Tick(void);
+    virtual void        Remove(void);
 
     void                SetupMatrices(void);
     void                UpdateAspect(void);
 
+    const float         Aspect(void) const { return aspect; }
     kexMatrix           &Projection(void) { return projMatrix; }
     kexMatrix           &ModelView(void) { return modelMatrix; }
     const kexFrustum    &Frustum(void) const { return viewFrustum; }

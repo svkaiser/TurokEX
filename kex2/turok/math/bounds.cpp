@@ -136,6 +136,42 @@ bool kexBBox::IntersectingBox(const kexBBox &box) const {
 }
 
 //
+// kexBBox::DistanceToPlane
+//
+
+float kexBBox::DistanceToPlane(kexPlane &plane) {
+    kexVec3 c;
+    kexVec3 n;
+    float distStart;
+    float distEnd;
+    float dist = 0;
+    
+    c = Center();
+    n = plane.Normal();
+    
+    distStart = plane.Distance(c);
+    distEnd = (float)fabs((max.x - c.x) * n.x) +
+              (float)fabs((max.y - c.y) * n.y) +
+              (float)fabs((max.z - c.z) * n.z);
+
+    dist = distStart - distEnd;
+    
+    if(dist > 0) {
+        // in front
+        return dist;
+    }
+    
+    dist = distStart + distEnd;
+    
+    if(dist < 0) {
+        // behind
+        return dist;
+    }
+    
+    return 0;
+}
+
+//
 // kexBBox::operator+
 //
 

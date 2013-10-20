@@ -86,6 +86,65 @@ void kexTri::SetBounds(void) {
 }
 
 //
+// kexTri::PointInRange
+//
+
+bool kexTri::PointInRange(const kexVec3 &pt, const float expand) {
+    float rSq = expand * expand;
+    float eSq;
+    kexVec3 cp;
+    kexVec3 pt1;
+    kexVec3 pt2;
+    kexVec3 pt3;
+    kexVec3 dp1;
+    kexVec3 dp2;
+    kexVec3 edge;
+
+    for(int i = 0; i < 3; i++) {
+        pt1 = *point[(i+0)%3];
+        pt2 = *point[(i+1)%3];
+        pt3 = *point[(i+2)%3];
+
+        dp1 = pt1 - pt;
+        dp2 = pt2 - pt;
+
+        cp = dp1.Cross(dp2);
+
+        if(plane.Normal().Dot(cp) >= 0) {
+            continue;
+        }
+
+        if(expand == 0) {
+            return false;
+        }
+
+        edge = pt1 - pt2;
+        eSq = edge.UnitSq();
+
+        if(cp.UnitSq() > eSq * rSq) {
+            return false;
+        }
+
+        float d = edge.Dot(dp1);
+
+        if(d < 0) {
+            edge = pt1 - pt3;
+            if(edge.Dot(dp1) < 0 && dp1.UnitSq() > rSq) {
+                return false;
+            }
+        }
+        else if(d > eSq) {
+            edge = pt2 - pt3;
+            if(edge.Dot(dp2) < 0 && dp2.UnitSq() > rSq) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+//
 // kexTri::GetDistance
 //
 

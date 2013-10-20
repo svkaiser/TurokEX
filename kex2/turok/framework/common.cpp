@@ -279,6 +279,42 @@ void kexCommon::StripExt(char *name) {
 }
 
 //
+// kexCommon::AddCvar
+//
+
+void kexCommon::AddCvar(const kexStr &name, const kexStr &value, const kexStr &desc, const int flags) {
+    new kexCvar(name.c_str(), flags|CVF_ALLOCATED, (char*)value.c_str(), desc.c_str());
+}
+
+//
+// kexCommon::GetCvarFloat
+//
+
+float kexCommon::GetCvarFloat(const kexStr &name) {
+    kexCvar *cvar = cvarManager.Get(name.c_str());
+
+    if(cvar == NULL) {
+        return 0;
+    }
+
+    return cvar->GetFloat();
+}
+
+//
+// kexCommon::GetCvarBool
+//
+
+bool kexCommon::GetCvarBool(const kexStr &name) {
+    kexCvar *cvar = cvarManager.Get(name.c_str());
+
+    if(cvar == NULL) {
+        return 0;
+    }
+
+    return cvar->GetBool();
+}
+
+//
 // kexCommon::InitObject
 //
 
@@ -294,7 +330,36 @@ void kexCommon::InitObject(void) {
         asMETHODPR(kexCommon, Printf, (const kexStr &str), void),
         asCALL_THISCALL);
 
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kCommon",
+        "void AddCvar(const kStr &in, const kStr &in, const kStr &in, const int)",
+        asMETHODPR(kexCommon, AddCvar,
+        (const kexStr &name, const kexStr &value, const kexStr &desc, const int flags), void),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kCommon",
+        "float GetCvarFloat(const kStr &in)",
+        asMETHODPR(kexCommon, GetCvarFloat, (const kexStr &name), float),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kCommon",
+        "bool GetCvarBool(const kStr &in)",
+        asMETHODPR(kexCommon, GetCvarBool, (const kexStr &name), bool),
+        asCALL_THISCALL);
+
     scriptManager.Engine()->RegisterGlobalProperty("kCommon Com", &common);
+
+    scriptManager.Engine()->RegisterEnum("CvarFlags");
+    scriptManager.Engine()->RegisterEnumValue("CvarFlags", "CVF_BOOL", CVF_BOOL);
+    scriptManager.Engine()->RegisterEnumValue("CvarFlags", "CVF_INT", CVF_INT);
+    scriptManager.Engine()->RegisterEnumValue("CvarFlags", "CVF_FLOAT", CVF_FLOAT);
+    scriptManager.Engine()->RegisterEnumValue("CvarFlags", "CVF_STRING", CVF_STRING);
+    scriptManager.Engine()->RegisterEnumValue("CvarFlags", "CVF_NETWORK", CVF_NETWORK);
+    scriptManager.Engine()->RegisterEnumValue("CvarFlags", "CVF_CHEAT", CVF_CHEAT);
+    scriptManager.Engine()->RegisterEnumValue("CvarFlags", "CVF_CONFIG", CVF_CONFIG);
+    scriptManager.Engine()->RegisterEnumValue("CvarFlags", "CVF_ALLOCATED", CVF_ALLOCATED);
 }
 
 //

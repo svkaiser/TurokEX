@@ -27,15 +27,15 @@
 
 class kexNetwork {
 public:
-    virtual void        Init(void);
+    virtual void        Init(void) = 0;
     virtual void        Destroy(void);
     virtual void        Shutdown(void);
-    virtual void        ProcessPackets(const ENetPacket *packet);
-    virtual void        CreateHost(void);
+    virtual void        ProcessPackets(const ENetPacket *packet) = 0;
+    virtual void        CreateHost(void) = 0;
     virtual void        CheckMessages(void);
-    virtual void        Run(const int msec);
-    virtual void        OnConnect(void);
-    virtual void        OnDisconnect(void);
+    virtual void        Run(const int msec) = 0;
+    virtual void        OnConnect(void) = 0;
+    virtual void        OnDisconnect(void) = 0;
     virtual void        OnRecieve(void);
     
     void                SetHost(ENetHost *_host) { host = _host; }

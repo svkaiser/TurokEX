@@ -263,6 +263,48 @@ kexAngle &kexAngle::Clamp180(void) {
 }
 
 //
+// kexAngle::Clamp180Invert
+//
+
+kexAngle &kexAngle::Clamp180Invert(void) {
+#define CLAMP180(x)                                             \
+    for(; x < -M_PI; x = x + FULLCIRCLE);                       \
+    for(; x >  M_PI; x = x - FULLCIRCLE)
+    CLAMP180(yaw);
+    CLAMP180(pitch);
+    CLAMP180(roll);
+#undef CLAMP180
+
+    yaw     = -yaw;
+    pitch   = -pitch;
+    roll    = -roll;
+
+    return *this;
+}
+
+//
+// kexAngle::Clamp180InvertSum
+//
+
+kexAngle &kexAngle::Clamp180InvertSum(const kexAngle &angle) {
+    kexAngle an = angle;
+
+    an.Clamp180Invert();
+
+    an.yaw      += this->yaw;
+    an.pitch    += this->pitch;
+    an.roll     += this->roll;
+
+    an.Clamp180Invert();
+
+    this->yaw   = an.yaw;
+    this->pitch = an.pitch;
+    this->roll  = an.roll;
+
+    return *this;
+}
+
+//
 // kexAngle::Round
 //
 

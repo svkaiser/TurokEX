@@ -138,6 +138,7 @@ void kexRenderWorld::RenderScene(void) {
     DrawStaticActors();
     DrawActors();
     DrawFX();
+    DrawViewActors();
 
     client.LocalPlayer().PlayerEvent("onRender");
     dglEnableClientState(GL_COLOR_ARRAY);
@@ -288,10 +289,10 @@ void kexRenderWorld::TraverseDrawActorNode(kexWorldActor *actor,
                 frame       = animState->prevTrack.frame;
                 nextframe   = animState->prevTrack.nextFrame;
 
-                rot_cur     = r1.Slerp(animState->GetRotation(prevanim, nodenum, frame), delta);
-                rot_next    = r2.Slerp(animState->GetRotation(prevanim, nodenum, nextframe), delta);
-                pos_cur     = t1.Lerp(animState->GetTranslation(prevanim, nodenum, frame), delta);
-                pos_next    = t2.Lerp(animState->GetTranslation(prevanim, nodenum, nextframe), delta);
+                rot_cur     = animState->GetRotation(prevanim, nodenum, frame).Slerp(r1, delta);
+                rot_next    = animState->GetRotation(prevanim, nodenum, nextframe).Slerp(r2, delta);
+                pos_cur     = animState->GetTranslation(prevanim, nodenum, frame).Lerp(t1, delta);
+                pos_next    = animState->GetTranslation(prevanim, nodenum, nextframe).Lerp(t2, delta);
             }
 
             kexQuat rot = rot_cur.Slerp(rot_next, delta);
@@ -391,8 +392,9 @@ void kexRenderWorld::DrawStaticActors(void) {
 
                 actor->bCulled = !frustum.TestBoundingBox(box);
 
-                if(actor->bCulled)
+                if(actor->bCulled) {
                     continue;
+                }
 
                 if(!bShowClipMesh) {
                     dglPushMatrix();
@@ -400,10 +402,10 @@ void kexRenderWorld::DrawStaticActors(void) {
                     TraverseDrawActorNode(actor, &actor->Model()->nodes[0], NULL);
                     dglPopMatrix();
                 }
-
-                if(bShowClipMesh) {
+                else {
                     actor->ClipMesh().DebugDraw();
                 }
+
                 if(bShowBBox) {
                     if(actor->bTraced) {
                         DrawBoundingBox(box, 255, 0, 0);
@@ -442,8 +444,9 @@ void kexRenderWorld::DrawActors(void) {
 
     for(kexWorldActor *actor = world->actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
-            if(actor->bHidden)
+            if(actor->bHidden || actor->bClientView) {
                 continue;
+            }
 
             kexBBox box;
 
@@ -452,8 +455,9 @@ void kexRenderWorld::DrawActors(void) {
 
             actor->bCulled = !frustum.TestBoundingBox(box);
 
-            if(actor->bCulled)
+            if(actor->bCulled) {
                 continue;
+            }
 
             if(actor->Model()) {
                 dglPushMatrix();
@@ -483,6 +487,48 @@ void kexRenderWorld::DrawActors(void) {
                     actor->Radius(), actor->Height(), 255, 128, 128);
             }
     }
+}
+
+//
+// kexRenderWorld::DrawViewActors
+//
+
+void kexRenderWorld::DrawViewActors(void) {
+    kexMatrix projMatrix;
+    kexMatrix modelMatrix(DEG2RAD(-90), 1);
+
+    dglMatrixMode(GL_PROJECTION);
+    dglLoadIdentity();
+    projMatrix.Identity();
+    projMatrix.SetViewProjection(world->Camera()->Aspect(), 45.0f, 32, -1);
+    dglMultMatrixf(projMatrix.ToFloatPtr());
+
+    dglMatrixMode(GL_MODELVIEW);
+    dglLoadIdentity();
+
+    renderSystem.SetState(GLSTATE_LIGHTING, true);
+
+    for(kexWorldActor *actor = world->actors.Next();
+        actor != NULL; actor = actor->worldLink.Next()) {
+            if(actor->bHidden || !actor->bClientView) {
+                continue;
+            }
+
+            if(actor->Model()) {
+                dglPushMatrix();
+                dglMultMatrixf(actor->Matrix().ToFloatPtr());
+                dglPushMatrix();
+
+                dglMultMatrixf(modelMatrix.ToFloatPtr());
+
+                TraverseDrawActorNode(actor, &actor->Model()->nodes[0], actor->AnimState());
+
+                dglPopMatrix();
+                dglPopMatrix();
+            }
+    }
+
+    renderSystem.SetState(GLSTATE_LIGHTING, false);
 }
 
 //

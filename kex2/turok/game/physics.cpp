@@ -146,8 +146,17 @@ float kexPhysics::GroundDistance(void) {
     if(groundGeom == NULL) {
         return 0;
     }
+
+    float radius = owner->Radius();
+    float height = owner->BaseHeight();
     kexVec3 org = owner->GetOrigin();
-    return org.y - groundGeom->GetDistance(org);
+
+    kexVec3 offset(groundGeom->plane.a < 0 ? radius : -radius,
+                   groundGeom->plane.b < 0 ? height : 0,
+                   groundGeom->plane.c < 0 ? radius : -radius);
+
+    return org.y - (-offset.Dot(groundGeom->plane.Normal()) +
+        groundGeom->GetDistance(org));
 }
 
 //
@@ -198,15 +207,6 @@ void kexPhysics::ImpactVelocity(kexVec3 &vel, kexVec3 &normal, const float force
     if(d != 0) {
         vel *= (dir.Unit() / d);
     }
-}
-
-//
-// kexPhysics::ProjectOnCrease
-//
-
-void kexPhysics::ProjectOnCrease(kexVec3 &vel, const kexVec3 &n1, const kexVec3 &n2) {
-    kexVec3 dir = n1.Cross(n2).Normalize();
-    vel = (dir * (velocity.Dot(dir)));
 }
 
 //
@@ -300,8 +300,8 @@ void kexPhysics::Think(const float timeDelta) {
     float time = timeDelta;
     kexVec3 gravity;
     float massAmount = (mass * timeDelta);
-    float radius = static_cast<kexWorldActor*>(owner)->Radius();
-    float height = static_cast<kexWorldActor*>(owner)->BaseHeight();
+    float radius = owner->Radius();
+    float height = owner->BaseHeight();
 
     gravity = localWorld.GetGravity();
 
@@ -373,7 +373,7 @@ void kexPhysics::Think(const float timeDelta) {
 
         if(trace.hitActor == NULL) {
             // nudge origin away from plane
-            owner->SetOrigin(owner->GetOrigin() + (trace.hitNormal * 0.125f));
+            owner->SetOrigin(owner->GetOrigin() - (direction * 0.125f));
 
             // don't climb on steep slopes
             if(trace.hitNormal.Dot(gravity) >= -0.5f) {
@@ -410,7 +410,9 @@ void kexPhysics::Think(const float timeDelta) {
                 }
 
                 // slide along the crease between two planes
-                ProjectOnCrease(vel, normals[hits], normals[j]);
+                kexVec3 dir = normals[hits].Cross(normals[j]).Normalize();
+                float d = dir.Dot(velocity);
+                vel = dir * d;
 
                 // see if it bumps into a third plane
                 for(int k = 0; k < moves; k++) {

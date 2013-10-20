@@ -68,6 +68,24 @@ void kexScriptObjAngle::Init(void) {
 
     scriptManager.Engine()->RegisterObjectMethod(
         "kAngle",
+        "kAngle &Clamp180(void)",
+        asMETHODPR(kexAngle, Clamp180, (void), kexAngle&),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kAngle",
+        "kAngle &Clamp180Invert(void)",
+        asMETHODPR(kexAngle, Clamp180Invert, (void), kexAngle&),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kAngle",
+        "kAngle &Clamp180InvertSum(const kAngle &in)",
+        asMETHODPR(kexAngle, Clamp180InvertSum, (const kexAngle&), kexAngle&),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kAngle",
         "kVec3 ToForwardAxis(void)",
         asMETHODPR(kexAngle, ToForwardAxis, (void), kexVec3),
         asCALL_THISCALL);

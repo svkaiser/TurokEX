@@ -917,6 +917,36 @@ kexMatrix kexMatrix::Transpose(const kexMatrix &mtx) {
 }
 
 //
+// kexMatrix::SetViewProjection
+//
+
+void kexMatrix::SetViewProjection(float aspect, float fov, float zNear, float zFar) {
+    float top       = zNear * (float)tan(fov * M_PI / 360.0f);
+    float bottom    = -top;
+    float left      = bottom * aspect;
+    float right     = top * aspect;
+    
+    vectors[0].x =  (2 * zNear) / (right - left);
+    vectors[1].y =  (2 * zNear) / (top - bottom);
+    vectors[3].z = -(2 * zFar * zNear) / (zFar - zNear);
+
+    vectors[2].x =  (right + left) / (right - left);
+    vectors[2].y =  (top + bottom) / (top - bottom);
+    vectors[2].z = -(zFar + zNear) / (zFar - zNear);
+
+    vectors[0].y = 0;
+    vectors[0].z = 0;
+    vectors[0].w = 0;
+    vectors[1].x = 0;
+    vectors[1].w = 0;
+    vectors[1].z = 0;
+    vectors[2].w = -1;
+    vectors[3].x = 0;
+    vectors[3].y = 0;
+    vectors[3].w = 0;
+}
+
+//
 // kexMatrix::operator*
 //
 

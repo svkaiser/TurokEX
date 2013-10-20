@@ -84,6 +84,11 @@ kexActor::kexActor(void) {
     this->bTouch        = false;
     this->bClientOnly   = false;
     this->bHidden       = false;
+    this->bClientView   = false;
+    this->radius        = 10.24f;
+    this->baseHeight    = 10.24f;
+    this->viewHeight    = 8.192f;
+    this->centerHeight  = 5.12f;
     this->owner         = NULL;
     this->target        = NULL;
     this->model         = NULL;
@@ -100,27 +105,6 @@ kexActor::kexActor(void) {
 //
 
 kexActor::~kexActor(void) {
-}
-
-//
-// kexActor::LocalTick
-//
-
-void kexActor::LocalTick(void) {
-}
-
-//
-// kexActor::Tick
-//
-
-void kexActor::Tick(void) {
-}
-
-//
-// kexActor::Remove
-//
-
-void kexActor::Remove(void) {
 }
 
 //
@@ -174,6 +158,49 @@ void kexActor::SetOwner(kexActor *targ) {
 void kexActor::SetBoundingBox(const kexVec3 &min, const kexVec3 &max) {
     bbox.min = min;
     bbox.max = max;
+}
+
+//
+// kexActor::Trace
+//
+
+bool kexActor::Trace(traceInfo_t *trace) {
+    kexVec3 org = (origin - trace->start);
+
+    if(trace->dir.Dot(org) <= 0) {
+        return false;
+    }
+
+    float len = trace->dir.Unit();
+
+    if(len == 0) {
+        return false;
+    }
+
+    kexVec3 nDir    = (trace->dir * (1.0f / len));
+    float cp        = nDir.Dot(org);
+    kexVec3 cDist   = (org - (nDir * cp));
+    float rd        = radius * radius - cDist.UnitSq();
+
+    if(rd <= 0) {
+        return false;
+    }
+
+    float frac = (cp - (float)sqrt(rd)) * (1.0f / len);
+
+    if(frac <= 1.0f && frac < trace->fraction) {
+        if(frac < 0) {
+            frac = 0;
+        }
+        trace->hitActor = this;
+        trace->fraction = frac;
+        trace->hitVector = trace->start - (trace->dir * frac);
+        trace->hitNormal = (trace->start - origin);
+        trace->hitNormal.Normalize();
+        return true;
+    }
+
+    return false;
 }
 
 enum {
@@ -245,11 +272,8 @@ kexWorldActor::kexWorldActor(void) {
     this->worldLink.SetData(this);
     this->scriptComponent.SetOwner(this);
     this->clipMesh.SetOwner(this);
+    this->AnimState()->SetOwner(this);
 
-    this->radius            = 30.72f;
-    this->baseHeight        = 30.72f;
-    this->viewHeight        = 16.384f;
-    this->centerHeight      = 10.24f;
     this->bbox              = baseBBox;
     this->bTraced           = false;
 }
@@ -266,6 +290,16 @@ kexWorldActor::~kexWorldActor(void) {
 //
 
 void kexWorldActor::LocalTick(void) {
+    if(bStatic == true) {
+        return;
+    }
+
+    UpdateTransform();
+
+    if(scriptComponent.onThink) {
+        scriptComponent.CallFunction(scriptComponent.onThink);
+    }
+
     animState.Update();
 }
 
@@ -274,6 +308,15 @@ void kexWorldActor::LocalTick(void) {
 //
 
 void kexWorldActor::Tick(void) {
+    if(bStatic == true) {
+        return;
+    }
+
+    UpdateTransform();
+
+    if(scriptComponent.onThink) {
+        scriptComponent.CallFunction(scriptComponent.onThink);
+    }
 }
 
 //
@@ -611,49 +654,6 @@ void kexWorldActor::CreateComponent(const char *name) {
 }
 
 //
-// kexWorldActor::Trace
-//
-
-bool kexWorldActor::Trace(traceInfo_t *trace) {
-    kexVec3 org = (origin - trace->start);
-
-    if(trace->dir.Dot(org) <= 0) {
-        return false;
-    }
-
-    float len = trace->dir.Unit();
-
-    if(len == 0) {
-        return false;
-    }
-
-    kexVec3 nDir    = (trace->dir * (1.0f / len));
-    float cp        = nDir.Dot(org);
-    kexVec3 cDist   = (org - (nDir * cp));
-    float rd        = radius * radius - cDist.UnitSq();
-
-    if(rd <= 0) {
-        return false;
-    }
-
-    float frac = (cp - (float)sqrt(rd)) * (1.0f / len);
-
-    if(frac <= 1.0f && frac < trace->fraction) {
-        if(frac < 0) {
-            frac = 0;
-        }
-        trace->hitActor = this;
-        trace->fraction = frac;
-        trace->hitVector = trace->start - (trace->dir * frac);
-        trace->hitNormal = (trace->start - origin);
-        trace->hitNormal.Normalize();
-        return true;
-    }
-
-    return false;
-}
-
-//
 // kexWorldActor::ToJSVal
 //
 
@@ -747,11 +747,6 @@ void kexWorldActor::InitObject(void) {
 
     OBJPROPERTY("ref @obj", scriptComponent.Handle());
     OBJPROPERTY("int health", health);
-    OBJPROPERTY("float radius", radius);
-    OBJPROPERTY("float height", height);
-    OBJPROPERTY("float baseHeight", baseHeight);
-    OBJPROPERTY("float centerHeight", centerHeight);
-    OBJPROPERTY("float viewHeight", viewHeight);
     OBJPROPERTY("kQuat lerpRotation", lerpRotation);
 
 #undef OBJMETHOD
@@ -783,23 +778,4 @@ void kexWorldActor::InitObject(void) {
 
 #undef OBJMETHOD
 #undef OBJPROPERTY
-}
-
-DECLARE_CLASS(kexViewActor, kexWorldActor)
-
-//
-// kexViewActor::kexViewActor
-//
-
-kexViewActor::kexViewActor(void) {
-    this->bClientOnly = true;
-    this->bCollision = false;
-    this->bTouch = false;
-}
-
-//
-// kexViewActor::~kexViewActor
-//
-
-kexViewActor::~kexViewActor(void) {
 }

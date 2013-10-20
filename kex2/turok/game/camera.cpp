@@ -68,31 +68,8 @@ void kexCamera::SetupMatrices(void) {
 
     // projection
     projMatrix.Identity();
-
-    float camFov    = (float)bFixedFOV ? fov : cvarClientFOV.GetFloat();
-    float top       = zNear * (float)tan(camFov * M_PI / 360.0f);
-    float bottom    = -top;
-    float left      = bottom * aspect;
-    float right     = top * aspect;
-    
-    projMatrix.vectors[0].x =  (2 * zNear) / (right - left);
-    projMatrix.vectors[1].y =  (2 * zNear) / (top - bottom);
-    projMatrix.vectors[3].z = -(2 * zFar * zNear) / (zFar - zNear);
-
-    projMatrix.vectors[2].x =  (right + left) / (right - left);
-    projMatrix.vectors[2].y =  (top + bottom) / (top - bottom);
-    projMatrix.vectors[2].z = -(zFar + zNear) / (zFar - zNear);
-
-    projMatrix.vectors[0].y = 0;
-    projMatrix.vectors[0].z = 0;
-    projMatrix.vectors[0].w = 0;
-    projMatrix.vectors[1].x = 0;
-    projMatrix.vectors[1].w = 0;
-    projMatrix.vectors[1].z = 0;
-    projMatrix.vectors[2].w = -1;
-    projMatrix.vectors[3].x = 0;
-    projMatrix.vectors[3].y = 0;
-    projMatrix.vectors[3].w = 0;
+    projMatrix.SetViewProjection(aspect,
+        (float)bFixedFOV ? fov : cvarClientFOV.GetFloat(), zNear, zFar);
     
     // model
     modelMatrix.Identity();
@@ -115,6 +92,20 @@ void kexCamera::SetupMatrices(void) {
 
 void kexCamera::LocalTick(void) {
     attachment.Transform();
+}
+
+//
+// kexCamera::Tick
+//
+
+void kexCamera::Tick(void) {
+}
+
+//
+// kexCamera::Remove
+//
+
+void kexCamera::Remove(void) {
 }
 
 //

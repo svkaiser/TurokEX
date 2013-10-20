@@ -59,6 +59,8 @@ typedef struct {
     int                     nextFrame;
 } animTrack_t;
 
+class kexWorldActor;
+
 class kexAnimState {
 public:
                             kexAnimState(void);
@@ -67,7 +69,11 @@ public:
     void                    Reset(void);
     void                    Update(void);
     void                    Set(const kexAnim_t *anim, float animTime, int animFlags);
-    void                    Blend(const kexAnim_t *anim, float animTime, float blendTime, int animFlags);
+    void                    Set(const kexStr &animName, float animTime, int animFlags);
+    void                    Set(const int id, float animTime, int animFlags);
+    void                    Blend(const kexAnim_t *anim, float animTime, float animBlendTime, int animFlags);
+    void                    Blend(const kexStr &animName, float animTime, float animBlendTime, int animFlags);
+    void                    Blend(const int id, float animTime, float animBlendTime, int animFlags);
 
     static kexQuat          GetRotation(kexAnim_t *anim, int nodeNum, int frame);
     static kexVec3          GetTranslation(kexAnim_t *anim, int nodeNum, int frame);
@@ -75,6 +81,12 @@ public:
     static kexAnim_t        *GetAnim(const kexModel_t *model, const int id);
     static bool             CheckAnimID(const kexModel_t *model, const int id);
     static void             LoadKAnim(const kexModel_t *model);
+
+    void                    SetOwner(kexWorldActor *actor) { owner = actor; }
+    const int               CurrentFrame(void) const { return currentFrame; }
+    const float             PlayTime(void) const { return playTime; }
+
+    static void             InitObject(void);
 
     animTrack_t             track;
     animTrack_t             prevTrack;
@@ -93,6 +105,7 @@ private:
     float                   playTime;
     float                   blendTime;
     unsigned int            restartFrame;
+    kexWorldActor           *owner;
 };
 
 #endif

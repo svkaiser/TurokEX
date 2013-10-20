@@ -590,10 +590,6 @@ bool kexClipMesh::Trace(traceInfo_t *trace) {
     float frac = 1;
     float r = 0;
     float bxRadius = 1.024f;
-    
-    if(trace->bUseBBox) {
-        bxRadius = trace->localBBox.Radius() * 0.5f;
-    }
 
     for(unsigned int i = 0; i < numGroups; i++) {
         cmGroup_t *cmGroup = &cmGroups[i];
@@ -603,25 +599,8 @@ bool kexClipMesh::Trace(traceInfo_t *trace) {
             float dist;
             float distStart;
             float distEnd;
-            kexVec3 dp1;
-            kexVec3 dp2;
-            kexVec3 pt1;
-            kexVec3 pt2;
-            kexVec3 pt3;
             kexVec3 hit;
             kexVec3 offset;
-            bool ok;
-            kexVec3 cp;
-            kexVec3 edge;
-            float eSq;
-            float rSq;
-
-#if 0
-            // check if trace bounds overlap triangle's bounds
-            if(trace->bUseBBox && !trace->bbox.IntersectingBox(tri->bounds + bxRadius)) {
-                continue;
-            }
-#endif
 
             // direction must be facing the plane
             if(tri->plane.Distance(trace->dir) >= 0) {
@@ -634,7 +613,15 @@ bool kexClipMesh::Trace(traceInfo_t *trace) {
                 offset.z = tri->plane.c < 0 ? trace->localBBox.max.z : trace->localBBox.min.z;
 
                 r = -offset.Dot(tri->plane.Normal());
+                bxRadius = offset.Unit();
             }
+
+#if 0
+            // check if trace bounds overlap triangle's bounds
+            if(trace->bUseBBox && !trace->bbox.IntersectingBox(tri->bounds + bxRadius)) {
+                continue;
+            }
+#endif
 
             dist = tri->plane.d + r;
 
@@ -661,59 +648,9 @@ bool kexClipMesh::Trace(traceInfo_t *trace) {
             }
 
             hit = trace->start + ((trace->end - trace->start) * frac);
-            ok = true;
 
             // check if hit vector lies within the triangle's edges
-            rSq = ((bxRadius*0.75f) * (bxRadius*0.75f));
-
-            for(int k = 0; k < 3; k++) {
-                pt1 = *tri->point[(k+0)%3];
-                pt2 = *tri->point[(k+1)%3];
-                pt3 = *tri->point[(k+2)%3];
-
-                dp1 = pt1 - hit;
-                dp2 = pt2 - hit;
-
-                cp = dp1.Cross(dp2);
-
-                if(tri->plane.Normal().Dot(cp) < 0) {
-                    if(!trace->bUseBBox) {
-                        ok = false;
-                        break;
-                    }
-
-                    edge = pt1 - pt2;
-                    eSq = edge.UnitSq();
-
-                    if(cp.UnitSq() > eSq * rSq) {
-                        ok = false;
-                        break;
-                    }
-
-                    float d = edge.Dot(dp1);
-
-                    if(d < 0) {
-                        edge = pt1 - pt3;
-                        if(edge.Dot(dp1) < 0 && dp1.UnitSq() > rSq) {
-                            ok = false;
-                            break;
-                        }
-                    }
-                    else if(d > eSq) {
-                        edge = pt2 - pt3;
-                        if(edge.Dot(dp2) < 0 && dp2.UnitSq() > rSq) {
-                            ok = false;
-                            break;
-                        }
-                    }
-                }
-
-                if(ok == false) {
-                    break;
-                }
-            }
-
-            if(ok == false) {
+            if(!tri->PointInRange(hit, bxRadius)) {
                 continue;
             }
 

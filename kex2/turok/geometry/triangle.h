@@ -38,6 +38,7 @@ public:
     
     void            SetPoint(const int idx, float *p);
     void            SetBounds(void);
+    bool            PointInRange(const kexVec3 &pt, const float expand);
     const float     GetDistance(const kexVec3 &pos) const;
     const float     GetEdgeYaw(const int idx) const;
     const kexVec3   GetCenterPoint(void) const;

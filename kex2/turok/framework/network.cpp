@@ -28,13 +28,6 @@
 #include "network.h"
 
 //
-// kexNetwork::Init
-//
-
-void kexNetwork::Init(void) {
-}
-
-//
 // kexNetwork::Destroy
 //
 
@@ -50,20 +43,6 @@ void kexNetwork::Destroy(void) {
 void kexNetwork::Shutdown(void) {
     Destroy();
     enet_deinitialize();
-}
-
-//
-// kexNetwork::ProcessPackets
-//
-
-void kexNetwork::ProcessPackets(const ENetPacket *packet) {
-}
-
-//
-// kexNetwork::CreateHost
-//
-
-void kexNetwork::CreateHost(void) {
 }
 
 //
@@ -90,30 +69,9 @@ void kexNetwork::CheckMessages(void) {
 }
 
 //
-// kexNetwork::OnConnect
-//
-
-void kexNetwork::OnConnect(void) {
-}
-
-//
-// kexNetwork::OnDisconnect
-//
-
-void kexNetwork::OnDisconnect(void) {
-}
-
-//
 // kexNetwork::OnRecieve
 //
 
 void kexNetwork::OnRecieve(void) {
     ProcessPackets(netEvent.packet);
-}
-
-//
-// kexNetwork::Run
-//
-
-void kexNetwork::Run(const int msec) {
 }

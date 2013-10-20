@@ -210,10 +210,42 @@ void kexAnimState::Set(const kexAnim_t *anim, float animTime, int animFlags) {
 }
 
 //
+// kexAnimState::Set
+//
+
+void kexAnimState::Set(const kexStr &animName, float animTime, int animFlags) {
+    kexAnim_t *anim;
+
+    if(owner == NULL) {
+        return;
+    }
+
+    if(anim = kexAnimState::GetAnim(owner->Model(), animName.c_str())) {
+        Set(anim, animTime, animFlags);
+    }
+}
+
+//
+// kexAnimState::Set
+//
+
+void kexAnimState::Set(const int id, float animTime, int animFlags) {
+    kexAnim_t *anim;
+
+    if(owner == NULL) {
+        return;
+    }
+
+    if(anim = kexAnimState::GetAnim(owner->Model(), id)) {
+        Set(anim, animTime, animFlags);
+    }
+}
+
+//
 // kexAnimState::Blend
 //
 
-void kexAnimState::Blend(const kexAnim_t *anim, float animTime, float blendTime, int animFlags) {
+void kexAnimState::Blend(const kexAnim_t *anim, float animTime, float animBlendTime, int animFlags) {
     bool bSameAnim = (anim == track.anim);
 
     if(flags & ANF_NOINTERRUPT && !(flags & ANF_STOPPED)) {
@@ -235,15 +267,47 @@ void kexAnimState::Blend(const kexAnim_t *anim, float animTime, float blendTime,
     prevTrack.nextFrame     = track.nextFrame;
     track.frame             = bSameAnim ? anim->loopFrame : 0;
     track.nextFrame         = bSameAnim ? (anim->loopFrame+1) : 1;
-    time                    = (float)client.GetTicks() + blendTime;
+    time                    = (float)client.GetTicks() + animBlendTime;
     playTime                = 0;
     frameTime               = animTime;
-    blendTime               = blendTime;
+    blendTime               = animBlendTime;
     deltaTime               = 0;
     prevTrack.anim          = track.anim;
     track.anim              = const_cast<kexAnim_t*>(anim);
     restartFrame            = anim->loopFrame;
     currentFrame            = 0;
+}
+
+//
+// kexAnimState::Blend
+//
+
+void kexAnimState::Blend(const kexStr &animName, float animTime, float animBlendTime, int animFlags) {
+    kexAnim_t *anim;
+
+    if(owner == NULL) {
+        return;
+    }
+
+    if(anim = kexAnimState::GetAnim(owner->Model(), animName.c_str())) {
+        Blend(anim, animTime, animBlendTime, animFlags);
+    }
+}
+
+//
+// kexAnimState::Blend
+//
+
+void kexAnimState::Blend(const int id, float animTime, float animBlendTime, int animFlags) {
+    kexAnim_t *anim;
+
+    if(owner == NULL) {
+        return;
+    }
+
+    if(anim = kexAnimState::GetAnim(owner->Model(), id)) {
+        Blend(anim, animTime, animBlendTime, animFlags);
+    }
 }
 
 //
@@ -574,4 +638,61 @@ void kexAnimState::LoadKAnim(const kexModel_t *model) {
         ParseKAnim(model, &model->anims[i], lexer);
         parser.Close();
     }
+}
+
+//
+// kexAnimState::InitObject
+//
+
+void kexAnimState::InitObject(void) {
+    scriptManager.Engine()->RegisterObjectType(
+        "kAnimState",
+        sizeof(kexAnimState),
+        asOBJ_REF | asOBJ_NOCOUNT);
+
+#define OBJMETHOD(str, a, b, c)                     \
+    scriptManager.Engine()->RegisterObjectMethod(   \
+        "kAnimState",                               \
+        str,                                        \
+        asMETHODPR(kexAnimState, a, b, c),          \
+        asCALL_THISCALL)
+
+    OBJMETHOD("void Reset(void)", Reset, (void), void);
+    OBJMETHOD("void Update(void)", Update, (void), void);
+    OBJMETHOD("void Set(const kStr &in, float, int)", Set,
+        (const kexStr &animName, float animTime, int animFlags), void);
+    OBJMETHOD("void Set(const int, float, int)", Set,
+        (const int id, float animTime, int animFlags), void);
+    OBJMETHOD("void Blend(const kStr &in, float, float, int)", Blend,
+        (const kexStr &animName, float animTime, float animBlendTime, int animFlags), void);
+    OBJMETHOD("void Blend(const int, float, float, int)", Blend,
+        (const int id, float animTime, float animBlendTime, int animFlags), void);
+    OBJMETHOD("const int CurrentFrame(void)", CurrentFrame, (void)const, const int);
+    OBJMETHOD("const float PlayTime(void)", PlayTime, (void)const, const float);
+
+#define OBJPROPERTY(str, p)                         \
+    scriptManager.Engine()->RegisterObjectProperty( \
+        "kAnimState",                               \
+        str,                                        \
+        asOFFSET(kexAnimState, p))
+
+    OBJPROPERTY("int flags", flags);
+
+#undef OBJMETHOD
+#undef OBJPROPERTY
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kActor",
+        "kAnimState @AnimState(void)",
+        asMETHODPR(kexWorldActor, AnimState, (void), kexAnimState*),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterEnum("AnimStateFlags");
+    scriptManager.Engine()->RegisterEnumValue("AnimStateFlags", "ANF_BLEND", ANF_BLEND);
+    scriptManager.Engine()->RegisterEnumValue("AnimStateFlags", "ANF_LOOP", ANF_LOOP);
+    scriptManager.Engine()->RegisterEnumValue("AnimStateFlags", "ANF_STOPPED", ANF_STOPPED);
+    scriptManager.Engine()->RegisterEnumValue("AnimStateFlags", "ANF_NOINTERRUPT", ANF_NOINTERRUPT);
+    scriptManager.Engine()->RegisterEnumValue("AnimStateFlags", "ANF_ROOTMOTION", ANF_ROOTMOTION);
+    scriptManager.Engine()->RegisterEnumValue("AnimStateFlags", "ANF_PAUSED", ANF_PAUSED);
+    scriptManager.Engine()->RegisterEnumValue("AnimStateFlags", "ANF_CROSSFADE", ANF_CROSSFADE);
 }

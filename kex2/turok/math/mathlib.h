@@ -310,6 +310,7 @@ public:
     kexMatrix               &Transpose(void);
     static kexMatrix        Transpose(const kexMatrix &mtx);
     float                   *ToFloatPtr(void);
+    void                    SetViewProjection(float aspect, float fov, float zNear, float zFar);
     
     kexMatrix               operator*(const kexVec3 &vector);
     kexMatrix               &operator*=(const kexVec3 &vector);
@@ -382,6 +383,8 @@ public:
 
     kexAngle                &Round(void);
     kexAngle                &Clamp180(void);
+    kexAngle                &Clamp180Invert(void);
+    kexAngle                &Clamp180InvertSum(const kexAngle &angle);
     kexAngle                Diff(kexAngle &angle);
     void                    ToAxis(kexVec3 *forward, kexVec3 *up, kexVec3 *right);
     kexVec3                 ToForwardAxis(void);
@@ -421,6 +424,7 @@ public:
     float                   Radius(void) const;
     bool                    PointInside(const kexVec3 &vec) const;
     bool                    IntersectingBox(const kexBBox &box) const;
+    float                   DistanceToPlane(kexPlane &plane);
     bool                    LineIntersect(const kexVec3 &start, const kexVec3 &end);
     
     kexBBox                 operator+(const float radius) const;

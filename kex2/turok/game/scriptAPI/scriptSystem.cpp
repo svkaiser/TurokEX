@@ -324,6 +324,7 @@ void kexScriptManager::RegisterObjects(void) {
     kexLocalPlayer::InitObject();
     kexWorld::InitObject();
     kexPhysics::InitObject();
+    kexAnimState::InitObject();
 }
 
 //

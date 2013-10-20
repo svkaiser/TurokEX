@@ -65,7 +65,6 @@ public:
     bool                    OnSteepSlope(void);
     void                    ImpactVelocity(kexVec3 &vel, kexVec3 &normal, const float force);
     void                    ApplyFriction(void);
-    void                    ProjectOnCrease(kexVec3 &vel, const kexVec3 &n1, const kexVec3 &n2);
     void                    Think(const float timeDelta);
 
     kexVec3                 &GetVelocity(void) { return velocity; }

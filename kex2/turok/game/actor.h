@@ -70,9 +70,9 @@ public:
                                 kexActor(void);
                                 ~kexActor(void);
 
-    virtual void                LocalTick(void);
-    virtual void                Tick(void);
-    virtual void                Remove(void);
+    virtual void                LocalTick(void) = 0;
+    virtual void                Tick(void) = 0;
+    virtual void                Remove(void) = 0;
 
     int                         AddRef(void);
     int                         RemoveRef(void);
@@ -80,16 +80,20 @@ public:
     void                        SetOwner(kexActor *targ);
 
     void                        SetBoundingBox(const kexVec3 &min, const kexVec3 &max);
+    bool                        Trace(traceInfo_t *trace);
 
     kexVec3                     &GetOrigin(void) { return origin; }
     void                        SetOrigin(const kexVec3 &org) { origin = org; }
     kexQuat                     &GetRotation(void) { return rotation; }
     void                        SetRotation(const kexQuat &rot) { rotation = rot; }
     kexVec3                     &GetScale(void) { return scale; }
-    void                        SetScale(const kexVec3 &vel) { scale = vel; }
+    void                        SetScale(const kexVec3 &s) { scale = s; }
     kexActor                    *GetOwner(void) { return owner; }
     kexActor                    *GetTarget(void) { return target; }
     kexAttachment               &Attachment(void) { return attachment; }
+    float                       Radius(void) { return radius; }
+    float                       Height(void) { return height; }
+    float                       BaseHeight(void) { return baseHeight; }
     kexPhysics                  *Physics(void) { return &physics; }
     kexAngle                    &GetAngles(void) { return angles; }
     void                        SetAngles(const kexAngle &an) { angles = an; }
@@ -106,6 +110,7 @@ public:
     bool                        bClientOnly;    // ignored by server / only updated by LocalTick
     bool                        bHidden;        // don't draw by renderer
     bool                        bCulled;        // currently culled by frustum or distance
+    bool                        bClientView;    // can only be rendered through user-commands
 
     //
     // template for registering default script actor methods and properties
@@ -129,6 +134,8 @@ public:
         OBJMETHOD("void SetRotation(const kQuat &in)", SetRotation, (const kexQuat &rot), void);
         OBJMETHOD("kAngle &GetAngles(void)", GetAngles, (void), kexAngle&);
         OBJMETHOD("void SetAngles(const kAngle &in)", SetAngles, (const kexAngle &an), void);
+        OBJMETHOD("kVec3 &GetScale(void)", GetScale, (void), kexVec3&);
+        OBJMETHOD("void SetScale(const kVec3 &in)", SetScale, (const kexVec3 &s), void);
         OBJMETHOD("kAttachment &Attachment(void)", Attachment, (void), kexAttachment&);
         OBJMETHOD("const kStr ClassName(void) const", GetClassString, (void) const, const kexStr);
         OBJMETHOD("void SetBoundingBox(const kVec3 &in, const kVec3 &in)",
@@ -146,6 +153,12 @@ public:
         OBJPROPERTY("bool bHidden", bHidden);
         OBJPROPERTY("bool bClientOnly", bClientOnly);
         OBJPROPERTY("bool bCulled", bCulled);
+        OBJPROPERTY("bool bClientView", bClientView);
+        OBJPROPERTY("float radius", radius);
+        OBJPROPERTY("float height", height);
+        OBJPROPERTY("float baseHeight", baseHeight);
+        OBJPROPERTY("float centerHeight", centerHeight);
+        OBJPROPERTY("float viewHeight", viewHeight);
 
     #undef OBJMETHOD
     #undef OBJPROPERTY
@@ -161,6 +174,11 @@ protected:
     unsigned int                targetID;
     kexActor                    *owner;
     kexActor                    *target;
+    float                       radius;
+    float                       height;
+    float                       baseHeight;
+    float                       centerHeight;
+    float                       viewHeight;
     kexAttachment               attachment;     // attachment object
     kexPhysics                  physics;        // physics object
     kexMatrix                   matrix;         // modelview matrix
@@ -204,16 +222,12 @@ public:
     bool                        Event(const char *function, long *args, unsigned int nargs);
     bool                        ToJSVal(long *val);
     bool                        AlignToSurface(void);
-    float                       Radius(void) { return radius; }
-    float                       Height(void) { return height; }
-    float                       BaseHeight(void) { return baseHeight; }
     kexVec3                     ToLocalOrigin(const float x, const float y, const float z);
     kexVec3                     ToLocalOrigin(const kexVec3 &org);
     void                        SpawnFX(const char *fxName, const float x, const float y, const float z);
     void                        SetModel(const char *modelFile);
     void                        SetModel(const kexStr &modelFile);
     void                        CreateComponent(const char *name);
-    bool                        Trace(traceInfo_t *trace);
 
     gObject_t                   *Component(void) { return component; }
     const int                   Variant(void) const { return variant; }
@@ -243,30 +257,12 @@ protected:
     kexClipMesh                 clipMesh;
     kexStr                      name;
     int                         health;
-    float                       radius;
-    float                       height;
-    float                       baseHeight;
-    float                       centerHeight;
-    float                       viewHeight;
     kexQuat                     lerpRotation;
     kexVec3                     *nodeOffsets_t;
     kexQuat                     *nodeOffsets_r;
     kexAnimState                animState;
     int                         variant;
     rcolor                      *vertexColors;
-END_CLASS();
-
-//-----------------------------------------------------------------------------
-//
-// kexViewActor - special actors that will only render to client projection
-// typically used to draw on to the player hud (weapons, etc)
-//
-//-----------------------------------------------------------------------------
-
-BEGIN_EXTENDED_CLASS(kexViewActor, kexWorldActor);
-public:
-                                kexViewActor(void);
-                                ~kexViewActor(void);
 END_CLASS();
 
 #endif
