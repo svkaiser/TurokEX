@@ -129,7 +129,6 @@ public:
 
     virtual void            LocalTick(void);
 
-    void                    Spawn(void);
     bool                    ProcessInput(event_t *ev);
     void                    BuildCommands(void);
     int                     PlayerEvent(const char *eventName);

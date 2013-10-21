@@ -274,8 +274,8 @@ kexWorldActor::kexWorldActor(void) {
     this->clipMesh.SetOwner(this);
     this->AnimState()->SetOwner(this);
 
-    this->bbox              = baseBBox;
-    this->bTraced           = false;
+    this->bbox      = baseBBox;
+    this->bTraced   = false;
 }
 
 //

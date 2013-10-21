@@ -512,15 +512,6 @@ int kexLocalPlayer::ActionHeldTime(const kexStr &str) {
 
     return heldtime;
 }
-
-//
-// kexLocalPlayer::Spawn
-//
-
-void kexLocalPlayer::Spawn(void) {
-    scriptComponent.CallFunction(scriptComponent.onSpawn);
-}
-
 //
 // kexLocalPlayer::LocalTick
 //
