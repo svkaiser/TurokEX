@@ -307,6 +307,11 @@ void kexScriptManager::RegisterMath(void) {
     engine->RegisterGlobalFunction("float Fabs(float)", asFUNCTION(fabsf), asCALL_CDECL);
     engine->RegisterGlobalFunction("float Acos(float)", asFUNCTION(acosf), asCALL_CDECL);
     engine->RegisterGlobalFunction("float Sqrt(float)", asFUNCTION(sqrtf), asCALL_CDECL);
+    engine->RegisterGlobalFunction("int SysRand(void)", asFUNCTION(kexRand::SysRand), asCALL_CDECL);
+    engine->RegisterGlobalFunction("int Rand(void)", asFUNCTION(kexRand::Int), asCALL_CDECL);
+    engine->RegisterGlobalFunction("int RandMax(const int)", asFUNCTION(kexRand::Max), asCALL_CDECL);
+    engine->RegisterGlobalFunction("float RandFloat(void)", asFUNCTION(kexRand::Float), asCALL_CDECL);
+    engine->RegisterGlobalFunction("float RandCFloat(void)", asFUNCTION(kexRand::CFloat), asCALL_CDECL);
     engine->SetDefaultNamespace("");
 }
 

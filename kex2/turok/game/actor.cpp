@@ -203,6 +203,20 @@ bool kexActor::Trace(traceInfo_t *trace) {
     return false;
 }
 
+//
+// kexActor::PlaySound
+//
+
+void kexActor::PlaySound(const char *name) {
+}
+
+//
+// kexActor::PlaySound
+//
+
+void kexActor::PlaySound(const kexStr &name) {
+}
+
 enum {
     scactor_name = 0,
     scactor_mesh,

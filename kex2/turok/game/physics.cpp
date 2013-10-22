@@ -243,11 +243,13 @@ void kexPhysics::ApplyFriction(void) {
             return;
         }
 
-        if(GroundDistance() > ONPLANE_EPSILON) {
+        bool bSteepSlope = OnSteepSlope();
+
+        if(!bSteepSlope && GroundDistance() > ONPLANE_EPSILON) {
             return;
         }
 
-        if(OnSteepSlope() && velocity.Dot(groundGeom->plane.Normal()) <= 0) {
+        if(bSteepSlope && velocity.Dot(groundGeom->plane.Normal()) <= 0) {
             return;
         }
 

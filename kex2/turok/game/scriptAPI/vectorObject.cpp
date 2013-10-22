@@ -68,6 +68,12 @@ void kexScriptObjVector::Init(void) {
 
     scriptManager.Engine()->RegisterObjectMethod(
         "kVec3",
+        "float Dot(const kVec3 &in) const",
+        asMETHODPR(kexVec3, Dot, (const kexVec3 &vec)const, float),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kVec3",
         "kStr ToString(void)",
         asMETHODPR(kexVec3, ToString, (void)const, kexStr),
         asCALL_THISCALL);

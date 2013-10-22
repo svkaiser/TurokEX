@@ -81,6 +81,8 @@ public:
 
     void                        SetBoundingBox(const kexVec3 &min, const kexVec3 &max);
     bool                        Trace(traceInfo_t *trace);
+    void                        PlaySound(const char *name);
+    void                        PlaySound(const kexStr &name);
 
     kexVec3                     &GetOrigin(void) { return origin; }
     void                        SetOrigin(const kexVec3 &org) { origin = org; }
@@ -138,6 +140,7 @@ public:
         OBJMETHOD("void SetScale(const kVec3 &in)", SetScale, (const kexVec3 &s), void);
         OBJMETHOD("kAttachment &Attachment(void)", Attachment, (void), kexAttachment&);
         OBJMETHOD("const kStr ClassName(void) const", GetClassString, (void) const, const kexStr);
+        OBJMETHOD("void PlaySound(const kStr &in)", PlaySound, (const kexStr &name), void);
         OBJMETHOD("void SetBoundingBox(const kVec3 &in, const kVec3 &in)",
             SetBoundingBox, (const kexVec3 &min, const kexVec3 &max), void);
 
