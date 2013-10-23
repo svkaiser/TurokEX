@@ -48,9 +48,7 @@ public:
 private:
     void                    ProcessScript(const char *file);
     bool                    HasScriptFile(const char *file);
-    void                    RegisterBasicTypes(void);
     void                    RegisterObjects(void);
-    void                    RegisterMath(void);
 
     static void             MessageCallback(const asSMessageInfo *msg, void *param);
 
@@ -64,9 +62,7 @@ private:
 
 extern kexScriptManager scriptManager;
 
-class kexScriptObjVector    { public: static void Init(void); };
 class kexScriptObjString    { public: static void Init(void); };
-class kexScriptObjAngle     { public: static void Init(void); };
 
 class kexActor;
 

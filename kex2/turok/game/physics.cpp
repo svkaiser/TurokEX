@@ -663,7 +663,7 @@ static void G_ClimbOnWall(vec3_t origin, vec3_t velocity, plane_t *plane)
     {
         float dist;
 
-        dist = (float)sqrt(lenxz / leny);
+        dist = kexMath::Sqrt(lenxz / leny);
 
         origin[0] = (end[0] - origin[0]) * dist + origin[0];
         origin[1] = (y2 - y1) * dist + y1;

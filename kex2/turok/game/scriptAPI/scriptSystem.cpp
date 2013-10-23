@@ -140,9 +140,8 @@ void kexScriptManager::Init(void) {
 
     kexComponent::Init();
 
-    RegisterBasicTypes();
+    kexScriptObjString::Init();
     RegisterObjects();
-    RegisterMath();
 
     // TODO
     ProcessScript("scripts/main.txt");
@@ -295,32 +294,12 @@ void kexScriptManager::CallCommand(const char *decl) {
 }
 
 //
-// kexScriptManager::RegisterMath
-//
-
-void kexScriptManager::RegisterMath(void) {
-    engine->SetDefaultNamespace("Math");
-    engine->RegisterGlobalFunction("float Sin(float)", asFUNCTION(sinf), asCALL_CDECL);
-    engine->RegisterGlobalFunction("float Cos(float)", asFUNCTION(cosf), asCALL_CDECL);
-    engine->RegisterGlobalFunction("float Tan(float)", asFUNCTION(tanf), asCALL_CDECL);
-    engine->RegisterGlobalFunction("float ATan2(float)", asFUNCTION(atan2f), asCALL_CDECL);
-    engine->RegisterGlobalFunction("float Fabs(float)", asFUNCTION(fabsf), asCALL_CDECL);
-    engine->RegisterGlobalFunction("float Acos(float)", asFUNCTION(acosf), asCALL_CDECL);
-    engine->RegisterGlobalFunction("float Sqrt(float)", asFUNCTION(sqrtf), asCALL_CDECL);
-    engine->RegisterGlobalFunction("int SysRand(void)", asFUNCTION(kexRand::SysRand), asCALL_CDECL);
-    engine->RegisterGlobalFunction("int Rand(void)", asFUNCTION(kexRand::Int), asCALL_CDECL);
-    engine->RegisterGlobalFunction("int RandMax(const int)", asFUNCTION(kexRand::Max), asCALL_CDECL);
-    engine->RegisterGlobalFunction("float RandFloat(void)", asFUNCTION(kexRand::Float), asCALL_CDECL);
-    engine->RegisterGlobalFunction("float RandCFloat(void)", asFUNCTION(kexRand::CFloat), asCALL_CDECL);
-    engine->SetDefaultNamespace("");
-}
-
-//
 // kexScriptManager::RegisterObjects
 //
 
 void kexScriptManager::RegisterObjects(void) {
     kexScriptObjHandle::Init();
+    kexMath::InitObject();
     kexCommon::InitObject();
     kexClient::InitObject();
     kexInputKey::InitObject();
@@ -330,14 +309,4 @@ void kexScriptManager::RegisterObjects(void) {
     kexWorld::InitObject();
     kexPhysics::InitObject();
     kexAnimState::InitObject();
-}
-
-//
-// kexScriptManager::RegisterBasicTypes
-//
-
-void kexScriptManager::RegisterBasicTypes(void) {
-    kexScriptObjString::Init();
-    kexScriptObjVector::Init();
-    kexScriptObjAngle::Init();
 }

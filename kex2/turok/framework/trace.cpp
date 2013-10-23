@@ -66,7 +66,7 @@ static kbool Trace_Object(trace_t *trace, vec3_t objpos, float radius)
 
             if(rd > 0)
             {
-                float frac = (cp - (float)sqrt(rd)) * (1.0f / len);
+                float frac = (cp - kexMath::Sqrt(rd)) * (1.0f / len);
 
                 if(frac <= 1.0f && frac < trace->frac)
                 {

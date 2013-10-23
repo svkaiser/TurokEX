@@ -58,7 +58,7 @@ float Ang_AlignPitchToVector(vec3_t vec)
         return 0.0f;
     }
 
-    return (float)acos(vec[1] / (float)sqrt(d)) - DEG2RAD(90);
+    return kexMath::ACos(vec[1] / kexMath::Sqrt(d)) - DEG2RAD(90);
 }
 
 //
@@ -83,19 +83,19 @@ float Ang_AlignYawToVector(float angle, vec3_t v1, vec3_t v2)
     if(d == 0.0f)
         return 0.0f;
 
-    s = -(float)sin(angle);
-    c = -(float)cos(angle);
+    s = -kexMath::Sin(angle);
+    c = -kexMath::Cos(angle);
 
     v = (c * z + s * x);
-    an = v / (float)sqrt(d);
+    an = v / kexMath::Sqrt(d);
 
     if(an >  1.0f) an =  1.0f;
     if(an < -1.0f) an = -1.0f;
 
     if(x >= 0)
-        return -(float)acos(an);
+        return -kexMath::ACos(an);
 
-    return (float)acos(an);
+    return kexMath::ACos(an);
 }
 
 //
@@ -112,17 +112,17 @@ float Ang_VectorToAngle(vec3_t vec)
     if(d == 0.0f)
         return 0.0f;
 
-    an = -(vec[2] / (float)sqrt(d));
+    an = -(vec[2] / kexMath::Sqrt(d));
 
     if(an >  1.0f) an =  1.0f;
     if(an < -1.0f) an = -1.0f;
 
     if(-vec[0] <= 0.0f)
     {
-        return -(float)acos(an);
+        return -kexMath::ACos(an);
     }
 
-    return (float)acos(an);
+    return kexMath::ACos(an);
 }
 
 //
@@ -363,12 +363,12 @@ kexAngle kexAngle::Diff(kexAngle &angle) {
 //
 
 void kexAngle::ToAxis(kexVec3 *forward, kexVec3 *up, kexVec3 *right) {
-    float sy = (float)sin(yaw);
-    float cy = (float)cos(yaw);
-    float sp = (float)sin(pitch);
-    float cp = (float)cos(pitch);
-    float sr = (float)sin(roll);
-    float cr = (float)cos(roll);
+    float sy = kexMath::Sin(yaw);
+    float cy = kexMath::Cos(yaw);
+    float sp = kexMath::Sin(pitch);
+    float cp = kexMath::Cos(pitch);
+    float sr = kexMath::Sin(roll);
+    float cr = kexMath::Cos(roll);
 
     if(forward) {
         forward->x  = sy * cp;

@@ -213,7 +213,7 @@ void R_DrawFX(void)
 
         if(showorigin)
         {
-            if(sqrt(fx->rotation[0]*fx->rotation[0]+
+            if(kexMath::Sqrt(fx->rotation[0]*fx->rotation[0]+
                 fx->rotation[1]*fx->rotation[1]+
                 fx->rotation[2]*fx->rotation[2]+
                 fx->rotation[3]*fx->rotation[3]) != 0.0f)

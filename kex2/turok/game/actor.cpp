@@ -186,7 +186,7 @@ bool kexActor::Trace(traceInfo_t *trace) {
         return false;
     }
 
-    float frac = (cp - (float)sqrt(rd)) * (1.0f / len);
+    float frac = (cp - kexMath::Sqrt(rd)) * (1.0f / len);
 
     if(frac <= 1.0f && frac < trace->fraction) {
         if(frac < 0) {

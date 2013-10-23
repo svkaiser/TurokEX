@@ -81,7 +81,7 @@ float AI_GetTargetDistance(ai_t *ai, gActor_t *target)
     y = (actor->origin[1] + actor->height) - (target->origin[1] + target->height);
     z = actor->origin[2] - target->origin[2];
 
-    return (float)sqrt(x*x+y*y+z*z);
+    return kexMath::Sqrt(x*x+y*y+z*z);
 }
 
 //
@@ -165,8 +165,8 @@ trace_t AI_TracePosition(ai_t *ai, vec3_t position, float radius, float angle)
 {
     vec3_t dest;
     plane_t *plane;
-    float s = (float)sin(angle);
-    float c = (float)cos(angle);
+    float s = kexMath::Sin(angle);
+    float c = kexMath::Cos(angle);
 
     dest[0] = position[0] + (ai->owner->radius * radius * s);
     dest[1] = position[1];
@@ -254,7 +254,7 @@ void AI_Turn(ai_t *ai)
     speed = ai->turnSpeed * ai->owner->timestamp;
     current = Ang_Round(ai->owner->angles[0]);
 
-    if(fabs(current - ai->idealYaw) <= 0.001f)
+    if(kexMath::Fabs(current - ai->idealYaw) <= 0.001f)
     {
         ai->flags &= ~AIF_TURNING;
         return;
@@ -366,7 +366,7 @@ static void AI_SetHeadLook(ai_t *ai)
     speed = ai->headTurnSpeed * ai->owner->timestamp;
 
     current = Ang_Round(ai->headYaw);
-    if(fabs(current - yan) <= 0.001f)
+    if(kexMath::Fabs(current - yan) <= 0.001f)
         ai->headYaw = yan;
     else
     {

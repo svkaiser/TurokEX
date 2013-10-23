@@ -79,7 +79,7 @@ enum tga_type
 
 d_inline static byte Img_GetRGBGamma(int c)
 {
-    return (byte)MIN(pow((float)c, (1.0f + (0.01f * cvarGamma.GetFloat()))), 255);
+    return (byte)MIN(kexMath::Pow((float)c, (1.0f + (0.01f * cvarGamma.GetFloat()))), 255);
 }
 
 //

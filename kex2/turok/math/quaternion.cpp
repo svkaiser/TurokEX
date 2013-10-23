@@ -41,8 +41,8 @@ kexQuat::kexQuat(void) {
 //
 
 kexQuat::kexQuat(const float angle, const float x, const float y, const float z) {
-    float s = (float)sin(angle * 0.5f);
-    float c = (float)cos(angle * 0.5f);
+    float s = kexMath::Sin(angle * 0.5f);
+    float c = kexMath::Cos(angle * 0.5f);
 
     this->x = x * s;
     this->y = y * s;
@@ -55,8 +55,8 @@ kexQuat::kexQuat(const float angle, const float x, const float y, const float z)
 //
 
 kexQuat::kexQuat(const float angle, kexVec3 &vector) {
-    float s = (float)sin(angle * 0.5f);
-    float c = (float)cos(angle * 0.5f);
+    float s = kexMath::Sin(angle * 0.5f);
+    float c = kexMath::Cos(angle * 0.5f);
 
     this->x = vector.x * s;
     this->y = vector.y * s;
@@ -69,8 +69,8 @@ kexQuat::kexQuat(const float angle, kexVec3 &vector) {
 //
 
 kexQuat::kexQuat(const float angle, const kexVec3 &vector) {
-    float s = (float)sin(angle * 0.5f);
-    float c = (float)cos(angle * 0.5f);
+    float s = kexMath::Sin(angle * 0.5f);
+    float c = kexMath::Cos(angle * 0.5f);
 
     this->x = vector.x * s;
     this->y = vector.y * s;
@@ -111,7 +111,7 @@ float kexQuat::UnitSq(void) const {
 //
 
 float kexQuat::Unit(void) const {
-    return (float)sqrt(UnitSq());
+    return kexMath::Sqrt(UnitSq());
 }
 
 //
@@ -269,8 +269,8 @@ kexQuat kexQuat::Slerp(const kexQuat &quat, float movement) const {
     }
 
     if(d1 <= 0.7071067811865001f) {
-        float halfcos = (float)acos(d1);
-        float halfsin = (float)sin(halfcos);
+        float halfcos = kexMath::ACos(d1);
+        float halfsin = kexMath::Sin(halfcos);
 
         if(halfsin == 0) {
             kexQuat out;
@@ -283,8 +283,8 @@ kexQuat kexQuat::Slerp(const kexQuat &quat, float movement) const {
             float ms2;
 
             d = 1.0f / halfsin;
-            ms1 = (float)sin((1.0f - movement) * halfcos) * d;
-            ms2 = (float)sin(halfcos * movement) * d;
+            ms1 = kexMath::Sin((1.0f - movement) * halfcos) * d;
+            ms2 = kexMath::Sin(halfcos * movement) * d;
 
             if(ms2 < 0) {
                 rdest = -quat;

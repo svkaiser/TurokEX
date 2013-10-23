@@ -149,6 +149,29 @@ float Random_CFloat(void);
 //
 void BBox_Transform(bbox_t srcBox, mtx_t matrix, bbox_t *out);
 
+class kexMath {
+public:
+    static float            Sin(float x) { return sinf(x); }
+    static float            Cos(float x) { return cosf(x); }
+    static float            Tan(float x) { return tanf(x); }
+    static float            ATan2(float x, float y) { return atan2f(x, y); }
+    static float            Fabs(float x) { return fabsf(x); }
+    static float            ACos(float x) { return acosf(x); }
+    static float            Sqrt(float x) { return sqrtf(x); }
+    static float            Pow(float x, float y) { return powf(x, y); }
+    static float            Log(float x) { return logf(x); }
+    static float            Floor(float x) { return floorf(x); }
+    static float            Ceil(float x) { return ceilf(x); }
+    static float            Deg2Rad(float x) { return DEG2RAD(x); }
+    static float            Rad2Deg(float x) { return RAD2DEG(x); }
+    
+    static int              Abs(int x);
+    static int              RoundPowerOfTwo(int x);
+    static float            InvSqrt(float x);
+
+    static void             InitObject(void);
+};
+
 class kexRand {
 public:
     static void             SetSeed(const int randSeed);

@@ -254,7 +254,7 @@ float kexInput::AccelerateMouse(int val) const {
     if(val < 0)
         return -AccelerateMouse(-val);
     
-    return (float)(pow((double)val, (double)(cvarMAcceleration.GetFloat() / 200.0f + 1.0f)));
+    return kexMath::Pow((float)val, (cvarMAcceleration.GetFloat() / 200.0f + 1.0f));
 }
 
 //

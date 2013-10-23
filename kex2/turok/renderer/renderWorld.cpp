@@ -618,10 +618,10 @@ void kexRenderWorld::DrawRadius(float x, float y, float z, float radius, float h
 
     for(i = 0; i < 32; i++)
     {
-        float s1 = (float)sin(an * i);
-        float c1 = (float)cos(an * i);
-        float s2 = (float)sin(an * ((i+1)%31));
-        float c2 = (float)cos(an * ((i+1)%31));
+        float s1 = kexMath::Sin(an * i);
+        float c1 = kexMath::Cos(an * i);
+        float s2 = kexMath::Sin(an * ((i+1)%31));
+        float c2 = kexMath::Cos(an * ((i+1)%31));
 
         dglVertex3f(x + (radius * s1), y, z + (radius * c1));
         dglVertex3f(x + (radius * s1), y + height, z + (radius * c1));

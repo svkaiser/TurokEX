@@ -186,7 +186,7 @@ float Vec_Length2(vec3_t v1, vec3_t v2)
     x = v1[0] - v2[0];
     z = v1[2] - v2[2];
 
-    return (float)sqrt(x * x + z * z);
+    return kexMath::Sqrt(x * x + z * z);
 }
 
 //
@@ -203,7 +203,7 @@ float Vec_Length3(vec3_t v1, vec3_t v2)
     y = v1[1] - v2[1];
     z = v1[2] - v2[2];
 
-    return (float)sqrt(x * x + y * y + z * z);
+    return kexMath::Sqrt(x * x + y * y + z * z);
 }
 
 //
@@ -212,7 +212,7 @@ float Vec_Length3(vec3_t v1, vec3_t v2)
 
 float Vec_Unit2(vec3_t vec)
 {
-    return (float)sqrt(
+    return kexMath::Sqrt(
         vec[0] * vec[0] +
         vec[2] * vec[2]);
 }
@@ -223,7 +223,7 @@ float Vec_Unit2(vec3_t vec)
 
 float Vec_Unit3(vec3_t vec)
 {
-    return (float)sqrt(
+    return kexMath::Sqrt(
         vec[0] * vec[0] +
         vec[1] * vec[1] +
         vec[2] * vec[2]);
@@ -237,7 +237,7 @@ void Vec_Normalize3(vec3_t out)
 {
     float d;
 
-    d = (float)sqrt(out[0] * out[0] + out[1] * out[1] + out[2] * out[2]);
+    d = kexMath::Sqrt(out[0] * out[0] + out[1] * out[1] + out[2] * out[2]);
 
     if(d != 0.0f)
     {
@@ -255,7 +255,7 @@ void Vec_Normalize4(vec4_t out)
 {
     float d;
 
-    d = (float)sqrt(out[1] * out[1] + out[2] * out[2] + out[3] * out[3] + out[0] * out[0]);
+    d = kexMath::Sqrt(out[1] * out[1] + out[2] * out[2] + out[3] * out[3] + out[0] * out[0]);
 
     if(d != 0.0f)
     {
@@ -341,8 +341,8 @@ void Vec_Slerp(vec4_t out, float movement, vec4_t vec1, vec4_t vec2)
 
     if(d1 <= 0.7071067811865001f)
     {
-        halfcos = (float)acos(d1);
-        halfsin = (float)sin(halfcos);
+        halfcos = kexMath::ACos(d1);
+        halfsin = kexMath::Sin(halfcos);
 
         if(halfsin == 0)
         {
@@ -358,8 +358,8 @@ void Vec_Slerp(vec4_t out, float movement, vec4_t vec1, vec4_t vec2)
             float ms2;
 
             d = 1.0f / halfsin;
-            ms1 = (float)sin((1.0f - movement) * halfcos) * d;
-            ms2 = (float)sin(halfcos * movement) * d;
+            ms1 = kexMath::Sin((1.0f - movement) * halfcos) * d;
+            ms2 = kexMath::Sin(halfcos * movement) * d;
 
             if(ms2 < 0)
             {
@@ -389,8 +389,8 @@ void Vec_Slerp(vec4_t out, float movement, vec4_t vec1, vec4_t vec2)
 
 void Vec_SetQuaternion(vec4_t vec, float angle, float x, float y, float z)
 {
-    float sin_a = (float)sin(angle * 0.5f);
-    float cos_a = (float)cos(angle * 0.5f);
+    float sin_a = kexMath::Sin(angle * 0.5f);
+    float cos_a = kexMath::Cos(angle * 0.5f);
 
     vec[0]  = x * sin_a;
     vec[1]  = y * sin_a;
@@ -406,9 +406,9 @@ void Vec_SetQuaternion(vec4_t vec, float angle, float x, float y, float z)
 
 void Vec_QuaternionToAxis(float *angle, vec3_t vec3, vec4_t vec4)
 {
-    float d = (float)sqrt(1 - vec4[3] * vec4[3]);
+    float d = kexMath::Sqrt(1 - vec4[3] * vec4[3]);
 
-    *angle  = 2 * (float)acos(vec4[3]);
+    *angle  = 2 * kexMath::ACos(vec4[3]);
 
     if(d != 0.0)
     {
@@ -449,7 +449,7 @@ void Vec_ToQuaternion(vec4_t out, vec3_t vec)
     Vec_Cross(cp, fwd, scv);
     Vec_Normalize3(cp);
 
-    an = (float)acos(scv[2]);
+    an = kexMath::ACos(scv[2]);
 
     Vec_SetQuaternion(out, an, cp[0], cp[1], cp[2]);
 }
@@ -476,8 +476,8 @@ void Vec_AdjustQuaternion(vec4_t out, vec4_t rot, float angle)
     float s;
     float c;
 
-    s = (float)sin((angle + M_PI) * 0.5f);
-    c = (float)cos((angle + M_PI) * 0.5f);
+    s = kexMath::Sin((angle + M_PI) * 0.5f);
+    c = kexMath::Cos((angle + M_PI) * 0.5f);
 
     vec[0] = 0;
     vec[1] = s;
@@ -507,7 +507,7 @@ void Vec_PointAt(vec3_t org1, vec3_t org2, vec4_t rotation, float maxAngle, vec4
     Vec_Cross(cp, dir, axis);
     Vec_Normalize3(cp);
 
-    an = (float)acos(Vec_Dot(axis, dir));
+    an = kexMath::ACos(Vec_Dot(axis, dir));
 
     if(maxAngle != 0 && an >= maxAngle)
         an = maxAngle;
@@ -528,9 +528,9 @@ void Vec_PointToAxis(vec3_t out, vec3_t p1, vec3_t p2)
     an1 = (float)atan2(p2[0] - p1[0], p2[2] - p1[2]);
     an2 = (float)atan2(Vec_Length3(p2, p1), p2[1]- p1[1]);
 
-    out[0] = (float)sin(an1);
-    out[1] = (float)cos(an2);
-    out[2] = (float)cos(an1);
+    out[0] = kexMath::Sin(an1);
+    out[1] = kexMath::Cos(an2);
+    out[2] = kexMath::Cos(an1);
 }
 
 const kexVec3 kexVec3::vecRight(1, 0, 0);
@@ -624,7 +624,7 @@ float kexVec3::UnitSq(void) const {
 //
 
 float kexVec3::Unit(void) const {
-    return (float)sqrt(UnitSq());
+    return kexMath::Sqrt(UnitSq());
 }
 
 //
@@ -644,7 +644,7 @@ float kexVec3::DistanceSq(const kexVec3 &vec) const {
 //
 
 float kexVec3::Distance(const kexVec3 &vec) const {
-    return (float)sqrt(DistanceSq(vec));
+    return kexMath::Sqrt(DistanceSq(vec));
 }
 
 //
@@ -669,9 +669,9 @@ kexVec3 kexVec3::PointAt(kexVec3 &location) const {
     float an2 = (float)atan2(location.Distance(*this), location.y - y);
 
     return kexVec3(
-        (float)sin(an1),
-        (float)cos(an2),
-        (float)cos(an1)
+        kexMath::Sin(an1),
+        kexMath::Cos(an2),
+        kexMath::Cos(an1)
     );
 }
 
@@ -703,7 +703,7 @@ kexQuat kexVec3::ToQuat(void) {
         return kexQuat();
 
     kexVec3 scv = *this * (1.0f / d);
-    float angle = (float)acos(scv.z);
+    float angle = kexMath::ACos(scv.z);
 
     return kexQuat(angle, vecForward.Cross(scv).Normalize());
 }
@@ -718,16 +718,16 @@ float kexVec3::ToYaw(void) const {
     if(d == 0.0f)
         return 0.0f;
 
-    float an = -(z / (float)sqrt(d));
+    float an = -(z / kexMath::Sqrt(d));
 
     if(an >  1.0f) an =  1.0f;
     if(an < -1.0f) an = -1.0f;
 
     if(-x <= 0.0f) {
-        return -(float)acos(an);
+        return -kexMath::ACos(an);
     }
 
-    return (float)acos(an);
+    return kexMath::ACos(an);
 }
 
 //
@@ -740,7 +740,7 @@ float kexVec3::ToPitch(void) const {
     if(d == 0.0f)
         return 0.0f;
         
-    return (float)acos(y / (float)sqrt(d));
+    return kexMath::ACos(y / kexMath::Sqrt(d));
 }
 
 //

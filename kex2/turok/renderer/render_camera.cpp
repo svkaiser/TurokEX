@@ -69,7 +69,7 @@ void R_RenderCameraView(void)
     Vec_SetQuaternion(yaw, -camera->angles[0] + M_PI, 0, 1, 0);
     Vec_SetQuaternion(pitch, camera->angles[1], 1, 0, 0);
     Vec_SetQuaternion(roll, camera->angles[2], 0,
-        (float)sin(camera->angles[1]), (float)cos(camera->angles[1]));
+        kexMath::Sin(camera->angles[1]), kexMath::Cos(camera->angles[1]));
     Vec_MultQuaternion(vroll, yaw, roll);
     Vec_MultQuaternion(rot, vroll, pitch);
     Mtx_ApplyRotation(rot, mtx);

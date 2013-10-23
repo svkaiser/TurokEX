@@ -84,7 +84,7 @@ void Mtx_ViewFrustum(int width, int height, float fovy, float znear, float zfar)
     mtx_t m;
     
     aspect = (float)width / (float)height;
-    top = znear * (float)tan((float)fovy * M_PI / 360.0f);
+    top = znear * kexMath::Tan((float)fovy * M_PI / 360.0f);
     bottom = -top;
     left = bottom * aspect;
     right = top * aspect;
@@ -297,8 +297,8 @@ void Mtx_IdentityX(mtx_t m, float angle)
     float s;
     float c;
 
-    s = (float)sin(angle);
-    c = (float)cos(angle);
+    s = kexMath::Sin(angle);
+    c = kexMath::Cos(angle);
 
     m[ 0] = c;
     m[ 1] = 0;
@@ -327,8 +327,8 @@ void Mtx_IdentityY(mtx_t m, float angle)
     float s;
     float c;
 
-    s = (float)sin(angle);
-    c = (float)cos(angle);
+    s = kexMath::Sin(angle);
+    c = kexMath::Cos(angle);
 
     m[ 0] = 1;
     m[ 1] = 0;
@@ -357,8 +357,8 @@ void Mtx_IdentityZ(mtx_t m, float angle)
     float s;
     float c;
 
-    s = (float)sin(angle);
-    c = (float)cos(angle);
+    s = kexMath::Sin(angle);
+    c = kexMath::Cos(angle);
 
     m[ 0] = c;
     m[ 1] = s;
@@ -524,8 +524,8 @@ void Mtx_ApplyCoordinates(mtx_t m, vec3_t src, vec3_t out)
 
 void Mtx_SetFromAxis(mtx_t m, float angle, float x, float y, float z)
 {
-    float s    = (float)sin(angle);
-    float c    = (float)cos(angle);
+    float s    = kexMath::Sin(angle);
+    float c    = kexMath::Cos(angle);
     float xx   = x * x;
     float yy   = y * y;
     float zz   = z * z;
@@ -575,8 +575,8 @@ void Mtx_RotateX(mtx_t m, float angle)
     float tm4;
     float tm12;
 
-    s = (float)sin(angle);
-    c = (float)cos(angle);
+    s = kexMath::Sin(angle);
+    c = kexMath::Cos(angle);
 
     tm0     = m[ 0];
     tm4     = m[ 4];
@@ -605,8 +605,8 @@ void Mtx_RotateY(mtx_t m, float angle)
     float tm1;
     float tm2;
 
-    s = (float)sin(angle);
-    c = (float)cos(angle);
+    s = kexMath::Sin(angle);
+    c = kexMath::Cos(angle);
 
     tm0     = m[ 0];
     tm1     = m[ 1];
@@ -633,8 +633,8 @@ void Mtx_RotateZ(mtx_t m, float angle)
     float tm9;
     float tm13;
 
-    s = (float)sin(angle);
-    c = (float)cos(angle);
+    s = kexMath::Sin(angle);
+    c = kexMath::Cos(angle);
 
     tm1     = m[ 1];
     tm5     = m[ 5];
@@ -757,8 +757,8 @@ kexMatrix::kexMatrix(const float angle, const int axis) {
     float s;
     float c;
 
-    s = (float)sin(angle);
-    c = (float)cos(angle);
+    s = kexMath::Sin(angle);
+    c = kexMath::Cos(angle);
     
     Identity();
 
@@ -921,7 +921,7 @@ kexMatrix kexMatrix::Transpose(const kexMatrix &mtx) {
 //
 
 void kexMatrix::SetViewProjection(float aspect, float fov, float zNear, float zFar) {
-    float top       = zNear * (float)tan(fov * M_PI / 360.0f);
+    float top       = zNear * kexMath::Tan(fov * M_PI / 360.0f);
     float bottom    = -top;
     float left      = bottom * aspect;
     float right     = top * aspect;

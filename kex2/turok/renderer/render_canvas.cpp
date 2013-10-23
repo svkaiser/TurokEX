@@ -450,7 +450,7 @@ static void DrawPlaneOutline(plane_t *plane, int idx, float zoom)
         if(plane->flags & CLF_CHECKHEIGHT)
         {
             c[3] = 1.0f - 
-                ((float)fabs(client.LocalPlayer().actor->origin[1] -
+                (kexMath::Fabs(client.LocalPlayer().actor->origin[1] -
                 Plane_GetDistance(plane, client.LocalPlayer().actor->origin)) / 512);
 
             if(c[3] < 0) c[3] = 0;

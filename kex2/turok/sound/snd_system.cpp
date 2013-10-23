@@ -338,12 +338,12 @@ void Snd_UpdateListener(void)
     if(client.LocalPlayer().actor)
     {
         ALfloat orientation[6];
-        float sy = (float)sin(client.LocalPlayer().camera->angles[0]);
-        float cy = (float)cos(client.LocalPlayer().camera->angles[0]);
-        float sp = (float)sin(client.LocalPlayer().camera->angles[1]);
-        float cp = (float)cos(client.LocalPlayer().camera->angles[1]);
-        float sr = (float)sin(client.LocalPlayer().camera->angles[2]);
-        float cr = (float)cos(client.LocalPlayer().camera->angles[2]);
+        float sy = kexMath::Sin(client.LocalPlayer().camera->angles[0]);
+        float cy = kexMath::Cos(client.LocalPlayer().camera->angles[0]);
+        float sp = kexMath::Sin(client.LocalPlayer().camera->angles[1]);
+        float cp = kexMath::Cos(client.LocalPlayer().camera->angles[1]);
+        float sr = kexMath::Sin(client.LocalPlayer().camera->angles[2]);
+        float cr = kexMath::Cos(client.LocalPlayer().camera->angles[2]);
         
         orientation[0] = sy * cp;
         orientation[1] = -sp;

@@ -77,7 +77,7 @@ void kexCamera::SetupMatrices(void) {
     kexQuat yaw(-(angles.yaw + offsetAngle.yaw) + M_PI, kexVec3::vecUp);
     kexQuat pitch(angles.pitch + offsetAngle.pitch, kexVec3::vecRight);
     kexQuat roll(angles.roll + offsetAngle.roll,
-        kexVec3(0, (float)sin(angles.pitch), (float)cos(angles.pitch)));
+        kexVec3(0, kexMath::Sin(angles.pitch), kexMath::Cos(angles.pitch)));
     
     modelMatrix = kexMatrix((yaw * roll) * pitch);
     modelMatrix.AddTranslation(-(origin | modelMatrix));

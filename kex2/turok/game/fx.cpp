@@ -231,8 +231,8 @@ static void FX_DestroyEvent(fx_t *fx, fxEvent_t *fxEvent, gActor_t *hitActor)
 
 static void FX_SetDistance(fx_t *fx)
 {
-    float s = (float)sin(client.LocalPlayer().actor->angles[0]);
-    float c = (float)cos(client.LocalPlayer().actor->angles[0]);
+    float s = kexMath::Sin(client.LocalPlayer().actor->angles[0]);
+    float c = kexMath::Cos(client.LocalPlayer().actor->angles[0]);
 
     fx->dist = (int)((fx->origin[0] - client.LocalPlayer().actor->origin[0]) * s +
         (fx->origin[2] - client.LocalPlayer().actor->origin[2]) * c) * 0.5f;

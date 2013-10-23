@@ -179,10 +179,10 @@ const float kexTri::GetDistance(const kexVec3 &pos) const {
 const float kexTri::GetEdgeYaw(const int idx) const {
     float x = point[(idx+1)%3]->x - point[idx]->x;
     float z = point[(idx+1)%3]->z - point[idx]->z;
-    float d = (float)sqrt(x * x + z * z);
+    float d = kexMath::Sqrt(x * x + z * z);
     
     if(d != 0) {
-        float an = (float)acos(x / d);
+        float an = kexMath::ACos(x / d);
         if(z >= 0) {
             an = -an;
         }

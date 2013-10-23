@@ -86,8 +86,8 @@ kbool Plane_IsFacing(plane_t *plane, float angle)
     float c;
     vec3_t n;
 
-    s = (float)sin(angle);
-    c = (float)cos(angle);
+    s = kexMath::Sin(angle);
+    c = kexMath::Cos(angle);
 
     Plane_GetNormal(n, plane);
 
@@ -200,7 +200,7 @@ float Plane_GetYaw(plane_t *p)
         {
             float phi;
 
-            phi = (float)acos(p->normal[2] / d);
+            phi = kexMath::ACos(p->normal[2] / d);
             if(p->normal[0] <= 0)
                 phi = -phi;
 
@@ -223,11 +223,11 @@ float Plane_GetEdgeYaw(plane_t *p, int point)
 
     x = p->points[(point + 1) % 3][0] - p->points[point][0];
     z = p->points[(point + 1) % 3][2] - p->points[point][2];
-    d = (float)sqrt(x * x + z * z);
+    d = kexMath::Sqrt(x * x + z * z);
 
     if(d != 0.0f)
     {
-        float an = (float)acos(x / d);
+        float an = kexMath::ACos(x / d);
 
         if(z >= 0.0f)
         {
@@ -253,7 +253,7 @@ float Plane_GetPitch(plane_t *p)
     Vec_Set3(t1, 0, 1, 0);
     Vec_Normalize3(n);
 
-    return (float)acos(Vec_Dot(t1, n));
+    return kexMath::ACos(Vec_Dot(t1, n));
 }
 
 //
@@ -285,17 +285,17 @@ float Plane_GetSlope(plane_t *plane, float x1, float z1, float x2, float z2)
 
     if(d != 0)
     {
-        float an = (float)sqrt(xz / d);
+        float an = kexMath::Sqrt(xz / d);
 
         if(an >  1) an =  1;
         if(an < -1) an = -1;
 
         if(dist2 <= dist1)
         {
-            return -(float)acos(an);
+            return -kexMath::ACos(an);
         }
 
-        return (float)acos(an);
+        return kexMath::ACos(an);
     }
 
     return 0;
@@ -316,7 +316,7 @@ void Plane_GetRotation(vec4_t vec, plane_t *p)
     Vec_Set3(n2, 0, 1, 0);
     Vec_Cross(cp, n2, n1);
     Vec_Normalize3(cp);
-    Vec_SetQuaternion(vec, (float)acos(Vec_Dot(n2, n1)), cp[0], cp[1], cp[2]);
+    Vec_SetQuaternion(vec, kexMath::ACos(Vec_Dot(n2, n1)), cp[0], cp[1], cp[2]);
 }
 
 //
@@ -344,7 +344,7 @@ void Plane_GetNormalizedRotation(vec4_t out, plane_t *p)
     else
     {
         Vec_Scale(cp, cp, 1.0f / d);
-        Vec_SetQuaternion(out, (float)acos(Vec_Dot(n2, n1)), cp[0], cp[1], cp[2]);
+        Vec_SetQuaternion(out, kexMath::ACos(Vec_Dot(n2, n1)), cp[0], cp[1], cp[2]);
     }
 }
 
@@ -501,7 +501,7 @@ kexPlane &kexPlane::SetDistance(const kexVec3 &point) {
 //
 
 bool kexPlane::IsFacing(const float yaw) {
-    return -(float)sin(yaw) * a + -(float)cos(yaw) * c < 0;
+    return -kexMath::Sin(yaw) * a + -kexMath::Cos(yaw) * c < 0;
 }
 
 //
@@ -513,7 +513,7 @@ float kexPlane::ToYaw(void) {
     
     if(d != 0) {
         float phi;
-        phi = (float)acos(c / d);
+        phi = kexMath::ACos(c / d);
         if(a <= 0)
             phi = -phi;
 
@@ -528,7 +528,7 @@ float kexPlane::ToYaw(void) {
 //
 
 float kexPlane::ToPitch(void) {
-    return (float)acos(kexVec3::vecUp.Dot(Normal()));
+    return kexMath::ACos(kexVec3::vecUp.Dot(Normal()));
 }
 
 //
@@ -537,7 +537,7 @@ float kexPlane::ToPitch(void) {
 
 kexQuat kexPlane::ToQuat(void) {
     kexVec3 cross = kexVec3::vecUp.Cross(Normal()).Normalize();
-    return kexQuat((float)acos(kexVec3::vecUp.Dot(Normal())), cross);
+    return kexQuat(kexMath::ACos(kexVec3::vecUp.Dot(Normal())), cross);
 }
 
 //
