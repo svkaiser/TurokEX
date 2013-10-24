@@ -47,6 +47,19 @@ static void FCmd_Call(void) {
 }
 
 //
+// FCmd_CallFile
+//
+
+static void FCmd_CallFile(void) {
+    if(command.GetArgc() < 3) {
+        common.Printf("Usage: callfile <\"file name\"> <\"function name\">\n");
+        return;
+    }
+    scriptManager.CallExternalScript(command.GetArgv(1),
+        kva("void %s(void)", command.GetArgv(2)));
+}
+
+//
 // FCmd_MemUsage
 //
 
@@ -161,6 +174,7 @@ void kexScriptManager::Init(void) {
     }
 
     command.Add("call", FCmd_Call);
+    command.Add("callfile", FCmd_CallFile);
     command.Add("scriptMem", FCmd_MemUsage);
     common.Printf("Script System Initialized\n");
 }

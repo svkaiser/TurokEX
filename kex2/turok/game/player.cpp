@@ -25,9 +25,6 @@
 //-----------------------------------------------------------------------------
 
 #include "enet/enet.h"
-#include "js.h"
-#include "jsobj.h"
-#include "js_shared.h"
 #include "common.h"
 #include "system.h"
 #include "packet.h"
@@ -301,8 +298,6 @@ kexLocalPlayer::kexLocalPlayer(void) {
 //
 
 kexLocalPlayer::~kexLocalPlayer(void) {
-    if(jsonData != NULL)
-        JS_free(js_context, jsonData);
 }
 
 //
@@ -407,83 +402,6 @@ void kexLocalPlayer::BuildCommands(void) {
     netseq.outgoing++;
 
     packetManager.Send(packet, peer);
-}
-
-//
-// kexLocalPlayer::PlayerEvent
-//
-
-int kexLocalPlayer::PlayerEvent(const char *eventName) {
-    gObject_t *function;
-    JSContext *cx;
-    jsval val;
-    jsval rval;
-
-    if(client.GetState() != CL_STATE_INGAME)
-        return 0;
-
-    cx = js_context;
-
-    if(!JS_GetProperty(cx, component, eventName, &val))
-        return 0;
-    if(!JS_ValueToObject(cx, val, &function))
-        return 0;
-    if(!function || !JS_ObjectIsFunction(cx, function))
-        return 0;
-
-    JS_CallFunctionValue(cx, component,
-        OBJECT_TO_JSVAL(function), 0, NULL, &rval);
-
-    return rval;
-}
-
-//
-// kexLocalPlayer::SerializeScriptObject
-//
-
-void kexLocalPlayer::SerializeScriptObject(void) {
-    jsval val = (jsval)PlayerEvent("serialize");
-
-    if(val == 0)
-        return;
-
-    if(JSVAL_IS_STRING(val)) {
-        JSString *str;
-
-        if(str = JS_ValueToString(js_context, val)) {
-            // free the old string
-            if(jsonData != NULL)
-                JS_free(js_context, jsonData);
-
-            jsonData = JS_EncodeString(js_context, str);
-        }
-    }
-}
-
-//
-// kexLocalPlayer::DeSerializeScriptObject
-//
-
-void kexLocalPlayer::DeSerializeScriptObject(void) {
-    gObject_t *function;
-    JSContext *cx;
-    jsval val;
-    jsval rval;
-
-    if(jsonData == NULL)
-        return;
-
-    cx = js_context;
-
-    if(!JS_GetProperty(cx, component, "deSerialize", &val))
-        return;
-    if(!JS_ValueToObject(cx, val, &function))
-        return;
-
-    val = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, jsonData));
-
-    JS_CallFunctionValue(cx, component,
-        OBJECT_TO_JSVAL(function), 1, &val, &rval);
 }
 
 //

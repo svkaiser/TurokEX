@@ -115,13 +115,12 @@ void kexRenderWorld::Init(void) {
 //
 
 void kexRenderWorld::RenderScene(void) {
+    dglClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+    dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
     if(!world->IsLoaded()) {
-        dglClearColor(0.25f, 0.25f, 0.25f, 1.0f);
-        dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         return;
     }
-
-    client.LocalPlayer().PlayerEvent("onPreRender");
 
     world->Camera()->SetupMatrices();
     renderSystem.SetCull(GLCULL_BACK);
@@ -140,7 +139,6 @@ void kexRenderWorld::RenderScene(void) {
     DrawFX();
     DrawViewActors();
 
-    client.LocalPlayer().PlayerEvent("onRender");
     dglEnableClientState(GL_COLOR_ARRAY);
 
     renderSystem.SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);

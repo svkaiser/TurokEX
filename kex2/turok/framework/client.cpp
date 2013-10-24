@@ -216,7 +216,6 @@ void kexClient::Run(const int msec) {
 
     // draw 2D canvas
     renderSystem.SetOrtho();
-    playerClient.PlayerEvent("onPostRender");
 
     // update debug stats
     Debug_DrawStats();

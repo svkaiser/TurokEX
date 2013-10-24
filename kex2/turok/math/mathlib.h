@@ -252,6 +252,9 @@ public:
     float                   ToYaw(void) const;
     float                   ToPitch(void) const;
     kexStr                  ToString(void) const;
+    kexVec3                 ScreenProject(kexMatrix &proj, kexMatrix &model,
+                                          const int width, const int height,
+                                          const int wx, const int wy);
 
     kexVec3                 operator+(const kexVec3 &vec);
     kexVec3                 operator+(const kexVec3 &vec) const;
@@ -304,6 +307,8 @@ public:
     
     const kexVec3           &ToVec3(void) const;
     kexVec3                 &ToVec3(void);
+    kexVec4                 operator|(const kexMatrix &mtx);
+    kexVec4                 &operator|=(const kexMatrix &mtx);
     float                   operator[](int index) const;
     float                   operator[](int index);
 

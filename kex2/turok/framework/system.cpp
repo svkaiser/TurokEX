@@ -431,10 +431,10 @@ void kexSystem::Main(int argc, char **argv) {
     G_Init();
     common.Printf("Game Initialized\n");
 
+    scriptManager.Init();
+
     common.ReadConfigFile("config.cfg");
     common.ReadConfigFile("autoexec.cfg");
-
-    scriptManager.Init();
 
     InitVideo();
 

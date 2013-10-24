@@ -940,8 +940,6 @@ static void R_SetupWorldLight(void)
 
 void R_DrawFrame(void)
 {
-    client.LocalPlayer().PlayerEvent("onPreRender");
-
     if(showcollision)
         dglDisable(GL_FOG);
 
@@ -971,8 +969,6 @@ void R_DrawFrame(void)
     dglCullFace(GL_FRONT);
     R_DrawFX();
 
-    client.LocalPlayer().PlayerEvent("onRender");
-
     dglEnableClientState(GL_COLOR_ARRAY);
     dglAlphaFunc(GL_GEQUAL, 0.01f);
 
@@ -997,8 +993,6 @@ void R_DrawFrame(void)
     dglDisable(GL_COLOR_MATERIAL);
 
     GL_SetOrtho();
-
-    client.LocalPlayer().PlayerEvent("onPostRender");
 
     R_MorphModel(&morphmodels[0]);
     R_MorphModel(&morphmodels[1]);

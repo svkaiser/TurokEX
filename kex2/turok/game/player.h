@@ -131,9 +131,6 @@ public:
 
     bool                    ProcessInput(event_t *ev);
     void                    BuildCommands(void);
-    int                     PlayerEvent(const char *eventName);
-    void                    SerializeScriptObject(void);
-    void                    DeSerializeScriptObject(void);
     bool                    ActionDown(const kexStr &str);
     int                     ActionHeldTime(const kexStr &str);
 

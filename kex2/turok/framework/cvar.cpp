@@ -182,8 +182,7 @@ void kexCvarManager::AutoComplete(const char *partial) {
     }
     
     // check functions
-    for(cvar = first; cvar; cvar = cvar->GetNext())
-    {
+    for(cvar = first; cvar; cvar = cvar->GetNext()) {
         if(!strncmp(partial, cvar->GetName(), len)) {
             if(!match) {
                 match = true;
@@ -232,6 +231,22 @@ void kexCvarManager::WriteToFile(FILE *file) {
 void kexCvarManager::Init(void) {
     command.Add("listvars", FCmd_ListVars);
     command.Add("seta", FCmd_Seta);
+
+    int p;
+
+    if(p = common.CheckParam("-setvar")) {
+        p++;
+
+        while(p != myargc && myargv[p][0] != '-') {
+            char *name;
+            char *value;
+
+            name = myargv[p++];
+            value = myargv[p++];
+
+            cvarManager.Set(name, value);
+        }
+    }
 
     common.Printf("Cvar System Initialized\n");
 }

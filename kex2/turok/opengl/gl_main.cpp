@@ -32,6 +32,7 @@
 #include "gl.h"
 #include "zone.h"
 #include "system.h"
+#include "renderSystem.h"
 
 #define GL_MAX_INDICES  0x10000
 #define GL_MAX_VERTICES 0x10000
@@ -281,6 +282,8 @@ void GL_SetTextureFilter(void)
 
 static void CalcViewSize(void)
 {
+    renderSystem.SetViewDimensions();
+
     ViewWidth = sysMain.VideoWidth();
     ViewHeight = sysMain.VideoHeight();
 

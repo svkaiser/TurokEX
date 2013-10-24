@@ -245,7 +245,7 @@ void kexPhysics::ApplyFriction(void) {
 
         bool bSteepSlope = OnSteepSlope();
 
-        if(!bSteepSlope && GroundDistance() > ONPLANE_EPSILON) {
+        if(/*!bSteepSlope &&*/ GroundDistance() > ONPLANE_EPSILON) {
             return;
         }
 

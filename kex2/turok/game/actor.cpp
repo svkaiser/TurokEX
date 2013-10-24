@@ -27,10 +27,6 @@
 #include "common.h"
 #include "actor.h"
 #include "game.h"
-#include "js.h"
-#include "jsobj.h"
-#include "js_shared.h"
-#include "js_class.h"
 #include "zone.h"
 #include "parse.h"
 #include "server.h"
@@ -631,58 +627,12 @@ void kexWorldActor::SpawnFX(const char *fxName, const float x, const float y, co
 }
 
 //
-// kexWorldActor::Event
-//
-
-bool kexWorldActor::Event(const char *function, long *args, unsigned int nargs) {
-    return false;
-}
-
-//
 // kexWorldActor::CreateComponent
 //
 
 void kexWorldActor::CreateComponent(const char *name) {
     // TODO
     scriptComponent.Spawn(name);
-
-    jsval val;
-    JSContext *cx;
-    gObject_t *cObject;
-
-    cx = js_context;
-
-    // get prototype
-    if(!JS_GetProperty(cx, js_gobject, name, &val))
-        return;
-    if(!JS_ValueToObject(cx, val, &cObject))
-        return;
-    if(cObject == NULL)
-        return;
-
-    // construct class object
-    if(!(component = classObj.create(cObject)))
-        return;
-
-    JS_AddRoot(cx, &component);
-}
-
-//
-// kexWorldActor::ToJSVal
-//
-
-bool kexWorldActor::ToJSVal(long *val) {
-    gObject_t *aObject;
-    
-    *val = JSVAL_NULL;
-
-    if(!(aObject = JPool_GetFree(&objPoolGameActor, &GameActor_class)) ||
-        !(JS_SetPrivate(js_context, aObject, this))) {
-        return false;
-    }
-
-    *val = (jsval)OBJECT_TO_JSVAL(aObject);
-    return true;
 }
 
 //
@@ -690,12 +640,6 @@ bool kexWorldActor::ToJSVal(long *val) {
 //
 
 void kexWorldActor::OnTouch(kexWorldActor *instigator) {
-    jsval val;
-
-    if(bStatic || !bTouch || !instigator->ToJSVal(&val))
-        return;
-
-    Event("onTouch", &val, 1);
 }
 
 //

@@ -421,6 +421,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\math\mathlib.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\math\matrix.cpp"
 					>
 				</File>
@@ -640,10 +644,6 @@
 					Name="scriptAPI"
 					>
 					<File
-						RelativePath="..\turok\game\scriptAPI\angleObject.cpp"
-						>
-					</File>
-					<File
 						RelativePath="..\turok\game\scriptAPI\component.cpp"
 						>
 					</File>
@@ -657,10 +657,6 @@
 					</File>
 					<File
 						RelativePath="..\turok\game\scriptAPI\stringObject.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\game\scriptAPI\vectorObject.cpp"
 						>
 					</File>
 				</Filter>

@@ -79,6 +79,7 @@ public:
     void                SetEnv(int env);
     void                SetCull(int type);
     void                SetTextureUnit(int unit);
+    void                SetViewDimensions(void);
     
     const int           ViewWidth(void) const { return viewWidth; }
     const int           ViewHeight(void) const { return viewHeight; }
@@ -128,8 +129,6 @@ private:
     const char          *gl_vendor;
     const char          *gl_renderer;
     const char          *gl_version;
-    
-    void                SetViewDimensions(void);    
 };
 
 extern kexRenderSystem renderSystem;

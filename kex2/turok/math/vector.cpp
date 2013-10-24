@@ -754,6 +754,39 @@ kexStr kexVec3::ToString(void) const {
 }
 
 //
+// kexVec3::ScreenProject
+//
+
+kexVec3 kexVec3::ScreenProject(kexMatrix &proj, kexMatrix &model,
+                               const int width, const int height,
+                               const int wx, const int wy) {
+    kexVec4 projVec;
+    kexVec4 modelVec;
+
+    modelVec.ToVec3() = *this;
+    modelVec |= model;
+
+    projVec = (modelVec | proj);
+    projVec.x *= modelVec.w;
+    projVec.y *= modelVec.w;
+    projVec.z *= modelVec.w;
+
+    if(projVec.w != 0) {
+        projVec.w = 1.0f / projVec.w;
+        projVec.x *= projVec.w;
+        projVec.y *= projVec.w;
+        projVec.z *= projVec.w;
+
+        return kexVec3(
+            (projVec.x * 0.5f + 0.5f) * width + wx,
+            (-projVec.y * 0.5f + 0.5f) * height + wy,
+            (1.0f + projVec.z) * 0.5f);
+    }
+
+    return kexVec3(*this);
+}
+
+//
 // kexVec3::operator+
 //
 
@@ -1108,6 +1141,36 @@ kexVec3 &kexVec4::ToVec3(void) {
 
 float *kexVec4::ToFloatPtr(void) {
     return reinterpret_cast<float*>(&x);
+}
+
+//
+// kexVec4::operator|
+//
+
+kexVec4 kexVec4::operator|(const kexMatrix &mtx) {
+    return kexVec4(
+        mtx.vectors[1].x * y + mtx.vectors[2].x * z + mtx.vectors[0].x * x + mtx.vectors[3].x,
+        mtx.vectors[1].y * y + mtx.vectors[2].y * z + mtx.vectors[0].y * x + mtx.vectors[3].y,
+        mtx.vectors[1].z * y + mtx.vectors[2].z * z + mtx.vectors[0].z * x + mtx.vectors[3].z,
+        mtx.vectors[1].w * y + mtx.vectors[2].w * z + mtx.vectors[0].w * x + mtx.vectors[3].w);
+}
+
+//
+// kexVec4::operator|=
+//
+
+kexVec4 &kexVec4::operator|=(const kexMatrix &mtx) {
+    float _x = x;
+    float _y = y;
+    float _z = z;
+    float _w = w;
+    
+    x = mtx.vectors[1].x * _y + mtx.vectors[2].x * _z + mtx.vectors[0].x * _x + mtx.vectors[3].x;
+    y = mtx.vectors[1].y * _y + mtx.vectors[2].y * _z + mtx.vectors[0].y * _x + mtx.vectors[3].y;
+    z = mtx.vectors[1].z * _y + mtx.vectors[2].z * _z + mtx.vectors[0].z * _x + mtx.vectors[3].z;
+    w = mtx.vectors[1].w * _y + mtx.vectors[2].w * _z + mtx.vectors[0].w * _x + mtx.vectors[3].w;
+
+    return *this;
 }
 
 //

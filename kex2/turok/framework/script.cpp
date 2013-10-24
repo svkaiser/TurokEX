@@ -902,11 +902,13 @@ kexLexer *kexParser::Open(const char* filename) {
     if(cvarDeveloper.GetBool()) {
         buffsize = fileSystem.ReadExternalTextFile(filename, (byte**)(&buffer));
 
-        if(buffsize <= 0)
+        if(buffsize <= 0) {
             buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), PU_STATIC);
+        }
     }
-    else
+    else {
         buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), PU_STATIC);
+    }
 
     if(buffsize <= 0) {
         common.Warning("kexParser::Open: %s not found\n", filename);

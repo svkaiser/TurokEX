@@ -776,7 +776,6 @@ void Map_Unload(void)
     Snd_StopAll();
 
     JS_CallFunctionName(js_context, js_objGame, "onLevelUnLoad", 0, NULL, &val);
-    client.LocalPlayer().SerializeScriptObject();
 
     gLevel.loaded = false;
     client.SetState(CL_STATE_CHANGINGLEVEL);
