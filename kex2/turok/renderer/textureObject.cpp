@@ -38,6 +38,28 @@ kexCvar cvarGamma("gl_gamma", CVF_FLOAT|CVF_CONFIG, "0", "TODO");
 kexCvar cvarGLFilter("gl_filter", CVF_INT|CVF_CONFIG, "0", "Texture filter mode");
 kexCvar cvarGLAnisotropic("gl_anisotropic", CVF_INT|CVF_CONFIG, "0", "TODO");
 
+//
+// ------------------------------------------------------
+//
+// common palette structure
+//
+// ------------------------------------------------------
+//
+typedef struct {
+    byte r;
+    byte g;
+    byte b;
+    byte a;
+} palette_t;
+
+//
+// ------------------------------------------------------
+//
+// tga structure
+//
+// ------------------------------------------------------
+//
+
 typedef struct {
     byte infolen;
     byte has_cmap;
@@ -53,13 +75,6 @@ typedef struct {
     byte flags;
 } tgaheader_t;
 
-typedef struct {
-    byte r;
-    byte g;
-    byte b;
-    byte a;
-} palette_t;
-
 enum tga_type {
     TGA_TYPE_INDEXED        = 1,
     TGA_TYPE_RGB            = 2,
@@ -68,6 +83,33 @@ enum tga_type {
     TGA_TYPE_RLE_RGB        = 10,
     TGA_TYPE_RLE_BW         = 11
 };
+
+//
+// ------------------------------------------------------
+//
+// bmp structure
+//
+// ------------------------------------------------------
+//
+
+typedef struct {
+    char id[2];
+    ulong fileSize;
+    ulong u1;
+    ulong dataOffset;
+    ulong headerSize;
+    ulong width;
+    ulong height;
+    word planes;
+    word bits;
+    ulong compression;
+    ulong dataSize;
+    ulong hRes;
+    ulong vRes;
+    ulong colors1;
+    ulong colors2;
+    palette_t palette[256];
+} bmpheader_t;
 
 //
 // kexTexture::kexTexture
@@ -175,6 +217,9 @@ byte *kexTexture::LoadFromFile(const char *file) {
 
     if(strstr(file, ".tga")) {
         out = LoadFromTGA(data);
+    }
+    else if(strstr(file, ".bmp")) {
+        out = LoadFromBMP(data);
     }
     else {
         common.Warning("kexTexture::LoadFromFile(%s) - Unknown file format\n", file);
@@ -372,6 +417,117 @@ byte *kexTexture::LoadFromTGA(byte *input) {
     default:
         common.Error("%s has unknown tga type", filePath);
         break;
+    }
+
+    return data;
+}
+
+//
+// kexTexture::LoadFromBMP
+//
+
+byte *kexTexture::LoadFromBMP(byte *input) {
+    byte *data = NULL;
+    byte *rover = input;
+    bmpheader_t bmp;
+
+    bmp.id[0]       = *rover++;
+    bmp.id[1]       = *rover++;
+    bmp.fileSize    = Com_SwapLE32(*(long*)rover); rover += 4;
+    bmp.u1          = Com_SwapLE32(*(long*)rover); rover += 4;
+    bmp.dataOffset  = Com_SwapLE32(*(long*)rover); rover += 4;
+    bmp.headerSize  = Com_SwapLE32(*(long*)rover); rover += 4;
+    bmp.width       = Com_SwapLE32(*(long*)rover); rover += 4;
+    bmp.height      = Com_SwapLE32(*(long*)rover); rover += 4;
+    bmp.planes      = Com_SwapLE16(*(short*)rover); rover += 2;
+    bmp.bits        = Com_SwapLE16(*(short*)rover); rover += 2;
+    bmp.compression = Com_SwapLE32(*(long*)rover); rover += 4;
+    bmp.dataSize    = Com_SwapLE32(*(long*)rover); rover += 4;
+    bmp.hRes        = Com_SwapLE32(*(long*)rover); rover += 4;
+    bmp.vRes        = Com_SwapLE32(*(long*)rover); rover += 4;
+    bmp.colors1     = Com_SwapLE32(*(long*)rover); rover += 4;
+    bmp.colors2     = Com_SwapLE32(*(long*)rover); rover += 4;
+
+    if(bmp.bits == 8) {
+        memcpy(bmp.palette, rover, sizeof(palette_t) * 256);
+        rover += (sizeof(palette_t) * 256);
+    }
+
+    if(bmp.id[0] != 'B' && bmp.id[1] != 'M') {
+        common.Error("bitmap (%s) has unknown header ID ('BM' only supported\n", filePath);
+    }
+    if(bmp.compression != 0) {
+        common.Error("compression not supported for bitmap (%s)\n", filePath);
+    }
+    if(bmp.bits < 8) {
+        common.Error("monochrome and 4-bit pixels not supported for bitmap (%s)\n", filePath);
+    }
+
+    int bitStride = 0;
+
+    int cols = kexMath::Abs(bmp.width);
+    int rows = kexMath::Abs(bmp.height);
+
+    int numPixels = cols * rows;
+
+    width = cols;
+    height = rows;
+
+    if(bmp.bits != 32) {
+        bitStride = 3;
+        colorMode = TCR_RGB;
+    }
+    else {
+        bitStride = 4;
+        colorMode = TCR_RGBA;
+    }
+
+    data = (byte*)Z_Calloc(cols * rows * bitStride, PU_STATIC, 0);
+
+    for(int y = rows-1; y >= 0; y--) {
+        byte *buf = data + (y * cols * bitStride);
+
+        for(int x = 0; x < cols; x++) {
+            byte rgba[4];
+            word rgb16;
+            int palIdx;
+
+            switch(bmp.bits) {
+            case 8:
+                palIdx = *rover++;
+                *buf++ = bmp.palette[palIdx].b;
+                *buf++ = bmp.palette[palIdx].g;
+                *buf++ = bmp.palette[palIdx].r;
+                break;
+            case 16:
+                rgb16 = *(word*)buf; buf += 2;
+                *buf++ = (rgb16 & (31 << 10)) >> 7;
+                *buf++ = (rgb16 & (31 << 5)) >> 2;
+                *buf++ = (rgb16 & 31) << 3;
+                break;
+            case 24:
+                rgba[2] = *rover++;
+                rgba[1] = *rover++;
+                rgba[0] = *rover++;
+                *buf++ = rgba[0];
+                *buf++ = rgba[1];
+                *buf++ = rgba[2];
+                break;
+            case 32:
+                rgba[2] = *rover++;
+                rgba[1] = *rover++;
+                rgba[0] = *rover++;
+                rgba[3] = *rover++;
+                *buf++ = rgba[0];
+                *buf++ = rgba[1];
+                *buf++ = rgba[2];
+                *buf++ = rgba[3];
+                break;
+            default:
+                common.Error("bitmap (%s) has unknown pixel format (%i)\n", filePath, bmp.bits);
+                break;
+            }
+        }
     }
 
     return data;

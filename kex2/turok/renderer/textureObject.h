@@ -70,6 +70,7 @@ public:
 
 private:
     byte                    *LoadFromTGA(byte *input);
+    byte                    *LoadFromBMP(byte *input);
     byte                    GetRGBGamma(int c);
     int                     width;
     int                     height;
