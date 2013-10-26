@@ -30,20 +30,104 @@
 
 kexRenderSystem renderSystem;
 
+GL_ARB_multitexture_Define();
+GL_EXT_compiled_vertex_array_Define();
+GL_EXT_fog_coord_Define();
+GL_ARB_texture_non_power_of_two_Define();
+GL_ARB_texture_env_combine_Define();
+GL_EXT_texture_env_combine_Define();
+GL_EXT_texture_filter_anisotropic_Define();
+
+//
+// FindExtension
+//
+
+static bool FindExtension(const char *ext) {
+    const byte *extensions = NULL;
+    const byte *start;
+    byte *wh, *terminator;
+    
+    // Extension names should not have spaces.
+    wh = (byte *)strrchr((char*)ext, ' ');
+    if(wh || *ext == '\0') {
+        return 0;
+    }
+    
+    extensions = dglGetString(GL_EXTENSIONS);
+    
+    start = extensions;
+    for(;;) {
+        wh = (byte *)strstr((char*)start, ext);
+        if(!wh) {
+            break;
+        }
+        terminator = wh + strlen(ext);
+        if(wh == start || *(wh - 1) == ' ') {
+            if(*terminator == ' ' || *terminator == '\0')
+                return true;
+
+            start = terminator;
+        }
+    }
+
+    return false;
+}
+
+//
+// GL_CheckExtension
+//
+
+bool GL_CheckExtension(const char *ext) {
+    if(FindExtension(ext)) {
+        common.Printf("GL Extension: %s = true\n", ext);
+        return true;
+    }
+    else {
+        common.Warning("GL Extension: %s = false\n", ext);
+    }
+    
+    return false;
+}
+
+//
+// GL_RegisterProc
+//
+
+void* GL_RegisterProc(const char *address) {
+    void *proc = SDL_GL_GetProcAddress(address);
+    
+    if(!proc) {
+        common.Warning("GL_RegisterProc: Failed to get proc address: %s", address);
+        return NULL;
+    }
+    
+    return proc;
+}
+
+kexTexture kexRenderSystem::defaultTexture;
+kexTexture kexRenderSystem::whiteTexture;
+kexTexture kexRenderSystem::blackTexture;
+
 //
 // kexRenderSystem::kexRenderSystem
 //
 
 kexRenderSystem::kexRenderSystem(void) {
-    this->viewWidth         = this->SCREEN_WIDTH;
-    this->viewHeight        = this->SCREEN_HEIGHT;
-    this->viewWindowX       = 0;
-    this->viewWindowY       = 0;
-    this->maxTextureUnits   = 1;
-    this->maxTextureSize    = 64;
-    this->maxAnisotropic    = 0;
-    this->bWideScreen       = false;
-    this->bFullScreen       = false;
+    this->viewWidth             = this->SCREEN_WIDTH;
+    this->viewHeight            = this->SCREEN_HEIGHT;
+    this->viewWindowX           = 0;
+    this->viewWindowY           = 0;
+    this->maxTextureUnits       = 1;
+    this->maxTextureSize        = 64;
+    this->maxAnisotropic        = 0;
+    this->bWideScreen           = false;
+    this->bFullScreen           = false;
+    this->glState.glStateBits   = 0;
+    this->glState.alphaFunction = -1;
+    this->glState.blendDest     = -1;
+    this->glState.blendSrc      = -1;
+    this->glState.cullType      = -1;
+    this->glState.currentUnit   = -1;
 }
 
 //
@@ -51,6 +135,9 @@ kexRenderSystem::kexRenderSystem(void) {
 //
 
 kexRenderSystem::~kexRenderSystem(void) {
+    defaultTexture.Delete();
+    whiteTexture.Delete();
+    blackTexture.Delete();
 }
 
 //
@@ -74,17 +161,54 @@ void kexRenderSystem::SetViewDimensions(void) {
 }
 
 //
+// kexRenderSystem::GetOGLVersion
+//
+
+typedef enum {
+    OPENGL_VERSION_1_0,
+    OPENGL_VERSION_1_1,
+    OPENGL_VERSION_1_2,
+    OPENGL_VERSION_1_3,
+    OPENGL_VERSION_1_4,
+    OPENGL_VERSION_1_5,
+    OPENGL_VERSION_2_0,
+    OPENGL_VERSION_2_1,
+} glversion_t;
+
+int kexRenderSystem::GetOGLVersion(const char* version) {
+    int MajorVersion;
+    int MinorVersion;
+    int versionvar;
+
+    versionvar = OPENGL_VERSION_1_0;
+
+    if(sscanf(version, "%d.%d", &MajorVersion, &MinorVersion) == 2) {
+        if(MajorVersion > 1) {
+            versionvar = OPENGL_VERSION_2_0;
+
+            if(MinorVersion > 0) {
+                versionvar = OPENGL_VERSION_2_1;
+            }
+        }
+        else {
+            versionvar = OPENGL_VERSION_1_0;
+
+            if(MinorVersion > 0) versionvar = OPENGL_VERSION_1_1;
+            if(MinorVersion > 1) versionvar = OPENGL_VERSION_1_2;
+            if(MinorVersion > 2) versionvar = OPENGL_VERSION_1_3;
+            if(MinorVersion > 3) versionvar = OPENGL_VERSION_1_4;
+            if(MinorVersion > 4) versionvar = OPENGL_VERSION_1_5;
+        }
+    }
+
+    return versionvar;
+}
+
+//
 // kexRenderSystem::Init
 //
 
 void kexRenderSystem::Init(void) {
-}
-
-//
-// kexRenderSystem::InitOpenGL
-//
-
-void kexRenderSystem::InitOpenGL(void) {
     gl_vendor = (const char*)dglGetString(GL_VENDOR);
     common.Printf("GL_VENDOR: %s\n", gl_vendor);
     gl_renderer = (const char*)dglGetString(GL_RENDERER);
@@ -102,7 +226,7 @@ void kexRenderSystem::InitOpenGL(void) {
     dglClearDepth(1.0f);
     dglClearStencil(0);
     
-    SetState(GLSTATE_TEXTURE0, false);
+    SetState(GLSTATE_TEXTURE0, true);
     SetState(GLSTATE_CULL, true);
     SetState(GLSTATE_LIGHTING, false);
     SetCull(GLCULL_FRONT);
@@ -121,6 +245,44 @@ void kexRenderSystem::InitOpenGL(void) {
     dglTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
     dglColorMaterial(GL_FRONT, GL_DIFFUSE);
     dglColorMaterial(GL_BACK, GL_DIFFUSE);
+
+    GL_ARB_multitexture_Init();
+    GL_EXT_compiled_vertex_array_Init();
+    GL_EXT_fog_coord_Init();
+    GL_ARB_texture_non_power_of_two_Init();
+    GL_ARB_texture_env_combine_Init();
+    GL_EXT_texture_env_combine_Init();
+    GL_EXT_texture_filter_anisotropic_Init();
+
+    GL_Init();
+
+    byte *data;
+
+    if(data = defaultTexture.LoadFromFile("textures/default.tga")) {
+        defaultTexture.Upload(data, TC_CLAMP, TF_LINEAR);
+        Z_Free(data);
+    }
+
+    if(data = whiteTexture.LoadFromFile("textures/white.tga")) {
+        whiteTexture.Upload(data, TC_CLAMP, TF_LINEAR);
+        Z_Free(data);
+    }
+
+    if(data = blackTexture.LoadFromFile("textures/black.tga")) {
+        blackTexture.Upload(data, TC_CLAMP, TF_LINEAR);
+        Z_Free(data);
+    }
+
+    if(has_GL_EXT_texture_filter_anisotropic) {
+        dglGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropic);
+    }
+
+    dglEnableClientState(GL_VERTEX_ARRAY);
+    dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    dglEnableClientState(GL_COLOR_ARRAY);
+    dglEnableClientState(GL_NORMAL_ARRAY);
+
+    common.Printf("Renderer Initialized\n");
 }
 
 //
@@ -149,55 +311,6 @@ void kexRenderSystem::SetOrtho(void) {
 void kexRenderSystem::SwapBuffers(void) {
     dglFinish();
     sysMain.SwapBuffers();
-}
-
-//
-// kexRenderSystem::GetScreenBuffer
-//
-
-byte *kexRenderSystem::GetScreenBuffer(int x, int y, int width, int height, bool bFlip) {
-    byte* buffer;
-    byte* data;
-    int i;
-    int pack;
-    int col;
-
-    col     = (width * 3);
-    data    = (byte*)Z_Calloc(height * width * 3, PU_STATIC, 0);
-    buffer  = (byte*)Z_Calloc(col, PU_STATIC, 0);
-
-    //
-    // 20120313 villsa - force pack alignment to 1
-    //
-    dglGetIntegerv(GL_PACK_ALIGNMENT, &pack);
-    dglPixelStorei(GL_PACK_ALIGNMENT, 1);
-    dglFlush();
-    dglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
-    dglPixelStorei(GL_PACK_ALIGNMENT, pack);
-
-    //
-    // Need to vertically flip the image
-    // 20120313 villsa - better method to flip image. uses one buffer instead of two
-    //
-    if(bFlip) {
-        for(i = 0; i < height / 2; i++)
-        {
-            memcpy(buffer, &data[i * col], col);
-            memcpy(&data[i * col], &data[(height - (i + 1)) * col], col);
-            memcpy(&data[(height - (i + 1)) * col], buffer, col);
-        }
-    }
-    
-    Z_Free(buffer);
-    return data;
-}
-
-//
-// kexRenderSystem::ScreenToTexture
-//
-
-dtexture kexRenderSystem::ScreenToTexture(void) {
-    return 0;
 }
 
 //
@@ -288,8 +401,7 @@ void kexRenderSystem::SetAlphaFunc(int func, float val) {
         break;
     }
     
-    dglAlphaFunc(glFunc, val);
-    
+    dglAlphaFunc(glFunc, val);   
     glState.alphaFunction = func;
     glState.alphaFuncThreshold = val;
 }
@@ -325,7 +437,6 @@ void kexRenderSystem::SetDepth(int func) {
     }
     
     dglDepthFunc(glFunc);
-    
     glState.depthFunction = func;
 }
 
@@ -400,7 +511,6 @@ void kexRenderSystem::SetBlend(int src, int dest) {
     }
     
     dglBlendFunc(glSrc, glDst);
-    
     glState.blendSrc = src;
     glState.blendDest = dest;
 }
@@ -434,7 +544,6 @@ void kexRenderSystem::SetCull(int type) {
     }
     
     dglCullFace(cullType);
-    
     glState.cullType = type;
 }
 
@@ -451,4 +560,28 @@ void kexRenderSystem::SetTextureUnit(int unit) {
         
     dglActiveTextureARB(GL_TEXTURE0_ARB + unit);
     glState.currentUnit = unit;
+}
+
+//
+// kexRenderSystem::CacheTexture
+//
+
+kexTexture *kexRenderSystem::CacheTexture(const char *name, texClampMode_t clampMode,
+                                          texFilterMode_t filterMode) {
+    kexTexture *texture = NULL;
+
+    if(!(texture = textureList.Find(name))) {
+        byte *data;
+
+        texture = textureList.Create(name);
+        texture->SetMasked(true);
+
+        data = texture->LoadFromFile(name);
+        texture->Upload(data, clampMode, filterMode);
+
+        textureList.Add(texture);
+        Z_Free(data);
+    }
+
+    return texture;
 }

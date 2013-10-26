@@ -23,6 +23,9 @@
 #ifndef __RENDERSYS_H__
 #define __RENDERSYS_H__
 
+#include "textureObject.h"
+#include "cachefilelist.h"
+
 typedef enum {
     GLFUNC_LEQUAL   = 0,
     GLFUNC_GEQUAL,
@@ -62,73 +65,79 @@ typedef enum {
 class kexRenderSystem {
 public:
 
-                        kexRenderSystem(void);
-                        ~kexRenderSystem(void);
-                    
-    void                Init(void);
-    void                InitOpenGL(void);
-    void                Shutdown(void);
-    void                SetOrtho(void);
-    void                SwapBuffers(void);
-    byte                *GetScreenBuffer(int x, int y, int width, int height, bool bFlip);
-    dtexture            ScreenToTexture(void);
-    void                SetState(int bits, bool bEnable);
-    void                SetAlphaFunc(int func, float val);
-    void                SetDepth(int func);
-    void                SetBlend(int src, int dest);
-    void                SetEnv(int env);
-    void                SetCull(int type);
-    void                SetTextureUnit(int unit);
-    void                SetViewDimensions(void);
-    
-    const int           ViewWidth(void) const { return viewWidth; }
-    const int           ViewHeight(void) const { return viewHeight; }
-    const int           WindowX(void) const { return viewWindowX; }
-    const int           WindowY(void) const { return viewWindowY; }
-    const int           MaxTextureUnits(void) const { return maxTextureUnits; }
-    const int           MaxTextureSize(void) const { return maxTextureSize; }
-    const float         MaxAnisotropic(void) const { return maxAnisotropic; }
-    const bool          IsWideScreen(void) const { return bWideScreen; }
-    const bool          IsFullScreen(void) const { return bFullScreen; }
+                                    kexRenderSystem(void);
+                                    ~kexRenderSystem(void);
 
-    static const int    SCREEN_WIDTH    = 320;
-    static const int    SCREEN_HEIGHT   = 240;
+    void                            Init(void);
+    void                            Shutdown(void);
+    void                            SetOrtho(void);
+    void                            SwapBuffers(void);
+    void                            SetState(int bits, bool bEnable);
+    void                            SetAlphaFunc(int func, float val);
+    void                            SetDepth(int func);
+    void                            SetBlend(int src, int dest);
+    void                            SetEnv(int env);
+    void                            SetCull(int type);
+    void                            SetTextureUnit(int unit);
+    void                            SetViewDimensions(void);
+    kexTexture                      *CacheTexture(const char *name, texClampMode_t clampMode,
+                                        texFilterMode_t filterMode = TF_LINEAR);
 
-private:
-    int                 viewWidth;
-    int                 viewHeight;
-    int                 viewWindowX;
-    int                 viewWindowY;
-    int                 maxTextureUnits;
-    int                 maxTextureSize;
-    float               maxAnisotropic;
-    bool                bWideScreen;
-    bool                bFullScreen;
-    
-    static const int    MAX_TEXTURE_UNITS = 4;
-    
+    const int                       ViewWidth(void) const { return viewWidth; }
+    const int                       ViewHeight(void) const { return viewHeight; }
+    const int                       WindowX(void) const { return viewWindowX; }
+    const int                       WindowY(void) const { return viewWindowY; }
+    const int                       MaxTextureUnits(void) const { return maxTextureUnits; }
+    const int                       MaxTextureSize(void) const { return maxTextureSize; }
+    const float                     MaxAnisotropic(void) const { return maxAnisotropic; }
+    const bool                      IsWideScreen(void) const { return bWideScreen; }
+    const bool                      IsFullScreen(void) const { return bFullScreen; }
+
+    static const int                SCREEN_WIDTH        = 320;
+    static const int                SCREEN_HEIGHT       = 240;
+    static const int                MAX_TEXTURE_UNITS   = 4;
+
+    static kexTexture               defaultTexture;
+    static kexTexture               whiteTexture;
+    static kexTexture               blackTexture;
+
     typedef struct {
-        dtexture        currentTexture;
-        int             environment;
+        dtexture                    currentTexture;
+        int                         environment;
     } texUnit_t;
-    
+
     typedef struct {
-        int             glStateBits;
-        int             depthFunction;
-        int             blendSrc;
-        int             blendDest;
-        int             cullType;
-        int             alphaFunction;
-        float           alphaFuncThreshold;
-        int             currentUnit;
-        texUnit_t       textureUnits[MAX_TEXTURE_UNITS];
+        int                         glStateBits;
+        int                         depthFunction;
+        int                         blendSrc;
+        int                         blendDest;
+        int                         cullType;
+        int                         alphaFunction;
+        float                       alphaFuncThreshold;
+        int                         currentUnit;
+        texUnit_t                   textureUnits[MAX_TEXTURE_UNITS];
     } glState_t;
 
-    glState_t           glState;
-    
-    const char          *gl_vendor;
-    const char          *gl_renderer;
-    const char          *gl_version;
+    glState_t                       glState;
+
+private:
+    int                             GetOGLVersion(const char* version);
+
+    int                             viewWidth;
+    int                             viewHeight;
+    int                             viewWindowX;
+    int                             viewWindowY;
+    int                             maxTextureUnits;
+    int                             maxTextureSize;
+    float                           maxAnisotropic;
+    bool                            bWideScreen;
+    bool                            bFullScreen;
+
+    kexFileCacheList<kexTexture>    textureList;
+
+    const char                      *gl_vendor;
+    const char                      *gl_renderer;
+    const char                      *gl_version;
 };
 
 extern kexRenderSystem renderSystem;

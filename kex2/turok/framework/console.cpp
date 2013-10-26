@@ -35,6 +35,7 @@
 #include "keyInput.h"
 #include "render.h"
 #include "console.h"
+#include "renderSystem.h"
 
 kexCvar cvarDisplayConsole("con_alwaysShowConsole", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 
@@ -727,7 +728,7 @@ void kexConsole::Draw(void) {
     float w = (float)sysMain.VideoWidth();
     float h = (float)sysMain.VideoHeight() * 0.6875f;
 
-    GL_SetState(GLSTATE_BLEND, 1);
+    renderSystem.SetState(GLSTATE_BLEND, true);
 
     texture_t *white = Tex_CacheTextureFile("textures/white.tga", DGL_CLAMP, true);
 
@@ -773,7 +774,7 @@ void kexConsole::Draw(void) {
         }
     }
 
-    GL_SetState(GLSTATE_BLEND, 0);
+    renderSystem.SetState(GLSTATE_BLEND, false);
 
     if(!bOverlay) {
         Canvas_SetDrawColor(&canvas, 0, 128, 255);

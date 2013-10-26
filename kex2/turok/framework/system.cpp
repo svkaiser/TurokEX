@@ -44,6 +44,7 @@
 #include "debug.h"
 #include "filesystem.h"
 #include "console.h"
+#include "renderSystem.h"
 #include "renderWorld.h"
 #include "scriptAPI/scriptSystem.h"
 
@@ -438,8 +439,7 @@ void kexSystem::Main(int argc, char **argv) {
 
     InitVideo();
 
-    GL_Init();
-    common.Printf("OpenGL Initialized\n");
+    renderSystem.Init();
 
     R_Init();
     common.Printf("Renderer Initialized\n");

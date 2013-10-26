@@ -97,9 +97,6 @@ public:
     void            WriteConfigFile(void);
     void            ReadConfigFile(const char *file);
     unsigned int    HashFileName(const char *name);
-    void            NormalizeSlashes(char *str);
-    void            StripPath(char *name);
-    void            StripExt(char *name);
     void            AddCvar(const kexStr &name, const kexStr &value, const kexStr &desc, const int flags);
     float           GetCvarFloat(const kexStr &name);
     bool            GetCvarBool(const kexStr &name);

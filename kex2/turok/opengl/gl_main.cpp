@@ -43,6 +43,8 @@ static vtx_t drawVertices[GL_MAX_VERTICES];
 
 static dtexture prev_texture = 0;
 
+#if 0
+
 GL_ARB_multitexture_Define();
 GL_EXT_compiled_vertex_array_Define();
 GL_EXT_fog_coord_Define();
@@ -51,9 +53,10 @@ GL_ARB_texture_env_combine_Define();
 GL_EXT_texture_env_combine_Define();
 GL_EXT_texture_filter_anisotropic_Define();
 
-kexCvar cvarGLFilter("gl_filter", CVF_INT|CVF_CONFIG, "0", "Texture filter mode");
-kexCvar cvarGLAnisotropic("gl_anisotropic", CVF_INT|CVF_CONFIG, "0", "TODO");
+#endif
 
+extern kexCvar cvarGLFilter;
+extern kexCvar cvarGLAnisotropic;
 extern kexCvar cvarGamma;
 extern kexCvar cvarVidVSync;
 extern kexCvar cvarVidDepthSize;
@@ -72,9 +75,11 @@ const char *gl_vendor;
 const char *gl_renderer;
 const char *gl_version;
 
-int DGL_CLAMP = GL_CLAMP;
+int DGL_CLAMP = GL_CLAMP_TO_EDGE;
 float max_anisotropic = 0;
 kbool widescreen = false;
+
+#if 0
 
 //
 // FindExtension
@@ -143,6 +148,8 @@ void* GL_RegisterProc(const char *address)
     
     return proc;
 }
+
+#endif
 
 //
 // GL_SetOrtho
@@ -459,7 +466,7 @@ void GL_SetTextureUnit(int unit, kbool enable)
     curunit = unit;
 
     dglActiveTextureARB(GL_TEXTURE0_ARB + unit);
-    GL_SetState(GLSTATE_TEXTURE0 + unit, enable);
+    renderSystem.SetState(GLSTATE_TEXTURE0 + unit, (enable != 0));
 }
 
 //
@@ -564,7 +571,7 @@ void GL_DrawElements(unsigned int count, vtx_t *vtx)
 
 void GL_Init(void)
 {
-    gl_vendor = (const char*)dglGetString(GL_VENDOR);
+    /*gl_vendor = (const char*)dglGetString(GL_VENDOR);
     common.Printf("GL_VENDOR: %s\n", gl_vendor);
     gl_renderer = (const char*)dglGetString(GL_RENDERER);
     common.Printf("GL_RENDERER: %s\n", gl_renderer);
@@ -599,8 +606,9 @@ void GL_Init(void)
     dglColorMaterial(GL_BACK, GL_DIFFUSE);
     
     GL_SetState(GLSTATE_TEXTURE0, 1);
-    GL_SetTextureFilter();
+    GL_SetTextureFilter();*/
 
+#if 0
     GL_ARB_multitexture_Init();
     GL_EXT_compiled_vertex_array_Init();
     GL_EXT_fog_coord_Init();
@@ -608,8 +616,9 @@ void GL_Init(void)
     GL_ARB_texture_env_combine_Init();
     GL_EXT_texture_env_combine_Init();
     GL_EXT_texture_filter_anisotropic_Init();
+#endif
 
-    if(!has_GL_ARB_multitexture)
+    /*if(!has_GL_ARB_multitexture)
     {
         common.Warning("GL_ARB_multitexture not supported...\n");
     }
@@ -617,12 +626,12 @@ void GL_Init(void)
     dglEnableClientState(GL_VERTEX_ARRAY);
     dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
     dglEnableClientState(GL_COLOR_ARRAY);
-    dglEnableClientState(GL_NORMAL_ARRAY);
+    dglEnableClientState(GL_NORMAL_ARRAY);*/
 
-    DGL_CLAMP = (GetVersionInt(gl_version) >= OPENGL_VERSION_1_2 ? GL_CLAMP_TO_EDGE : GL_CLAMP);
+    //DGL_CLAMP = (GetVersionInt(gl_version) >= OPENGL_VERSION_1_2 ? GL_CLAMP_TO_EDGE : GL_CLAMP);
 
-    if(has_GL_EXT_texture_filter_anisotropic)
-        dglGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max_anisotropic);
+    //if(has_GL_EXT_texture_filter_anisotropic)
+        //dglGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max_anisotropic);
 
     Draw_Init();
     Tex_Init();

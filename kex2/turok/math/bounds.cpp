@@ -259,33 +259,17 @@ bool kexBBox::LineIntersect(const kexVec3 &start, const kexVec3 &end) {
     kexVec3 dir = lineCenter - center;
 
     ld[0] = kexMath::Fabs(lineDir[0]);
-    if(kexMath::Fabs(dir[0]) > extents[0] + ld[0]) {
-        return false;
-    }
-
+    if(kexMath::Fabs(dir[0]) > extents[0] + ld[0]) return false;
     ld[1] = kexMath::Fabs(lineDir[1]);
-    if(kexMath::Fabs(dir[1]) > extents[1] + ld[1]) {
-        return false;
-    }
-
+    if(kexMath::Fabs(dir[1]) > extents[1] + ld[1]) return false;
     ld[2] = kexMath::Fabs(lineDir[2]);
-    if(kexMath::Fabs(dir[2]) > extents[2] + ld[2]) {
-        return false;
-    }
+    if(kexMath::Fabs(dir[2]) > extents[2] + ld[2]) return false;
 
     kexVec3 cross = lineDir.Cross(dir);
 
-    if(kexMath::Fabs(cross[0]) > extents[1] * ld[2] + extents[2] * ld[1]) {
-        return false;
-    }
-
-    if(kexMath::Fabs(cross[1]) > extents[0] * ld[2] + extents[2] * ld[0]) {
-        return false;
-    }
-
-    if(kexMath::Fabs(cross[2]) > extents[0] * ld[1] + extents[1] * ld[0]) {
-        return false;
-    }
+    if(kexMath::Fabs(cross[0]) > extents[1] * ld[2] + extents[2] * ld[1]) return false;
+    if(kexMath::Fabs(cross[1]) > extents[0] * ld[2] + extents[2] * ld[0]) return false;
+    if(kexMath::Fabs(cross[2]) > extents[0] * ld[1] + extents[1] * ld[0]) return false;
 
     return true;
 }

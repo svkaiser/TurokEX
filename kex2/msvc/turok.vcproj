@@ -320,6 +320,10 @@
 					RelativePath="..\turok\renderer\renderWorld.cpp"
 					>
 				</File>
+				<File
+					RelativePath="..\turok\renderer\textureObject.cpp"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="framework"
@@ -723,6 +727,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\renderWorld.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\textureObject.h"
 					>
 				</File>
 			</Filter>

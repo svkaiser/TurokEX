@@ -448,7 +448,7 @@ jsuint J_AllocByteArray(JSContext *cx, JSObject *object, byte **arr, JSBool fixe
 
 js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer, int size)
 {
-    char scrname[MAX_FILEPATH];
+    kexStr scrname;
     unsigned int hash;
     js_scrobj_t *scrobj;
     JSContext *cx;
@@ -469,11 +469,11 @@ js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer, int size)
 
     scrobj = (js_scrobj_t*)Z_Calloc(sizeof(js_scrobj_t), PU_JSOBJ, 0);
     strcpy(scrobj->name, name);
-    strcpy(scrname, name);
-    common.StripPath(scrname);
-    common.StripExt(scrname);
+    scrname.Copy(name);
+    scrname.StripPath();
+    scrname.StripExtension();
 
-    if(!(scrobj->script = JS_CompileScript(cx, obj, buffer, size, scrname, 1)))
+    if(!(scrobj->script = JS_CompileScript(cx, obj, buffer, size, scrname.c_str(), 1)))
     {
         JS_ReportPendingException(cx);
         Z_Free(scrobj);
@@ -489,7 +489,7 @@ js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer, int size)
         return NULL;
     }
 
-    if(!JS_AddNamedRoot(cx, &scrobj->obj, scrname))
+    if(!JS_AddNamedRoot(cx, &scrobj->obj, scrname.c_str()))
     {
         JS_DestroyScript(cx, scrobj->script);
         Z_Free(scrobj);

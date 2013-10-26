@@ -33,7 +33,7 @@
 #include "system.h"
 #include "filesystem.h"
 
-kexCvar cvarGamma("gl_gamma", CVF_FLOAT|CVF_CONFIG, "0", "TODO");
+extern kexCvar cvarGamma;
 
 //////////////////////////////////////
 // TGA FORMAT HANDLING
