@@ -144,7 +144,7 @@ void kexSystem::Shutdown(void) {
     bShuttingDown = true;
 
     J_Shutdown();
-    Snd_Shutdown();
+    soundSystem.Shutdown();
     FX_Shutdown();
     G_Shutdown();
 
@@ -418,8 +418,7 @@ void kexSystem::Main(int argc, char **argv) {
 
     fileSystem.Init();
 
-    Snd_Init();
-    common.Printf("Sound System Initialized (%s)\n", Snd_GetDeviceName());
+    soundSystem.Init();
     J_Init();
     common.Printf("Javascript API Initialized\n");
 

@@ -754,6 +754,14 @@ kexStr kexVec3::ToString(void) const {
 }
 
 //
+// kexVec3::ToFloatPtr
+//
+
+float *kexVec3::ToFloatPtr(void) {
+    return reinterpret_cast<float*>(&x);
+}
+
+//
 // kexVec3::ScreenProject
 //
 

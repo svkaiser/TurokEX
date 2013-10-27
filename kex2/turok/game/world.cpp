@@ -35,6 +35,7 @@
 #include "js_parse.h"
 #include "js_shared.h"
 #include "world.h"
+#include "sound.h"
 
 kexWorld localWorld;
 
@@ -314,6 +315,22 @@ void kexWorld::Trace(traceInfo_t *trace) {
 }
 
 //
+// kexWorld::PlaySound
+//
+
+void kexWorld::PlaySound(const char *name) {
+    soundSystem.PlaySound(name, NULL);
+}
+
+//
+// kexWorld::PlaySound
+//
+
+void kexWorld::PlaySound(const kexStr &name) {
+    PlaySound(name.c_str());
+}
+
+//
 // kexWorld::ParseGridBound
 //
 
@@ -492,6 +509,12 @@ void kexWorld::InitObject(void) {
         "kWorld",
         "const int GetTicks(void) const",
         asMETHODPR(kexWorld, GetTicks, (void)const, const int),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "void PlaySound(const kStr &in)",
+        asMETHODPR(kexWorld, PlaySound, (const kexStr &), void),
         asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectMethod(

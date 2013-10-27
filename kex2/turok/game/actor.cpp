@@ -30,6 +30,7 @@
 #include "zone.h"
 #include "parse.h"
 #include "server.h"
+#include "sound.h"
 
 //
 // kexAttachment::AttachToActor
@@ -204,6 +205,7 @@ bool kexActor::Trace(traceInfo_t *trace) {
 //
 
 void kexActor::PlaySound(const char *name) {
+    soundSystem.PlaySound(name, this);
 }
 
 //
@@ -211,6 +213,7 @@ void kexActor::PlaySound(const char *name) {
 //
 
 void kexActor::PlaySound(const kexStr &name) {
+    PlaySound(name.c_str());
 }
 
 enum {

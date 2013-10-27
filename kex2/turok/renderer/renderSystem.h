@@ -65,7 +65,6 @@ typedef enum {
 
 class kexRenderSystem {
 public:
-
                                     kexRenderSystem(void);
                                     ~kexRenderSystem(void);
 

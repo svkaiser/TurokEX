@@ -32,10 +32,7 @@
 #include "script.h"
 #include "client.h"
 
-static sndShader_t *snd_hashlist[MAX_HASH];
-
-enum
-{
+enum {
     scsfx_wavefile = 0,
     scsfx_delay,
     scsfx_dbFreq,
@@ -54,8 +51,7 @@ enum
     scsfx_end
 };
 
-static const sctokens_t sfxtokens[scsfx_end+1] =
-{
+static const sctokens_t sfxtokens[scsfx_end+1] = {
     { scsfx_wavefile,           "wavefile"          },
     { scsfx_delay,              "delay"             },
     { scsfx_dbFreq,             "dbFreq"            },
@@ -75,24 +71,38 @@ static const sctokens_t sfxtokens[scsfx_end+1] =
 };
 
 //
-// Snd_ParseShaderScript
+// kexSoundShader::kexSoundShader
 //
 
-static void Snd_ParseShaderScript(sndShader_t *snd, kexLexer *lexer)
-{
-    unsigned int i;
+kexSoundShader::kexSoundShader(void) {
+}
+
+//
+// kexSoundShader::~kexSoundShader
+//
+
+kexSoundShader::~kexSoundShader(void) {
+}
+
+//
+// kexSoundShader::Load
+//
+
+void kexSoundShader::Load(kexLexer *lexer) {
+    int i;
 
     lexer->Find();
 
-    if(strcmp(lexer->Token(), "sounds"))
+    if(strcmp(lexer->Token(), "sounds")) {
         common.Error("Snd_ParseShaderScript: Expected 'sound', found %s", lexer->Token());
+    }
 
     lexer->ExpectNextToken(TK_LSQBRACK);
 
-    snd->numsfx = lexer->GetNumber();
+    numsfx = lexer->GetNumber();
 
-    if(snd->numsfx == 0) {
-        snd->sfx = NULL;
+    if(numsfx == 0) {
+        sfxList = NULL;
         lexer->ExpectNextToken(TK_RSQBRACK);
         lexer->ExpectNextToken(TK_EQUAL);
         lexer->ExpectNextToken(TK_LBRACK);
@@ -100,28 +110,25 @@ static void Snd_ParseShaderScript(sndShader_t *snd, kexLexer *lexer)
         return;
     }
 
-    snd->sfx = (sfx_t*)Z_Calloc(sizeof(sfx_t) * snd->numsfx, PU_SOUND, 0);
-    snd->sfx->rolloffFactor = 8.0f;
+    sfxList = (sfx_t*)Z_Calloc(sizeof(sfx_t) * numsfx, PU_SOUND, 0);
 
     lexer->ExpectNextToken(TK_RSQBRACK);
     lexer->ExpectNextToken(TK_EQUAL);
     lexer->ExpectNextToken(TK_LBRACK);
 
-    for(i = 0; i < snd->numsfx; i++)
-    {
-        sfx_t *sfx = &snd->sfx[i];
+    for(i = 0; i < numsfx; i++) {
+        sfx_t *sfx = &sfxList[i];
+        sfx->rolloffFactor = 8.0f;
 
         lexer->ExpectNextToken(TK_LBRACK);
         lexer->Find();
 
-        while(lexer->TokenType() != TK_RBRACK)
-        {
-            switch(lexer->GetIDForTokenList(sfxtokens, lexer->Token()))
-            {
+        while(lexer->TokenType() != TK_RBRACK) {
+            switch(lexer->GetIDForTokenList(sfxtokens, lexer->Token())) {
             case scsfx_wavefile:
                 lexer->ExpectNextToken(TK_EQUAL);
                 lexer->GetString();
-                sfx->wave = Snd_CacheWaveFile(lexer->StringToken());
+                sfx->wavFile = soundSystem.CacheWavFile(lexer->StringToken());
                 break;
 
             case scsfx_delay:
@@ -195,9 +202,8 @@ static void Snd_ParseShaderScript(sndShader_t *snd, kexLexer *lexer)
                 break;
 
             default:
-                if(lexer->TokenType() == TK_IDENIFIER)
-                {
-                    parser.Error("Snd_ParseShaderScript: Unknown token: %s\n",
+                if(lexer->TokenType() == TK_IDENIFIER) {
+                    parser.Error("kexSoundShader::Load: Unknown token: %s\n",
                         lexer->Token());
                 }
                 break;
@@ -211,124 +217,23 @@ static void Snd_ParseShaderScript(sndShader_t *snd, kexLexer *lexer)
 }
 
 //
-// Snd_FindShader
+// kexSoundShader::Play
 //
 
-sndShader_t *Snd_FindShader(const char *name)
-{
-    sndShader_t *snd;
-    unsigned int hash;
+void kexSoundShader::Play(kexActor *actor) {
+    kexSoundSource *src;
 
-    hash = common.HashFileName(name);
+    kexSoundSystem::EnterCriticalSection();
 
-    for(snd = snd_hashlist[hash]; snd; snd = snd->next)
-    {
-        if(!strcmp(name, snd->name))
-            return snd;
-    }
+    for(int i = 0; i < numsfx; i++) {
 
-    return NULL;
-}
-
-//
-// Snd_LoadShader
-//
-
-sndShader_t *Snd_LoadShader(const char *name)
-{
-    sndShader_t *snd;
-
-    if(name == NULL || name[0] == 0)
-        return NULL;
-
-    if(!(snd = Snd_FindShader(name)))
-    {
-        unsigned int hash;
-        kexLexer *lexer;
-
-        if(strlen(name) >= MAX_FILEPATH)
-            common.Error("Snd_LoadShader: \"%s\" is too long", name);
-
-        if(!(lexer = parser.Open(name)))
-            return NULL;
-
-        snd = (sndShader_t*)Z_Calloc(sizeof(sndShader_t), PU_STATIC, 0);
-        strncpy(snd->name, name, MAX_FILEPATH);
-
-        Snd_ParseShaderScript(snd, lexer);
-
-        hash = common.HashFileName(name);
-        snd->next = snd_hashlist[hash];
-        snd_hashlist[hash] = snd;
-
-        parser.Close();
-    }
-
-    return snd;
-}
-
-//
-// Snd_PlayShaderDirect
-//
-
-void Snd_PlayShaderDirect(sndShader_t *shader, gActor_t *actor)
-{
-    sndSource_t *src;
-    unsigned int i;
-
-    if(shader == NULL)
-        return;
-
-    Snd_EnterCriticalSection();
-
-    for(i = 0; i < shader->numsfx; i++)
-    {
-        src = Snd_GetAvailableSource();
-
-        if(src == NULL)
-        {
-            Snd_ExitCriticalSection();
+        if(!(src = soundSystem.GetAvailableSource())) {
+            kexSoundSystem::ExitCriticalSection();
             return;
         }
 
-        src->sfx = &shader->sfx[i];
-        Actor_SetTarget(&src->actor, actor);
-
-        if(src->sfx->bLerpVol)
-            src->volume = src->sfx->gainLerpStart;
-
-        if(src->sfx->bLerpFreq)
-            src->pitch = src->sfx->freqLerpStart;
-
-        if(actor != NULL && client.LocalPlayer().actor != actor)
-        {
-            alSource3f(src->handle, AL_POSITION,
-                actor->origin[0],
-                actor->origin[1],
-                actor->origin[2]);
-        }
+        src->Set(&sfxList[i], actor);
     }
 
-    Snd_ExitCriticalSection();
-}
-
-//
-// Snd_PlayShader
-//
-
-void Snd_PlayShader(const char *name, gActor_t *actor)
-{
-    sndShader_t *shader;
-
-    // TODO
-    if(actor && Vec_Length3(client.LocalPlayer().actor->origin,
-        actor->origin) >= 4096)
-        return;
-    
-    shader = Snd_LoadShader(name);
-
-    if(shader == NULL)
-        return;
-
-    Snd_PlayShaderDirect(shader, actor);
+    kexSoundSystem::ExitCriticalSection();
 }

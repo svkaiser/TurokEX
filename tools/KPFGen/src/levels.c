@@ -2002,6 +2002,25 @@ static void ProcessGridBounds(byte *data, byte *inst)
     int stride;
     int i;
 
+    // world collision
+    Com_Strcat("gridbound { -32768 -32768 -32768 } { 32768 32768 32768 }\n");
+    Com_Strcat("{\n");
+    Com_Strcat("actor \"kexWorldActor\"\n");
+    Com_Strcat("{\n");
+    Com_Strcat("mesh \"maps/map%02d/mapCollision%02d.kmesh\"\n", levelID, levelID);
+    Com_Strcat("bounds { -16384 -32768 -16384 } { 16384 32768 16384 }\n");
+    Com_Strcat("bCollision 1\n");
+    Com_Strcat("bHidden 1\n");
+    Com_Strcat("origin { 0 0 0 }\n");
+    Com_Strcat("scale { 1 1 1 }\n");
+    Com_Strcat("bStatic 1\n");
+    Com_Strcat("clipMesh\n");
+    Com_Strcat("{\n");
+    Com_Strcat("type 6\n");
+    Com_Strcat("}\n");
+    Com_Strcat("}\n");
+    Com_Strcat("}\n");
+
     // some gridbounds can contain bad or empty data....UGH
     if(count > 1)
     {
@@ -2967,7 +2986,7 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
 
         switch(mapinst->model)
         {
-        case 9:
+        /*case 9:
             ProcessEmitterActor(mapinst, "fx/fx_263.kfx");
             break;
 
@@ -3045,7 +3064,7 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
 
         case 555:
             ProcessEmitterActor(mapinst, "fx/fx_083.kfx");
-            break;
+            break;*/
         default:
             Com_Strcat("actor \"kexWorldActor\"\n");
             Com_Strcat("{\n");

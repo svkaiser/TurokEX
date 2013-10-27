@@ -227,7 +227,7 @@ void kexClient::Run(const int msec) {
     R_FinishFrame();
 
     // update all sound sources
-    Snd_UpdateListener();
+    soundSystem.UpdateListener();
 
     // update all debug variables
     Debug_UpdateStatFrame();

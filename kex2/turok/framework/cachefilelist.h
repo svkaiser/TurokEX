@@ -29,8 +29,6 @@ public:
     void                Add(type *o);
     type                *Create(const char *filename, int zoneTag = PU_STATIC);
     type                *Find(const char *name) const;
-
-private:
     type                *hashlist[MAX_HASH];
 };
 

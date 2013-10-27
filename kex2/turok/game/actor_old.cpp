@@ -599,7 +599,7 @@ static void Actor_ExecuteFrameActions(gActor_t *actor)
 
             if(!strcmp(action->function, "playSound"))
             {
-                Snd_PlayShader(action->argStrings[0], actor);
+                //soundSystem.PlaySound(action->argStrings[0], actor);
                 continue;
             }
             else if(!strcmp(action->function, "fx"))

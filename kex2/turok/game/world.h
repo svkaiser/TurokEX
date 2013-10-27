@@ -56,6 +56,8 @@ public:
     void                                RemoveActor(kexWorldActor *actor);
     void                                SpawnLocalPlayer(void);
     void                                Trace(traceInfo_t *trace);
+    void                                PlaySound(const char *name);
+    void                                PlaySound(const kexStr &name);
 
     bool                                IsLoaded(void) const { return bLoaded; }
     float                               DeltaTime(void) { return deltaTime; }

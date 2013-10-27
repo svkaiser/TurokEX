@@ -773,7 +773,7 @@ void Map_Unload(void)
     unsigned int i;
     jsval val;
 
-    Snd_StopAll();
+    soundSystem.StopAll();
 
     JS_CallFunctionName(js_context, js_objGame, "onLevelUnLoad", 0, NULL, &val);
 

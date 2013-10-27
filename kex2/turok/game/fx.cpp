@@ -174,8 +174,8 @@ static void FX_Event(fx_t *fx, fxEvent_t *fxEvent, gActor_t *actor)
     if(!nfx)
         nfx = fx;
 
-    if(fxEvent->snd != NULL && nfx->refcount <= 0)
-        Snd_PlayShader(fxEvent->snd, (gActor_t*)nfx);
+    //if(fxEvent->snd != NULL && nfx->refcount <= 0)
+        //soundSystem.PlaySound(fxEvent->snd, (gActor_t*)nfx);
 
     if(fxEvent->action.function != NULL && fx->source)
     {
@@ -199,8 +199,8 @@ static void FX_TickEvent(fx_t *fx, fxEvent_t *fxEvent, gActor_t *actor)
     if(fxEvent->fx != NULL)
         FX_SpawnChild(fx, fxEvent->fx);
 
-    if(fxEvent->snd != NULL && fx->refcount <= 0)
-        Snd_PlayShader(fxEvent->snd, (gActor_t*)fx);
+    //if(fxEvent->snd != NULL && fx->refcount <= 0)
+        //soundSystem.PlaySound(fxEvent->snd, (gActor_t*)fx);
 
     if(fxEvent->action.function != NULL && fx->source)
     {

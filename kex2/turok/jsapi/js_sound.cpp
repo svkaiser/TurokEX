@@ -52,7 +52,7 @@ JS_FASTNATIVE_BEGIN(Snd, play)
             &GameActor_class, NULL);
     }
 
-    Snd_PlayShader(bytes, actor);
+    //soundSystem.PlaySound(bytes, actor);
     JS_free(cx, bytes);
 
     JS_SET_RVAL(cx, vp, JSVAL_VOID);

@@ -23,25 +23,14 @@
 #ifndef _SND_H_
 #define _SND_H_
 
-typedef struct wave_s
-{
-    char            name[MAX_FILEPATH];
-    short           formatCode;
-    short           channels;
-    int             samples;
-    int             bytes;
-    short           blockAlign;
-    short           bits;
-    int             waveSize;
-    byte            *data;
-    byte            *waveFile;
-    unsigned int    buffer;
-    struct wave_s   *next;
-} wave_t;
+#include "al.h"
+#include "alc.h"
+#include "actor.h"
 
-typedef struct
-{
-    wave_t          *wave;
+class kexWavFile;
+
+typedef struct {
+    kexWavFile      *wavFile;
     int             delay;
     float           random;
     float           gain;
@@ -59,45 +48,115 @@ typedef struct
     float           rolloffFactor;
 } sfx_t;
 
-typedef struct sndShader_s
-{
-    char                name[MAX_FILEPATH];
-    unsigned int        numsfx;
-    sfx_t               *sfx;
-    struct sndShader_s  *next;
-} sndShader_t;
-
-typedef struct sndSource_s
-{
-    unsigned int        handle;
-    int                 startTime;
-    kbool               inUse;
-    kbool               playing;
-    kbool               looping;
-    float               volume;
-    float               pitch;
-    sfx_t               *sfx;
-    gActor_t            *actor;
-} sndSource_t;
-
 #define SND_MAX_SOURCES 64
 
-extern sndSource_t sndSources[SND_MAX_SOURCES];
-extern unsigned long sndTime;
+class kexSoundShader {
+public:
+                                        kexSoundShader(void);
+                                        ~kexSoundShader(void);
 
-sndShader_t *Snd_LoadShader(const char *name);
-void Snd_PlayShader(const char *name, gActor_t *actor);
-void Snd_PlayShaderDirect(sndShader_t *shader, gActor_t *actor);
+    void                                Play(kexActor *actor);
+    void                                Load(kexLexer *lexer);
 
-void Snd_Shutdown(void);
-void Snd_Init(void);
-char *Snd_GetDeviceName(void);
-void Snd_EnterCriticalSection(void);
-void Snd_ExitCriticalSection(void);
-wave_t *Snd_CacheWaveFile(const char *name);
-sndSource_t *Snd_GetAvailableSource(void);
-void Snd_FreeSource(sndSource_t *src);
-void Snd_UpdateListener(void);
-void Snd_StopAll(void);
+    filepath_t                          filePath;
+    kexSoundShader                      *next;
+
+private:
+    int                                 numsfx;
+    sfx_t                               *sfxList;
+};
+
+class kexWavFile {
+public:
+                                        kexWavFile(void);
+                                        ~kexWavFile(void);
+
+    int                                 GetFormat(void);
+    bool                                CompareTag(const char *tag, int offset);
+    void                                Allocate(const char *name, byte *data);
+    void                                Delete(void);
+    ALuint                              *GetBuffer(void) { return &buffer; }
+
+    filepath_t                          filePath;
+    kexWavFile                          *next;
+
+private:
+    short                               formatCode;
+    short                               channels;
+    int                                 samples;
+    int                                 bytes;
+    short                               blockAlign;
+    short                               bits;
+    int                                 waveSize;
+    byte                                *data;
+    byte                                *waveFile;
+    ALuint                              buffer;
+};
+
+class kexSoundSource {
+    public:
+                                        kexSoundSource(void);
+                                        ~kexSoundSource(void);
+
+    bool                                Generate(void);
+    void                                Set(sfx_t *sfxRef, kexActor *actor);
+    void                                Play(void);
+    void                                Stop(void);
+    void                                Reset(void);
+    void                                Free(void);
+    void                                Delete(void);
+    void                                Update(void);
+
+    bool                                InUse(void) const { return bInUse; }
+
+private:
+    ALuint                              handle;
+    int                                 startTime;
+    bool                                bInUse;
+    bool                                bPlaying;
+    bool                                bLooping;
+    float                               volume;
+    float                               pitch;
+    sfx_t                               *sfx;
+    kexActor                            *actor;
+};
+
+class kexSoundSystem {
+public:
+                                        kexSoundSystem(void);
+                                        ~kexSoundSystem(void);
+
+    void                                Init(void);
+    void                                Shutdown(void);
+    char                                *GetDeviceName(void);
+    void                                UpdateListener(void);
+    void                                StopAll(void);
+    kexWavFile                          *CacheWavFile(const char *name);
+    kexSoundShader                      *CacheShaderFile(const char *name);
+    kexSoundSource                      *GetAvailableSource(void);
+    void                                PlaySound(const char *name, kexActor *actor);
+
+    const int                           GetNumActiveSources(void) const { return activeSources; }
+    kexSoundSource                      *GetSources(void) { return sources; }
+
+    static void                         EnterCriticalSection(void);
+    static void                         ExitCriticalSection(void);
+    static int SDLCALL                  Thread(void *param);
+
+    static SDL_mutex                    *mutex;
+    static SDL_Thread                   *thread;
+    static unsigned long                time;
+    static bool                         bKillSoundThread;
+
+private:
+    ALCdevice                           *alDevice;
+    ALCcontext                          *alContext;
+    kexSoundSource                      sources[SND_MAX_SOURCES];
+    kexFileCacheList<kexWavFile>        wavList;
+    kexFileCacheList<kexSoundShader>    shaderList;
+    int                                 activeSources;
+};
+
+extern kexSoundSystem soundSystem;
 
 #endif

@@ -32,22 +32,10 @@
 #include "sound.h"
 #include "client.h"
 #include "filesystem.h"
+#include "world.h"
 
 kexCvar cvarPitchShift("s_pitchshift", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 kexCvar cvarSoundVolume("s_sndvolume", CVF_FLOAT|CVF_CONFIG, "0.5", 0, 1, "TODO");
-
-SDL_mutex   *snd_mutex  = NULL;
-SDL_Thread  *snd_thread = NULL;
-
-ALCdevice   *alDevice   = NULL;
-ALCcontext  *alContext  = NULL;
-
-sndSource_t sndSources[SND_MAX_SOURCES];
-int nSndSources = 0;
-unsigned long sndTime = 0;
-
-static wave_t *wave_hashlist[MAX_HASH];
-static bool bKillSoundThread = false;
 
 #define SND_METRICS 0.0035f
 #define SND_VECTOR2METRICS(vec) \
@@ -57,38 +45,462 @@ static bool bKillSoundThread = false;
 
 #define SND_INT2TIME(t) ((float)t * ((1.0f / 60.0f) * 1000.0f))
 
+kexSoundSystem soundSystem;
+
 //
-// Snd_Shutdown
+// FCmd_SoundInfo
 //
 
-void Snd_Shutdown(void)
-{
-    int i;
+static void FCmd_SoundInfo(void) {
+    common.CPrintf(COLOR_CYAN, "------------- Sound Info -------------\n");
+    common.CPrintf(COLOR_GREEN, "Device: %s\n", soundSystem.GetDeviceName());
+    common.CPrintf(COLOR_GREEN, "Available Sources: %i\n", soundSystem.GetNumActiveSources());
+}
 
-    Snd_EnterCriticalSection();
-    bKillSoundThread = true;
-    Snd_ExitCriticalSection();
+//
+// FCmd_LoadShader
+//
 
-    SDL_WaitThread(snd_thread, NULL);
-    SDL_DestroyMutex(snd_mutex);
-
-    for(i = 0; i < nSndSources; i++)
-    {
-        sndSource_t *sndSrc = &sndSources[i];
-
-        alSourceStop(sndSrc->handle);
-        alSourcei(sndSrc->handle, AL_BUFFER, 0);
-        alDeleteSources(1, &sndSrc->handle);
+static void FCmd_LoadShader(void) {
+    if(command.GetArgc() < 2) {
+        return;
     }
 
-    for(i = 0; i < MAX_HASH; i++)
-    {
-        wave_t *wave = wave_hashlist[i];
+    soundSystem.PlaySound(command.GetArgv(1), NULL);
+}
 
-        if(wave == NULL)
+//
+// kexWavFile::kexWavFile
+//
+
+kexWavFile::kexWavFile(void) {
+}
+
+//
+// kexWavFile::~kexWavFile
+//
+
+kexWavFile::~kexWavFile(void) {
+}
+
+//
+// kexWavFile::CompareTag
+//
+
+bool kexWavFile::CompareTag(const char *tag, int offset) {
+    byte *buf = waveFile + offset;
+
+    return
+        (buf[0] == tag[0] &&
+         buf[1] == tag[1] &&
+         buf[2] == tag[2] &&
+         buf[3] == tag[3]);
+}
+
+//
+// kexWavFile::GetFormat
+//
+
+int kexWavFile::GetFormat(void) {
+    switch(channels) {
+    case 1:
+        switch(bits) {
+        case 8:
+            return AL_FORMAT_MONO8;
+        case 16:
+            return AL_FORMAT_MONO16;
+        }
+        break;
+    case 2:
+        switch(bits) {
+        case 8:
+            return AL_FORMAT_STEREO8;
+        case 16:
+            return AL_FORMAT_STEREO16;
+        }
+        break;
+    default:
+        common.Error("Snd_GetWaveFormat: Unsupported number of channels - %i", channels);
+        return -1;
+    }
+
+    common.Error("Snd_GetWaveFormat: Unknown bits format - %i", bits);
+    return -1;
+}
+
+//
+// kexWavFile::Allocate
+//
+
+void kexWavFile::Allocate(const char *name, byte *data) {
+    strcpy(filePath, name);
+    waveFile = data;
+
+    if(!CompareTag("RIFF", 0)) {
+        common.Error("kexWavFile::Allocate: RIFF header not found in %s", name);
+    }
+    if(!CompareTag("WAVE", 8)) {
+        common.Error("kexWavFile::Allocate: WAVE header not found in %s", name);
+    }
+    if(!CompareTag("fmt ", 12)) {
+        common.Error("kexWavFile::Allocate: fmt header not found in %s", name);
+    }
+    if(!CompareTag("data", 36)) {
+        common.Error("kexWavFile::Allocate: data header not found in %s", name);
+    }
+
+    if(*(data + 16) != 16) {
+        common.Error("kexWavFile::Allocate: WAV chunk size must be 16 (%s)", name);
+    }
+
+    formatCode  = *(short*)(data + 20);
+    channels    = *(short*)(data + 22);
+    samples     = *(int*)(data + 24);
+    bytes       = *(int*)(data + 28);
+    blockAlign  = *(short*)(data + 32);
+    bits        = *(short*)(data + 34);
+    waveSize    = *(int*)(data + 40);
+    data        = data + 44;
+
+    kexSoundSystem::EnterCriticalSection();
+
+    alGetError();
+    alGenBuffers(1, &buffer);
+
+    if(alGetError() != AL_NO_ERROR) {
+        kexSoundSystem::ExitCriticalSection();
+        common.Error("kexWavFile::Allocate: failed to create buffer for %s", name);
+    }
+
+    alBufferData(buffer, GetFormat(), data, waveSize, samples);
+    kexSoundSystem::ExitCriticalSection();
+}
+
+//
+// kexWavFile::Delete
+//
+
+void kexWavFile::Delete(void) {
+    alDeleteBuffers(1, &buffer);
+    buffer = 0;
+}
+
+//
+// kexSoundSource::kexSoundSource
+//
+
+kexSoundSource::kexSoundSource(void) {
+}
+
+//
+// kexSoundSource::~kexSoundSource
+//
+
+kexSoundSource::~kexSoundSource(void) {
+}
+
+//
+// kexSoundSource::Generate
+//
+
+bool kexSoundSource::Generate(void) {
+    alGetError();
+    alGenSources(1, &handle);
+
+    if(alGetError() != AL_NO_ERROR) {
+        return false;
+    }
+
+    startTime   = 0;
+    bInUse      = false;
+    bLooping    = false;
+    bPlaying    = false;
+    sfx         = NULL;
+    actor       = NULL;
+    volume      = 1.0f;
+
+    alSourcei(handle, AL_LOOPING, AL_FALSE);
+    alSourcei(handle, AL_SOURCE_RELATIVE, AL_TRUE);
+    alSourcef(handle, AL_GAIN, 1.0f);
+    alSourcef(handle, AL_PITCH, 1.0f);
+    return true;
+}
+
+//
+// kexSoundSource::Set
+//
+
+void kexSoundSource::Set(sfx_t *sfxRef, kexActor *actor) {
+    if(sfxRef == NULL) {
+        return;
+    }
+
+    sfx = sfxRef;
+
+    if(actor) {
+        actor->AddRef();
+    }
+
+    if(sfx->bLerpVol) {
+        volume = sfx->gainLerpStart;
+    }
+
+    if(sfx->bLerpFreq) {
+        pitch = sfx->freqLerpStart;
+    }
+
+    if(actor != NULL && client.LocalPlayer().Puppet() != actor) {
+        kexVec3 org = actor->GetOrigin();
+        alSource3f(handle, AL_POSITION, org.x, org.y, org.z);
+    }
+}
+
+//
+// kexSoundSource::Stop
+//
+
+void kexSoundSource::Stop(void) {
+    alSourceStop(handle);
+}
+
+//
+// kexSoundSource::Free
+//
+
+void kexSoundSource::Free(void) {
+    bInUse      = false;
+    bPlaying    = false;
+    sfx         = NULL;
+    volume      = 1.0f;
+    pitch       = 1.0f;
+    startTime   = 0;
+
+    if(actor) {
+        actor->RemoveRef();
+        actor = NULL;
+    }
+
+    alSource3f(handle, AL_POSITION, 0, 0, 0);
+}
+
+//
+// kexSoundSource::Delete
+//
+
+void kexSoundSource::Delete(void) {
+    if(bPlaying) {
+        Free();
+    }
+
+    Stop();
+
+    alSourcei(handle, AL_BUFFER, 0);
+    alDeleteSources(1, &handle);
+
+    handle = 0;
+}
+
+//
+// kexSoundSource::Reset
+//
+
+void kexSoundSource::Reset(void) {
+    startTime   = kexSoundSystem::time;
+    bInUse      = true;
+    bPlaying    = false;
+    volume      = 1.0f;
+    pitch       = 1.0f;
+}
+
+//
+// kexSoundSource::Play
+//
+
+void kexSoundSource::Play(void) {
+    float time;
+    kexWavFile *wave = sfx->wavFile;
+
+    if(sfx->random != 1.0f &&
+        (rand()%100) >= (sfx->random * 100.0f)) {
+        return;
+    }
+
+    time = (float)startTime + SND_INT2TIME(sfx->delay);
+
+    if(time > kexSoundSystem::time) {
+        return;
+    }
+
+    alSourceQueueBuffers(handle, 1, wave->GetBuffer());
+
+    if(cvarPitchShift.GetBool()) {
+        alSourcef(handle, AL_PITCH, sfx->dbFreq);
+    }
+
+    if(actor && actor != client.LocalPlayer().Puppet()) {
+        alSourcef(handle, AL_ROLLOFF_FACTOR, sfx->rolloffFactor);
+        alSourcei(handle, AL_SOURCE_RELATIVE, AL_FALSE);
+        alSource3f(handle, AL_POSITION,
+            SND_VECTOR2METRICS(actor->GetOrigin().ToFloatPtr()));
+    }
+    else {
+        alSourcei(handle, AL_SOURCE_RELATIVE, AL_TRUE);
+    }
+
+    alSourcef(handle, AL_GAIN, sfx->gain * volume * cvarSoundVolume.GetFloat());
+    alSourcePlay(handle);
+
+    bPlaying = true;
+    startTime = kexSoundSystem::time;
+}
+
+//
+// kexSoundSource::Update
+//
+
+void kexSoundSource::Update(void) {
+    if(!bInUse) {
+        return;
+    }
+
+    if(sfx != NULL) {
+        kexWavFile *wave = sfx->wavFile;
+
+        if(!bPlaying) {
+            Play();
+        }
+        else {
+            ALint state;
+
+            alGetSourcei(handle, AL_SOURCE_STATE, &state);
+            if(state != AL_PLAYING) {
+                alSourceStop(handle);
+                alSourceUnqueueBuffers(handle, 1, wave->GetBuffer());
+                Free();
+            }
+            else {
+                if(sfx->bLerpVol && bPlaying) {
+                    float time = (float)startTime + SND_INT2TIME(sfx->gainLerpDelay);
+
+                    if(time <= kexSoundSystem::time) {
+                        float volLerp = (1.0f / (float)sfx->gainLerpTime);
+                        volume = (sfx->gainLerpEnd - volume) * volLerp + volume;
+
+                        if(volume > 1) volume = 1;
+                        if(volume < 0.01f) {
+                            alSourceStop(handle);
+                            alSourceUnqueueBuffers(handle, 1, wave->GetBuffer());
+                            Free();
+                            return;
+                        }
+
+                        alSourcef(handle, AL_GAIN, sfx->gain * volume * cvarSoundVolume.GetFloat());
+                    }
+                }
+
+                if(sfx->bLerpFreq && bPlaying && cvarPitchShift.GetBool()) {
+                    float time = (float)startTime + SND_INT2TIME(sfx->freqLerpDelay);
+
+                    if(time <= kexSoundSystem::time) {
+                        float freqLerp = (1.0f / (float)sfx->freqLerpTime);
+                        pitch = (sfx->freqLerpEnd - pitch) * freqLerp + pitch;
+
+                        alSourcef(handle, AL_PITCH, pitch);
+                    }
+                }
+            }
+        }
+    }
+}
+
+bool kexSoundSystem::bKillSoundThread = false;
+unsigned long kexSoundSystem::time = 0;
+SDL_mutex *kexSoundSystem::mutex = NULL;
+SDL_Thread *kexSoundSystem::thread = NULL;
+
+//
+// kexSoundSystem::kexSoundSystem
+//
+
+kexSoundSystem::kexSoundSystem(void) {
+}
+
+//
+// kexSoundSystem::~kexSoundSystem
+//
+
+kexSoundSystem::~kexSoundSystem(void) {
+}
+
+//
+// kexSoundSystem::Init
+//
+
+void kexSoundSystem::Init(void) {
+    int i;
+
+    alDevice = alcOpenDevice(NULL);
+    if(!alDevice) {
+        common.Error("kexSoundSystem::Init: Failed to create OpenAL device");
+    }
+
+    alContext = alcCreateContext(alDevice, NULL);
+    if(!alContext) {
+        common.Error("kexSoundSystem::Init: Failed to create OpenAL context");
+    }
+
+    if(!alcMakeContextCurrent(alContext)) {
+        common.Error("kexSoundSystem::Init: Failed to set current context");
+    }
+
+    for(i = 0; i < SND_MAX_SOURCES; i++) {
+        kexSoundSource *sndSrc = &sources[activeSources];
+
+        if(sndSrc->Generate() == false) {
+            break;
+        }
+
+        activeSources++;
+    }
+
+    alListener3f(AL_POSITION, 0, 0, 0);
+
+    kexSoundSystem::mutex = SDL_CreateMutex();
+    kexSoundSystem::thread = SDL_CreateThread(kexSoundSystem::Thread, "SoundThread", NULL);
+
+    command.Add("printsoundinfo", FCmd_SoundInfo);
+    command.Add("playsoundshader", FCmd_LoadShader);
+
+    common.Printf("Sound System Initialized (%s)\n", GetDeviceName());
+}
+
+//
+// kexSoundSystem::Shutdown
+//
+
+void kexSoundSystem::Shutdown(void) {
+    int i;
+    kexWavFile *wavFile;
+
+    kexSoundSystem::EnterCriticalSection();
+    bKillSoundThread = true;
+    kexSoundSystem::ExitCriticalSection();
+
+    SDL_WaitThread(kexSoundSystem::thread, NULL);
+    SDL_DestroyMutex(kexSoundSystem::mutex);
+
+    for(i = 0; i < activeSources; i++) {
+        sources[i].Delete();
+    }
+
+    for(i = 0; i < MAX_HASH; i++) {
+        wavFile = wavList.hashlist[i];
+
+        if(wavFile == NULL) {
             continue;
+        }
 
-        alDeleteBuffers(1, &wave->buffer);
+        wavFile->Delete();
     }
 
     alcMakeContextCurrent(NULL);
@@ -99,213 +511,127 @@ void Snd_Shutdown(void)
 }
 
 //
-// Snd_EnterCriticalSection
+// kexSoundSystem::Thread
 //
 
-void Snd_EnterCriticalSection(void)
-{
-    SDL_LockMutex(snd_mutex);
+int SDLCALL kexSoundSystem::Thread(void *param) {
+    long start = SDL_GetTicks();
+    long delay = 0;
+    int i;
+
+    while(1) {
+        kexSoundSystem::EnterCriticalSection();
+        for(i = 0; i < soundSystem.GetNumActiveSources(); i++) {
+            soundSystem.GetSources()[i].Update();
+        }
+        kexSoundSystem::ExitCriticalSection();
+
+        kexSoundSystem::time++;
+        // try to avoid incremental time de-syncs
+        delay = kexSoundSystem::time - (SDL_GetTicks() - start);
+
+        if(delay > 0) {
+            sysMain.Sleep(delay);
+        }
+
+        if(kexSoundSystem::bKillSoundThread) {
+            break;
+        }
+    }
+
+    return 0;
 }
 
 //
-// Snd_ExitCriticalSection
+// kexSoundSystem::GetDeviceName
 //
 
-void Snd_ExitCriticalSection(void)
-{
-    SDL_UnlockMutex(snd_mutex);
-}
-
-//
-// Snd_GetDeviceName
-//
-
-char *Snd_GetDeviceName(void)
-{
+char *kexSoundSystem::GetDeviceName(void) {
     return (char*)alcGetString(alDevice, ALC_DEVICE_SPECIFIER);
 }
 
 //
-// Snd_GetWaveFormat
+// kexSoundSystem::EnterCriticalSection
 //
 
-int Snd_GetWaveFormat(wave_t *wave)
-{
-    switch(wave->channels)
-    {
-    case 1:
-        switch(wave->bits)
-        {
-        case 8:
-            return AL_FORMAT_MONO8;
-        case 16:
-            return AL_FORMAT_MONO16;
-        }
-        break;
-    case 2:
-        switch(wave->bits)
-        {
-        case 8:
-            return AL_FORMAT_STEREO8;
-        case 16:
-            return AL_FORMAT_STEREO16;
-        }
-        break;
-    default:
-        common.Error("Snd_GetWaveFormat: Unsupported number of channels - %i", wave->channels);
-        return -1;
-    }
-
-    common.Error("Snd_GetWaveFormat: Unknown bits format - %i", wave->bits);
-    return -1;
+void kexSoundSystem::EnterCriticalSection(void) {
+    SDL_LockMutex(kexSoundSystem::mutex);
 }
 
 //
-// Snd_CompareWaveTag
+// kexSoundSystem::ExitCriticalSection
 //
 
-kbool Snd_CompareWaveTag(byte *buf, const char *tag)
-{
-    return
-        (buf[0] == tag[0] &&
-         buf[1] == tag[1] &&
-         buf[2] == tag[2] &&
-         buf[3] == tag[3]);
+void kexSoundSystem::ExitCriticalSection(void) {
+    SDL_UnlockMutex(kexSoundSystem::mutex);
 }
 
 //
-// Snd_AllocWave
+// kexSoundSystem::StopAll
 //
 
-wave_t *Snd_AllocWave(const char *name, byte *data)
-{
-    wave_t *wave;
-    unsigned int hash;
-
-    if(strlen(name) >= MAX_FILEPATH)
-        common.Error("Snd_AllocWave: \"%s\" is too long", name);
-
-    wave = (wave_t*)Z_Calloc(sizeof(wave_t), PU_SOUND, 0);
-    strcpy(wave->name, name);
-
-    wave->waveFile = data;
-
-    if(!Snd_CompareWaveTag(data, "RIFF"))
-        common.Error("Snd_AllocWave: RIFF header not found");
-    if(!Snd_CompareWaveTag(data + 8, "WAVE"))
-        common.Error("Snd_AllocWave: WAVE header not found");
-    if(!Snd_CompareWaveTag(data + 12, "fmt "))
-        common.Error("Snd_AllocWave: fmt header not found");
-    if(!Snd_CompareWaveTag(data + 36, "data"))
-        common.Error("Snd_AllocWave: data header not found");
-
-    if(*(data + 16) != 16)
-        common.Error("Snd_AllocWave: WAV chunk size must be 16");
-
-    wave->formatCode    = *(short*)(data + 20);
-    wave->channels      = *(short*)(data + 22);
-    wave->samples       = *(int*)(data + 24);
-    wave->bytes         = *(int*)(data + 28);
-    wave->blockAlign    = *(short*)(data + 32);
-    wave->bits          = *(short*)(data + 34);
-    wave->waveSize      = *(int*)(data + 40);
-    wave->data          = data + 44;
-
-    Snd_EnterCriticalSection();
-
-    alGetError();
-    alGenBuffers(1, &wave->buffer);
-
-    if(alGetError() != AL_NO_ERROR)
-    {
-        Snd_ExitCriticalSection();
-        common.Error("Snd_AllocWave: failed to create buffer for %s", name);
-    }
-
-    alBufferData(wave->buffer, Snd_GetWaveFormat(wave),
-        wave->data, wave->waveSize, wave->samples);
-
-    Snd_ExitCriticalSection();
-
-    hash = common.HashFileName(name);
-    wave->next = wave_hashlist[hash];
-    wave_hashlist[hash] = wave;
-
-    return wave;
-}
-
-//
-// Snd_FindWave
-//
-
-wave_t *Snd_FindWave(const char *name)
-{
-    wave_t *wave;
-    unsigned int hash;
-
-    if(name[0] == 0)
-        return NULL;
-
-    hash = common.HashFileName(name);
-
-    for(wave = wave_hashlist[hash]; wave; wave = wave->next)
-    {
-        if(!strcmp(name, wave->name))
-            return wave;
-    }
-
-    return NULL;
-}
-
-//
-// Snd_CacheWaveFile
-//
-
-wave_t *Snd_CacheWaveFile(const char *name)
-{
-    wave_t *wave;
-
-    if(name[0] == 0)
-        return NULL;
-
-    wave = Snd_FindWave(name);
-
-    if(wave == NULL)
-    {
-        byte *data;
-
-        if(fileSystem.OpenFile(name, &data, PU_SOUND) == 0)
-            return NULL;
-
-        wave = Snd_AllocWave(name, data);
-    }
-
-    return wave;
-}
-
-//
-// Snd_GetAvailableSource
-//
-
-sndSource_t *Snd_GetAvailableSource(void)
-{
+void kexSoundSystem::StopAll(void) {
     int i;
-    sndSource_t *src = NULL;
 
-    for(i = 0; i < nSndSources; i++)
-    {
-        sndSource_t *sndSrc = &sndSources[i];
+    for(i = 0; i < activeSources; i++) {
+        sources[i].Stop();
+    }
+}
 
-        if(sndSrc->inUse)
+//
+// kexSoundSystem::UpdateListener
+//
+
+void kexSoundSystem::UpdateListener(void) {
+    ALfloat orientation[6];
+
+    if(localWorld.IsLoaded() == false) {
+        return;
+    }
+
+    kexCamera *camera = localWorld.Camera();
+    kexAngle angles = camera->GetAngles();
+
+    float sy = kexMath::Sin(angles.yaw);
+    float cy = kexMath::Cos(angles.yaw);
+    float sp = kexMath::Sin(angles.pitch);
+    float cp = kexMath::Cos(angles.pitch);
+    float sr = kexMath::Sin(angles.roll);
+    float cr = kexMath::Cos(angles.roll);
+    
+    orientation[0] = sy * cp;
+    orientation[1] = -sp;
+    orientation[2] = cy * cp;
+    orientation[3] = cr * sp * sy + -sr * cy;
+    orientation[4] = cr * cp;
+    orientation[5] = cr * sp * cy + -sr * -sy;
+
+    kexSoundSystem::EnterCriticalSection();
+
+    alListenerfv(AL_ORIENTATION, orientation);
+    alListener3f(AL_POSITION,
+        SND_VECTOR2METRICS(camera->GetOrigin().ToFloatPtr()));
+
+    kexSoundSystem::ExitCriticalSection();
+}
+
+//
+// kexSoundSystem::GetAvailableSource
+//
+
+kexSoundSource *kexSoundSystem::GetAvailableSource(void) {
+    int i;
+    kexSoundSource *src = NULL;
+
+    for(i = 0; i < activeSources; i++) {
+        kexSoundSource *sndSrc = &sources[i];
+
+        if(sndSrc->InUse()) {
             continue;
+        }
 
         src = sndSrc;
-
-        src->startTime  = sndTime;
-        src->inUse      = true;
-        src->playing    = false;
-        src->volume     = 1.0f;
-        src->pitch      = 1.0f;
+        src->Reset();
         break;
     }
 
@@ -313,345 +639,66 @@ sndSource_t *Snd_GetAvailableSource(void)
 }
 
 //
-// Snd_FreeSource
+// kexSoundSystem::CacheWavFile
 //
 
-void Snd_FreeSource(sndSource_t *src)
-{
-    src->inUse      = false;
-    src->playing    = false;
-    src->sfx        = NULL;
-    src->volume     = 1.0f;
-    src->pitch      = 1.0f;
-    src->startTime  = 0;
+kexWavFile *kexSoundSystem::CacheWavFile(const char *name) {
+    kexWavFile *wavFile = NULL;
 
-    Actor_SetTarget(&src->actor, NULL);
-    alSource3f(src->handle, AL_POSITION, 0, 0, 0);
-}
+    if(!(wavFile = wavList.Find(name))) {
+        byte *data;
 
-//
-// Snd_UpdateListener
-//
-
-void Snd_UpdateListener(void)
-{
-    if(client.LocalPlayer().actor)
-    {
-        ALfloat orientation[6];
-        float sy = kexMath::Sin(client.LocalPlayer().camera->angles[0]);
-        float cy = kexMath::Cos(client.LocalPlayer().camera->angles[0]);
-        float sp = kexMath::Sin(client.LocalPlayer().camera->angles[1]);
-        float cp = kexMath::Cos(client.LocalPlayer().camera->angles[1]);
-        float sr = kexMath::Sin(client.LocalPlayer().camera->angles[2]);
-        float cr = kexMath::Cos(client.LocalPlayer().camera->angles[2]);
-        
-        orientation[0] = sy * cp;
-        orientation[1] = -sp;
-        orientation[2] = cy * cp;
-        orientation[3] = cr * sp * sy + -sr * cy;
-        orientation[4] = cr * cp;
-        orientation[5] = cr * sp * cy + -sr * -sy;
-
-        Snd_EnterCriticalSection();
-
-        alListenerfv(AL_ORIENTATION, orientation);
-        alListener3f(AL_POSITION,
-            SND_VECTOR2METRICS(client.LocalPlayer().camera->origin));
-
-        Snd_ExitCriticalSection();
-    }
-}
-
-//
-// Snd_StopAll
-//
-
-void Snd_StopAll(void)
-{
-    int i;
-
-    for(i = 0; i < nSndSources; i++)
-    {
-        sndSource_t *sndSrc = &sndSources[i];
-        alSourceStop(sndSrc->handle);
-    }
-}
-
-//
-// Snd_UpdateSources
-//
-
-static void Snd_UpdateSources(void)
-{
-    int i;
-
-    Snd_EnterCriticalSection();
-
-    for(i = 0; i < nSndSources; i++)
-    {
-        sndSource_t *sndSrc = &sndSources[i];
-
-        if(!sndSrc->inUse)
-            continue;
-
-        if(sndSrc->sfx != NULL)
-        {
-            wave_t *wave = sndSrc->sfx->wave;
-
-            if(!sndSrc->playing)
-            {
-                float time;
-
-                if(sndSrc->sfx->random != 1.0f &&
-                    (rand()%100) >= (sndSrc->sfx->random * 100.0f))
-                    continue;
-
-                time = (float)sndSrc->startTime +
-                    SND_INT2TIME(sndSrc->sfx->delay);
-
-                if(time > sndTime)
-                    continue;
-
-                alSourceQueueBuffers(sndSrc->handle, 1, &wave->buffer);
-
-                if(cvarPitchShift.GetBool())
-                    alSourcef(sndSrc->handle, AL_PITCH, sndSrc->sfx->dbFreq);
-
-                if(sndSrc->actor && sndSrc->actor != client.LocalPlayer().actor)
-                {
-                    alSourcef(sndSrc->handle, AL_ROLLOFF_FACTOR, sndSrc->sfx->rolloffFactor);
-                    alSourcei(sndSrc->handle, AL_SOURCE_RELATIVE, AL_FALSE);
-                    alSource3f(sndSrc->handle, AL_POSITION,
-                        SND_VECTOR2METRICS(sndSrc->actor->origin));
-                }
-                else
-                    alSourcei(sndSrc->handle, AL_SOURCE_RELATIVE, AL_TRUE);
-
-                alSourcef(sndSrc->handle, AL_GAIN,
-                    sndSrc->sfx->gain *
-                    sndSrc->volume *
-                    cvarSoundVolume.GetFloat());
-
-                alSourcePlay(sndSrc->handle);
-
-                sndSrc->playing = true;
-                sndSrc->startTime = sndTime;
-            }
-            else
-            {
-                ALint state;
-
-                alGetSourcei(sndSrc->handle, AL_SOURCE_STATE, &state);
-                if(state != AL_PLAYING)
-                {
-                    alSourceStop(sndSrc->handle);
-                    alSourceUnqueueBuffers(sndSrc->handle, 1, &wave->buffer);
-                    Snd_FreeSource(sndSrc);
-                }
-                else
-                {
-                    if(sndSrc->sfx->bLerpVol && sndSrc->playing)
-                    {
-                        float time = (float)sndSrc->startTime +
-                            SND_INT2TIME(sndSrc->sfx->gainLerpDelay);
-
-                        if(time <= sndTime)
-                        {
-                            float volLerp = (1.0f / (float)sndSrc->sfx->gainLerpTime);
-                            sndSrc->volume = (sndSrc->sfx->gainLerpEnd - sndSrc->volume) *
-                                volLerp + sndSrc->volume;
-
-                            if(sndSrc->volume > 1)
-                                sndSrc->volume = 1;
-                            if(sndSrc->volume < 0.01f)
-                            {
-                                alSourceStop(sndSrc->handle);
-                                alSourceUnqueueBuffers(sndSrc->handle, 1, &wave->buffer);
-                                Snd_FreeSource(sndSrc);
-                                continue;
-                            }
-
-                            alSourcef(sndSrc->handle, AL_GAIN,
-                                sndSrc->sfx->gain *
-                                sndSrc->volume *
-                                cvarSoundVolume.GetFloat());
-                        }
-                    }
-
-                    if(sndSrc->sfx->bLerpFreq && sndSrc->playing && cvarPitchShift.GetBool())
-                    {
-                        float time = (float)sndSrc->startTime +
-                            SND_INT2TIME(sndSrc->sfx->freqLerpDelay);
-
-                        if(time <= sndTime)
-                        {
-                            float freqLerp = (1.0f / (float)sndSrc->sfx->freqLerpTime);
-                            sndSrc->pitch = (sndSrc->sfx->freqLerpEnd - sndSrc->pitch) *
-                                freqLerp + sndSrc->pitch;
-
-                            alSourcef(sndSrc->handle, AL_PITCH, sndSrc->pitch);
-                        }
-                    }
-                }
-            }
+        if(fileSystem.OpenFile(name, &data, PU_SOUND) == 0) {
+            return NULL;
         }
+
+        wavFile = wavList.Create(name, PU_SOUND);
+        wavList.Add(wavFile);
+
+        wavFile->Allocate(name, data);
     }
 
-    Snd_ExitCriticalSection();
+    return wavFile;
 }
 
 //
-// Thread_SoundHandler
+// kexSoundSystem::CacheShaderFile
 //
 
-static int SDLCALL Thread_SoundHandler(void *param)
-{
-    long start = SDL_GetTicks();
-    long delay = 0;
+kexSoundShader *kexSoundSystem::CacheShaderFile(const char *name) {
+    kexSoundShader *snd;
 
-    while(1)
-    {
-        Snd_UpdateSources();
-        sndTime++;
-        // try to avoid incremental time de-syncs
-        delay = sndTime - (SDL_GetTicks() - start);
-
-        if(delay > 0)
-            sysMain.Sleep(delay);
-
-        if(bKillSoundThread)
-            break;
+    if(name == NULL || name[0] == 0) {
+        return NULL;
     }
 
-    return 0;
+    if(!(snd = shaderList.Find(name))) {
+        kexLexer *lexer;
+
+        if(!(lexer = parser.Open(name))) {
+            return NULL;
+        }
+
+        snd = shaderList.Create(name, PU_SOUND);
+        shaderList.Add(snd);
+
+        snd->Load(lexer);
+        parser.Close();
+    }
+
+    return snd;
 }
 
 //
-// FCmd_SoundInfo
+// kexSoundSystem::PlaySound
 //
 
-static void FCmd_SoundInfo(void)
-{
-    common.CPrintf(COLOR_CYAN, "------------- Sound Info -------------\n");
-    common.CPrintf(COLOR_GREEN, "Device: %s\n", Snd_GetDeviceName());
-    common.CPrintf(COLOR_GREEN, "Available Sources: %i\n", nSndSources);
-}
+void kexSoundSystem::PlaySound(const char *name, kexActor *actor) {
+    kexSoundShader *sndShader;
 
-//
-// FCmd_LoadTestSound
-//
-
-static void FCmd_LoadTestSound(void)
-{
-    wave_t *wave;
-    ALuint buffer;
-    ALint state;
-
-    if(command.GetArgc() < 2)
-        return;
-
-    wave = Snd_CacheWaveFile(command.GetArgv(1));
-
-    if(wave == NULL)
-        return;
-
-    common.CPrintf(COLOR_GREEN, "bits: %i\n", wave->bits);
-    common.CPrintf(COLOR_GREEN, "block align: %i\n", wave->blockAlign);
-    common.CPrintf(COLOR_GREEN, "bytes: %i\n", wave->bytes);
-    common.CPrintf(COLOR_GREEN, "samples: %i\n", wave->samples);
-    common.CPrintf(COLOR_GREEN, "size: %i\n", wave->waveSize);
-    common.CPrintf(COLOR_GREEN, "channels: %i\n\n", wave->channels);
-
-    alGetError();
-    alGenBuffers(1, &buffer);
-
-    if(alGetError() != AL_NO_ERROR)
-        return;
-
-    alBufferData(buffer, Snd_GetWaveFormat(wave), wave->data, wave->waveSize, wave->samples);
-    alSourceQueueBuffers(sndSources[0].handle, 1, &buffer);
-    alSourcePlay(sndSources[0].handle);
-
-    if(alGetError() != AL_NO_ERROR)
-    {
-        alSourceUnqueueBuffers(sndSources[0].handle, 1, &buffer);
-        alDeleteBuffers(1, &buffer);
+    if(!(sndShader = CacheShaderFile(name))) {
         return;
     }
 
-    do
-    {
-        alGetSourcei(sndSources[0].handle, AL_SOURCE_STATE, &state);
-    } while(state == AL_PLAYING);
-
-    alSourceUnqueueBuffers(sndSources[0].handle, 1, &buffer);
-    alDeleteBuffers(1, &buffer);
-}
-
-//
-// FCmd_LoadShader
-//
-
-static void FCmd_LoadShader(void)
-{
-    if(command.GetArgc() < 2)
-        return;
-
-    Snd_PlayShader(command.GetArgv(1), NULL);
-}
-
-//
-// Snd_Init
-//
-
-void Snd_Init(void)
-{
-    int i;
-    unsigned int handle;
-
-    alDevice = alcOpenDevice(NULL);
-    if(!alDevice)
-        common.Error("Snd_Init: Failed to create OpenAL device");
-
-    alContext = alcCreateContext(alDevice, NULL);
-    if(!alContext)
-        common.Error("Snd_Init: Failed to create OpenAL context");
-
-    if(!alcMakeContextCurrent(alContext))
-        common.Error("Snd_Init: Failed to set current context");
-
-    for(i = 0; i < SND_MAX_SOURCES; i++)
-    {
-        sndSource_t *sndSrc = &sndSources[nSndSources];
-
-        alGetError();
-        alGenSources(1, &handle);
-
-        if(alGetError() != AL_NO_ERROR)
-            break;
-
-        sndSrc->handle      = handle;
-        sndSrc->startTime   = 0;
-        sndSrc->inUse       = false;
-        sndSrc->looping     = false;
-        sndSrc->playing     = false;
-        sndSrc->sfx         = NULL;
-        sndSrc->volume      = 1.0f;
-
-        alSourcei(handle, AL_LOOPING, AL_FALSE);
-        alSourcei(sndSrc->handle, AL_SOURCE_RELATIVE, AL_TRUE);
-        alSourcef(handle, AL_GAIN, 1.0f);
-        alSourcef(handle, AL_PITCH, 1.0f);
-        nSndSources++;
-    }
-
-    alListener3f(AL_POSITION, 0, 0, 0);
-
-    snd_mutex = SDL_CreateMutex();
-    bKillSoundThread = false;
-    snd_thread = SDL_CreateThread(Thread_SoundHandler, "SoundThread", NULL);
-
-    command.Add("printsoundinfo", FCmd_SoundInfo);
-    command.Add("playsound", FCmd_LoadTestSound);
-    command.Add("playsoundshader", FCmd_LoadShader);
+    sndShader->Play(actor);
 }

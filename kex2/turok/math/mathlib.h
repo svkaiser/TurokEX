@@ -257,6 +257,7 @@ public:
     float                   ToYaw(void) const;
     float                   ToPitch(void) const;
     kexStr                  ToString(void) const;
+    float                   *ToFloatPtr(void);
     kexVec3                 ScreenProject(kexMatrix &proj, kexMatrix &model,
                                           const int width, const int height,
                                           const int wx, const int wy);

@@ -482,7 +482,7 @@ JS_FASTNATIVE_BEGIN(Sys, spawnFx)
             char *bytes;
 
             JS_GETSTRING(str, bytes, v, 6);
-            Snd_PlayShader(bytes, (gActor_t*)fx);
+            //soundSystem.PlaySound(bytes, (gActor_t*)fx);
             JS_free(cx, bytes);
         }
 
