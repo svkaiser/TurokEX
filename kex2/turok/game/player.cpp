@@ -435,8 +435,9 @@ int kexLocalPlayer::ActionHeldTime(const kexStr &str) {
 //
 
 void kexLocalPlayer::LocalTick(void) {
-    if(client.GetState() != CL_STATE_INGAME)
+    if(client.GetState() != CL_STATE_INGAME) {
         return;
+    }
 
     timeStamp = (float)cmd.timestamp.i;
     frameTime = cmd.frametime.f;

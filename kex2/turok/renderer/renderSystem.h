@@ -24,6 +24,7 @@
 #define __RENDERSYS_H__
 
 #include "textureObject.h"
+#include "renderFont.h"
 #include "cachefilelist.h"
 
 typedef enum {
@@ -97,9 +98,11 @@ public:
     static const int                SCREEN_HEIGHT       = 240;
     static const int                MAX_TEXTURE_UNITS   = 4;
 
-    static kexTexture               defaultTexture;
-    static kexTexture               whiteTexture;
-    static kexTexture               blackTexture;
+    kexTexture                      defaultTexture;
+    kexTexture                      whiteTexture;
+    kexTexture                      blackTexture;
+
+    kexFont                         consoleFont;
 
     typedef struct {
         dtexture                    currentTexture;

@@ -146,10 +146,9 @@ void kexSystem::Shutdown(void) {
     J_Shutdown();
     Snd_Shutdown();
     FX_Shutdown();
-    Tex_Shutdown();
-    R_Shutdown();
     G_Shutdown();
 
+    renderSystem.Shutdown();
     scriptManager.Shutdown();
     fileSystem.Shutdown();
     client.Shutdown();
@@ -442,7 +441,6 @@ void kexSystem::Main(int argc, char **argv) {
     renderSystem.Init();
 
     R_Init();
-    common.Printf("Renderer Initialized\n");
 
     kexRenderWorld::Init();
 

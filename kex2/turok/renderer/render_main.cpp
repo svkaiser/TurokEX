@@ -1169,7 +1169,7 @@ void R_Init(void)
     //command.Add("showcollision", FCmd_ShowCollision);
     //command.Add("showbbox", FCmd_ShowBoundingBox);
     //command.Add("showgrid", FCmd_ShowGrid);
-    command.Add("showorigin", FCmd_ShowOrigin);
+    //command.Add("showorigin", FCmd_ShowOrigin);
     command.Add("showpnmls", FCmd_ShowPlaneNormals);
     //command.Add("showradius", FCmd_ShowRadius);
     command.Add("drawwireframe", FCmd_ShowWireFrame);

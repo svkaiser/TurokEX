@@ -1300,9 +1300,6 @@ void Actor_Setup(gActor_t *actor)
 
 void Actor_DrawDebugStats(void)
 {
-    Draw_Text(32, 192, COLOR_GREEN, 1, "num actors: %i", numActors);
-    Draw_Text(32, 208, COLOR_GREEN, 1, "num stale actors: %i", numStaleActors);
-
     numActors = 0;
     numStaleActors = 0;
 }

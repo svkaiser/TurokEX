@@ -62,6 +62,7 @@ public:
     kexCamera                           *Camera(void) { return &camera; };
     kexVec3                             &GetGravity(void) { return gravity; }
     void                                SetGravity(const kexVec3 &in) { gravity = in; }
+    const int                           GetTicks(void) const { return ticks; }
 
     kexLinklist<kexWorldActor>          actors;
     kexPtrArray<gridBound_t*>           gridBounds;

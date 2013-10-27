@@ -27,7 +27,7 @@ template<class type>
 class kexFileCacheList {
 public:
     void                Add(type *o);
-    type                *Create(const char *filename);
+    type                *Create(const char *filename, int zoneTag = PU_STATIC);
     type                *Find(const char *name) const;
 
 private:
@@ -51,8 +51,8 @@ void kexFileCacheList<type>::Add(type *o) {
 // kexFileCacheList::Create
 //
 template<class type>
-type *kexFileCacheList<type>::Create(const char *filename) {
-    type *o = (type*)Z_Calloc(sizeof(type), PU_STATIC, 0);
+type *kexFileCacheList<type>::Create(const char *filename, int zoneTag) {
+    type *o = (type*)Z_Calloc(sizeof(type), zoneTag, 0);
     strncpy(o->filePath, filename, MAX_FILEPATH);
 
     return o;

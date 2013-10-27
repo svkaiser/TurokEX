@@ -149,6 +149,10 @@ float Random_CFloat(void);
 //
 void BBox_Transform(bbox_t srcBox, mtx_t matrix, bbox_t *out);
 
+class kexVec3;
+class kexVec4;
+class kexMatrix;
+
 class kexMath {
 public:
     static float            Sin(float x) { return sinf(x); }
@@ -169,6 +173,11 @@ public:
     static int              RoundPowerOfTwo(int x);
     static float            InvSqrt(float x);
 
+    static void             CubicCurve(const kexVec3 &start, const kexVec3 &end, const float time,
+                                       const kexVec3 &point, kexVec3 *vec);
+    static void             QuadraticCurve(const kexVec3 &start, const kexVec3 &end, const float time,
+                                           const kexVec3 &pt1, const kexVec3 &pt2, kexVec3 *vec);
+
     static void             InitObject(void);
 };
 
@@ -184,10 +193,6 @@ public:
 private:
     static int              seed;
 };
-
-class kexVec3;
-class kexVec4;
-class kexMatrix;
 
 class kexQuat {
 public:

@@ -178,12 +178,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/LTCG"
-				AdditionalDependencies="SDL2.lib SDL2main.lib opengl32.lib glu32.lib enet.lib angelscript.lib ws2_32.lib winmm.lib js32.lib openal32.lib eaxguid.lib"
+				AdditionalDependencies="SDL2.lib SDL2main.lib opengl32.lib glu32.lib enet.lib angelscriptd.lib ws2_32.lib winmm.lib js32.lib openal32.lib eaxguid.lib"
 				OutputFile="$(OutDir)\msvc\bin\KEX2.EXE"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				IgnoreDefaultLibraryNames="LIBCMT;MSVCRT"
+				IgnoreDefaultLibraryNames="LIBCMT;MSVCRT;LIBCMTD"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
 				GenerateMapFile="true"
@@ -249,10 +248,6 @@
 				Name="opengl"
 				>
 				<File
-					RelativePath="..\turok\opengl\gl_draw.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\turok\opengl\gl_images.cpp"
 					>
 				</File>
@@ -306,6 +301,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\render_shadows.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\renderFont.cpp"
 					>
 				</File>
 				<File
@@ -715,6 +714,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\render.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\renderFont.h"
 					>
 				</File>
 				<File

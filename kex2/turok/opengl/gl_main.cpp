@@ -633,7 +633,6 @@ void GL_Init(void)
     //if(has_GL_EXT_texture_filter_anisotropic)
         //dglGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max_anisotropic);
 
-    Draw_Init();
     Tex_Init();
 }
 

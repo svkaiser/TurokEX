@@ -134,8 +134,8 @@ void Debug_DrawStats(void)
 
             stat = &perfStats.data[i];
 
-            Draw_Text(32, 64 + debugStats_RowOffset, COLOR_GREEN, 1, "%s: %f",
-                stat->name, stat->avgValue);
+            //Draw_Text(32, 64 + debugStats_RowOffset, COLOR_GREEN, 1, "%s: %f",
+                //stat->name, stat->avgValue);
 
             debugStats_RowOffset += 16;
         }

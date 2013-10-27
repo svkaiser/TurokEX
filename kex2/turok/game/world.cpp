@@ -490,6 +490,12 @@ void kexWorld::InitObject(void) {
 
     scriptManager.Engine()->RegisterObjectMethod(
         "kWorld",
+        "const int GetTicks(void) const",
+        asMETHODPR(kexWorld, GetTicks, (void)const, const int),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
         "kActor @SpawnActor(kStr &in, kStr &in, kVec3 &in, kAngle &in)",
         asMETHODPR(kexWorld, SpawnActor,
         (kexStr &className, kexStr &component,

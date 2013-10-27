@@ -33,6 +33,7 @@ public:
     void            DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b);
     void            DrawRadius(float x, float y, float z, float radius, float height,
                                byte r, byte g, byte b);
+    void            DrawOrigin(float x, float y, float z, float size);
 
     static void     Init(void);
 

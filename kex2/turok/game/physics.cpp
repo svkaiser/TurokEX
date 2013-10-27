@@ -290,6 +290,11 @@ void kexPhysics::Think(const float timeDelta) {
         return;
     }
 
+    // don't update on first two ticks
+    if(localWorld.GetTicks() <= 1) {
+        return;
+    }
+
     traceInfo_t trace;
     kexVec3 oldVelocity = velocity;
     kexVec3 start = owner->GetOrigin();

@@ -104,10 +104,6 @@ void* GL_RegisterProc(const char *address) {
     return proc;
 }
 
-kexTexture kexRenderSystem::defaultTexture;
-kexTexture kexRenderSystem::whiteTexture;
-kexTexture kexRenderSystem::blackTexture;
-
 //
 // kexRenderSystem::kexRenderSystem
 //
@@ -135,9 +131,6 @@ kexRenderSystem::kexRenderSystem(void) {
 //
 
 kexRenderSystem::~kexRenderSystem(void) {
-    defaultTexture.Delete();
-    whiteTexture.Delete();
-    blackTexture.Delete();
 }
 
 //
@@ -273,6 +266,8 @@ void kexRenderSystem::Init(void) {
         Z_Free(data);
     }
 
+    consoleFont.LoadKFont("fonts/confont.kfont");
+
     if(has_GL_EXT_texture_filter_anisotropic) {
         dglGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropic);
     }
@@ -290,6 +285,14 @@ void kexRenderSystem::Init(void) {
 //
 
 void kexRenderSystem::Shutdown(void) {
+    defaultTexture.Delete();
+    whiteTexture.Delete();
+    blackTexture.Delete();
+
+    consoleFont.Texture()->Delete();
+
+    Z_FreeTags(PU_MODEL, PU_MODEL);
+    Z_FreeTags(PU_TEXTURE, PU_TEXTURE);
 }
 
 //
@@ -573,7 +576,7 @@ kexTexture *kexRenderSystem::CacheTexture(const char *name, texClampMode_t clamp
     if(!(texture = textureList.Find(name))) {
         byte *data;
 
-        texture = textureList.Create(name);
+        texture = textureList.Create(name, PU_TEXTURE);
         texture->SetMasked(true);
 
         data = texture->LoadFromFile(name);

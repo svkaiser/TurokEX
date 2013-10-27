@@ -133,23 +133,6 @@ void GL_Init(void);
 dtexture GL_ScreenToTexture(void);
 
 //
-// DRAW
-//
-void Draw_Init(void);
-void Draw_SetBigTextColor(byte r1, byte g1, byte b1, byte r2, byte g2, byte b2);
-float Draw_BigText(float x, float y, byte alpha, kbool centered,
-                   float scale, const char* string);
-void Draw_ShadowedText(float x, float y, byte alpha, kbool centered,
-                       float scale, const char* string);
-void Draw_Pic(const char *pic, float x, float y, byte alpha, float scale);
-void Draw_Tile(const char *pic, float x, float y,
-               float tx1, float ty1, float tx2, float ty2,
-               float width, float height,
-               byte r, byte g, byte b, byte alpha);
-float Draw_Text(float x, float y, rcolor color,
-                float scale, const char* string, ...);
-
-//
 // IMAGES
 //
 void Img_LoadTGA(const char *name, byte **output,

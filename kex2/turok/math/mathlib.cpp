@@ -74,6 +74,45 @@ float kexMath::InvSqrt(float x) {
 }
 
 //
+// kexMath::CubicCurve
+//
+
+void kexMath::CubicCurve(const kexVec3 &start, const kexVec3 &end, const float time,
+                         const kexVec3 &point, kexVec3 *vec) {
+    int i;
+    float xyz[3];
+
+    for(i = 0; i < 3; i++) {
+        xyz[i] = kexMath::Pow(1-time, 2) * start[i] +
+            (2 * (1-time)) * time * point[i] + kexMath::Pow(time, 2) * end[i];
+    }
+
+    vec->x = xyz[0];
+    vec->y = xyz[1];
+    vec->z = xyz[2];
+}
+
+//
+// kexMath::QuadraticCurve
+//
+
+void kexMath::QuadraticCurve(const kexVec3 &start, const kexVec3 &end, const float time,
+                             const kexVec3 &pt1, const kexVec3 &pt2, kexVec3 *vec) {
+    int i;
+    float xyz[3];
+
+    for(i = 0; i < 3; i++) {
+        xyz[i] = kexMath::Pow(1-time, 3) * start[i] + (3 * kexMath::Pow(1-time, 2)) *
+            time * pt1[i] + (3 * (1-time)) * kexMath::Pow(time, 2) * pt2[i] +
+            kexMath::Pow(time, 3) * end[i];
+    }
+
+    vec->x = xyz[0];
+    vec->y = xyz[1];
+    vec->z = xyz[2];
+}
+
+//
 // kexMath::InitObject
 //
 

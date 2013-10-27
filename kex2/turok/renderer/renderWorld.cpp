@@ -84,6 +84,18 @@ static void FCmd_ShowRadius(void) {
 }
 
 //
+// FCmd_ShowOrigin
+//
+
+static void FCmd_ShowOrigin(void) {
+    if(command.GetArgc() < 1) {
+        return;
+    }
+
+    renderWorld.bShowOrigin ^= 1;
+}
+
+//
 // kexRenderWorld::kexRenderWorld
 //
 
@@ -108,6 +120,7 @@ void kexRenderWorld::Init(void) {
     command.Add("showgridbounds", FCmd_ShowGridBounds);
     command.Add("showbbox", FCmd_ShowBoundingBox);
     command.Add("showradius", FCmd_ShowRadius);
+    command.Add("showorigin", FCmd_ShowOrigin);
 }
 
 //
@@ -635,4 +648,35 @@ void kexRenderWorld::DrawRadius(float x, float y, float z, float radius, float h
     renderSystem.SetState(GLSTATE_CULL, true);
     renderSystem.SetState(GLSTATE_BLEND, false);
     renderSystem.SetState(GLSTATE_LIGHTING, true);
+}
+
+//
+// kexRenderWorld::DrawOrigin
+//
+
+void kexRenderWorld::DrawOrigin(float x, float y, float z, float size) {
+    renderSystem.SetState(GLSTATE_TEXTURE0, false);
+
+    dglDepthRange(0.0f, 0.0f);
+    dglLineWidth(2.0f);
+    dglBegin(GL_LINES);
+
+    // x
+    dglColor4ub(255, 0, 0, 255);
+    dglVertex3f(x, y, z);
+    dglVertex3f(x + size, y, z);
+    // y
+    dglColor4ub(0, 255, 0, 255);
+    dglVertex3f(x, y, z);
+    dglVertex3f(x, y + size, z);
+    // z
+    dglColor4ub(0, 0, 255, 255);
+    dglVertex3f(x, y, z);
+    dglVertex3f(x, y, z + size);
+
+    dglEnd();
+    dglLineWidth(1.0f);
+    dglDepthRange(0.0f, 1.0f);
+
+    renderSystem.SetState(GLSTATE_TEXTURE0, true);
 }
