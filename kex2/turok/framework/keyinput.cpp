@@ -205,8 +205,8 @@ bool kexInputKey::GetName(char *buff, int key) {
     }
     for(pkey = Keys; pkey->name; pkey++) {
         // F1 - F12 keys
-        if(key >= 26 && key <= 37) {
-            if(pkey->code == (SDLK_F1 + (key-26))) {
+        if(key >= SDL_SCANCODE_F1 && key <= SDL_SCANCODE_F12) {
+            if(pkey->code == SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_F1 + (key-SDL_SCANCODE_F1))) {
                 strcpy(buff, pkey->name);
                 return true;
             }

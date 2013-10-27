@@ -285,11 +285,21 @@ void kexRenderSystem::Init(void) {
 //
 
 void kexRenderSystem::Shutdown(void) {
+    kexTexture *texture;
+
     defaultTexture.Delete();
     whiteTexture.Delete();
     blackTexture.Delete();
 
     consoleFont.Texture()->Delete();
+
+    for(int i = 0; i < MAX_HASH; i++) {
+        if(!(texture = textureList.hashlist[i])) {
+            continue;
+        }
+
+        texture->Delete();
+    }
 
     Z_FreeTags(PU_MODEL, PU_MODEL);
     Z_FreeTags(PU_TEXTURE, PU_TEXTURE);
