@@ -58,6 +58,7 @@ public:
     void                                Trace(traceInfo_t *trace);
     void                                PlaySound(const char *name);
     void                                PlaySound(const kexStr &name);
+    void                                SetFogRGB(float r, float g, float b);
 
     bool                                IsLoaded(void) const { return bLoaded; }
     float                               DeltaTime(void) { return deltaTime; }
@@ -65,6 +66,13 @@ public:
     kexVec3                             &GetGravity(void) { return gravity; }
     void                                SetGravity(const kexVec3 &in) { gravity = in; }
     const int                           GetTicks(void) const { return ticks; }
+    float                               GetFogNear(void) { return currentFogNear; }
+    void                                SetFogNear(float n) { fogNear = n; }
+    float                               GetFogFar(void) { return currentFogFar; }
+    void                                SetFogFar(float f) { fogFar = f; }
+    float                               *GetCurrentFogRGB(void) { return currentFogRGB; }
+    bool                                FogEnabled(void) { return bEnableFog; }
+    void                                ToggleFog(bool toggle) { bEnableFog = toggle; }
 
     kexLinklist<kexWorldActor>          actors;
     kexPtrArray<gridBound_t*>           gridBounds;
@@ -93,6 +101,13 @@ private:
     int                                 ticks;
     float                               time;
     float                               deltaTime;
+    bool                                bEnableFog;
+    float                               fogNear;
+    float                               fogFar;
+    float                               fogRGB[4];
+    float                               currentFogNear;
+    float                               currentFogFar;
+    float                               currentFogRGB[4];
 };
 
 extern kexWorld localWorld;

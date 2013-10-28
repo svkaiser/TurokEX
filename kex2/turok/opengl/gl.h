@@ -80,6 +80,7 @@ d_inline void dglSetVertexColor(vtx_t *v, rcolor c, word count)
 #define GLSTATE_TEXGEN_T    8
 #define GLSTATE_DEPTHTEST   9
 #define GLSTATE_LIGHTING    10
+#define GLSTATE_FOG         11
 
 #define MAX_COORD 32768.0f
 

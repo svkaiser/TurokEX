@@ -37,6 +37,8 @@
 #include "world.h"
 #include "sound.h"
 
+#define FOG_LERP_SPEED  0.025f
+
 kexWorld localWorld;
 
 enum {
@@ -68,13 +70,22 @@ static const sctokens_t maptokens[scmap_end+1] = {
 //
 
 kexWorld::kexWorld(void) {
-    this->mapID         = -1;
-    this->nextMapID     = -1;
-    this->bLoaded       = false;
-    this->bReadyUnload  = false;
-    this->ticks         = 0;
-    this->time          = 0;
-    this->deltaTime     = 0;
+    this->mapID             = -1;
+    this->nextMapID         = -1;
+    this->bLoaded           = false;
+    this->bReadyUnload      = false;
+    this->ticks             = 0;
+    this->time              = 0;
+    this->deltaTime         = 0;
+    this->bEnableFog        = true;
+    this->fogFar            = 1024;
+    this->fogNear           = this->fogFar * 0.5f;
+    this->currentFogFar     = this->fogFar;
+    this->currentFogNear    = this->fogNear;
+
+    this->SetFogRGB(0, 0, 0);
+    this->fogRGB[3] = 1;
+    memcpy(this->currentFogRGB, this->fogRGB, sizeof(float) * 4);
 
     this->gravity.Set(0, -1, 0);
 }
@@ -144,6 +155,14 @@ void kexWorld::LocalTick(void) {
             continue;
         }
         actorRover->LocalTick();
+    }
+
+    if(bEnableFog) {
+        currentFogRGB[0]    = (fogRGB[0] - currentFogRGB[0]) * FOG_LERP_SPEED + currentFogRGB[0];
+        currentFogRGB[1]    = (fogRGB[1] - currentFogRGB[1]) * FOG_LERP_SPEED + currentFogRGB[1];
+        currentFogRGB[2]    = (fogRGB[2] - currentFogRGB[2]) * FOG_LERP_SPEED + currentFogRGB[2];
+        currentFogFar       = (fogFar - currentFogFar) * FOG_LERP_SPEED + currentFogFar;
+        currentFogNear      = (fogNear - currentFogNear) * FOG_LERP_SPEED + currentFogNear;
     }
 }
 
@@ -331,6 +350,14 @@ void kexWorld::PlaySound(const kexStr &name) {
 }
 
 //
+// kexWorld::SetFogRGB
+//
+
+void kexWorld::SetFogRGB(float r, float g, float b) {
+    fogRGB[0] = r; fogRGB[1] = g; fogRGB[2] = b;
+}
+
+//
 // kexWorld::ParseGridBound
 //
 
@@ -503,6 +530,48 @@ void kexWorld::InitObject(void) {
         "kWorld",
         "float DeltaTime(void)",
         asMETHODPR(kexWorld, DeltaTime, (void), float),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "void SetFogRGB(float, float, float)",
+        asMETHODPR(kexWorld, SetFogRGB, (float, float, float), void),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "float GetFogNear(void)",
+        asMETHODPR(kexWorld, GetFogNear, (void), float),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "void SetFogNear(float)",
+        asMETHODPR(kexWorld, SetFogNear, (float), void),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "float GetFogFar(void)",
+        asMETHODPR(kexWorld, GetFogFar, (void), float),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "void SetFogFar(float)",
+        asMETHODPR(kexWorld, SetFogFar, (float), void),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "bool FogEnabled(void)",
+        asMETHODPR(kexWorld, FogEnabled, (void), bool),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "void ToggleFog(bool)",
+        asMETHODPR(kexWorld, ToggleFog, (bool), void),
         asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectMethod(

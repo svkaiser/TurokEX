@@ -494,13 +494,9 @@ void kexSoundSystem::Shutdown(void) {
     }
 
     for(i = 0; i < MAX_HASH; i++) {
-        wavFile = wavList.hashlist[i];
-
-        if(wavFile == NULL) {
-            continue;
+        for(wavFile = wavList.hashlist[i]; wavFile; wavFile = wavFile->next) {
+            wavFile->Delete();
         }
-
-        wavFile->Delete();
     }
 
     alcMakeContextCurrent(NULL);
@@ -590,21 +586,14 @@ void kexSoundSystem::UpdateListener(void) {
     }
 
     kexCamera *camera = localWorld.Camera();
-    kexAngle angles = camera->GetAngles();
-
-    float sy = kexMath::Sin(angles.yaw);
-    float cy = kexMath::Cos(angles.yaw);
-    float sp = kexMath::Sin(angles.pitch);
-    float cp = kexMath::Cos(angles.pitch);
-    float sr = kexMath::Sin(angles.roll);
-    float cr = kexMath::Cos(angles.roll);
+    kexMatrix matrix = camera->ModelView();
     
-    orientation[0] = sy * cp;
-    orientation[1] = -sp;
-    orientation[2] = cy * cp;
-    orientation[3] = cr * sp * sy + -sr * cy;
-    orientation[4] = cr * cp;
-    orientation[5] = cr * sp * cy + -sr * -sy;
+    orientation[0] = -matrix.vectors[0].z;
+    orientation[1] = -matrix.vectors[1].z;
+    orientation[2] = -matrix.vectors[2].z;
+    orientation[3] =  matrix.vectors[0].y;
+    orientation[4] =  matrix.vectors[1].y;
+    orientation[5] =  matrix.vectors[2].y;
 
     kexSoundSystem::EnterCriticalSection();
 

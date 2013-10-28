@@ -33,6 +33,9 @@
 #include "renderSystem.h"
 #include "renderWorld.h"
 
+kexCvar cvarRenderFog("r_fog", CVF_BOOL|CVF_CONFIG, "1", "TODO");
+kexCvar cvarRenderCull("r_cull", CVF_BOOL|CVF_CONFIG, "1", "TODO");
+
 kexRenderWorld renderWorld;
 
 //
@@ -128,12 +131,26 @@ void kexRenderWorld::Init(void) {
 //
 
 void kexRenderWorld::RenderScene(void) {
-    dglClearColor(0.25f, 0.25f, 0.25f, 1.0f);
-    dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
     if(!world->IsLoaded()) {
+        dglClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+        dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         return;
     }
+
+    if(!bShowClipMesh && cvarRenderFog.GetBool() && localWorld.FogEnabled()) {
+        float *rgb = localWorld.GetCurrentFogRGB();
+        dglClearColor(rgb[0], rgb[1], rgb[2], 1.0f);
+
+        dglFogi(GL_FOG_COORD_SRC, GL_FRAGMENT_DEPTH);
+        dglFogfv(GL_FOG_COLOR, rgb);
+        dglFogf(GL_FOG_START, localWorld.GetFogNear());
+        dglFogf(GL_FOG_END, localWorld.GetFogFar());
+    }
+    else {
+        dglClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+    }
+
+    dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     world->Camera()->SetupMatrices();
     renderSystem.SetCull(GLCULL_BACK);
@@ -163,6 +180,7 @@ void kexRenderWorld::RenderScene(void) {
     renderSystem.SetState(GLSTATE_TEXGEN_S, false);
     renderSystem.SetState(GLSTATE_TEXGEN_T, false);
     renderSystem.SetState(GLSTATE_LIGHTING, false);
+    renderSystem.SetState(GLSTATE_FOG, false);
 
     // TODO - NEEDS SHADERS
     dglDisable(GL_LIGHT0);
@@ -203,6 +221,7 @@ void kexRenderWorld::DrawSurface(const surface_t *surface, const char *texturePa
         texturePath = surface->texturePath;
     }
 
+    renderSystem.SetState(GLSTATE_FOG, localWorld.FogEnabled());
     renderSystem.SetState(GLSTATE_CULL, (surface->flags & MDF_NOCULLFACES) == 0);
     renderSystem.SetState(GLSTATE_BLEND, (surface->flags & (MDF_MASKED|MDF_TRANSPARENT1)) != 0);
     renderSystem.SetState(GLSTATE_ALPHATEST, (surface->flags & (MDF_MASKED|MDF_TRANSPARENT1)) != 0);

@@ -34,6 +34,9 @@ public:
     const bool      IsLoaded(void) const { return bLoaded; }
     kexTexture      *Texture(void) { return texture; }
 
+    filepath_t      filePath;
+    kexFont         *next;
+
 private:
     kexTexture      *texture;
     int             width;

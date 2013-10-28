@@ -40,8 +40,8 @@
 #include "debug.h"
 #include "parse.h"
 
-kexCvar cvarRenderFog("r_fog", CVF_BOOL|CVF_CONFIG, "1", "TODO");
-kexCvar cvarRenderCull("r_cull", CVF_BOOL|CVF_CONFIG, "1", "TODO");
+extern kexCvar cvarRenderFog;
+extern kexCvar cvarRenderCull;
 
 static kbool showcollision = false;
 static kbool showbbox = false;

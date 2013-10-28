@@ -294,11 +294,9 @@ void kexRenderSystem::Shutdown(void) {
     consoleFont.Texture()->Delete();
 
     for(int i = 0; i < MAX_HASH; i++) {
-        if(!(texture = textureList.hashlist[i])) {
-            continue;
+        for(texture = textureList.hashlist[i]; texture; texture = texture->next) {
+            texture->Delete();
         }
-
-        texture->Delete();
     }
 
     Z_FreeTags(PU_MODEL, PU_MODEL);
@@ -374,6 +372,9 @@ void kexRenderSystem::SetState(int bits, bool bEnable) {
         break;
     case GLSTATE_LIGHTING:
         TOGGLEGLBIT(GLSTATE_LIGHTING, GL_LIGHTING);
+        break;
+    case GLSTATE_FOG:
+        TOGGLEGLBIT(GLSTATE_FOG, GL_FOG);
         break;
     default:
         common.Warning("kexRenderSystem::SetState: unknown bit flag: %i\n", bits);
@@ -597,4 +598,21 @@ kexTexture *kexRenderSystem::CacheTexture(const char *name, texClampMode_t clamp
     }
 
     return texture;
+}
+
+//
+// kexRenderSystem::CacheFont
+//
+
+kexFont *kexRenderSystem::CacheFont(const char *name) {
+    kexFont *font = NULL;
+
+    if(!(font = fontList.Find(name))) {
+        font = fontList.Create(name);
+        fontList.Add(font);
+
+        font->LoadKFont(name);
+    }
+
+    return font;
 }

@@ -80,6 +80,7 @@ public:
     void                            SetCull(int type);
     void                            SetTextureUnit(int unit);
     void                            SetViewDimensions(void);
+    kexFont                         *CacheFont(const char *name);
     kexTexture                      *CacheTexture(const char *name, texClampMode_t clampMode,
                                         texFilterMode_t filterMode = TF_LINEAR);
 
@@ -136,6 +137,7 @@ private:
     bool                            bFullScreen;
 
     kexFileCacheList<kexTexture>    textureList;
+    kexFileCacheList<kexFont>       fontList;
 
     const char                      *gl_vendor;
     const char                      *gl_renderer;
