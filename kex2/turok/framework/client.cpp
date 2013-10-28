@@ -199,32 +199,21 @@ void kexClient::Run(const int msec) {
     // prep and send input information to server
     playerClient.BuildCommands();
 
-    // update local player
+    // run client-side ticks
     playerClient.LocalTick();
-
-    // update console
     console.Tick();
-
-    // update all local particles
     FX_Ticker();
-
-    // update all actor animations
     localWorld.LocalTick();
 
-    // draw scene
+    // draw
     renderWorld.RenderScene();
-
-    // draw 2D canvas
     renderSystem.SetOrtho();
-
-    // update debug stats
     Debug_DrawStats();
-
-    // update console display
     console.Draw();
 
-    // wrap up all rendering and swap buffers
-    R_FinishFrame();
+    // finish frame
+    inputSystem.UpdateGrab();
+    renderSystem.SwapBuffers();
 
     // update all sound sources
     soundSystem.UpdateListener();
