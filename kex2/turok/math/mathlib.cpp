@@ -197,6 +197,10 @@ void kexMath::InitObject(void) {
         asMETHODPR(kexVec3, operator/, (const float), kexVec3), asCALL_THISCALL);
     scriptManager.Engine()->RegisterObjectMethod("kVec3", "kVec3 &opAssign(const kVec3 &in)",
         asMETHODPR(kexVec3, operator=, (const kexVec3&), kexVec3&), asCALL_THISCALL);
+    scriptManager.Engine()->RegisterObjectMethod("kVec3", "float opIndex(uint)const",
+        asMETHODPR(kexVec3, operator[], (int index)const, float), asCALL_THISCALL);
+    scriptManager.Engine()->RegisterObjectMethod("kVec3", "float opIndex(uint)",
+        asMETHODPR(kexVec3, operator[], (int index), float), asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectProperty("kVec3", "float x", asOFFSET(kexVec3, x));
     scriptManager.Engine()->RegisterObjectProperty("kVec3", "float y", asOFFSET(kexVec3, y));
