@@ -3091,6 +3091,7 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
             ProcessTextureOverrides(mapinst->model, GetAttribute(mapinst->attribute)->texture);
             Com_Strcat("bCollision %i\n",
                 GetAttribute(mapinst->attribute)->behavior1 & 1);
+             Com_Strcat("clipMesh { type 0 }\n");
 
             Com_Strcat("origin { %f %f %f }\n",
                 mapinst->xyz[0], mapinst->xyz[1], mapinst->xyz[2]);

@@ -320,12 +320,6 @@ void kexPhysics::Think(const float timeDelta) {
     trace.bbox.min += start;
     trace.bbox.max += start;
 
-    trace.fraction = 1.0f;
-    trace.hitActor = NULL;
-    trace.hitTri = NULL;
-    trace.hitMesh = NULL;
-    trace.hitVector.Clear();
-    trace.hitNormal.Clear();
     trace.start = start;
     trace.end = (gravity * mass) * mass;
     trace.dir = gravity;
@@ -349,6 +343,15 @@ void kexPhysics::Think(const float timeDelta) {
         }
     }
 
+    // try to step up something
+    trace.start = start + kexVec3(0, owner->GetViewHeight(), 0);
+    trace.end = start;
+    localWorld.Trace(&trace);
+
+    if(trace.fraction != 1) {
+        owner->SetOrigin(trace.hitVector + kexVec3(0, 2.048f, 0));
+    }
+
     for(int i = 0; i < TRYMOVE_COUNT; i++) {
         start = owner->GetOrigin();
         end = start + (velocity * time);
@@ -356,12 +359,6 @@ void kexPhysics::Think(const float timeDelta) {
         direction = (end - start);
         direction.Normalize();
 
-        trace.fraction = 1.0f;
-        trace.hitActor = NULL;
-        trace.hitTri = NULL;
-        trace.hitMesh = NULL;
-        trace.hitVector.Clear();
-        trace.hitNormal.Clear();
         trace.start = start;
         trace.end = end;
         trace.dir = direction;

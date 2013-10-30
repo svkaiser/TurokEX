@@ -296,6 +296,13 @@ void kexWorld::SpawnLocalPlayer(void) {
 //
 
 void kexWorld::Trace(traceInfo_t *trace) {
+    trace->fraction = 1.0f;
+    trace->hitActor = NULL;
+    trace->hitTri = NULL;
+    trace->hitMesh = NULL;
+    trace->hitVector.Clear();
+    trace->hitNormal.Clear();
+
     for(unsigned int i = 0; i < gridBounds.Length(); i++) {
         gridBound_t *grid = gridBounds[i];
 

@@ -433,6 +433,11 @@ void kexClipMesh::CreateMeshFromModel(void) {
 
     origin      = owner->BoundingBox().Center();
     numGroups   = group->numSurfaces;
+
+    if(numGroups <= 0) {
+        return;
+    }
+
     cmGroups    = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
 
     for(unsigned int i = 0; i < numGroups; i++) {

@@ -96,6 +96,10 @@ public:
     float                       Radius(void) { return radius; }
     float                       Height(void) { return height; }
     float                       BaseHeight(void) { return baseHeight; }
+    float                       GetCenterHeight(void) { return centerHeight; }
+    void                        SetCenterHeight(float f) { centerHeight = f; }
+    float                       GetViewHeight(void) { return viewHeight; }
+    void                        SetViewHeight(float f) { viewHeight = f; }
     kexPhysics                  *Physics(void) { return &physics; }
     kexAngle                    &GetAngles(void) { return angles; }
     void                        SetAngles(const kexAngle &an) { angles = an; }
