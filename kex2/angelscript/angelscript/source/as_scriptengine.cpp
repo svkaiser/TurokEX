@@ -52,6 +52,7 @@
 #include "as_compiler.h"
 #include "as_bytecode.h"
 #include "as_debug.h"
+#include "../../add_on/scriptarray/scriptarray.h"
 
 BEGIN_AS_NAMESPACE
 
@@ -545,6 +546,7 @@ asCScriptEngine::asCScriptEngine()
 	RegisterScriptFunction(this);
 	RegisterObjectTypeGCBehaviours(this);
 	asCGlobalProperty::RegisterGCBehaviours(this);
+    RegisterScriptArray(this, true);
 }
 
 asCScriptEngine::~asCScriptEngine()

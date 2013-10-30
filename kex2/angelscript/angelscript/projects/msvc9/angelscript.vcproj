@@ -497,6 +497,10 @@
 				RelativePath="..\..\source\as_variablescope.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\add_on\scriptarray\scriptarray.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -649,6 +653,10 @@
 			</File>
 			<File
 				RelativePath="..\..\source\as_variablescope.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\add_on\scriptarray\scriptarray.h"
 				>
 			</File>
 		</Filter>

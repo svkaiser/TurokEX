@@ -127,6 +127,7 @@ public:
     static void             Init(void);
 
     asIScriptFunction       *onThink;
+    asIScriptFunction       *onLocalThink;
     asIScriptFunction       *onSpawn;
     asIScriptFunction       *onTouch;
     asIScriptFunction       *onDamage;

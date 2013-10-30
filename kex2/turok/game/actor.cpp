@@ -309,8 +309,8 @@ void kexWorldActor::LocalTick(void) {
 
     UpdateTransform();
 
-    if(scriptComponent.onThink) {
-        scriptComponent.CallFunction(scriptComponent.onThink);
+    if(scriptComponent.onLocalThink) {
+        scriptComponent.CallFunction(scriptComponent.onLocalThink);
     }
 
     animState.Update();

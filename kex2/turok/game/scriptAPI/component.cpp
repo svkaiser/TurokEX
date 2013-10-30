@@ -64,6 +64,7 @@ kexComponent::~kexComponent(void) {
 void kexComponent::Init(void) {
     scriptManager.Engine()->RegisterInterface("Component");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnThink(void)");
+    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnLocalThink(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnSpawn(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnTouch(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnDamage(void)");
@@ -93,13 +94,14 @@ void kexComponent::Spawn(const char *className) {
 
     CallConstructor((kexStr(className) + " @" + className + "(kActor@)").c_str());
 
-    onThink     = type->GetMethodByDecl("void OnThink(void)");
-    onSpawn     = type->GetMethodByDecl("void OnSpawn(void)");
-    onTouch     = type->GetMethodByDecl("void OnTouch(void)");
-    onDamage    = type->GetMethodByDecl("void OnDamage(void)");
-    onPreDraw   = type->GetMethodByDecl("void OnPreDraw(void)");
-    onDraw      = type->GetMethodByDecl("void OnDraw(void)");
-    onPostDraw  = type->GetMethodByDecl("void OnPostDraw(void)");
+    onThink         = type->GetMethodByDecl("void OnThink(void)");
+    onLocalThink    = type->GetMethodByDecl("void OnLocalThink(void)");
+    onSpawn         = type->GetMethodByDecl("void OnSpawn(void)");
+    onTouch         = type->GetMethodByDecl("void OnTouch(void)");
+    onDamage        = type->GetMethodByDecl("void OnDamage(void)");
+    onPreDraw       = type->GetMethodByDecl("void OnPreDraw(void)");
+    onDraw          = type->GetMethodByDecl("void OnDraw(void)");
+    onPostDraw      = type->GetMethodByDecl("void OnPostDraw(void)");
 }
 
 //

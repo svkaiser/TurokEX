@@ -442,7 +442,7 @@ void kexLocalPlayer::LocalTick(void) {
     timeStamp = (float)cmd.timestamp.i;
     frameTime = cmd.frametime.f;
 
-    scriptComponent.CallFunction(scriptComponent.onThink);
+    scriptComponent.CallFunction(scriptComponent.onLocalThink);
 
     int current = (netseq.outgoing-1) & (NETBACKUPS-1);
 
