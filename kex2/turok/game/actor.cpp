@@ -337,6 +337,10 @@ void kexWorldActor::Tick(void) {
 //
 
 void kexWorldActor::Spawn(void) {
+    if(rotation.x == 0 && rotation.y == 0 && rotation.z == 0 && rotation.w == 0) {
+        rotation = kexQuat(angles.yaw, 0, 1, 0);
+    }
+
     rotation.Normalize();
     UpdateTransform();
 

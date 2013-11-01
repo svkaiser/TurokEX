@@ -853,11 +853,9 @@ kexMatrix &kexMatrix::AddTranslation(const kexVec3 &vector) {
 //
 
 kexMatrix &kexMatrix::Scale(const float x, const float y, const float z) {
-    for(int i = 0; i < 3; i++) {
-        vectors[i].x *= x;
-        vectors[i].y *= y;
-        vectors[i].z *= z;
-    }
+    vectors[0].ToVec3() *= x;
+    vectors[1].ToVec3() *= y;
+    vectors[2].ToVec3() *= z;
 
     return *this;
 }
@@ -867,8 +865,9 @@ kexMatrix &kexMatrix::Scale(const float x, const float y, const float z) {
 //
 
 kexMatrix &kexMatrix::Scale(const kexVec3 &vector) {
-    for(int i = 0; i < 3; i++)
-        vectors[i].ToVec3() *= vector;
+    vectors[0].ToVec3() *= vector.x;
+    vectors[1].ToVec3() *= vector.y;
+    vectors[2].ToVec3() *= vector.z;
 
     return *this;
 }
@@ -879,11 +878,10 @@ kexMatrix &kexMatrix::Scale(const kexVec3 &vector) {
 
 kexMatrix kexMatrix::Scale(const kexMatrix &mtx, const float x, const float y, const float z) {
     kexMatrix out;
-    for(int i = 0; i < 3; i++) {
-        out.vectors[i].x = mtx.vectors[i].x * x;
-        out.vectors[i].y = mtx.vectors[i].y * y;
-        out.vectors[i].z = mtx.vectors[i].z * z;
-    }
+
+    out.vectors[0].ToVec3() = mtx.vectors[0].ToVec3() * x;
+    out.vectors[1].ToVec3() = mtx.vectors[1].ToVec3() * y;
+    out.vectors[2].ToVec3() = mtx.vectors[2].ToVec3() * z;
 
     return out;
 }

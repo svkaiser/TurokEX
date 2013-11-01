@@ -243,13 +243,8 @@ void kexPhysics::ApplyFriction(void) {
             return;
         }
 
-        bool bSteepSlope = OnSteepSlope();
-
-        if(/*!bSteepSlope &&*/ GroundDistance() > ONPLANE_EPSILON) {
-            return;
-        }
-
-        if(bSteepSlope && velocity.Dot(groundGeom->plane.Normal()) <= 0) {
+        if(GroundDistance() > ONPLANE_EPSILON ||
+            velocity.Dot(groundGeom->plane.Normal()) <= 0) {
             return;
         }
 
@@ -344,12 +339,12 @@ void kexPhysics::Think(const float timeDelta) {
     }
 
     // try to step up something
-    trace.start = start + kexVec3(0, owner->GetViewHeight(), 0);
+    trace.start = start - (gravity * 1.024f);
     trace.end = start;
     localWorld.Trace(&trace);
 
     if(trace.fraction != 1) {
-        owner->SetOrigin(trace.hitVector + kexVec3(0, 2.048f, 0));
+        owner->SetOrigin(trace.hitVector - (gravity * 1.024f));
     }
 
     for(int i = 0; i < TRYMOVE_COUNT; i++) {
@@ -381,7 +376,9 @@ void kexPhysics::Think(const float timeDelta) {
 
             // don't climb on steep slopes
             if(trace.hitNormal.Dot(gravity) >= -0.5f) {
-                trace.hitNormal.y = 0;
+                if(trace.hitTri == groundGeom) {
+                    velocity = (-gravity * velocity);
+                }
             }
         }
 

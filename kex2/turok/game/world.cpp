@@ -296,6 +296,8 @@ void kexWorld::SpawnLocalPlayer(void) {
 //
 
 void kexWorld::Trace(traceInfo_t *trace) {
+    kexBBox box;
+
     trace->fraction = 1.0f;
     trace->hitActor = NULL;
     trace->hitTri = NULL;
@@ -308,15 +310,19 @@ void kexWorld::Trace(traceInfo_t *trace) {
 
         grid->bTraced = false;
 
-        if(grid->box.LineIntersect(trace->start, trace->end)) {
+        box = grid->box;
+
+        if(trace->bUseBBox) {
+            box = box + trace->localBBox.Radius();
+        }
+
+        if(box.LineIntersect(trace->start, trace->end)) {
             grid->bTraced = true;
 
             for(kexWorldActor *actor = grid->staticActors.Next();
                 actor != NULL; actor = actor->worldLink.Next()) {
                     if(!actor->bCollision)
                         continue;
-
-                    kexBBox box;
 
                     box.min = actor->BoundingBox().min + actor->GetOrigin();
                     box.max = actor->BoundingBox().max + actor->GetOrigin();
