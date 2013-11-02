@@ -243,6 +243,7 @@ void kexPhysics::ApplyFriction(void) {
             return;
         }
 
+        // apply vertical friction only if we're rubbing up against the floor
         if(GroundDistance() > ONPLANE_EPSILON ||
             velocity.Dot(groundGeom->plane.Normal()) <= 0) {
             return;
@@ -291,16 +292,17 @@ void kexPhysics::Think(const float timeDelta) {
     }
 
     traceInfo_t trace;
-    kexVec3 oldVelocity = velocity;
     kexVec3 start = owner->GetOrigin();
     kexVec3 end;
     kexVec3 direction;
     kexVec3 vel;
     kexVec3 normals[TRYMOVE_COUNT];
+    kexVec3 slideNormal;
+    kexVec3 gravity;
+    float slope;
     int moves = 0;
     int hits;
     float time = timeDelta;
-    kexVec3 gravity;
     float massAmount = (mass * timeDelta);
     float radius = owner->Radius();
     float height = owner->BaseHeight();
@@ -338,7 +340,7 @@ void kexPhysics::Think(const float timeDelta) {
         }
     }
 
-    // try to step up something
+    // fudge the origin if we're slightly clipping below the floor
     trace.start = start - (gravity * 1.024f);
     trace.end = start;
     localWorld.Trace(&trace);
@@ -368,16 +370,31 @@ void kexPhysics::Think(const float timeDelta) {
             break;
         }
 
+        // update origin
         owner->SetOrigin(trace.hitVector);
 
         if(trace.hitActor == NULL) {
             // nudge origin away from plane
             owner->SetOrigin(owner->GetOrigin() - (direction * 0.125f));
 
-            // don't climb on steep slopes
-            if(trace.hitNormal.Dot(gravity) >= -0.5f) {
+            // test if walking on steep slopes
+            slope = trace.hitNormal.Dot(gravity);
+
+            if(slope < 0 && slope >= -0.5f) {
                 if(trace.hitTri == groundGeom) {
-                    velocity = (-gravity * velocity);
+                    // remove vertical movement
+                    slideNormal = (trace.hitNormal + (trace.hitNormal * gravity));
+                    vel = (velocity + (velocity * gravity));
+
+                    ImpactVelocity(vel, slideNormal, 1.024f);
+
+                    // continue sliding down the slope
+                    velocity = (-gravity * velocity) + vel;
+                }
+                else {
+                    // trying to move from ground to steep slope will be
+                    // treated as a solid wall
+                    trace.hitNormal += (trace.hitNormal * gravity);
                 }
             }
         }
