@@ -84,6 +84,19 @@ kexStr::kexStr(const char *string) {
 // kexStr::kexStr
 //
 
+kexStr::kexStr(const char *string, const int length) {
+    Init();
+
+    if(string == NULL)
+        return;
+
+    CopyNew(string, length);
+}
+
+//
+// kexStr::kexStr
+//
+
 kexStr::kexStr(const kexStr &string) {
     Init();
 
@@ -432,15 +445,7 @@ kexStr &kexStr::StripExtension(void) {
 //
 
 int kexStr::Hash(void) {
-    unsigned int hash   = 1315423911;
-    unsigned int i      = 0;
-    char *str           = (char*)charPtr;
-
-    for(i = 0; i < (unsigned int)Length()-1 && *str != '\0'; str++, i++) {
-        hash ^= ((hash << 5) + toupper((int)*str) + (hash >> 2));
-    }
-
-    return hash & (MAX_HASH-1);
+    return common.HashFileName(charPtr);
 }
 
 //
@@ -458,6 +463,33 @@ kexStr kexStr::Substr(int start, int len) const {
         len = l - start;
         
     return str.Concat((const char*)&charPtr[start], len);
+}
+
+//
+// kexStr::Split
+//
+
+void kexStr::Split(kexStrListMem &list, const char seperator) {
+    int splitLen = 0;
+    int startOffs = 0;
+    for(int i = 0; i < length; i++) {
+        if(charPtr[i] == seperator) {
+            if(splitLen == 0) {
+                continue;
+            }
+            
+            list.Push(new kexStr(&charPtr[startOffs], splitLen));
+            startOffs += (splitLen+1);
+            splitLen = 0;
+            continue;
+        }
+        
+        splitLen++;
+    }
+
+    if(splitLen != 0 && startOffs != 0) {
+        list.Push(new kexStr(&charPtr[startOffs], splitLen));
+    }
 }
 
 //

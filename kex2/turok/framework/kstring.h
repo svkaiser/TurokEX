@@ -26,10 +26,16 @@
 #include <string.h>
 #include "array.h"
 
+class kexStr;
+
+typedef kexArray<kexStr>        kexStrList;
+typedef kexPtrArray<kexStr*>    kexStrListMem;
+
 class kexStr {
 public:
                         kexStr(void);
                         kexStr(const char *string);
+                        kexStr(const char *string, const int length);
                         kexStr(const kexStr &string);
                         ~kexStr(void);
 
@@ -47,6 +53,7 @@ public:
     kexStr              &ToLower(void);
     int                 Hash(void);
     kexStr              Substr(int start, int len) const;
+    void                Split(kexStrListMem &list, const char seperator);
     int                 Length(void) const { return length; }
     const char          *c_str(void) const { return charPtr; }
 
@@ -88,8 +95,5 @@ protected:
     int                 length;
     int                 bufferLength;
 };
-
-typedef kexArray<kexStr>        kexStrList;
-typedef kexPtrArray<kexStr*>    kexStrListMem;
 
 #endif
