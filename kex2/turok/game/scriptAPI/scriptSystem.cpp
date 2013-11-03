@@ -156,12 +156,12 @@ void kexScriptManager::Init(void) {
     kexScriptObjString::Init();
     RegisterObjects();
 
+    module = engine->GetModule("core", asGM_CREATE_IF_NOT_EXISTS);
+
     // TODO
     ProcessScript("scripts/main.txt");
     scriptBuffer += "\0";
 
-    module = engine->GetModule("main", asGM_CREATE_IF_NOT_EXISTS);
-    module->AddScriptSection("Section", &scriptBuffer.c_str()[0], scriptBuffer.Length());
     module->Build();
 
     asIScriptFunction *func = module->GetFunctionByDecl("void main(void)");
@@ -214,6 +214,7 @@ bool kexScriptManager::HasScriptFile(const char *file) {
 
 void kexScriptManager::ProcessScript(const char *file) {
     kexLexer *lexer;
+    kexStr scrBuffer;
     
     if(!(lexer = parser.Open(file))) {
         common.Error("kexScriptManager::Init: could not load %s", file);
@@ -227,11 +228,11 @@ void kexScriptManager::ProcessScript(const char *file) {
             lexer->Find();
             if(!strcmp(lexer->Token(), "include")) {
                 lexer->GetString();
-                char *file = lexer->StringToken();
+                char *nfile = lexer->StringToken();
                 
-                if(!HasScriptFile(file)) {
-                    ProcessScript(file);
-                    scriptFiles.Push(kexStr(file).StripExtension().StripPath());
+                if(!HasScriptFile(nfile)) {
+                    ProcessScript(nfile);
+                    scriptFiles.Push(kexStr(nfile).StripExtension().StripPath());
                 }
                 continue;
             }
@@ -242,7 +243,11 @@ void kexScriptManager::ProcessScript(const char *file) {
         }
         
         scriptBuffer += ch;
+        scrBuffer += ch;
     }
+
+    module->AddScriptSection(kexStr(file).StripExtension().StripPath(),
+        scrBuffer.c_str(), scrBuffer.Length());
     
     parser.Close();
 }
