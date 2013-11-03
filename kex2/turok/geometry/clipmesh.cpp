@@ -677,6 +677,14 @@ bool kexClipMesh::Trace(traceInfo_t *trace) {
 //
 
 void kexClipMesh::DebugDraw(void) {
+    static rcolor colors[6] = {
+        RGBA(255, 128, 128, 128),
+        RGBA(255, 96, 255, 128),
+        RGBA(192, 192, 192, 128),
+        RGBA(255, 128, 0, 128),
+        RGBA(255, 255, 0, 128),
+        RGBA(0, 64, 96, 128)
+    };
     if(owner == NULL || type == CMT_NONE) {
         return;
     }
@@ -693,11 +701,24 @@ void kexClipMesh::DebugDraw(void) {
     for(unsigned int i = 0; i < numGroups; i++) {
         cmGroup_t *cmGroup = &cmGroups[i];
 
-        dglColor4ub(
-            0xFF - (0x50 * (i & 3)),
-            0xFF * (i & 1),
-            0x50 * (i & 3),
-            128);
+        for(unsigned int j = 0; j < cmGroup->numTriangles; j++) {
+            kexTri *tri = &cmGroup->triangles[j];
+
+            if(tri->bTraced == false) {
+                continue;
+            }
+
+            dglColor4ub(0xFF, 0xFF, 0xFF, 192);
+            dglBegin(GL_TRIANGLES);
+            dglVertex3f((*tri->point[0]).x, (*tri->point[0]).y, (*tri->point[0]).z);
+            dglVertex3f((*tri->point[1]).x, (*tri->point[1]).y, (*tri->point[1]).z);
+            dglVertex3f((*tri->point[2]).x, (*tri->point[2]).y, (*tri->point[2]).z);
+            dglEnd();
+
+            tri->bTraced = false;
+        }
+
+        dglColor4ubv((byte*)&colors[i%6]);
 
         dglVertexPointer(3, GL_FLOAT, sizeof(kexVec3),
             reinterpret_cast<float*>(&cmGroup->points[0].x));
@@ -711,23 +732,6 @@ void kexClipMesh::DebugDraw(void) {
             GL_UNSIGNED_SHORT, cmGroup->indices);
 
         dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-        for(unsigned int j = 0; j < cmGroup->numTriangles; j++) {
-            kexTri *tri = &cmGroup->triangles[j];
-
-            if(tri->bTraced == false) {
-                continue;
-            }
-
-            dglColor4ub(0xFF, 0xFF, 0xFF, 80);
-            dglBegin(GL_TRIANGLES);
-            dglVertex3f((*tri->point[0]).x, (*tri->point[0]).y, (*tri->point[0]).z);
-            dglVertex3f((*tri->point[1]).x, (*tri->point[1]).y, (*tri->point[1]).z);
-            dglVertex3f((*tri->point[2]).x, (*tri->point[2]).y, (*tri->point[2]).z);
-            dglEnd();
-
-            tri->bTraced = false;
-        }
     }
 
     dglEnableClientState(GL_NORMAL_ARRAY);
