@@ -75,4 +75,81 @@ type *kexFileCacheList<type>::Find(const char *name) const {
     return NULL;
 }
 
+template<class type>
+class kexHashList {
+public:
+    type                *Add(const char *tname, int zoneTag = PU_STATIC);
+    type                *Find(const char *tname) const;
+    type                *GetData(const int index);
+    type                *Next(void);
+
+    typedef struct hashKey_s {
+        type            data;
+        filepath_t      name;
+        hashKey_s       *next;
+    } hashKey_t;
+
+    hashKey_t           *hashlist[MAX_HASH];
+    hashKey_t           *rover;
+};
+
+//
+// kexHashList::Add
+//
+template<class type>
+type *kexHashList<type>::Add(const char *tname, int zoneTag) {
+    unsigned int hash;
+
+    hashKey_t *o = (hashKey_t*)Z_Calloc(sizeof(hashKey_t), zoneTag, 0);
+    strncpy(o->name, tname, MAX_FILEPATH);
+
+    // add to hash for future reference
+    hash = common.HashFileName(o->name);
+    o->next = hashlist[hash];
+    hashlist[hash] = o;
+
+    return &o->data;
+}
+
+//
+// kexHashList::Find
+//
+template<class type>
+type *kexHashList<type>::Find(const char *tname) const {
+    hashKey_t *t;
+    unsigned int hash;
+
+    hash = common.HashFileName(tname);
+
+    for(t = hashlist[hash]; t; t = t->next) {
+        if(!strcmp(tname, t->name)) {
+            return &t->data;
+        }
+    }
+
+    return NULL;
+}
+
+//
+// kexHashList::GetData
+//
+template<class type>
+type *kexHashList<type>::GetData(const int index) {
+    rover = hashlist[index];
+    return &rover->data;
+}
+
+//
+// kexHashList::Next
+//
+template<class type>
+type *kexHashList<type>::Next(void) {
+    if(rover->next) {
+        rover = rover->next;
+        return &rover->data;
+    }
+
+    return NULL;
+}
+
 #endif
