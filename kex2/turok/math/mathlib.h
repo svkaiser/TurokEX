@@ -350,6 +350,7 @@ public:
     kexMatrix               &operator*=(const kexVec3 &vector);
     kexMatrix               operator*(kexMatrix &matrix);
     kexMatrix               &operator=(const kexMatrix &matrix);
+    kexMatrix               operator|(kexMatrix &matrix);
     
     kexVec4                 vectors[4];
 };

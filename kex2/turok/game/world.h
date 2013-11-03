@@ -27,6 +27,7 @@
 #include "array.h"
 #include "linkedlist.h"
 #include "camera.h"
+#include "fx.h"
 
 typedef struct gridBound_s {
     kexBBox                             box;
@@ -47,12 +48,15 @@ public:
     void                                Load(const char *mapFile);
     void                                Unload(void);
     const char                          *GetMapFileFromID(const int id);
+    kexObject                           *ConstructObject(const char *className);
     kexWorldActor                       *ConstructActor(const char *className);
     void                                AddActor(kexWorldActor *actor);
     kexWorldActor                       *SpawnActor(const char *className, const char *component,
                                             const kexVec3 &origin, const kexAngle &angles);
     kexWorldActor                       *SpawnActor(kexStr &className, kexStr &component,
                                             kexVec3 &origin, kexAngle &angles);
+    kexFx                               *SpawnFX(const char *name, kexActor *source, kexVec3 &velocity,
+                                            kexVec3 &origin, kexQuat &rotation);
     void                                RemoveActor(kexWorldActor *actor);
     void                                SpawnLocalPlayer(void);
     void                                Trace(traceInfo_t *trace);
@@ -75,9 +79,12 @@ public:
     void                                ToggleFog(bool toggle) { bEnableFog = toggle; }
 
     kexLinklist<kexWorldActor>          actors;
+    kexLinklist<kexFx>                  fxList;
     kexPtrArray<gridBound_t*>           gridBounds;
 
     kexWorldActor                       *actorRover;
+    kexFx                               *fxRover;
+
     // TEMP
     kexVec4                             worldLightOrigin;
     kexVec4                             worldLightColor;

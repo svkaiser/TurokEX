@@ -35,6 +35,7 @@
 
 kexCvar cvarRenderFog("r_fog", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 kexCvar cvarRenderCull("r_cull", CVF_BOOL|CVF_CONFIG, "1", "TODO");
+kexCvar cvarRenderFxTexture("r_fxtexture", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 
 kexRenderWorld renderWorld;
 
@@ -536,6 +537,7 @@ void kexRenderWorld::DrawViewActors(void) {
     dglMatrixMode(GL_MODELVIEW);
     dglLoadIdentity();
 
+    renderSystem.SetCull(GLCULL_FRONT);
     renderSystem.SetState(GLSTATE_LIGHTING, true);
 
     for(kexWorldActor *actor = world->actors.Next();
@@ -562,12 +564,188 @@ void kexRenderWorld::DrawViewActors(void) {
 }
 
 //
+// kexRenderWorld::SortSprites
+//
+
+int kexRenderWorld::SortSprites(const void *a, const void *b) {
+    kexFx *xa = ((fxDisplay_t*)a)->fx;
+    kexFx *xb = ((fxDisplay_t*)b)->fx;
+
+    return (int)(xb->Distance() - xa->Distance());
+}
+
+//
 // kexRenderWorld::DrawFX
 //
 
 void kexRenderWorld::DrawFX(void) {
+    static const word   spriteIndices[6] = { 0, 1, 2, 2, 1, 3 };
+    static const float  spriteTexCoords[8] = { 1, 1, 1, 0, 0, 1, 0 };
+    static float        spriteVertices[4][3];
+    static byte         spriteColors[4][4];
+    bool                bShowTexture;
+    int                 fxDisplayNum;
+    int                 i;
+    int                 j;
+    kexMatrix           mtx;
+    kexMatrix           scalemtx;
+    kexMatrix           finalmtx;
+    kexFx               *fx;
+    float               scale;
+    float               w;
+    float               h;
+    float               y;
+    fxinfo_t            *fxinfo;
+    kexTexture          *texture;
+
+    memset(fxDisplayList, 0, sizeof(fxDisplay_t) * MAX_FX_DISPLAYS);
+
+    for(world->fxRover = world->fxList.Next(), fxDisplayNum = 0;
+        world->fxRover != NULL; world->fxRover = world->fxRover->worldLink.Next()) {
+            if(fxDisplayNum >= MAX_FX_DISPLAYS) {
+                break;
+            }
+            if(world->fxRover == NULL) {
+                continue;
+            }
+            if(world->fxRover->restart > 0) {
+                continue;
+            }
+
+            fxDisplayList[fxDisplayNum++].fx = world->fxRover;
+    }
+
+    if(fxDisplayNum <= 0) {
+        return;
+    }
+
     renderSystem.SetState(GLSTATE_LIGHTING, false);
+    renderSystem.SetState(GLSTATE_BLEND, true);
+    renderSystem.SetState(GLSTATE_ALPHATEST, true);
+    renderSystem.SetState(GLSTATE_TEXGEN_S, false);
+    renderSystem.SetState(GLSTATE_TEXGEN_T, false);
+
     renderSystem.SetCull(GLCULL_FRONT);
+    renderSystem.SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
+
+    bShowTexture = cvarRenderFxTexture.GetBool();
+
+    qsort(fxDisplayList, fxDisplayNum, sizeof(fxDisplay_t), kexRenderWorld::SortSprites);
+
+    dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, spriteTexCoords);
+    dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, spriteVertices);
+    dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, spriteColors);
+
+    dglDisableClientState(GL_NORMAL_ARRAY);
+
+    if(!bWireframe) {
+        dglEnableClientState(GL_COLOR_ARRAY);
+    }
+
+    for(i = 0; i < fxDisplayNum; i++) {
+        fx = fxDisplayList[i].fx;
+        fxinfo = fx->fxInfo;
+
+        if(fxinfo == NULL) {
+            continue;
+        }
+
+        if(fx->Removing()) {
+            continue;
+        }
+
+        scale = fx->drawScale * 0.01f;
+        scalemtx = kexMatrix(fx->rotationOffset + DEG2RAD(180), 2);
+
+        if(fxinfo->screen_offset_x != 0 || fxinfo->screen_offset_y != 0) {
+            scalemtx *= kexVec3(fxinfo->screen_offset_x, fxinfo->screen_offset_y, 0);
+        }
+
+        scalemtx.Scale(scale, scale, scale);
+
+        switch(fxinfo->drawtype) {
+        case VFX_DRAWFLAT:
+        case VFX_DRAWDECAL:
+            mtx = kexMatrix(DEG2RAD(90), 1);
+            renderSystem.SetState(GLSTATE_CULL, false);
+            break;
+        case VFX_DRAWBILLBOARD:
+            mtx = kexMatrix(kexQuat(world->Camera()->GetAngles().yaw, 0, 1, 0));
+            renderSystem.SetState(GLSTATE_CULL, true);
+            break;
+        default:
+            mtx = kexMatrix(world->Camera()->GetRotation());
+            renderSystem.SetState(GLSTATE_CULL, true);
+            break;
+        }
+
+        texture = fx->Texture();
+        y = fx->GetOrigin().y;
+
+        /*
+        if(fxinfo->bOffsetFromFloor && fx->plane != NULL) {
+            float dist = Plane_GetDistance(fx->plane, fx->origin) + 3.42f;
+
+            if(dist >= fx->origin[1]) {
+                y = dist;
+            }
+
+            if(fxinfo->drawtype == VFX_DRAWBILLBOARD) {
+                y += (float)texture->height;
+            }
+        }
+        */
+
+        finalmtx = (scalemtx | mtx);
+        finalmtx.AddTranslation(fx->GetOrigin().x, y, fx->GetOrigin().z);
+
+        dglPushMatrix();
+        dglMultMatrixf(finalmtx.ToFloatPtr());
+
+        w = (float)texture->OriginalWidth();
+        h = (float)texture->OriginalHeight();
+
+        spriteVertices[0][0] = -w;
+        spriteVertices[0][1] = -h;
+        spriteVertices[1][0] =  w;
+        spriteVertices[1][1] = -h;
+        spriteVertices[2][0] = -w;
+        spriteVertices[2][1] =  h;
+        spriteVertices[3][0] =  w;
+        spriteVertices[3][1] =  h;
+
+        for(j = 0; j < 4; j++) {
+            spriteColors[j][0] = fx->color1[0];
+            spriteColors[j][1] = fx->color1[1];
+            spriteColors[j][2] = fx->color1[2];
+            spriteColors[j][3] = fx->color1[3];
+        }
+
+        renderSystem.SetState(GLSTATE_DEPTHTEST, fxinfo->bDepthBuffer);
+
+        if(bWireframe) {
+            renderSystem.whiteTexture.Bind();
+            dglColor4ub(192, 0, 0, 255);
+        }
+        else {
+            if(bShowTexture) {
+                texture->Bind();
+            }
+            else {
+                renderSystem.whiteTexture.Bind();
+            }
+        }
+
+        dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, spriteIndices);
+        dglPopMatrix();
+    }
+
+    renderSystem.SetState(GLSTATE_DEPTHTEST, true);
+    dglEnableClientState(GL_NORMAL_ARRAY);
+
+    if(!bWireframe) {
+        dglDisableClientState(GL_COLOR_ARRAY);
+    }
 }
 
 //

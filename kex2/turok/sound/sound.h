@@ -152,8 +152,8 @@ private:
     ALCdevice                           *alDevice;
     ALCcontext                          *alContext;
     kexSoundSource                      sources[SND_MAX_SOURCES];
-    kexFileCacheList<kexWavFile>        wavList;
-    kexFileCacheList<kexSoundShader>    shaderList;
+    kexHashList<kexWavFile>             wavList;
+    kexHashList<kexSoundShader>         shaderList;
     int                                 activeSources;
 };
 

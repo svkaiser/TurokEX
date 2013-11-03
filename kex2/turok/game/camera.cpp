@@ -42,6 +42,7 @@ kexCamera::kexCamera(void) {
     this->bLetterBox    = false;
     this->bFixedFOV     = false;
     this->aspect        = 4.0f/3.0f;
+    this->bStatic       = false;
 }
 
 //
@@ -78,7 +79,7 @@ void kexCamera::SetupMatrices(void) {
     kexQuat pitch(angles.pitch + offsetAngle.pitch, kexVec3::vecRight);
     kexQuat roll(angles.roll + offsetAngle.roll,
         kexVec3(0, kexMath::Sin(angles.pitch), kexMath::Cos(angles.pitch)));
-    
+
     modelMatrix = kexMatrix((yaw * roll) * pitch);
     modelMatrix.AddTranslation(-(origin | modelMatrix));
 
@@ -92,6 +93,12 @@ void kexCamera::SetupMatrices(void) {
 
 void kexCamera::LocalTick(void) {
     attachment.Transform();
+
+    angles.Clamp180();
+    rotation =
+        kexQuat(angles.pitch, kexVec3::vecRight) *
+        (kexQuat(angles.yaw, kexVec3::vecUp) *
+        kexQuat(angles.roll, kexVec3::vecForward));
 }
 
 //

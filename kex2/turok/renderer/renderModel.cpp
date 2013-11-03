@@ -512,7 +512,8 @@ kexModel_t *kexModelManager::LoadModel(const char *file) {
             return NULL;
         }
 
-        model = modelList.Create(file);
+        model = modelList.Add(file);
+        strncpy(model->filePath, file, MAX_FILEPATH);
 
         // begin parsing
         if(strstr(file, ".kmesh")) {
@@ -521,8 +522,6 @@ kexModel_t *kexModelManager::LoadModel(const char *file) {
         else if(strstr(file, ".obj")) {
             ParseWavefrontObj(model, lexer);
         }
-
-        modelList.Add(model);
 
         // we're done with the file
         parser.Close();

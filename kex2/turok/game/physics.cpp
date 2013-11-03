@@ -299,9 +299,11 @@ void kexPhysics::Think(const float timeDelta) {
     kexVec3 normals[TRYMOVE_COUNT];
     kexVec3 slideNormal;
     kexVec3 gravity;
+    kexVec3 cDir;
     float slope;
     int moves = 0;
     int hits;
+    float d;
     float time = timeDelta;
     float massAmount = (mass * timeDelta);
     float radius = owner->Radius();
@@ -428,9 +430,9 @@ void kexPhysics::Think(const float timeDelta) {
                 }
 
                 // slide along the crease between two planes
-                kexVec3 dir = normals[hits].Cross(normals[j]).Normalize();
-                float d = dir.Dot(velocity);
-                vel = dir * d;
+                cDir = normals[hits].Cross(normals[j]).Normalize();
+                d = cDir.Dot(velocity);
+                vel = cDir * d;
 
                 // see if it bumps into a third plane
                 for(int k = 0; k < moves; k++) {

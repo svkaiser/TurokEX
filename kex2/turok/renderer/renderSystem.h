@@ -136,8 +136,8 @@ private:
     bool                            bWideScreen;
     bool                            bFullScreen;
 
-    kexFileCacheList<kexTexture>    textureList;
-    kexFileCacheList<kexFont>       fontList;
+    kexHashList<kexTexture>         textureList;
+    kexHashList<kexFont>            fontList;
 
     const char                      *gl_vendor;
     const char                      *gl_renderer;

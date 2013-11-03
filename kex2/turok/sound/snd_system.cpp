@@ -494,7 +494,7 @@ void kexSoundSystem::Shutdown(void) {
     }
 
     for(i = 0; i < MAX_HASH; i++) {
-        for(wavFile = wavList.hashlist[i]; wavFile; wavFile = wavFile->next) {
+        for(wavFile = wavList.GetData(i); wavFile; wavFile = wavList.Next()) {
             wavFile->Delete();
         }
     }
@@ -641,9 +641,7 @@ kexWavFile *kexSoundSystem::CacheWavFile(const char *name) {
             return NULL;
         }
 
-        wavFile = wavList.Create(name, PU_SOUND);
-        wavList.Add(wavFile);
-
+        wavFile = wavList.Add(name, PU_SOUND);
         wavFile->Allocate(name, data);
     }
 
@@ -668,9 +666,7 @@ kexSoundShader *kexSoundSystem::CacheShaderFile(const char *name) {
             return NULL;
         }
 
-        snd = shaderList.Create(name, PU_SOUND);
-        shaderList.Add(snd);
-
+        snd = shaderList.Add(name, PU_SOUND);
         snd->Load(lexer);
         parser.Close();
     }

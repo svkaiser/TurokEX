@@ -72,7 +72,7 @@ public:
 
     virtual void                LocalTick(void) = 0;
     virtual void                Tick(void) = 0;
-    virtual void                Remove(void) = 0;
+    virtual void                Remove(void);
 
     int                         AddRef(void);
     int                         RemoveRef(void);
@@ -107,6 +107,7 @@ public:
     kexMatrix                   &Matrix(void) { return matrix; }
     kexBBox                     &BoundingBox(void) { return bbox; }
     const kexModel_t            *Model(void) const { return model; }
+    const bool                  Removing(void)const { return bStale; }
 
     struct gridBound_s          *gridBound;
 
@@ -219,7 +220,6 @@ public:
 
     virtual void                LocalTick(void);
     virtual void                Tick(void);
-    virtual void                Remove(void);
     virtual void                Parse(kexLexer *lexer);
     virtual void                UpdateTransform(void);
     virtual void                OnTouch(kexWorldActor *instigator);

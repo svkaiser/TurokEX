@@ -151,10 +151,41 @@ void kexWorld::LocalTick(void) {
 
     for(actorRover = actors.Next(); actorRover != NULL;
         actorRover = actorRover->worldLink.Next()) {
-        if(actorRover->bStatic) {
-            continue;
-        }
-        actorRover->LocalTick();
+            if(actorRover->bStatic) {
+                continue;
+            }
+            
+            actorRover->LocalTick();
+
+            if(actorRover->Removing()) {
+                RemoveActor(actorRover);
+
+                if(actorRover == NULL) {
+                    break;
+                }
+            }
+    }
+
+    kexFx *tmpFx;
+
+    for(fxRover = fxList.Next(); fxRover != NULL;
+        fxRover = fxRover->worldLink.Next()) {
+            fxRover->LocalTick();
+
+            if(fxRover->Removing()) {
+                if(fxRover->RefCount() > 0) {
+                    return;
+                }
+                    
+                fxRover->worldLink.Remove();
+                tmpFx = fxRover;
+                fxRover = fxRover->worldLink.Prev();
+                Z_Free(tmpFx);
+
+                if(fxRover == NULL) {
+                    break;
+                }
+            }
     }
 
     if(bEnableFog) {
@@ -167,24 +198,32 @@ void kexWorld::LocalTick(void) {
 }
 
 //
-// kexWorld::ConstructActor
+// kexWorld::ConstructObject
 //
 
-kexWorldActor *kexWorld::ConstructActor(const char *className) {
+kexObject *kexWorld::ConstructObject(const char *className) {
     kexObject *obj;
     kexRTTI *objType;
     
     if(!(objType = kexObject::Get(className))) {
-        common.Error("kexWorld::ConstructActor: unknown class (\"%s\")\n", className);
+        common.Error("kexWorld::ConstructObject: unknown class (\"%s\")\n", className);
         return NULL;
     }
         
     if(!(obj = objType->Create())) {
-        common.Error("kexWorld::ConstructActor: could not spawn (\"%s\")\n", className);
+        common.Error("kexWorld::ConstructObject: could not spawn (\"%s\")\n", className);
         return NULL;
     }
     
-    return static_cast<kexWorldActor*>(obj);
+    return obj;
+}
+
+//
+// kexWorld::ConstructActor
+//
+
+kexWorldActor *kexWorld::ConstructActor(const char *className) {
+    return static_cast<kexWorldActor*>(ConstructObject(className));
 }
 
 //
@@ -210,8 +249,6 @@ void kexWorld::AddActor(kexWorldActor *actor) {
 void kexWorld::RemoveActor(kexWorldActor *actor) {
     if(actor->RefCount() > 0)
         return;
-
-    kexWorldActor *next = actorRover->worldLink.Next();
         
     actor->worldLink.Remove();
 
@@ -220,7 +257,9 @@ void kexWorld::RemoveActor(kexWorldActor *actor) {
     * point it to actor->prev, so the iterator will correctly move on to
     * actor->prev->next = actor->next */
     actorRover = actor->worldLink.Prev();
-    actor->Remove();
+    Z_Free(actor);
+
+    actor = NULL;
 }
 
 //
@@ -261,6 +300,81 @@ kexWorldActor *kexWorld::SpawnActor(kexStr &className, kexStr &component,
         componentName = component.c_str();
     }
     return SpawnActor(className.c_str(), componentName, origin, angles);
+}
+
+//
+// kexWorld::SpawnFX
+//
+
+kexFx *kexWorld::SpawnFX(const char *name, kexActor *source, kexVec3 &velocity,
+                         kexVec3 &origin, kexQuat &rotation) {
+    kexFx *fx = NULL;
+    fxfile_t *fxfile;
+    fxinfo_t *info;
+
+    if(!(fxfile = fxManager.LoadKFX(name))) {
+        return NULL;
+    }
+
+    for(unsigned int i = 0; i < fxfile->numfx; i++) {
+        bool ok = true;
+        int instances;
+        int spawnDice;
+
+        info = &fxfile->info[i];
+
+        instances = info->instances.value;
+        spawnDice = instances + fxManager.RandValue((int)info->instances.rand);
+
+        if(spawnDice <= 0) {
+            continue;
+        }
+
+        // allow only one FX instance to be spawned per actor
+        if(source && info->bActorInstance) {
+            for(fxRover = fxList.Next(); fxRover != NULL; fxRover = fxRover->worldLink.Next()) {
+                if(!fxRover->GetOwner()) {
+                    continue;
+                }
+
+                if(fxRover->GetOwner() == source && fxRover->fxInfo == fxfile->info) {
+                    fxRover->bForcedRestart = true;
+                    ok = false;
+                    break;
+                }
+            }
+        }
+
+        if(!ok) {
+            continue;
+        }
+
+        if(instances <= 0) {
+            instances = 1;
+        }
+
+        for(int j = 0; j < instances; j++) {
+            if(!(fx = static_cast<kexFx*>(ConstructObject("kexFx")))) {
+                continue;
+            }
+
+            fx->SetOrigin(origin);
+            fx->SetRotation(rotation);
+            fx->SetVelocityOffset(velocity);
+
+            fx->fxFile = fxfile;
+            fx->fxInfo = info;
+
+            if(source) {
+                fx->SetOwner(source);
+            }
+
+            fxList.Add(fx->worldLink);
+            fx->CallSpawn();
+        }
+    }
+
+    return fx;
 }
 
 //

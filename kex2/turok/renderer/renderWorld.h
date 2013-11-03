@@ -25,6 +25,8 @@
 
 #include "world.h"
 
+#define MAX_FX_DISPLAYS 2048
+
 class kexRenderWorld {
 public:
                     kexRenderWorld(void);
@@ -36,6 +38,7 @@ public:
     void            DrawOrigin(float x, float y, float z, float size);
 
     static void     Init(void);
+    static int      SortSprites(const void *a, const void *b);
 
     bool            bShowBBox;
     bool            bShowGrid;
@@ -57,6 +60,12 @@ private:
                         const modelNode_t *node, kexAnimState *animState);
 
     kexWorld        *world;
+
+    typedef struct {
+        kexFx       *fx;
+    } fxDisplay_t;
+
+    fxDisplay_t     fxDisplayList[MAX_FX_DISPLAYS];
 };
 
 extern kexRenderWorld renderWorld;

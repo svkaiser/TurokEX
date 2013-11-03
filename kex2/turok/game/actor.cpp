@@ -121,6 +121,14 @@ int kexActor::RemoveRef(void) {
 }
 
 //
+// kexActor::Remove
+//
+
+void kexActor::Remove(void) {
+    bStale = true;
+}
+
+//
 // kexActor::SetTarget
 //
 
@@ -356,13 +364,6 @@ void kexWorldActor::Spawn(void) {
     clipMesh.Transform();
 
     scriptComponent.CallFunction(scriptComponent.onSpawn);
-}
-
-//
-// kexWorldActor::Remove
-//
-
-void kexWorldActor::Remove(void) {
 }
 
 //

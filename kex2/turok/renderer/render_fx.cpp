@@ -30,8 +30,7 @@
 #include "fx.h"
 #include "client.h"
 
-kexCvar cvarRenderFxTexture("r_fxtexture", CVF_BOOL|CVF_CONFIG, "1", "TODO");
-
+extern kexCvar cvarRenderFxTexture;
 extern int numFxCount;
 
 typedef struct

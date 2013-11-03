@@ -60,7 +60,6 @@ typedef struct kexModel_s {
     unsigned int                    numAnimations;
     modelNode_t                     *nodes;
     struct kexAnim_s                *anims;
-    struct kexModel_s               *next;
 } kexModel_t;
 
 class kexModelManager {
@@ -74,7 +73,7 @@ private:
     void                            ParseKMesh(kexModel_t *model, kexLexer *lexer);
     void                            ParseWavefrontObj(kexModel_t *model, kexLexer *lexer);
 
-    kexFileCacheList<kexModel_t>    modelList;
+    kexHashList<kexModel_t>         modelList;
 };
 
 extern kexModelManager modelManager;

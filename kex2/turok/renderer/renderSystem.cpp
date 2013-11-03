@@ -294,7 +294,7 @@ void kexRenderSystem::Shutdown(void) {
     consoleFont.Texture()->Delete();
 
     for(int i = 0; i < MAX_HASH; i++) {
-        for(texture = textureList.hashlist[i]; texture; texture = texture->next) {
+        for(texture = textureList.GetData(i); texture; texture = textureList.Next()) {
             texture->Delete();
         }
     }
@@ -587,13 +587,12 @@ kexTexture *kexRenderSystem::CacheTexture(const char *name, texClampMode_t clamp
     if(!(texture = textureList.Find(name))) {
         byte *data;
 
-        texture = textureList.Create(name, PU_TEXTURE);
+        texture = textureList.Add(name, PU_TEXTURE);
         texture->SetMasked(true);
 
         data = texture->LoadFromFile(name);
         texture->Upload(data, clampMode, filterMode);
 
-        textureList.Add(texture);
         Z_Free(data);
     }
 
@@ -608,9 +607,7 @@ kexFont *kexRenderSystem::CacheFont(const char *name) {
     kexFont *font = NULL;
 
     if(!(font = fontList.Find(name))) {
-        font = fontList.Create(name);
-        fontList.Add(font);
-
+        font = fontList.Add(name);
         font->LoadKFont(name);
     }
 

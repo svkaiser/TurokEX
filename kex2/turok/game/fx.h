@@ -23,72 +23,67 @@
 #ifndef _FX_H_
 #define _FX_H_
 
-typedef struct
-{
+#include "actor.h"
+#include "textureObject.h"
+
+typedef struct {
     vec3_t value;
     vec3_t rand;
 } fxvector_t;
 
-typedef struct
-{
+typedef struct {
     float value;
     float rand;
 } fxfloat_t;
 
-typedef struct
-{
+typedef struct {
     int value;
     float rand;
 } fxint_t;
 
-enum
-{
-    VFX_ANIMDEFAULT,
+typedef enum {
+    VFX_ANIMDEFAULT     = 0,
     VFX_ANIMONETIME,
     VFX_ANIMLOOP,
     VFX_ANIMSINWAVE
-};
+} fxAnimType_t;
 
-enum
-{
-    VFX_DRAWDEFAULT,
+typedef enum {
+    VFX_DRAWDEFAULT     = 0,
     VFX_DRAWFLAT,
     VFX_DRAWDECAL,
     VFX_DRAWBILLBOARD
-};
+} fxDrawType_t;
 
-enum
-{
-    VFX_DEFAULT,
+typedef enum {
+    VFX_DEFAULT         = 0,
     VFX_DESTROY,
     VFX_REFLECT,
     VFX_BOUNCE
-};
+} fxCollisionType_t;
 
-typedef struct
-{
+typedef struct {
     char        *fx;
     char        *snd;
     action_t    action;
 } fxEvent_t;
 
-typedef struct
-{
-    kbool               bFadeout;
-    kbool               bStopAnimOnImpact;
-    kbool               bOffsetFromFloor;
-    kbool               bTextureWrapMirror;
-    kbool               bLensFlares;
-    kbool               bBlood;
-    kbool               bAddOffset;
-    kbool               bDepthBuffer;
-    kbool               bScaleLerp;
-    kbool               bActorInstance;
-    kbool               bNoDirection;
-    kbool               bLocalAxis;
-    kbool               bClientSpace;
-    kbool               bProjectile;
-    kbool               bDestroyOnWaterSurface;
+typedef struct {
+    bool                bFadeout;
+    bool                bStopAnimOnImpact;
+    bool                bOffsetFromFloor;
+    bool                bTextureWrapMirror;
+    bool                bLensFlares;
+    bool                bBlood;
+    bool                bAddOffset;
+    bool                bDepthBuffer;
+    bool                bScaleLerp;
+    bool                bActorInstance;
+    bool                bNoDirection;
+    bool                bLocalAxis;
+    bool                bClientSpace;
+    bool                bProjectile;
+    bool                bDestroyOnWaterSurface;
     float               mass;
     float               translation_randomscale;
     fxvector_t          translation;
@@ -128,16 +123,14 @@ typedef struct
     fxEvent_t           onWaterExpire;
 } fxinfo_t;
 
-typedef struct fxfile_s
-{
+typedef struct fxfile_s {
     char                filePath[MAX_FILEPATH];
     unsigned int        numfx;
     fxinfo_t            *info;
     struct fxfile_s     *next;
 } fxfile_t;
 
-typedef struct fx_s
-{
+typedef struct fx_s {
     vec3_t              origin;
     vec4_t              rotation;
     vec3_t              translation;
@@ -170,6 +163,68 @@ typedef struct fx_s
     struct fx_s         *prev;
     struct fx_s         *next;
 } fx_t;
+
+class kexFxManager {
+public:
+                                kexFxManager(void);
+                                ~kexFxManager(void);
+
+    void                        Init(void);
+    void                        Shutdown(void);
+    fxfile_t                    *LoadKFX(const char *file);
+    int                         RandValue(int value);
+
+private:
+    void                        ParseEvent(fxEvent_t *fxEvent, kexLexer *lexer);
+    kexHashList<fxfile_t>       kfxList;
+};
+
+extern kexFxManager fxManager;
+
+BEGIN_EXTENDED_CLASS(kexFx, kexActor);
+public:
+                                kexFx(void);
+                                ~kexFx(void);
+
+    virtual void                LocalTick(void);
+    virtual void                Tick(void);
+
+    void                        Spawn(void);
+    void                        SetViewDistance(void);
+    kexFx                       *SpawnChild(const char *name);
+    void                        Event(fxEvent_t *fxEvent, kexActor *target);
+
+    kexVec3                     &GetVelocityOffset(void) { return velOffset; }
+    void                        SetVelocityOffset(const kexVec3 &vel) { velOffset = vel; }
+    const float                 Distance(void)const { return distance; }
+    kexTexture                  *Texture(void) { return textures[frame]; }
+
+    kexLinklist<kexFx>          worldLink;
+    fxinfo_t                    *fxInfo;
+    fxfile_t                    *fxFile;
+    bool                        bAnimate;
+    bool                        bAttachToSource;
+    bool                        bForcedRestart;
+    float                       restart;
+    float                       drawScale;
+    float                       drawScaleDest;
+    float                       rotationOffset;
+    float                       rotationSpeed;
+    float                       gravity;
+    float                       speed;
+    byte                        color1[4];
+    byte                        color2[4];
+
+private:
+    kexVec3                     offset;
+    kexVec3                     velOffset;
+    int                         instances;
+    float                       lifeTime;
+    kexTexture                  **textures;
+    int                         frame;
+    int                         frameTime;
+    float                       distance;
+END_CLASS();
 
 extern fx_t fxRoot;
 extern fx_t *fxRover;

@@ -1009,6 +1009,36 @@ kexMatrix kexMatrix::operator*(kexMatrix &matrix) {
 }
 
 //
+// kexMatrix::operator|
+//
+
+kexMatrix kexMatrix::operator|(kexMatrix &matrix) {
+    kexMatrix out;
+    float *m1 = ToFloatPtr();
+    float *m2 = matrix.ToFloatPtr();
+    float *mOut = out.ToFloatPtr();
+
+    mOut[ 0] = m2[ 4] * m1[ 1] + m1[ 2] * m2[ 8] + m2[ 0] * m1[ 0];
+    mOut[ 1] = m1[ 0] * m2[ 1] + m2[ 9] * m1[ 2] + m2[ 5] * m1[ 1];
+    mOut[ 2] = m1[ 0] * m2[ 2] + m1[ 1] * m2[ 6] + m1[ 2] * m2[10];
+    mOut[ 3] = 0;
+    mOut[ 4] = m2[ 0] * m1[ 4] + m2[ 4] * m1[ 5] + m1[ 6] * m2[ 8];
+    mOut[ 5] = m2[ 5] * m1[ 5] + m1[ 6] * m2[ 9] + m1[ 4] * m2[ 1];
+    mOut[ 6] = m1[ 5] * m2[ 6] + m1[ 6] * m2[10] + m1[ 4] * m2[ 2];
+    mOut[ 7] = 0;
+    mOut[ 8] = m2[ 0] * m1[ 8] + m1[10] * m2[ 8] + m1[ 9] * m2[ 4];
+    mOut[ 9] = m1[ 8] * m2[ 1] + m1[ 9] * m2[ 5] + m1[10] * m2[ 9];
+    mOut[10] = m1[ 8] * m2[ 2] + m1[ 9] * m2[ 6] + m1[10] * m2[10];
+    mOut[11] = 0;
+    mOut[12] = m2[ 0] * m1[12] + m1[14] * m2[ 8] + m1[13] * m2[ 4] + m2[12];
+    mOut[13] = m1[13] * m2[ 5] + m1[14] * m2[ 9] + m1[12] * m2[ 1] + m2[13];
+    mOut[14] = m1[12] * m2[ 2] + m1[14] * m2[10] + m1[13] * m2[ 6] + m2[14];
+    mOut[15] = 1;
+
+    return out;
+}
+
+//
 // kexMatrix::operator=
 //
 
