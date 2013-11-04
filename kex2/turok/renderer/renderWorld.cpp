@@ -49,6 +49,7 @@ static void FCmd_ShowCollision(void) {
     }
 
     renderWorld.bShowClipMesh ^= 1;
+    renderWorld.bWireframe = 0;
 }
 
 //
@@ -100,6 +101,18 @@ static void FCmd_ShowOrigin(void) {
 }
 
 //
+// FCmd_ShowWireframe
+//
+
+static void FCmd_ShowWireFrame(void) {
+    if(command.GetArgc() < 1)
+        return;
+
+    renderWorld.bWireframe ^= 1;
+    renderWorld.bShowClipMesh = 0;
+}
+
+//
 // kexRenderWorld::kexRenderWorld
 //
 
@@ -125,6 +138,7 @@ void kexRenderWorld::Init(void) {
     command.Add("showbbox", FCmd_ShowBoundingBox);
     command.Add("showradius", FCmd_ShowRadius);
     command.Add("showorigin", FCmd_ShowOrigin);
+    command.Add("drawwireframe", FCmd_ShowWireFrame);
 }
 
 //
@@ -138,31 +152,25 @@ void kexRenderWorld::RenderScene(void) {
         return;
     }
 
-    if(!bShowClipMesh && cvarRenderFog.GetBool() && localWorld.FogEnabled()) {
-        float *rgb = localWorld.GetCurrentFogRGB();
-        dglClearColor(rgb[0], rgb[1], rgb[2], 1.0f);
-
-        dglFogi(GL_FOG_COORD_SRC, GL_FRAGMENT_DEPTH);
-        dglFogfv(GL_FOG_COLOR, rgb);
-        dglFogf(GL_FOG_START, localWorld.GetFogNear());
-        dglFogf(GL_FOG_END, localWorld.GetFogFar());
-    }
-    else {
-        dglClearColor(0.25f, 0.25f, 0.25f, 1.0f);
-    }
+    SetupGlobalFog();
 
     dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    world->Camera()->SetupMatrices();
     renderSystem.SetCull(GLCULL_BACK);
     renderSystem.SetState(GLSTATE_DEPTHTEST, true);
 
     dglDisableClientState(GL_COLOR_ARRAY);
 
+    world->Camera()->SetupMatrices();
+
     dglMatrixMode(GL_PROJECTION);
     dglLoadMatrixf(world->Camera()->Projection().ToFloatPtr());
     dglMatrixMode(GL_MODELVIEW);
     dglLoadMatrixf(world->Camera()->ModelView().ToFloatPtr());
+
+    if(bWireframe) {
+        dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
 
     SetupGlobalLight();
     DrawStaticActors();
@@ -171,6 +179,10 @@ void kexRenderWorld::RenderScene(void) {
     DrawViewActors();
 
     dglEnableClientState(GL_COLOR_ARRAY);
+
+    if(bWireframe) {
+        dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
 
     renderSystem.SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
     renderSystem.SetState(GLSTATE_DEPTHTEST, false);
@@ -189,12 +201,32 @@ void kexRenderWorld::RenderScene(void) {
 }
 
 //
+// kexRenderWorld::SetupGlobalFog
+//
+
+void kexRenderWorld::SetupGlobalFog(void) {
+    if(!bShowClipMesh && cvarRenderFog.GetBool() && localWorld.FogEnabled() && !bWireframe) {
+        float *rgb = localWorld.GetCurrentFogRGB();
+        dglClearColor(rgb[0], rgb[1], rgb[2], 1.0f);
+
+        dglFogi(GL_FOG_COORD_SRC, GL_FRAGMENT_DEPTH);
+        dglFogfv(GL_FOG_COLOR, rgb);
+        dglFogf(GL_FOG_START, localWorld.GetFogNear());
+        dglFogf(GL_FOG_END, localWorld.GetFogFar());
+    }
+    else {
+        dglClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+    }
+}
+
+//
 // kexRenderWorld::SetupGlobalLight
 //
 
 void kexRenderWorld::SetupGlobalLight(void) {
-    if(bWireframe)
+    if(bWireframe) {
         return;
+    }
 
     // TODO - NEEDS SHADERS
     renderSystem.SetState(GLSTATE_LIGHTING, true);
@@ -215,14 +247,14 @@ void kexRenderWorld::SetupGlobalLight(void) {
 //
 
 void kexRenderWorld::DrawSurface(const surface_t *surface, const char *texturePath) {
-    texture_t *tex;
+    kexTexture *tex;
     rcolor color;
 
     if(texturePath == NULL) {
         texturePath = surface->texturePath;
     }
 
-    renderSystem.SetState(GLSTATE_FOG, localWorld.FogEnabled());
+    renderSystem.SetState(GLSTATE_FOG, (localWorld.FogEnabled() && !bWireframe));
     renderSystem.SetState(GLSTATE_CULL, (surface->flags & MDF_NOCULLFACES) == 0);
     renderSystem.SetState(GLSTATE_BLEND, (surface->flags & (MDF_MASKED|MDF_TRANSPARENT1)) != 0);
     renderSystem.SetState(GLSTATE_ALPHATEST, (surface->flags & (MDF_MASKED|MDF_TRANSPARENT1)) != 0);
@@ -249,26 +281,31 @@ void kexRenderWorld::DrawSurface(const surface_t *surface, const char *texturePa
     dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, surface->coords);
     dglVertexPointer(3, GL_FLOAT, sizeof(kexVec3), surface->vertices);
 
-    tex = Tex_CacheTextureFile(texturePath, GL_REPEAT,
-        surface->flags & MDF_MASKED);
+    if(!bWireframe) {
+        tex = renderSystem.CacheTexture(texturePath, TC_REPEAT);
 
-    if(tex) {
-        renderSystem.SetState(GLSTATE_LIGHTING, true);
-        GL_BindTexture(tex);
+        if(tex) {
+            renderSystem.SetState(GLSTATE_LIGHTING, true);
+            tex->Bind();
+        }
+        else {
+            renderSystem.SetState(GLSTATE_LIGHTING, false);
+            renderSystem.whiteTexture.Bind();
+            color = surface->color1;
+        }
+
+        if(surface->flags & MDF_TRANSPARENT1) {
+            renderSystem.SetState(GLSTATE_LIGHTING, false);
+            color = color & 0xffffff;
+            color |= (160 << 24);
+        }
+
+        dglColor4ubv((byte*)&color);
     }
     else {
         renderSystem.SetState(GLSTATE_LIGHTING, false);
-        GL_BindTextureName("textures/white.tga");
-        color = surface->color1;
+        renderSystem.whiteTexture.Bind();
     }
-
-    if(surface->flags & MDF_TRANSPARENT1) {
-        renderSystem.SetState(GLSTATE_LIGHTING, false);
-        color = color & 0xffffff;
-        color |= (160 << 24);
-    }
-
-    dglColor4ubv((byte*)&color);
 
     dglDrawElements(GL_TRIANGLES, surface->numIndices, GL_UNSIGNED_SHORT, surface->indices);
 }
@@ -430,6 +467,10 @@ void kexRenderWorld::DrawStaticActors(void) {
                 if(!bShowClipMesh) {
                     dglPushMatrix();
                     dglMultMatrixf(actor->Matrix().ToFloatPtr());
+
+                    if(bWireframe) {
+                        dglColor4ub(0, 224, 224, 255);
+                    }
                     TraverseDrawActorNode(actor, &actor->Model()->nodes[0], NULL);
                     dglPopMatrix();
                 }
@@ -497,6 +538,10 @@ void kexRenderWorld::DrawActors(void) {
 
                 dglMultMatrixf(mtx.ToFloatPtr());
 
+                if(bWireframe) {
+                    dglColor4ub(192, 192, 192, 255);
+                }
+
                 TraverseDrawActorNode(actor, &actor->Model()->nodes[0], actor->AnimState());
 
                 dglPopMatrix();
@@ -553,6 +598,15 @@ void kexRenderWorld::DrawViewActors(void) {
 
                 dglMultMatrixf(modelMatrix.ToFloatPtr());
 
+                if(bWireframe) {
+                    if(actor->bStatic) {
+                        dglColor4ub(0, 224, 224, 255);
+                    }
+                    else {
+                        dglColor4ub(192, 192, 192, 255);
+                    }
+                }
+
                 TraverseDrawActorNode(actor, &actor->Model()->nodes[0], actor->AnimState());
 
                 dglPopMatrix();
@@ -580,7 +634,7 @@ int kexRenderWorld::SortSprites(const void *a, const void *b) {
 
 void kexRenderWorld::DrawFX(void) {
     static const word   spriteIndices[6] = { 0, 1, 2, 2, 1, 3 };
-    static const float  spriteTexCoords[8] = { 1, 1, 1, 0, 0, 1, 0 };
+    static const float  spriteTexCoords[8] = { 0, 1, 1, 1, 0, 0, 1, 0 };
     static float        spriteVertices[4][3];
     static byte         spriteColors[4][4];
     bool                bShowTexture;
@@ -600,6 +654,7 @@ void kexRenderWorld::DrawFX(void) {
 
     memset(fxDisplayList, 0, sizeof(fxDisplay_t) * MAX_FX_DISPLAYS);
 
+    // gather particle fx and add to display list for sorting
     for(world->fxRover = world->fxList.Next(), fxDisplayNum = 0;
         world->fxRover != NULL; world->fxRover = world->fxRover->worldLink.Next()) {
             if(fxDisplayNum >= MAX_FX_DISPLAYS) {
@@ -609,6 +664,9 @@ void kexRenderWorld::DrawFX(void) {
                 continue;
             }
             if(world->fxRover->restart > 0) {
+                continue;
+            }
+            if(world->fxRover->IsStale()) {
                 continue;
             }
 
@@ -630,7 +688,7 @@ void kexRenderWorld::DrawFX(void) {
 
     bShowTexture = cvarRenderFxTexture.GetBool();
 
-    qsort(fxDisplayList, fxDisplayNum, sizeof(fxDisplay_t), kexRenderWorld::SortSprites);
+    SDL_qsort(fxDisplayList, fxDisplayNum, sizeof(fxDisplay_t), kexRenderWorld::SortSprites);
 
     dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, spriteTexCoords);
     dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, spriteVertices);
@@ -642,15 +700,12 @@ void kexRenderWorld::DrawFX(void) {
         dglEnableClientState(GL_COLOR_ARRAY);
     }
 
+    // draw sorted fx list
     for(i = 0; i < fxDisplayNum; i++) {
         fx = fxDisplayList[i].fx;
         fxinfo = fx->fxInfo;
 
         if(fxinfo == NULL) {
-            continue;
-        }
-
-        if(fx->Removing()) {
             continue;
         }
 
@@ -682,19 +737,13 @@ void kexRenderWorld::DrawFX(void) {
         texture = fx->Texture();
         y = fx->GetOrigin().y;
 
-        /*
-        if(fxinfo->bOffsetFromFloor && fx->plane != NULL) {
-            float dist = Plane_GetDistance(fx->plane, fx->origin) + 3.42f;
-
-            if(dist >= fx->origin[1]) {
-                y = dist;
-            }
-
+        // snap sprite to floor based on texture height
+        if(fxinfo->bOffsetFromFloor) {
+            y += 3.42f;
             if(fxinfo->drawtype == VFX_DRAWBILLBOARD) {
-                y += (float)texture->height;
+                y += (float)texture->OriginalHeight();
             }
         }
-        */
 
         finalmtx = (scalemtx | mtx);
         finalmtx.AddTranslation(fx->GetOrigin().x, y, fx->GetOrigin().z);

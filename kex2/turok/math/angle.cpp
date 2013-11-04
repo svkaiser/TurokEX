@@ -437,6 +437,17 @@ kexVec3 &kexAngle::ToVec3(void) {
 }
 
 //
+// kexAngle::ToQuat
+//
+
+kexQuat kexAngle::ToQuat(void) {
+    return 
+        (kexQuat(pitch, kexVec3::vecRight) *
+        (kexQuat(yaw, kexVec3::vecUp) *
+         kexQuat(roll, kexVec3::vecForward)));
+}
+
+//
 // kexAngle::operator+
 //
 

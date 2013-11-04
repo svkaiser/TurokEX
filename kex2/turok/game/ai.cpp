@@ -226,8 +226,8 @@ void AI_FireProjectile(ai_t *ai, const char *fxname, float x, float y, float z,
     Vec_PointAt(origin, torg, actor->rotation, maxangle, frot);
     Vec_Set3(tmp, 0, 0, 0);
 
-    FX_Spawn(fxname, actor, tmp, origin, frot,
-        Map_IndexToPlane(actor->plane));
+    //FX_Spawn(fxname, actor, tmp, origin, frot,
+        //Map_IndexToPlane(actor->plane));
 }
 
 //

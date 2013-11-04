@@ -50,6 +50,7 @@ public:
     bool            bShowClipMesh;
 
 private:
+    void            SetupGlobalFog(void);
     void            SetupGlobalLight(void);
     void            DrawActors(void);
     void            DrawStaticActors(void);

@@ -166,27 +166,7 @@ void kexWorld::LocalTick(void) {
             }
     }
 
-    kexFx *tmpFx;
-
-    for(fxRover = fxList.Next(); fxRover != NULL;
-        fxRover = fxRover->worldLink.Next()) {
-            fxRover->LocalTick();
-
-            if(fxRover->Removing()) {
-                if(fxRover->RefCount() > 0) {
-                    return;
-                }
-                    
-                fxRover->worldLink.Remove();
-                tmpFx = fxRover;
-                fxRover = fxRover->worldLink.Prev();
-                Z_Free(tmpFx);
-
-                if(fxRover == NULL) {
-                    break;
-                }
-            }
-    }
+    fxManager.UpdateWorld(this);
 
     if(bEnableFog) {
         currentFogRGB[0]    = (fogRGB[0] - currentFogRGB[0]) * FOG_LERP_SPEED + currentFogRGB[0];
@@ -247,9 +227,6 @@ void kexWorld::AddActor(kexWorldActor *actor) {
 //
 
 void kexWorld::RemoveActor(kexWorldActor *actor) {
-    if(actor->RefCount() > 0)
-        return;
-        
     actor->worldLink.Remove();
 
    /* Note that actorRover is guaranteed to point to us,
@@ -324,7 +301,7 @@ kexFx *kexWorld::SpawnFX(const char *name, kexActor *source, kexVec3 &velocity,
         info = &fxfile->info[i];
 
         instances = info->instances.value;
-        spawnDice = instances + fxManager.RandValue((int)info->instances.rand);
+        spawnDice = instances + FX_RAND_VALUE((int)info->instances.rand);
 
         if(spawnDice <= 0) {
             continue;

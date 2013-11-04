@@ -78,6 +78,7 @@ public:
     int                         RemoveRef(void);
     void                        SetTarget(kexActor *targ);
     void                        SetOwner(kexActor *targ);
+    const bool                  Removing(void) const;
 
     void                        SetBoundingBox(const kexVec3 &min, const kexVec3 &max);
     bool                        Trace(traceInfo_t *trace);
@@ -107,7 +108,7 @@ public:
     kexMatrix                   &Matrix(void) { return matrix; }
     kexBBox                     &BoundingBox(void) { return bbox; }
     const kexModel_t            *Model(void) const { return model; }
-    const bool                  Removing(void)const { return bStale; }
+    const bool                  IsStale(void) const { return bStale; }
 
     struct gridBound_s          *gridBound;
 

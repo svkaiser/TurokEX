@@ -39,7 +39,6 @@
 #include "server.h"
 #include "sound.h"
 #include "fx.h"
-#include "parse.h"
 #include "actor.h"
 
 static gActorTemplate_t *actorTemplateList[MAX_HASH];
@@ -118,7 +117,7 @@ static void Actor_ParseTemplate(kexLexer *lexer, gActorTemplate_t *ac)
         case scactor_mesh:
             lexer->ExpectNextToken(TK_EQUAL);
             lexer->GetString();
-            ac->actor.model = Kmesh_Load(lexer->StringToken());
+            //ac->actor.model = Kmesh_Load(lexer->StringToken());
             break;
 
         case scactor_bounds:
@@ -705,6 +704,7 @@ void Actor_GetLocalVectors(vec3_t out, gActor_t *actor, float x, float y, float 
 
 void Actor_SpawnBodyFX(gActor_t *actor, const char *fx, float x, float y, float z)
 {
+#if 0
     plane_t *plane;
     vec3_t org;
     vec3_t tmp;
@@ -732,6 +732,7 @@ void Actor_SpawnBodyFX(gActor_t *actor, const char *fx, float x, float y, float 
         return;
 
     Vec_AdjustQuaternion(vfx->rotation, rot, actor->angles[0] + M_PI);
+#endif
 }
 
 //
@@ -1163,8 +1164,8 @@ void Actor_ClearData(gActor_t *actor)
 
 void Actor_UpdateModel(gActor_t *actor, const char *model)
 {
-    if(model)
-        actor->model = Kmesh_Load(model);
+    //if(model)
+        //actor->model = Kmesh_Load(model);
 
     if(actor->model)
     {

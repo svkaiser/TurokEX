@@ -38,7 +38,6 @@
 #include "fx.h"
 #include "ai.h"
 #include "debug.h"
-#include "parse.h"
 
 extern kexCvar cvarRenderFog;
 extern kexCvar cvarRenderCull;
@@ -967,7 +966,7 @@ void R_DrawFrame(void)
     GL_SetState(GLSTATE_LIGHTING, false);
 
     dglCullFace(GL_FRONT);
-    R_DrawFX();
+    //R_DrawFX();
 
     dglEnableClientState(GL_COLOR_ARRAY);
     dglAlphaFunc(GL_GEQUAL, 0.01f);
@@ -1172,12 +1171,11 @@ void R_Init(void)
     //command.Add("showorigin", FCmd_ShowOrigin);
     command.Add("showpnmls", FCmd_ShowPlaneNormals);
     //command.Add("showradius", FCmd_ShowRadius);
-    command.Add("drawwireframe", FCmd_ShowWireFrame);
+//    command.Add("drawwireframe", FCmd_ShowWireFrame);
     command.Add("shownodes", FCmd_ShowNodes);
     command.Add("screenshot", FCmd_Screenshot);
 
     Debug_RegisterPerfStatVar((float*)&numFxCount, "FX Count", false);
 
     Mdl_Init();
-    FX_Init();
 }

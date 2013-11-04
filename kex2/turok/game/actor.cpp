@@ -129,6 +129,14 @@ void kexActor::Remove(void) {
 }
 
 //
+// kexActor::Removing
+//
+
+const bool kexActor::Removing(void) const {
+    return (bStale && RefCount() <= 0);
+}
+
+//
 // kexActor::SetTarget
 //
 
@@ -510,10 +518,7 @@ void kexWorldActor::UpdateTransform(void) {
 
     if(!bStatic || physics.bRotor) {
         angles.Clamp180();
-        rotation =
-            kexQuat(angles.pitch, kexVec3::vecRight) *
-            (kexQuat(angles.yaw, kexVec3::vecUp) *
-            kexQuat(angles.roll, kexVec3::vecForward));
+        rotation = angles.ToQuat();
     }
 
     if(!AlignToSurface())

@@ -63,106 +63,73 @@ typedef enum {
 } fxCollisionType_t;
 
 typedef struct {
-    char        *fx;
-    char        *snd;
-    action_t    action;
+    char                        *fx;
+    char                        *snd;
+    action_t                    action;
 } fxEvent_t;
 
 typedef struct {
-    bool                bFadeout;
-    bool                bStopAnimOnImpact;
-    bool                bOffsetFromFloor;
-    bool                bTextureWrapMirror;
-    bool                bLensFlares;
-    bool                bBlood;
-    bool                bAddOffset;
-    bool                bDepthBuffer;
-    bool                bScaleLerp;
-    bool                bActorInstance;
-    bool                bNoDirection;
-    bool                bLocalAxis;
-    bool                bClientSpace;
-    bool                bProjectile;
-    bool                bDestroyOnWaterSurface;
-    float               mass;
-    float               translation_randomscale;
-    fxvector_t          translation;
-    fxfloat_t           gravity;
-    float               friction;
-    float               animFriction;
-    fxfloat_t           scale;
-    fxfloat_t           scaledest;
-    fxfloat_t           forward;
-    fxvector_t          offset;
-    fxfloat_t           rotation_offset;
-    fxfloat_t           rotation_speed;
-    float               screen_offset_x;
-    float               screen_offset_y;
-    int                 numTextures;
-    char                **textures;
-    fxint_t             instances;
-    fxint_t             lifetime;
-    float               restart;
-    int                 animspeed;
-    byte                ontouch;
-    byte                onplane;
-    byte                drawtype;
-    byte                animtype;
-    byte                color1[4];
-    int                 color1_randomscale;
-    byte                color2[4];
-    int                 color2_randomscale;
-    int                 saturation_randomscale;
-    int                 fadein_time;
-    int                 fadeout_time;
-    fxEvent_t           onImpact;
-    fxEvent_t           onTick;
-    fxEvent_t           onExpire;
-    fxEvent_t           onWaterImpact;
-    fxEvent_t           onWaterTick;
-    fxEvent_t           onWaterExpire;
+    bool                        bFadeout;
+    bool                        bStopAnimOnImpact;
+    bool                        bOffsetFromFloor;
+    bool                        bTextureWrapMirror;
+    bool                        bLensFlares;
+    bool                        bBlood;
+    bool                        bAddOffset;
+    bool                        bDepthBuffer;
+    bool                        bScaleLerp;
+    bool                        bActorInstance;
+    bool                        bNoDirection;
+    bool                        bLocalAxis;
+    bool                        bClientSpace;
+    bool                        bProjectile;
+    bool                        bDestroyOnWaterSurface;
+    float                       mass;
+    float                       translation_randomscale;
+    fxvector_t                  translation;
+    fxfloat_t                   gravity;
+    float                       friction;
+    float                       animFriction;
+    fxfloat_t                   scale;
+    fxfloat_t                   scaledest;
+    fxfloat_t                   forward;
+    fxvector_t                  offset;
+    fxfloat_t                   rotation_offset;
+    fxfloat_t                   rotation_speed;
+    float                       screen_offset_x;
+    float                       screen_offset_y;
+    int                         numTextures;
+    char                        **textures;
+    fxint_t                     instances;
+    fxint_t                     lifetime;
+    float                       restart;
+    int                         animspeed;
+    fxCollisionType_t           ontouch;
+    fxCollisionType_t           onplane;
+    fxDrawType_t                drawtype;
+    fxAnimType_t                animtype;
+    byte                        color1[4];
+    int                         color1_randomscale;
+    byte                        color2[4];
+    int                         color2_randomscale;
+    int                         saturation_randomscale;
+    int                         fadein_time;
+    int                         fadeout_time;
+    fxEvent_t                   onImpact;
+    fxEvent_t                   onTick;
+    fxEvent_t                   onExpire;
+    fxEvent_t                   onWaterImpact;
+    fxEvent_t                   onWaterTick;
+    fxEvent_t                   onWaterExpire;
 } fxinfo_t;
 
 typedef struct fxfile_s {
-    char                filePath[MAX_FILEPATH];
-    unsigned int        numfx;
-    fxinfo_t            *info;
-    struct fxfile_s     *next;
+    char                        filePath[MAX_FILEPATH];
+    unsigned int                numfx;
+    fxinfo_t                    *info;
 } fxfile_t;
 
-typedef struct fx_s {
-    vec3_t              origin;
-    vec4_t              rotation;
-    vec3_t              translation;
-    int                 refcount;
-    kbool               bStale;
-    vec3_t              offset;
-    fxinfo_t            *info;
-    float               gravity;
-    float               scale;
-    float               scale_dest;
-    float               forward;
-    float               rotation_offset;
-    float               rotation_speed;
-    int                 instances;
-    float               lifetime;
-    float               restart;
-    kbool               bAnimate;
-    kbool               bAttachToSource;
-    kbool               bForcedRestart;
-    byte                color1[4];
-    byte                color2[4];
-    texture_t           **textures;
-    int                 frame;
-    int                 frametime;
-    plane_t             *plane;
-    mtx_t               matrix;
-    fxfile_t            *file;
-    gActor_t            *source;
-    float               dist;
-    struct fx_s         *prev;
-    struct fx_s         *next;
-} fx_t;
+class kexWorld;
 
 class kexFxManager {
 public:
@@ -171,8 +138,8 @@ public:
 
     void                        Init(void);
     void                        Shutdown(void);
+    void                        UpdateWorld(kexWorld *world);
     fxfile_t                    *LoadKFX(const char *file);
-    int                         RandValue(int value);
 
 private:
     void                        ParseEvent(fxEvent_t *fxEvent, kexLexer *lexer);
@@ -180,6 +147,20 @@ private:
 };
 
 extern kexFxManager fxManager;
+
+#define FX_RAND_RANGE()     ((float)((kexRand::SysRand() % 20000) - 10000) * 0.0001f)
+#define FX_RAND_FLOAT(x)    (kexRand::Float() * x)
+#define FX_RAND_VALUE(x)                        \
+    ((x > 0) ? (kexRand::SysRand() % (x + 1)) : \
+    -(kexRand::SysRand() % (1 - x)))
+
+BEGIN_EXTENDED_CLASS(kexFxPhysics, kexPhysics);
+public:
+                                kexFxPhysics(void);
+                                ~kexFxPhysics(void);
+
+    virtual void                Think(const float timeDelta);
+END_CLASS();
 
 BEGIN_EXTENDED_CLASS(kexFx, kexActor);
 public:
@@ -198,6 +179,7 @@ public:
     void                        SetVelocityOffset(const kexVec3 &vel) { velOffset = vel; }
     const float                 Distance(void)const { return distance; }
     kexTexture                  *Texture(void) { return textures[frame]; }
+    kexFxPhysics                *Physics(void) { return &physics; }
 
     kexLinklist<kexFx>          worldLink;
     fxinfo_t                    *fxInfo;
@@ -216,6 +198,7 @@ public:
     byte                        color2[4];
 
 private:
+    kexFxPhysics                physics;
     kexVec3                     offset;
     kexVec3                     velOffset;
     int                         instances;
@@ -225,16 +208,5 @@ private:
     int                         frameTime;
     float                       distance;
 END_CLASS();
-
-extern fx_t fxRoot;
-extern fx_t *fxRover;
-
-void FX_Init(void);
-void FX_Kill(fx_t *fx);
-void FX_Ticker(void);
-void FX_ClearLinks(void);
-void FX_Shutdown(void);
-fx_t *FX_Spawn(const char *name, gActor_t *source, vec3_t origin,
-                vec3_t dest, vec4_t rotation, plane_t *plane);
 
 #endif

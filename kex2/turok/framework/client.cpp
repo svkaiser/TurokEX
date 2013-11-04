@@ -202,7 +202,6 @@ void kexClient::Run(const int msec) {
     // run client-side ticks
     playerClient.LocalTick();
     console.Tick();
-    FX_Ticker();
     localWorld.LocalTick();
 
     // draw

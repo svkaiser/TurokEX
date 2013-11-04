@@ -247,6 +247,35 @@ kexQuat &kexQuat::operator*=(const float val) {
 }
 
 //
+// kexQuat::operator|
+//
+
+kexVec3 kexQuat::operator|(const kexVec3 &vector) {
+    float xx = x * x;
+    float yx = y * x;
+    float zx = z * x;
+    float wx = w * x;
+    float yy = y * y;
+    float zy = z * y;
+    float wy = w * y;
+    float zz = z * z;
+    float wz = w * z;
+    float ww = w * w;
+
+    return kexVec3(
+        ((yx + yx) - (wz + wz)) * vector.y +
+        ((wy + wy + zx + zx)) * vector.z +
+        (((ww + xx) - yy) - zz) * vector.x,
+        ((yy + (ww - xx)) - zz) * vector.y +
+        ((zy + zy) - (wx + wx)) * vector.z +
+        ((wz + wz) + (yx + yx)) * vector.x,
+        ((wx + wx) + (zy + zy)) * vector.y +
+        (((ww - xx) - yy) + zz) * vector.z +
+        ((zx + zx) - (wy + wy)) * vector.x
+    );
+}
+
+//
 // kexQuat::Dot
 //
 
@@ -298,6 +327,30 @@ kexQuat kexQuat::Slerp(const kexQuat &quat, float movement) const {
         out.Normalize();
         return out;
     }
+}
+
+//
+// kexQuat::RotateFrom
+//
+
+kexQuat kexQuat::RotateFrom(const kexVec3 &location, const kexVec3 &target, float maxAngle) {
+    kexVec3 axis;
+    kexVec3 dir;
+    kexVec3 cp;
+    kexQuat prot;
+    float an;
+
+    dir = (*this | kexVec3::vecForward);
+    axis = (target - location).Normalize();
+    cp = dir.Cross(axis).Normalize();
+
+    an = kexMath::ACos(axis.Dot(dir));
+
+    if(maxAngle != 0 && an >= maxAngle) {
+        an = maxAngle;
+    }
+
+    return (*this * kexQuat(an, cp));
 }
 
 //

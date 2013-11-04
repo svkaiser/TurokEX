@@ -60,6 +60,8 @@ static const sctokens_t physicsTokens[scPhysics_end+1] = {
     { -1,                       NULL                    }
 };
 
+DECLARE_CLASS(kexPhysics, kexObject)
+
 //
 // kexPhysics::kexPhysics
 //

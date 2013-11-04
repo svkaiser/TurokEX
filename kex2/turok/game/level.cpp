@@ -40,7 +40,6 @@
 #include "ai.h"
 #include "fx.h"
 #include "debug.h"
-#include "parse.h"
 
 gLevel_t gLevel;
 
@@ -759,8 +758,8 @@ void Map_Load(int map)
         return;
 
     Map_PreLoad();
-    Knav_Load(map);
-    Kmap_Load(map);
+    //Knav_Load(map);
+    //Kmap_Load(map);
     Map_PostLoad();
 }
 
@@ -826,7 +825,7 @@ void Map_Unload(void)
             JS_RemoveRoot(js_context, &area->components);
     }
 
-    FX_ClearLinks();
+    //FX_ClearLinks();
 
     // purge all level and actor allocations
     Z_FreeTags(PU_LEVEL, PU_LEVEL);

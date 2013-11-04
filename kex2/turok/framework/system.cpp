@@ -145,7 +145,7 @@ void kexSystem::Shutdown(void) {
 
     J_Shutdown();
     soundSystem.Shutdown();
-    FX_Shutdown();
+    fxManager.Shutdown();
     G_Shutdown();
 
     renderSystem.Shutdown();
@@ -440,6 +440,7 @@ void kexSystem::Main(int argc, char **argv) {
     renderSystem.Init();
 
     R_Init();
+    fxManager.Init();
 
     kexRenderWorld::Init();
 

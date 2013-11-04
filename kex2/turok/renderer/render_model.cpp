@@ -32,7 +32,6 @@
 #include "script.h"
 #include "render.h"
 #include "mathlib.h"
-#include "parse.h"
 
 //
 // Mdl_GetAnim
@@ -262,6 +261,7 @@ void Mdl_GetAnimTranslation(vec3_t out, anim_t *anim, int nodenum, int frame)
 
 static void FCmd_LoadTestModel(void)
 {
+#if 0
     kmodel_t *model;
     int time;
 
@@ -280,6 +280,7 @@ static void FCmd_LoadTestModel(void)
 
     common.DPrintf("\nloadtime: %f seconds\n\n",
         (float)(sysMain.GetMS() - time) / 1000.0f);
+#endif
 }
 
 //

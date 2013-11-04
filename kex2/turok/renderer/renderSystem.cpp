@@ -584,6 +584,10 @@ kexTexture *kexRenderSystem::CacheTexture(const char *name, texClampMode_t clamp
                                           texFilterMode_t filterMode) {
     kexTexture *texture = NULL;
 
+    if(name == NULL || name[0] == 0) {
+        return NULL;
+    }
+
     if(!(texture = textureList.Find(name))) {
         byte *data;
 

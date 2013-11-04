@@ -54,7 +54,7 @@ typedef struct {
     kexActor                *owner;
 } traceInfo_t;
 
-class kexPhysics {
+BEGIN_EXTENDED_CLASS(kexPhysics, kexObject);
 public:
                             kexPhysics(void);
                             ~kexPhysics(void);
@@ -65,7 +65,8 @@ public:
     bool                    OnSteepSlope(void);
     void                    ImpactVelocity(kexVec3 &vel, kexVec3 &normal, const float force);
     void                    ApplyFriction(void);
-    void                    Think(const float timeDelta);
+
+    virtual void            Think(const float timeDelta);
 
     kexVec3                 &GetVelocity(void) { return velocity; }
     void                    SetVelocity(const kexVec3 &vel) { velocity = vel; }
@@ -88,8 +89,8 @@ public:
     kexTri                  *groundGeom;
     bool                    bOnGround;
 
-private:
+protected:
     kexActor                *owner;
-};
+END_CLASS();
 
 #endif

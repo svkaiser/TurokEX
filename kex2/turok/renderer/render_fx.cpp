@@ -29,7 +29,7 @@
 #include "render.h"
 #include "fx.h"
 #include "client.h"
-
+#if 0
 extern kexCvar cvarRenderFxTexture;
 extern int numFxCount;
 
@@ -238,3 +238,4 @@ void R_DrawFX(void)
     if(!bWireframe)
         dglDisableClientState(GL_COLOR_ARRAY);
 }
+#endif

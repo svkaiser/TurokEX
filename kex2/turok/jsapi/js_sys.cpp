@@ -33,7 +33,6 @@
 #include "gl.h"
 #include "fx.h"
 #include "sound.h"
-#include "parse.h"
 #include "filesystem.h"
 
 JS_CLASSOBJECT(Sys);
@@ -359,6 +358,7 @@ JS_FASTNATIVE_BEGIN(Sys, cacheTexture)
 
 JS_FASTNATIVE_BEGIN(Sys, loadModel)
 {
+#if 0
     JSString *str;
     char *bytes;
     kmodel_t *model;
@@ -375,7 +375,8 @@ JS_FASTNATIVE_BEGIN(Sys, loadModel)
     {
         JS_NEWOBJECT_SETPRIVATE(model, &Model_class);
     }
-
+#endif
+    JS_SET_RVAL(cx, vp, JSVAL_NULL);
     return JS_TRUE;
 }
 
@@ -407,6 +408,7 @@ JS_FASTNATIVE_BEGIN(Sys, loadAnimation)
 
 JS_FASTNATIVE_BEGIN(Sys, spawnFx)
 {
+#if 0
     JSString *str;
     char *bytes;
     gActor_t *actor;
@@ -492,6 +494,7 @@ JS_FASTNATIVE_BEGIN(Sys, spawnFx)
         }
     }
 
+#endif
    JS_SET_RVAL(cx, vp, JSVAL_VOID);
    return JS_TRUE;
 }

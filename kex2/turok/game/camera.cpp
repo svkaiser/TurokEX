@@ -95,10 +95,7 @@ void kexCamera::LocalTick(void) {
     attachment.Transform();
 
     angles.Clamp180();
-    rotation =
-        kexQuat(angles.pitch, kexVec3::vecRight) *
-        (kexQuat(angles.yaw, kexVec3::vecUp) *
-        kexQuat(angles.roll, kexVec3::vecForward));
+    rotation = angles.ToQuat();
 }
 
 //
