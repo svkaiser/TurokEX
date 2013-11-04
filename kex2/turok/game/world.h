@@ -57,6 +57,8 @@ public:
                                             kexVec3 &origin, kexAngle &angles);
     kexFx                               *SpawnFX(const char *name, kexActor *source, kexVec3 &velocity,
                                             kexVec3 &origin, kexQuat &rotation);
+    void                                SpawnFX(const kexStr &str, kexActor *source, kexVec3 &velocity,
+                                            kexVec3 &origin, kexQuat &rotation);
     void                                RemoveActor(kexWorldActor *actor);
     void                                SpawnLocalPlayer(void);
     void                                Trace(traceInfo_t *trace);

@@ -30,6 +30,7 @@
 #include "zone.h"
 #include "server.h"
 #include "sound.h"
+#include "world.h"
 
 //
 // kexAttachment::AttachToActor
@@ -634,8 +635,20 @@ kexVec3 kexWorldActor::ToLocalOrigin(const kexVec3 &org) {
 void kexWorldActor::SpawnFX(const char *fxName, const float x, const float y, const float z) {
     if(bStatic || bCulled)
         return;
-        
-    //TODO
+
+    kexVec3 org = origin;
+    org.y += viewHeight;
+
+    localWorld.SpawnFX(fxName, this, kexVec3(0, 0, 0),
+        org + (kexVec3(x, y, z) | rotation), rotation);
+}
+
+//
+// kexWorldActor::SpawnFX
+//
+
+void kexWorldActor::SpawnFX(const kexStr &str, const float x, const float y, const float z) {
+    SpawnFX(str.c_str(), x, y, z);
 }
 
 //
@@ -708,6 +721,8 @@ void kexWorldActor::InitObject(void) {
         asCALL_THISCALL)
 
     OBJMETHOD("void SetModel(const kStr &in)", SetModel, (const kexStr &modelFile), void);
+    OBJMETHOD("void SpawnFX(const kStr &in, float, float, float)", SpawnFX,
+        (const kexStr &str, float x, float y, float z), void);
 
 #define OBJPROPERTY(str, p)                         \
     scriptManager.Engine()->RegisterObjectProperty( \

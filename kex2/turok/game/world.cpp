@@ -355,6 +355,15 @@ kexFx *kexWorld::SpawnFX(const char *name, kexActor *source, kexVec3 &velocity,
 }
 
 //
+// kexWorld::SpawnFX
+//
+
+void kexWorld::SpawnFX(const kexStr &str, kexActor *source, kexVec3 &velocity,
+                         kexVec3 &origin, kexQuat &rotation) {
+    SpawnFX(str.c_str(), source, velocity, origin, rotation);
+}
+
+//
 // kexLocalPlayer::SpawnLocalPlayer
 //
 
@@ -696,6 +705,14 @@ void kexWorld::InitObject(void) {
         asMETHODPR(kexWorld, SpawnActor,
         (kexStr &className, kexStr &component,
         kexVec3 &origin, kexAngle &angles), kexWorldActor*),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "void SpawnFX(kStr &in, kActor@, kVec3 &in, kVec3 &in, kQuat &in)",
+        asMETHODPR(kexWorld, SpawnFX,
+        (const kexStr &str, kexActor *source, kexVec3 &velocity,
+        kexVec3 &origin, kexQuat &rotation), void),
         asCALL_THISCALL);
         
     scriptManager.Engine()->RegisterGlobalProperty(
