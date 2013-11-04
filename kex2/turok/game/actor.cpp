@@ -28,7 +28,6 @@
 #include "actor.h"
 #include "game.h"
 #include "zone.h"
-#include "parse.h"
 #include "server.h"
 #include "sound.h"
 
