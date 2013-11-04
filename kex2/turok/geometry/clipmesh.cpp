@@ -30,6 +30,7 @@
 #include "actor.h"
 #include "renderSystem.h"
 #include "renderWorld.h"
+#include "stanHull.h"
 
 enum {
     scClipMesh_type = 0,
@@ -430,6 +431,8 @@ void kexClipMesh::CreateMeshFromModel(void) {
 
     // TODO - support variants and child nodes
     surfaceGroup_t *group = &model->nodes[0].surfaceGroups[0];
+    surface_t *surface;
+    cmGroup_t *cmGroup;
 
     origin      = owner->BoundingBox().Center();
     numGroups   = group->numSurfaces;
@@ -438,11 +441,11 @@ void kexClipMesh::CreateMeshFromModel(void) {
         return;
     }
 
-    cmGroups    = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+    cmGroups = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
 
     for(unsigned int i = 0; i < numGroups; i++) {
-        surface_t *surface      = &group->surfaces[i];
-        cmGroup_t *cmGroup      = &cmGroups[i];
+        surface                 = &group->surfaces[i];
+        cmGroup                 = &cmGroups[i];
         cmGroup->numIndices     = surface->numIndices;
         cmGroup->numPoints      = surface->numVerts;
         cmGroup->numTriangles   = surface->numIndices / 3;
@@ -459,6 +462,68 @@ void kexClipMesh::CreateMeshFromModel(void) {
             cmGroup->points[v].y = surface->vertices[v][1];
             cmGroup->points[v].z = surface->vertices[v][2];
         }
+    }
+}
+
+//
+// kexClipMesh::CreateConvexHull
+//
+
+void kexClipMesh::CreateConvexHull(void) {
+    const kexModel_t *model = owner->Model();
+
+    if(model == NULL) {
+        return;
+    }
+
+    surfaceGroup_t *group;
+    cmGroup_t *cmGroup;
+    HullLibrary hl;
+    HullResult result;
+    HullError err;
+
+    // TODO - support variants and child nodes
+    group = &model->nodes[0].surfaceGroups[0];
+    origin = owner->BoundingBox().Center();
+    numGroups = group->numSurfaces;
+
+    if(numGroups <= 0) {
+        return;
+    }
+
+    cmGroups = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+
+    for(unsigned int i = 0; i < numGroups; i++) {
+        HullDesc desc(QF_TRIANGLES, group->surfaces[i].numVerts,
+            reinterpret_cast<PxF32*>(group->surfaces[i].vertices) ,sizeof(PxF32) * 3);
+
+        err = hl.CreateConvexHull(desc, result);
+
+        if(err == QE_OK) {
+            cmGroup                 = &cmGroups[i];
+            cmGroup->numIndices     = result.mNumIndices;
+            cmGroup->numPoints      = result.mNumOutputVertices;
+            cmGroup->numTriangles   = result.mNumIndices / 3;
+            cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
+            cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
+            cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
+
+            for(unsigned int k = 0; k < cmGroup->numIndices; k++) {
+                cmGroup->indices[k] = result.mIndices[k];
+            }
+
+            float *p;
+
+            for(unsigned int v = 0; v < cmGroup->numPoints; v++) {
+                p = &result.mOutputVertices[v*3];
+
+                cmGroup->points[v].x = p[0];
+                cmGroup->points[v].y = p[1];
+                cmGroup->points[v].z = p[2];
+            }
+        }
+
+        hl.ReleaseResult(result);
     }
 }
 
@@ -522,7 +587,9 @@ void kexClipMesh::CreateShape(void) {
     case CMT_CYLINDER:
         CreateCylinder(owner->BoundingBox());
         break;
-    case CMT_CONVEXHULL:    // TODO
+    case CMT_CONVEXHULL:
+        CreateConvexHull();
+        break;
     case CMT_CUSTOM:        // TODO
         return;
     default:
@@ -693,7 +760,6 @@ void kexClipMesh::DebugDraw(void) {
     renderSystem.SetState(GLSTATE_BLEND, true);
     renderSystem.SetState(GLSTATE_ALPHATEST, true);
     renderSystem.SetState(GLSTATE_LIGHTING, false);
-    //renderSystem.SetState(GLSTATE_DEPTHTEST, false);
 
     dglDisableClientState(GL_NORMAL_ARRAY);
     dglDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -741,7 +807,6 @@ void kexClipMesh::DebugDraw(void) {
     renderSystem.SetState(GLSTATE_BLEND, false);
     renderSystem.SetState(GLSTATE_ALPHATEST, false);
     renderSystem.SetState(GLSTATE_LIGHTING, true);
-    //renderSystem.SetState(GLSTATE_DEPTHTEST, true);
 #if 0
     for(unsigned int i = 0; i < numGroups; i++) {
         cmGroup_t *cmGroup = &cmGroups[i];

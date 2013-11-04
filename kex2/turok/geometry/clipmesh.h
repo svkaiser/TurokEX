@@ -65,6 +65,7 @@ private:
     void                    CreateDodecahedron(const kexBBox &bbox);
     void                    CreateCylinder(const kexBBox &bbox);
     void                    CreateMeshFromModel(void);
+    void                    CreateConvexHull(void);
 
     typedef struct {
         unsigned int        numPoints;    
