@@ -128,10 +128,10 @@ kexQuat &kexQuat::Normalize(void) {
 }
 
 //
-// kexQuat::operator-
+// kexQuat::Inverse
 //
 
-kexQuat kexQuat::operator-(void) const {
+kexQuat kexQuat::Inverse(void) const {
     kexQuat out;
     out.Set(-x, -y, -z, -w);
     return out;
@@ -290,10 +290,10 @@ float kexQuat::Dot(const kexQuat &quat) const {
 kexQuat kexQuat::Slerp(const kexQuat &quat, float movement) const {
     kexQuat rdest = quat;
     float d1 = Dot(quat);
-    float d2 = Dot(-quat);
+    float d2 = Dot(quat.Inverse());
 
     if(d1 < d2) {
-        rdest = -quat;
+        rdest = quat.Inverse();
         d1 = d2;
     }
 
@@ -316,7 +316,7 @@ kexQuat kexQuat::Slerp(const kexQuat &quat, float movement) const {
             ms2 = kexMath::Sin(halfcos * movement) * d;
 
             if(ms2 < 0) {
-                rdest = -quat;
+                rdest = quat.Inverse();
             }
 
             return *this * ms1 + rdest * ms2;
@@ -387,6 +387,22 @@ kexQuat &kexQuat::operator=(const float *vecs) {
     z = vecs[2];
     w = vecs[3];
     return *this;
+}
+
+//
+// kexQuat::ToVec3
+//
+
+kexVec3 const &kexQuat::ToVec3(void) const {
+    return *reinterpret_cast<const kexVec3*>(this);
+}
+
+//
+// kexQuat::ToVec3
+//
+
+kexVec3 &kexQuat::ToVec3(void) {
+    return *reinterpret_cast<kexVec3*>(this);
 }
 
 //

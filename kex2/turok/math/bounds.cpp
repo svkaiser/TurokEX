@@ -206,7 +206,7 @@ kexBBox kexBBox::operator|(const kexMatrix &matrix) const {
         mtx.vectors[i].z = kexMath::Fabs(mtx.vectors[i].z);
     }
     
-    kexVec3 ht = c | mtx;
+    kexVec3 ht = (max - c) | mtx;
     
     return kexBBox(ct - ht, ct + ht);
 }
@@ -227,7 +227,7 @@ kexBBox &kexBBox::operator|=(const kexMatrix &matrix) {
         mtx.vectors[i].z = kexMath::Fabs(mtx.vectors[i].z);
     }
     
-    kexVec3 ht = c | mtx;
+    kexVec3 ht = (max - c) | mtx;
     
     min = (ct - ht);
     max = (ct + ht);

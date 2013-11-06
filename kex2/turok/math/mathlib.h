@@ -210,8 +210,8 @@ public:
     kexQuat                 &Normalize(void);
     kexQuat                 Slerp(const kexQuat &quat, float movement) const;
     kexQuat                 RotateFrom(const kexVec3 &location, const kexVec3 &target, float maxAngle);
+    kexQuat                 Inverse(void) const;
 
-    kexQuat                 operator-(void) const;
     kexQuat                 operator+(const kexQuat &quat);
     kexQuat                 &operator+=(const kexQuat &quat);
     kexQuat                 operator-(const kexQuat &quat);
@@ -224,6 +224,9 @@ public:
     kexQuat                 &operator=(const kexVec4 &vec);
     kexQuat                 &operator=(const float *vecs);
     kexVec3                 operator|(const kexVec3 &vector);
+
+    const kexVec3           &ToVec3(void) const;
+    kexVec3                 &ToVec3(void);
 
     float                   x;
     float                   y;
