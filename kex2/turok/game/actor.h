@@ -46,7 +46,9 @@ public:
     void                        DettachActor(void);
 
     kexVec3                     &GetAttachOffset(void) { return attachOffset; }
+    kexVec3                     &GetSourceOffset(void) { return sourceOffset; }
     void                        SetAttachOffset(const kexVec3 &vec) { attachOffset = vec; }
+    void                        SetSourceOffset(const kexVec3 &vec) { sourceOffset = vec; }
     kexActor                    *GetOwner(void) { return owner; }
     void                        SetOwner(kexActor *o) { owner = o; }
     kexActor                    *GetAttachedActor(void) { return actor; }
@@ -55,6 +57,7 @@ public:
 
 private:
     kexVec3                     attachOffset;
+    kexVec3                     sourceOffset;
     kexActor                    *actor;
     kexActor                    *owner;
 };

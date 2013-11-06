@@ -84,6 +84,7 @@ typedef struct {
     bool                        bClientSpace;
     bool                        bProjectile;
     bool                        bDestroyOnWaterSurface;
+    bool                        bAttachToSource;
     float                       mass;
     float                       translation_randomscale;
     fxvector_t                  translation;
@@ -185,7 +186,6 @@ public:
     fxinfo_t                    *fxInfo;
     fxfile_t                    *fxFile;
     bool                        bAnimate;
-    bool                        bAttachToSource;
     bool                        bForcedRestart;
     float                       restart;
     float                       drawScale;

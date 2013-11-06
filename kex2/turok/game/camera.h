@@ -44,6 +44,7 @@ public:
     const kexFrustum    &Frustum(void) const { return viewFrustum; }
     kexAngle            &GetOffsetAngle(void) { return offsetAngle; }
     void                SetOffsetAngle(const kexAngle &an) { offsetAngle = an; }
+    kexActor            *ToActor(void) { return static_cast<kexActor*>(this); }
 
     static void         InitObject(void);
 

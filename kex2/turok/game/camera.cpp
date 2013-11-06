@@ -147,6 +147,7 @@ void kexCamera::InitObject(void) {
 
     OBJMETHOD("kAngle &GetOffsetAngle(void)", GetOffsetAngle, (void), kexAngle&);
     OBJMETHOD("void SetOffsetAngle(const kAngle &in)", SetOffsetAngle, (const kexAngle &an), void);
+    OBJMETHOD("kActor @ToActor(void)", ToActor, (void), kexActor*);
 
 #define OBJPROPERTY(str, p)                             \
     scriptManager.Engine()->RegisterObjectProperty(     \

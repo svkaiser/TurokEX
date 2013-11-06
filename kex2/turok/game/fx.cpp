@@ -99,17 +99,17 @@ void kexFxPhysics::Think(const float timeDelta) {
         return;
     }
 
-    fx = static_cast<kexFx*>(owner);
-
     velocity += (localWorld.GetGravity() * (mass * timeDelta));
 
-    start = owner->GetOrigin();
     move = velocity * timeDelta;
     moveAmount = move.UnitSq();
 
     if(mass == 0 || moveAmount < 0.001f) {
         return;
     }
+
+    fx = static_cast<kexFx*>(owner);
+    start = owner->GetOrigin();
 
     if(owner->bCollision == false) {
         owner->SetOrigin(start + move);
@@ -142,7 +142,7 @@ void kexFxPhysics::Think(const float timeDelta) {
                         if(fxinfo->bStopAnimOnImpact) {
                             fx->bAnimate = false;
                         }
-                        ImpactVelocity(velocity, trace.hitNormal, 1 + bounceDamp);
+                        ImpactVelocity(velocity, trace.hitNormal, 1.05f);
                         break;
                     case VFX_DESTROY:
                         owner->SetOrigin(trace.hitVector);
@@ -161,7 +161,7 @@ void kexFxPhysics::Think(const float timeDelta) {
                         if(fxinfo->bStopAnimOnImpact) {
                             fx->bAnimate = false;
                         }
-                        ImpactVelocity(velocity, trace.hitNormal, 1 + bounceDamp);
+                        ImpactVelocity(velocity, trace.hitNormal, 1.05f);
                         ApplyFriction();
                         break;
                     case VFX_DESTROY:
@@ -238,14 +238,15 @@ void kexFx::LocalTick(void) {
         return;
     }
 
-    time = 10.24f * client.GetRunTime();
-
+    time = 15 * client.GetRunTime();
     restart -= time;
 
     // ready to spawn?
     if(restart > 0) {
         return;
     }
+
+    attachment.Transform();
 
     //bUnderWater = (Map_GetWaterLevel(origin, 0, fx->plane) == WL_UNDER);
     bUnderWater = false;
@@ -346,11 +347,6 @@ void kexFx::LocalTick(void) {
     color2[3] = alpha;
 
     physics.Think(client.GetRunTime());
-
-    if(owner && bAttachToSource) {
-        // TODO - HANDLE CLIPPING IF OUTSIDE OF WORLD
-        SetOrigin(owner->GetOrigin() + (offset | owner->GetRotation()));
-    }
 
     SetViewDistance();
 
@@ -650,6 +646,7 @@ enum {
     scvfx_bLocalAxis,
     scvfx_bProjectile,
     scvfx_bActorInstance,
+    scvfx_bAttachToSource,
     scvfx_mass,
     scvfx_translation_global_randomscale,
     scvfx_translation_randomscale,
@@ -710,6 +707,7 @@ static const sctokens_t vfxtokens[scvfx_end+1] = {
     { scvfx_bBlood,                         "bBlood"                            },
     { scvfx_bAddOffset,                     "bAddOffset"                        },
     { scvfx_bScaleLerp,                     "bScaleLerp"                        },
+    { scvfx_bAttachToSource,                "bAttachToSource"                   },
     { scvfx_mass,                           "mass"                              },
     { scvfx_translation_global_randomscale, "translation_global_randomscale"    },
     { scvfx_translation_randomscale,        "translation_randomscale"           },
@@ -994,6 +992,7 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                 CHECK_BOOL(bProjectile);
                 CHECK_BOOL(bDestroyOnWaterSurface);
                 CHECK_BOOL(bActorInstance);
+                CHECK_BOOL(bAttachToSource);
 
                 CHECK_INT(animspeed);
                 CHECK_INT(color1_randomscale);

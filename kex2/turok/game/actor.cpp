@@ -60,9 +60,10 @@ void kexAttachment::DettachActor(void) {
 
 void kexAttachment::Transform(void) {
     if(actor != NULL) {
-        // TODO
+        owner->SetOrigin((actor->GetOrigin() + sourceOffset) +
+            ((attachOffset - sourceOffset) | actor->GetRotation()));
+
         if(bAttachRelativeAngles) {
-            owner->SetOrigin(actor->GetOrigin() + attachOffset);
             owner->SetAngles(actor->GetAngles());
         }
     }
@@ -510,6 +511,8 @@ void kexWorldActor::Parse(kexLexer *lexer) {
 //
 
 void kexWorldActor::UpdateTransform(void) {
+    attachment.Transform();
+
     if(physics.bRotor) {
         angles.yaw      += (physics.rotorVector.y * physics.rotorSpeed * timeStamp);
         angles.pitch    += (physics.rotorVector.x * physics.rotorSpeed * timeStamp);
@@ -748,7 +751,9 @@ void kexWorldActor::InitObject(void) {
     OBJMETHOD("void AttachToActor(kActor@)", AttachToActor, (kexActor *targ), void);
     OBJMETHOD("void DettachActor(void)", DettachActor, (void), void);
     OBJMETHOD("kVec3 &GetAttachOffset(void)", GetAttachOffset, (void), kexVec3&);
+    OBJMETHOD("kVec3 &GetSourceOffset(void)", GetSourceOffset, (void), kexVec3&);
     OBJMETHOD("void SetAttachOffset(const kVec3 &in)", SetAttachOffset, (const kexVec3 &vec), void);
+    OBJMETHOD("void SetSourceOffset(const kVec3 &in)", SetSourceOffset, (const kexVec3 &vec), void);
     OBJMETHOD("kActor @GetOwner(void)", GetOwner, (void), kexActor*);
     OBJMETHOD("void SetOwner(kActor@)", SetOwner, (kexActor *o), void);
     OBJMETHOD("kActor @GetAttachedActor(void)", GetAttachedActor, (void), kexActor*);
