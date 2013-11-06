@@ -24,58 +24,6 @@
 #define __CACHEFILELIST_H__
 
 template<class type>
-class kexFileCacheList {
-public:
-    void                Add(type *o);
-    type                *Create(const char *filename, int zoneTag = PU_STATIC);
-    type                *Find(const char *name) const;
-    type                *hashlist[MAX_HASH];
-};
-
-//
-// kexFileCacheList::Add
-//
-template<class type>
-void kexFileCacheList<type>::Add(type *o) {
-    unsigned int hash;
-
-    // add to hash for future reference
-    hash = common.HashFileName(o->filePath);
-    o->next = hashlist[hash];
-    hashlist[hash] = o;
-}
-
-//
-// kexFileCacheList::Create
-//
-template<class type>
-type *kexFileCacheList<type>::Create(const char *filename, int zoneTag) {
-    type *o = (type*)Z_Calloc(sizeof(type), zoneTag, 0);
-    strncpy(o->filePath, filename, MAX_FILEPATH);
-
-    return o;
-}
-
-//
-// kexFileCacheList::Find
-//
-template<class type>
-type *kexFileCacheList<type>::Find(const char *name) const {
-    type *t;
-    unsigned int hash;
-
-    hash = common.HashFileName(name);
-
-    for(t = hashlist[hash]; t; t = t->next) {
-        if(!strcmp(name, t->filePath)) {
-            return t;
-        }
-    }
-
-    return NULL;
-}
-
-template<class type>
 class kexHashList {
 public:
     type                *Add(const char *tname, int zoneTag = PU_STATIC);
