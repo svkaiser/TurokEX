@@ -372,6 +372,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\framework\memHeap.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\network.cpp"
 					>
 				</File>
@@ -778,6 +782,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\linkedlist.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\memHeap.h"
 					>
 				</File>
 				<File
