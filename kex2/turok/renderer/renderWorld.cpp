@@ -787,6 +787,10 @@ void kexRenderWorld::DrawFX(void) {
 
         dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, spriteIndices);
         dglPopMatrix();
+
+        if(fxinfo->lifetime.value == 1 && fx->bClientOnly) {
+            fx->Remove();
+        }
     }
 
     renderSystem.SetState(GLSTATE_DEPTHTEST, true);

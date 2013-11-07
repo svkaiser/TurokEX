@@ -134,7 +134,7 @@ public:
     kexWavFile                          *CacheWavFile(const char *name);
     kexSoundShader                      *CacheShaderFile(const char *name);
     kexSoundSource                      *GetAvailableSource(void);
-    void                                PlaySound(const char *name, kexActor *actor);
+    void                                StartSound(const char *name, kexActor *actor);
 
     const int                           GetNumActiveSources(void) const { return activeSources; }
     kexSoundSource                      *GetSources(void) { return sources; }

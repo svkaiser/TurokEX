@@ -218,19 +218,19 @@ bool kexActor::Trace(traceInfo_t *trace) {
 }
 
 //
-// kexActor::PlaySound
+// kexActor::StartSound
 //
 
-void kexActor::PlaySound(const char *name) {
-    soundSystem.PlaySound(name, this);
+void kexActor::StartSound(const char *name) {
+    soundSystem.StartSound(name, this);
 }
 
 //
-// kexActor::PlaySound
+// kexActor::StartSound
 //
 
-void kexActor::PlaySound(const kexStr &name) {
-    PlaySound(name.c_str());
+void kexActor::StartSound(const kexStr &name) {
+    StartSound(name.c_str());
 }
 
 enum {
@@ -714,31 +714,7 @@ void kexWorldActor::InitObject(void) {
         asMETHOD(kexWorldActor, RemoveRef),
         asCALL_THISCALL);
 
-    kexActor::RegisterBaseProperties<kexWorldActor>("kActor");
-
-#define OBJMETHOD(str, a, b, c)                     \
-    scriptManager.Engine()->RegisterObjectMethod(   \
-        "kActor",                                   \
-        str,                                        \
-        asMETHODPR(kexWorldActor, a, b, c),         \
-        asCALL_THISCALL)
-
-    OBJMETHOD("void SetModel(const kStr &in)", SetModel, (const kexStr &modelFile), void);
-    OBJMETHOD("void SpawnFX(const kStr &in, float, float, float)", SpawnFX,
-        (const kexStr &str, float x, float y, float z), void);
-
-#define OBJPROPERTY(str, p)                         \
-    scriptManager.Engine()->RegisterObjectProperty( \
-        "kActor",                                   \
-        str,                                        \
-        asOFFSET(kexWorldActor, p))
-
-    OBJPROPERTY("ref @obj", scriptComponent.Handle());
-    OBJPROPERTY("int health", health);
-    OBJPROPERTY("kQuat lerpRotation", lerpRotation);
-
-#undef OBJMETHOD
-#undef OBJPROPERTY
+    kexWorldActor::RegisterBaseProperties<kexWorldActor>("kActor");
 
 #define OBJMETHOD(str, a, b, c)                     \
     scriptManager.Engine()->RegisterObjectMethod(   \

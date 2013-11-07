@@ -62,8 +62,8 @@ public:
     void                                RemoveActor(kexWorldActor *actor);
     void                                SpawnLocalPlayer(void);
     void                                Trace(traceInfo_t *trace);
-    void                                PlaySound(const char *name);
-    void                                PlaySound(const kexStr &name);
+    void                                StartSound(const char *name);
+    void                                StartSound(const kexStr &name);
     void                                SetFogRGB(float r, float g, float b);
 
     bool                                IsLoaded(void) const { return bLoaded; }

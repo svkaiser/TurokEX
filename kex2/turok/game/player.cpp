@@ -201,6 +201,8 @@ DECLARE_ABSTRACT_CLASS(kexPlayer, kexWorldActor)
 //
 
 kexPlayer::kexPlayer(void) {
+    this->bStatic = false;
+
     ResetNetSequence();
     ResetTicCommand();
 
@@ -442,19 +444,21 @@ void kexLocalPlayer::LocalTick(void) {
     timeStamp = (float)cmd.timestamp.i;
     frameTime = cmd.frametime.f;
 
-    scriptComponent.CallFunction(scriptComponent.onLocalThink);
-
     int current = (netseq.outgoing-1) & (NETBACKUPS-1);
 
     oldMoves[current] = puppet->GetOrigin();
     latency[current] = client.GetTime();
 
+    scriptComponent.CallFunction(scriptComponent.onLocalThink);
+
     puppet->Physics()->Think(frameTime);
-
-    angles = puppet->GetAngles();
-    origin = puppet->GetOrigin();
-
     puppet->UpdateTransform();
+
+    angles          = puppet->GetAngles();
+    origin          = puppet->GetOrigin();
+    viewHeight      = puppet->GetViewHeight();
+    centerHeight    = puppet->GetCenterHeight();
+    rotation        = puppet->GetRotation();
 
     angles.Clamp180();
 }
@@ -495,6 +499,8 @@ void kexLocalPlayer::InitObject(void) {
         sizeof(kexPlayerMove),
         asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS);
 
+    kexWorldActor::RegisterBaseProperties<kexLocalPlayer>("kLocalPlayer");
+
 #define OBJMETHOD(str, a, b, c)                     \
     scriptManager.Engine()->RegisterObjectMethod(   \
         "kLocalPlayer",                             \
@@ -526,7 +532,6 @@ void kexLocalPlayer::InitObject(void) {
     OBJPROPERTY("float cmdMouseX", cmd.mouse[0].f);
     OBJPROPERTY("float cmdMouseY", cmd.mouse[1].f);
     OBJPROPERTY("float deltaTime", cmd.frametime.f);
-    OBJPROPERTY("ref @obj", scriptComponent.Handle());
     OBJPROPERTY("bool bAllowCrawl", bAllowCrawl);
 
 #undef OBJMETHOD

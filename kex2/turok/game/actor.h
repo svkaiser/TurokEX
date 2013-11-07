@@ -85,8 +85,8 @@ public:
 
     void                        SetBoundingBox(const kexVec3 &min, const kexVec3 &max);
     bool                        Trace(traceInfo_t *trace);
-    void                        PlaySound(const char *name);
-    void                        PlaySound(const kexStr &name);
+    void                        StartSound(const char *name);
+    void                        StartSound(const kexStr &name);
 
     kexVec3                     &GetOrigin(void) { return origin; }
     void                        SetOrigin(const kexVec3 &org) { origin = org; }
@@ -149,7 +149,7 @@ public:
         OBJMETHOD("void SetScale(const kVec3 &in)", SetScale, (const kexVec3 &s), void);
         OBJMETHOD("kAttachment &Attachment(void)", Attachment, (void), kexAttachment&);
         OBJMETHOD("const kStr ClassName(void) const", GetClassString, (void) const, const kexStr);
-        OBJMETHOD("void PlaySound(const kStr &in)", PlaySound, (const kexStr &name), void);
+        OBJMETHOD("void StartSound(const kStr &in)", StartSound, (const kexStr &name), void);
         OBJMETHOD("void SetBoundingBox(const kVec3 &in, const kVec3 &in)",
             SetBoundingBox, (const kexVec3 &min, const kexVec3 &max), void);
 
@@ -258,6 +258,38 @@ public:
     // TODO - need some sort of skin system
     char                        ****textureSwaps;
     bool                        bTraced;
+
+    //
+    // template for registering default script actor methods and properties
+    //
+    template<class type>
+    static void                 RegisterBaseProperties(const char *scriptClass) {
+    #define OBJMETHOD(str, a, b, c)                     \
+        scriptManager.Engine()->RegisterObjectMethod(   \
+            scriptClass,                                \
+            str,                                        \
+            asMETHODPR(type, a, b, c),                  \
+            asCALL_THISCALL)
+
+        kexActor::RegisterBaseProperties<type>(scriptClass);
+
+        OBJMETHOD("void SetModel(const kStr &in)", SetModel, (const kexStr &modelFile), void);
+        OBJMETHOD("void SpawnFX(const kStr &in, float, float, float)", SpawnFX,
+            (const kexStr &str, float x, float y, float z), void);
+
+    #define OBJPROPERTY(str, p)                         \
+        scriptManager.Engine()->RegisterObjectProperty( \
+            scriptClass,                                \
+            str,                                        \
+            asOFFSET(type, p))
+
+    OBJPROPERTY("ref @obj", scriptComponent.Handle());
+    OBJPROPERTY("int health", health);
+    OBJPROPERTY("kQuat lerpRotation", lerpRotation);
+
+    #undef OBJMETHOD
+    #undef OBJPROPERTY
+    }
 
 protected:
     void                        ParseDefault(kexLexer *lexer);

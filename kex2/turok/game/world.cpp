@@ -447,19 +447,19 @@ void kexWorld::Trace(traceInfo_t *trace) {
 }
 
 //
-// kexWorld::PlaySound
+// kexWorld::StartSound
 //
 
-void kexWorld::PlaySound(const char *name) {
-    soundSystem.PlaySound(name, NULL);
+void kexWorld::StartSound(const char *name) {
+    soundSystem.StartSound(name, NULL);
 }
 
 //
-// kexWorld::PlaySound
+// kexWorld::StartSound
 //
 
-void kexWorld::PlaySound(const kexStr &name) {
-    PlaySound(name.c_str());
+void kexWorld::StartSound(const kexStr &name) {
+    StartSound(name.c_str());
 }
 
 //
@@ -696,7 +696,7 @@ void kexWorld::InitObject(void) {
     scriptManager.Engine()->RegisterObjectMethod(
         "kWorld",
         "void PlaySound(const kStr &in)",
-        asMETHODPR(kexWorld, PlaySound, (const kexStr &), void),
+        asMETHODPR(kexWorld, StartSound, (const kexStr &), void),
         asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectMethod(

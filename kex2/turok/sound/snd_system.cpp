@@ -66,7 +66,7 @@ static void FCmd_LoadShader(void) {
         return;
     }
 
-    soundSystem.PlaySound(command.GetArgv(1), NULL);
+    soundSystem.StartSound(command.GetArgv(1), NULL);
 }
 
 //
@@ -675,10 +675,10 @@ kexSoundShader *kexSoundSystem::CacheShaderFile(const char *name) {
 }
 
 //
-// kexSoundSystem::PlaySound
+// kexSoundSystem::StartSound
 //
 
-void kexSoundSystem::PlaySound(const char *name, kexActor *actor) {
+void kexSoundSystem::StartSound(const char *name, kexActor *actor) {
     kexSoundShader *sndShader;
 
     if(!(sndShader = CacheShaderFile(name))) {
