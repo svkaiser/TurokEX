@@ -25,8 +25,8 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "zone.h"
 #include "script.h"
+#include "renderSystem.h"
 #include "renderModel.h"
 #include "animation.h"
 
@@ -167,8 +167,8 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                 // begin reading into the node block
                 lexer->ExpectTokenListID(mdltokens, scmdl_nodes);
                 lexer->ExpectNextToken(TK_LBRACK);
-                model->nodes = (modelNode_t*)Z_Calloc(sizeof(modelNode_t) *
-                    model->numNodes, PU_MODEL, 0);
+                model->nodes = (modelNode_t*)Mem_Calloc(sizeof(modelNode_t) *
+                    model->numNodes, kexRenderSystem::hb_model);
 
                 for(i = 0; i < model->numNodes; i++) {
                     modelNode_t *node = &model->nodes[i];
@@ -182,7 +182,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                     if(node->numChildren > 0) {
                         lexer->AssignFromTokenList(mdltokens, AT_SHORT,
                             (void**)&node->children, node->numChildren,
-                            scmdl_children, true, PU_MODEL);
+                            scmdl_children, true, kexRenderSystem::hb_model);
                     }
 
                     lexer->AssignFromTokenList(mdltokens, &node->numVariants,
@@ -195,7 +195,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
 
                     lexer->AssignFromTokenList(mdltokens, AT_SHORT,
                         (void**)&node->variants, node->numVariants,
-                        scmdl_variants, true, PU_MODEL);
+                        scmdl_variants, true, kexRenderSystem::hb_model);
 
                     lexer->AssignFromTokenList(mdltokens, &node->numSurfaceGroups,
                         scmdl_numgroups, true);
@@ -206,8 +206,8 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                     }
 
                     // read into the group block
-                    node->surfaceGroups = (surfaceGroup_t*)Z_Calloc(sizeof(surfaceGroup_t) *
-                        node->numSurfaceGroups, PU_MODEL, 0);
+                    node->surfaceGroups = (surfaceGroup_t*)Mem_Calloc(sizeof(surfaceGroup_t) *
+                        node->numSurfaceGroups, kexRenderSystem::hb_model);
 
                     lexer->ExpectTokenListID(mdltokens, scmdl_groups);
                     lexer->ExpectNextToken(TK_LBRACK);
@@ -229,8 +229,8 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                             lexer->ExpectNextToken(TK_RBRACK);
                         }
                         else {
-                            group->surfaces = (surface_t*)Z_Calloc(sizeof(surface_t) *
-                                group->numSurfaces, PU_MODEL, 0);
+                            group->surfaces = (surface_t*)Mem_Calloc(sizeof(surface_t) *
+                                group->numSurfaces, kexRenderSystem::hb_model);
 
                             lexer->ExpectTokenListID(mdltokens, scmdl_sections);
                             lexer->ExpectNextToken(TK_LBRACK);
@@ -276,7 +276,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                                         bNested = true;
                                         lexer->AssignFromTokenList(mdltokens, AT_SHORT,
                                             (void**)&surface->indices, surface->numIndices,
-                                            scmdl_triangles, false, PU_MODEL);
+                                            scmdl_triangles, false, kexRenderSystem::hb_model);
                                         break;
                                     case scmdl_numvertices:
                                         lexer->AssignFromTokenList(mdltokens, &surface->numVerts,
@@ -288,13 +288,13 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                                         lexer->ExpectNextToken(TK_LBRACK);
                                         lexer->AssignFromTokenList(mdltokens, AT_VECTOR,
                                             (void**)&surface->vertices, surface->numVerts,
-                                            scmdl_xyz, true, PU_MODEL);
+                                            scmdl_xyz, true, kexRenderSystem::hb_model);
                                         lexer->AssignFromTokenList(mdltokens, AT_FLOAT,
                                             (void**)&surface->coords, surface->numVerts * 2,
-                                            scmdl_coords, true, PU_MODEL);
+                                            scmdl_coords, true, kexRenderSystem::hb_model);
                                         lexer->AssignFromTokenList(mdltokens, AT_FLOAT,
                                             (void**)&surface->normals, surface->numVerts * 3,
-                                            scmdl_normals, true, PU_MODEL);
+                                            scmdl_normals, true, kexRenderSystem::hb_model);
                                         lexer->ExpectNextToken(TK_RBRACK);
                                         break;
                                     default:
@@ -343,14 +343,14 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                 lexer->ExpectNextToken(TK_EQUAL);
                 lexer->ExpectNextToken(TK_LBRACK);
                 if(model->numAnimations > 0) {
-                    model->anims = (kexAnim_t*)Z_Calloc(sizeof(kexAnim_t) *
-                        model->numAnimations, PU_MODEL, 0);
+                    model->anims = (kexAnim_t*)Mem_Calloc(sizeof(kexAnim_t) *
+                        model->numAnimations, kexRenderSystem::hb_model);
 
                     for(i = 0; i < model->numAnimations; i++) {
                         lexer->ExpectNextToken(TK_LBRACK);
                         model->anims[i].animID = lexer->GetNumber();
                         lexer->GetString();
-                        model->anims[i].alias = Z_Strdup(lexer->StringToken(), PU_MODEL, 0);
+                        model->anims[i].alias = Mem_Strdup(lexer->StringToken(), kexRenderSystem::hb_model);
                         lexer->GetString();
                         memcpy(model->anims[i].animFile, lexer->StringToken(), MAX_FILEPATH);
                         lexer->ExpectNextToken(TK_RBRACK);
@@ -429,8 +429,8 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
     }
 
     model->numNodes = numObjects;
-    model->nodes = (modelNode_t*)Z_Calloc(sizeof(modelNode_t) *
-        model->numNodes, PU_MODEL, 0);
+    model->nodes = (modelNode_t*)Mem_Calloc(sizeof(modelNode_t) *
+        model->numNodes, kexRenderSystem::hb_model);
 
     // objects
     for(unsigned int i = 0; i < model->numNodes; i++) {
@@ -439,16 +439,16 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
         node->numVariants = 1;
         // TODO
         node->numSurfaceGroups = numGroups;
-        node->surfaceGroups = (surfaceGroup_t*)Z_Calloc(sizeof(surfaceGroup_t) *
-            node->numSurfaceGroups, PU_MODEL, 0);
+        node->surfaceGroups = (surfaceGroup_t*)Mem_Calloc(sizeof(surfaceGroup_t) *
+            node->numSurfaceGroups, kexRenderSystem::hb_model);
 
         // surface groups
         for(unsigned int j = 0; j < node->numSurfaceGroups; j++) {
             surfaceGroup_t *group = &node->surfaceGroups[j];
             // TODO
             group->numSurfaces = 1;
-            group->surfaces = (surface_t*)Z_Calloc(sizeof(surface_t) *
-                group->numSurfaces, PU_MODEL, 0);
+            group->surfaces = (surface_t*)Mem_Calloc(sizeof(surface_t) *
+                group->numSurfaces, kexRenderSystem::hb_model);
 
             // surfaces
             for(unsigned int k = 0; k < group->numSurfaces; k++) {
@@ -457,20 +457,20 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
                 surface->flags |= MDF_SOLID;
 
                 surface->numIndices = indices.Length();
-                surface->indices = (word*)Z_Calloc(sizeof(word) *
-                    surface->numIndices, PU_MODEL, 0);
+                surface->indices = (word*)Mem_Calloc(sizeof(word) *
+                    surface->numIndices, kexRenderSystem::hb_model);
 
                 for(unsigned int ind = 0; ind < surface->numIndices; ind++) {
                     surface->indices[ind] = indices[ind] - 1;
                 }
 
                 surface->numVerts = points.Length() / 3;
-                surface->vertices = (kexVec3*)Z_Calloc(sizeof(kexVec3) *
-                    surface->numVerts, PU_MODEL, 0);
-                surface->coords = (float*)Z_Calloc(sizeof(float) *
-                    surface->numVerts * 2, PU_MODEL, 0);
-                surface->normals = (float*)Z_Calloc(sizeof(float) *
-                    surface->numVerts * 3, PU_MODEL, 0);
+                surface->vertices = (kexVec3*)Mem_Calloc(sizeof(kexVec3) *
+                    surface->numVerts, kexRenderSystem::hb_model);
+                surface->coords = (float*)Mem_Calloc(sizeof(float) *
+                    surface->numVerts * 2, kexRenderSystem::hb_model);
+                surface->normals = (float*)Mem_Calloc(sizeof(float) *
+                    surface->numVerts * 3, kexRenderSystem::hb_model);
 
                 for(unsigned int v = 0; v < surface->numVerts; v++) {
                     surface->vertices[v].x = points[v * 3 + 0];

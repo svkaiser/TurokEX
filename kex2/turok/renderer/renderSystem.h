@@ -98,6 +98,8 @@ public:
     static const int                SCREEN_HEIGHT       = 240;
     static const int                MAX_TEXTURE_UNITS   = 4;
 
+    static kexHeapBlock             hb_model;
+
     kexTexture                      defaultTexture;
     kexTexture                      whiteTexture;
     kexTexture                      blackTexture;

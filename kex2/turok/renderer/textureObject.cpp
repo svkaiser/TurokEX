@@ -29,7 +29,7 @@
 
 #include "common.h"
 #include "fileSystem.h"
-#include "zone.h"
+#include "memHeap.h"
 #include "mathlib.h"
 #include "renderSystem.h"
 #include "textureObject.h"
@@ -37,6 +37,8 @@
 kexCvar cvarGamma("gl_gamma", CVF_FLOAT|CVF_CONFIG, "0", "TODO");
 kexCvar cvarGLFilter("gl_filter", CVF_INT|CVF_CONFIG, "0", "Texture filter mode");
 kexCvar cvarGLAnisotropic("gl_anisotropic", CVF_INT|CVF_CONFIG, "0", "TODO");
+
+kexHeapBlock kexTexture::hb_texture("texture", false, NULL, NULL);
 
 //
 // ------------------------------------------------------
@@ -206,12 +208,12 @@ byte *kexTexture::LoadFromFile(const char *file) {
     byte *out;
     
     if(cvarDeveloper.GetBool()) {
-        if(fileSystem.OpenFile(file, &data, PU_STATIC) == 0 &&
+        if(fileSystem.OpenFile(file, &data, hb_static) == 0 &&
             fileSystem.ReadExternalTextFile(file, &data) <= 0) {
             return NULL;
         }
     }
-    else if(fileSystem.OpenFile(file, &data, PU_STATIC) == 0) {
+    else if(fileSystem.OpenFile(file, &data, hb_static) == 0) {
         return NULL;
     }
 
@@ -225,7 +227,7 @@ byte *kexTexture::LoadFromFile(const char *file) {
         common.Warning("kexTexture::LoadFromFile(%s) - Unknown file format\n", file);
     }
 
-    Z_Free(data);
+    Mem_Free(data);
     return out;
 }
 
@@ -247,7 +249,7 @@ byte *kexTexture::LoadFromScreenBuffer(void) {
     x           = renderSystem.WindowX();
     y           = renderSystem.WindowY();
     col         = (width * 3);
-    data        = (byte*)Z_Calloc(height * width * 3, PU_STATIC, 0);
+    data        = (byte*)Mem_Calloc(height * width * 3, hb_static);
     
     colorMode   = TCR_RGB;
     bMasked     = false;
@@ -322,7 +324,7 @@ byte *kexTexture::LoadFromTGA(byte *input) {
 
             switch(tga.cmap_bits) {
             case 24:
-                data = (byte*)Z_Calloc(tga.width * tga.height * 3, PU_STATIC, 0);
+                data = (byte*)Mem_Calloc(tga.width * tga.height * 3, hb_static);
                 rover += (3 * tga.cmap_len);
                 colorMode = TCR_RGB;
 
@@ -337,7 +339,7 @@ byte *kexTexture::LoadFromTGA(byte *input) {
                 }
                 break;
             case 32:
-                data = (byte*)Z_Calloc(tga.width * tga.height * 4, PU_STATIC, 0);
+                data = (byte*)Mem_Calloc(tga.width * tga.height * 4, hb_static);
                 rover += (4 * tga.cmap_len);
                 colorMode = TCR_RGBA;
 
@@ -377,7 +379,7 @@ byte *kexTexture::LoadFromTGA(byte *input) {
             bitStride = 3;
         }
         
-        data = (byte*)Z_Calloc(tga.width * tga.height * bitStride, PU_STATIC, 0);
+        data = (byte*)Mem_Calloc(tga.width * tga.height * bitStride, hb_static);
         for(r = tga.height - 1; r >= 0; r--) {
             data_r = data + r * tga.width * bitStride;
             for(c = 0; c < tga.width; c++) {
@@ -482,7 +484,7 @@ byte *kexTexture::LoadFromBMP(byte *input) {
         colorMode = TCR_RGBA;
     }
 
-    data = (byte*)Z_Calloc(cols * rows * bitStride, PU_STATIC, 0);
+    data = (byte*)Mem_Calloc(cols * rows * bitStride, hb_static);
 
     for(int y = rows-1; y >= 0; y--) {
         byte *buf = data + (y * cols * bitStride);
@@ -543,14 +545,14 @@ void kexTexture::PadImage(byte **data) {
     }
     
     int bitStride = (colorMode == TCR_RGBA) ? 4 : 3;
-    byte *pad = (byte*)Z_Calloc(width * height * bitStride, PU_STATIC, 0);
+    byte *pad = (byte*)Mem_Calloc(width * height * bitStride, hb_static);
 
     for(int y = 0; y < origheight; y++) {
         memcpy(pad + y * width * bitStride, *data + y * origwidth * bitStride,
             origwidth * bitStride);
     }
     
-    Z_Free(*data);
+    Mem_Free(*data);
     *data = pad;
 }
 
@@ -560,7 +562,7 @@ void kexTexture::PadImage(byte **data) {
 
 void kexTexture::VerticalFlipImage(byte **data) {
     int bitStride = (colorMode == TCR_RGBA) ? 4 : 3;
-    byte *buffer = (byte*)Z_Calloc((width * height) * bitStride, PU_STATIC, 0);
+    byte *buffer = (byte*)Mem_Calloc((width * height) * bitStride, hb_static);
     byte *tmp = *data;
     int col = (width * bitStride);
 
@@ -570,7 +572,7 @@ void kexTexture::VerticalFlipImage(byte **data) {
         memcpy(&tmp[(height - (i + 1)) * col], buffer, col);
     }
 
-    Z_Free(buffer);
+    Mem_Free(buffer);
 }
 
 //

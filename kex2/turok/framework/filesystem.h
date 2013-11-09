@@ -35,7 +35,7 @@ public:
     const char          *BasePath(void);
     void                Shutdown(void);
     void                LoadZipFile(const char *file);
-    int                 OpenFile(const char *filename, byte **data, int tag) const;
+    int                 OpenFile(const char *filename, byte **data, kexHeapBlock &hb) const;
     kexStrListMem       *GetMatchingFiles(const char *search);
     int                 ReadExternalTextFile(const char *name, byte **buffer) const;
     void                Init(void);

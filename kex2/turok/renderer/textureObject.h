@@ -68,6 +68,8 @@ public:
     filepath_t              filePath;
     kexTexture              *next;
 
+    static kexHeapBlock     hb_texture;
+
 private:
     byte                    *LoadFromTGA(byte *input);
     byte                    *LoadFromBMP(byte *input);

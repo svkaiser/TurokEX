@@ -26,8 +26,8 @@
 
 #include "common.h"
 #include "gl.h"
-#include "zone.h"
 #include "system.h"
+#include "textureObject.h"
 
 static texture_t *tex_hashlist[MAX_HASH];
 static texture_t *tex_default;
@@ -59,7 +59,7 @@ int Tex_PadDims(int n)
 
 void Tex_Shutdown(void)
 {
-    Z_FreeTags(PU_TEXTURE, PU_TEXTURE);
+    //Z_FreeTags(PU_TEXTURE, PU_TEXTURE);
 }
 
 //
@@ -87,7 +87,7 @@ texture_t *Tex_Alloc(const char *name, byte *data, int width, int height, int cl
         common.Error("Tex_Alloc: \"%s\" is too long", name);
     }
 
-    texture = (texture_t*)Z_Calloc(sizeof(texture_t), PU_TEXTURE, 0);
+    texture = (texture_t*)Mem_Calloc(sizeof(texture_t), kexTexture::hb_texture);
     strcpy(texture->name, name);
     texture->origwidth = width;
     texture->origheight = height;
@@ -98,7 +98,7 @@ texture_t *Tex_Alloc(const char *name, byte *data, int width, int height, int cl
     dglGenTextures(1, &texture->texid);
     dglBindTexture(GL_TEXTURE_2D, texture->texid);
 
-    pad = (byte*)Z_Calloc(texture->width * texture->height * 4, PU_STATIC, 0);
+    pad = (byte*)Mem_Calloc(texture->width * texture->height * 4, hb_static);
 
     for(y = 0; y < texture->origheight; y++)          
     {
@@ -112,7 +112,7 @@ texture_t *Tex_Alloc(const char *name, byte *data, int width, int height, int cl
     dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clampmode);
 
     GL_SetTextureFilter();
-    Z_Free(pad);
+    Mem_Free(pad);
 
     dglBindTexture(GL_TEXTURE_2D, 0);
 
@@ -179,7 +179,7 @@ texture_t *Tex_CacheTextureFile(const char *name, int clampmode, kbool masked)
         }
 
         texture = Tex_Alloc(name, data, width, height, clampmode);
-        Z_Free(data);
+        Mem_Free(data);
     }
 
     return texture;
@@ -191,6 +191,6 @@ texture_t *Tex_CacheTextureFile(const char *name, int clampmode, kbool masked)
 
 void Tex_Init(void)
 {
-    tex_default = Tex_CacheTextureFile("textures/default.tga", DGL_CLAMP, false);
+    //tex_default = Tex_CacheTextureFile("textures/default.tga", DGL_CLAMP, false);
 }
 

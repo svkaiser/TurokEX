@@ -27,7 +27,6 @@
 #include "js.h"
 #include "js_shared.h"
 #include "common.h"
-#include "zone.h"
 #include "system.h"
 #include "js_class.h"
 #include "debug.h"
@@ -136,20 +135,20 @@ static void J_Error(JSContext *cx, const char *message, JSErrorReport *report)
 
     if(report->filename)
     {
-        f = Z_Strdupa(kva("%s: ", report->filename));
+        f = Mem_Strdupa(kva("%s: ", report->filename));
         len += strlen(f);
     }
 
     if(report->lineno)
     {
-        l = Z_Strdupa(kva("%i ", report->lineno));
+        l = Mem_Strdupa(kva("%i ", report->lineno));
         len += strlen(l);
     }
 
-    m = Z_Strdupa(message);
+    m = Mem_Strdupa(message);
     len += strlen(m);
 
-    buf = (char*)Z_Alloca(len+1);
+    buf = (char*)Mem_Alloca(len+1);
     if(f) strcat(buf, f);
     if(l) strcat(buf, l);
     if(m) strcat(buf, m);
@@ -448,7 +447,7 @@ jsuint J_AllocByteArray(JSContext *cx, JSObject *object, byte **arr, JSBool fixe
 
 js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer, int size)
 {
-    kexStr scrname;
+    /*kexStr scrname;
     unsigned int hash;
     js_scrobj_t *scrobj;
     JSContext *cx;
@@ -467,7 +466,7 @@ js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer, int size)
         return NULL;
     }
 
-    scrobj = (js_scrobj_t*)Z_Calloc(sizeof(js_scrobj_t), PU_JSOBJ, 0);
+    scrobj = (js_scrobj_t*)Mem_Calloc(sizeof(js_scrobj_t), PU_JSOBJ, 0);
     strcpy(scrobj->name, name);
     scrname.Copy(name);
     scrname.StripPath();
@@ -476,7 +475,7 @@ js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer, int size)
     if(!(scrobj->script = JS_CompileScript(cx, obj, buffer, size, scrname.c_str(), 1)))
     {
         JS_ReportPendingException(cx);
-        Z_Free(scrobj);
+        Mem_Free(scrobj);
         return NULL;
     }
 
@@ -485,14 +484,14 @@ js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer, int size)
     if(!(scrobj->obj = JS_NewScriptObject(cx, scrobj->script)))
     {
         JS_DestroyScript(cx, scrobj->script);
-        Z_Free(scrobj);
+        Mem_Free(scrobj);
         return NULL;
     }
 
     if(!JS_AddNamedRoot(cx, &scrobj->obj, scrname.c_str()))
     {
         JS_DestroyScript(cx, scrobj->script);
-        Z_Free(scrobj);
+        Mem_Free(scrobj);
         return NULL;
     }
 
@@ -500,7 +499,8 @@ js_scrobj_t *J_LoadScriptObject(const char *name, char *buffer, int size)
     scrobj->next = js_scrobj_list[hash];
     js_scrobj_list[hash] = scrobj;
 
-    return scrobj;
+    return scrobj;*/
+    return NULL;
 }
 
 //
@@ -548,14 +548,14 @@ js_scrobj_t *J_LoadScript(const char *name)
     {
         char *file;
 
-        if((size = fileSystem.OpenFile(name, (byte**)&file, PU_STATIC)) == 0)
+        if((size = fileSystem.OpenFile(name, (byte**)&file, hb_static)) == 0)
         {
             if((size = fileSystem.ReadExternalTextFile(name, (byte**)&file)) == -1)
                 return NULL;
         }
 
         scrobj = J_LoadScriptObject(name, file, size);
-        Z_Free(file);
+        Mem_Free(file);
     }
 
     return scrobj;
@@ -700,7 +700,7 @@ void J_Shutdown(void)
     JS_DestroyRuntime(js_runtime);
     JS_ShutDown();
 
-    Z_FreeTags(PU_JSOBJ, PU_JSOBJ);
+    //Z_FreeTags(PU_JSOBJ, PU_JSOBJ);
 }
 
 #if 0
@@ -912,8 +912,8 @@ void J_Init(void)
     JS_INITCLASS_NOCONSTRUCTOR(InputEvent, 0);
     JS_INITCLASS_NOCONSTRUCTOR(Command, 0);
 
-    if(!(js_rootscript = J_LoadScript("scripts/main.js")))
-        common.Error("J_Init: Unable to load main.js");
+    //if(!(js_rootscript = J_LoadScript("scripts/main.js")))
+        //common.Error("J_Init: Unable to load main.js");
 
     JPool_Initialize(&objPoolVector, 256, &Vector_class);
     JPool_Initialize(&objPoolQuaternion, 256, &Quaternion_class);
@@ -926,8 +926,8 @@ void J_Init(void)
     JPool_Initialize(&objPoolGameActor, 32, &GameActor_class);
     JPool_Initialize(&objPoolInputEvent, 8, &InputEvent_class);
 
-    J_ExecScriptObj(js_rootscript);
-    JClass_InitObject();
+    //J_ExecScriptObj(js_rootscript);
+    //JClass_InitObject();
 
     command.Add("js", FCmd_JS);
     command.Add("jsfile", FCmd_JSFile);

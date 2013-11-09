@@ -32,7 +32,6 @@
 #include "mathlib.h"
 #include "client.h"
 #include "level.h"
-#include "zone.h"
 #include "game.h"
 #include "js.h"
 #include "fx.h"
@@ -1156,7 +1155,7 @@ static void FCmd_Screenshot(void)
 
 void R_Shutdown(void)
 {
-    Z_FreeTags(PU_MODEL, PU_MODEL);
+    //Z_FreeTags(PU_MODEL, PU_MODEL);
 }
 
 //

@@ -26,7 +26,6 @@
 
 #include "common.h"
 #include "filesystem.h"
-#include "zone.h"
 #include "unzip.h"
 
 #define FILE_MAX_HASH_SIZE  32768
@@ -58,7 +57,7 @@ const char *kexFileSystem::BasePath(void) {
     // cache multiple requests
     if(!base) {
         size_t len = strlen(*myargv);
-        char *p = (base = (char*)Z_Malloc(len + 1, PU_STATIC, 0)) + len - 1;
+        char *p = (base = (char*)Mem_Malloc(len + 1, hb_static)) + len - 1;
         
         strcpy(base, *myargv);
         while (p > base && *p!='/' && *p!='\\') {
@@ -70,8 +69,8 @@ const char *kexFileSystem::BasePath(void) {
         }
 
         if(strlen(base) < 2) {
-            Z_Free(base);
-            base = (char*)Z_Malloc(1024, PU_STATIC, 0);
+            Mem_Free(base);
+            base = (char*)Mem_Malloc(1024, hb_static);
             if(!getcwd(base, 1024)) {
                 strcpy(base, dummyDirectory);
             }
@@ -92,7 +91,7 @@ void kexFileSystem::Shutdown(void) {
         unzClose(pack->filehandle);
     }
 
-    Z_FreeTags(PU_FILE, PU_FILE);
+    Mem_Purge(hb_file);
 }
 
 //
@@ -138,7 +137,7 @@ void kexFileSystem::LoadZipFile(const char *file) {
         return;
 
     // allocate new pack file
-    pack = (kpf_t*)Z_Calloc(sizeof(kpf_t), PU_FILE, 0);
+    pack = (kpf_t*)Mem_Calloc(sizeof(kpf_t), hb_file);
     pack->filehandle = (unzFile*)uf;
     strcpy(pack->filename, filepath);
     pack->numfiles = gi.number_entry;
@@ -156,9 +155,9 @@ void kexFileSystem::LoadZipFile(const char *file) {
 
     // allocate file/hash list
     pack->hashentries = entries;
-    pack->files = (file_t*)Z_Calloc(sizeof(file_t) * pack->numfiles, PU_FILE, 0);
-    pack->hashes = (file_t***)Z_Calloc(sizeof(file_t**) * pack->hashentries, PU_FILE, 0);
-    pack->hashcount = (unsigned int*)Z_Calloc(sizeof(int) * pack->hashentries, PU_FILE, 0);
+    pack->files = (file_t*)Mem_Calloc(sizeof(file_t) * pack->numfiles, hb_file);
+    pack->hashes = (file_t***)Mem_Calloc(sizeof(file_t**) * pack->hashentries, hb_file);
+    pack->hashcount = (unsigned int*)Mem_Calloc(sizeof(int) * pack->hashentries, hb_file);
 
     // fill in file lookup lists
     for(i = 0; i < pack->numfiles; i++) {
@@ -169,6 +168,7 @@ void kexFileSystem::LoadZipFile(const char *file) {
             break;
         }
 
+        pack->files[i].cache = NULL;
         fp = &pack->files[i];
 
         unzGetCurrentFileInfoPosition(pack->filehandle, &fp->position);
@@ -179,9 +179,9 @@ void kexFileSystem::LoadZipFile(const char *file) {
         hash = HashFileName(filename, pack->hashentries);
 
         // resize hash table if needed
-        pack->hashes[hash] = (file_t**)Z_Realloc(
+        pack->hashes[hash] = (file_t**)Mem_Realloc(
             pack->hashes[hash],
-            sizeof(file_t*) * (pack->hashcount[hash]+1), PU_FILE, 0);
+            sizeof(file_t*) * (pack->hashcount[hash]+1), hb_file);
 
         pack->hashes[hash][pack->hashcount[hash]++] = fp;
 
@@ -193,7 +193,7 @@ void kexFileSystem::LoadZipFile(const char *file) {
 // kexFileSystem::OpenFile
 //
 
-int kexFileSystem::OpenFile(const char *filename, byte **data, int tag) const {
+int kexFileSystem::OpenFile(const char *filename, byte **data, kexHeapBlock &hb) const {
     long hash;
     for(kpf_t *pack = root; pack; pack = pack->next) {
         hash = HashFileName(filename, pack->hashentries);
@@ -206,7 +206,11 @@ int kexFileSystem::OpenFile(const char *filename, byte **data, int tag) const {
 
                 if(!strcmp(file->name, filename)) {
                     if(!file->cache) {
-                        Z_Calloc(file->info.uncompressed_size+1, tag, &file->cache);
+                        file->cache = Mem_Calloc(file->info.uncompressed_size+1, hb);
+                        // automatically set cache to NULL when freed so we can
+                        // recache it later
+                        Mem_CacheRef(&file->cache);
+
                         unzSetCurrentFileInfoPosition(pack->filehandle, file->position);
                         unzOpenCurrentFile(pack->filehandle);
                         unzReadCurrentFile(pack->filehandle, file->cache,
@@ -265,14 +269,14 @@ int kexFileSystem::ReadExternalTextFile(const char *name, byte **buffer) const {
         length = ftell(fp);
         fseek(fp, 0, SEEK_SET);
 
-        *buffer = (byte*)Z_Calloc(length+1, PU_FILE, 0);
+        *buffer = (byte*)Mem_Calloc(length+1, hb_file);
 
         if(fread(*buffer, 1, length, fp) == length) {
             fclose(fp);
             return length;
         }
         
-        Z_Free(*buffer);
+        Mem_Free(*buffer);
         *buffer = NULL;
         fclose(fp);
    }
@@ -291,13 +295,13 @@ static void FCmd_LoadFile(void) {
     if(command.GetArgc() < 2)
         return;
 
-    size = fileSystem.OpenFile(command.GetArgv(1), (byte**)&data, PU_STATIC);
+    size = fileSystem.OpenFile(command.GetArgv(1), (byte**)&data, hb_static);
 
     if(size) {
         common.Printf("loaded %s\nsize = %i\ndata = 0x%p\n",
             command.GetArgv(1), size, data);
 
-        Z_Free(data);
+        Mem_Free(data);
     }
     else {
         common.Warning("couldn't open %s\n", command.GetArgv(1));

@@ -148,6 +148,8 @@ public:
     static unsigned long                time;
     static bool                         bKillSoundThread;
 
+    static kexHeapBlock                 hb_sound;
+
 private:
     ALCdevice                           *alDevice;
     ALCcontext                          *alContext;

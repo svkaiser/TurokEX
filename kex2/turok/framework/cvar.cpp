@@ -25,7 +25,6 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "zone.h"
 
 kexCvarManager cvarManager;
 
@@ -77,7 +76,7 @@ kexCvar::kexCvar(const char *name, int flags, char *value,
 //
 
 void kexCvar::FreeStringValue(void) {
-    bModified ? Z_Free((char*)value) : value = NULL;
+    bModified ? Mem_Free((char*)value) : value = NULL;
 }
 
 //
@@ -85,7 +84,7 @@ void kexCvar::FreeStringValue(void) {
 //
 
 void kexCvar::SetNewStringValue(const char *string) {
-    value = (char*)(Z_Malloc(strlen(string)+1, PU_STATIC, 0));
+    value = Mem_Strdup(string, hb_static);
     strcpy(value, string);
 
     bModified = true;

@@ -27,7 +27,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include "common.h"
-#include "zone.h"
 #include "system.h"
 #include "filesystem.h"
 #include "console.h"
@@ -148,7 +147,7 @@ int kexCommon::CheckParam(const char *check) {
 //
 
 void kexCommon::Shutdown(void) {
-    Z_FreeTags(PU_STATIC, PU_STATIC);
+    Mem_Purge(hb_static);
 }
 
 //
@@ -167,7 +166,7 @@ void kexCommon::ReadConfigFile(const char *file) {
     }
 
     command.Execute(buffer);
-    Z_Free(buffer);
+    Mem_Free(buffer);
 }
 
 //
@@ -205,7 +204,11 @@ unsigned int kexCommon::HashFileName(const char *name) {
 //
 
 void kexCommon::AddCvar(const kexStr &name, const kexStr &value, const kexStr &desc, const int flags) {
-    new kexCvar(name.c_str(), flags|CVF_ALLOCATED, (char*)value.c_str(), desc.c_str());
+    new kexCvar(
+        Mem_Strdup(name.c_str(), hb_static),
+        flags|CVF_ALLOCATED,
+        Mem_Strdup(value.c_str(), hb_static),
+        Mem_Strdup(desc.c_str(), hb_static));
 }
 
 //

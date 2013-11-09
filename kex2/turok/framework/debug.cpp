@@ -25,7 +25,6 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "zone.h"
 #include "client.h"
 #include "server.h"
 #include "render.h"
@@ -66,8 +65,8 @@ static debugStats_t perfStats;
 
 void Debug_RegisterPerfStatVar(float *value, const char *name, kbool bFloat)
 {
-    perfStats.data = (statData_t*)Z_Realloc(perfStats.data,
-        sizeof(statData_t) * (++perfStats.count), PU_STATIC, 0);
+    perfStats.data = (statData_t*)Mem_Realloc(perfStats.data,
+        sizeof(statData_t) * (++perfStats.count), hb_static);
 
     if(bFloat)
         perfStats.data[perfStats.count-1].value.f = value;

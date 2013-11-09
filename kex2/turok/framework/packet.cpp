@@ -27,7 +27,6 @@
 
 #include "enet/enet.h"
 #include "common.h"
-#include "zone.h"
 #include "system.h"
 #include "packet.h"
 
@@ -202,7 +201,7 @@ void kexPacketManager::WriteVector(ENetPacket *packet, vec3_t vec) {
 //
 
 void kexPacketManager::WriteString(ENetPacket *packet, char *string) {
-    char *string2 = Z_Strdupa(string);
+    char *string2 = Mem_Strdupa(string);
     unsigned int len = strlen(string2) + 1;
     // Increase the packet size until large enough to hold the string
     if(packet->dataLength + len > packet->dataLength) {

@@ -29,7 +29,6 @@
 #include "common.h"
 #include "type.h"
 #include "gl.h"
-#include "zone.h"
 #include "system.h"
 #include "filesystem.h"
 
@@ -97,14 +96,14 @@ void Img_LoadTGA(const char *name, byte **output, int *width, int *height, kbool
 
     if(cvarDeveloper.GetBool())
     {
-        if(fileSystem.OpenFile(name, &tgafile, PU_STATIC) == 0 &&
+        if(fileSystem.OpenFile(name, &tgafile, hb_static) == 0 &&
             fileSystem.ReadExternalTextFile(name, &tgafile) <= 0)
         {
             *output = NULL;
             return;
         }
     }
-    else if(fileSystem.OpenFile(name, &tgafile, PU_STATIC) == 0)
+    else if(fileSystem.OpenFile(name, &tgafile, hb_static) == 0)
     {
         *output = NULL;
         return;
@@ -155,7 +154,7 @@ void Img_LoadTGA(const char *name, byte **output, int *width, int *height, kbool
                 int c;
                 palette_t *p;
 
-                data = (byte*)Z_Calloc(tga.width * tga.height * 4, PU_STATIC, 0);
+                data = (byte*)Mem_Calloc(tga.width * tga.height * 4, hb_static);
                 *output = data;
                 p = (palette_t*)rover;
 
@@ -214,7 +213,7 @@ void Img_LoadTGA(const char *name, byte **output, int *width, int *height, kbool
             int r;
             int c;
 
-            data = (byte*)Z_Calloc(tga.width * tga.height * 4, PU_STATIC, 0);
+            data = (byte*)Mem_Calloc(tga.width * tga.height * 4, hb_static);
             *output = data;
 
             for(r = tga.height - 1; r >= 0; r--)
@@ -263,7 +262,7 @@ void Img_LoadTGA(const char *name, byte **output, int *width, int *height, kbool
         break;
     }
 
-    Z_Free(tgafile);
+    Mem_Free(tgafile);
 }
 
 //

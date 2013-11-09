@@ -27,7 +27,6 @@
 #include <math.h>
 #include "common.h"
 #include "mathlib.h"
-#include "zone.h"
 
 //
 // Plane_SetTemp

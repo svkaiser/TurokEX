@@ -34,7 +34,6 @@
 #include "script.h"
 #include "level.h"
 #include "ai.h"
-#include "zone.h"
 #include "client.h"
 #include "server.h"
 #include "sound.h"
@@ -138,15 +137,15 @@ static void Actor_ParseTemplate(kexLexer *lexer, gActorTemplate_t *ac)
             lexer->ExpectNextToken(TK_RSQBRACK);
             if(numComponents > 0)
             {
-                ac->components = (char**)Z_Calloc(sizeof(char*) *
-                    numComponents, PU_ACTOR, NULL);
+                ac->components = (char**)Mem_Calloc(sizeof(char*) *
+                    numComponents, hb_object);
             }
             lexer->ExpectNextToken(TK_EQUAL);
             lexer->ExpectNextToken(TK_LBRACK);
             for(j = 0; j < numComponents; j++)
             {
                 lexer->GetString();
-                ac->components[j] = Z_Strdup(lexer->StringToken(), PU_ACTOR, NULL);
+                ac->components[j] = Mem_Strdup(lexer->StringToken(), hb_object);
             }
             ac->numComponents = numComponents;
             lexer->ExpectNextToken(TK_RBRACK);
@@ -1007,7 +1006,7 @@ gActorTemplate_t *Actor_NewTemplate(const char *name)
     unsigned int hash;
     kexLexer *lexer;
 
-    at = (gActorTemplate_t*)Z_Calloc(sizeof(gActorTemplate_t), PU_STATIC, 0);
+    at = (gActorTemplate_t*)Mem_Calloc(sizeof(gActorTemplate_t), hb_static);
 
     // set default properties
     at->actor.mass          = 1200;
@@ -1044,7 +1043,7 @@ gActor_t *Actor_Spawn(const char *classname, float x, float y, float z,
             return NULL;
     }
 
-    actor = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
+    actor = (gActor_t*)Mem_Calloc(sizeof(gActor_t), hb_object);
 
     Actor_CopyProperties(actor, &at->actor);
 
@@ -1079,7 +1078,7 @@ gActor_t *Actor_SpawnEx(float x, float y, float z, float yaw, float pitch, int p
 {
     gActor_t *actor;
 
-    actor = (gActor_t*)Z_Calloc(sizeof(gActor_t), PU_ACTOR, NULL);
+    actor = (gActor_t*)Mem_Calloc(sizeof(gActor_t), hb_object);
 
     // set default properties
     actor->classFlags   = classFlags;
@@ -1154,7 +1153,7 @@ void Actor_ClearData(gActor_t *actor)
             JS_RemoveRoot(js_context, &actor->ai->object);
         }
 
-        Z_Free(actor->ai);
+        Mem_Free(actor->ai);
     }
 }
 
@@ -1182,26 +1181,22 @@ void Actor_UpdateModel(gActor_t *actor, const char *model)
             Mdl_SetAnimState(&actor->animState, anim, 4, ANF_LOOP);
 
         // allocate node translation offset data
-        actor->nodeOffsets_t = (vec3_t*)Z_Realloc(
+        actor->nodeOffsets_t = (vec3_t*)Mem_Realloc(
             actor->nodeOffsets_t,
-            sizeof(vec3_t) * m->numnodes,
-            PU_ACTOR,
-            0);
+            sizeof(vec3_t) * m->numnodes, hb_object);
 
         // allocate node rotation offset data
-        actor->nodeOffsets_r = (vec4_t*)Z_Realloc(
+        actor->nodeOffsets_r = (vec4_t*)Mem_Realloc(
             actor->nodeOffsets_r,
-            sizeof(vec4_t) * m->numnodes,
-            PU_ACTOR,
-            0);
+            sizeof(vec4_t) * m->numnodes, hb_object);
 
         // set default rotation offsets
         for(i = 0; i < m->numnodes; i++)
             Vec_Set4(actor->nodeOffsets_r[i], 0, 0, 0, 1);
 
         // allocate data for texture swap array
-        actor->textureSwaps = (char****)Z_Calloc(sizeof(char***) *
-            m->numnodes, PU_ACTOR, NULL);
+        actor->textureSwaps = (char****)Mem_Calloc(sizeof(char***) *
+            m->numnodes, hb_object);
 
         for(j = 0; j < m->numnodes; j++)
         {
@@ -1210,8 +1205,8 @@ void Actor_UpdateModel(gActor_t *actor, const char *model)
 
             node = &m->nodes[j];
 
-            actor->textureSwaps[j] = (char***)Z_Calloc(sizeof(char**) *
-                node->nummeshes, PU_ACTOR, NULL);
+            actor->textureSwaps[j] = (char***)Mem_Calloc(sizeof(char**) *
+                node->nummeshes, hb_object);
 
             for(k = 0; k < node->nummeshes; k++)
             {
@@ -1222,8 +1217,8 @@ void Actor_UpdateModel(gActor_t *actor, const char *model)
                 if(mesh->numsections == 0)
                     continue;
 
-                actor->textureSwaps[j][k] = (char**)Z_Calloc(sizeof(char*) *
-                    mesh->numsections, PU_ACTOR, NULL);
+                actor->textureSwaps[j][k] = (char**)Mem_Calloc(sizeof(char*) *
+                    mesh->numsections, hb_object);
             }
         }
     }
@@ -1239,7 +1234,7 @@ void Actor_Remove(gActor_t *actor)
     actor->linkNext = actor->linkPrev = NULL;
 
     Actor_ClearData(actor);
-    Z_Free(actor);
+    Mem_Free(actor);
 }
 
 //

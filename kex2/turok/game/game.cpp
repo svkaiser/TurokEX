@@ -30,7 +30,6 @@
 #include "system.h"
 #include "mathlib.h"
 #include "level.h"
-#include "zone.h"
 #include "game.h"
 #include "packet.h"
 #include "js.h"
@@ -42,9 +41,8 @@
 
 void G_Shutdown(void)
 {
-    Z_FreeTags(PU_LEVEL, PU_LEVEL);
-    Z_FreeTags(PU_ACTOR, PU_ACTOR);
-    Z_FreeTags(PU_CM, PU_CM);
+    Mem_Purge(hb_object);
+    Mem_Purge(kexClipMesh::hb_clipMesh);
 }
 
 //

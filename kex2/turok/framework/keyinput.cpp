@@ -28,7 +28,6 @@
 
 #include "common.h"
 #include "keyinput.h"
-#include "zone.h"
 #include "scriptAPI/scriptSystem.h"
 
 kexInputKey inputKey;
@@ -230,8 +229,8 @@ void kexInputKey::BindCommand(char key, const char *string) {
     cmdlist_t *newcmd;
 
     keycmd = &keycmds[keycode[bShiftdown][key]];
-    newcmd = (cmdlist_t*)Z_Calloc(sizeof(cmdlist_t), PU_STATIC, 0);
-    newcmd->command = Z_Strdup(string, PU_STATIC, 0);
+    newcmd = (cmdlist_t*)Mem_Calloc(sizeof(cmdlist_t), hb_static);
+    newcmd->command = Mem_Strdup(string, hb_static);
     newcmd->next = keycmd->cmds;
     keycmd->cmds = newcmd;
 }
@@ -349,7 +348,7 @@ void kexInputKey::AddAction(byte id, const char *name) {
     if(!command.Verify(name))
         return;
 
-    keyaction = (keyaction_t*)Z_Calloc(sizeof(keyaction_t), PU_STATIC, 0);
+    keyaction = (keyaction_t*)Mem_Calloc(sizeof(keyaction_t), hb_static);
     keyaction->keyid = id;
     strcpy(keyaction->name, name);
 

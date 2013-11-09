@@ -34,7 +34,6 @@
 #include "js.h"
 #include "sound.h"
 #include "fx.h"
-#include "zone.h"
 #include "debug.h"
 #include "network.h"
 #include "console.h"

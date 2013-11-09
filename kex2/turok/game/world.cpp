@@ -25,7 +25,6 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "zone.h"
 #include "script.h"
 #include "mathlib.h"
 #include "client.h"
@@ -234,7 +233,7 @@ void kexWorld::RemoveActor(kexWorldActor *actor) {
     * point it to actor->prev, so the iterator will correctly move on to
     * actor->prev->next = actor->next */
     actorRover = actor->worldLink.Prev();
-    Z_Free(actor);
+    Mem_Free(actor);
 
     actor = NULL;
 }

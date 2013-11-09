@@ -26,7 +26,6 @@
 
 #include "common.h"
 #include "system.h"
-#include "zone.h"
 #include "gl.h"
 #include "client.h"
 #include "script.h"

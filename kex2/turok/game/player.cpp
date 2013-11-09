@@ -33,7 +33,6 @@
 #include "actor_old.h"
 #include "player.h"
 #include "world.h"
-#include "zone.h"
 #include "console.h"
 
 //
@@ -224,7 +223,6 @@ kexPlayer::kexPlayer(void) {
 //
 
 kexPlayer::~kexPlayer(void) {
-    UnpossessPuppet();
 }
 
 //

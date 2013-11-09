@@ -27,7 +27,6 @@
 #include <string.h>
 #include "common.h"
 #include "system.h"
-#include "zone.h"
 #include "script.h"
 #include "filesystem.h"
 
@@ -93,7 +92,7 @@ kexLexer::kexLexer(const char *filename, char *buf, int bufSize) {
 
 kexLexer::~kexLexer(void) {
     if(buffer) {
-        Z_Free(buffer);
+        Mem_Free(buffer);
     }
     buffer          = NULL;
     buffsize        = 0;
@@ -665,7 +664,7 @@ void kexLexer::AssignVectorFromTokenList(const sctokens_t *tokenlist, vec3_t var
 //
 
 void kexLexer::AssignFromTokenList(const sctokens_t *tokenlist, arraytype_t type,
-                    void **data, int count, int id, bool expect, int tag) {
+                    void **data, int count, int id, bool expect, kexHeapBlock &hb) {
     void *buf;
 
     if(expect) {
@@ -712,7 +711,7 @@ void kexLexer::AssignFromTokenList(const sctokens_t *tokenlist, arraytype_t type
             break;
         }
 
-        buf = (void*)Z_Calloc(len * count, tag, 0);
+        buf = (void*)Mem_Calloc(len * count, hb);
 
         switch(type) {
         case AT_SHORT: {
@@ -903,11 +902,11 @@ kexLexer *kexParser::Open(const char* filename) {
         buffsize = fileSystem.ReadExternalTextFile(filename, (byte**)(&buffer));
 
         if(buffsize <= 0) {
-            buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), PU_STATIC);
+            buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), hb_static);
         }
     }
     else {
-        buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), PU_STATIC);
+        buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), hb_static);
     }
 
     if(buffsize <= 0) {

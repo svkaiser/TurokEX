@@ -29,7 +29,6 @@
 #include "common.h"
 #include "mathlib.h"
 #include "gl.h"
-#include "zone.h"
 #include "system.h"
 
 JSObject *js_objMatrix;
@@ -57,7 +56,7 @@ static JSBool matrix_toString(JSContext *cx, uintN argc, jsval *vp)
 
     JS_THISMATRIX(mtx, vp);
 
-    buffer = (char*)Z_Alloca(512);
+    buffer = (char*)Mem_Alloca(512);
 
     strcat(buffer, kva("%f %f %f %f\n", (*mtx)[ 0], (*mtx)[ 4], (*mtx)[ 8], (*mtx)[12]));
     strcat(buffer, kva("%f %f %f %f\n", (*mtx)[ 1], (*mtx)[ 5], (*mtx)[ 9], (*mtx)[13]));

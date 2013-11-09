@@ -29,7 +29,6 @@
 #include "common.h"
 #include "system.h"
 #include "client.h"
-#include "zone.h"
 #include "gl.h"
 #include "fx.h"
 #include "sound.h"
@@ -558,7 +557,7 @@ JS_FASTNATIVE_BEGIN(Sys, readTextFile)
     else
     {
         JS_RETURNSTRING(vp, buffer);
-        Z_Free(buffer);
+        Mem_Free(buffer);
     }
 
     return JS_TRUE;

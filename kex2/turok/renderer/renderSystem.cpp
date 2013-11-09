@@ -25,10 +25,12 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "zone.h"
+#include "memHeap.h"
 #include "renderSystem.h"
 
 kexRenderSystem renderSystem;
+
+kexHeapBlock kexRenderSystem::hb_model("model", false, NULL, NULL);
 
 GL_ARB_multitexture_Define();
 GL_EXT_compiled_vertex_array_Define();
@@ -253,17 +255,17 @@ void kexRenderSystem::Init(void) {
 
     if(data = defaultTexture.LoadFromFile("textures/default.tga")) {
         defaultTexture.Upload(data, TC_CLAMP, TF_LINEAR);
-        Z_Free(data);
+        Mem_Free(data);
     }
 
     if(data = whiteTexture.LoadFromFile("textures/white.tga")) {
         whiteTexture.Upload(data, TC_CLAMP, TF_LINEAR);
-        Z_Free(data);
+        Mem_Free(data);
     }
 
     if(data = blackTexture.LoadFromFile("textures/black.tga")) {
         blackTexture.Upload(data, TC_CLAMP, TF_LINEAR);
-        Z_Free(data);
+        Mem_Free(data);
     }
 
     consoleFont.LoadKFont("fonts/confont.kfont");
@@ -299,8 +301,8 @@ void kexRenderSystem::Shutdown(void) {
         }
     }
 
-    Z_FreeTags(PU_MODEL, PU_MODEL);
-    Z_FreeTags(PU_TEXTURE, PU_TEXTURE);
+    Mem_Purge(kexRenderSystem::hb_model);
+    Mem_Purge(kexTexture::hb_texture);
 }
 
 //
@@ -591,13 +593,13 @@ kexTexture *kexRenderSystem::CacheTexture(const char *name, texClampMode_t clamp
     if(!(texture = textureList.Find(name))) {
         byte *data;
 
-        texture = textureList.Add(name, PU_TEXTURE);
+        texture = textureList.Add(name, kexTexture::hb_texture);
         texture->SetMasked(true);
 
         data = texture->LoadFromFile(name);
         texture->Upload(data, clampMode, filterMode);
 
-        Z_Free(data);
+        Mem_Free(data);
     }
 
     return texture;

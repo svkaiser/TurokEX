@@ -27,7 +27,6 @@
 #include "common.h"
 #include "actor_old.h"
 #include "level.h"
-#include "zone.h"
 #include "script.h"
 #include "mathlib.h"
 #include "client.h"
@@ -583,8 +582,8 @@ static void Map_ImportObjToKNav(const char *filename) {
                 }
                 else if(!strcmp(lexer->Token(), "v")) {
                     numpoints++;
-                    verts = (float*)Z_Realloc(verts,
-                        sizeof(float) * (numpoints * 3), PU_STATIC, 0);
+                    verts = (float*)Mem_Realloc(verts,
+                        sizeof(float) * (numpoints * 3), hb_static);
 
                     verts[pointRover++] = (float)lexer->GetFloat() * 256.0f;
                     verts[pointRover++] = (float)lexer->GetFloat() * 256.0f;
@@ -592,8 +591,8 @@ static void Map_ImportObjToKNav(const char *filename) {
                 }
                 else if(!strcmp(lexer->Token(), "f")) {
                     numfaces++;
-                    faces = (int*)Z_Realloc(faces,
-                        sizeof(int) * (numfaces * 3), PU_STATIC, 0);
+                    faces = (int*)Mem_Realloc(faces,
+                        sizeof(int) * (numfaces * 3), hb_static);
 
                     faces[faceRover++] = lexer->GetNumber() - 1;
                     faces[faceRover++] = lexer->GetNumber() - 1;
@@ -605,7 +604,7 @@ static void Map_ImportObjToKNav(const char *filename) {
 
         parser.Close();
 
-        int *links = (int*)Z_Calloc(sizeof(int) * (numfaces * 3), PU_STATIC, 0);
+        int *links = (int*)Mem_Calloc(sizeof(int) * (numfaces * 3), hb_static);
         memset(links, -1, sizeof(int) * (numfaces * 3));
 
         for(int i = 0; i < numfaces * 3; i += 3) {
@@ -667,9 +666,9 @@ static void Map_ImportObjToKNav(const char *filename) {
         fprintf(f, "}\n");
         fclose(f);
 
-        Z_Free(verts);
-        Z_Free(faces);
-        Z_Free(links);
+        Mem_Free(verts);
+        Mem_Free(faces);
+        Mem_Free(links);
     }
 }
 
@@ -810,7 +809,7 @@ void Map_Unload(void)
             Actor_ClearData(actor);
         }
 
-        Z_Free(gb->statics);
+        Mem_Free(gb->statics);
     }
 
     // unroot all script objects in areas
@@ -828,8 +827,8 @@ void Map_Unload(void)
     //FX_ClearLinks();
 
     // purge all level and actor allocations
-    Z_FreeTags(PU_LEVEL, PU_LEVEL);
-    Z_FreeTags(PU_ACTOR, PU_ACTOR);
+    //Z_FreeTags(PU_LEVEL, PU_LEVEL);
+    //Z_FreeTags(PU_ACTOR, PU_ACTOR);
 
     JS_GC(js_context);
 }

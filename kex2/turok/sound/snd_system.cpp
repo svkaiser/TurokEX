@@ -28,7 +28,6 @@
 #include "al.h"
 #include "alc.h"
 #include "common.h"
-#include "zone.h"
 #include "sound.h"
 #include "client.h"
 #include "filesystem.h"
@@ -46,6 +45,7 @@ kexCvar cvarSoundVolume("s_sndvolume", CVF_FLOAT|CVF_CONFIG, "0.5", 0, 1, "TODO"
 #define SND_INT2TIME(t) ((float)t * ((1.0f / 60.0f) * 1000.0f))
 
 kexSoundSystem soundSystem;
+kexHeapBlock kexSoundSystem::hb_sound("sound", false, NULL, NULL);
 
 //
 // FCmd_SoundInfo
@@ -503,7 +503,7 @@ void kexSoundSystem::Shutdown(void) {
     alcDestroyContext(alContext);
     alcCloseDevice(alDevice);
 
-    Z_FreeTags(PU_SOUND, PU_SOUND);
+    Mem_Purge(kexSoundSystem::hb_sound);
 }
 
 //
@@ -637,11 +637,11 @@ kexWavFile *kexSoundSystem::CacheWavFile(const char *name) {
     if(!(wavFile = wavList.Find(name))) {
         byte *data;
 
-        if(fileSystem.OpenFile(name, &data, PU_SOUND) == 0) {
+        if(fileSystem.OpenFile(name, &data, kexSoundSystem::hb_sound) == 0) {
             return NULL;
         }
 
-        wavFile = wavList.Add(name, PU_SOUND);
+        wavFile = wavList.Add(name, kexSoundSystem::hb_sound);
         wavFile->Allocate(name, data);
     }
 
@@ -666,7 +666,7 @@ kexSoundShader *kexSoundSystem::CacheShaderFile(const char *name) {
             return NULL;
         }
 
-        snd = shaderList.Add(name, PU_SOUND);
+        snd = shaderList.Add(name, kexSoundSystem::hb_sound);
         snd->Load(lexer);
         parser.Close();
     }

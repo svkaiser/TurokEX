@@ -29,7 +29,6 @@
 #include "SDL.h"
 
 #include "common.h"
-#include "zone.h"
 #include "system.h"
 #include "server.h"
 #include "client.h"
@@ -210,8 +209,6 @@ void kexSystem::InitSDL(void) {
     
     SDL_ShowCursor(0);
 
-    Z_Init();
-
     command.Add("showconsole", FCmd_ShowWinConsole);
     common.Printf("SDL Initialized\n");
 }
@@ -386,7 +383,7 @@ void kexSystem::MainLoop(void) {
 
         prevmsec = nextmsec;
 
-        Z_FreeAlloca();
+        Mem_GC();
         J_GarbageCollect();
     }
 }
@@ -407,6 +404,7 @@ void kexSystem::Main(int argc, char **argv) {
     InitSDL();
 
     command.Init();
+    kexHeap::Init();
     cvarManager.Init();
     kexObject::Init();
     console.Init();

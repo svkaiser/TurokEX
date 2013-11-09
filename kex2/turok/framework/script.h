@@ -97,7 +97,7 @@ public:
                                             float *var, int id, bool expect);
     void                AssignFromTokenList(const sctokens_t *tokenlist,
                                             arraytype_t type, void **data, int count,
-                                            int id, bool expect, int tag);
+                                            int id, bool expect, kexHeapBlock &hb);
     void                AssignVectorFromTokenList(const sctokens_t *tokenlist,
                                             vec3_t var, int id, bool expect);
     int                 LinePos(void) { return linepos; }

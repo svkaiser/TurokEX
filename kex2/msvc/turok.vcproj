@@ -411,10 +411,6 @@
 					RelativePath="..\turok\framework\unzip.cpp"
 					>
 				</File>
-				<File
-					RelativePath="..\turok\framework\zone.cpp"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="math"
@@ -826,10 +822,6 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\unzip.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\framework\zone.h"
 					>
 				</File>
 			</Filter>

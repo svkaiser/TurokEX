@@ -25,12 +25,13 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "zone.h"
 #include "clipmesh.h"
 #include "actor.h"
 #include "renderSystem.h"
 #include "renderWorld.h"
 #include "stanHull.h"
+
+kexHeapBlock kexClipMesh::hb_clipMesh("clip mesh", false, NULL, NULL);
 
 enum {
     scClipMesh_type = 0,
@@ -66,21 +67,21 @@ kexClipMesh::~kexClipMesh(void) {
             this->cmGroups[i].numIndices    = 0;
             this->cmGroups[i].numTriangles  = 0;
             if(this->cmGroups[i].points) {
-                Z_Free(this->cmGroups[i].points);
+                Mem_Free(this->cmGroups[i].points);
                 this->cmGroups[i].points = NULL;
             }
             if(this->cmGroups[i].indices) {
-                Z_Free(this->cmGroups[i].indices);
+                Mem_Free(this->cmGroups[i].indices);
                 this->cmGroups[i].indices = NULL;
             }
             if(this->cmGroups[i].triangles) {
-                Z_Free(this->cmGroups[i].triangles);
+                Mem_Free(this->cmGroups[i].triangles);
                 this->cmGroups[i].triangles = NULL;
             }
         }
 
         this->numGroups = 0;
-        Z_Free(this->cmGroups);
+        Mem_Free(this->cmGroups);
     }
 }
 
@@ -119,14 +120,14 @@ void kexClipMesh::CreateBox(const kexBBox &bbox) {
 
     origin                  = bbox.Center();
     numGroups               = 1;
-    cmGroups                = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+    cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
     cmGroup                 = &cmGroups[0];
     cmGroup->numPoints      = 8;
     cmGroup->numIndices     = 36;
     cmGroup->numTriangles   = 12;
-    cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
-    cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
-    cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
+    cmGroup->points         = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * cmGroup->numPoints, kexClipMesh::hb_clipMesh);
+    cmGroup->indices        = (word*)Mem_Calloc(sizeof(word) * cmGroup->numIndices, kexClipMesh::hb_clipMesh);
+    cmGroup->triangles      = (kexTri*)Mem_Calloc(sizeof(kexTri) * cmGroup->numTriangles, kexClipMesh::hb_clipMesh);
     word *indices           = cmGroup->indices;
     kexVec3 *points         = cmGroup->points;
     
@@ -179,14 +180,14 @@ void kexClipMesh::CreateTetrahedron(const kexBBox &bbox) {
     origin                  = bbox.Center();
     s                       = bbox.max - origin;
     numGroups               = 1;
-    cmGroups                = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+    cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
     cmGroup                 = &cmGroups[0];
     cmGroup->numPoints      = 4;
     cmGroup->numIndices     = 12;
     cmGroup->numTriangles   = 4;
-    cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
-    cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
-    cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
+    cmGroup->points         = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * cmGroup->numPoints, kexClipMesh::hb_clipMesh);
+    cmGroup->indices        = (word*)Mem_Calloc(sizeof(word) * cmGroup->numIndices, kexClipMesh::hb_clipMesh);
+    cmGroup->triangles      = (kexTri*)Mem_Calloc(sizeof(kexTri) * cmGroup->numTriangles, kexClipMesh::hb_clipMesh);
     word *indices           = cmGroup->indices;
     kexVec3 *points         = cmGroup->points;
 
@@ -212,14 +213,14 @@ void kexClipMesh::CreateOctahedron(const kexBBox &bbox) {
     origin                  = bbox.Center();
     s                       = bbox.max - origin;
     numGroups               = 1;
-    cmGroups                = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+    cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
     cmGroup                 = &cmGroups[0];
     cmGroup->numPoints      = 6;
     cmGroup->numIndices     = 24;
     cmGroup->numTriangles   = 8;
-    cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
-    cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
-    cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
+    cmGroup->points         = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * cmGroup->numPoints, kexClipMesh::hb_clipMesh);
+    cmGroup->indices        = (word*)Mem_Calloc(sizeof(word) * cmGroup->numIndices, kexClipMesh::hb_clipMesh);
+    cmGroup->triangles      = (kexTri*)Mem_Calloc(sizeof(kexTri) * cmGroup->numTriangles, kexClipMesh::hb_clipMesh);
     word *indices           = cmGroup->indices;
     kexVec3 *points         = cmGroup->points;
 
@@ -249,14 +250,14 @@ void kexClipMesh::CreateDodecahedron(const kexBBox &bbox) {
 
     origin                  = bbox.Center();
     numGroups               = 1;
-    cmGroups                = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+    cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
     cmGroup                 = &cmGroups[0];
     cmGroup->numPoints      = 20;
     cmGroup->numIndices     = 108;
     cmGroup->numTriangles   = 36;
-    cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
-    cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
-    cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
+    cmGroup->points         = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * cmGroup->numPoints, kexClipMesh::hb_clipMesh);
+    cmGroup->indices        = (word*)Mem_Calloc(sizeof(word) * cmGroup->numIndices, kexClipMesh::hb_clipMesh);
+    cmGroup->triangles      = (kexTri*)Mem_Calloc(sizeof(kexTri) * cmGroup->numTriangles, kexClipMesh::hb_clipMesh);
     word *indices           = cmGroup->indices;
     kexVec3 *points         = cmGroup->points;
 
@@ -350,14 +351,14 @@ void kexClipMesh::CreateCylinder(const kexBBox &bbox) {
 
     origin                  = bbox.Center();
     numGroups               = 1;
-    cmGroups                = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+    cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
     cmGroup                 = &cmGroups[0];
     cmGroup->numPoints      = 16;
     cmGroup->numIndices     = 84;
     cmGroup->numTriangles   = 28;
-    cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
-    cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
-    cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
+    cmGroup->points         = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * cmGroup->numPoints, kexClipMesh::hb_clipMesh);
+    cmGroup->indices        = (word*)Mem_Calloc(sizeof(word) * cmGroup->numIndices, kexClipMesh::hb_clipMesh);
+    cmGroup->triangles      = (kexTri*)Mem_Calloc(sizeof(kexTri) * cmGroup->numTriangles, kexClipMesh::hb_clipMesh);
     word *indices           = cmGroup->indices;
     kexVec3 *points         = cmGroup->points;
 
@@ -441,7 +442,7 @@ void kexClipMesh::CreateMeshFromModel(void) {
         return;
     }
 
-    cmGroups = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+    cmGroups = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
 
     for(unsigned int i = 0; i < numGroups; i++) {
         surface                 = &group->surfaces[i];
@@ -449,9 +450,9 @@ void kexClipMesh::CreateMeshFromModel(void) {
         cmGroup->numIndices     = surface->numIndices;
         cmGroup->numPoints      = surface->numVerts;
         cmGroup->numTriangles   = surface->numIndices / 3;
-        cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
-        cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
-        cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
+        cmGroup->points         = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * cmGroup->numPoints, kexClipMesh::hb_clipMesh);
+        cmGroup->indices        = (word*)Mem_Calloc(sizeof(word) * cmGroup->numIndices, kexClipMesh::hb_clipMesh);
+        cmGroup->triangles      = (kexTri*)Mem_Calloc(sizeof(kexTri) * cmGroup->numTriangles, kexClipMesh::hb_clipMesh);
 
         for(unsigned int k = 0; k < cmGroup->numIndices; k++) {
             cmGroup->indices[k] = surface->indices[k];
@@ -493,7 +494,7 @@ void kexClipMesh::CreateConvexHull(void) {
     origin = owner->BoundingBox().Center();
     numGroups = 1;
 
-    cmGroups = (cmGroup_t*)Z_Calloc(sizeof(cmGroup_t) * numGroups, PU_CM, NULL);
+    cmGroups = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
 
     if(group->numSurfaces > 1) {
         unsigned int i;
@@ -505,7 +506,7 @@ void kexClipMesh::CreateConvexHull(void) {
             totalVerts += group->surfaces[i].numVerts;
         }
 
-        verts = (PxF32*)Z_Malloc(totalVerts * (sizeof(PxF32) * 3), PU_STATIC, NULL);
+        verts = (PxF32*)Mem_Malloc(totalVerts * (sizeof(PxF32) * 3), hb_static);
 
         for(i = 0; i < group->numSurfaces; i++) {
             memcpy(&verts[totalCopyVerts], reinterpret_cast<PxF32*>(group->surfaces[i].vertices),
@@ -517,7 +518,7 @@ void kexClipMesh::CreateConvexHull(void) {
         HullDesc desc(QF_TRIANGLES, totalVerts, verts ,sizeof(PxF32) * 3);
         err = hl.CreateConvexHull(desc, result);
 
-        Z_Free(verts);
+        Mem_Free(verts);
     }
     else {
         HullDesc desc(QF_TRIANGLES, group->surfaces[0].numVerts,
@@ -530,9 +531,9 @@ void kexClipMesh::CreateConvexHull(void) {
         cmGroup->numIndices     = result.mNumIndices;
         cmGroup->numPoints      = result.mNumOutputVertices;
         cmGroup->numTriangles   = result.mNumIndices / 3;
-        cmGroup->points         = (kexVec3*)Z_Calloc(sizeof(kexVec3) * cmGroup->numPoints, PU_CM, NULL);
-        cmGroup->indices        = (word*)Z_Calloc(sizeof(word) * cmGroup->numIndices, PU_CM, NULL);
-        cmGroup->triangles      = (kexTri*)Z_Calloc(sizeof(kexTri) * cmGroup->numTriangles, PU_CM, NULL);
+        cmGroup->points         = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * cmGroup->numPoints, kexClipMesh::hb_clipMesh);
+        cmGroup->indices        = (word*)Mem_Calloc(sizeof(word) * cmGroup->numIndices, kexClipMesh::hb_clipMesh);
+        cmGroup->triangles      = (kexTri*)Mem_Calloc(sizeof(kexTri) * cmGroup->numTriangles, kexClipMesh::hb_clipMesh);
 
         for(unsigned int k = 0; k < cmGroup->numIndices; k++) {
             cmGroup->indices[k] = result.mIndices[k];

@@ -30,7 +30,6 @@
 #include "mathlib.h"
 #include "actor_old.h"
 #include "client.h"
-#include "zone.h"
 #include "ai.h"
 #include "fx.h"
 
@@ -43,7 +42,7 @@ ai_t *AI_Spawn(gActor_t *actor)
     if(actor->bStale)
         return NULL;
 
-    actor->ai = (ai_t*)Z_Calloc(sizeof(ai_t), PU_AI, NULL);
+    actor->ai = (ai_t*)Mem_Calloc(sizeof(ai_t), hb_object);
     actor->ai->owner = actor;
 
     // defaults

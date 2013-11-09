@@ -27,12 +27,13 @@
 #include "common.h"
 #include "client.h"
 #include "fileSystem.h"
-#include "zone.h"
 #include "world.h"
 #include "physics.h"
 #include "scriptAPI/scriptSystem.h"
 
 kexScriptManager scriptManager;
+
+static kexHeapBlock hb_script("script", false, NULL, NULL);
 
 //
 // FCmd_Call
@@ -65,7 +66,7 @@ static void FCmd_CallFile(void) {
 
 static void FCmd_MemUsage(void) {
     common.CPrintf(RGBA(0, 255, 255, 255), "Script Memory Usage:\n");
-    common.CPrintf(COLOR_YELLOW, "%ikb\n", Z_TagUsage(PU_SCRIPT) >> 10);
+    common.CPrintf(COLOR_YELLOW, "%ikb\n", kexHeap::Usage(hb_script) >> 10);
 }
 
 //
@@ -90,7 +91,7 @@ kexScriptManager::~kexScriptManager(void) {
 //
 
 void *kexScriptManager::MemAlloc(size_t size) {
-    return Z_Calloc(size, PU_SCRIPT, 0);
+    return Mem_Calloc(size, hb_script);
 }
 
 //
@@ -98,7 +99,7 @@ void *kexScriptManager::MemAlloc(size_t size) {
 //
 
 void kexScriptManager::MemFree(void *ptr) {
-    Z_Free(ptr);
+    Mem_Free(ptr);
 }
 
 //
@@ -187,7 +188,7 @@ void kexScriptManager::Shutdown(void) {
     ctx->Release();
     engine->Release();
 
-    Z_FreeTags(PU_SCRIPT, PU_SCRIPT);
+    Mem_Purge(hb_script);
 }
 
 //
@@ -272,7 +273,7 @@ void kexScriptManager::CallExternalScript(const char *file, const char *function
     mod->AddScriptSection("externalSection", &data[0], size);
     mod->Build();
 
-    Z_Free(data);
+    Mem_Free(data);
 
     asIScriptFunction *func = mod->GetFunctionByDecl(function);
 

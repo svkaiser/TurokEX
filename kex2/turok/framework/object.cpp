@@ -26,7 +26,6 @@
 
 #include "common.h"
 #include "object.h"
-#include "zone.h"
 
 //
 // kexRTTI::kexRTTI
@@ -181,7 +180,7 @@ void kexObject::Spawn(void) {
 //
 
 void *kexObject::operator new(size_t s) {
-    return Z_Calloc(s, PU_OBJECT, 0);
+    return Mem_Calloc(s, hb_object);
 }
 
 //
@@ -189,7 +188,7 @@ void *kexObject::operator new(size_t s) {
 //
 
 void kexObject::operator delete(void *ptr) {
-    Z_Free(ptr);
+    Mem_Free(ptr);
 }
 
 //

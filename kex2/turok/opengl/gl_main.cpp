@@ -30,7 +30,6 @@
 #include "common.h"
 #include "type.h"
 #include "gl.h"
-#include "zone.h"
 #include "system.h"
 #include "renderSystem.h"
 
@@ -187,8 +186,8 @@ byte* GL_GetScreenBuffer(int x, int y, int width, int height, kbool flip)
     int col;
 
     col     = (width * 3);
-    data    = (byte*)Z_Calloc(height * width * 3, PU_STATIC, 0);
-    buffer  = (byte*)Z_Calloc(col, PU_STATIC, 0);
+    data    = (byte*)Mem_Calloc(height * width * 3, hb_static);
+    buffer  = (byte*)Mem_Calloc(col, hb_static);
 
     //
     // 20120313 villsa - force pack alignment to 1
@@ -213,7 +212,7 @@ byte* GL_GetScreenBuffer(int x, int y, int width, int height, kbool flip)
         }
     }
     
-    Z_Free(buffer);
+    Mem_Free(buffer);
 
     return data;
 }

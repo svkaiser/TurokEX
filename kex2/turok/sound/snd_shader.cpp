@@ -27,7 +27,6 @@
 #include "al.h"
 #include "alc.h"
 #include "common.h"
-#include "zone.h"
 #include "sound.h"
 #include "script.h"
 #include "client.h"
@@ -110,7 +109,7 @@ void kexSoundShader::Load(kexLexer *lexer) {
         return;
     }
 
-    sfxList = (sfx_t*)Z_Calloc(sizeof(sfx_t) * numsfx, PU_SOUND, 0);
+    sfxList = (sfx_t*)Mem_Calloc(sizeof(sfx_t) * numsfx, kexSoundSystem::hb_sound);
 
     lexer->ExpectNextToken(TK_RSQBRACK);
     lexer->ExpectNextToken(TK_EQUAL);

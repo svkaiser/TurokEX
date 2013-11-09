@@ -3,7 +3,7 @@
 #define STAN_HULL_CONFIG_H
 
 #include <assert.h>
-#include <zone.h>
+#include "memHeap.h"
 
 #ifdef STAN_HULL_USE_NAMESPACE
 namespace physx
@@ -18,8 +18,8 @@ namespace physx
 #define PX_ALWAYS_ASSERT() assert(0)
 #define PX_INLINE inline
 #define PX_FORCE_PARAMETER_REFERENCE(_P) (void)(_P);
-#define PX_ALLOC(x,y) Z_Malloc(x, PU_STATIC, 0)
-#define PX_FREE(x) Z_Free(x)
+#define PX_ALLOC(x,y) Mem_Malloc(x, hb_static)
+#define PX_FREE(x) Mem_Free(x)
 #define PX_NEW(T) new(#T,__FILE__,__LINE__,sizeof(T)) T
 
 	// An expression that should expand to nothing in _DEBUG builds.  

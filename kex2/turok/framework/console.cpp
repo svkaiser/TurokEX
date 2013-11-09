@@ -28,7 +28,6 @@
 #include "js_shared.h"
 #include "common.h"
 #include "system.h"
-#include "zone.h"
 #include "array.h"
 #include "kstring.h"
 #include "client.h"

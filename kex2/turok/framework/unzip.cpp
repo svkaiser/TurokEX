@@ -1,5 +1,4 @@
 #include "common.h"
-#include "zone.h"
 #include "keywds.h"
 #include "unzip.h"
 
@@ -1057,10 +1056,10 @@ static void   zcfree  OF((voidp opaque, voidp ptr));
 #endif
 
 #ifndef ALLOC
-# define ALLOC(size) (Z_Malloc(size, PU_FILE, 0))
+# define ALLOC(size) (Mem_Malloc(size, hb_static))
 #endif
 #ifndef TRYFREE
-# define TRYFREE(p) {if (p) Z_Free(p);}
+# define TRYFREE(p) {if (p) Mem_Free(p);}
 #endif
 
 #define SIZECENTRALDIRITEM (0x2e)
@@ -4276,12 +4275,12 @@ int inflateSyncPoint(z_streamp z)
 voidp zcalloc (voidp opaque, unsigned items, unsigned size)
 {
     if (opaque) items += size - size; /* make compiler happy */
-    return (voidp)Z_Malloc(items*size, PU_FILE, 0);
+    return (voidp)Mem_Malloc(items*size, hb_file);
 }
 
 void  zcfree (voidp opaque, voidp ptr)
 {
-    Z_Free(ptr);
+    Mem_Free(ptr);
     if (opaque) return; /* make compiler happy */
 }
 

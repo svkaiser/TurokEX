@@ -26,7 +26,6 @@
 
 #include <string.h>
 #include "common.h"
-#include "zone.h"
 #include "js.h"
 
 static void FCmd_Stub(void);
@@ -50,10 +49,10 @@ bool kexCommand::Run(void) {
         if(!strcasecmp(cmd_argv[0], cmd->name)) {
             if(cmd->object) {
                 int i;
-                char **argv = (char**)(Z_Alloca(sizeof(char*) * cmd_argc));
+                char **argv = (char**)(Mem_Alloca(sizeof(char*) * cmd_argc));
 
                 for(i = 0; i < cmd_argc-1; i++)
-                    argv[i] = Z_Strdupa(cmd_argv[i+1]);
+                    argv[i] = Mem_Strdupa(cmd_argv[i+1]);
 
                 J_CallObject(cmd->object, argv, cmd_argc-1);
             }
@@ -281,7 +280,7 @@ void kexCommand::Add(const char *name, cmd_t function) {
     if(!Verify(name))
         return;
 
-    cmd             = (cmd_function_t*)(Z_Malloc(sizeof(cmd_function_t), PU_STATIC, 0));
+    cmd             = (cmd_function_t*)(Mem_Malloc(sizeof(cmd_function_t), hb_static));
     cmd->name       = name;
     cmd->function   = function;
     cmd->next       = cmd_functions;
@@ -299,8 +298,8 @@ void kexCommand::Add(const char *name, gObject_t *object) {
     if(!Verify(name))
         return;
 
-    cmd             = (cmd_function_t*)(Z_Malloc(sizeof(cmd_function_t), PU_STATIC, 0));
-    cmd->name       = Z_Strdup(name, PU_STATIC, 0);
+    cmd             = (cmd_function_t*)(Mem_Malloc(sizeof(cmd_function_t), hb_static));
+    cmd->name       = Mem_Strdup(name, hb_static);
     cmd->function   = FCmd_Stub;
     cmd->next       = cmd_functions;
     cmd->object     = object;

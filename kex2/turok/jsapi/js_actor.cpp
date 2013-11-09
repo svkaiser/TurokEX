@@ -29,7 +29,6 @@
 #include "common.h"
 #include "actor_old.h"
 #include "ai.h"
-#include "zone.h"
 
 JS_CLASSOBJECT(GameActor);
 
@@ -714,9 +713,9 @@ JS_FASTNATIVE_BEGIN(GameActor, setTexture)
     meshTexture = &actor->textureSwaps[node][mesh][section];
 
     if(*meshTexture)
-        Z_Free(*meshTexture);
+        Mem_Free(*meshTexture);
 
-    *meshTexture = Z_Strdup(bytes, PU_ACTOR, NULL);
+    //*meshTexture = Mem_Strdup(bytes, PU_ACTOR, NULL);
 
     JS_free(cx, bytes);
     JS_SAFERETURN();

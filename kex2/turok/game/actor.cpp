@@ -27,7 +27,6 @@
 #include "common.h"
 #include "actor.h"
 #include "game.h"
-#include "zone.h"
 #include "server.h"
 #include "sound.h"
 #include "world.h"
@@ -170,8 +169,8 @@ void kexActor::SetOwner(kexActor *targ) {
 //
 
 void kexActor::SetBoundingBox(const kexVec3 &min, const kexVec3 &max) {
-    bbox.min = min;
-    bbox.max = max;
+    baseBBox.min = min;
+    baseBBox.max = max;
 }
 
 //
@@ -425,7 +424,7 @@ void kexWorldActor::ParseDefault(kexLexer *lexer) {
                 for(unsigned int l = 0; l < group->numSurfaces; l++) {
                     // parse sections
                     lexer->GetString();
-                    textureSwaps[j][k][l] = Z_Strdup(lexer->StringToken(), PU_ACTOR, NULL);
+                    textureSwaps[j][k][l] = Mem_Strdup(lexer->StringToken(), hb_object);
                 }
                 // end mesh block
                 lexer->ExpectNextToken(TK_RBRACK);
@@ -559,26 +558,20 @@ void kexWorldActor::SetModel(const char* modelFile) {
         }
 
         // allocate node translation offset data
-        nodeOffsets_t = (kexVec3*)Z_Realloc(
-            nodeOffsets_t,
-            sizeof(kexVec3) * m->numNodes,
-            PU_ACTOR,
-            0);
+        nodeOffsets_t = (kexVec3*)Mem_Realloc(nodeOffsets_t,
+            sizeof(kexVec3) * m->numNodes, hb_object);
 
         // allocate node rotation offset data
-        nodeOffsets_r = (kexQuat*)Z_Realloc(
-            nodeOffsets_r,
-            sizeof(kexQuat) * m->numNodes,
-            PU_ACTOR,
-            0);
+        nodeOffsets_r = (kexQuat*)Mem_Realloc(
+            nodeOffsets_r, sizeof(kexQuat) * m->numNodes, hb_object);
 
         // set default rotation offsets
         for(i = 0; i < m->numNodes; i++)
             nodeOffsets_r[i].Set(0, 0, 0, 1);
 
         // allocate data for texture swap array
-        textureSwaps = (char****)Z_Calloc(sizeof(char***) *
-            m->numNodes, PU_ACTOR, NULL);
+        textureSwaps = (char****)Mem_Calloc(sizeof(char***) *
+            m->numNodes, hb_object);
 
         for(j = 0; j < m->numNodes; j++) {
             unsigned int k;
@@ -586,8 +579,8 @@ void kexWorldActor::SetModel(const char* modelFile) {
 
             node = &m->nodes[j];
 
-            textureSwaps[j] = (char***)Z_Calloc(sizeof(char**) *
-                node->numSurfaceGroups, PU_ACTOR, NULL);
+            textureSwaps[j] = (char***)Mem_Calloc(sizeof(char**) *
+                node->numSurfaceGroups, hb_object);
 
             for(k = 0; k < node->numSurfaceGroups; k++) {
                 surfaceGroup_t *group;
@@ -597,8 +590,8 @@ void kexWorldActor::SetModel(const char* modelFile) {
                 if(group->numSurfaces == 0)
                     continue;
 
-                textureSwaps[j][k] = (char**)Z_Calloc(sizeof(char*) *
-                    group->numSurfaces, PU_ACTOR, NULL);
+                textureSwaps[j][k] = (char**)Mem_Calloc(sizeof(char*) *
+                    group->numSurfaces, hb_object);
             }
         }
     }

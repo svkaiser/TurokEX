@@ -24,7 +24,6 @@
 //
 //-----------------------------------------------------------------------------
 
-#include <stdlib.h>
 #include <assert.h>
 #include "common.h"
 #include "memHeap.h"
@@ -35,14 +34,20 @@ int kexHeap::currentHeapBlockID = -1;
 kexHeapBlock *kexHeap::currentHeapBlock = NULL;
 kexHeapBlock *kexHeap::blockList = NULL;
 
+//
+// common heap block types
+//
 kexHeapBlock hb_static("static", false, NULL, NULL);
 kexHeapBlock hb_auto("auto", false, NULL, NULL);
+kexHeapBlock hb_file("file", false, NULL, NULL);
+kexHeapBlock hb_object("object", false, NULL, NULL);
 
 //
 // kexHeapBlock::kexHeapBlock
 //
 
-kexHeapBlock::kexHeapBlock(const char *name, bool bGarbageCollect, blockFunc_t funcFree, blockFunc_t funcGC) {
+kexHeapBlock::kexHeapBlock(const char *name, bool bGarbageCollect,
+                           blockFunc_t funcFree, blockFunc_t funcGC) {
     this->name      = (char*)name;
     this->freeFunc  = funcFree;
     this->gcFunc    = funcGC;
@@ -111,6 +116,7 @@ kexHeapBlock *kexHeapBlock::operator[](int index) {
 //
 
 void kexHeap::Init(void) {
+    command.Add("printheap", kexHeap::PrintHeapBlocks);
     common.Printf("Heap Manager Initialized\n");
 }
 
@@ -183,6 +189,7 @@ void *kexHeap::Malloc(int size, kexHeapBlock &heapBlock, const char *file, int l
     newblock->purgeID = heapBlock.purgeID;
     newblock->heapTag = kexHeap::HeapTag;
     newblock->size = size;
+    newblock->ptrRef = NULL;
     newblock->ms = sysMain.GetMS();
 
     kexHeap::AddBlock(newblock, &heapBlock);
@@ -225,6 +232,10 @@ void *kexHeap::Realloc(void *ptr, int size, kexHeapBlock &heapBlock, const char 
     block->next = NULL;
     block->prev = NULL;
 
+    if(block->ptrRef) {
+        *block->ptrRef = NULL;
+    }
+
     if(!(newblock = (memBlock_t*)realloc(block, sizeof(memBlock_t) + size))) {
         common.Error("kexHeap::Realloc: failed on allocation of %u bytes (%s:%d)", size, file, line);
     }
@@ -232,6 +243,7 @@ void *kexHeap::Realloc(void *ptr, int size, kexHeapBlock &heapBlock, const char 
     newblock->purgeID = heapBlock.purgeID;
     newblock->heapTag = kexHeap::HeapTag;
     newblock->size = size;
+    newblock->ptrRef = NULL;
     newblock->ms = sysMain.GetMS();
 
     kexHeap::AddBlock(newblock, &heapBlock);
@@ -255,6 +267,10 @@ void kexHeap::Free(void *ptr, const char *file, int line) {
     memBlock_t* block;
 
     block = kexHeap::GetBlock(ptr, file, line);
+    if(block->ptrRef) {
+        *block->ptrRef = NULL;
+    }
+
     kexHeap::RemoveBlock(block);
 
     // free back to system
@@ -276,11 +292,23 @@ void kexHeap::Purge(kexHeapBlock &heapBlock, const char *file, int line) {
             common.Error("kexHeap::Purge: Purging without heap tag (%s:%d)", file, line);
         }
 
+        if(block->ptrRef) {
+            *block->ptrRef = NULL;
+        }
+
         free(block);
         block = next;
     }
 
     heapBlock.blocks = NULL;
+}
+
+//
+// kexHeap::SetCacheRef
+//
+
+void kexHeap::SetCacheRef(void **ptr, const char *file, int line) {
+    kexHeap::GetBlock(*ptr, file, line)->ptrRef = ptr;
 }
 
 //
@@ -307,6 +335,9 @@ void kexHeap::GarbageCollect(const char *file, int line) {
                     heapBlock->gcFunc((byte*)block + sizeof(memBlock_t));
                 }
 
+                if(block->ptrRef) {
+                    *block->ptrRef = NULL;
+                }
                 free(block);
 
                 block = next_block;
@@ -368,4 +399,20 @@ int kexHeap::Usage(const kexHeapBlock &heapBlock) {
     }
 
     return bytes;
+}
+
+//
+// kexHeap::PrintHeapBlocks
+//
+
+void kexHeap::PrintHeapBlocks(void) {
+    kexHeapBlock *heapBlock;
+
+    common.CPrintf(COLOR_GREEN, "-------------- Heap Blocks ---------------\n");
+
+    for(heapBlock = kexHeap::blockList; heapBlock; heapBlock = heapBlock->next) {
+        common.Printf("%s: %ikb\n", heapBlock->name, kexHeap::Usage(*heapBlock) >> 10);
+    }
+
+    common.CPrintf(COLOR_GREEN, "----------------------------------------------\n\n");
 }

@@ -28,7 +28,6 @@
 #include "js_shared.h"
 #include "common.h"
 #include "gl.h"
-#include "zone.h"
 
 #define JS_MAX_GL_PARAMS    16
 

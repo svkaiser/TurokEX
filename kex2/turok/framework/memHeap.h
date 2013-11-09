@@ -33,6 +33,7 @@ typedef struct memBlock_s {
     int                     size;
     int                     ms;
     kexHeapBlock            *heapBlock;
+    void                    **ptrRef;
     struct memBlock_s       *prev;
     struct memBlock_s       *next;
 } memBlock_t;
@@ -67,6 +68,7 @@ public:
     static void             CheckBlocks(const char *file, int line);
     static void             Touch(void *ptr, const char *file, int line);
     static int              Usage(const kexHeapBlock &heapBlock);
+    static void             SetCacheRef(void **ptr, const char *file, int line);
     static void             Init(void);
 
     static int              numHeapBlocks;
@@ -78,12 +80,15 @@ private:
     static void             AddBlock(memBlock_t *block, kexHeapBlock *heapBlock);
     static void             RemoveBlock(memBlock_t *block);
     static memBlock_t       *GetBlock(void *ptr, const char *file, int line);
+    static void             PrintHeapBlocks(void);
     
     static const int        HeapTag = 0x03151983;
 };
 
 extern kexHeapBlock hb_static;
 extern kexHeapBlock hb_auto;
+extern kexHeapBlock hb_file;
+extern kexHeapBlock hb_object;
 
 #define Mem_Malloc(s, hb)       (kexHeap::Malloc(s, hb, __FILE__,__LINE__))
 #define Mem_Calloc(s, hb)       (kexHeap::Calloc(s, hb, __FILE__,__LINE__))
@@ -94,6 +99,11 @@ extern kexHeapBlock hb_auto;
 #define Mem_GC()                (kexHeap::GarbageCollect(__FILE__,__LINE__))
 #define Mem_CheckBlocks()       (kexHeap::CheckBlocks(__FILE__,__LINE__))
 #define Mem_Touch(p)            (kexHeap::Touch(p, __FILE__,__LINE__))
+#define Mem_CacheRef(p)         (kexHeap::SetCacheRef(p, __FILE__,__LINE__))
+
 #define Mem_AllocStatic(s)      (Mem_Calloc(s, hb_static))
+
+#define Mem_Strdup(s, hb)       (strcpy((char*)Mem_Malloc(strlen(s)+1, hb), s))
+#define Mem_Strdupa(s)          (strcpy((char*)Mem_Alloca(strlen(s)+1), s))
 
 #endif

@@ -29,7 +29,6 @@
 #include "common.h"
 #include "js_class.h"
 #include "script.h"
-#include "zone.h"
 
 //
 // JParse_GetJSONBuffer
@@ -54,7 +53,7 @@ char *JParse_GetJSONBuffer(kexLexer *lexer)
     if(strcmp(lexer->Token(), "EndObject"))
         parser.Error("Expected 'EndObject', found %s", lexer->Token());
 
-    out = (char*)Z_Calloc((end-start)+1, PU_STATIC, NULL);
+    out = (char*)Mem_Calloc((end-start)+1, hb_static);
     strncpy(out, start, (end-start));
 
     return out;
@@ -125,7 +124,7 @@ kbool JParse_BeginObject(kexLexer *lexer, gObject_t *object)
         JS_CallFunctionValue(cx, newObject, OBJECT_TO_JSVAL(fObject), 1, &argv, &rval);
     }
 
-    Z_Free(json);
+    Mem_Free(json);
     return true;
 }
 

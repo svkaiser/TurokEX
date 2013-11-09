@@ -58,6 +58,8 @@ public:
     kexWorldActor           *GetOwner(void) { return owner; }
     void                    SetOwner(kexWorldActor *actor) { owner = actor; }
 
+    static kexHeapBlock     hb_clipMesh;
+
 private:
     void                    CreateBox(const kexBBox &bbox);
     void                    CreateTetrahedron(const kexBBox &bbox);

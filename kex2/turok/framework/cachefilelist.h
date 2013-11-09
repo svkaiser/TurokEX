@@ -26,7 +26,7 @@
 template<class type>
 class kexHashList {
 public:
-    type                *Add(const char *tname, int zoneTag = PU_STATIC);
+    type                *Add(const char *tname, kexHeapBlock &hb = hb_static);
     type                *Find(const char *tname) const;
     type                *GetData(const int index);
     type                *Next(void);
@@ -45,10 +45,10 @@ public:
 // kexHashList::Add
 //
 template<class type>
-type *kexHashList<type>::Add(const char *tname, int zoneTag) {
+type *kexHashList<type>::Add(const char *tname, kexHeapBlock &hb) {
     unsigned int hash;
 
-    hashKey_t *o = (hashKey_t*)Z_Calloc(sizeof(hashKey_t), zoneTag, 0);
+    hashKey_t *o = (hashKey_t*)Mem_Calloc(sizeof(hashKey_t), hb);
     strncpy(o->name, tname, MAX_FILEPATH);
 
     // add to hash for future reference

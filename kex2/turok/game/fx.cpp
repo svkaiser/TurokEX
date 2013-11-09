@@ -25,7 +25,6 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "zone.h"
 #include "script.h"
 #include "mathlib.h"
 #include "gl.h"
@@ -486,8 +485,8 @@ void kexFx::Spawn(void) {
     bAnimate = fxInfo->numTextures > 1 ? true : false;
     bForcedRestart = false;
     frameTime = client.GetTime() + fxInfo->animspeed;
-    textures = (kexTexture**)Z_Calloc(sizeof(kexTexture*) *
-        fxInfo->numTextures, PU_FX, 0);
+    textures = (kexTexture**)Mem_Calloc(sizeof(kexTexture*) *
+        fxInfo->numTextures, hb_object);
 
     // setup texture lookup array
     for(i = 0; i < fxInfo->numTextures; i++) {
@@ -813,7 +812,7 @@ void kexFxManager::Init(void) {
 //
 
 void kexFxManager::Shutdown(void) {
-    Z_FreeTags(PU_FX, PU_FX);
+    //Z_FreeTags(PU_FX, PU_FX);
 }
 
 //
@@ -832,7 +831,7 @@ void kexFxManager::UpdateWorld(kexWorld *world) {
                 world->fxRover->worldLink.Remove();
                 tmpFx = world->fxRover;
                 world->fxRover = world->fxRover->worldLink.Prev();
-                Z_Free(tmpFx);
+                Mem_Free(tmpFx);
 
                 if(world->fxRover == NULL) {
                     break;
@@ -852,22 +851,19 @@ void kexFxManager::ParseEvent(fxEvent_t *fxEvent, kexLexer *lexer) {
         if(!strcmp(lexer->Token(), "fx")) {
             lexer->ExpectNextToken(TK_EQUAL);
             lexer->GetString();
-            fxEvent->fx = Z_Strndup(lexer->StringToken(),
-                MAX_FILEPATH, PU_STATIC, 0);
+            fxEvent->fx = Mem_Strdup(lexer->StringToken(), hb_static);
         }
         else if(!strcmp(lexer->Token(), "sound")) {
             lexer->ExpectNextToken(TK_EQUAL);
             lexer->GetString();
-            fxEvent->snd = Z_Strndup(lexer->StringToken(),
-                MAX_FILEPATH, PU_STATIC, 0);
+            fxEvent->snd = Mem_Strdup(lexer->StringToken(), hb_static);
         }
         else if(!strcmp(lexer->Token(), "action")) {
             lexer->ExpectNextToken(TK_EQUAL);
             lexer->ExpectNextToken(TK_LBRACK);
 
             lexer->GetString();
-            fxEvent->action.function = Z_Strdup(lexer->StringToken(),
-                PU_STATIC, 0);
+            fxEvent->action.function = Mem_Strdup(lexer->StringToken(), hb_static);
             fxEvent->action.args[0] = (float)lexer->GetFloat();
 
             lexer->ExpectNextToken(TK_RBRACK);
@@ -963,7 +959,7 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
         lexer->ExpectNextToken(TK_LSQBRACK);
 
         fx->numfx = lexer->GetNumber();
-        fx->info = (fxinfo_t*)Z_Calloc(sizeof(fxinfo_t) * fx->numfx, PU_STATIC, 0);
+        fx->info = (fxinfo_t*)Mem_Calloc(sizeof(fxinfo_t) * fx->numfx, hb_static);
 
         lexer->ExpectNextToken(TK_RSQBRACK);
         lexer->ExpectNextToken(TK_EQUAL);
@@ -1025,15 +1021,14 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                 case scvfx_texture:
                     lexer->ExpectNextToken(TK_LSQBRACK);
                     info->numTextures = lexer->GetNumber();
-                    info->textures = (char**)Z_Calloc(sizeof(char*) *
-                        info->numTextures, PU_STATIC, 0);
+                    info->textures = (char**)Mem_Calloc(sizeof(char*) *
+                        info->numTextures, hb_static);
                     lexer->ExpectNextToken(TK_RSQBRACK);
                     lexer->ExpectNextToken(TK_EQUAL);
                     lexer->ExpectNextToken(TK_LBRACK);
                     for(j = 0; j < info->numTextures; j++) {
                         lexer->GetString();
-                        info->textures[j] = Z_Strndup(lexer->StringToken(),
-                            MAX_FILEPATH, PU_STATIC, 0);
+                        info->textures[j] = Mem_Strdup(lexer->StringToken(), hb_static);
                     }
                     lexer->ExpectNextToken(TK_RBRACK);
                     break;
