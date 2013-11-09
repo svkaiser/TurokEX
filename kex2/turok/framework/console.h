@@ -79,7 +79,6 @@ private:
     int                 timePressed;
     bool                bShowPrompt;
     int                 outputLength;
-    font_t              textFont;
 };
 
 extern kexConsole console;

@@ -24,8 +24,6 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "js.h"
-#include "js_shared.h"
 #include "common.h"
 #include "system.h"
 #include "array.h"
@@ -447,267 +445,6 @@ void kexConsole::Tick(void) {
 //
 
 void kexConsole::Init(void) {
-    textFont.texture = "fonts/confont.tga";
-    textFont.width = 256;
-    textFont.height = 256;
-
-    Font_MapChar(&textFont, 0, 0, 1, 13, 16);
-    Font_MapChar(&textFont, 1, 14, 1, 13, 16);
-    Font_MapChar(&textFont, 2, 28, 1, 13, 16);
-    Font_MapChar(&textFont, 3, 42, 1, 13, 16);
-    Font_MapChar(&textFont, 4, 56, 1, 13, 16);
-    Font_MapChar(&textFont, 5, 70, 1, 13, 16);
-    Font_MapChar(&textFont, 6, 84, 1, 13, 16);
-    Font_MapChar(&textFont, 7, 98, 1, 13, 16);
-    Font_MapChar(&textFont, 8, 112, 1, 13, 16);
-    Font_MapChar(&textFont, 9, 126, 1, 13, 16);
-    Font_MapChar(&textFont, 10, 140, 1, 13, 16);
-    Font_MapChar(&textFont, 11, 154, 1, 13, 16);
-    Font_MapChar(&textFont, 12, 168, 1, 13, 16);
-    Font_MapChar(&textFont, 13, 182, 1, 13, 16);
-    Font_MapChar(&textFont, 14, 196, 1, 13, 16);
-    Font_MapChar(&textFont, 15, 210, 1, 13, 16);
-    Font_MapChar(&textFont, 16, 224, 1, 13, 16);
-    Font_MapChar(&textFont, 17, 238, 1, 13, 16);
-    Font_MapChar(&textFont, 18, 0, 18, 13, 16);
-    Font_MapChar(&textFont, 19, 14, 18, 13, 16);
-    Font_MapChar(&textFont, 20, 28, 18, 13, 16);
-    Font_MapChar(&textFont, 21, 42, 18, 13, 16);
-    Font_MapChar(&textFont, 22, 56, 18, 13, 16);
-    Font_MapChar(&textFont, 23, 70, 18, 13, 16);
-    Font_MapChar(&textFont, 24, 84, 18, 13, 16);
-    Font_MapChar(&textFont, 25, 98, 18, 13, 16);
-    Font_MapChar(&textFont, 26, 112, 18, 13, 16);
-    Font_MapChar(&textFont, 27, 126, 18, 13, 16);
-    Font_MapChar(&textFont, 28, 140, 18, 13, 16);
-    Font_MapChar(&textFont, 29, 154, 18, 13, 16);
-    Font_MapChar(&textFont, 30, 168, 18, 13, 16);
-    Font_MapChar(&textFont, 31, 182, 18, 13, 16);
-    Font_MapChar(&textFont, 32, 196, 18, 5, 16);
-    Font_MapChar(&textFont, 33, 202, 18, 5, 16);
-    Font_MapChar(&textFont, 34, 208, 18, 5, 16);
-    Font_MapChar(&textFont, 35, 214, 18, 10, 16);
-    Font_MapChar(&textFont, 36, 225, 18, 8, 16);
-    Font_MapChar(&textFont, 37, 234, 18, 13, 16);
-    Font_MapChar(&textFont, 38, 0, 35, 9, 16);
-    Font_MapChar(&textFont, 39, 10, 35, 3, 16);
-    Font_MapChar(&textFont, 40, 14, 35, 6, 16);
-    Font_MapChar(&textFont, 41, 21, 35, 6, 16);
-    Font_MapChar(&textFont, 42, 28, 35, 9, 16);
-    Font_MapChar(&textFont, 43, 38, 35, 9, 16);
-    Font_MapChar(&textFont, 44, 48, 35, 5, 16);
-    Font_MapChar(&textFont, 45, 54, 35, 7, 16);
-    Font_MapChar(&textFont, 46, 62, 35, 5, 16);
-    Font_MapChar(&textFont, 47, 68, 35, 6, 16);
-    Font_MapChar(&textFont, 48, 75, 35, 8, 16);
-    Font_MapChar(&textFont, 49, 84, 35, 8, 16);
-    Font_MapChar(&textFont, 50, 93, 35, 8, 16);
-    Font_MapChar(&textFont, 51, 102, 35, 8, 16);
-    Font_MapChar(&textFont, 52, 111, 35, 8, 16);
-    Font_MapChar(&textFont, 53, 120, 35, 8, 16);
-    Font_MapChar(&textFont, 54, 129, 35, 8, 16);
-    Font_MapChar(&textFont, 55, 138, 35, 8, 16);
-    Font_MapChar(&textFont, 56, 147, 35, 8, 16);
-    Font_MapChar(&textFont, 57, 156, 35, 8, 16);
-    Font_MapChar(&textFont, 58, 165, 35, 6, 16);
-    Font_MapChar(&textFont, 59, 172, 35, 6, 16);
-    Font_MapChar(&textFont, 60, 179, 35, 9, 16);
-    Font_MapChar(&textFont, 61, 189, 35, 9, 16);
-    Font_MapChar(&textFont, 62, 199, 35, 9, 16);
-    Font_MapChar(&textFont, 63, 209, 35, 7, 16);
-    Font_MapChar(&textFont, 64, 217, 35, 13, 16);
-    Font_MapChar(&textFont, 65, 231, 35, 9, 16);
-    Font_MapChar(&textFont, 66, 241, 35, 8, 16);
-    Font_MapChar(&textFont, 67, 0, 52, 9, 16);
-    Font_MapChar(&textFont, 68, 10, 52, 9, 16);
-    Font_MapChar(&textFont, 69, 20, 52, 8, 16);
-    Font_MapChar(&textFont, 70, 29, 52, 8, 16);
-    Font_MapChar(&textFont, 71, 38, 52, 9, 16);
-    Font_MapChar(&textFont, 72, 48, 52, 9, 16);
-    Font_MapChar(&textFont, 73, 58, 52, 5, 16);
-    Font_MapChar(&textFont, 74, 64, 52, 6, 16);
-    Font_MapChar(&textFont, 75, 71, 52, 8, 16);
-    Font_MapChar(&textFont, 76, 80, 52, 7, 16);
-    Font_MapChar(&textFont, 77, 88, 52, 11, 16);
-    Font_MapChar(&textFont, 78, 100, 52, 9, 16);
-    Font_MapChar(&textFont, 79, 110, 52, 10, 16);
-    Font_MapChar(&textFont, 80, 121, 52, 8, 16);
-    Font_MapChar(&textFont, 81, 130, 52, 10, 16);
-    Font_MapChar(&textFont, 82, 141, 52, 8, 16);
-    Font_MapChar(&textFont, 83, 150, 52, 9, 16);
-    Font_MapChar(&textFont, 84, 160, 52, 9, 16);
-    Font_MapChar(&textFont, 85, 170, 52, 9, 16);
-    Font_MapChar(&textFont, 86, 180, 52, 9, 16);
-    Font_MapChar(&textFont, 87, 190, 52, 13, 16);
-    Font_MapChar(&textFont, 88, 204, 52, 9, 16);
-    Font_MapChar(&textFont, 89, 214, 52, 9, 16);
-    Font_MapChar(&textFont, 90, 224, 52, 9, 16);
-    Font_MapChar(&textFont, 91, 234, 52, 6, 16);
-    Font_MapChar(&textFont, 92, 241, 52, 6, 16);
-    Font_MapChar(&textFont, 93, 248, 52, 6, 16);
-    Font_MapChar(&textFont, 94, 0, 69, 11, 16);
-    Font_MapChar(&textFont, 95, 12, 69, 8, 16);
-    Font_MapChar(&textFont, 96, 21, 69, 8, 16);
-    Font_MapChar(&textFont, 97, 30, 69, 8, 16);
-    Font_MapChar(&textFont, 98, 39, 69, 8, 16);
-    Font_MapChar(&textFont, 99, 48, 69, 8, 16);
-    Font_MapChar(&textFont, 100, 57, 69, 8, 16);
-    Font_MapChar(&textFont, 101, 66, 69, 8, 16);
-    Font_MapChar(&textFont, 102, 75, 69, 5, 16);
-    Font_MapChar(&textFont, 103, 81, 69, 8, 16);
-    Font_MapChar(&textFont, 104, 90, 69, 8, 16);
-    Font_MapChar(&textFont, 105, 99, 69, 3, 16);
-    Font_MapChar(&textFont, 106, 103, 69, 4, 16);
-    Font_MapChar(&textFont, 107, 108, 69, 7, 16);
-    Font_MapChar(&textFont, 108, 116, 69, 3, 16);
-    Font_MapChar(&textFont, 109, 120, 69, 11, 16);
-    Font_MapChar(&textFont, 110, 132, 69, 8, 16);
-    Font_MapChar(&textFont, 111, 141, 69, 8, 16);
-    Font_MapChar(&textFont, 112, 150, 69, 8, 16);
-    Font_MapChar(&textFont, 113, 159, 69, 8, 16);
-    Font_MapChar(&textFont, 114, 168, 69, 5, 16);
-    Font_MapChar(&textFont, 115, 174, 69, 7, 16);
-    Font_MapChar(&textFont, 116, 182, 69, 6, 16);
-    Font_MapChar(&textFont, 117, 189, 69, 8, 16);
-    Font_MapChar(&textFont, 118, 198, 69, 8, 16);
-    Font_MapChar(&textFont, 119, 207, 69, 11, 16);
-    Font_MapChar(&textFont, 120, 219, 69, 7, 16);
-    Font_MapChar(&textFont, 121, 227, 69, 8, 16);
-    Font_MapChar(&textFont, 122, 236, 69, 7, 16);
-    Font_MapChar(&textFont, 123, 244, 69, 8, 16);
-    Font_MapChar(&textFont, 124, 0, 86, 7, 16);
-    Font_MapChar(&textFont, 125, 8, 86, 8, 16);
-    Font_MapChar(&textFont, 126, 17, 86, 11, 16);
-    Font_MapChar(&textFont, 127, 29, 86, 13, 16);
-    Font_MapChar(&textFont, 128, 43, 86, 13, 16);
-    Font_MapChar(&textFont, 129, 57, 86, 13, 16);
-    Font_MapChar(&textFont, 130, 71, 86, 13, 16);
-    Font_MapChar(&textFont, 131, 85, 86, 13, 16);
-    Font_MapChar(&textFont, 132, 99, 86, 13, 16);
-    Font_MapChar(&textFont, 133, 113, 86, 13, 16);
-    Font_MapChar(&textFont, 134, 127, 86, 13, 16);
-    Font_MapChar(&textFont, 135, 141, 86, 13, 16);
-    Font_MapChar(&textFont, 136, 155, 86, 13, 16);
-    Font_MapChar(&textFont, 137, 169, 86, 13, 16);
-    Font_MapChar(&textFont, 138, 183, 86, 13, 16);
-    Font_MapChar(&textFont, 139, 197, 86, 13, 16);
-    Font_MapChar(&textFont, 140, 211, 86, 13, 16);
-    Font_MapChar(&textFont, 141, 225, 86, 13, 16);
-    Font_MapChar(&textFont, 142, 239, 86, 13, 16);
-    Font_MapChar(&textFont, 143, 0, 103, 13, 16);
-    Font_MapChar(&textFont, 144, 14, 103, 13, 16);
-    Font_MapChar(&textFont, 145, 28, 103, 13, 16);
-    Font_MapChar(&textFont, 146, 42, 103, 13, 16);
-    Font_MapChar(&textFont, 147, 56, 103, 13, 16);
-    Font_MapChar(&textFont, 148, 70, 103, 13, 16);
-    Font_MapChar(&textFont, 149, 84, 103, 13, 16);
-    Font_MapChar(&textFont, 150, 98, 103, 13, 16);
-    Font_MapChar(&textFont, 151, 112, 103, 13, 16);
-    Font_MapChar(&textFont, 152, 126, 103, 13, 16);
-    Font_MapChar(&textFont, 153, 140, 103, 13, 16);
-    Font_MapChar(&textFont, 154, 154, 103, 13, 16);
-    Font_MapChar(&textFont, 155, 168, 103, 13, 16);
-    Font_MapChar(&textFont, 156, 182, 103, 13, 16);
-    Font_MapChar(&textFont, 157, 196, 103, 13, 16);
-    Font_MapChar(&textFont, 158, 210, 103, 13, 16);
-    Font_MapChar(&textFont, 159, 224, 103, 13, 16);
-    Font_MapChar(&textFont, 160, 238, 103, 5, 16);
-    Font_MapChar(&textFont, 161, 244, 103, 5, 16);
-    Font_MapChar(&textFont, 162, 0, 120, 8, 16);
-    Font_MapChar(&textFont, 163, 9, 120, 8, 16);
-    Font_MapChar(&textFont, 164, 18, 120, 8, 16);
-    Font_MapChar(&textFont, 165, 27, 120, 8, 16);
-    Font_MapChar(&textFont, 166, 36, 120, 7, 16);
-    Font_MapChar(&textFont, 167, 44, 120, 8, 16);
-    Font_MapChar(&textFont, 168, 53, 120, 8, 16);
-    Font_MapChar(&textFont, 169, 62, 120, 13, 16);
-    Font_MapChar(&textFont, 170, 76, 120, 7, 16);
-    Font_MapChar(&textFont, 171, 84, 120, 8, 16);
-    Font_MapChar(&textFont, 172, 93, 120, 9, 16);
-    Font_MapChar(&textFont, 173, 103, 120, 7, 16);
-    Font_MapChar(&textFont, 174, 111, 120, 13, 16);
-    Font_MapChar(&textFont, 175, 125, 120, 8, 16);
-    Font_MapChar(&textFont, 176, 134, 120, 7, 16);
-    Font_MapChar(&textFont, 177, 142, 120, 9, 16);
-    Font_MapChar(&textFont, 178, 152, 120, 7, 16);
-    Font_MapChar(&textFont, 179, 160, 120, 7, 16);
-    Font_MapChar(&textFont, 180, 168, 120, 8, 16);
-    Font_MapChar(&textFont, 181, 177, 120, 8, 16);
-    Font_MapChar(&textFont, 182, 186, 120, 8, 16);
-    Font_MapChar(&textFont, 183, 195, 120, 5, 16);
-    Font_MapChar(&textFont, 184, 201, 120, 8, 16);
-    Font_MapChar(&textFont, 185, 210, 120, 7, 16);
-    Font_MapChar(&textFont, 186, 218, 120, 7, 16);
-    Font_MapChar(&textFont, 187, 226, 120, 8, 16);
-    Font_MapChar(&textFont, 188, 235, 120, 13, 16);
-    Font_MapChar(&textFont, 189, 0, 137, 13, 16);
-    Font_MapChar(&textFont, 190, 14, 137, 13, 16);
-    Font_MapChar(&textFont, 191, 28, 137, 7, 16);
-    Font_MapChar(&textFont, 192, 36, 137, 9, 16);
-    Font_MapChar(&textFont, 193, 46, 137, 9, 16);
-    Font_MapChar(&textFont, 194, 56, 137, 9, 16);
-    Font_MapChar(&textFont, 195, 66, 137, 9, 16);
-    Font_MapChar(&textFont, 196, 76, 137, 9, 16);
-    Font_MapChar(&textFont, 197, 86, 137, 9, 16);
-    Font_MapChar(&textFont, 198, 96, 137, 12, 16);
-    Font_MapChar(&textFont, 199, 109, 137, 9, 16);
-    Font_MapChar(&textFont, 200, 119, 137, 8, 16);
-    Font_MapChar(&textFont, 201, 128, 137, 8, 16);
-    Font_MapChar(&textFont, 202, 137, 137, 8, 16);
-    Font_MapChar(&textFont, 203, 146, 137, 8, 16);
-    Font_MapChar(&textFont, 204, 155, 137, 5, 16);
-    Font_MapChar(&textFont, 205, 161, 137, 5, 16);
-    Font_MapChar(&textFont, 206, 167, 137, 5, 16);
-    Font_MapChar(&textFont, 207, 173, 137, 5, 16);
-    Font_MapChar(&textFont, 208, 179, 137, 9, 16);
-    Font_MapChar(&textFont, 209, 189, 137, 9, 16);
-    Font_MapChar(&textFont, 210, 199, 137, 10, 16);
-    Font_MapChar(&textFont, 211, 210, 137, 10, 16);
-    Font_MapChar(&textFont, 212, 221, 137, 10, 16);
-    Font_MapChar(&textFont, 213, 232, 137, 10, 16);
-    Font_MapChar(&textFont, 214, 243, 137, 10, 16);
-    Font_MapChar(&textFont, 215, 0, 154, 11, 16);
-    Font_MapChar(&textFont, 216, 12, 154, 10, 16);
-    Font_MapChar(&textFont, 217, 23, 154, 9, 16);
-    Font_MapChar(&textFont, 218, 33, 154, 9, 16);
-    Font_MapChar(&textFont, 219, 43, 154, 9, 16);
-    Font_MapChar(&textFont, 220, 53, 154, 9, 16);
-    Font_MapChar(&textFont, 221, 63, 154, 9, 16);
-    Font_MapChar(&textFont, 222, 73, 154, 8, 16);
-    Font_MapChar(&textFont, 223, 82, 154, 8, 16);
-    Font_MapChar(&textFont, 224, 91, 154, 8, 16);
-    Font_MapChar(&textFont, 225, 100, 154, 8, 16);
-    Font_MapChar(&textFont, 226, 109, 154, 8, 16);
-    Font_MapChar(&textFont, 227, 118, 154, 8, 16);
-    Font_MapChar(&textFont, 228, 127, 154, 8, 16);
-    Font_MapChar(&textFont, 229, 136, 154, 8, 16);
-    Font_MapChar(&textFont, 230, 145, 154, 11, 16);
-    Font_MapChar(&textFont, 231, 157, 154, 8, 16);
-    Font_MapChar(&textFont, 232, 166, 154, 8, 16);
-    Font_MapChar(&textFont, 233, 175, 154, 8, 16);
-    Font_MapChar(&textFont, 234, 184, 154, 8, 16);
-    Font_MapChar(&textFont, 235, 193, 154, 8, 16);
-    Font_MapChar(&textFont, 236, 202, 154, 3, 16);
-    Font_MapChar(&textFont, 237, 206, 154, 3, 16);
-    Font_MapChar(&textFont, 238, 210, 154, 3, 16);
-    Font_MapChar(&textFont, 239, 214, 154, 3, 16);
-    Font_MapChar(&textFont, 240, 218, 154, 8, 16);
-    Font_MapChar(&textFont, 241, 227, 154, 8, 16);
-    Font_MapChar(&textFont, 242, 236, 154, 8, 16);
-    Font_MapChar(&textFont, 243, 245, 154, 8, 16);
-    Font_MapChar(&textFont, 244, 0, 171, 8, 16);
-    Font_MapChar(&textFont, 245, 9, 171, 8, 16);
-    Font_MapChar(&textFont, 246, 18, 171, 8, 16);
-    Font_MapChar(&textFont, 247, 27, 171, 9, 16);
-    Font_MapChar(&textFont, 248, 37, 171, 8, 16);
-    Font_MapChar(&textFont, 249, 46, 171, 8, 16);
-    Font_MapChar(&textFont, 250, 55, 171, 8, 16);
-    Font_MapChar(&textFont, 251, 64, 171, 8, 16);
-    Font_MapChar(&textFont, 252, 73, 171, 8, 16);
-    Font_MapChar(&textFont, 253, 82, 171, 8, 16);
-    Font_MapChar(&textFont, 254, 91, 171, 8, 16);
-    Font_MapChar(&textFont, 255, 100, 171, 8, 16);
-
     command.Add("clear", FCmd_ClearConsole);
     common.Printf("Console Initialized\n");
 }
@@ -716,44 +453,90 @@ void kexConsole::Init(void) {
 // kexConsole::Draw
 //
 
-// TODO - TEMP/PLACEHOLDER
 void kexConsole::Draw(void) {
+    static const word   drawConIndices[6] = { 0, 1, 2, 2, 1, 3 };
+    static float        drawConVertices[4][3];
+    static byte         drawConColors[4][4];
+    bool                bOverlay;
+    float               w;
+    float               h;
+    rcolor              color;
+
     if(state == CON_STATE_UP && !cvarDisplayConsole.GetBool())
         return;
 
-    bool bOverlay = (state == CON_STATE_UP && cvarDisplayConsole.GetBool());
-    canvas_t canvas;
+    bOverlay = (state == CON_STATE_UP && cvarDisplayConsole.GetBool());
 
-    float w = (float)sysMain.VideoWidth();
-    float h = (float)sysMain.VideoHeight() * 0.6875f;
+    w = (float)sysMain.VideoWidth();
+    h = (float)sysMain.VideoHeight() * 0.6875f;
+
+    dglDisableClientState(GL_NORMAL_ARRAY);
+    dglEnableClientState(GL_COLOR_ARRAY);
+
+    dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, drawConVertices);
+    dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, drawConColors);
 
     renderSystem.SetState(GLSTATE_BLEND, true);
 
-    texture_t *white = Tex_CacheTextureFile("textures/white.tga", DGL_CLAMP, true);
-
-    GL_BindTextureName(textFont.texture);
-    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    Canvas_SetFont(&canvas, &textFont);
-    Canvas_SetDrawAlpha(&canvas, 128);
-
     if(!bOverlay) {
-        Canvas_SetDrawColor(&canvas, 4, 8, 16);
-        Canvas_SetDrawAlpha(&canvas, 192);
-        Canvas_DrawTile(&canvas, white, 0, 0, w, h);
+        dglDisableClientState(GL_TEXTURE_COORD_ARRAY);
+        
+        // draw tint overlay
+        for(int i = 0; i < 4; i++) {
+            drawConColors[i][0] = 4;
+            drawConColors[i][1] = 8;
+            drawConColors[i][2] = 16;
+            drawConColors[i][3] = 192;
+        }
 
-        Canvas_SetDrawColor(&canvas, 255, 255, 255);
-        Canvas_SetDrawAlpha(&canvas, 255);
-        Canvas_DrawString(&canvas, "> ", 0, h-15, false);
+        drawConVertices[0][0] = 0;
+        drawConVertices[0][1] = 0;
+        drawConVertices[1][0] = w;
+        drawConVertices[1][1] = 0;
+        drawConVertices[2][0] = 0;
+        drawConVertices[2][1] = h;
+        drawConVertices[3][0] = w;
+        drawConVertices[3][1] = h;
+
+        renderSystem.whiteTexture.Bind();
+
+        dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, drawConIndices);
+
+        for(int i = 0; i < 4; i++) {
+            drawConColors[i][0] = 0;
+            drawConColors[i][1] = 128;
+            drawConColors[i][2] = 255;
+            drawConColors[i][3] = 255;
+        }
+
+        // draw top border
+        drawConVertices[0][1] = h-17;
+        drawConVertices[1][1] = h-17;
+        drawConVertices[2][1] = h-16;
+        drawConVertices[3][1] = h-16;
+        dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, drawConIndices);
+
+        // draw bottom border
+        drawConVertices[0][1] = h;
+        drawConVertices[1][1] = h;
+        drawConVertices[2][1] = h+1;
+        drawConVertices[3][1] = h+1;
+        dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, drawConIndices);
+        
+        dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+        color = RGBA(255, 255, 255, 255);
+        renderSystem.consoleFont.DrawString("> ", 0, h-15, 1, false, (byte*)&color, (byte*)&color);
 
         if(bShowPrompt) {
-            Canvas_DrawString(&canvas, "_", 16 +
-                Font_StringWidth(&textFont, typeStr, 1.0f, typeStrPos), h-15, false);
+            renderSystem.consoleFont.DrawString("_", 16 +
+                renderSystem.consoleFont.StringWidth(typeStr, 1.0f, typeStrPos),
+                h-15, 1, false, (byte*)&color, (byte*)&color);
         }
 
         if(strlen(typeStr) > 0) {
-            Canvas_DrawString(&canvas, typeStr, 16, h-15, false);
+            renderSystem.consoleFont.DrawString(typeStr, 16, h-15, 1, false,
+                (byte*)&color, (byte*)&color);
         }
     }
 
@@ -761,24 +544,19 @@ void kexConsole::Draw(void) {
         float scy = h-34;
 
         for(int i = scrollBackLines-(scrollBackPos)-1; i >= 0; i--) {
-            if(scy < 0)
+            if(scy < 0) {
                 break;
+            }
 
-            Canvas_SetDrawColor(&canvas,
-                (lineColor[i] >> 0 ) & 0xff,
-                (lineColor[i] >> 8 ) & 0xff,
-                (lineColor[i] >> 16) & 0xff);
-            Canvas_DrawString(&canvas, scrollBackStr[i], 0, scy, false);
+            color = lineColor[i];
+            renderSystem.consoleFont.DrawString(scrollBackStr[i], 0, scy,
+                1, false, (byte*)&color, (byte*)&color);
             scy -= 16;
         }
     }
 
     renderSystem.SetState(GLSTATE_BLEND, false);
-
-    if(!bOverlay) {
-        Canvas_SetDrawColor(&canvas, 0, 128, 255);
-        Canvas_SetDrawAlpha(&canvas, 255);
-        Canvas_DrawTile(&canvas, white, 0, h-17, w, 1);
-        Canvas_DrawTile(&canvas, white, 0, h, w, 1);
-    }
+    
+    dglDisableClientState(GL_COLOR_ARRAY);
+    dglEnableClientState(GL_NORMAL_ARRAY);
 }

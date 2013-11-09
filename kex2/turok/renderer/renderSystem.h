@@ -63,6 +63,9 @@ typedef enum {
     GLDST_ONE_MINUS_DST_ALPHA,
 } glDstBlend_e;
 
+#define GL_MAX_INDICES  0x10000
+#define GL_MAX_VERTICES 0x10000
+
 class kexRenderSystem {
 public:
                                     kexRenderSystem(void);
@@ -83,6 +86,11 @@ public:
     kexFont                         *CacheFont(const char *name);
     kexTexture                      *CacheTexture(const char *name, texClampMode_t clampMode,
                                         texFilterMode_t filterMode = TF_LINEAR);
+    void                            BindDrawPointers(void);
+    void                            AddTriangle(int v0, int v1, int v2);
+    void                            AddVertex(float x, float y, float z, float s, float t,
+                                        byte r, byte g, byte b, byte a);
+    void                            DrawElements(void);
 
     const int                       ViewWidth(void) const { return viewWidth; }
     const int                       ViewHeight(void) const { return viewHeight; }
@@ -144,6 +152,13 @@ private:
     const char                      *gl_vendor;
     const char                      *gl_renderer;
     const char                      *gl_version;
+
+    word                            indiceCount;
+    word                            vertexCount;
+    word                            drawIndices[GL_MAX_INDICES];
+    float                           drawVertices[GL_MAX_VERTICES];
+    float                           drawTexCoords[GL_MAX_VERTICES];
+    byte                            drawRGB[GL_MAX_VERTICES];
 };
 
 extern kexRenderSystem renderSystem;

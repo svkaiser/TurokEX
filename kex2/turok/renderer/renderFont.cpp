@@ -142,6 +142,74 @@ void kexFont::LoadKFont(const char *file) {
 }
 
 //
+// kexFont::DrawString
+//
+
+void kexFont::DrawString(const char *string, float x, float y, float scale,
+                         bool center, byte *rgba1, byte *rgba2) {
+    float w;
+    float h;
+    int tri;
+    unsigned int i;
+    unsigned int len;
+    char ch;
+    atlas_t *at;
+    float vx1;
+    float vy1;
+    float vx2;
+    float vy2;
+    float tx1;
+    float tx2;
+    float ty1;
+    float ty2;
+    char *check;
+
+    if(scale <= 0.01f) {
+        scale = 1;
+    }
+
+    if(center) {
+        x -= StringWidth(string, scale, 0) * 0.5f;
+    }
+
+    w = (float)texture->OriginalWidth();
+    h = (float)texture->OriginalHeight();
+
+    tri = 0;
+    len = strlen(string);
+
+    renderSystem.BindDrawPointers();
+    texture->Bind();
+
+    for(i = 0; i < len; i++) {
+        ch      = string[i];
+        at      = &atlas[ch];
+        vx1     = x;
+        vy1     = y;
+        vx2     = vx1 + at->w * scale;
+        vy2     = vy1 + at->h * scale;
+        tx1     = (at->x / w) + 0.001f;
+        tx2     = (tx1 + at->w / w) - 0.002f;
+        ty1     = (at->y / h);
+        ty2     = (ty1 + at->h / h);
+        check   = (char*)string+i;
+
+        renderSystem.AddVertex(vx1, vy1, 0, tx1, ty1, rgba1[0], rgba1[1], rgba1[2], rgba1[3]);
+        renderSystem.AddVertex(vx2, vy1, 0, tx2, ty1, rgba1[0], rgba1[1], rgba1[2], rgba1[3]);
+        renderSystem.AddVertex(vx1, vy2, 0, tx1, ty2, rgba2[0], rgba2[1], rgba2[2], rgba2[3]);
+        renderSystem.AddVertex(vx2, vy2, 0, tx2, ty2, rgba2[0], rgba2[1], rgba2[2], rgba2[3]);
+
+        renderSystem.AddTriangle(0+tri, 1+tri, 2+tri);
+        renderSystem.AddTriangle(2+tri, 1+tri, 3+tri);
+
+        x += at->w * scale;
+        tri += 4;
+    }
+
+    renderSystem.DrawElements();
+}
+
+//
 // kexFont::StringWidth
 //
 

@@ -29,6 +29,8 @@ public:
                     ~kexFont(void);
 
     void            LoadKFont(const char *file);
+    void            DrawString(const char *string, float x, float y, float scale,
+                               bool center, byte *rgba1, byte *rgba2);
     float           StringWidth(const char* string, float scale, int fixedLen);
 
     const bool      IsLoaded(void) const { return bLoaded; }
@@ -39,8 +41,6 @@ public:
 
 private:
     kexTexture      *texture;
-    int             width;
-    int             height;
     atlas_t         atlas[256];
     bool            bLoaded;
 };

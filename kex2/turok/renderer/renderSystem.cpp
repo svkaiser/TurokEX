@@ -619,3 +619,63 @@ kexFont *kexRenderSystem::CacheFont(const char *name) {
 
     return font;
 }
+
+//
+// kexRenderSystem::BindDrawPointers
+//
+
+void kexRenderSystem::BindDrawPointers(void) {
+    dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, drawTexCoords);
+    dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, drawVertices);
+    dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, drawRGB);
+}
+
+//
+// kexRenderSystem::AddTriangle
+//
+
+void kexRenderSystem::AddTriangle(int v0, int v1, int v2) {
+    if(indiceCount + 3 >= GL_MAX_INDICES) {
+        common.Warning("Static triangle indice overflow");
+        return;
+    }
+
+    drawIndices[indiceCount++] = v0;
+    drawIndices[indiceCount++] = v1;
+    drawIndices[indiceCount++] = v2;
+}
+
+//
+// kexRenderSystem::AddVertex
+//
+
+void kexRenderSystem::AddVertex(float x, float y, float z, float s, float t,
+                                byte r, byte g, byte b, byte a) {
+    if((vertexCount * 4 + 3) >= GL_MAX_VERTICES) {
+        common.Warning("Static vertex draw overflow");
+        return;
+    }
+
+    drawVertices[vertexCount * 3 + 0]   = x;
+    drawVertices[vertexCount * 3 + 1]   = y;
+    drawVertices[vertexCount * 3 + 2]   = z;
+    drawTexCoords[vertexCount * 2 + 0]  = s;
+    drawTexCoords[vertexCount * 2 + 1]  = t;
+    drawRGB[vertexCount * 4 + 0]        = r;
+    drawRGB[vertexCount * 4 + 1]        = g;
+    drawRGB[vertexCount * 4 + 2]        = b;
+    drawRGB[vertexCount * 4 + 3]        = a;
+
+    vertexCount++;
+}
+
+//
+// kexRenderSystem::DrawElements
+//
+
+void kexRenderSystem::DrawElements(void) {
+    dglDrawElements(GL_TRIANGLES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
+
+    indiceCount = 0;
+    vertexCount = 0;
+}
