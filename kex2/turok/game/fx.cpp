@@ -103,7 +103,7 @@ void kexFxPhysics::Think(const float timeDelta) {
     move = velocity * timeDelta;
     moveAmount = move.UnitSq();
 
-    if(mass == 0 || moveAmount < 0.001f) {
+    if(moveAmount < 0.001f) {
         return;
     }
 
@@ -144,8 +144,9 @@ void kexFxPhysics::Think(const float timeDelta) {
                         ImpactVelocity(velocity, trace.hitNormal, 1.05f);
                         break;
                     case VFX_DESTROY:
-                        owner->SetOrigin(trace.hitVector);
+                        owner->GetOrigin() += (trace.hitNormal * 1.024f);
                         fx->Event(&fxinfo->onImpact, trace.hitActor);
+                        fx->Remove();
                         break;
                     default:
                         break;
@@ -164,8 +165,9 @@ void kexFxPhysics::Think(const float timeDelta) {
                         ApplyFriction();
                         break;
                     case VFX_DESTROY:
-                        owner->SetOrigin(trace.hitVector);
+                        owner->GetOrigin() += (trace.hitNormal * 1.024f);
                         fx->Event(&fxinfo->onImpact, NULL);
+                        fx->Remove();
                         break;
                 }
             }
@@ -409,7 +411,7 @@ kexFx *kexFx::SpawnChild(const char *name) {
             break;
         }
 
-        origin += (nvec | (mtx1 | mtx3));
+        org += (nvec | (mtx1 | mtx3));
     }
 
     return localWorld.SpawnFX(name, owner, physics.velocity, org, rot);

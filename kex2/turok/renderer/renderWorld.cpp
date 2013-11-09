@@ -160,6 +160,7 @@ void kexRenderWorld::RenderScene(void) {
     renderSystem.SetState(GLSTATE_DEPTHTEST, true);
 
     dglDisableClientState(GL_COLOR_ARRAY);
+    dglEnableClientState(GL_NORMAL_ARRAY);
 
     world->Camera()->SetupMatrices();
 
@@ -179,6 +180,7 @@ void kexRenderWorld::RenderScene(void) {
     DrawViewActors();
 
     dglEnableClientState(GL_COLOR_ARRAY);
+    dglDisableClientState(GL_NORMAL_ARRAY);
 
     if(bWireframe) {
         dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -439,6 +441,7 @@ void kexRenderWorld::TraverseDrawActorNode(kexWorldActor *actor,
 //
 
 void kexRenderWorld::DrawStaticActors(void) {
+    kexBBox box;
     kexFrustum frustum = world->Camera()->Frustum();
 
     for(unsigned int i = 0; i < world->gridBounds.Length(); i++) {
@@ -453,11 +456,7 @@ void kexRenderWorld::DrawStaticActors(void) {
                     continue;
                 }
 
-                kexBBox box;
-
-                box.min = actor->BoundingBox().min + actor->GetOrigin();
-                box.max = actor->BoundingBox().max + actor->GetOrigin();
-
+                box = actor->BoundingBox();
                 actor->bCulled = !frustum.TestBoundingBox(box);
 
                 if(actor->bCulled) {
@@ -510,6 +509,7 @@ void kexRenderWorld::DrawStaticActors(void) {
 //
 
 void kexRenderWorld::DrawActors(void) {
+    kexBBox box;
     kexFrustum frustum = world->Camera()->Frustum();
     kexMatrix mtx(DEG2RAD(-90), 1);
     mtx.Scale(-1, 1, 1);
@@ -520,11 +520,7 @@ void kexRenderWorld::DrawActors(void) {
                 continue;
             }
 
-            kexBBox box;
-
-            box.min = actor->BoundingBox().min * actor->GetScale() + actor->GetOrigin();
-            box.max = actor->BoundingBox().max * actor->GetScale() + actor->GetOrigin();
-
+            box = actor->BoundingBox();
             actor->bCulled = !frustum.TestBoundingBox(box);
 
             if(actor->bCulled) {

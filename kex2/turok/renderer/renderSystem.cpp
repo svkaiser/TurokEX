@@ -277,7 +277,7 @@ void kexRenderSystem::Init(void) {
     dglEnableClientState(GL_VERTEX_ARRAY);
     dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
     dglEnableClientState(GL_COLOR_ARRAY);
-    dglEnableClientState(GL_NORMAL_ARRAY);
+    dglDisableClientState(GL_NORMAL_ARRAY);
 
     common.Printf("Renderer Initialized\n");
 }

@@ -533,6 +533,9 @@ void kexWorldActor::UpdateTransform(void) {
     if(!bStatic) {
         bbox = (baseBBox | rotMatrix);
     }
+
+    bbox.min += origin;
+    bbox.max += origin;
 }
 
 //

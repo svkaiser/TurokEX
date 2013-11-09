@@ -38,6 +38,16 @@ int kexMath::Abs(int x) {
 }
 
 //
+// kexMath::Fabs
+//
+
+float kexMath::Fabs(float x) {
+    int tmp = *reinterpret_cast<int*>(&x);
+    tmp &= 0x7FFFFFFF;
+    return *reinterpret_cast<float*>(&tmp);
+}
+
+//
 // kexMath::RoundPowerOfTwo
 //
 

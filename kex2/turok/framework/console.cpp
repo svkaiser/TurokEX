@@ -454,13 +454,10 @@ void kexConsole::Init(void) {
 //
 
 void kexConsole::Draw(void) {
-    static const word   drawConIndices[6] = { 0, 1, 2, 2, 1, 3 };
-    static float        drawConVertices[4][3];
-    static byte         drawConColors[4][4];
-    bool                bOverlay;
-    float               w;
-    float               h;
-    rcolor              color;
+    bool    bOverlay;
+    float   w;
+    float   h;
+    rcolor  color;
 
     if(state == CON_STATE_UP && !cvarDisplayConsole.GetBool())
         return;
@@ -470,60 +467,35 @@ void kexConsole::Draw(void) {
     w = (float)sysMain.VideoWidth();
     h = (float)sysMain.VideoHeight() * 0.6875f;
 
-    dglDisableClientState(GL_NORMAL_ARRAY);
-    dglEnableClientState(GL_COLOR_ARRAY);
-
-    dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, drawConVertices);
-    dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, drawConColors);
-
     renderSystem.SetState(GLSTATE_BLEND, true);
 
     if(!bOverlay) {
-        dglDisableClientState(GL_TEXTURE_COORD_ARRAY);
-        
-        // draw tint overlay
-        for(int i = 0; i < 4; i++) {
-            drawConColors[i][0] = 4;
-            drawConColors[i][1] = 8;
-            drawConColors[i][2] = 16;
-            drawConColors[i][3] = 192;
-        }
-
-        drawConVertices[0][0] = 0;
-        drawConVertices[0][1] = 0;
-        drawConVertices[1][0] = w;
-        drawConVertices[1][1] = 0;
-        drawConVertices[2][0] = 0;
-        drawConVertices[2][1] = h;
-        drawConVertices[3][0] = w;
-        drawConVertices[3][1] = h;
-
+        renderSystem.BindDrawPointers();
         renderSystem.whiteTexture.Bind();
 
-        dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, drawConIndices);
+        // draw tint overlay
+        renderSystem.AddVertex(0, 0, 0, 0, 0, 4, 8, 16, 192);
+        renderSystem.AddVertex(w, 0, 0, 0, 0, 4, 8, 16, 192);
+        renderSystem.AddVertex(0, h, 0, 0, 0, 4, 8, 16, 192);
+        renderSystem.AddVertex(w, h, 0, 0, 0, 4, 8, 16, 192);
+        renderSystem.AddTriangle(0, 1, 2);
+        renderSystem.AddTriangle(2, 1, 3);
+        renderSystem.DrawElements();
 
-        for(int i = 0; i < 4; i++) {
-            drawConColors[i][0] = 0;
-            drawConColors[i][1] = 128;
-            drawConColors[i][2] = 255;
-            drawConColors[i][3] = 255;
-        }
-
-        // draw top border
-        drawConVertices[0][1] = h-17;
-        drawConVertices[1][1] = h-17;
-        drawConVertices[2][1] = h-16;
-        drawConVertices[3][1] = h-16;
-        dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, drawConIndices);
-
-        // draw bottom border
-        drawConVertices[0][1] = h;
-        drawConVertices[1][1] = h;
-        drawConVertices[2][1] = h+1;
-        drawConVertices[3][1] = h+1;
-        dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, drawConIndices);
-        
-        dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        // draw borders
+        renderSystem.AddVertex(0, h-17, 0, 0, 0, 0, 128, 255, 255);
+        renderSystem.AddVertex(w, h-17, 0, 0, 0, 0, 128, 255, 255);
+        renderSystem.AddVertex(0, h-16, 0, 0, 0, 0, 128, 255, 255);
+        renderSystem.AddVertex(w, h-16, 0, 0, 0, 0, 128, 255, 255);
+        renderSystem.AddVertex(0, h, 0, 0, 0, 0, 128, 255, 255);
+        renderSystem.AddVertex(w, h, 0, 0, 0, 0, 128, 255, 255);
+        renderSystem.AddVertex(0, h+1, 0, 0, 0, 0, 128, 255, 255);
+        renderSystem.AddVertex(w, h+1, 0, 0, 0, 0, 128, 255, 255);
+        renderSystem.AddTriangle(0, 1, 2);
+        renderSystem.AddTriangle(2, 1, 3);
+        renderSystem.AddTriangle(4, 5, 6);
+        renderSystem.AddTriangle(6, 5, 7);
+        renderSystem.DrawElements();
 
         color = RGBA(255, 255, 255, 255);
         renderSystem.consoleFont.DrawString("> ", 0, h-15, 1, false, (byte*)&color, (byte*)&color);
@@ -556,7 +528,4 @@ void kexConsole::Draw(void) {
     }
 
     renderSystem.SetState(GLSTATE_BLEND, false);
-    
-    dglDisableClientState(GL_COLOR_ARRAY);
-    dglEnableClientState(GL_NORMAL_ARRAY);
 }

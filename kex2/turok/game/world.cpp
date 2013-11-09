@@ -396,6 +396,7 @@ void kexWorld::SpawnLocalPlayer(void) {
 
 void kexWorld::Trace(traceInfo_t *trace) {
     kexBBox box;
+    float r;
 
     trace->fraction = 1.0f;
     trace->hitActor = NULL;
@@ -403,6 +404,8 @@ void kexWorld::Trace(traceInfo_t *trace) {
     trace->hitMesh = NULL;
     trace->hitVector.Clear();
     trace->hitNormal.Clear();
+
+    r = trace->localBBox.Radius();
 
     for(unsigned int i = 0; i < gridBounds.Length(); i++) {
         gridBound_t *grid = gridBounds[i];
@@ -412,7 +415,7 @@ void kexWorld::Trace(traceInfo_t *trace) {
         box = grid->box;
 
         if(trace->bUseBBox) {
-            box = box + trace->localBBox.Radius();
+            box = box + r;
         }
 
         if(box.LineIntersect(trace->start, trace->end)) {
@@ -423,10 +426,7 @@ void kexWorld::Trace(traceInfo_t *trace) {
                     if(!actor->bCollision)
                         continue;
 
-                    box.min = actor->BoundingBox().min + actor->GetOrigin();
-                    box.max = actor->BoundingBox().max + actor->GetOrigin();
-
-                    box = box + (box.Radius() * 0.5f);
+                    box = actor->BoundingBox() + r;
 
                     if(box.LineIntersect(trace->start, trace->end)) {
                         actor->bTraced = true;

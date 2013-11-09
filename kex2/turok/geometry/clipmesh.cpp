@@ -118,7 +118,7 @@ void kexClipMesh::Parse(kexLexer *lexer) {
 void kexClipMesh::CreateBox(const kexBBox &bbox) {
     cmGroup_t *cmGroup;
 
-    origin                  = bbox.Center();
+    origin                  = bbox.Center() - owner->GetOrigin();
     numGroups               = 1;
     cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
     cmGroup                 = &cmGroups[0];
@@ -177,7 +177,7 @@ void kexClipMesh::CreateTetrahedron(const kexBBox &bbox) {
     kexVec3 s;
     cmGroup_t *cmGroup;
 
-    origin                  = bbox.Center();
+    origin                  = bbox.Center() - owner->GetOrigin();
     s                       = bbox.max - origin;
     numGroups               = 1;
     cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
@@ -210,7 +210,7 @@ void kexClipMesh::CreateOctahedron(const kexBBox &bbox) {
     kexVec3 s;
     cmGroup_t *cmGroup;
 
-    origin                  = bbox.Center();
+    origin                  = bbox.Center() - owner->GetOrigin();
     s                       = bbox.max - origin;
     numGroups               = 1;
     cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
@@ -248,7 +248,7 @@ void kexClipMesh::CreateOctahedron(const kexBBox &bbox) {
 void kexClipMesh::CreateDodecahedron(const kexBBox &bbox) {
     cmGroup_t *cmGroup;
 
-    origin                  = bbox.Center();
+    origin                  = bbox.Center() - owner->GetOrigin();
     numGroups               = 1;
     cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
     cmGroup                 = &cmGroups[0];
@@ -349,7 +349,7 @@ void kexClipMesh::CreateDodecahedron(const kexBBox &bbox) {
 void kexClipMesh::CreateCylinder(const kexBBox &bbox) {
     cmGroup_t *cmGroup;
 
-    origin                  = bbox.Center();
+    origin                  = bbox.Center() - owner->GetOrigin();
     numGroups               = 1;
     cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
     cmGroup                 = &cmGroups[0];
