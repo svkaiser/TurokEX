@@ -32,15 +32,10 @@
 #include "system.h"
 #include "server.h"
 #include "client.h"
-#include "render.h"
 #include "sound.h"
-#include "gl.h"
 #include "script.h"
-#include "game.h"
-#include "js.h"
 #include "type.h"
 #include "fx.h"
-#include "debug.h"
 #include "filesystem.h"
 #include "console.h"
 #include "renderSystem.h"
@@ -142,10 +137,11 @@ void kexSystem::Shutdown(void) {
 
     bShuttingDown = true;
 
-    J_Shutdown();
     soundSystem.Shutdown();
     fxManager.Shutdown();
-    G_Shutdown();
+    
+    Mem_Purge(hb_object);
+    Mem_Purge(kexClipMesh::hb_clipMesh);
 
     renderSystem.Shutdown();
     scriptManager.Shutdown();
@@ -384,7 +380,6 @@ void kexSystem::MainLoop(void) {
         prevmsec = nextmsec;
 
         Mem_GC();
-        J_GarbageCollect();
     }
 }
 
@@ -410,23 +405,12 @@ void kexSystem::Main(int argc, char **argv) {
     console.Init();
     inputSystem.Init();
     inputKey.Init();
-
-    Debug_Init();
-    common.Printf("Debug System Initialized\n");
-
     fileSystem.Init();
-
     soundSystem.Init();
-    J_Init();
-    common.Printf("Javascript API Initialized\n");
-
     server.Init();
     client.Init();
 
     command.Add("quit", FCmd_Quit);
-
-    G_Init();
-    common.Printf("Game Initialized\n");
 
     scriptManager.Init();
 
@@ -436,10 +420,7 @@ void kexSystem::Main(int argc, char **argv) {
     InitVideo();
 
     renderSystem.Init();
-
-    R_Init();
     fxManager.Init();
-
     kexRenderWorld::Init();
 
     common.Printf("Running kernel...\n");

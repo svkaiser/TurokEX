@@ -249,8 +249,6 @@ void kexRenderSystem::Init(void) {
     GL_EXT_texture_env_combine_Init();
     GL_EXT_texture_filter_anisotropic_Init();
 
-    GL_Init();
-
     byte *data;
 
     if(data = defaultTexture.LoadFromFile("textures/default.tga")) {

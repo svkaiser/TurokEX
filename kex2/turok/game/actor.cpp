@@ -26,7 +26,6 @@
 
 #include "common.h"
 #include "actor.h"
-#include "game.h"
 #include "server.h"
 #include "sound.h"
 #include "world.h"

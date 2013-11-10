@@ -95,9 +95,6 @@ public:
     int                     GetID(void) const { return id; }
     void                    SetID(const int _id) { id = _id; }
     netSequence_t           *NetSeq(void) { return &netseq; }
-
-    // TODO - REMOVE
-    worldState_t            worldState;
     
 protected:
     kexPlayerPuppet         *puppet;
@@ -134,18 +131,12 @@ public:
     bool                    ActionDown(const kexStr &str);
     int                     ActionHeldTime(const kexStr &str);
 
-    //kexActor               *Camera(void) { return camera; }
     kexVec3                 &MoveDiff(void) { return moveDiff; }
     kexWorldActor           *ToWorldActor(void) { return static_cast<kexWorldActor*>(this); }
-
-    // TODO
-    gActor_t                *actor;
-    gActor_t                *camera;
 
     static void             InitObject(void);
 
 private:
-    //kexActor              *camera;
     int                     latency[NETBACKUPS];
     kexVec3                 moveDiff;
     kexVec3                 oldMoves[NETBACKUPS];
@@ -160,9 +151,6 @@ public:
     virtual void            Tick(void);
     int                     GetState(void) const { return state; }
     void                    SetState(const int s) { state = s; }
-
-    // TODO
-    gActor_t                *actor;
 
 private:
     int                     state;

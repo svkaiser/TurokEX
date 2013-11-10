@@ -30,7 +30,6 @@
 #include "packet.h"
 #include "client.h"
 #include "server.h"
-#include "actor_old.h"
 #include "player.h"
 #include "world.h"
 #include "console.h"

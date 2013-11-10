@@ -25,6 +25,24 @@
 
 #include "cachefilelist.h"
 
+#define MDF_UNKNOWN1                1
+#define MDF_FULLBRIGHT              2
+#define MDF_NOCULLFACES             4
+#define MDF_RENDERSPECULAR          8
+#define MDF_SHINYSURFACE            16
+#define MDF_UNKNOWN32               32
+#define MDF_SOLID                   64
+#define MDF_MASKED                  128
+#define MDF_TRANSPARENT1            256
+#define MDF_TRANSPARENT2            512
+#define MDF_COLORIZE                1024
+#define MDF_METALSURFACE            2048
+#define MDF_UNKNOWN4096             4096
+#define MDF_UNKNOWN8192             8192
+#define MDF_UNKNOWN16384            16384
+#define MDF_UNKNOWN32768            32768
+#define MDF_UNKNOWN65536            65536
+
 typedef struct {
     unsigned int                    flags;
     unsigned int                    numVerts;

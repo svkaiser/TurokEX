@@ -28,6 +28,9 @@
 #include "clipmesh.h"
 #include "script.h"
 
+#define ONPLANE_EPSILON     0.512f
+#define VELOCITY_EPSILON    0.0001f
+
 typedef enum {
     WLT_INVALID  = 0,
     WLT_OVER     = 1,

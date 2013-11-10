@@ -24,6 +24,7 @@
 #define __CAMERA_H__
 
 #include "common.h"
+#include "actor.h"
 #include "frustum.h"
 
 BEGIN_EXTENDED_CLASS(kexCamera, kexActor);

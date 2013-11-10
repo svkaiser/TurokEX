@@ -30,11 +30,11 @@
 #include "kstring.h"
 #include "client.h"
 #include "keyInput.h"
-#include "render.h"
 #include "console.h"
 #include "renderSystem.h"
 
 kexCvar cvarDisplayConsole("con_alwaysShowConsole", CVF_BOOL|CVF_CONFIG, "0", "TODO");
+kexCvar cvarShowFPS("con_showfps", CVF_BOOL|CVF_CONFIG, "0", "Displays current FPS");
 
 kexConsole console;
 
@@ -466,6 +466,12 @@ void kexConsole::Draw(void) {
 
     w = (float)sysMain.VideoWidth();
     h = (float)sysMain.VideoHeight() * 0.6875f;
+
+    if(cvarShowFPS.GetBool()) {
+        color = RGBA(255, 255, 255, 255);
+        renderSystem.consoleFont.DrawString(kva("fps: %i", client.fps), w - 64, 32, 1,
+            false, (byte*)&color, (byte*)&color);
+    }
 
     renderSystem.SetState(GLSTATE_BLEND, true);
 

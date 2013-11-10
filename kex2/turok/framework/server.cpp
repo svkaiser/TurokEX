@@ -29,9 +29,7 @@
 #include "client.h"
 #include "packet.h"
 #include "server.h"
-#include "game.h"
 #include "type.h"
-#include "js.h"
 #include "world.h"
 
 kexCvar cvarServerAddress("sv_address", CVF_STRING|CVF_CONFIG, "localhost", "TODO");

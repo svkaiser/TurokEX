@@ -148,7 +148,7 @@ public:
         OBJMETHOD("kVec3 &GetScale(void)", GetScale, (void), kexVec3&);
         OBJMETHOD("void SetScale(const kVec3 &in)", SetScale, (const kexVec3 &s), void);
         OBJMETHOD("kAttachment &Attachment(void)", Attachment, (void), kexAttachment&);
-        OBJMETHOD("const kStr ClassName(void) const", GetClassString, (void) const, const kexStr);
+        OBJMETHOD("const kStr ClassName(void) const", ClassString, (void) const, const kexStr);
         OBJMETHOD("void StartSound(const kStr &in)", StartSound, (const kexStr &name), void);
         OBJMETHOD("void SetBoundingBox(const kVec3 &in, const kVec3 &in)",
             SetBoundingBox, (const kexVec3 &min, const kexVec3 &max), void);
@@ -239,7 +239,6 @@ public:
     void                        SetModel(const kexStr &modelFile);
     void                        CreateComponent(const char *name);
 
-    gObject_t                   *Component(void) { return component; }
     const int                   Variant(void) const { return variant; }
     kexStr                      &GetName(void) { return name; }
     void                        SetName(kexStr &str) { name = str; }
@@ -294,8 +293,6 @@ public:
 protected:
     void                        ParseDefault(kexLexer *lexer);
 
-    gObject_t                   *component;
-    gObject_t                   *iterator;
     kexClipMesh                 clipMesh;
     kexStr                      name;
     int                         health;

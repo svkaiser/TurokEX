@@ -25,14 +25,11 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
+#include "object.h"
 #include "script.h"
 #include "mathlib.h"
 #include "client.h"
 #include "server.h"
-#include "js.h"
-#include "jsobj.h"
-#include "js_parse.h"
-#include "js_shared.h"
 #include "world.h"
 #include "sound.h"
 
@@ -214,7 +211,7 @@ void kexWorld::AddActor(kexWorldActor *actor) {
 
     if(actor->GetName().Length() <= 0) {
         actor->SetName(kexStr(kva("%s_%i",
-            actor->GetClassName(), kexWorldActor::id)));
+            actor->ClassName(), kexWorldActor::id)));
     }
 
     actor->CallSpawn();

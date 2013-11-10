@@ -25,8 +25,6 @@
 
 #include "enet/enet.h"
 #include "client.h"
-#include "actor_old.h"
-#include "game.h"
 #include "player.h"
 
 typedef enum

@@ -129,7 +129,6 @@ kexTexture::kexTexture(void) {
     this->bLoaded = false;
     this->bMasked = false;
     this->next = NULL;
-    this->jsObject = NULL;
 }
 
 //

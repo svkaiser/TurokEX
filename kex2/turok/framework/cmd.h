@@ -42,7 +42,6 @@ public:
     void                Execute(const char *buffer);
     bool                AutoComplete(const char *partial);
     void                Add(const char *name, cmd_t function);
-    void                Add(const char *name, gObject_t *object);
     void                Init(void);
     cmd_function_t      *GetFunctions(void);
     bool                Verify(const char *name);

@@ -87,10 +87,10 @@ public:
 BEGIN_CLASS(kexObject);
                             ~kexObject(void);
     
-    const char              *GetClassName(void) const;
-    const kexStr            GetClassString(void) const;
-    const char              *GetSuperName(void) const;
-    const kexStr            GetSuperString(void) const;
+    const char              *ClassName(void) const;
+    const kexStr            ClassString(void) const;
+    const char              *SuperName(void) const;
+    const kexStr            SuperString(void) const;
     bool                    InstanceOf(const kexRTTI *objInfo) const;
     void                    CallSpawn(void);
     void                    Spawn(void);

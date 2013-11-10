@@ -28,51 +28,6 @@
 #include "mathlib.h"
 
 //
-// BBox_Transform
-//
-
-void BBox_Transform(bbox_t srcBox, mtx_t matrix, bbox_t *out)
-{
-    bbox_t box;
-    vec3_t c;
-    vec3_t h;
-    vec3_t ct;
-    vec3_t ht;
-    mtx_t m;
-
-    Vec_Copy3(box.min, srcBox.min);
-    Vec_Copy3(box.max, srcBox.max);
-
-    Mtx_Copy(m, matrix);
-
-    Vec_Add(c, box.min, box.max);
-    Vec_Scale(c, c, 0.5f);
-    Vec_Sub(h, box.max, c);
-    Vec_TransformToWorld(m, c, ct);
-
-    m[ 0] = kexMath::Fabs(m[ 0]);
-    m[ 1] = kexMath::Fabs(m[ 1]);
-    m[ 2] = kexMath::Fabs(m[ 2]);
-    m[ 4] = kexMath::Fabs(m[ 4]);
-    m[ 5] = kexMath::Fabs(m[ 5]);
-    m[ 6] = kexMath::Fabs(m[ 6]);
-    m[ 8] = kexMath::Fabs(m[ 8]);
-    m[ 9] = kexMath::Fabs(m[ 9]);
-    m[10] = kexMath::Fabs(m[10]);
-    m[12] = 0;
-    m[13] = 0;
-    m[14] = 0;
-
-    Vec_TransformToWorld(m, h, ht);
-
-    Vec_Sub(box.min, ct, ht);
-    Vec_Add(box.max, ct, ht);
-
-    Vec_Copy3(out->min, box.min);
-    Vec_Copy3(out->max, box.max);
-}
-
-//
 // kexBBox::kexBBox
 //
 

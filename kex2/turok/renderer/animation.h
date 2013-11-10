@@ -24,6 +24,23 @@
 #define __ANIMATION_H__
 
 typedef struct {
+    int                     frame;
+    char                    *function;
+    float                   args[4];
+    char                    *argStrings[4];
+} action_t;
+
+typedef enum {
+    ANF_BLEND       = 1,
+    ANF_LOOP        = 2,
+    ANF_STOPPED     = 4,
+    ANF_NOINTERRUPT = 8,
+    ANF_ROOTMOTION  = 16,
+    ANF_PAUSED      = 32,
+    ANF_CROSSFADE   = 64
+} animflags_t;
+
+typedef struct {
     kexVec3                 *translations;
     kexQuat                 *rotations;
 } frameSet_t;

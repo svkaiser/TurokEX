@@ -26,7 +26,6 @@
 
 #include <string.h>
 #include "common.h"
-#include "js.h"
 
 static void FCmd_Stub(void);
 static void FCmd_List(void);
@@ -47,19 +46,9 @@ bool kexCommand::Run(void) {
 
     for(cmd = cmd_functions; cmd; cmd = cmd->next) {
         if(!strcasecmp(cmd_argv[0], cmd->name)) {
-            if(cmd->object) {
-                int i;
-                char **argv = (char**)(Mem_Alloca(sizeof(char*) * cmd_argc));
-
-                for(i = 0; i < cmd_argc-1; i++)
-                    argv[i] = Mem_Strdupa(cmd_argv[i+1]);
-
-                J_CallObject(cmd->object, argv, cmd_argc-1);
-            }
-            else if(cmd->function) {
+            if(cmd->function) {
                 cmd->function();
             }
-
             return true;
         }
     }
@@ -284,25 +273,6 @@ void kexCommand::Add(const char *name, cmd_t function) {
     cmd->name       = name;
     cmd->function   = function;
     cmd->next       = cmd_functions;
-    cmd->object     = NULL;
-    cmd_functions   = cmd;
-}
-
-//
-// kexCommand::AddObject
-//
-
-void kexCommand::Add(const char *name, gObject_t *object) {
-	cmd_function_t *cmd;
-	
-    if(!Verify(name))
-        return;
-
-    cmd             = (cmd_function_t*)(Mem_Malloc(sizeof(cmd_function_t), hb_static));
-    cmd->name       = Mem_Strdup(name, hb_static);
-    cmd->function   = FCmd_Stub;
-    cmd->next       = cmd_functions;
-    cmd->object     = object;
     cmd_functions   = cmd;
 }
 

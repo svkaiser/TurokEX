@@ -95,11 +95,11 @@ public:
                                             unsigned short *var, int id, bool expect);
     void                AssignFromTokenList(const sctokens_t *tokenlist,
                                             float *var, int id, bool expect);
+    void                AssignVectorFromTokenList(const sctokens_t *tokenlist,
+                                            float *var, int id, bool expect);
     void                AssignFromTokenList(const sctokens_t *tokenlist,
                                             arraytype_t type, void **data, int count,
                                             int id, bool expect, kexHeapBlock &hb);
-    void                AssignVectorFromTokenList(const sctokens_t *tokenlist,
-                                            vec3_t var, int id, bool expect);
     int                 LinePos(void) { return linepos; }
     int                 RowPos(void) { return rowpos; }
     int                 BufferPos(void) { return buffpos; }

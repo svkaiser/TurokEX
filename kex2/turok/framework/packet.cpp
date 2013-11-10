@@ -100,20 +100,6 @@ bool kexPacketManager::ReadFloat(ENetPacket *packet, float *data) {
 }
 
 //
-// kexPacketManager::ReadVector
-//
-
-bool kexPacketManager::ReadVector(ENetPacket *packet, vec3_t *data) {
-    if(!ReadFloat(packet, &(*data)[0]))
-        return false;
-    if(!ReadFloat(packet, &(*data)[1]))
-        return false;
-    if(!ReadFloat(packet, &(*data)[2]))
-        return false;
-    return true;
-}
-
-//
 // kexPacketManager::ReadString
 //
 
@@ -184,16 +170,6 @@ void kexPacketManager::WriteFloat(ENetPacket *packet, float i) {
     fint_t fi;
     fi.f = i;
     Write32(packet, fi.i);
-}
-
-//
-// kexPacketManager::WriteVector
-//
-
-void kexPacketManager::WriteVector(ENetPacket *packet, vec3_t vec) {
-    WriteFloat(packet, vec[0]);
-    WriteFloat(packet, vec[1]);
-    WriteFloat(packet, vec[2]);
 }
 
 //

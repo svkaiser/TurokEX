@@ -647,7 +647,7 @@ void kexLexer::AssignFromTokenList(const sctokens_t *tokenlist, float *var, int 
 // kexLexer::AssignVectorFromTokenList
 //
 
-void kexLexer::AssignVectorFromTokenList(const sctokens_t *tokenlist, vec3_t var, int id, bool expect) {
+void kexLexer::AssignVectorFromTokenList(const sctokens_t *tokenlist, float *var, int id, bool expect) {
     if(expect) {
         ExpectTokenListID(tokenlist, id);
     }
@@ -704,8 +704,8 @@ void kexLexer::AssignFromTokenList(const sctokens_t *tokenlist, arraytype_t type
         case AT_DOUBLE:
             len = sizeof(double);
             break;
-        case AT_VECTOR:
-            len = sizeof(vec3_t);
+         case AT_VECTOR:
+            len = sizeof(float) * 3;
             break;
         default:
             break;
@@ -747,12 +747,11 @@ void kexLexer::AssignFromTokenList(const sctokens_t *tokenlist, arraytype_t type
             }
             break;
         case AT_VECTOR: {
-                vec3_t *vbuf = (vec3_t*)buf;
-
+                float *fbuf = (float*)buf;
                 for(i = 0; i < count; i++) {
-                    vbuf[i][0] = (float)GetFloat();
-                    vbuf[i][1] = (float)GetFloat();
-                    vbuf[i][2] = (float)GetFloat();
+                    fbuf[i * 3 + 0] = (float)GetFloat();
+                    fbuf[i * 3 + 1] = (float)GetFloat();
+                    fbuf[i * 3 + 2] = (float)GetFloat();
                 }
             }
             break;

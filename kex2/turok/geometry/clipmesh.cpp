@@ -688,17 +688,19 @@ bool kexClipMesh::Trace(traceInfo_t *trace) {
     float frac = 1;
     float r = 0;
     float bxRadius = 1.024f;
+    kexTri *tri;
+    float dist;
+    float distStart;
+    float distEnd;
+    kexVec3 hit;
+    kexVec3 offset;
+    cmGroup_t *cmGroup;
 
     for(unsigned int i = 0; i < numGroups; i++) {
-        cmGroup_t *cmGroup = &cmGroups[i];
+        cmGroup = &cmGroups[i];
 
         for(unsigned int j = 0; j < cmGroup->numTriangles; j++) {
-            kexTri *tri = &cmGroup->triangles[j];
-            float dist;
-            float distStart;
-            float distEnd;
-            kexVec3 hit;
-            kexVec3 offset;
+            tri = &cmGroup->triangles[j];
 
             // direction must be facing the plane
             if(tri->plane.Distance(trace->dir) >= 0) {

@@ -25,8 +25,6 @@
 
 #include "enet/enet.h"
 #include "system.h"
-#include "actor_old.h"
-#include "game.h"
 #include "player.h"
 #include "network.h"
 
@@ -74,6 +72,7 @@ public:
 
     unsigned int        id;
     int                 curtime;
+    int                 fps;
 
     static void         InitObject(void);
 

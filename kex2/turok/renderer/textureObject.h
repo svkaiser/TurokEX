@@ -23,6 +23,13 @@
 #ifndef __TEXTURE_OBJ_H__
 #define __TEXTURE_OBJ_H__
 
+typedef struct {
+    int x;
+    int y;
+    int w;
+    int h;
+} atlas_t;
+
 typedef enum {
     TC_CLAMP    = 0,
     TC_REPEAT
@@ -84,7 +91,6 @@ private:
     dtexture                texid;
     bool                    bLoaded;
     bool                    bMasked;
-    gObject_t               *jsObject;
 };
 
 #endif

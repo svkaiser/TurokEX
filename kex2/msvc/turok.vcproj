@@ -151,7 +151,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(OutDir)\js\src\&quot;;&quot;$(OutDir)\openal\include\&quot;;&quot;$(OutDir)\SDL2\include\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\angelscript\angelscript\include&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\sound\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDir)\turok\jsapi\&quot;;&quot;$(OutDir)\turok\game\&quot;;&quot;$(OutDir)\turok\geometry\&quot;"
+				AdditionalIncludeDirectories="&quot;$(OutDir)\openal\include\&quot;;&quot;$(OutDir)\SDL2\include\&quot;;&quot;$(OutDir)\zlib\&quot;;&quot;$(OutDir)\enet\include\&quot;;&quot;$(OutDir)\angelscript\angelscript\include&quot;;&quot;$(OutDir)\turok\&quot;;&quot;$(OutDir)\turok\kernel\&quot;;&quot;$(OutDir)\turok\win32\&quot;;&quot;$(OutDir)\turok\opengl\&quot;;&quot;$(OutDir)\turok\sound\&quot;;&quot;$(OutDir)\turok\renderer\&quot;;&quot;$(OutDir)\turok\framework\&quot;;&quot;$(OutDir)\turok\math\&quot;;&quot;$(OutDir)\turok\game\&quot;;&quot;$(OutDir)\turok\geometry\&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -178,7 +178,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="SDL2.lib SDL2main.lib opengl32.lib glu32.lib enet.lib angelscriptd.lib ws2_32.lib winmm.lib js32.lib openal32.lib eaxguid.lib"
+				AdditionalDependencies="SDL2.lib SDL2main.lib opengl32.lib glu32.lib enet.lib angelscriptd.lib ws2_32.lib winmm.lib openal32.lib eaxguid.lib"
 				OutputFile="$(OutDir)\msvc\bin\KEX2.EXE"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -245,22 +245,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="opengl"
-				>
-				<File
-					RelativePath="..\turok\opengl\gl_images.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\opengl\gl_main.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\opengl\gl_textures.cpp"
-					>
-				</File>
-			</Filter>
-			<Filter
 				Name="renderer"
 				>
 				<File
@@ -269,38 +253,6 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\frustum.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\renderer\render_camera.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\renderer\render_canvas.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\renderer\render_debug.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\renderer\render_font.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\renderer\render_fx.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\renderer\render_main.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\renderer\render_model.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\renderer\render_shadows.cpp"
 					>
 				</File>
 				<File
@@ -345,10 +297,6 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\cvar.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\framework\debug.cpp"
 					>
 				</File>
 				<File
@@ -404,10 +352,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\turok\framework\trace.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\turok\framework\unzip.cpp"
 					>
 				</File>
@@ -453,118 +397,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="jsapi"
-				>
-				<File
-					RelativePath="..\turok\jsapi\js_class.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_main.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_objPool.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_parse.cpp"
-					>
-				</File>
-				<Filter
-					Name="classes"
-					>
-					<File
-						RelativePath="..\turok\jsapi\js_actor.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_ai.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_angle.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_anim.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_client.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_cmd.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_component.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_game.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_gl.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_input.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_level.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_matrix.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_net.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_physics.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_plane.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_player.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_quaternion.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_render.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_server.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_sound.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_sys.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\jsapi\js_vector.cpp"
-						>
-					</File>
-				</Filter>
-			</Filter>
-			<Filter
 				Name="sound"
 				>
 				<File
@@ -584,27 +416,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\turok\game\actor_old.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\game\ai.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\turok\game\camera.cpp"
 					>
 				</File>
 				<File
 					RelativePath="..\turok\game\fx.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\game\game.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\game\level.cpp"
 					>
 				</File>
 				<File
@@ -676,10 +492,6 @@
 					RelativePath="..\turok\opengl\dgl.h"
 					>
 				</File>
-				<File
-					RelativePath="..\turok\opengl\gl.h"
-					>
-				</File>
 			</Filter>
 			<Filter
 				Name="renderer"
@@ -690,10 +502,6 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\frustum.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\renderer\render.h"
 					>
 				</File>
 				<File
@@ -746,10 +554,6 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\cvar.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\framework\debug.h"
 					>
 				</File>
 				<File
@@ -834,30 +638,6 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="jsapi"
-				>
-				<File
-					RelativePath="..\turok\jsapi\js.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_class.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_objPool.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_parse.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\jsapi\js_shared.h"
-					>
-				</File>
-			</Filter>
-			<Filter
 				Name="sound"
 				>
 				<File
@@ -873,27 +653,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\turok\game\actor_old.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\game\ai.h"
-					>
-				</File>
-				<File
 					RelativePath="..\turok\game\camera.h"
 					>
 				</File>
 				<File
 					RelativePath="..\turok\game\fx.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\game\game.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\game\level.h"
 					>
 				</File>
 				<File

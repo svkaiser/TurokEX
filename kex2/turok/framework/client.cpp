@@ -29,19 +29,13 @@
 #include "packet.h"
 #include "client.h"
 #include "system.h"
-#include "render.h"
-#include "gl.h"
-#include "js.h"
 #include "sound.h"
 #include "fx.h"
-#include "debug.h"
 #include "network.h"
 #include "console.h"
 #include "world.h"
 #include "renderSystem.h"
 #include "renderWorld.h"
-
-static int clientFPS;
 
 kexCvar cvarClientName("cl_name", CVF_STRING|CVF_CONFIG, "Player", "Name for client player");
 kexCvar cvarClientFOV("cl_fov", CVF_FLOAT|CVF_CONFIG, "74.0", "Client's field of view");
@@ -183,7 +177,7 @@ void kexClient::Run(const int msec) {
     SetRunTime((float)curtime / 1000.0f);
     SetTime(GetTime() + curtime);
 
-    clientFPS = (int)(1000.0f / (GetRunTime() * 1000.0f));
+    fps = (int)(1000.0f / (GetRunTime() * 1000.0f));
     curtime = 0;
 
     // check for new packets
@@ -206,7 +200,6 @@ void kexClient::Run(const int msec) {
     // draw
     renderWorld.RenderScene();
     renderSystem.SetOrtho();
-    Debug_DrawStats();
     console.Draw();
 
     // finish frame
@@ -215,9 +208,6 @@ void kexClient::Run(const int msec) {
 
     // update all sound sources
     soundSystem.UpdateListener();
-
-    // update all debug variables
-    Debug_UpdateStatFrame();
 
     UpdateTicks();
 }
@@ -408,6 +398,7 @@ void kexClient::Init(void) {
     CreateHost();
 
     curtime = 0;
+    fps = 0;
     id = -1;
     bLocal = (common.CheckParam("-client") == 0);
     
@@ -421,11 +412,4 @@ void kexClient::Init(void) {
     command.Add("msgserver", FCmd_MsgServer);
 
     common.Printf("Client Initialized\n");
-
-    /*
-    Debug_RegisterPerfStatVar((float*)&clientFPS, "FPS", false);
-    Debug_RegisterPerfStatVar(&client.runtime, "Runtime", true);
-    Debug_RegisterPerfStatVar((float*)&client.time, "Client Time", false);
-    Debug_RegisterPerfStatVar((float*)&client.tics, "Client Ticks", false);
-    */
 }

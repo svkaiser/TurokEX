@@ -34,13 +34,11 @@ public:
     bool        Read16(ENetPacket *packet, unsigned int *data);
     bool        Read32(ENetPacket *packet, unsigned int *data);
     bool        ReadFloat(ENetPacket *packet, float *data);
-    bool        ReadVector(ENetPacket *packet, vec3_t *data);
     char        *ReadString(ENetPacket *packet);
     void        Write8(ENetPacket *packet, unsigned int i);
     void        Write16(ENetPacket *packet, unsigned int i);
     void        Write32(ENetPacket *packet, unsigned int i);
     void        WriteFloat(ENetPacket *packet, float i);
-    void        WriteVector(ENetPacket *packet, vec3_t vec);
     void        WriteString(ENetPacket *packet, char *string);
     void        Send(ENetPacket *packet, ENetPeer *peer);
     ENetPacket  *Create(void);

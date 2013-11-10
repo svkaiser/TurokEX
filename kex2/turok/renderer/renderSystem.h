@@ -23,9 +23,25 @@
 #ifndef __RENDERSYS_H__
 #define __RENDERSYS_H__
 
+#include "dgl.h"
 #include "textureObject.h"
 #include "renderFont.h"
 #include "cachefilelist.h"
+
+typedef enum {
+    GLSTATE_BLEND   = 0,
+    GLSTATE_CULL,
+    GLSTATE_TEXTURE0,
+    GLSTATE_TEXTURE1,
+    GLSTATE_TEXTURE2,
+    GLSTATE_TEXTURE3,
+    GLSTATE_ALPHATEST,
+    GLSTATE_TEXGEN_S,
+    GLSTATE_TEXGEN_T,
+    GLSTATE_DEPTHTEST,
+    GLSTATE_LIGHTING,
+    GLSTATE_FOG
+} glState_t;
 
 typedef enum {
     GLFUNC_LEQUAL   = 0,

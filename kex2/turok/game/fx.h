@@ -27,8 +27,8 @@
 #include "textureObject.h"
 
 typedef struct {
-    vec3_t value;
-    vec3_t rand;
+    float value[3];
+    float rand[3];
 } fxvector_t;
 
 typedef struct {

@@ -32,27 +32,13 @@ typedef unsigned long   ulong;
 typedef int             kbool;
 typedef unsigned int    dtexture;
 typedef unsigned int    rcolor;
-typedef float           vec3_t[3];
-typedef float           vec4_t[4];
-typedef float           mtx_t[16];
 typedef char            filepath_t[MAX_FILEPATH];
-
-typedef struct
-{
-    vec3_t  min;
-    vec3_t  max;
-} bbox_t;
 
 typedef union
 {
     int     i;
     float   f;
 } fint_t;
-
-typedef struct gclient_s gclient_t;
-typedef struct gActor_s gActor_t;
-typedef struct svclient_s svclient_t;
-typedef struct JSObject gObject_t;
 
 #define ASCII_SLASH		47
 #define ASCII_BACKSLASH 92

@@ -214,35 +214,35 @@ bool kexObject::InstanceOf(const kexRTTI *objInfo) const {
 }
 
 //
-// kexObject::GetClassName
+// kexObject::ClassName
 //
 
-const char *kexObject::GetClassName(void) const {
+const char *kexObject::ClassName(void) const {
     return GetInfo()->classname;
 }
 
 //
-// kexObject::GetClassString
+// kexObject::ClassString
 //
 
-const kexStr kexObject::GetClassString(void) const {
-    return kexStr(GetClassName());
+const kexStr kexObject::ClassString(void) const {
+    return kexStr(ClassName());
 }
 
 //
-// kexObject::GetSuperName
+// kexObject::SuperName
 //
 
-const char *kexObject::GetSuperName(void) const {
+const char *kexObject::SuperName(void) const {
     return GetInfo()->supername;
 }
 
 //
-// kexObject::GetSuperString
+// kexObject::SuperString
 //
 
-const kexStr kexObject::GetSuperString(void) const {
-    return kexStr(GetSuperName());
+const kexStr kexObject::SuperString(void) const {
+    return kexStr(SuperName());
 }
 
 //

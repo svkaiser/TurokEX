@@ -30,57 +30,6 @@
 
 #define RANDOM_MAX  0x7FFF
 
-static int rand_seed = 0;
-
-//
-// Random_SetSeed
-//
-
-void Random_SetSeed(int seed)
-{
-    rand_seed = seed;
-}
-
-//
-// Random_Int
-//
-
-int Random_Int(void)
-{
-    rand_seed = 1479838765 - 1471521965 * rand_seed;
-    return rand_seed & RANDOM_MAX;
-}
-
-//
-// Random_Max
-//
-
-int Random_Max(int max)
-{
-    if(max == 0)
-        return 0;
-
-    return Random_Int() % max;
-}
-
-//
-// Random_Float
-//
-
-float Random_Float(void)
-{
-    return (float)Random_Max(RANDOM_MAX+1) / ((float)RANDOM_MAX+1);
-}
-
-//
-// Random_CFloat
-//
-
-float Random_CFloat(void)
-{
-    return (float)(Random_Max(20000) - 10000) * 0.0001f;
-}
-
 int kexRand::seed = 0;
 
 //
