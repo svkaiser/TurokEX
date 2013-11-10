@@ -657,7 +657,7 @@ void kexRenderWorld::DrawFX(void) {
                 break;
             }
             if(world->fxRover == NULL) {
-                continue;
+                break;
             }
             if(world->fxRover->restart > 0) {
                 continue;
@@ -684,7 +684,7 @@ void kexRenderWorld::DrawFX(void) {
 
     bShowTexture = cvarRenderFxTexture.GetBool();
 
-    SDL_qsort(fxDisplayList, fxDisplayNum, sizeof(fxDisplay_t), kexRenderWorld::SortSprites);
+    qsort(fxDisplayList, fxDisplayNum, sizeof(fxDisplay_t), kexRenderWorld::SortSprites);
 
     dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, spriteTexCoords);
     dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, spriteVertices);

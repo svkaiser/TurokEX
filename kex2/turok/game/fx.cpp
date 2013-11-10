@@ -454,6 +454,8 @@ void kexFx::SetViewDistance(void) {
     distance = (((origin.x - camOrg.x) *  mtx.vectors[2].x) * mtx.vectors[1].y +
                  (origin.y - camOrg.y) * -mtx.vectors[1].z +
                 ((origin.z - camOrg.z) * -mtx.vectors[0].x) * mtx.vectors[1].y) * 0.5f;
+
+    distance = (float)(int)(distance * distance);
 }
 
 //
