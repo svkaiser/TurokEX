@@ -335,6 +335,7 @@ extern short model_nodeCount[800];
 extern short model_meshCount[800][100];
 extern short section_count[800][100][100];
 extern short section_textures[800][100][100][100];
+extern byte model_masked[800];
 extern bbox mdlboxes[1000];
 
 typedef struct
@@ -774,33 +775,17 @@ static void ProcessPoints(byte *buffer, byte *data)
     int* rover = (int*)(data + 8);
     int count = Com_GetCartOffset(data, CHUNK_POINTS_COUNT, 0);
     int i;
-#ifndef FORMAT_BINARY
-    Com_Strcat("points =\n");
-    Com_Strcat("{\n");
-#endif
 
     for(i = 0; i < count; i++)
     {
-#ifndef FORMAT_BINARY
-        Com_Strcat("%f %f %f %f\n",
-            (float)rover[0] * 0.029296875f,
-            (float)rover[1] * 0.029296875f,
-            (float)rover[2] * 0.029296875f,
-            (float)rover[3] * 0.029296875f);
-#else
         Com_WriteBufferFloat(buffer, (float)rover[0] * 0.029296875f);
         Com_WriteBufferFloat(buffer, (float)rover[1] * 0.029296875f);
         Com_WriteBufferFloat(buffer, (float)rover[2] * 0.029296875f);
         Com_WriteBufferFloat(buffer, (float)rover[3] * 0.029296875f);
-#endif
 
         rover += 4;
         Com_UpdateDataProgress();
     }
-
-#ifndef FORMAT_BINARY
-    Com_Strcat("}\n\n");
-#endif
 }
 
 //
@@ -813,16 +798,10 @@ static void ProcessLeafs(byte *buffer, byte *data)
     int count = Com_GetCartOffset(data, CHUNK_LEAFS_COUNT, 0);
     int i;
 
-#ifndef FORMAT_BINARY
-    Com_Strcat("leafs = // [area, flags, pt1, pt2, pt3, link1, link2, link3]\n");
-    Com_Strcat("{\n");
-#endif
-
     for(i = 0; i < count; i++)
     {
         mapleaf_t *leaf = (mapleaf_t*)(data + 8 + (i * size));
 
-#ifdef FORMAT_BINARY
         Com_WriteBuffer16(buffer, leaf->area_id);
         Com_WriteBuffer16(buffer, leaf->flags);
         Com_WriteBuffer16(buffer, leaf->pt1);
@@ -831,17 +810,8 @@ static void ProcessLeafs(byte *buffer, byte *data)
         Com_WriteBuffer16(buffer, leaf->link1);
         Com_WriteBuffer16(buffer, leaf->link2);
         Com_WriteBuffer16(buffer, leaf->link3);
-#else
-        Com_Strcat("%i %i %i %i %i %i %i %i\n",
-            leaf->area_id, leaf->flags, leaf->pt1, leaf->pt2, leaf->pt3,
-            leaf->link1, leaf->link2, leaf->link3);
-#endif
         Com_UpdateDataProgress();
     }
-
-#ifndef FORMAT_BINARY
-    Com_Strcat("}\n\n");
-#endif
 }
 
 //
@@ -1073,7 +1043,6 @@ static void ProcessAreas(byte *data)
 // ProcessNavigation
 //
 
-#ifdef OLD_FORMAT
 static void ProcessNavigation(byte *data, int index)
 {
     byte *rncdata;
@@ -1085,16 +1054,10 @@ static void ProcessNavigation(byte *data, int index)
     int outsize;
     char name[256];
     byte *buffer = NULL;
-#ifdef FORMAT_BINARY
     int *dataSize;
     int *lookup1;
     int *lookup2;
-#endif
 
-#ifndef FORMAT_BINARY
-    Com_StrcatClear();
-
-#else
     buffer = Com_Alloc(0x850000);
     com_fileoffset = 0;
     Com_WriteBuffer32(buffer, 1296843595);
@@ -1107,7 +1070,6 @@ static void ProcessNavigation(byte *data, int index)
     Com_WriteBuffer32(buffer, 0);
 
     *lookup1 = com_fileoffset;
-#endif
 
     rncdata = Com_GetCartData(data, CHUNK_LVROOT_INFO, &size);
     info = RNC_ParseFile(rncdata, size, &outsize);
@@ -1124,131 +1086,27 @@ static void ProcessNavigation(byte *data, int index)
     //DC_DecodeData(zones, decode_buffer, 0);
     //memcpy(zones, decode_buffer, size);
 
-#ifndef FORMAT_BINARY
-    Com_Strcat("numpoints = %i\n", Com_GetCartOffset(points, CHUNK_POINTS_COUNT, 0));
-    Com_Strcat("numleafs = %i\n\n", Com_GetCartOffset(leafs, CHUNK_LEAFS_COUNT, 0));
-    //Com_Strcat("numzonebounds = %i\n\n", Com_GetCartOffset(zones, CHUNK_ZONE_COUNT, 0));
-#endif
-
     Com_SetDataProgress(Com_GetCartOffset(points, CHUNK_POINTS_COUNT, 0) +
         Com_GetCartOffset(leafs, CHUNK_LEAFS_COUNT, 0));
 
-#ifdef FORMAT_BINARY
     Com_WriteBuffer32(buffer, Com_GetCartOffset(points, CHUNK_POINTS_COUNT, 0));
-#endif
     ProcessPoints(buffer, points);
 
-#ifdef FORMAT_BINARY
     *lookup2 = com_fileoffset;
     Com_WriteBuffer32(buffer, Com_GetCartOffset(leafs, CHUNK_LEAFS_COUNT, 0));
-#endif
 
     ProcessLeafs(buffer, leafs);
     //ProcessZones(zones);
 
-#ifndef FORMAT_BINARY
-    sprintf(name, "maps/map%02d/map%02d.kcm", index, index);
-    Com_StrcatAddToFile(name);
-#endif
-
     Com_Free(&info);
     
-#ifdef FORMAT_BINARY
     *dataSize = (com_fileoffset - 8);
     
     sprintf(name, "maps/map%02d/map%02d.kclm", index, index);
     PK_AddFile(name, buffer, com_fileoffset, true);
 
     Com_Free(&buffer);
-#endif
 }
-#else
-static void ProcessNavigation(byte *data, int index)
-{
-    byte *rncdata;
-    byte *info;
-    byte *points;
-    byte *leafs;
-    int size;
-    int outsize;
-    char name[256];
-    byte *buffer = NULL;
-    int leafSize;
-    int leafCount;
-    int i;
-    int *ptRover;
-    int numPoints;
-
-    Com_StrcatClear();
-
-    rncdata = Com_GetCartData(data, CHUNK_LVROOT_INFO, &size);
-    info = RNC_ParseFile(rncdata, size, &outsize);
-
-    points = Com_GetCartData(info, CHUNK_LEVELINFO_POINTS, &size);
-    DC_DecodeData(points, decode_buffer, 0);
-    memcpy(points, decode_buffer, size);
-
-    leafs = Com_GetCartData(info, CHUNK_LEVELIFNO_LEAFS, &size);
-    DC_DecodeData(leafs, decode_buffer, 0);
-    memcpy(leafs, decode_buffer, size);
-
-    Com_Strcat("model { numnodes = 1 nodes {{ numchildren = 0 numvariants = 1 variants = { 0 } numgroups = 1\n");
-    Com_Strcat("groups {{ numsections = 1 sections {{ texture = \"textures/default.tga\" rgba = 0 0 0 255\n");
-
-    Com_SetDataProgress(Com_GetCartOffset(points, CHUNK_POINTS_COUNT, 0) +
-        Com_GetCartOffset(leafs, CHUNK_LEAFS_COUNT, 0));
-
-    leafSize = Com_GetCartOffset(leafs, CHUNK_LEAFS_SIZE, 0);
-    leafCount = Com_GetCartOffset(leafs, CHUNK_LEAFS_COUNT, 0);
-
-    Com_Strcat("numtriangles = %i\n", leafCount);
-    Com_Strcat("triangles = {\n");
-
-    for(i = 0; i < leafCount; i++)
-    {
-        mapleaf_t *leaf = (mapleaf_t*)(leafs + 8 + (i * leafSize));
-
-        Com_Strcat("%i %i %i\n", leaf->pt1, leaf->pt2, leaf->pt3);
-        Com_UpdateDataProgress();
-    }
-
-    Com_Strcat("}\n");
-
-    ptRover = (int*)(points + 8);
-    numPoints = Com_GetCartOffset(points, CHUNK_POINTS_COUNT, 0);
-
-    Com_Strcat("numvertices = %i\n", numPoints);
-    Com_Strcat("vertices = {\n");
-
-    Com_Strcat("xyz = {\n");
-    for(i = 0; i < numPoints; i++)
-    {
-        Com_Strcat("%f %f %f\n",
-            (float)ptRover[0] * 0.029296875f,
-            (float)ptRover[1] * 0.029296875f,
-            (float)ptRover[2] * 0.029296875f);
-
-        ptRover += 4;
-        Com_UpdateDataProgress();
-    }
-    Com_Strcat("}\n");
-
-    Com_Strcat("coords = {\n");
-    for(i = 0; i < numPoints; i++)
-        Com_Strcat("0 0\n");
-    Com_Strcat("}\n");
-
-    Com_Strcat("normals = {\n");
-    for(i = 0; i < numPoints; i++)
-        Com_Strcat("0 0 0\n");
-    Com_Strcat("}}}}}}}}}\n");
-
-    sprintf(name, "maps/map%02d/mapCollision%02d.kmesh", index, index);
-    Com_StrcatAddToFile(name);
-
-    Com_Free(&info);
-}
-#endif
 
 //
 // ProcessAIBehavior
@@ -2001,25 +1859,6 @@ static void ProcessGridBounds(byte *data, byte *inst)
     int total = count;
     int stride;
     int i;
-
-    // world collision
-    Com_Strcat("gridbound { -32768 -32768 -32768 } { 32768 32768 32768 }\n");
-    Com_Strcat("{\n");
-    Com_Strcat("actor \"kexWorldActor\"\n");
-    Com_Strcat("{\n");
-    Com_Strcat("mesh \"maps/map%02d/mapCollision%02d.kmesh\"\n", levelID, levelID);
-    Com_Strcat("bounds { -16384 -32768 -16384 } { 16384 32768 16384 }\n");
-    Com_Strcat("bCollision 1\n");
-    Com_Strcat("bHidden 1\n");
-    Com_Strcat("origin { 0 0 0 }\n");
-    Com_Strcat("scale { 1 1 1 }\n");
-    Com_Strcat("bStatic 1\n");
-    Com_Strcat("clipMesh\n");
-    Com_Strcat("{\n");
-    Com_Strcat("type 6\n");
-    Com_Strcat("}\n");
-    Com_Strcat("}\n");
-    Com_Strcat("}\n");
 
     // some gridbounds can contain bad or empty data....UGH
     if(count > 1)
@@ -3089,9 +2928,25 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
                 CoerceFloat(mapinst->bbox[5])*CoerceFloat(mapinst->bbox[5]));
 
             ProcessTextureOverrides(mapinst->model, GetAttribute(mapinst->attribute)->texture);
-            Com_Strcat("bCollision %i\n",
-                GetAttribute(mapinst->attribute)->behavior1 & 1);
-             Com_Strcat("clipMesh { type 0 }\n");
+
+            Com_Strcat("radius %f\n", GetAttribute(mapinst->attribute)->width);
+            Com_Strcat("height %f\n", GetAttribute(mapinst->attribute)->height);
+
+            if(GetAttribute(mapinst->attribute)->behavior1 & 1)
+            {
+                Com_Strcat("bCollision 1\n");
+                Com_Strcat("clipMesh { type 0 }\n");
+            }
+            else if(model_masked[mapinst->model] == 0)
+            {
+                Com_Strcat("bCollision 1\n");
+                Com_Strcat("clipMesh { type 6 }\n");
+            }
+            else
+            {
+                Com_Strcat("bCollision 0\n");
+                Com_Strcat("clipMesh { type 0 }\n");
+            }
 
             Com_Strcat("origin { %f %f %f }\n",
                 mapinst->xyz[0], mapinst->xyz[1], mapinst->xyz[2]);
@@ -3101,8 +2956,6 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
                 rotvec[0], rotvec[1], rotvec[2], rotvec[3]);
 
             Com_Strcat("bStatic 1\n");
-            Com_Strcat("radius %f\n", GetAttribute(mapinst->attribute)->width);
-            Com_Strcat("height %f\n", GetAttribute(mapinst->attribute)->height);
             Com_Strcat("cullDistance %f\n", bboxUnit + 4096.0f);
             Com_Strcat("}\n");
         }

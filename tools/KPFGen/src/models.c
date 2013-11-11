@@ -183,6 +183,7 @@ short model_nodeCount[800];
 short model_meshCount[800][100];
 short section_count[800][100][100];
 short section_textures[800][100][100][100];
+byte model_masked[800];
 bbox mdlboxes[1000];
 
 typedef struct
@@ -522,6 +523,11 @@ static void ProcessGeometry(byte *data)
 
     section_textures[curmodel][curnode][curmesh][cursection] = header->texture;
 
+    if(header->flags & 0x380)
+    {
+        model_masked[curmodel] = 1;
+    }
+
     PrintFlags(header->flags);
     if(header->texture != -1)
     {
@@ -668,6 +674,7 @@ static void ProcessRoot(byte *data, int index)
     limbcount = Com_GetCartOffset(data, CHUNK_LIMBINDEX_COUNT, 0);
 
     Com_Strcat("numnodes = %i\n\n", limbcount);
+    model_masked[curmodel] = 0;
     model_nodeCount[curmodel] = limbcount;
 
     Com_Strcat("nodes\n");
