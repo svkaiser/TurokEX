@@ -348,6 +348,7 @@ void kexClipMesh::CreateDodecahedron(const kexBBox &bbox) {
 
 void kexClipMesh::CreateCylinder(const kexBBox &bbox) {
     cmGroup_t *cmGroup;
+    float r;
 
     origin                  = bbox.Center() - owner->GetOrigin();
     numGroups               = 1;
@@ -379,9 +380,11 @@ void kexClipMesh::CreateCylinder(const kexBBox &bbox) {
     points[14].Set(-0.707107f, -0.500000f, -0.707107f);
     points[15].Set(-0.707107f, 0.500000f, -0.707107f);
 
+    r = owner->Radius();
+
     for(unsigned int i = 0; i < cmGroup->numPoints; i++) {
-        points[i].x *= owner->Radius();
-        points[i].z *= owner->Radius();
+        points[i].x *= r;
+        points[i].z *= r;
     }
 
     points[ 0].y = points[ 2].y = points[ 4].y = points[ 6].y =

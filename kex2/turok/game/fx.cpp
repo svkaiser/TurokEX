@@ -235,6 +235,10 @@ void kexFx::LocalTick(void) {
         return;
     }
 
+    if(IsStale()) {
+        return;
+    }
+
     time = 15 * client.GetRunTime();
     restart -= time;
 
