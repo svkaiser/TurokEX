@@ -29,11 +29,58 @@
 #include "camera.h"
 #include "fx.h"
 
+//-----------------------------------------------------------------------------
+//
+// kexNode
+//
+//-----------------------------------------------------------------------------
+
+typedef enum {
+    NODE_FRONT  = 0,
+    NODE_BACK,
+    NODE_SIDES
+} nodeSide_t;
+
+class kexNode {
+public:
+                                        kexNode(void);
+
+    kexBBox                             bounds;
+    kexPlane                            plane;
+    kexArray<kexWorldActor*>            actors;
+    bool                                bLeaf;
+    kexNode                             *children[NODE_SIDES];
+};
+
+//-----------------------------------------------------------------------------
+//
+// kexNodeBuilder
+//
+//-----------------------------------------------------------------------------
+
+class kexNodeBuilder {
+public:
+    void                                AddActor(kexWorldActor *actor);
+    void                                Build(kexNode *node);
+
+private:
+    void                                AddNode(kexNode *node, int split);
+    bool                                SetupChildNode(kexNode *parent, kexNode *child,
+                                            float *splitX, float *splitZ,
+                                            nodeSide_t side, int split);
+
+    kexArray<kexWorldActor*>            actors;
+};
+
+//-----------------------------------------------------------------------------
+//
+// kexWorld
+//
+//-----------------------------------------------------------------------------
+
 typedef struct gridBound_s {
     kexBBox                             box;
     kexLinklist<kexWorldActor>          staticActors;
-    kexLinklist<kexWorldActor>          linkedActors;
-    kexPtrArray<struct gridBound_s*>    linkedBounds;
     bool                                bTraced;
 } gridBound_t;
 
@@ -86,6 +133,7 @@ public:
 
     kexWorldActor                       *actorRover;
     kexFx                               *fxRover;
+    kexNode                             worldNode;
 
     // TEMP
     kexVec4                             worldLightOrigin;
@@ -98,7 +146,7 @@ public:
 
 private:
     void                                ParseGridBound(kexLexer *lexer);
-    void                                LinkGridBounds(void);
+    void                                TraverseWorldNodes(kexNode *node, traceInfo_t *trace);
 
     bool                                bLoaded;
     bool                                bReadyUnload;

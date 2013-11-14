@@ -113,19 +113,32 @@ static void FCmd_ShowWireFrame(void) {
 }
 
 //
+// FCmd_ShowWorldNode
+//
+
+static void FCmd_ShowWorldNode(void) {
+    if(command.GetArgc() < 2) {
+        return;
+    }
+
+    renderWorld.showWorldNode = atoi(command.GetArgv(1));
+}
+
+//
 // kexRenderWorld::kexRenderWorld
 //
 
 kexRenderWorld::kexRenderWorld(void) {
-    this->world         = &localWorld;
-    this->bShowBBox     = false;
-    this->bShowGrid     = false;
-    this->bShowNodes    = false;
-    this->bShowNormals  = false;
-    this->bShowOrigin   = false;
-    this->bShowRadius   = false;
-    this->bWireframe    = false;
-    this->bShowClipMesh = false;
+    this->world             = &localWorld;
+    this->bShowBBox         = false;
+    this->bShowGrid         = false;
+    this->bShowNodes        = false;
+    this->bShowNormals      = false;
+    this->bShowOrigin       = false;
+    this->bShowRadius       = false;
+    this->bWireframe        = false;
+    this->bShowClipMesh     = false;
+    this->showWorldNode     = -1;
 }
 
 //
@@ -139,6 +152,7 @@ void kexRenderWorld::Init(void) {
     command.Add("showradius", FCmd_ShowRadius);
     command.Add("showorigin", FCmd_ShowOrigin);
     command.Add("drawwireframe", FCmd_ShowWireFrame);
+    command.Add("showworldnode", FCmd_ShowWorldNode);
 }
 
 //
@@ -501,6 +515,12 @@ void kexRenderWorld::DrawStaticActors(void) {
                 DrawBoundingBox(grid->box, 224, 224, 224);
             }
         }
+    }
+
+    if(showWorldNode >= 0) {
+        renderSystem.SetState(GLSTATE_DEPTHTEST, false);
+        DrawWorldNode(&world->worldNode);
+        renderSystem.SetState(GLSTATE_DEPTHTEST, true);
     }
 }
 
@@ -925,4 +945,44 @@ void kexRenderWorld::DrawOrigin(float x, float y, float z, float size) {
     dglDepthRange(0.0f, 1.0f);
 
     renderSystem.SetState(GLSTATE_TEXTURE0, true);
+}
+
+//
+// kexRenderWorld::DrawWorldNode
+//
+
+void kexRenderWorld::DrawWorldNode(kexNode *node) {
+    if(node->bLeaf) {
+        DrawBoundingBox(node->bounds, 0, 255, 0);
+        for(unsigned i = 0; i < node->actors.Length(); i++) {
+            DrawBoundingBox(node->actors[i]->BoundingBox(), 0, 255, 255);
+        }
+        return;
+    }
+    else {
+        DrawBoundingBox(node->bounds, 255, 255, 0);
+    }
+
+    if(showWorldNode >= 1) {
+        float d = node->plane.Normal().Dot(world->Camera()->GetOrigin()) - node->plane.d;
+
+        if(d >= 0) {
+            if(node->children[0]) {
+                DrawWorldNode(node->children[0]);
+            }
+        }
+        else {
+            if(node->children[1]) {
+                DrawWorldNode(node->children[1]);
+            }
+        }
+    }
+    else {
+        if(node->children[0]) {
+            DrawWorldNode(node->children[0]);
+        }
+        if(node->children[1]) {
+            DrawWorldNode(node->children[1]);
+        }
+    }
 }

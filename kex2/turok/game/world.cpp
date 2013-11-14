@@ -33,7 +33,10 @@
 #include "world.h"
 #include "sound.h"
 
-#define FOG_LERP_SPEED  0.025f
+#define FOG_LERP_SPEED      0.025f
+
+#define NODE_MAX_CONTENTS   32
+#define NODE_MAX_SIZE       256
 
 kexWorld localWorld;
 
@@ -388,13 +391,55 @@ void kexWorld::SpawnLocalPlayer(void) {
 }
 
 //
+// kexWorld::TraverseWorldNodes
+//
+
+void kexWorld::TraverseWorldNodes(kexNode *node, traceInfo_t *trace) {
+    if(node->bLeaf) {
+        float r = trace->localBBox.Radius();
+        kexBBox box;
+        kexWorldActor *actor;
+
+        for(unsigned i = 0; i < node->actors.Length(); i++) {
+            actor = node->actors[i];
+            box = actor->BoundingBox() + r;
+
+            if(box.LineIntersect(trace->start, trace->end)) {
+                actor->bTraced = true;
+
+                // do simple sphere intersection test if no collision
+                // mesh is present
+                if(actor->ClipMesh().GetType() == CMT_NONE) {
+                    actor->Trace(trace);
+                }
+                else {
+                    actor->ClipMesh().Trace(trace);
+                }
+            }
+        }
+
+        return;
+    }
+
+    kexVec3 normal = node->plane.Normal();
+
+    float d1 = normal.Dot(trace->start) - node->plane.d;
+    float d2 = normal.Dot(trace->end) - node->plane.d;
+
+    if((d1 >= 0 || d2 >= 0) && node->children[0]) {
+        TraverseWorldNodes(node->children[0], trace);
+    }
+    
+    if((d1 < 0 || d2 < 0) && node->children[1]) {
+        TraverseWorldNodes(node->children[1], trace);
+    }
+}
+
+//
 // kexWorld::Trace
 //
 
 void kexWorld::Trace(traceInfo_t *trace) {
-    kexBBox box;
-    float r;
-
     trace->fraction = 1.0f;
     trace->hitActor = NULL;
     trace->hitTri = NULL;
@@ -402,44 +447,7 @@ void kexWorld::Trace(traceInfo_t *trace) {
     trace->hitVector.Clear();
     trace->hitNormal.Clear();
 
-    r = trace->localBBox.Radius();
-
-    for(unsigned int i = 0; i < gridBounds.Length(); i++) {
-        gridBound_t *grid = gridBounds[i];
-
-        grid->bTraced = false;
-
-        box = grid->box;
-
-        if(trace->bUseBBox) {
-            box = box + r;
-        }
-
-        if(box.LineIntersect(trace->start, trace->end)) {
-            grid->bTraced = true;
-
-            for(kexWorldActor *actor = grid->staticActors.Next();
-                actor != NULL; actor = actor->worldLink.Next()) {
-                    if(!actor->bCollision)
-                        continue;
-
-                    box = actor->BoundingBox() + r;
-
-                    if(box.LineIntersect(trace->start, trace->end)) {
-                        actor->bTraced = true;
-
-                        // do simple sphere intersection test if no collision
-                        // mesh is present
-                        if(actor->ClipMesh().GetType() == CMT_NONE) {
-                            actor->Trace(trace);
-                        }
-                        else {
-                            actor->ClipMesh().Trace(trace);
-                        }
-                    }
-            }
-        }
-    }
+    TraverseWorldNodes(&worldNode, trace);
 }
 
 //
@@ -505,28 +513,6 @@ void kexWorld::ParseGridBound(kexLexer *lexer) {
 }
 
 //
-// kexWorld::LinkGridBounds
-//
-
-void kexWorld::LinkGridBounds(void) {
-    for(unsigned int i = 0; i < gridBounds.Length(); i++) {
-        gridBound_t *grid = gridBounds[i];
-
-        for(unsigned int j = 0; j < gridBounds.Length(); j++) {
-            gridBound_t *nGrid = gridBounds[j];
-
-            if(grid == nGrid) {
-                continue;
-            }
-
-            if(grid->box.IntersectingBox(nGrid->box)) {
-                grid->linkedBounds.Push(nGrid);
-            }
-        }
-    }
-}
-
-//
 // kexWorld::Load
 //
 
@@ -545,6 +531,7 @@ void kexWorld::Load(const char *mapFile) {
     
     kexLexer *lexer;
     kexWorldActor *actor;
+    kexNodeBuilder builder;
     
     if(!(lexer = parser.Open(mapFile)))
         return;
@@ -609,7 +596,15 @@ void kexWorld::Load(const char *mapFile) {
     nextMapID = -1;
     bLoaded = true;
 
-    LinkGridBounds();
+    for(unsigned int i = 0; i < gridBounds.Length(); i++) {
+        gridBound_t *grid = gridBounds[i];
+
+        for(actor = grid->staticActors.Next(); actor != NULL; actor = actor->worldLink.Next()) {
+            builder.AddActor(actor);
+        }
+    }
+
+    builder.Build(&worldNode);
 }
 
 //
@@ -714,4 +709,185 @@ void kexWorld::InitObject(void) {
     scriptManager.Engine()->RegisterGlobalProperty(
         "kWorld LocalWorld",
         &localWorld);
+}
+
+//
+// kexNode::kexNode
+//
+
+kexNode::kexNode(void) {
+    this->bLeaf         = false;
+    this->children[0]   = NULL;
+    this->children[1]   = NULL;
+
+    this->bounds.min.Clear();
+    this->bounds.max.Clear();
+}
+
+//
+// kexNodeBuilder::AddActor
+//
+
+void kexNodeBuilder::AddActor(kexWorldActor *actor) {
+    if(actor->bStatic == false || actor->bCollision == false) {
+        return;
+    }
+    actors.Push(actor);
+}
+
+//
+// kexNodeBuilder::SetupChildNode
+//
+
+bool kexNodeBuilder::SetupChildNode(kexNode *parent, kexNode *child,
+                                    float *splitX, float *splitZ,
+                                    nodeSide_t side, int split) {
+    float rx;
+    float rz;
+    float r;
+    unsigned int i;
+    kexBBox *box = &child->bounds;
+    kexBBox abox;
+
+    // resize the bounding box for the child node
+    switch(side) {
+        case NODE_FRONT:
+            if(split == 0) {
+                box->min.Set(parent->bounds.min.x, 0, parent->bounds.min.z);
+                box->max.Set(parent->bounds.max.x, 0, splitZ[1]);
+            }
+            else {
+                box->min.Set(parent->bounds.min.x, 0, parent->bounds.min.z);
+                box->max.Set(splitX[1], 0, parent->bounds.max.z);
+            }
+            break;
+        case NODE_BACK:
+            if(split == 0) {
+                box->min.Set(parent->bounds.min.x, 0, splitZ[0]);
+                box->max.Set(parent->bounds.max.x, 0, parent->bounds.max.z);
+            }
+            else {
+                box->min.Set(splitX[0], 0, parent->bounds.min.z);
+                box->max.Set(parent->bounds.max.x, 0, parent->bounds.max.z);
+            }
+            break;
+    }
+
+    rx = box->max.x - ((box->max.x + box->min.x) * 0.5f);
+    rz = box->max.z - ((box->max.z + box->min.z) * 0.5f);
+    r = kexMath::Sqrt(rx*rx+rz*rz);
+
+    // test all actors bounding boxes with this node
+    for(i = 0; i < actors.Length(); i++) {
+        // extend the box a little bit
+        abox = actors[i]->BoundingBox() + (actors[i]->BoundingBox().Radius() * 0.5f);
+        
+        if(abox.max.x > child->bounds.max.x && abox.min.x < child->bounds.min.x &&
+            abox.max.z > child->bounds.max.z && abox.min.z < child->bounds.min.z) {
+                // node box completely inside actor box
+                child->actors.Push(actors[i]);
+                continue;
+        }
+
+        if(!(abox.max.x < child->bounds.min.x || abox.max.z < child->bounds.min.z ||
+            abox.min.x > child->bounds.max.x || abox.min.z > child->bounds.max.z)) {
+                // node box intersecting with actor box
+                child->actors.Push(actors[i]);
+        }
+    }
+
+    // determine if we need to break this grid volume down even more
+    if(child->actors.Length() > NODE_MAX_CONTENTS && r >= NODE_MAX_SIZE) {
+        child->actors.Empty();
+        return false;
+    }
+    else {
+        child->bLeaf = true;
+    }
+    
+    return true;
+}
+
+//
+// kexNodeBuilder::AddNode
+//
+
+void kexNodeBuilder::AddNode(kexNode *node, int split) {
+    float mx = (node->bounds.max.x + node->bounds.min.x) * 0.5f;
+    float mz = (node->bounds.max.z + node->bounds.min.z) * 0.5f;
+    float splitX[2];
+    float splitZ[2];
+    kexNode *frontNode;
+    kexNode *backNode;
+    kexPlane *plane;
+
+    if(split == 0) {
+        splitX[0] = node->bounds.min.x;
+        splitZ[0] = mz;
+        splitX[1] = node->bounds.max.x;
+        splitZ[1] = mz;
+    }
+    else {
+        splitX[0] = mx;
+        splitZ[0] = node->bounds.min.z;
+        splitX[1] = mx;
+        splitZ[1] = node->bounds.max.z;
+    }
+
+    plane = &node->plane;
+
+    // splitting planes are either vertical or horizontal
+    plane->a = (split == 0 ? 0 : -1.0f);
+    plane->b = 0;
+    plane->c = (split == 0 ? -1.0f : 0);
+    plane->d = (plane->a * splitX[0] + plane->c * splitZ[0]);
+
+    frontNode = (kexNode*)Mem_Calloc(sizeof(kexNode), hb_static);
+    node->children[NODE_FRONT] = frontNode;
+
+    if(!SetupChildNode(node, frontNode, splitX, splitZ, NODE_FRONT, split)) {
+        AddNode(frontNode, split ^ 1);
+    }
+
+    backNode = (kexNode*)Mem_Calloc(sizeof(kexNode), hb_static);
+    node->children[NODE_BACK] = backNode;
+
+    if(!SetupChildNode(node, backNode, splitX, splitZ, NODE_BACK, split)) {
+        AddNode(backNode, split ^ 1);
+    }
+}
+
+//
+// kexNodeBuilder::Build
+//
+// Recursively split a group of bounding boxes
+// into grid volumes
+//
+
+void kexNodeBuilder::Build(kexNode *node) {
+    if(actors.Length() <= 0) {
+        return;
+    }
+
+    float maxX = -M_INFINITY;
+    float maxZ = -M_INFINITY;
+    float minX =  M_INFINITY;
+    float minZ =  M_INFINITY;
+
+    kexBBox box;
+
+    // setup the root node bounding box
+    for(unsigned int i = 0; i < actors.Length(); i++) {
+        box = actors[i]->BoundingBox();
+        
+        if(box.min[0] < minX) minX = box.min[0];
+        if(box.min[2] < minZ) minZ = box.min[2];
+        if(box.max[0] > maxX) maxX = box.max[0];
+        if(box.max[2] > maxZ) maxZ = box.max[2];
+    }
+
+    node->bounds.min.Set(minX, 0, minZ);
+    node->bounds.max.Set(maxX, 0, maxZ);
+
+    AddNode(node, 0);
 }

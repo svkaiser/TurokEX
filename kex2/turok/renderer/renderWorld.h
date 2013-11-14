@@ -36,6 +36,7 @@ public:
     void            DrawRadius(float x, float y, float z, float radius, float height,
                                byte r, byte g, byte b);
     void            DrawOrigin(float x, float y, float z, float size);
+    void            DrawWorldNode(kexNode *node);
 
     static void     Init(void);
     static int      SortSprites(const void *a, const void *b);
@@ -48,6 +49,8 @@ public:
     bool            bShowOrigin;
     bool            bWireframe;
     bool            bShowClipMesh;
+
+    int             showWorldNode;
 
 private:
     void            SetupGlobalFog(void);
