@@ -78,6 +78,8 @@ private:
         kexTri              *triangles;
     } cmGroup_t;
 
+    void                    AllocateCmGroup(cmGroup_t *group, const int numPoints, const int numIndices);
+
     unsigned int            numGroups;
     cmGroup_t               *cmGroups;
     kexVec3                 origin;

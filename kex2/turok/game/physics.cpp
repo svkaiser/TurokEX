@@ -324,7 +324,9 @@ void kexPhysics::Think(const float timeDelta) {
 
     // need to determine if we're standing on the ground or not
     localWorld.Trace(&trace);
-    groundGeom = trace.hitTri;
+    if(trace.hitTri) {
+        groundGeom = trace.hitTri;
+    }
 
     bOnGround = OnGround();
 

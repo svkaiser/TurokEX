@@ -954,8 +954,10 @@ void kexRenderWorld::DrawOrigin(float x, float y, float z, float size) {
 void kexRenderWorld::DrawWorldNode(kexNode *node) {
     if(node->bLeaf) {
         DrawBoundingBox(node->bounds, 0, 255, 0);
-        for(unsigned i = 0; i < node->actors.Length(); i++) {
-            DrawBoundingBox(node->actors[i]->BoundingBox(), 0, 255, 255);
+        if(showWorldNode >= 1) {
+            for(unsigned i = 0; i < node->actors.Length(); i++) {
+                DrawBoundingBox(node->actors[i]->BoundingBox(), 0, 255, 255);
+            }
         }
         return;
     }

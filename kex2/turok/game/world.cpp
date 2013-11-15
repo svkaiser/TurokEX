@@ -448,6 +448,10 @@ void kexWorld::Trace(traceInfo_t *trace) {
     trace->hitNormal.Clear();
 
     TraverseWorldNodes(&worldNode, trace);
+
+    if(trace->hitTri) {
+        trace->hitTri->bTraced = true;
+    }
 }
 
 //
