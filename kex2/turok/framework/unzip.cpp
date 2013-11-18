@@ -1,4 +1,8 @@
+#ifndef EDITOR
 #include "common.h"
+#else
+#include "editorCommon.h"
+#endif
 #include "keywds.h"
 #include "unzip.h"
 
@@ -1131,7 +1135,7 @@ static int unzlocal_getLong (FILE *fin, uLong *pX)
 
 	fread( &v, sizeof(v), 1, fin );
 
-	*pX = SDL_SwapLE32( v);
+    *pX = Com_SwapLE32( v);
 	return UNZ_OK;
 
 /*

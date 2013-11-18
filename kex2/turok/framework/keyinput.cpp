@@ -297,7 +297,7 @@ int kexInputKey::FindAction(const char *name) {
     if(name[0] == 0)
         return -1;
 
-    hash = common.HashFileName(name);
+    hash = kexStr::Hash(name);
 
     for(action = keyactions[hash]; action; action = action->next) {
         if(!strcmp(name, action->name))
@@ -355,7 +355,7 @@ void kexInputKey::AddAction(byte id, const char *name) {
 
     command.Add(keyaction->name, FCmd_KeyAction);
 
-    hash = common.HashFileName(keyaction->name);
+    hash = kexStr::Hash(keyaction->name);
     keyaction->next = keyactions[hash];
     keyactions[hash] = keyaction;
 }

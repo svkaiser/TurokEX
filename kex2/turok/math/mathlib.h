@@ -361,8 +361,15 @@ public:
     bool                    LineIntersect(const kexVec3 &start, const kexVec3 &end);
     
     kexBBox                 operator+(const float radius) const;
+    kexBBox                 &operator+=(const float radius);
+    kexBBox                 operator+(const kexVec3 &vec) const;
+    kexBBox                 operator-(const float radius) const;
+    kexBBox                 operator-(const kexVec3 &vec) const;
+    kexBBox                 &operator-=(const float radius);
     kexBBox                 operator|(const kexMatrix &matrix) const;
     kexBBox                 &operator|=(const kexMatrix &matrix);
+    kexBBox                 operator|(const kexVec3 &vec) const;
+    kexBBox                 &operator|=(const kexVec3 &vec);
     kexBBox                 &operator=(const kexBBox &bbox);
                         
     kexVec3                 min;

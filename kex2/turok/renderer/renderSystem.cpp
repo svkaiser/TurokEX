@@ -30,8 +30,6 @@
 
 kexRenderSystem renderSystem;
 
-kexHeapBlock kexRenderSystem::hb_model("model", false, NULL, NULL);
-
 GL_ARB_multitexture_Define();
 GL_EXT_compiled_vertex_array_Define();
 GL_EXT_fog_coord_Define();
@@ -299,7 +297,6 @@ void kexRenderSystem::Shutdown(void) {
         }
     }
 
-    Mem_Purge(kexRenderSystem::hb_model);
     Mem_Purge(kexTexture::hb_texture);
 }
 

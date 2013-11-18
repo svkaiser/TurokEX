@@ -69,7 +69,24 @@ kexVec3 kexBBox::Center(void) const {
 //
 
 float kexBBox::Radius(void) const {
-    return (max - Center()).Unit();
+    int i;
+    float r = 0;
+    float r1;
+    float r2;
+
+    for(i = 0; i < 3; i++) {
+        r1 = kexMath::Fabs(min[i]);
+        r2 = kexMath::Fabs(max[i]);
+
+        if(r1 > r2) {
+            r += r1 * r1;
+        }
+        else {
+            r += r2 * r2;
+        }
+    }
+
+    return kexMath::Sqrt(r);
 }
 
 //
@@ -146,6 +163,91 @@ kexBBox kexBBox::operator+(const float radius) const {
 }
 
 //
+// kexBBox::operator+=
+//
+
+kexBBox &kexBBox::operator+=(const float radius) {
+    min.x -= radius;
+    min.y -= radius;
+    min.z -= radius;
+    max.x += radius;
+    max.y += radius;
+    max.z += radius;
+    return *this;
+}
+
+//
+// kexBBox::operator+
+//
+
+kexBBox kexBBox::operator+(const kexVec3 &vec) const {
+    kexVec3 vmin = min;
+    kexVec3 vmax = max;
+
+    vmin.x += vec.x;
+    vmin.y += vec.y;
+    vmin.z += vec.z;
+
+    vmax.x += vec.x;
+    vmax.y += vec.y;
+    vmax.z += vec.z;
+
+    return kexBBox(vmin, vmax);
+}
+
+//
+// kexBBox::operator-
+//
+
+kexBBox kexBBox::operator-(const float radius) const {
+    kexVec3 vmin = min;
+    kexVec3 vmax = max;
+
+    vmin.x += radius;
+    vmin.y += radius;
+    vmin.z += radius;
+
+    vmax.x -= radius;
+    vmax.y -= radius;
+    vmax.z -= radius;
+
+    return kexBBox(vmin, vmax);
+}
+
+//
+// kexBBox::operator-
+//
+
+kexBBox kexBBox::operator-(const kexVec3 &vec) const {
+    kexVec3 vmin = min;
+    kexVec3 vmax = max;
+
+    vmin.x -= vec.x;
+    vmin.y -= vec.y;
+    vmin.z -= vec.z;
+
+    vmax.x -= vec.x;
+    vmax.y -= vec.y;
+    vmax.z -= vec.z;
+
+    return kexBBox(vmin, vmax);
+}
+
+//
+// kexBBox::operator-=
+//
+
+kexBBox &kexBBox::operator-=(const float radius) {
+    min.x += radius;
+    min.y += radius;
+    min.z += radius;
+    max.x -= radius;
+    max.y -= radius;
+    max.z -= radius;
+    return *this;
+}
+
+//
 // kexBBox::operator|
 //
 
@@ -187,6 +289,32 @@ kexBBox &kexBBox::operator|=(const kexMatrix &matrix) {
     min = (ct - ht);
     max = (ct + ht);
     
+    return *this;
+}
+
+//
+// kexBBox::operator|
+//
+
+kexBBox kexBBox::operator|(const kexVec3 &vec) const {
+    kexBBox box = *this;
+
+    if(vec.x < 0) box.min.x += (vec.x-1); else box.max.x += (vec.x+1);
+    if(vec.y < 0) box.min.y += (vec.y-1); else box.max.y += (vec.y+1);
+    if(vec.z < 0) box.min.z += (vec.z-1); else box.max.z += (vec.z+1);
+
+    return box;
+}
+
+//
+// kexBBox::operator|=
+//
+
+kexBBox &kexBBox::operator|=(const kexVec3 &vec) {
+    if(vec.x < 0) min.x += (vec.x-1); else max.x += (vec.x+1);
+    if(vec.y < 0) min.y += (vec.y-1); else max.y += (vec.y+1);
+    if(vec.z < 0) min.z += (vec.z-1); else max.z += (vec.z+1);
+
     return *this;
 }
 

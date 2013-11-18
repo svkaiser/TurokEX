@@ -25,8 +25,11 @@
 //-----------------------------------------------------------------------------
 
 #include <string.h>
+#ifndef EDITOR
 #include "common.h"
-#include "system.h"
+#else
+#include "editorCommon.h"
+#endif
 #include "script.h"
 #include "filesystem.h"
 
@@ -125,16 +128,16 @@ bool kexLexer::CheckState(void) {
 //
 
 void kexLexer::CheckKeywords(void) {
-    if(!strcasecmp(token, "define")) {
+    if(!kexStr::CompareCase(token, "define")) {
         tokentype = TK_DEFINE;
     }
-    else if(!strcasecmp(token, "include")) {
+    else if(!kexStr::CompareCase(token, "include")) {
         tokentype = TK_INCLUDE;
     }
-    else if(!strcasecmp(token, "setdir")) {
+    else if(!kexStr::CompareCase(token, "setdir")) {
         tokentype = TK_SETDIR;
     }
-    else if(!strcasecmp(token, "undef")) {
+    else if(!kexStr::CompareCase(token, "undef")) {
         tokentype = TK_UNDEF;
     }
 }
@@ -897,14 +900,8 @@ kexLexer *kexParser::Open(const char* filename) {
     int buffsize;
     byte *buffer;
 
-    if(cvarDeveloper.GetBool()) {
-        buffsize = fileSystem.ReadExternalTextFile(filename, (byte**)(&buffer));
-
-        if(buffsize <= 0) {
-            buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), hb_static);
-        }
-    }
-    else {
+    buffsize = fileSystem.ReadExternalTextFile(filename, (byte**)(&buffer));
+    if(buffsize <= 0) {
         buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), hb_static);
     }
 

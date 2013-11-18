@@ -27,7 +27,6 @@
 #include "common.h"
 #include "client.h"
 #include "script.h"
-#include "renderSystem.h"
 #include "renderModel.h"
 #include "animation.h"
 
@@ -376,7 +375,7 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
     }
 
     anim->frameSet = (frameSet_t*)Mem_Calloc(sizeof(frameSet_t)
-        * model->numNodes, kexRenderSystem::hb_model);
+        * model->numNodes, hb_model);
 
     lexer->ExpectTokenListID(animtokens, scanim_anim);
     lexer->ExpectNextToken(TK_LBRACK);
@@ -440,12 +439,12 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                         anim->alias);
                 }
                 anim->translations = (kexVec3**)Mem_Calloc(sizeof(kexVec3*)
-                    * anim->numTranslations, kexRenderSystem::hb_model);
+                    * anim->numTranslations, hb_model);
 
                 lexer->ExpectNextToken(TK_LBRACK);
                 for(i = 0; i < anim->numTranslations; i++) {
                     anim->translations[i] = (kexVec3*)Mem_Calloc(
-                        sizeof(kexVec3) * anim->numFrames, kexRenderSystem::hb_model);
+                        sizeof(kexVec3) * anim->numFrames, hb_model);
 
                     lexer->ExpectNextToken(TK_LBRACK);
                     for(j = 0; j < anim->numFrames; j++) {
@@ -471,12 +470,12 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                         anim->alias);
                 }
                 anim->rotations = (kexQuat**)Mem_Calloc(sizeof(kexQuat*)
-                    * anim->numRotations, kexRenderSystem::hb_model);
+                    * anim->numRotations, hb_model);
 
                 lexer->ExpectNextToken(TK_LBRACK);
                 for(i = 0; i < anim->numRotations; i++) {
                     anim->rotations[i] = (kexQuat*)Mem_Calloc(
-                        sizeof(kexQuat) * anim->numFrames, kexRenderSystem::hb_model);
+                        sizeof(kexQuat) * anim->numFrames, hb_model);
 
                     lexer->ExpectNextToken(TK_LBRACK);
                     for(j = 0; j < anim->numFrames; j++) {
@@ -519,14 +518,14 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                         anim->alias);
                 }
                 anim->actions = (frameAction_t*)Mem_Calloc(sizeof(frameAction_t) *
-                    anim->numActions, kexRenderSystem::hb_model);
+                    anim->numActions, hb_model);
                 lexer->ExpectNextToken(TK_EQUAL);
                 lexer->ExpectNextToken(TK_LBRACK);
                 for(i = 0; i < anim->numActions; i++) {
                     anim->actions[i].frame = lexer->GetNumber();
                     lexer->GetString();
                     anim->actions[i].function = Mem_Strdup(lexer->StringToken(),
-                        kexRenderSystem::hb_model);
+                        hb_model);
 
                     lexer->Find();
 
@@ -535,7 +534,7 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                         {
                         case TK_STRING:
                             anim->actions[i].argStrings[j] =
-                            Mem_Strdup(lexer->Token(), kexRenderSystem::hb_model);
+                            Mem_Strdup(lexer->Token(), hb_model);
                             break;
                         case TK_NUMBER:
                             anim->actions[i].args[j] = (float)atof(lexer->Token());
@@ -561,7 +560,7 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                 lexer->ExpectNextToken(TK_LBRACK);
 
                 anim->initialFrame.translations = (kexVec3*)Mem_Calloc(sizeof(kexVec3)
-                    * model->numNodes, kexRenderSystem::hb_model);
+                    * model->numNodes, hb_model);
 
                 for(i = 0; i < model->numNodes; i++) {
                     lexer->ExpectNextToken(TK_LBRACK);
@@ -579,7 +578,7 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                 lexer->ExpectNextToken(TK_LBRACK);
 
                 anim->initialFrame.rotations = (kexQuat*)Mem_Calloc(sizeof(kexQuat)
-                    * model->numNodes, kexRenderSystem::hb_model);
+                    * model->numNodes, hb_model);
 
                 for(i = 0; i < model->numNodes; i++) {
                     lexer->ExpectNextToken(TK_LBRACK);
@@ -594,7 +593,7 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                 break;
             case scanim_turninfo:
                 anim->yawOffsets = (float*)Mem_Calloc(sizeof(float) *
-                    anim->numFrames, kexRenderSystem::hb_model);
+                    anim->numFrames, hb_model);
                 lexer->ExpectNextToken(TK_EQUAL);
                 lexer->ExpectNextToken(TK_LBRACK);
                 for(i = 0; i < anim->numFrames; i++) {

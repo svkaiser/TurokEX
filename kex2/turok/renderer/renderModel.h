@@ -77,7 +77,9 @@ typedef struct kexModel_s {
     unsigned int                    numNodes;
     unsigned int                    numAnimations;
     modelNode_t                     *nodes;
+#ifndef EDITOR
     struct kexAnim_s                *anims;
+#endif
 } kexModel_t;
 
 class kexModelManager {
@@ -86,6 +88,7 @@ public:
                                     ~kexModelManager(void);
 
     kexModel_t                      *LoadModel(const char *file);
+    void                            Shutdown(void);
 
 private:
     void                            ParseKMesh(kexModel_t *model, kexLexer *lexer);
@@ -95,5 +98,6 @@ private:
 };
 
 extern kexModelManager modelManager;
+extern kexHeapBlock hb_model;
 
 #endif

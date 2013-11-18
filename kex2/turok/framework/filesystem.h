@@ -32,13 +32,18 @@ public:
                         kexFileSystem();
                         ~kexFileSystem();
 
-    const char          *BasePath(void);
     void                Shutdown(void);
     void                LoadZipFile(const char *file);
     int                 OpenFile(const char *filename, byte **data, kexHeapBlock &hb) const;
     kexStrListMem       *GetMatchingFiles(const char *search);
     int                 ReadExternalTextFile(const char *name, byte **buffer) const;
     void                Init(void);
+
+#ifndef EDITOR
+    const char          *GetBaseDirectory(void);
+#else
+    static char         *GetBaseDirectory(void);
+#endif
 
 private:
     long                HashFileName(const char *fname, int hashSize) const;

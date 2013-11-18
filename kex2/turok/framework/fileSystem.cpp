@@ -24,7 +24,11 @@
 //
 //-----------------------------------------------------------------------------
 
+#ifndef EDITOR
 #include "common.h"
+#else
+#include "editorCommon.h"
+#endif
 #include "filesystem.h"
 #include "unzip.h"
 
@@ -52,7 +56,8 @@ kexFileSystem::~kexFileSystem() {
 // kexFileSystem::BasePath
 //
 
-const char *kexFileSystem::BasePath(void) {
+#ifndef EDITOR
+const char *kexFileSystem::GetBaseDirectory(void) {
     static const char dummyDirectory[] = {"."};
     // cache multiple requests
     if(!base) {
@@ -79,6 +84,14 @@ const char *kexFileSystem::BasePath(void) {
     
     return base;
 }
+#else
+char *kexFileSystem::GetBaseDirectory(void) {
+    wxString exe_path = wxStandardPaths::Get().GetExecutablePath();
+    wxString path_separator = wxFileName::GetPathSeparator();
+    exe_path = exe_path.BeforeLast(path_separator[0]);
+    return Mem_Strdup(exe_path.c_str(), hb_static);
+}
+#endif;
 
 //
 // kexFileSystem::Shutdown
@@ -125,12 +138,19 @@ void kexFileSystem::LoadZipFile(const char *file) {
     long hash;
     char *filepath;
 
+#ifndef EDITOR
     filepath = kva("%s\\%s", cvarBasePath.GetValue(), file);
+#else
+    char *path = kexFileSystem::GetBaseDirectory();
+    filepath = kva("%s\\%s", path, file);
+    Mem_Free(path);
+#endif
     common.Printf("KF_LoadZipFile: Loading %s\n", filepath);
 
     // open zip file
-    if(!(uf = unzOpen(filepath)))
+    if(!(uf = unzOpen(filepath))) {
         common.Error("KF_LoadZipFile: Unable to find %s", filepath);
+    }
 
     // get info on zip file
     if(unzGetGlobalInfo(uf, &gi) != UNZ_OK)
@@ -261,7 +281,13 @@ int kexFileSystem::ReadExternalTextFile(const char *name, byte **buffer) const {
 
     errno = 0;
 
+#ifndef EDITOR
     sprintf(filepath, "%s\\%s", cvarBasePath.GetValue(), name);
+#else
+    char *path = kexFileSystem::GetBaseDirectory();
+    sprintf(filepath, "%s\\%s", path, name);
+    Mem_Free(path);
+#endif
     if((fp = fopen(filepath, "rb"))) {
         size_t length;
 
@@ -316,7 +342,7 @@ void kexFileSystem::Init(void) {
     command.Add("loadfile", FCmd_LoadFile);
 
     if(!strlen(cvarBasePath.GetValue()))
-        cvarBasePath.Set(BasePath());
+        cvarBasePath.Set(GetBaseDirectory());
 
     LoadZipFile("game.kpf");
     common.Printf("File System Initialized\n");

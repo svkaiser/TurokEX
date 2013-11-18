@@ -231,15 +231,15 @@ void kexFx::LocalTick(void) {
     int alpha;
     bool bUnderWater;
 
-    if(client.GetRunTime() <= 0) {
-        return;
-    }
-
     if(IsStale()) {
         return;
     }
 
     time = 15 * client.GetRunTime();
+
+    if(time < 0) time = 0;
+    if(time > 1) time = 1;
+
     restart -= time;
 
     // ready to spawn?
@@ -357,7 +357,7 @@ void kexFx::LocalTick(void) {
     //
     // handle expire event
     //
-    if(lifeTime < 0 || (owner && owner->IsStale())) {
+    if((drawScale <= 0) || lifeTime < 0 || (owner && owner->IsStale())) {
         if(bForcedRestart && owner && !owner->IsStale()) {
             bForcedRestart = false;
             lifeTime = (float)fxInfo->lifetime.value;

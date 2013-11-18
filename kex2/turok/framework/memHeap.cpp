@@ -25,7 +25,11 @@
 //-----------------------------------------------------------------------------
 
 #include <assert.h>
+#ifndef EDITOR
 #include "common.h"
+#else
+#include "editorCommon.h"
+#endif
 #include "memHeap.h"
 
 int kexHeap::numHeapBlocks = 0;
@@ -190,7 +194,9 @@ void *kexHeap::Malloc(int size, kexHeapBlock &heapBlock, const char *file, int l
     newblock->heapTag = kexHeap::HeapTag;
     newblock->size = size;
     newblock->ptrRef = NULL;
+#ifndef EDITOR
     newblock->ms = sysMain.GetMS();
+#endif
 
     kexHeap::AddBlock(newblock, &heapBlock);
 
@@ -244,7 +250,9 @@ void *kexHeap::Realloc(void *ptr, int size, kexHeapBlock &heapBlock, const char 
     newblock->heapTag = kexHeap::HeapTag;
     newblock->size = size;
     newblock->ptrRef = NULL;
+#ifndef EDITOR
     newblock->ms = sysMain.GetMS();
+#endif
 
     kexHeap::AddBlock(newblock, &heapBlock);
 
@@ -316,10 +324,11 @@ void kexHeap::SetCacheRef(void **ptr, const char *file, int line) {
 //
 
 void kexHeap::GarbageCollect(const char *file, int line) {
+    kexHeap::Purge(hb_auto, file, line);
+
+#ifndef EDITOR
     memBlock_t *block;
     kexHeapBlock *heapBlock;
-
-    kexHeap::Purge(hb_auto, file, line);
 
     for(heapBlock = kexHeap::blockList; heapBlock; heapBlock = heapBlock->next) {
         if(heapBlock->bGC == false) {
@@ -348,6 +357,7 @@ void kexHeap::GarbageCollect(const char *file, int line) {
             }
         }
     }
+#endif
 }
 
 //
@@ -380,10 +390,12 @@ void kexHeap::CheckBlocks(const char *file, int line) {
 //
 
 void kexHeap::Touch(void *ptr, const char *file, int line) {
+#ifndef EDITOR
     memBlock_t *block;
 
     block = kexHeap::GetBlock(ptr, file, line);
     block->ms = sysMain.GetMS();
+#endif
 }
 
 //

@@ -74,12 +74,16 @@ public:
     operator            const char *(void) { return c_str(); }
     
     static bool         Compare(const kexStr &a, const kexStr &b);
+    static bool         CompareCase(const char *s1, const char *s2);
     static int          IndexOf(const char *string, const char *pattern);
+    static int          Hash(const char *s);
 
+#ifndef EDITOR
     static void         ObjectConstruct(kexStr *thisstring);
     static void         ObjectConstructCopy(const kexStr &in, kexStr *thisstring);
     static kexStr       ObjectFactory(unsigned int byteLength, const char *s);
     static void         ObjectDeconstruct(kexStr *thisstring);
+#endif
 
 private:
     void                Resize(int size, bool bKeepString);

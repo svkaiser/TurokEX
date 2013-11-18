@@ -24,13 +24,19 @@
 //
 //-----------------------------------------------------------------------------
 
+#ifndef EDITOR
 #include "common.h"
+#else
+#include "editorCommon.h"
+#endif
 #include "script.h"
-#include "renderSystem.h"
 #include "renderModel.h"
+#ifndef EDITOR
 #include "animation.h"
+#endif
 
 kexModelManager modelManager;
+kexHeapBlock hb_model("model", false, NULL, NULL);
 
 enum {
     scmdl_info = 0,
@@ -98,23 +104,23 @@ typedef struct {
 } mdlflagnames_t;
 
 static const mdlflagnames_t mdlflagnames[17] = {
-    { "unknown1",       1       },
-    { "fullbright",     2       },
-    { "nocullfaces",    4       },
-    { "renderspecular", 8       },
-    { "shinysurface",   16      },
-    { "unknown32",      32      },
-    { "solid",          64      },
-    { "masked",         128     },
-    { "transparent1",   256     },
-    { "transparent2",   512     },
-    { "colorize",       1024    },
-    { "metalsurface",   2048    },
-    { "unknown4096",    4096    },
-    { "unknown8192",    8192    },
-    { "unknown16384",   16384   },
-    { "unknown32768",   32768   },
-    { "unknown65536",   65536   }
+    { "unknown1",       MDF_UNKNOWN1        },
+    { "fullbright",     MDF_FULLBRIGHT      },
+    { "nocullfaces",    MDF_NOCULLFACES     },
+    { "renderspecular", MDF_RENDERSPECULAR  },
+    { "shinysurface",   MDF_SHINYSURFACE    },
+    { "unknown32",      MDF_UNKNOWN32       },
+    { "solid",          MDF_SOLID           },
+    { "masked",         MDF_MASKED          },
+    { "transparent1",   MDF_TRANSPARENT1    },
+    { "transparent2",   MDF_TRANSPARENT2    },
+    { "colorize",       MDF_COLORIZE        },
+    { "metalsurface",   MDF_METALSURFACE    },
+    { "unknown4096",    MDF_UNKNOWN4096     },
+    { "unknown8192",    MDF_UNKNOWN8192     },
+    { "unknown16384",   MDF_UNKNOWN16384    },
+    { "unknown32768",   MDF_UNKNOWN32768    },
+    { "unknown65536",   MDF_UNKNOWN65536    }
 };
 
 
@@ -130,6 +136,14 @@ kexModelManager::kexModelManager(void) {
 //
 
 kexModelManager::~kexModelManager(void) {
+}
+
+//
+// kexModelManager::Shutdown
+//
+
+void kexModelManager::Shutdown(void) {
+    Mem_Purge(hb_model);
 }
 
 //
@@ -168,7 +182,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                 lexer->ExpectTokenListID(mdltokens, scmdl_nodes);
                 lexer->ExpectNextToken(TK_LBRACK);
                 model->nodes = (modelNode_t*)Mem_Calloc(sizeof(modelNode_t) *
-                    model->numNodes, kexRenderSystem::hb_model);
+                    model->numNodes, hb_model);
 
                 for(i = 0; i < model->numNodes; i++) {
                     modelNode_t *node = &model->nodes[i];
@@ -182,7 +196,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                     if(node->numChildren > 0) {
                         lexer->AssignFromTokenList(mdltokens, AT_SHORT,
                             (void**)&node->children, node->numChildren,
-                            scmdl_children, true, kexRenderSystem::hb_model);
+                            scmdl_children, true, hb_model);
                     }
 
                     lexer->AssignFromTokenList(mdltokens, &node->numVariants,
@@ -195,7 +209,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
 
                     lexer->AssignFromTokenList(mdltokens, AT_SHORT,
                         (void**)&node->variants, node->numVariants,
-                        scmdl_variants, true, kexRenderSystem::hb_model);
+                        scmdl_variants, true, hb_model);
 
                     lexer->AssignFromTokenList(mdltokens, &node->numSurfaceGroups,
                         scmdl_numgroups, true);
@@ -207,7 +221,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
 
                     // read into the group block
                     node->surfaceGroups = (surfaceGroup_t*)Mem_Calloc(sizeof(surfaceGroup_t) *
-                        node->numSurfaceGroups, kexRenderSystem::hb_model);
+                        node->numSurfaceGroups, hb_model);
 
                     lexer->ExpectTokenListID(mdltokens, scmdl_groups);
                     lexer->ExpectNextToken(TK_LBRACK);
@@ -230,7 +244,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                         }
                         else {
                             group->surfaces = (surface_t*)Mem_Calloc(sizeof(surface_t) *
-                                group->numSurfaces, kexRenderSystem::hb_model);
+                                group->numSurfaces, hb_model);
 
                             lexer->ExpectTokenListID(mdltokens, scmdl_sections);
                             lexer->ExpectNextToken(TK_LBRACK);
@@ -276,7 +290,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                                         bNested = true;
                                         lexer->AssignFromTokenList(mdltokens, AT_SHORT,
                                             (void**)&surface->indices, surface->numIndices,
-                                            scmdl_triangles, false, kexRenderSystem::hb_model);
+                                            scmdl_triangles, false, hb_model);
                                         break;
                                     case scmdl_numvertices:
                                         lexer->AssignFromTokenList(mdltokens, &surface->numVerts,
@@ -288,13 +302,13 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                                         lexer->ExpectNextToken(TK_LBRACK);
                                         lexer->AssignFromTokenList(mdltokens, AT_VECTOR,
                                             (void**)&surface->vertices, surface->numVerts,
-                                            scmdl_xyz, true, kexRenderSystem::hb_model);
+                                            scmdl_xyz, true, hb_model);
                                         lexer->AssignFromTokenList(mdltokens, AT_FLOAT,
                                             (void**)&surface->coords, surface->numVerts * 2,
-                                            scmdl_coords, true, kexRenderSystem::hb_model);
+                                            scmdl_coords, true, hb_model);
                                         lexer->AssignFromTokenList(mdltokens, AT_FLOAT,
                                             (void**)&surface->normals, surface->numVerts * 3,
-                                            scmdl_normals, true, kexRenderSystem::hb_model);
+                                            scmdl_normals, true, hb_model);
                                         lexer->ExpectNextToken(TK_RBRACK);
                                         break;
                                     default:
@@ -342,20 +356,30 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
             case scmdl_animsets:
                 lexer->ExpectNextToken(TK_EQUAL);
                 lexer->ExpectNextToken(TK_LBRACK);
+#ifndef EDITOR
                 if(model->numAnimations > 0) {
                     model->anims = (kexAnim_t*)Mem_Calloc(sizeof(kexAnim_t) *
-                        model->numAnimations, kexRenderSystem::hb_model);
+                        model->numAnimations, hb_model);
 
                     for(i = 0; i < model->numAnimations; i++) {
                         lexer->ExpectNextToken(TK_LBRACK);
                         model->anims[i].animID = lexer->GetNumber();
                         lexer->GetString();
-                        model->anims[i].alias = Mem_Strdup(lexer->StringToken(), kexRenderSystem::hb_model);
+                        model->anims[i].alias = Mem_Strdup(lexer->StringToken(), hb_model);
                         lexer->GetString();
                         memcpy(model->anims[i].animFile, lexer->StringToken(), MAX_FILEPATH);
                         lexer->ExpectNextToken(TK_RBRACK);
                     }
                 }
+#else
+                for(i = 0; i < model->numAnimations; i++) {
+                    lexer->ExpectNextToken(TK_LBRACK);
+                    lexer->GetNumber();
+                    lexer->GetString();
+                    lexer->GetString();
+                    lexer->ExpectNextToken(TK_RBRACK);
+                }
+#endif
                 lexer->ExpectNextToken(TK_RBRACK);
                 break;
             default:
@@ -430,7 +454,7 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
 
     model->numNodes = numObjects;
     model->nodes = (modelNode_t*)Mem_Calloc(sizeof(modelNode_t) *
-        model->numNodes, kexRenderSystem::hb_model);
+        model->numNodes, hb_model);
 
     // objects
     for(unsigned int i = 0; i < model->numNodes; i++) {
@@ -440,7 +464,7 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
         // TODO
         node->numSurfaceGroups = numGroups;
         node->surfaceGroups = (surfaceGroup_t*)Mem_Calloc(sizeof(surfaceGroup_t) *
-            node->numSurfaceGroups, kexRenderSystem::hb_model);
+            node->numSurfaceGroups, hb_model);
 
         // surface groups
         for(unsigned int j = 0; j < node->numSurfaceGroups; j++) {
@@ -448,7 +472,7 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
             // TODO
             group->numSurfaces = 1;
             group->surfaces = (surface_t*)Mem_Calloc(sizeof(surface_t) *
-                group->numSurfaces, kexRenderSystem::hb_model);
+                group->numSurfaces, hb_model);
 
             // surfaces
             for(unsigned int k = 0; k < group->numSurfaces; k++) {
@@ -458,7 +482,7 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
 
                 surface->numIndices = indices.Length();
                 surface->indices = (word*)Mem_Calloc(sizeof(word) *
-                    surface->numIndices, kexRenderSystem::hb_model);
+                    surface->numIndices, hb_model);
 
                 for(unsigned int ind = 0; ind < surface->numIndices; ind++) {
                     surface->indices[ind] = indices[ind] - 1;
@@ -466,11 +490,11 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
 
                 surface->numVerts = points.Length() / 3;
                 surface->vertices = (kexVec3*)Mem_Calloc(sizeof(kexVec3) *
-                    surface->numVerts, kexRenderSystem::hb_model);
+                    surface->numVerts, hb_model);
                 surface->coords = (float*)Mem_Calloc(sizeof(float) *
-                    surface->numVerts * 2, kexRenderSystem::hb_model);
+                    surface->numVerts * 2, hb_model);
                 surface->normals = (float*)Mem_Calloc(sizeof(float) *
-                    surface->numVerts * 3, kexRenderSystem::hb_model);
+                    surface->numVerts * 3, hb_model);
 
                 for(unsigned int v = 0; v < surface->numVerts; v++) {
                     surface->vertices[v].x = points[v * 3 + 0];
@@ -526,7 +550,9 @@ kexModel_t *kexModelManager::LoadModel(const char *file) {
         // we're done with the file
         parser.Close();
 
+#ifndef EDITOR
         kexAnimState::LoadKAnim(model);
+#endif
     }
 
     return model;

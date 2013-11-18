@@ -66,7 +66,7 @@ kexKeyMap::~kexKeyMap(void) {
 //
 
 void kexKeyMap::Add(const char *key, const char *value) {
-    hashlist[common.HashFileName(key)].Push(new kexHashKey(key, value));
+    hashlist[kexStr::Hash(key)].Push(new kexHashKey(key, value));
 }
 
 //
@@ -86,7 +86,7 @@ kexHashKey *kexKeyMap::Find(const char *name) {
     kexHashKey *k;
     kexPtrArray<kexHashKey*> *keyList;
 
-    keyList = &hashlist[common.HashFileName(name)];
+    keyList = &hashlist[kexStr::Hash(name)];
 
     for(unsigned int i = 0; i < keyList->Length(); i++) {
         k = keyList->GetData(i);

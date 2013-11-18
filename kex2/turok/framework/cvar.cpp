@@ -24,7 +24,11 @@
 //
 //-----------------------------------------------------------------------------
 
+#ifndef EDITOR
 #include "common.h"
+#else
+#include "editorCommon.h"
+#endif
 
 kexCvarManager cvarManager;
 
@@ -169,6 +173,7 @@ void kexCvarManager::Set(const char *var_name, int value) {
 //
 
 void kexCvarManager::AutoComplete(const char *partial) {
+#ifndef EDITOR
     kexCvar     *cvar;
     int         len;
     bool        match = false;
@@ -192,6 +197,7 @@ void kexCvarManager::AutoComplete(const char *partial) {
             common.Printf("%s\n", cvar->GetName());
         }
     }
+#endif
 }
 
 //
@@ -231,6 +237,7 @@ void kexCvarManager::Init(void) {
     command.Add("listvars", FCmd_ListVars);
     command.Add("seta", FCmd_Seta);
 
+#ifndef EDITOR
     int p;
 
     if(p = common.CheckParam("-setvar")) {
@@ -246,6 +253,7 @@ void kexCvarManager::Init(void) {
             cvarManager.Set(name, value);
         }
     }
+#endif
 
     common.Printf("Cvar System Initialized\n");
 }

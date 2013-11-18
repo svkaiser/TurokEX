@@ -25,7 +25,11 @@
 //-----------------------------------------------------------------------------
 
 #include <string.h>
+#ifndef EDITOR
 #include "common.h"
+#else
+#include "editorCommon.h"
+#endif
 
 static void FCmd_Stub(void);
 static void FCmd_List(void);
@@ -45,7 +49,7 @@ bool kexCommand::Run(void) {
     }
 
     for(cmd = cmd_functions; cmd; cmd = cmd->next) {
-        if(!strcasecmp(cmd_argv[0], cmd->name)) {
+        if(!kexStr::CompareCase(cmd_argv[0], cmd->name)) {
             if(cmd->function) {
                 cmd->function();
             }

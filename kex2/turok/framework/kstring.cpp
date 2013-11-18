@@ -24,7 +24,13 @@
 //
 //-----------------------------------------------------------------------------
 
+#include <ctype.h>
+
+#ifndef EDITOR
 #include "common.h"
+#else
+#include "editorCommon.h"
+#endif
 #include "kstring.h"
 
 //
@@ -445,7 +451,31 @@ kexStr &kexStr::StripExtension(void) {
 //
 
 int kexStr::Hash(void) {
-    return common.HashFileName(charPtr);
+    unsigned int hash   = 0;
+    char *str           = (char*)charPtr;
+    char c;
+
+    while((c = *str++)) {
+        hash = c + (hash << 6) + (hash << 16) - hash;
+    }
+
+    return hash & (MAX_HASH-1);
+}
+
+//
+// kexStr::Hash
+//
+
+int kexStr::Hash(const char *s) {
+    unsigned int hash   = 0;
+    char *str           = (char*)s;
+    char c;
+
+    while((c = *str++)) {
+        hash = c + (hash << 6) + (hash << 16) - hash;
+    }
+
+    return hash & (MAX_HASH-1);
 }
 
 //
@@ -545,6 +575,26 @@ bool kexStr::Compare(const kexStr &a, const kexStr &b) {
 }
 
 //
+// kexStr::CompareCase
+//
+
+bool kexStr::CompareCase(const char *s1, const char *s2) {
+    const byte *us1 = (const byte*)s1;
+    const byte *us2 = (const byte*)s2;
+
+    while(tolower(*us1) == tolower(*us2)) {
+        if(*us1++ == '\0') {
+            return false;
+        }
+
+        us2++;
+    }
+
+    return (tolower(*us1) - tolower(*us2)) != 0;
+}
+
+#ifndef EDITOR
+//
 // kexStr::ObjectConstruct
 //
 
@@ -575,3 +625,4 @@ kexStr kexStr::ObjectFactory(unsigned int byteLength, const char *s) {
 void kexStr::ObjectDeconstruct(kexStr *thisstring) {
     thisstring->~kexStr();
 }
+#endif

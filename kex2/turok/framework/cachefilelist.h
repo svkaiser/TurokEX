@@ -52,7 +52,7 @@ type *kexHashList<type>::Add(const char *tname, kexHeapBlock &hb) {
     strncpy(o->name, tname, MAX_FILEPATH);
 
     // add to hash for future reference
-    hash = common.HashFileName(o->name);
+    hash = kexStr::Hash(o->name);
     o->next = hashlist[hash];
     hashlist[hash] = o;
 
@@ -67,7 +67,7 @@ type *kexHashList<type>::Find(const char *tname) const {
     hashKey_t *t;
     unsigned int hash;
 
-    hash = common.HashFileName(tname);
+    hash = kexStr::Hash(tname);
 
     for(t = hashlist[hash]; t; t = t->next) {
         if(!strcmp(tname, t->name)) {

@@ -144,6 +144,7 @@ void kexSystem::Shutdown(void) {
     Mem_Purge(kexClipMesh::hb_clipMesh);
 
     renderSystem.Shutdown();
+    modelManager.Shutdown();
     scriptManager.Shutdown();
     fileSystem.Shutdown();
     client.Shutdown();
