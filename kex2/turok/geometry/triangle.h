@@ -28,7 +28,6 @@
 class kexTri {
 public:
                     kexTri(void);
-                    ~kexTri(void);
                     
     kexVec3         *point[3];
     kexTri          *edgeLink[3];

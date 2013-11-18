@@ -464,6 +464,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\geometry\collisionMap.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\geometry\stanHull.cpp"
 					>
 				</File>
@@ -686,6 +690,10 @@
 				>
 				<File
 					RelativePath="..\turok\geometry\clipmesh.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\geometry\collisionMap.h"
 					>
 				</File>
 				<File

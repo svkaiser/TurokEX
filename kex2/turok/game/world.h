@@ -28,6 +28,7 @@
 #include "linkedlist.h"
 #include "camera.h"
 #include "fx.h"
+#include "collisionMap.h"
 
 //-----------------------------------------------------------------------------
 //
@@ -116,6 +117,7 @@ public:
     bool                                IsLoaded(void) const { return bLoaded; }
     float                               DeltaTime(void) { return deltaTime; }
     kexCamera                           *Camera(void) { return &camera; };
+    kexCollisionMap                     &CollisionMap(void) { return collisionMap; }
     kexVec3                             &GetGravity(void) { return gravity; }
     void                                SetGravity(const kexVec3 &in) { gravity = in; }
     const int                           GetTicks(void) const { return ticks; }
@@ -154,6 +156,7 @@ private:
     int                                 nextMapID;
     kexStr                              title;
     kexCamera                           camera;
+    kexCollisionMap                     collisionMap;
     kexVec3                             gravity;
     int                                 ticks;
     float                               time;
@@ -165,6 +168,7 @@ private:
     float                               currentFogNear;
     float                               currentFogFar;
     float                               currentFogRGB[4];
+    int                                 validcount;
 };
 
 extern kexWorld localWorld;

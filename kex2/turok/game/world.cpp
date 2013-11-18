@@ -35,8 +35,8 @@
 
 #define FOG_LERP_SPEED      0.025f
 
-#define NODE_MAX_CONTENTS   32
-#define NODE_MAX_SIZE       256
+#define NODE_MAX_CONTENTS   16
+#define NODE_MAX_SIZE       128
 
 kexWorld localWorld;
 
@@ -69,6 +69,7 @@ static const sctokens_t maptokens[scmap_end+1] = {
 //
 
 kexWorld::kexWorld(void) {
+    this->validcount        = 0;
     this->mapID             = -1;
     this->nextMapID         = -1;
     this->bLoaded           = false;
@@ -396,13 +397,24 @@ void kexWorld::SpawnLocalPlayer(void) {
 
 void kexWorld::TraverseWorldNodes(kexNode *node, traceInfo_t *trace) {
     if(node->bLeaf) {
-        float r = trace->localBBox.Radius();
         kexBBox box;
         kexWorldActor *actor;
+        float r = 1.024f;
+
+        if(trace->bUseBBox) {
+            r = trace->localBBox.Radius();
+        }
 
         for(unsigned i = 0; i < node->actors.Length(); i++) {
             actor = node->actors[i];
+
+            if(actor->validcount == validcount) {
+                // already checked this one
+                continue;
+            }
+
             box = actor->BoundingBox() + r;
+            actor->validcount = validcount;
 
             if(box.LineIntersect(trace->start, trace->end)) {
                 actor->bTraced = true;
@@ -444,7 +456,7 @@ void kexWorld::Trace(traceInfo_t *trace) {
     trace->hitActor = NULL;
     trace->hitTri = NULL;
     trace->hitMesh = NULL;
-    trace->hitVector.Clear();
+    trace->hitVector = trace->end;
     trace->hitNormal.Clear();
 
     TraverseWorldNodes(&worldNode, trace);
@@ -452,6 +464,8 @@ void kexWorld::Trace(traceInfo_t *trace) {
     if(trace->hitTri) {
         trace->hitTri->bTraced = true;
     }
+
+    validcount++;
 }
 
 //
@@ -536,8 +550,11 @@ void kexWorld::Load(const char *mapFile) {
     kexLexer *lexer;
     kexWorldActor *actor;
     kexNodeBuilder builder;
+    kexStr file(mapFile);
+
+    collisionMap.Load((file + ".kclm").c_str());
     
-    if(!(lexer = parser.Open(mapFile)))
+    if(!(lexer = parser.Open((file + ".kmap").c_str())))
         return;
 
     // begin parsing
@@ -783,8 +800,10 @@ bool kexNodeBuilder::SetupChildNode(kexNode *parent, kexNode *child,
 
     // test all actors bounding boxes with this node
     for(i = 0; i < actors.Length(); i++) {
-        // extend the box a little bit
-        abox = actors[i]->BoundingBox() + (actors[i]->BoundingBox().Radius() * 0.5f);
+        abox = actors[i]->BoundingBox();
+
+        // expand a little bit
+        abox += (((abox.max - abox.Center()).Unit()) * 0.5f);
         
         if(abox.max.x > child->bounds.max.x && abox.min.x < child->bounds.min.x &&
             abox.max.z > child->bounds.max.z && abox.min.z < child->bounds.min.z) {

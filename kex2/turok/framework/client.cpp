@@ -108,7 +108,7 @@ void kexClient::PrepareMapChange(const ENetPacket *packet) {
     packetManager.Read8((ENetPacket*)packet, &mapID);
     client.SetState(CL_STATE_CHANGINGLEVEL);
 
-    localWorld.Load(kva("maps/map%02d/map%02d.kmap", mapID, mapID));
+    localWorld.Load(kva("maps/map%02d/map%02d", mapID, mapID));
     client.SetState(CL_STATE_INGAME);
     localWorld.SpawnLocalPlayer();
 }

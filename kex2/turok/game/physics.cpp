@@ -36,6 +36,7 @@ enum {
     scPhysics_friction,
     scPhysics_airFriction,
     scPhysics_bounceDamp,
+    scPhysics_stepHeight,
     scPhysics_rotorSpeed,
     scPhysics_rotorFriction,
     scPhysics_bRotor,
@@ -49,6 +50,7 @@ static const sctokens_t physicsTokens[scPhysics_end+1] = {
     { scPhysics_friction,       "friction"              },
     { scPhysics_airFriction,    "airFriction"           },
     { scPhysics_bounceDamp,     "bounceDamp"            },
+    { scPhysics_stepHeight,     "stepHeight"            },
     { scPhysics_rotorSpeed,     "rotorSpeed"            },
     { scPhysics_rotorFriction,  "rotorFriction"         },
     { scPhysics_bRotor,         "bRotor"                },
@@ -68,6 +70,7 @@ kexPhysics::kexPhysics(void) {
     this->friction              = 1;
     this->airFriction           = 0;
     this->bounceDamp            = 0;
+    this->stepHeight            = 48;
     this->rotorSpeed            = 0;
     this->rotorFriction         = 1;
     this->bRotor                = false;
@@ -307,6 +310,7 @@ void kexPhysics::Think(const float timeDelta) {
     float massAmount = (mass * timeDelta);
     float radius = owner->Radius();
     float height = owner->BaseHeight();
+    float stepFraction;
 
     gravity = localWorld.GetGravity();
 
@@ -373,32 +377,27 @@ void kexPhysics::Think(const float timeDelta) {
             break;
         }
 
-        // update origin
-        owner->SetOrigin(trace.hitVector);
+        // update origin and nudge origin away from plane
+        owner->SetOrigin(trace.hitVector - (direction * 0.125f));
 
-        if(trace.hitActor == NULL) {
-            // nudge origin away from plane
-            owner->SetOrigin(owner->GetOrigin() - (direction * 0.125f));
+        // test if walking on steep slopes
+        slope = trace.hitNormal.Dot(gravity);
 
-            // test if walking on steep slopes
-            slope = trace.hitNormal.Dot(gravity);
+        if(slope < 0 && slope >= -0.5f) {
+            if(trace.hitTri == groundGeom) {
+                // remove vertical movement
+                slideNormal = (trace.hitNormal + (trace.hitNormal * gravity));
+                vel = (velocity + (velocity * gravity));
 
-            if(slope < 0 && slope >= -0.5f) {
-                if(trace.hitTri == groundGeom) {
-                    // remove vertical movement
-                    slideNormal = (trace.hitNormal + (trace.hitNormal * gravity));
-                    vel = (velocity + (velocity * gravity));
+                ImpactVelocity(vel, slideNormal, 1.024f);
 
-                    ImpactVelocity(vel, slideNormal, 1.024f);
-
-                    // continue sliding down the slope
-                    velocity = (-gravity * velocity) + vel;
-                }
-                else {
-                    // trying to move from ground to steep slope will be
-                    // treated as a solid wall
-                    trace.hitNormal += (trace.hitNormal * gravity);
-                }
+                // continue sliding down the slope
+                velocity = (-gravity * velocity) + vel;
+            }
+            else {
+                // trying to move from ground to steep slope will be
+                // treated as a solid wall
+                trace.hitNormal += (trace.hitNormal * gravity);
             }
         }
 
@@ -407,6 +406,45 @@ void kexPhysics::Think(const float timeDelta) {
         }
 
         normals[moves++] = trace.hitNormal;
+        
+        // handle stepping
+        if(bOnGround && slope >= -0.5f) {
+            trace.start = owner->GetOrigin();
+            trace.end = trace.start + (-gravity * stepHeight);
+            trace.dir = -gravity;
+
+            // trace up
+            localWorld.Trace(&trace);
+
+            trace.start = trace.hitVector;
+            trace.end = trace.start + (velocity * time);
+            trace.dir = direction;
+
+            // see if we can trace over the step
+            localWorld.Trace(&trace);
+            stepFraction = trace.fraction;
+
+            trace.start = trace.hitVector;
+            trace.end = trace.start + (gravity * stepHeight);
+            trace.dir = gravity;
+
+            // test the ground
+            localWorld.Trace(&trace);
+            slope = trace.hitNormal.Dot(-gravity);
+
+            if(trace.hitTri != groundGeom && slope > 0.5f || trace.fraction >= 1) {
+                // don't try to step up against a wall
+                if(!(stepFraction < 0.99f && slope <= 0.5f)) {
+                    owner->SetOrigin(trace.hitVector - (gravity * 0.125f));
+
+                    if(stepFraction >= 1) {
+                        break;
+                    }
+
+                    time -= (time * trace.fraction);
+                }
+            }
+        }
 
         // try all interacted normals
         for(hits = 0; hits < moves; hits++) {
@@ -490,6 +528,7 @@ void kexPhysics::InitObject(void) {
     OBJPROPERTY("float airFriction", airFriction);
     OBJPROPERTY("float mass", mass);
     OBJPROPERTY("float bounceDamp", bounceDamp);
+    OBJPROPERTY("float stepHeight", stepHeight);
     OBJPROPERTY("float rotorSpeed", rotorSpeed);
     OBJPROPERTY("float rotorFriction", rotorFriction);
     OBJPROPERTY("kVec3 rotorVector", rotorVector);

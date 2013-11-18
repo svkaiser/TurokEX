@@ -563,7 +563,9 @@ void kexClipMesh::Transform(void) {
         cmGroup_t *cmGroup = &cmGroups[g];
 
         for(unsigned int i = 0; i < cmGroup->numPoints; i++) {
-            cmGroup->points[i] |= mtx;
+            if(type != CMT_BOX) {
+                cmGroup->points[i] |= mtx;
+            }
 
             for(unsigned int i = 0; i < cmGroup->numTriangles; i++) {
                 kexTri *tri = &cmGroup->triangles[i];
@@ -691,6 +693,10 @@ bool kexClipMesh::Trace(traceInfo_t *trace) {
     kexVec3 offset;
     cmGroup_t *cmGroup;
 
+    if(trace->bUseBBox) {
+        bxRadius = trace->localBBox.Radius() * 0.5f;
+    }
+
     for(unsigned int i = 0; i < numGroups; i++) {
         cmGroup = &cmGroups[i];
 
@@ -708,7 +714,6 @@ bool kexClipMesh::Trace(traceInfo_t *trace) {
                 offset.z = tri->plane.c < 0 ? trace->localBBox.max.z : trace->localBBox.min.z;
 
                 r = -offset.Dot(tri->plane.Normal());
-                bxRadius = offset.Unit();
             }
 
             dist = tri->plane.d + r;
@@ -722,12 +727,14 @@ bool kexClipMesh::Trace(traceInfo_t *trace) {
 
             frac = (distStart / (distStart - distEnd));
 
+            if(frac > 1) {
+                continue;
+            }
+
             if(frac < 0) {
                 if(trace->bUseBBox == false) {
                     continue;
                 }
-
-                frac = 0;
             }
 
             // check if something closer was hit

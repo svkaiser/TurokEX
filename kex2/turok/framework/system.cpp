@@ -142,6 +142,7 @@ void kexSystem::Shutdown(void) {
     
     Mem_Purge(hb_object);
     Mem_Purge(kexClipMesh::hb_clipMesh);
+    Mem_Purge(kexCollisionMap::hb_collisionMap);
 
     renderSystem.Shutdown();
     modelManager.Shutdown();

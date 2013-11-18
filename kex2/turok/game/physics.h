@@ -85,6 +85,7 @@ public:
     float                   airFriction;
     float                   mass;
     float                   bounceDamp;
+    float                   stepHeight;
     float                   rotorSpeed;
     float                   rotorFriction;
     kexVec3                 rotorVector;

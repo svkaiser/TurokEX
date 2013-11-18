@@ -257,6 +257,7 @@ public:
     // TODO - need some sort of skin system
     char                        ****textureSwaps;
     bool                        bTraced;
+    int                         validcount;
 
     //
     // template for registering default script actor methods and properties
