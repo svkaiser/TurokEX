@@ -399,7 +399,7 @@ void kexWorld::TraverseWorldNodes(kexNode *node, traceInfo_t *trace) {
     if(node->bLeaf) {
         kexBBox box;
         kexWorldActor *actor;
-        float r = 1.024f;
+        float r = 16.384f;
 
         if(trace->bUseBBox) {
             r = trace->localBBox.Radius();
