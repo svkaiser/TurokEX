@@ -110,8 +110,10 @@ void kexCollisionMap::Load(const char *name) {
     kexCollisionSector *sec;
     int numPoints;
     int numSectors;
+    float *pointPtrs;
     int pt[3];
     int edge[3];
+    int i;
     int j;
 
     if(!binFile.Open(name)) {
@@ -119,17 +121,34 @@ void kexCollisionMap::Load(const char *name) {
         return;
     }
 
-    points = reinterpret_cast<kexVec4*>(binFile.GetOffset(CM_ID_POINTS, NULL, &numPoints));
+    pointPtrs = (float*)binFile.GetOffset(CM_ID_POINTS, NULL, &numPoints);
     binFile.GetOffset(CM_ID_SECTORS, NULL, &numSectors);
 
     if(numSectors <= 0) {
+        binFile.Close();
         return;
+    }
+
+    points[0] = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * numPoints,
+        kexCollisionMap::hb_collisionMap);
+    points[1] = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * numPoints,
+        kexCollisionMap::hb_collisionMap);
+
+    for(i = 0; i < numPoints; i++) {
+        points[0][i].Set(
+            pointPtrs[i * 4 + 0],
+            pointPtrs[i * 4 + 1],
+            pointPtrs[i * 4 + 2]);
+        points[1][i].Set(
+            pointPtrs[i * 4 + 0],
+            pointPtrs[i * 4 + 3],
+            pointPtrs[i * 4 + 2]);
     }
 
     sectors = (kexCollisionSector*)Mem_Calloc(sizeof(kexCollisionSector) * numSectors,
         kexCollisionMap::hb_collisionMap);
 
-    for(int i = 0; i < numSectors; i++) {
+    for(i = 0; i < numSectors; i++) {
         sec = &sectors[i];
 
         sec->area_id = binFile.Read16();
@@ -142,8 +161,10 @@ void kexCollisionMap::Load(const char *name) {
             edge[j] = binFile.Read16();
         }
         for(j = 0; j < 3; j++) {
-            sec->lowerTri.point[j] = reinterpret_cast<kexVec3*>(&points[pt[j]]);
+            sec->lowerTri.point[j] = reinterpret_cast<kexVec3*>(&points[0][pt[j]]);
+            sec->upperTri.point[j] = reinterpret_cast<kexVec3*>(&points[1][pt[j]]);
             sec->lowerTri.edgeLink[j] = (edge[j] != -1) ? &sectors[edge[j]].lowerTri : NULL;
+            sec->upperTri.edgeLink[j] = (edge[j] != -1) ? &sectors[edge[j]].upperTri : NULL;
         }
     }
 
