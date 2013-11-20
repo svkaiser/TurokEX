@@ -311,6 +311,7 @@ void kexPhysics::Think(const float timeDelta) {
     float radius = owner->Radius();
     float height = owner->BaseHeight();
     float stepFraction;
+    bool bCanStep = true;
 
     gravity = localWorld.GetGravity();
 
@@ -393,11 +394,24 @@ void kexPhysics::Think(const float timeDelta) {
 
                 // continue sliding down the slope
                 velocity = (-gravity * velocity) + vel;
+                bCanStep = false;
             }
             else {
                 // trying to move from ground to steep slope will be
                 // treated as a solid wall
+                cDir = trace.hitVector + (trace.hitNormal.Cross(-gravity).Normalize());
+
+                cDir += (cDir * gravity);
+                cDir -= gravity;
+
+                trace.hitVector += (trace.hitVector * gravity);
+                trace.hitVector -= gravity;
+
+                trace.hitNormal = trace.hitVector.Cross(cDir);
                 trace.hitNormal += (trace.hitNormal * gravity);
+                trace.hitNormal.Normalize();
+
+                bCanStep = false;
             }
         }
 
@@ -408,7 +422,7 @@ void kexPhysics::Think(const float timeDelta) {
         normals[moves++] = trace.hitNormal;
         
         // handle stepping
-        if(bOnGround && slope >= -0.5f) {
+        if(bCanStep && slope >= -0.5f) {
             trace.start = owner->GetOrigin();
             trace.end = trace.start + (-gravity * stepHeight);
             trace.dir = -gravity;
