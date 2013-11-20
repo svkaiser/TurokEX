@@ -280,6 +280,10 @@
 				Name="framework"
 				>
 				<File
+					RelativePath="..\turok\framework\binFile.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\client.cpp"
 					>
 				</File>
@@ -534,6 +538,10 @@
 				>
 				<File
 					RelativePath="..\turok\framework\array.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\binFile.h"
 					>
 				</File>
 				<File
