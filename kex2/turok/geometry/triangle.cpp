@@ -28,7 +28,11 @@
 //
 //-----------------------------------------------------------------------------
 
+#ifndef EDITOR
 #include "common.h"
+#else
+#include "editorCommon.h"
+#endif
 #include "triangle.h"
 
 int kexTri::globalID = 0;

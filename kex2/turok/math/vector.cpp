@@ -25,7 +25,9 @@
 //-----------------------------------------------------------------------------
 
 #include <math.h>
+#ifndef EDITOR
 #include "common.h"
+#endif
 #include "mathlib.h"
 
 const kexVec3 kexVec3::vecRight(1, 0, 0);
@@ -563,6 +565,7 @@ float kexVec3::operator[](int index) {
     return (&x)[index];
 }
 
+#ifndef EDITOR
 //
 // kexVec3::ObjectConstruct1
 //
@@ -586,6 +589,7 @@ void kexVec3::ObjectConstruct2(float x, float y, float z, kexVec3 *thisvec) {
 void kexVec3::ObjectConstructCopy(const kexVec3 &in, kexVec3 *thisvec) {
     new(thisvec)kexVec3(in);
 }
+#endif
 
 //
 // kexVec4::kexVec4

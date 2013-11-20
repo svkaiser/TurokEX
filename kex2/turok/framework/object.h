@@ -47,11 +47,23 @@ public:                                                 \
         return &(classname::info);                      \
     }
 
+#ifdef EDITOR
+#ifdef DECLARE_CLASS
+#undef DECLARE_CLASS
+#endif
+#endif
+
 #define DECLARE_CLASS(classname, supername)             \
     DEFINE_CLASS(classname, supername)                  \
     kexObject *classname::Create(void) {                \
         return new classname;                           \
     }
+
+#ifdef EDITOR
+#ifdef DECLARE_ABSTRACT_CLASS
+#undef DECLARE_ABSTRACT_CLASS
+#endif
+#endif
 
 #define DECLARE_ABSTRACT_CLASS(classname, supername)    \
     DEFINE_CLASS(classname, supername)                  \

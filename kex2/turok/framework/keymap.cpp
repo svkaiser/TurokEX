@@ -24,7 +24,11 @@
 //
 //-----------------------------------------------------------------------------
 
+#ifndef EDITOR
 #include "common.h"
+#else
+#include "editorCommon.h"
+#endif
 #include "kstring.h"
 #include "keymap.h"
 

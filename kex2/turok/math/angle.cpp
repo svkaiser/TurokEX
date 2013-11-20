@@ -25,7 +25,9 @@
 //-----------------------------------------------------------------------------
 
 #include <math.h>
+#ifndef EDITOR
 #include "common.h"
+#endif
 #include "mathlib.h"
 
 #define FULLCIRCLE  (M_PI * 2)
@@ -370,6 +372,7 @@ float kexAngle::operator[](int index) {
     return (&yaw)[index];
 }
 
+#ifndef EDITOR
 //
 // kexAngle::ObjectConstruct1
 //
@@ -401,3 +404,4 @@ void kexAngle::ObjectConstruct3(const kexVec3 &vec, kexAngle *an) {
 void kexAngle::ObjectConstructCopy(const kexAngle &in, kexAngle *an) {
     new(an)kexAngle(in);
 }
+#endif

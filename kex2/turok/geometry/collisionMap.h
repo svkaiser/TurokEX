@@ -77,7 +77,7 @@ public:
     void                            Load(const char *name);
 
     kexVec4                         *points;
-    kexArray<kexCollisionSector>    sectors;
+    kexCollisionSector              *sectors;
 
     static kexHeapBlock             hb_collisionMap;
 

@@ -25,7 +25,9 @@
 //-----------------------------------------------------------------------------
 
 #include <math.h>
+#ifndef EDITOR
 #include "common.h"
+#endif
 #include "mathlib.h"
 
 //
@@ -405,6 +407,7 @@ kexVec3 &kexQuat::ToVec3(void) {
     return *reinterpret_cast<kexVec3*>(this);
 }
 
+#ifndef EDITOR
 //
 // kexQuat::ObjectConstruct1
 //
@@ -436,3 +439,4 @@ void kexQuat::ObjectConstruct3(float a, kexVec3 &in, kexQuat *thisq) {
 void kexQuat::ObjectConstructCopy(const kexQuat &in, kexQuat *thisq) {
     new(thisq)kexQuat(in);
 }
+#endif

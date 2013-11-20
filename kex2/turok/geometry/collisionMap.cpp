@@ -24,9 +24,19 @@
 //
 //-----------------------------------------------------------------------------
 
+#ifndef EDITOR
 #include "common.h"
+#else
+#include "editorCommon.h"
+#endif
+#include "binFile.h"
 #include "fileSystem.h"
 #include "collisionMap.h"
+
+#define CM_ID_HEADER    0
+#define CM_ID_DATASIZE  1
+#define CM_ID_POINTS    2
+#define CM_ID_SECTORS   3
 
 kexHeapBlock kexCollisionMap::hb_collisionMap("collision map", false, NULL, NULL);
 
@@ -96,26 +106,46 @@ kexCollisionMap::~kexCollisionMap(void) {
 //
 
 void kexCollisionMap::Load(const char *name) {
-    int buffsize;
-    int *rover;
-    int pointOffset;
-    int planeOffset;
-    int numPlanes;
+    kexBinFile binFile;
+    kexCollisionSector *sec;
+    int numPoints;
+    int numSectors;
+    int pt[3];
+    int edge[3];
+    int j;
 
-    buffsize = fileSystem.ReadExternalTextFile(name, (byte**)(&data));
-    if(buffsize <= 0) {
-        buffsize = fileSystem.OpenFile(name, (byte**)(&data), hb_collisionMap);
-    }
-
-    if(buffsize <= 0) {
+    if(!binFile.Open(name)) {
         common.Warning("kexCollisionMap::Load: %s not found\n", name);
         return;
     }
 
-    rover = (int*)data;
-    pointOffset = rover[2];
-    planeOffset = rover[3];
+    points = reinterpret_cast<kexVec4*>(binFile.GetOffset(CM_ID_POINTS, NULL, &numPoints));
+    binFile.GetOffset(CM_ID_SECTORS, NULL, &numSectors);
 
-    points = (kexVec4*)((data + pointOffset) + 4);
-    numPlanes = *(int*)(data + planeOffset);
+    if(numSectors <= 0) {
+        return;
+    }
+
+    sectors = (kexCollisionSector*)Mem_Calloc(sizeof(kexCollisionSector) * numSectors,
+        kexCollisionMap::hb_collisionMap);
+
+    for(int i = 0; i < numSectors; i++) {
+        sec = &sectors[i];
+
+        sec->area_id = binFile.Read16();
+        sec->flags = binFile.Read16();
+
+        for(j = 0; j < 3; j++) {
+            pt[j] = binFile.Read16();
+        }
+        for(j = 0; j < 3; j++) {
+            edge[j] = binFile.Read16();
+        }
+        for(j = 0; j < 3; j++) {
+            sec->lowerTri.point[j] = reinterpret_cast<kexVec3*>(&points[pt[j]]);
+            sec->lowerTri.edgeLink[j] = (edge[j] != -1) ? &sectors[edge[j]].lowerTri : NULL;
+        }
+    }
+
+    binFile.Close();
 }

@@ -24,9 +24,13 @@
 //
 //-----------------------------------------------------------------------------
 
+#ifndef EDITOR
 #include "common.h"
+#endif
 #include "mathlib.h"
+#ifndef EDITOR
 #include "scriptAPI/scriptSystem.h"
+#endif
 
 //
 // kexMath::Abs
@@ -122,6 +126,7 @@ void kexMath::QuadraticCurve(const kexVec3 &start, const kexVec3 &end, const flo
     vec->z = xyz[2];
 }
 
+#ifndef EDITOR
 //
 // kexMath::InitObject
 //
@@ -279,3 +284,4 @@ void kexMath::InitObject(void) {
     scriptManager.Engine()->RegisterObjectProperty("kAngle", "float pitch", asOFFSET(kexAngle, pitch));
     scriptManager.Engine()->RegisterObjectProperty("kAngle", "float roll", asOFFSET(kexAngle, roll));
 }
+#endif
