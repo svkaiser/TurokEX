@@ -45,6 +45,9 @@ kexHeapBlock kexCollisionMap::hb_collisionMap("collision map", false, NULL, NULL
 //
 
 kexCollisionSector::kexCollisionSector(void) {
+    this->link[0] = NULL;
+    this->link[1] = NULL;
+    this->link[2] = NULL;
 }
 
 //
@@ -92,6 +95,10 @@ bool kexCollisionSector::InRange(const float x, const float z) {
 //
 
 kexCollisionMap::kexCollisionMap(void) {
+    this->bLoaded = false;
+    this->points[0] = NULL;
+    this->points[1] = NULL;
+    this->sectors = NULL;
 }
 
 //
@@ -108,8 +115,6 @@ kexCollisionMap::~kexCollisionMap(void) {
 void kexCollisionMap::Load(const char *name) {
     kexBinFile binFile;
     kexCollisionSector *sec;
-    int numPoints;
-    int numSectors;
     float *pointPtrs;
     int pt[3];
     int edge[3];
@@ -132,6 +137,8 @@ void kexCollisionMap::Load(const char *name) {
     points[0] = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * numPoints,
         kexCollisionMap::hb_collisionMap);
     points[1] = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * numPoints,
+        kexCollisionMap::hb_collisionMap);
+    indices = (word*)Mem_Calloc((sizeof(word) * numSectors) * 3,
         kexCollisionMap::hb_collisionMap);
 
     for(i = 0; i < numPoints; i++) {
@@ -165,8 +172,30 @@ void kexCollisionMap::Load(const char *name) {
             sec->upperTri.point[j] = reinterpret_cast<kexVec3*>(&points[1][pt[j]]);
             sec->lowerTri.edgeLink[j] = (edge[j] != -1) ? &sectors[edge[j]].lowerTri : NULL;
             sec->upperTri.edgeLink[j] = (edge[j] != -1) ? &sectors[edge[j]].upperTri : NULL;
+            sec->link[j] = (edge[j] != -1) ? &sectors[edge[j]] : NULL;
         }
+
+        indices[i * 3 + 0] = pt[0];
+        indices[i * 3 + 1] = pt[1];
+        indices[i * 3 + 2] = pt[2];
+
+        // build plane for lower triangle
+        sec->lowerTri.plane.SetNormal(
+            *sec->lowerTri.point[0],
+            *sec->lowerTri.point[1],
+            *sec->lowerTri.point[2]);
+        sec->lowerTri.plane.SetDistance(*sec->lowerTri.point[0]);
+        sec->lowerTri.SetBounds();
+
+        // build plane for upper triangle
+        sec->upperTri.plane.SetNormal(
+            *sec->upperTri.point[0],
+            *sec->upperTri.point[1],
+            *sec->upperTri.point[2]);
+        sec->upperTri.plane.SetDistance(*sec->upperTri.point[0]);
+        sec->upperTri.SetBounds();
     }
 
     binFile.Close();
+    bLoaded = true;
 }

@@ -67,6 +67,7 @@ public:
     unsigned int                    flags;
     kexTri                          lowerTri;
     kexTri                          upperTri;
+    kexCollisionSector              *link[3];
 };
 
 class kexCollisionMap {
@@ -77,12 +78,17 @@ public:
     void                            Load(const char *name);
 
     kexVec3                         *points[2];
+    word                            *indices;
+    int                             numSectors;
+    int                             numPoints;
     kexCollisionSector              *sectors;
+
+    const bool                      IsLoaded(void) const { return bLoaded; }
 
     static kexHeapBlock             hb_collisionMap;
 
 private:
-    byte                            *data;
+    bool                            bLoaded;
 };
 
 #endif
