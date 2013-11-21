@@ -366,27 +366,30 @@ float *kexMatrix::ToFloatPtr(void) {
 
 kexMatrix kexMatrix::operator*(kexMatrix &matrix) {
     kexMatrix out;
-    float *m1 = ToFloatPtr();
-    float *m2 = matrix.ToFloatPtr();
-    float *mOut = out.ToFloatPtr();
-    
-    mOut[ 0] = m1[ 1] * m2[ 4] + m2[ 8] * m1[ 2] + m1[ 3] * m2[12] + m1[ 0] * m2[ 0];
-    mOut[ 1] = m1[ 0] * m2[ 1] + m2[ 5] * m1[ 1] + m2[ 9] * m1[ 2] + m2[13] * m1[ 3];
-    mOut[ 2] = m1[ 0] * m2[ 2] + m2[10] * m1[ 2] + m2[14] * m1[ 3] + m2[ 6] * m1[ 1];
-    mOut[ 3] = m1[ 0] * m2[ 3] + m2[15] * m1[ 3] + m2[ 7] * m1[ 1] + m2[11] * m1[ 2];
-    mOut[ 4] = m2[ 0] * m1[ 4] + m1[ 7] * m2[12] + m1[ 5] * m2[ 4] + m1[ 6] * m2[ 8];
-    mOut[ 5] = m1[ 4] * m2[ 1] + m1[ 5] * m2[ 5] + m1[ 7] * m2[13] + m1[ 6] * m2[ 9];
-    mOut[ 6] = m1[ 5] * m2[ 6] + m1[ 7] * m2[14] + m1[ 4] * m2[ 2] + m1[ 6] * m2[10];
-    mOut[ 7] = m1[ 6] * m2[11] + m1[ 7] * m2[15] + m1[ 5] * m2[ 7] + m1[ 4] * m2[ 3];
-    mOut[ 8] = m2[ 0] * m1[ 8] + m1[10] * m2[ 8] + m1[11] * m2[12] + m1[ 9] * m2[ 4];
-    mOut[ 9] = m1[ 8] * m2[ 1] + m1[10] * m2[ 9] + m1[11] * m2[13] + m1[ 9] * m2[ 5];
-    mOut[10] = m1[ 9] * m2[ 6] + m1[10] * m2[10] + m1[11] * m2[14] + m1[ 8] * m2[ 2];
-    mOut[11] = m1[ 9] * m2[ 7] + m1[11] * m2[15] + m1[10] * m2[11] + m1[ 8] * m2[ 3];
-    mOut[12] = m2[ 0] * m1[12] + m2[12] * m1[15] + m2[ 4] * m1[13] + m2[ 8] * m1[14];
-    mOut[13] = m2[13] * m1[15] + m2[ 1] * m1[12] + m2[ 9] * m1[14] + m2[ 5] * m1[13];
-    mOut[14] = m2[ 6] * m1[13] + m2[14] * m1[15] + m2[10] * m1[14] + m2[ 2] * m1[12];
-    mOut[15] = m2[ 3] * m1[12] + m2[ 7] * m1[13] + m2[11] * m1[14] + m2[15] * m1[15];
-    
+
+    for(int i = 0; i < 4; i++) {
+        out.vectors[i].x =
+            vectors[i].x * matrix.vectors[0].x +
+            vectors[i].y * matrix.vectors[1].x +
+            vectors[i].z * matrix.vectors[2].x +
+            vectors[i].w * matrix.vectors[3].x;
+        out.vectors[i].y =
+            vectors[i].x * matrix.vectors[0].y +
+            vectors[i].y * matrix.vectors[1].y +
+            vectors[i].z * matrix.vectors[2].y +
+            vectors[i].w * matrix.vectors[3].y;
+        out.vectors[i].z =
+            vectors[i].x * matrix.vectors[0].z +
+            vectors[i].y * matrix.vectors[1].z +
+            vectors[i].z * matrix.vectors[2].z +
+            vectors[i].w * matrix.vectors[3].z;
+        out.vectors[i].w =
+            vectors[i].x * matrix.vectors[0].w +
+            vectors[i].y * matrix.vectors[1].w +
+            vectors[i].z * matrix.vectors[2].w +
+            vectors[i].w * matrix.vectors[3].w;
+    }
+
     return out;
 }
 
@@ -396,26 +399,34 @@ kexMatrix kexMatrix::operator*(kexMatrix &matrix) {
 
 kexMatrix kexMatrix::operator|(kexMatrix &matrix) {
     kexMatrix out;
-    float *m1 = ToFloatPtr();
-    float *m2 = matrix.ToFloatPtr();
-    float *mOut = out.ToFloatPtr();
 
-    mOut[ 0] = m2[ 4] * m1[ 1] + m1[ 2] * m2[ 8] + m2[ 0] * m1[ 0];
-    mOut[ 1] = m1[ 0] * m2[ 1] + m2[ 9] * m1[ 2] + m2[ 5] * m1[ 1];
-    mOut[ 2] = m1[ 0] * m2[ 2] + m1[ 1] * m2[ 6] + m1[ 2] * m2[10];
-    mOut[ 3] = 0;
-    mOut[ 4] = m2[ 0] * m1[ 4] + m2[ 4] * m1[ 5] + m1[ 6] * m2[ 8];
-    mOut[ 5] = m2[ 5] * m1[ 5] + m1[ 6] * m2[ 9] + m1[ 4] * m2[ 1];
-    mOut[ 6] = m1[ 5] * m2[ 6] + m1[ 6] * m2[10] + m1[ 4] * m2[ 2];
-    mOut[ 7] = 0;
-    mOut[ 8] = m2[ 0] * m1[ 8] + m1[10] * m2[ 8] + m1[ 9] * m2[ 4];
-    mOut[ 9] = m1[ 8] * m2[ 1] + m1[ 9] * m2[ 5] + m1[10] * m2[ 9];
-    mOut[10] = m1[ 8] * m2[ 2] + m1[ 9] * m2[ 6] + m1[10] * m2[10];
-    mOut[11] = 0;
-    mOut[12] = m2[ 0] * m1[12] + m1[14] * m2[ 8] + m1[13] * m2[ 4] + m2[12];
-    mOut[13] = m1[13] * m2[ 5] + m1[14] * m2[ 9] + m1[12] * m2[ 1] + m2[13];
-    mOut[14] = m1[12] * m2[ 2] + m1[14] * m2[10] + m1[13] * m2[ 6] + m2[14];
-    mOut[15] = 1;
+    for(int i = 0; i < 3; i++) {
+        out.vectors[i].x =
+            vectors[i].x * matrix.vectors[0].x +
+            vectors[i].y * matrix.vectors[1].x +
+            vectors[i].z * matrix.vectors[2].x;
+        out.vectors[i].y =
+            vectors[i].x * matrix.vectors[0].y +
+            vectors[i].y * matrix.vectors[1].y +
+            vectors[i].z * matrix.vectors[2].y;
+        out.vectors[i].z =
+            vectors[i].x * matrix.vectors[0].z +
+            vectors[i].y * matrix.vectors[1].z +
+            vectors[i].z * matrix.vectors[2].z;
+    }
+
+    out.vectors[3].x =
+        vectors[3].x * matrix.vectors[0].x +
+        vectors[3].y * matrix.vectors[1].x +
+        vectors[3].z * matrix.vectors[2].x + matrix.vectors[3].x;
+    out.vectors[3].y =
+        vectors[3].x * matrix.vectors[0].y +
+        vectors[3].y * matrix.vectors[1].y +
+        vectors[3].z * matrix.vectors[2].y + matrix.vectors[3].y;
+    out.vectors[3].z =
+        vectors[3].x * matrix.vectors[0].z +
+        vectors[3].y * matrix.vectors[1].z +
+        vectors[3].z * matrix.vectors[2].z + matrix.vectors[3].z;
 
     return out;
 }
