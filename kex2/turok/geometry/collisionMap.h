@@ -43,7 +43,7 @@ typedef enum {
     CLF_SLOPETEST       = 0x2000,
     CLF_ENDLESSPIT      = 0x4000,
     CLF_MAPPED          = 0x8000,
-    CLF_UNKNOWN65536    = 0x10000
+    CLF_SOLID           = 0x10000
 } cMapFlags_t;
 
 typedef enum {
@@ -56,18 +56,51 @@ typedef enum {
     PF_NOEXITWATER      = 0x40
 } cMapClipFlags_t;
 
-class kexCollisionSector {
+class kexSector;
+
+typedef struct {
+    kexSector                       *sector;
+    kexSector                       *contactSector;
+    kexVec3                         position;
+    kexVec3                         normal;
+    float                           fraction;
+} cMapTraceResult_t;
+
+typedef struct {
+    kexVec3                         start;
+    kexVec3                         end;
+    kexVec3                         direction;
+    kexSector                       *sector;
+    cMapClipFlags_t                 flags;
+    cMapTraceResult_t               *result;
+} cMapTrace_t;
+
+typedef struct {
+    unsigned int                    flags;
+    float                           waterplane;
+    unsigned int                    targetID;
+    char                            *triggerSound;
+    unsigned short                  fSurfaceID;
+    unsigned short                  cSurfaceID;
+    unsigned short                  wSurfaceID;
+} cMapArea_t;
+
+class kexSector {
 public:
-                                    kexCollisionSector(void);
+                                    kexSector(void);
 
     bool                            Wall(void);
     bool                            InRange(const float x, const float z);
+    bool                            CheckHeight(const kexVec3 &pos);
+    bool                            IntersectEdge(cMapTrace_t *trace, const kexVec3 pt1, const kexVec3 pt2);
+    kexSector                       *CrossEdge(cMapTrace_t *trace, const int edge);
 
-    unsigned short                  area_id;
+    cMapArea_t                      *area;
     unsigned int                    flags;
     kexTri                          lowerTri;
     kexTri                          upperTri;
-    kexCollisionSector              *link[3];
+    kexSector                       *link[3];
+    bool                            bTraced;
 };
 
 class kexCollisionMap {
@@ -76,12 +109,18 @@ public:
                                     ~kexCollisionMap(void);
 
     void                            Load(const char *name);
+    void                            Trace(cMapTraceResult_t *result,
+                                          const kexVec3 &start, const kexVec3 &end,
+                                          kexSector *sector,
+                                          const cMapClipFlags_t flags);
+    void                            TraverseSectors(cMapTrace_t *trace, kexSector *sector);
 
     kexVec3                         *points[2];
     word                            *indices;
     int                             numSectors;
     int                             numPoints;
-    kexCollisionSector              *sectors;
+    kexSector                       *sectors;
+    cMapArea_t                      *areas;
 
     const bool                      IsLoaded(void) const { return bLoaded; }
 

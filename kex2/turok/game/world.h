@@ -79,12 +79,6 @@ private:
 //
 //-----------------------------------------------------------------------------
 
-typedef struct gridBound_s {
-    kexBBox                             box;
-    kexLinklist<kexWorldActor>          staticActors;
-    bool                                bTraced;
-} gridBound_t;
-
 class kexWorld {
 public:
                                         kexWorld(void);
@@ -130,8 +124,8 @@ public:
     void                                ToggleFog(bool toggle) { bEnableFog = toggle; }
 
     kexLinklist<kexWorldActor>          actors;
+    kexLinklist<kexWorldActor>          staticActors;
     kexLinklist<kexFx>                  fxList;
-    kexPtrArray<gridBound_t*>           gridBounds;
 
     kexWorldActor                       *actorRover;
     kexFx                               *fxRover;
@@ -147,7 +141,6 @@ public:
     static void                         InitObject(void);
 
 private:
-    void                                ParseGridBound(kexLexer *lexer);
     void                                TraverseWorldNodes(kexNode *node, traceInfo_t *trace);
 
     bool                                bLoaded;

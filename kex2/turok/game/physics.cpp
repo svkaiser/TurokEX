@@ -349,12 +349,13 @@ void kexPhysics::Think(const float timeDelta) {
     }
 
     // fudge the origin if we're slightly clipping below the floor
-    trace.start = start - (gravity * 1.024f);
+    trace.start = start - (gravity * (stepHeight * 0.5f));
     trace.end = start;
     localWorld.Trace(&trace);
 
     if(trace.fraction != 1) {
-        owner->SetOrigin(trace.hitVector - (gravity * 1.024f));
+        start = trace.hitVector - (gravity * 1.024f);
+        owner->SetOrigin(start);
     }
 
     for(int i = 0; i < TRYMOVE_COUNT; i++) {

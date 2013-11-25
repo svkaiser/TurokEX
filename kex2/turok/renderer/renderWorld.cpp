@@ -458,63 +458,53 @@ void kexRenderWorld::DrawStaticActors(void) {
     kexBBox box;
     kexFrustum frustum = world->Camera()->Frustum();
 
-    for(unsigned int i = 0; i < world->gridBounds.Length(); i++) {
-        gridBound_t *grid = world->gridBounds[i];
-
-        for(kexWorldActor *actor = grid->staticActors.Next();
-            actor != NULL; actor = actor->worldLink.Next()) {
-                if(actor->bHidden) {
-                    if(bShowClipMesh) {
-                        actor->ClipMesh().DebugDraw();
-                    }
-                    continue;
-                }
-
-                box = actor->BoundingBox();
-                actor->bCulled = !frustum.TestBoundingBox(box);
-
-                if(actor->bCulled) {
-                    continue;
-                }
-
-                if(!bShowClipMesh) {
-                    dglPushMatrix();
-                    dglMultMatrixf(actor->Matrix().ToFloatPtr());
-
-                    if(bWireframe) {
-                        dglColor4ub(0, 224, 224, 255);
-                    }
-                    TraverseDrawActorNode(actor, &actor->Model()->nodes[0], NULL);
-                    dglPopMatrix();
-                }
-                else {
+    for(kexWorldActor *actor = world->staticActors.Next();
+        actor != NULL; actor = actor->worldLink.Next()) {
+            if(!actor->bStatic) {
+                continue;
+            }
+            if(actor->bHidden) {
+                if(bShowClipMesh) {
                     actor->ClipMesh().DebugDraw();
                 }
+                continue;
+            }
 
-                if(bShowBBox) {
-                    if(actor->bTraced) {
-                        DrawBoundingBox(box, 255, 0, 0);
-                        actor->bTraced = false;
-                    }
-                    else {
-                        DrawBoundingBox(box, 255, 255, 0);
-                    }
-                }
-                if(bShowRadius && actor->bCollision) {
-                    kexVec3 org = actor->GetOrigin();
-                    DrawRadius(org[0], org[1], org[2],
-                        actor->Radius(), actor->Height(), 255, 128, 128);
-                }
-        }
+            box = actor->BoundingBox();
+            actor->bCulled = !frustum.TestBoundingBox(box);
 
-        if(bShowGrid) {
-            if(grid->bTraced) {
-                DrawBoundingBox(grid->box, 255, 0, 0);
+            if(actor->bCulled) {
+                continue;
+            }
+
+            if(!bShowClipMesh) {
+                dglPushMatrix();
+                dglMultMatrixf(actor->Matrix().ToFloatPtr());
+
+                if(bWireframe) {
+                    dglColor4ub(0, 224, 224, 255);
+                }
+                TraverseDrawActorNode(actor, &actor->Model()->nodes[0], NULL);
+                dglPopMatrix();
             }
             else {
-                DrawBoundingBox(grid->box, 224, 224, 224);
+                actor->ClipMesh().DebugDraw();
             }
-        }
+
+            if(bShowBBox) {
+                if(actor->bTraced) {
+                    DrawBoundingBox(box, 255, 0, 0);
+                    actor->bTraced = false;
+                }
+                else {
+                    DrawBoundingBox(box, 255, 255, 0);
+                }
+            }
+            if(bShowRadius && actor->bCollision) {
+                kexVec3 org = actor->GetOrigin();
+                DrawRadius(org[0], org[1], org[2],
+                    actor->Radius(), actor->Height(), 255, 128, 128);
+            }
     }
 
     if(showWorldNode >= 0) {
@@ -536,6 +526,9 @@ void kexRenderWorld::DrawActors(void) {
 
     for(kexWorldActor *actor = world->actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
+            if(actor->bStatic) {
+                continue;
+            }
             if(actor->bHidden || actor->bClientView) {
                 continue;
             }

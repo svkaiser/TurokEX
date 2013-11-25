@@ -493,6 +493,92 @@ typedef struct
 } mapinsttype3_t;
 
 //
+// GetClipMeshTypeForModel
+//
+
+static int GetClipMeshTypeForModel(int model) {
+    int clipType = 6;
+
+    switch(model) {
+        case 99:
+        case 210:
+        case 230:
+        case 390:
+        case 485:
+        case 495:
+        case 526:
+        case 527:
+        case 543:
+        case 544:
+        case 545:
+        case 577:
+        case 582:
+        case 583:
+        case 584:
+        case 585:
+        case 586:
+        case 587:
+        case 614:
+            clipType = 0;
+            break;
+        case 100:
+        case 102:
+        case 165:
+        case 167:
+        case 190:
+        case 199:
+        case 201:
+        case 202:
+        case 208:
+        case 209:
+        case 217:
+        case 220:
+        case 221:
+        case 250:
+        case 251:
+        case 278:
+        case 279:
+        case 414:
+        case 483:
+        case 504:
+        case 506:
+        case 513:
+        case 514:
+        case 534:
+        case 563:
+        case 565:
+        case 566:
+        case 597:
+        case 627:
+            clipType = 5;
+            break;
+        case 108:
+        case 112:
+        case 211:
+        case 264:
+        case 294:
+        case 295:
+        case 296:
+        case 297:
+        case 298:
+        case 299:
+        case 300:
+        case 425:
+        case 532:
+        case 533:
+        case 605:
+        case 630:
+        case 632:
+            clipType = 1;
+            break;
+        default:
+            break;
+    }
+
+    return clipType;
+}
+
+//
 // CoerceFloat
 //
 
@@ -1687,7 +1773,7 @@ static void ProcessActors(byte *data)
             Com_Strcat("viewheight %f\n", attr->viewHeight);
             Com_Strcat("id 0\n");
             Com_Strcat("component \"TurokPlayer\"\n");
-            Com_Strcat("}\n");
+            Com_Strcat("}\n\n");
         }
 
         Com_UpdateDataProgress();
@@ -1918,6 +2004,9 @@ static void ProcessGridBounds(byte *data, byte *inst)
 
     stride = 0;
 
+    Com_Strcat("staticActors\n");
+    Com_Strcat("{\n");
+
     for(i = 0; i < count; i++)
     {
         int gsize;
@@ -1932,19 +2021,21 @@ static void ProcessGridBounds(byte *data, byte *inst)
             float max_x = *(float*)((int*)(grid + 8 + 8  + (i * size)));
             float max_z = *(float*)((int*)(grid + 8 + 12 + (i * size)));
 
-            Com_Strcat("gridbound { %f -32768 %f } { %f 32768 %f }\n", min_x, min_z, max_x, max_z);
-            Com_Strcat("{\n");
+            //Com_Strcat("gridbound { %f -32768 %f } { %f 32768 %f }\n", min_x, min_z, max_x, max_z);
+            //Com_Strcat("{\n");
 
             ProcessStaticInstances2(
                 Com_GetCartData(group, CHUNK_STATICINST_GROUP2, 0),
                 Com_GetCartData(group, CHUNK_STATICINST_GROUP3, 0));
 
-            Com_Strcat("}\n");
+            //Com_Strcat("}\n\n");
         }
 
         Com_Free(&group);
         Com_UpdateDataProgress();
     }
+
+    Com_Strcat("}\n\n");
 }
 #endif
 
@@ -2808,6 +2899,7 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
     int count;
     int total;
     int i;
+    int clipType;
 
     size = Com_GetCartOffset(data, CHUNK_INSTANCE_SIZE, 0);
     count = Com_GetCartOffset(data, CHUNK_INSTANCE_COUNT, 0);
@@ -2932,15 +3024,17 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
             Com_Strcat("radius %f\n", GetAttribute(mapinst->attribute)->width);
             Com_Strcat("height %f\n", GetAttribute(mapinst->attribute)->height);
 
+            clipType = GetClipMeshTypeForModel(mapinst->model);
+
             if(GetAttribute(mapinst->attribute)->behavior1 & 1)
             {
                 Com_Strcat("bCollision 1\n");
-                Com_Strcat("clipMesh { type 0 }\n");
+                Com_Strcat("clipMesh { type 7 }\n");
             }
-            else if(model_masked[mapinst->model] == 0)
+            else if(model_masked[mapinst->model] == 0 && clipType != 0)
             {
                 Com_Strcat("bCollision 1\n");
-                Com_Strcat("clipMesh { type 6 }\n");
+                Com_Strcat("clipMesh { type %i }\n", clipType);
             }
             else
             {
@@ -2957,7 +3051,7 @@ static void ProcessStaticInstances2(byte *data, byte *data2)
 
             Com_Strcat("bStatic 1\n");
             Com_Strcat("cullDistance %f\n", bboxUnit + 4096.0f);
-            Com_Strcat("}\n");
+            Com_Strcat("}\n\n");
         }
     }
 }

@@ -661,7 +661,7 @@ void kexClipMesh::CreateShape(void) {
                         kexVec3 *nPt2 = nTri->point[(n+1)%3];
 
                         // points share an edge so link it
-                        if(pt1 == nPt1 && pt2 == nPt2) {
+                        if(pt1 == nPt2 && pt2 == nPt1) {
                             tri->edgeLink[j] = nTri;
                             ok = true;
                             break;
@@ -694,7 +694,7 @@ bool kexClipMesh::Trace(traceInfo_t *trace) {
     cmGroup_t *cmGroup;
 
     if(trace->bUseBBox) {
-        bxRadius = trace->localBBox.Radius() * 0.5f;
+        bxRadius = (trace->localBBox.max - trace->localBBox.Center()).Unit() * 0.5f;
     }
 
     for(unsigned int i = 0; i < numGroups; i++) {
@@ -742,7 +742,7 @@ bool kexClipMesh::Trace(traceInfo_t *trace) {
                 continue;
             }
 
-            hit = trace->start + ((trace->end - trace->start) * frac);
+            hit = trace->start.Lerp(trace->end, frac);
 
             // check if hit vector lies within the triangle's edges
             if(!tri->PointInRange(hit, bxRadius)) {
