@@ -45,11 +45,26 @@ kexTri::kexTri(void) {
     for(int i = 0; i < 3; i++) {
         this->point[i] = NULL;
         this->edgeLink[i] = NULL;
-        this->bEdgeBlock[i] = true;
     }
 
     this->id = kexTri::globalID++;
     this->bTraced = false;
+}
+
+//
+// kexTri::Set
+//
+
+void kexTri::Set(kexVec3 *vec1, kexVec3 *vec2, kexVec3 *vec3) {
+    point[0] = vec1;
+    point[1] = vec2;
+    point[2] = vec3;
+
+    plane.SetNormal(*point[0], *point[1], *point[2]);
+    plane.SetDistance(*point[0]);
+
+    SetBounds();
+    SetPlueckerEdges();
 }
 
 //
@@ -87,6 +102,16 @@ void kexTri::SetBounds(void) {
 
     bounds.min.Set(lowx, lowy, lowz);
     bounds.max.Set(hix, hiy, hiz);
+}
+
+//
+// kexTri::SetPlueckerEdges
+//
+
+void kexTri::SetPlueckerEdges(void) {
+    plEdge[0].SetLine(*point[0], *point[1]);
+    plEdge[1].SetLine(*point[1], *point[2]);
+    plEdge[2].SetLine(*point[2], *point[0]);
 }
 
 //

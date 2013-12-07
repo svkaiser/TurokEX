@@ -322,6 +322,8 @@ void kexPhysics::Think(const float timeDelta) {
     trace.bbox = trace.localBBox;
     trace.bbox.min += start;
     trace.bbox.max += start;
+    // resize box to account for movement
+    trace.bbox |= (velocity * time);
 
     trace.start = start;
     trace.end = (gravity * mass) * mass;
@@ -394,7 +396,13 @@ void kexPhysics::Think(const float timeDelta) {
                 ImpactVelocity(vel, slideNormal, 1.024f);
 
                 // continue sliding down the slope
-                velocity = (-gravity * velocity) + vel;
+                vel = (-gravity * velocity) + vel;
+                if(vel.Dot(velocity) <= 0) {
+                    velocity.Clear();
+                    break;
+                }
+
+                velocity = vel;
                 bCanStep = false;
             }
             else {

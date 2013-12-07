@@ -31,12 +31,14 @@ public:
                     
     kexVec3         *point[3];
     kexTri          *edgeLink[3];
-    bool            bEdgeBlock[3];
+    kexPluecker     plEdge[3];
     kexPlane        plane;
     kexBBox         bounds;
     
+    void            Set(kexVec3 *vec1, kexVec3 *vec2, kexVec3 *vec3);
     void            SetPoint(const int idx, float *p);
     void            SetBounds(void);
+    void            SetPlueckerEdges(void);
     bool            PointInRange(const kexVec3 &pt, const float expand);
     const float     GetDistance(const kexVec3 &pos) const;
     const float     GetEdgeYaw(const int idx) const;

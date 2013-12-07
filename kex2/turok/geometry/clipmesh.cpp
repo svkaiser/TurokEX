@@ -577,6 +577,7 @@ void kexClipMesh::Transform(void) {
 
                 tri->plane.SetDistance(*tri->point[0]);
                 tri->SetBounds();
+                tri->SetPlueckerEdges();
             }
         }
     }
@@ -627,16 +628,9 @@ void kexClipMesh::CreateShape(void) {
             kexTri *tri = &cmGroup->triangles[i];
 
             tri->id = kexTri::globalID++;
-
-            tri->point[0] = &cmGroup->points[cmGroup->indices[i * 3 + 0]];
-            tri->point[1] = &cmGroup->points[cmGroup->indices[i * 3 + 1]];
-            tri->point[2] = &cmGroup->points[cmGroup->indices[i * 3 + 2]];
-            tri->plane.SetNormal(
-                *tri->point[0],
-                *tri->point[1],
-                *tri->point[2]);
-            tri->plane.SetDistance(*tri->point[0]);
-            tri->SetBounds();
+            tri->Set(&cmGroup->points[cmGroup->indices[i * 3 + 0]],
+                     &cmGroup->points[cmGroup->indices[i * 3 + 1]],
+                     &cmGroup->points[cmGroup->indices[i * 3 + 2]]);
 
             // link triangle edges
             for(int j = 0; j < 3; j++) {
@@ -684,7 +678,6 @@ void kexClipMesh::CreateShape(void) {
 bool kexClipMesh::Trace(traceInfo_t *trace) {
     float frac = 1;
     float r = 0;
-    float bxRadius = 1.024f;
     kexTri *tri;
     float dist;
     float distStart;
@@ -692,10 +685,6 @@ bool kexClipMesh::Trace(traceInfo_t *trace) {
     kexVec3 hit;
     kexVec3 offset;
     cmGroup_t *cmGroup;
-
-    if(trace->bUseBBox) {
-        bxRadius = (trace->localBBox.max - trace->localBBox.Center()).Unit() * 0.5f;
-    }
 
     for(unsigned int i = 0; i < numGroups; i++) {
         cmGroup = &cmGroups[i];
@@ -745,8 +734,43 @@ bool kexClipMesh::Trace(traceInfo_t *trace) {
             hit = trace->start.Lerp(trace->end, frac);
 
             // check if hit vector lies within the triangle's edges
-            if(!tri->PointInRange(hit, bxRadius)) {
-                continue;
+            if(!tri->PointInRange(hit, 0.1f)) {
+                if(trace->bUseBBox) {
+                    kexPluecker bp[8];
+                    kexVec3 bMin;
+                    kexVec3 bMax;
+                    int bit[3];
+
+                    bMin = trace->bbox.min;
+                    bMax = trace->bbox.max;
+
+                    bit[0] = bit[1] = bit[2] = 0;
+
+                    // setup pluecker coordinates from each bounding box point
+                    bp[0].SetRay(kexVec3(bMin.x, bMin.y, bMin.z), trace->dir);
+                    bp[1].SetRay(kexVec3(bMin.x, bMax.y, bMin.z), trace->dir);
+                    bp[2].SetRay(kexVec3(bMax.x, bMin.y, bMin.z), trace->dir);
+                    bp[3].SetRay(kexVec3(bMax.x, bMax.y, bMin.z), trace->dir);
+                    bp[4].SetRay(kexVec3(bMin.x, bMin.y, bMax.z), trace->dir);
+                    bp[5].SetRay(kexVec3(bMin.x, bMax.y, bMax.z), trace->dir);
+                    bp[6].SetRay(kexVec3(bMax.x, bMin.y, bMax.z), trace->dir);
+                    bp[7].SetRay(kexVec3(bMax.x, bMax.y, bMax.z), trace->dir);
+
+                    for(int k = 0; k < 3; k++) {
+                        for(int l = 0; l < 8; l++) {
+                            float d = bp[l].InnerProduct(tri->plEdge[k]);
+                            bit[k] |= FLOATSIGNBIT(d) << l;
+                        }
+                    }
+
+                    // abort if bounding box didn't make contact with one of the edges
+                    if(bit[0] == 0xff || bit[1] == 0xff || bit[2] == 0xff) {
+                        continue;
+                    }
+                }
+                else {
+                    continue;
+                }
             }
 
             trace->fraction = frac;
