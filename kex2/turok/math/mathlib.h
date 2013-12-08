@@ -182,7 +182,7 @@ public:
     kexVec3                 &operator|=(const kexQuat &quat);
     kexVec3                 &operator|=(const kexMatrix &mtx);
     float                   operator[](int index) const;
-    float                   operator[](int index);
+    float                   &operator[](int index);
 
     operator                float *(void) { return reinterpret_cast<float*>(&x); }
 
@@ -280,6 +280,7 @@ public:
     float                   Distance(const kexVec3 &point);
     kexPlane                &SetDistance(const kexVec3 &point);
     bool                    IsFacing(const float yaw);
+    const int               BestAxis(void) const;
     float                   ToYaw(void);
     float                   ToPitch(void);
     kexQuat                 ToQuat(void);
@@ -287,10 +288,8 @@ public:
     kexVec4                 &ToVec4(void);
     kexVec3                 GetInclination(void);
 
-    kexPlane                &operator|(const kexQuat &quat);
-    kexPlane                &operator|=(const kexQuat &quat);
-    kexPlane                &operator|(const kexMatrix &mtx);
-    kexPlane                &operator|=(const kexMatrix &mtx);
+    float                   operator[](int index) const;
+    float                   &operator[](int index);
 
     static void             ObjectConstruct(kexPlane *p);
     static void             ObjectConstruct(const float a, const float b, const float c, const float d,
@@ -335,7 +334,7 @@ public:
     kexAngle                &operator=(const float *vecs);
     kexAngle                operator-(void);
     float                   operator[](int index) const;
-    float                   operator[](int index);
+    float                   &operator[](int index);
 
     float                   yaw;
     float                   pitch;

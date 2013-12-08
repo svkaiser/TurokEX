@@ -140,6 +140,48 @@ bool kexPlane::IsFacing(const float yaw) {
 }
 
 //
+// kexPlane::BestAxis
+//
+
+const int kexPlane::BestAxis(void) const {
+    float na = kexMath::Fabs(a);
+    float nb = kexMath::Fabs(b);
+    float nc = kexMath::Fabs(c);
+
+    // figure out what axis the plane lies on
+    if(na >= nb && na >= nc) {
+        return 0;
+    }
+    else if(nb >= na && nb >= nc) {
+        return 1;
+    }
+    else {
+        return 2;
+    }
+
+    // this should never happen
+    return -1;
+}
+
+//
+// kexPlane::operator[]
+//
+
+float kexPlane::operator[](int index) const {
+    assert(index >= 0 && index < 3);
+    return (&a)[index];
+}
+
+//
+// kexPlane::operator[]
+//
+
+float &kexPlane::operator[](int index) {
+    assert(index >= 0 && index < 3);
+    return (&a)[index];
+}
+
+//
 // kexPlane::ToYaw
 //
 

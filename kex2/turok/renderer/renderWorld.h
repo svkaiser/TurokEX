@@ -49,6 +49,7 @@ public:
     bool            bShowOrigin;
     bool            bWireframe;
     bool            bShowClipMesh;
+    bool            bShowCollisionMap;
 
     int             showWorldNode;
 

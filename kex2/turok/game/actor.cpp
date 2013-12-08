@@ -371,6 +371,10 @@ void kexWorldActor::Spawn(void) {
     clipMesh.CreateShape();
     clipMesh.Transform();
 
+    if(bStatic == false) {
+        physics.sector = localWorld.CollisionMap().PointInSector(origin);
+    }
+
     scriptComponent.CallFunction(scriptComponent.onSpawn);
 }
 

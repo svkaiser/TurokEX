@@ -32,6 +32,7 @@
 #include "binFile.h"
 #include "fileSystem.h"
 #include "collisionMap.h"
+#include "renderSystem.h"
 
 #define CM_ID_HEADER    0
 #define CM_ID_DATASIZE  1
@@ -70,28 +71,11 @@ bool kexSector::Wall(void) {
 // kexSector::kexSector
 //
 
-bool kexSector::InRange(const float x, const float z) {
-    bool s1;
-    bool s2;
-    bool s3;
+bool kexSector::InRange(const kexVec3 &origin) {
+    kexVec3 org = origin;
 
-#define M_POINTONSIDE(v1, v2, v3, x, z) \
-    ((x - v2[0])        *   \
-    (v3[2] - v2[2])     -   \
-    (v3[0] - v2[0])     *   \
-    (z - v2[2]))        *   \
-    ((v1[0] - v2[0])    *   \
-    (v3[2] - v2[2])     -   \
-    (v3[0] - v2[0])     *   \
-    (v1[2] - v2[2]))
-
-    s1 = M_POINTONSIDE(*lowerTri.point[0], *lowerTri.point[1], *lowerTri.point[2], x, z) >= 0;
-    s2 = M_POINTONSIDE(*lowerTri.point[1], *lowerTri.point[0], *lowerTri.point[2], x, z) >= 0;
-    s3 = M_POINTONSIDE(*lowerTri.point[2], *lowerTri.point[0], *lowerTri.point[1], x, z) >= 0;
-
-#undef M_POINTONSIDE
-
-    return (s1 && s2 && s3);
+    org[1] -= (org[1] - lowerTri.GetDistance(org));
+    return lowerTri.PointInRange(org, 0);
 }
 
 //
@@ -132,9 +116,9 @@ bool kexSector::IntersectEdge(cMapTrace_t *trace, const kexVec3 pt1, const kexVe
         dx = pt1[0] - trace->end[0];
         dz = pt1[2] - trace->end[2];
 
-        d = -(dz * x + dx * z) / d;
+        d = -(x * dx + z * dz) / d;
 
-        if(d < trace->result->fraction) {
+        if(d >= 0 && d < 1 && d < trace->result->fraction) {
             trace->result->fraction = d;
             trace->result->position.Lerp(trace->start, trace->end, d);
             trace->result->normal.Set(x, 0, z);
@@ -340,6 +324,49 @@ void kexCollisionMap::Load(const char *name) {
 }
 
 //
+// kexCollisionMap::PointInSector
+//
+
+kexSector *kexCollisionMap::PointInSector(const kexVec3 &origin) {
+    float dist;
+    float curdist = 0;
+    kexSector *sector = NULL;
+    bool ok = false;
+
+    for(int i = 0; i < numSectors; i++) {
+        kexSector *s;
+
+        s = &sectors[i];
+
+        if(s->InRange(origin)) {
+            dist = origin[1] - s->lowerTri.GetDistance(origin);
+
+            if(s->flags & CLF_ONESIDED && dist < -16) {
+                continue;
+            }
+
+            if(dist < 0) {
+                dist = -dist;
+            }
+
+            if(ok) {
+                if(dist < curdist) {
+                    curdist = dist;
+                    sector = s;
+                }
+            }
+            else {
+                sector = s;
+                curdist = dist;
+                ok = true;
+            }
+        }
+    }
+
+    return sector;
+}
+
+//
 // kexCollisionMap::TraverseSectors
 //
 
@@ -366,7 +393,24 @@ void kexCollisionMap::TraverseSectors(cMapTrace_t *trace, kexSector *sector) {
 
     if(next != NULL) {
         if(next->Wall()) {
-            // trace stuff
+            kexTri *tri     = &next->lowerTri;
+            float distStart = tri->plane.Distance(trace->start) - tri->plane.d;
+            float distEnd   = tri->plane.Distance(trace->end) - tri->plane.d;
+
+            if(!(distStart <= distEnd || distStart < 0 || distEnd > 0)) {
+                float frac = (distStart / (distStart - distEnd));
+
+                if(frac >= 0 && frac <= 1 && frac < trace->result->fraction) {
+                    kexVec3 hit = trace->start.Lerp(trace->end, frac);
+
+                    if(next->CheckHeight(hit)) {
+                        trace->result->position = hit;
+                        trace->result->fraction = frac;
+                        trace->result->contactSector = next;
+                        return;
+                    }
+                }
+            }
         }
 
         TraverseSectors(trace, next);
@@ -380,10 +424,10 @@ void kexCollisionMap::TraverseSectors(cMapTrace_t *trace, kexSector *sector) {
 void kexCollisionMap::Trace(cMapTraceResult_t *result,
                             const kexVec3 &start, const kexVec3 &end,
                             kexSector *sector,
-                            const cMapClipFlags_t flags) {
+                            const int flags) {
     cMapTrace_t trace;
 
-    if(bLoaded == false) {
+    if(bLoaded == false || sector == NULL) {
         return;
     }
 
@@ -401,4 +445,63 @@ void kexCollisionMap::Trace(cMapTraceResult_t *result,
     trace.result->contactSector = NULL;
 
     TraverseSectors(&trace, sector);
+}
+
+//
+// kexCollisionMap::DebugDraw
+//
+
+void kexCollisionMap::DebugDraw(void) {
+    if(numSectors <= 0 || numPoints <= 0 || sectors == NULL) {
+        return;
+    }
+
+    renderSystem.SetState(GLSTATE_CULL, true);
+    renderSystem.SetState(GLSTATE_TEXTURE0, false);
+    renderSystem.SetState(GLSTATE_BLEND, true);
+    renderSystem.SetState(GLSTATE_ALPHATEST, true);
+    renderSystem.SetState(GLSTATE_LIGHTING, false);
+
+    dglDisableClientState(GL_NORMAL_ARRAY);
+    dglDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    for(int i = 0; i < numSectors; i++) {
+        kexSector *sector = &sectors[i];
+        kexTri *tri = &sector->lowerTri;
+
+        if(sector->bTraced == false) {
+            continue;
+        }
+
+        dglColor4ub(0xFF, 0xFF, 0xFF, 192);
+        dglBegin(GL_TRIANGLES);
+        dglVertex3f((*tri->point[0]).x, (*tri->point[0]).y, (*tri->point[0]).z);
+        dglVertex3f((*tri->point[1]).x, (*tri->point[1]).y, (*tri->point[1]).z);
+        dglVertex3f((*tri->point[2]).x, (*tri->point[2]).y, (*tri->point[2]).z);
+        dglEnd();
+
+        sector->bTraced = false;
+    }
+
+    dglColor4ub(255, 128, 128, 128);
+    dglVertexPointer(3, GL_FLOAT, sizeof(kexVec3),
+        reinterpret_cast<float*>(points[0]));
+    dglDrawElements(GL_TRIANGLES, numSectors * 3,
+        GL_UNSIGNED_SHORT, indices);
+
+    dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
+
+    dglDrawElements(GL_TRIANGLES, numSectors * 3,
+        GL_UNSIGNED_SHORT, indices);
+
+    dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    dglEnableClientState(GL_NORMAL_ARRAY);
+    dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    renderSystem.SetState(GLSTATE_TEXTURE0, true);
+    renderSystem.SetState(GLSTATE_BLEND, false);
+    renderSystem.SetState(GLSTATE_ALPHATEST, false);
+    renderSystem.SetState(GLSTATE_LIGHTING, true);
 }

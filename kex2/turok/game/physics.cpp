@@ -78,6 +78,7 @@ kexPhysics::kexPhysics(void) {
     this->bOnGround             = false;
     this->waterLevel            = WLT_INVALID;
     this->groundGeom            = NULL;
+    this->sector                = NULL;
 
     this->rotorVector.Clear();
     this->velocity.Clear();
@@ -326,7 +327,7 @@ void kexPhysics::Think(const float timeDelta) {
     trace.bbox |= (velocity * time);
 
     trace.start = start;
-    trace.end = (gravity * mass) * mass;
+    trace.end = start + (gravity * mass) * mass;
     trace.dir = gravity;
 
     // need to determine if we're standing on the ground or not

@@ -367,7 +367,7 @@ float kexAngle::operator[](int index) const {
 // kexAngle::operator[]
 //
 
-float kexAngle::operator[](int index) {
+float &kexAngle::operator[](int index) {
     assert(index >= 0 && index < 3);
     return (&yaw)[index];
 }

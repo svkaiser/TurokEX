@@ -560,7 +560,7 @@ float kexVec3::operator[](int index) const {
 // kexVec3::operator[]
 //
 
-float kexVec3::operator[](int index) {
+float &kexVec3::operator[](int index) {
     assert(index >= 0 && index < 3);
     return (&x)[index];
 }

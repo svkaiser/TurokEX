@@ -26,6 +26,7 @@
 #include "common.h"
 #include "mathlib.h"
 #include "clipmesh.h"
+#include "collisionMap.h"
 #include "script.h"
 
 #define ONPLANE_EPSILON     0.512f
@@ -91,6 +92,7 @@ public:
     kexVec3                 rotorVector;
     waterLevelType_t        waterLevel;
     kexTri                  *groundGeom;
+    kexSector               *sector;
     bool                    bOnGround;
 
 protected:

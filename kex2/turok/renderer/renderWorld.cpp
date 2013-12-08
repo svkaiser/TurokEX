@@ -101,6 +101,19 @@ static void FCmd_ShowOrigin(void) {
 }
 
 //
+// FCmd_ShowCollisionMap
+//
+
+static void FCmd_ShowCollisionMap(void) {
+    if(command.GetArgc() < 1) {
+        return;
+    }
+
+    renderWorld.bShowCollisionMap ^= 1;
+    renderWorld.bWireframe = 0;
+}
+
+//
 // FCmd_ShowWireframe
 //
 
@@ -110,6 +123,7 @@ static void FCmd_ShowWireFrame(void) {
 
     renderWorld.bWireframe ^= 1;
     renderWorld.bShowClipMesh = 0;
+    renderWorld.bShowCollisionMap = 0;
 }
 
 //
@@ -138,6 +152,7 @@ kexRenderWorld::kexRenderWorld(void) {
     this->bShowRadius       = false;
     this->bWireframe        = false;
     this->bShowClipMesh     = false;
+    this->bShowCollisionMap = false;
     this->showWorldNode     = -1;
 }
 
@@ -146,13 +161,14 @@ kexRenderWorld::kexRenderWorld(void) {
 //
 
 void kexRenderWorld::Init(void) {
-    command.Add("showcollision", FCmd_ShowCollision);
+    command.Add("showclipmesh", FCmd_ShowCollision);
     command.Add("showgridbounds", FCmd_ShowGridBounds);
     command.Add("showbbox", FCmd_ShowBoundingBox);
     command.Add("showradius", FCmd_ShowRadius);
     command.Add("showorigin", FCmd_ShowOrigin);
     command.Add("drawwireframe", FCmd_ShowWireFrame);
     command.Add("showworldnode", FCmd_ShowWorldNode);
+    command.Add("showcollision", FCmd_ShowCollisionMap);
 }
 
 //
@@ -190,6 +206,11 @@ void kexRenderWorld::RenderScene(void) {
     SetupGlobalLight();
     DrawStaticActors();
     DrawActors();
+
+    if(bShowCollisionMap) {
+        world->CollisionMap().DebugDraw();
+    }
+
     DrawFX();
     DrawViewActors();
 
@@ -221,7 +242,8 @@ void kexRenderWorld::RenderScene(void) {
 //
 
 void kexRenderWorld::SetupGlobalFog(void) {
-    if(!bShowClipMesh && cvarRenderFog.GetBool() && localWorld.FogEnabled() && !bWireframe) {
+    if((!bShowClipMesh && !bShowCollisionMap) && cvarRenderFog.GetBool() &&
+        localWorld.FogEnabled() && !bWireframe) {
         float *rgb = localWorld.GetCurrentFogRGB();
         dglClearColor(rgb[0], rgb[1], rgb[2], 1.0f);
 
@@ -477,7 +499,7 @@ void kexRenderWorld::DrawStaticActors(void) {
                 continue;
             }
 
-            if(!bShowClipMesh) {
+            if(!bShowClipMesh && !bShowCollisionMap) {
                 dglPushMatrix();
                 dglMultMatrixf(actor->Matrix().ToFloatPtr());
 
@@ -487,7 +509,7 @@ void kexRenderWorld::DrawStaticActors(void) {
                 TraverseDrawActorNode(actor, &actor->Model()->nodes[0], NULL);
                 dglPopMatrix();
             }
-            else {
+            else if(bShowClipMesh) {
                 actor->ClipMesh().DebugDraw();
             }
 
