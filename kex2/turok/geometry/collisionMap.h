@@ -64,6 +64,7 @@ typedef struct {
     kexVec3                         position;
     kexVec3                         normal;
     float                           fraction;
+    bool                            bClippedEdge;
 } cMapTraceResult_t;
 
 typedef struct {
@@ -92,7 +93,8 @@ public:
     bool                            Wall(void);
     bool                            InRange(const kexVec3 &origin);
     bool                            CheckHeight(const kexVec3 &pos);
-    bool                            IntersectEdge(cMapTrace_t *trace, const kexVec3 pt1, const kexVec3 pt2);
+    bool                            IntersectEdge(cMapTrace_t *trace, const int edgeNum);
+    bool                            Trace(cMapTrace_t *trace);
     kexSector                       *CrossEdge(cMapTrace_t *trace, const int edge);
 
     cMapArea_t                      *area;

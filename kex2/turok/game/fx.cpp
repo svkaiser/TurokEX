@@ -66,6 +66,7 @@ kexFxPhysics::kexFxPhysics(void) {
     this->bOnGround             = false;
     this->waterLevel            = WLT_INVALID;
     this->groundGeom            = NULL;
+    this->sector                = NULL;
 
     this->rotorVector.Clear();
     this->velocity.Clear();
@@ -111,6 +112,10 @@ void kexFxPhysics::Think(const float timeDelta) {
         return;
     }
 
+    if(sector == NULL) {
+        sector = localWorld.CollisionMap().PointInSector(owner->GetOrigin());
+    }
+
     fxinfo = fx->fxInfo;
 
     if(moveAmount < 0.001f || fxinfo->onplane == VFX_DEFAULT) {
@@ -118,6 +123,7 @@ void kexFxPhysics::Think(const float timeDelta) {
     }
     else {
         trace.owner = owner;
+        trace.sector = &sector;
         trace.bUseBBox = false;
         trace.start = start;
         trace.end = start + move;
@@ -151,21 +157,21 @@ void kexFxPhysics::Think(const float timeDelta) {
 
             if(trace.hitTri != NULL) {
                 groundGeom = trace.hitTri;
+            }
 
-                switch(fxinfo->onplane) {
-                    case VFX_BOUNCE:
-                        if(fxinfo->bStopAnimOnImpact) {
-                            fx->bAnimate = false;
-                        }
-                        ImpactVelocity(velocity, trace.hitNormal, 1.05f);
-                        ApplyFriction();
-                        break;
-                    case VFX_DESTROY:
-                        owner->GetOrigin() += (trace.hitNormal * 1.024f);
-                        fx->Event(&fxinfo->onImpact, NULL);
-                        fx->Remove();
-                        break;
-                }
+            switch(fxinfo->onplane) {
+                case VFX_BOUNCE:
+                    if(fxinfo->bStopAnimOnImpact) {
+                        fx->bAnimate = false;
+                    }
+                    ImpactVelocity(velocity, trace.hitNormal, 1.05f);
+                    ApplyFriction();
+                    break;
+                case VFX_DESTROY:
+                    owner->GetOrigin() += (trace.hitNormal * 1.024f);
+                    fx->Event(&fxinfo->onImpact, NULL);
+                    fx->Remove();
+                    break;
             }
         }
     }

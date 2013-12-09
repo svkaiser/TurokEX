@@ -56,6 +56,7 @@ typedef struct {
     kexBBox                 bbox;
     kexBBox                 localBBox;
     kexActor                *owner;
+    kexSector               **sector;
 } traceInfo_t;
 
 BEGIN_EXTENDED_CLASS(kexPhysics, kexObject);

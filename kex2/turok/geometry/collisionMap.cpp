@@ -86,9 +86,9 @@ bool kexSector::CheckHeight(const kexVec3 &pos) {
     if(Wall()) {
         float y = pos[1] + 16.384f;
 
-        if( y > *lowerTri.point[0][1] &&
-            y > *lowerTri.point[1][1] &&
-            y > *lowerTri.point[2][1]) {
+        if( y > lowerTri.point[0]->y &&
+            y > lowerTri.point[1]->y &&
+            y > lowerTri.point[2]->y) {
                 return false;
         }
     }
@@ -99,12 +99,17 @@ bool kexSector::CheckHeight(const kexVec3 &pos) {
 // kexSector::IntersectEdge
 //
 
-bool kexSector::IntersectEdge(cMapTrace_t *trace, const kexVec3 pt1, const kexVec3 pt2) {
+bool kexSector::IntersectEdge(cMapTrace_t *trace, const int edgeNum) {
     float x;
     float z;
     float dx;
     float dz;
     float d;
+    kexVec3 pt1;
+    kexVec3 pt2;
+
+    pt1 = *lowerTri.point[(edgeNum+0)%3];
+    pt2 = *lowerTri.point[(edgeNum+1)%3];
 
     x = pt2[2] - pt1[2];
     z = pt1[0] - pt2[0];
@@ -116,14 +121,47 @@ bool kexSector::IntersectEdge(cMapTrace_t *trace, const kexVec3 pt1, const kexVe
         dx = pt1[0] - trace->end[0];
         dz = pt1[2] - trace->end[2];
 
-        d = -(x * dx + z * dz) / d;
+        d = 1.0f + ((x * dx + z * dz) / d);
 
-        if(d >= 0 && d < 1 && d < trace->result->fraction) {
+        if(d < 1 && d < trace->result->fraction) {
             trace->result->fraction = d;
-            trace->result->position.Lerp(trace->start, trace->end, d);
+            trace->result->position = trace->start.Lerp(trace->end, d);
             trace->result->normal.Set(x, 0, z);
             trace->result->normal.Normalize();
             return true;
+        }
+    }
+
+    return false;
+}
+
+//
+// kexSector::Trace
+//
+
+bool kexSector::Trace(cMapTrace_t *trace) {
+    kexTri *tri = &lowerTri;
+
+    if(tri->plane.Distance(trace->direction) >= 0) {
+        return false;
+    }
+
+    float distStart = tri->plane.Distance(trace->start) - tri->plane.d;
+    float distEnd   = tri->plane.Distance(trace->end) - tri->plane.d;
+
+    if(!(distStart <= distEnd || distStart < 0 || distEnd > 0)) {
+        float frac = (distStart / (distStart - distEnd));
+
+        if(frac >= 0 && frac <= 1 && frac < trace->result->fraction) {
+            kexVec3 hit = trace->start.Lerp(trace->end, frac);
+
+            if(tri->PointInRange(hit, 0)) {
+                trace->result->position = hit;
+                trace->result->fraction = frac;
+                trace->result->normal = tri->plane.Normal();
+                trace->result->contactSector = this;
+                return true;
+            }
         }
     }
 
@@ -333,6 +371,10 @@ kexSector *kexCollisionMap::PointInSector(const kexVec3 &origin) {
     kexSector *sector = NULL;
     bool ok = false;
 
+    if(bLoaded == false) {
+        return NULL;
+    }
+
     for(int i = 0; i < numSectors; i++) {
         kexSector *s;
 
@@ -373,47 +415,30 @@ kexSector *kexCollisionMap::PointInSector(const kexVec3 &origin) {
 void kexCollisionMap::TraverseSectors(cMapTrace_t *trace, kexSector *sector) {
     int i;
     kexSector *next = NULL;
-    kexVec3 pt1;
-    kexVec3 pt2;
 
     if(sector == NULL) {
         return;
     }
 
     trace->result->sector = sector;
+    trace->result->fraction = 1;
+
+    if(sector->Trace(trace)) {
+        // made contact
+        return;
+    }
 
     for(i = 0; i < 3; i++) {
-        pt1 = *sector->lowerTri.point[(i+0)%3];
-        pt2 = *sector->lowerTri.point[(i+1)%3];
-
-        if(sector->IntersectEdge(trace, pt1, pt2)) {
+        if(sector->IntersectEdge(trace, i)) {
             next = sector->CrossEdge(trace, i);
         }
     }
 
     if(next != NULL) {
-        if(next->Wall()) {
-            kexTri *tri     = &next->lowerTri;
-            float distStart = tri->plane.Distance(trace->start) - tri->plane.d;
-            float distEnd   = tri->plane.Distance(trace->end) - tri->plane.d;
-
-            if(!(distStart <= distEnd || distStart < 0 || distEnd > 0)) {
-                float frac = (distStart / (distStart - distEnd));
-
-                if(frac >= 0 && frac <= 1 && frac < trace->result->fraction) {
-                    kexVec3 hit = trace->start.Lerp(trace->end, frac);
-
-                    if(next->CheckHeight(hit)) {
-                        trace->result->position = hit;
-                        trace->result->fraction = frac;
-                        trace->result->contactSector = next;
-                        return;
-                    }
-                }
-            }
-        }
-
         TraverseSectors(trace, next);
+    }
+    else {
+        trace->result->bClippedEdge = true;
     }
 }
 
@@ -427,6 +452,14 @@ void kexCollisionMap::Trace(cMapTraceResult_t *result,
                             const int flags) {
     cMapTrace_t trace;
 
+    trace.result = result;
+
+    trace.result->position      = end;
+    trace.result->fraction      = 1.0f;
+    trace.result->sector        = sector;
+    trace.result->contactSector = NULL;
+    trace.result->bClippedEdge  = false;
+
     if(bLoaded == false || sector == NULL) {
         return;
     }
@@ -435,14 +468,9 @@ void kexCollisionMap::Trace(cMapTraceResult_t *result,
     trace.end       = end;
     trace.sector    = sector;
     trace.flags     = flags;
-    trace.result    = result;
     trace.direction = (end - start).Normalize();
 
-    trace.result->position      = end;
-    trace.result->fraction      = 1.0f;
-    trace.result->normal        = trace.direction;
-    trace.result->sector        = sector;
-    trace.result->contactSector = NULL;
+    trace.result->normal = trace.direction;
 
     TraverseSectors(&trace, sector);
 }

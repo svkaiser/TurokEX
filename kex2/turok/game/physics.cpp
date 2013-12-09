@@ -323,6 +323,7 @@ void kexPhysics::Think(const float timeDelta) {
     trace.bbox = trace.localBBox;
     trace.bbox.min += start;
     trace.bbox.max += start;
+    trace.sector = &sector;
     // resize box to account for movement
     trace.bbox |= (velocity * time);
 
@@ -388,40 +389,42 @@ void kexPhysics::Think(const float timeDelta) {
         // test if walking on steep slopes
         slope = trace.hitNormal.Dot(gravity);
 
-        if(slope < 0 && slope >= -0.5f) {
-            if(trace.hitTri == groundGeom) {
-                // remove vertical movement
-                slideNormal = (trace.hitNormal + (trace.hitNormal * gravity));
-                vel = (velocity + (velocity * gravity));
+        if(trace.hitTri) {
+            if(slope < 0 && slope >= -0.5f) {
+                if(trace.hitTri == groundGeom) {
+                    // remove vertical movement
+                    slideNormal = (trace.hitNormal + (trace.hitNormal * gravity));
+                    vel = (velocity + (velocity * gravity));
 
-                ImpactVelocity(vel, slideNormal, 1.024f);
+                    ImpactVelocity(vel, slideNormal, 1.024f);
 
-                // continue sliding down the slope
-                vel = (-gravity * velocity) + vel;
-                if(vel.Dot(velocity) <= 0) {
-                    velocity.Clear();
-                    break;
+                    // continue sliding down the slope
+                    vel = (-gravity * velocity) + vel;
+                    if(vel.Dot(velocity) <= 0) {
+                        velocity.Clear();
+                        break;
+                    }
+
+                    velocity = vel;
+                    bCanStep = false;
                 }
+                else if(trace.hitMesh != NULL) {
+                    // trying to move from ground to steep slope will be
+                    // treated as a solid wall
+                    cDir = trace.hitVector + (trace.hitNormal.Cross(-gravity).Normalize());
 
-                velocity = vel;
-                bCanStep = false;
-            }
-            else {
-                // trying to move from ground to steep slope will be
-                // treated as a solid wall
-                cDir = trace.hitVector + (trace.hitNormal.Cross(-gravity).Normalize());
+                    cDir += (cDir * gravity);
+                    cDir -= gravity;
 
-                cDir += (cDir * gravity);
-                cDir -= gravity;
+                    trace.hitVector += (trace.hitVector * gravity);
+                    trace.hitVector -= gravity;
 
-                trace.hitVector += (trace.hitVector * gravity);
-                trace.hitVector -= gravity;
+                    trace.hitNormal = trace.hitVector.Cross(cDir);
+                    trace.hitNormal += (trace.hitNormal * gravity);
+                    trace.hitNormal.Normalize();
 
-                trace.hitNormal = trace.hitVector.Cross(cDir);
-                trace.hitNormal += (trace.hitNormal * gravity);
-                trace.hitNormal.Normalize();
-
-                bCanStep = false;
+                    bCanStep = false;
+                }
             }
         }
 
@@ -431,41 +434,43 @@ void kexPhysics::Think(const float timeDelta) {
 
         normals[moves++] = trace.hitNormal;
         
-        // handle stepping
-        if(bCanStep && slope >= -0.5f) {
-            trace.start = owner->GetOrigin();
-            trace.end = trace.start + (-gravity * stepHeight);
-            trace.dir = -gravity;
+        if(trace.hitTri) {
+            // handle stepping
+            if(bCanStep && slope >= -0.5f) {
+                trace.start = owner->GetOrigin();
+                trace.end = trace.start + (-gravity * stepHeight);
+                trace.dir = -gravity;
 
-            // trace up
-            localWorld.Trace(&trace);
+                // trace up
+                localWorld.Trace(&trace);
 
-            trace.start = trace.hitVector;
-            trace.end = trace.start + (velocity * time);
-            trace.dir = direction;
+                trace.start = trace.hitVector;
+                trace.end = trace.start + (velocity * time);
+                trace.dir = direction;
 
-            // see if we can trace over the step
-            localWorld.Trace(&trace);
-            stepFraction = trace.fraction;
+                // see if we can trace over the step
+                localWorld.Trace(&trace);
+                stepFraction = trace.fraction;
 
-            trace.start = trace.hitVector;
-            trace.end = trace.start + (gravity * stepHeight);
-            trace.dir = gravity;
+                trace.start = trace.hitVector;
+                trace.end = trace.start + (gravity * stepHeight);
+                trace.dir = gravity;
 
-            // test the ground
-            localWorld.Trace(&trace);
-            slope = trace.hitNormal.Dot(-gravity);
+                // test the ground
+                localWorld.Trace(&trace);
+                slope = trace.hitNormal.Dot(-gravity);
 
-            if(trace.hitTri != groundGeom && slope > 0.5f || trace.fraction >= 1) {
-                // don't try to step up against a wall
-                if(!(stepFraction < 0.99f && slope <= 0.5f)) {
-                    owner->SetOrigin(trace.hitVector - (gravity * 0.125f));
+                if(trace.hitTri != groundGeom && slope > 0.5f || trace.fraction >= 1) {
+                    // don't try to step up against a wall
+                    if(!(stepFraction < 0.99f && slope <= 0.5f)) {
+                        owner->SetOrigin(trace.hitVector - (gravity * 0.125f));
 
-                    if(stepFraction >= 1) {
-                        break;
+                        if(stepFraction >= 1) {
+                            break;
+                        }
+
+                        time -= (time * trace.fraction);
                     }
-
-                    time -= (time * trace.fraction);
                 }
             }
         }

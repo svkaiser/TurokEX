@@ -465,6 +465,40 @@ void kexWorld::Trace(traceInfo_t *trace) {
         trace->hitTri->bTraced = true;
     }
 
+    if(collisionMap.IsLoaded() == true) {
+        cMapTraceResult_t cmResult;
+
+        collisionMap.Trace(&cmResult, trace->start, trace->end,
+            *trace->sector,
+            PF_CLIPEDGES|PF_DROPOFF);
+
+        if(cmResult.sector) {
+            *trace->sector = cmResult.sector;
+            cmResult.sector->bTraced = true;
+        }
+
+        if(cmResult.fraction < 1 && cmResult.fraction < trace->fraction) {
+            trace->fraction = cmResult.fraction;
+            trace->hitNormal = cmResult.normal;
+            trace->hitVector = cmResult.position;
+
+            trace->hitActor = NULL;
+            trace->hitMesh = NULL;
+
+            if(cmResult.sector != NULL) {
+                trace->hitTri = &cmResult.sector->lowerTri;
+            }
+
+            if(cmResult.contactSector) {
+                trace->hitTri = &cmResult.contactSector->lowerTri;
+                cmResult.contactSector->bTraced = true;
+            }
+            else if(cmResult.bClippedEdge) {
+                trace->hitTri = NULL;
+            }
+        }
+    }
+
     validcount++;
 }
 
