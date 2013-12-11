@@ -518,6 +518,16 @@ void kexPhysics::Think(const float timeDelta) {
     }
 
     ApplyFriction();
+
+    if(sector) {
+        kexVec3 org = owner->GetOrigin();
+        float dist = (org[1] - sector->lowerTri.GetDistance(org));
+
+        if(dist < 0) {
+            owner->GetOrigin()[1] = org[1] - dist;
+            velocity.Clear();
+        }
+    }
 }
 
 //
