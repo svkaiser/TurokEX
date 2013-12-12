@@ -113,7 +113,14 @@ void kexFxPhysics::Think(const float timeDelta) {
     }
 
     if(sector == NULL) {
-        sector = localWorld.CollisionMap().PointInSector(owner->GetOrigin());
+        kexActor *source = owner->GetOwner();
+
+        if(source != NULL && source->Physics()->sector) {
+            sector = source->Physics()->sector;
+        }
+        else {
+            sector = localWorld.CollisionMap().PointInSector(owner->GetOrigin());
+        }
     }
 
     fxinfo = fx->fxInfo;

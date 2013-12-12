@@ -56,6 +56,8 @@ void kexFont::LoadKFont(const char *file) {
     texFilterMode_t filter = TF_LINEAR;
 
     if(!(lexer = parser.Open(file))) {
+        texture = renderSystem.CacheTexture("textures/default.tga", clamp, filter);
+        common.Warning("kexFont::LoadKFont: %s not found\n", file);
         return;
     }
 

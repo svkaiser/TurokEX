@@ -690,58 +690,34 @@ bool kexWorldActor::AlignToSurface(void) {
 //
 
 void kexWorldActor::InitObject(void) {
-    scriptManager.Engine()->RegisterObjectType(
-        "kActor",
-        sizeof(kexWorldActor),
-        asOBJ_REF);
-        
-    scriptManager.Engine()->RegisterObjectType(
-        "kAttachment",
-        sizeof(kexAttachment),
-        asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS);
-
-    scriptManager.Engine()->RegisterObjectBehaviour(
-        "kActor",
-        asBEHAVE_ADDREF,
-        "void f()",
-        asMETHOD(kexWorldActor, AddRef),
-        asCALL_THISCALL);
-
-    scriptManager.Engine()->RegisterObjectBehaviour(
-        "kActor",
-        asBEHAVE_RELEASE,
-        "void f()",
-        asMETHOD(kexWorldActor, RemoveRef),
-        asCALL_THISCALL);
+    kexScriptManager::RegisterRefObject<kexWorldActor>("kActor");
+    kexScriptManager::RegisterDataObject<kexAttachment>("kAttachment");
+    kexScriptManager::RegisterAddRef<kexWorldActor>("kActor");
+    kexScriptManager::RegisterRemoveRef<kexWorldActor>("kActor");
 
     kexWorldActor::RegisterBaseProperties<kexWorldActor>("kActor");
 
-#define OBJMETHOD(str, a, b, c)                     \
-    scriptManager.Engine()->RegisterObjectMethod(   \
-        "kAttachment",                              \
-        str,                                        \
-        asMETHODPR(kexAttachment, a, b, c),         \
-        asCALL_THISCALL)
+    scriptManager.RegisterMethod("kAttachment", "void Transform(void)",
+        asMETHODPR(kexAttachment, Transform, (void), void));
+    scriptManager.RegisterMethod("kAttachment", "void AttachToActor(kActor@)",
+        asMETHODPR(kexAttachment, AttachToActor, (kexActor *targ), void));
+    scriptManager.RegisterMethod("kAttachment", "void DettachActor(void)",
+        asMETHODPR(kexAttachment, DettachActor, (void), void));
+    scriptManager.RegisterMethod("kAttachment", "kVec3 &GetAttachOffset(void)",
+        asMETHODPR(kexAttachment, GetAttachOffset, (void), kexVec3&));
+    scriptManager.RegisterMethod("kAttachment", "kVec3 &GetSourceOffset(void)",
+        asMETHODPR(kexAttachment, GetSourceOffset, (void), kexVec3&));
+    scriptManager.RegisterMethod("kAttachment", "void SetAttachOffset(const kVec3 &in)",
+        asMETHODPR(kexAttachment, SetAttachOffset, (const kexVec3 &vec), void));
+    scriptManager.RegisterMethod("kAttachment", "void SetSourceOffset(const kVec3 &in)",
+        asMETHODPR(kexAttachment, SetSourceOffset, (const kexVec3 &vec), void));
+    scriptManager.RegisterMethod("kAttachment", "kActor @GetOwner(void)",
+        asMETHODPR(kexAttachment, GetOwner, (void), kexActor*));
+    scriptManager.RegisterMethod("kAttachment", "void SetOwner(kActor@)",
+        asMETHODPR(kexAttachment, SetOwner, (kexActor *o), void));
+    scriptManager.RegisterMethod("kAttachment", "kActor @GetAttachedActor(void)",
+        asMETHODPR(kexAttachment, GetAttachedActor, (void), kexActor*));
 
-    OBJMETHOD("void Transform(void)", Transform, (void), void);
-    OBJMETHOD("void AttachToActor(kActor@)", AttachToActor, (kexActor *targ), void);
-    OBJMETHOD("void DettachActor(void)", DettachActor, (void), void);
-    OBJMETHOD("kVec3 &GetAttachOffset(void)", GetAttachOffset, (void), kexVec3&);
-    OBJMETHOD("kVec3 &GetSourceOffset(void)", GetSourceOffset, (void), kexVec3&);
-    OBJMETHOD("void SetAttachOffset(const kVec3 &in)", SetAttachOffset, (const kexVec3 &vec), void);
-    OBJMETHOD("void SetSourceOffset(const kVec3 &in)", SetSourceOffset, (const kexVec3 &vec), void);
-    OBJMETHOD("kActor @GetOwner(void)", GetOwner, (void), kexActor*);
-    OBJMETHOD("void SetOwner(kActor@)", SetOwner, (kexActor *o), void);
-    OBJMETHOD("kActor @GetAttachedActor(void)", GetAttachedActor, (void), kexActor*);
-
-#define OBJPROPERTY(str, p)                         \
-    scriptManager.Engine()->RegisterObjectProperty( \
-        "kAttachment",                              \
-        str,                                        \
-        asOFFSET(kexAttachment, p))
-
-    OBJPROPERTY("bool bAttachRelativeAngles", bAttachRelativeAngles);
-
-#undef OBJMETHOD
-#undef OBJPROPERTY
+    scriptManager.Engine()->RegisterObjectProperty("kAttachment", "bool bAttachRelativeAngles",
+        asOFFSET(kexAttachment, bAttachRelativeAngles));
 }

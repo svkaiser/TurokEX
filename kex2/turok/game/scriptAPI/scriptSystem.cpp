@@ -254,6 +254,15 @@ void kexScriptManager::ProcessScript(const char *file) {
 }
 
 //
+// kexScriptManager::RegisterMethod
+//
+
+void kexScriptManager::RegisterMethod(const char *name, const char *decl,
+                                      const asSFuncPtr &funcPointer) {
+    engine->RegisterObjectMethod(name, decl, funcPointer, asCALL_THISCALL);
+}
+
+//
 // kexScriptManager::CallExternalScript
 //
 

@@ -519,6 +519,8 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
 //
 
 kexModel_t *kexModelManager::LoadModel(const char *file) {
+    bool bUsingDefault = false;
+
     if(file == NULL) {
         return NULL;
     }
@@ -533,14 +535,19 @@ kexModel_t *kexModelManager::LoadModel(const char *file) {
         kexLexer *lexer;
 
         if(!(lexer = parser.Open(file))) {
-            return NULL;
+            if(!(lexer = parser.Open("models/default.kmesh"))) {
+                return NULL;
+            }
+
+            common.Warning("kexModelManager::LoadModel: %s not found\n", file);
+            bUsingDefault = true;
         }
 
         model = modelList.Add(file);
         strncpy(model->filePath, file, MAX_FILEPATH);
 
         // begin parsing
-        if(strstr(file, ".kmesh")) {
+        if(strstr(file, ".kmesh") || bUsingDefault) {
             ParseKMesh(model, lexer);
         }
         else if(strstr(file, ".obj")) {

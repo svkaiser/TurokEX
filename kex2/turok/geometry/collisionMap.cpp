@@ -239,9 +239,8 @@ kexSector *kexSector::CrossEdge(cMapTrace_t *trace, const int edge) {
         // from the front side. these will be treated as
         // solid walls. direction of ray must be facing
         // towards the plane
-        if(next->CheckHeight(trace->end) &&
+        if(next->CheckHeight(result->position) &&
             nextTri->plane.IsFacing(trace->direction.ToYaw())) {
-                result->contactSector = next;
                 return NULL;
         }
     }
