@@ -25,6 +25,7 @@
 
 #include "mathlib.h"
 #include "triangle.h"
+#include "areas.h"
 
 typedef enum {
     CLF_WATER           = 0x1,
@@ -76,16 +77,6 @@ typedef struct {
     cMapTraceResult_t               *result;
 } cMapTrace_t;
 
-typedef struct {
-    unsigned int                    flags;
-    float                           waterplane;
-    unsigned int                    targetID;
-    char                            *triggerSound;
-    unsigned short                  fSurfaceID;
-    unsigned short                  cSurfaceID;
-    unsigned short                  wSurfaceID;
-} cMapArea_t;
-
 class kexSector {
 public:
                                     kexSector(void);
@@ -97,7 +88,7 @@ public:
     bool                            Trace(cMapTrace_t *trace);
     kexSector                       *CrossEdge(cMapTrace_t *trace, const int edge);
 
-    cMapArea_t                      *area;
+    kexArea                         *area;
     unsigned int                    flags;
     kexTri                          lowerTri;
     kexTri                          upperTri;
@@ -122,9 +113,10 @@ public:
     kexVec3                         *points[2];
     word                            *indices;
     int                             numSectors;
+    int                             numAreas;
     int                             numPoints;
     kexSector                       *sectors;
-    cMapArea_t                      *areas;
+    kexArea                         *areas;
 
     const bool                      IsLoaded(void) const { return bLoaded; }
 

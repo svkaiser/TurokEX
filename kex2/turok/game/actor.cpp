@@ -660,7 +660,7 @@ void kexWorldActor::SpawnFX(const kexStr &str, const float x, const float y, con
 
 void kexWorldActor::CreateComponent(const char *name) {
     // TODO
-    scriptComponent.Spawn(name);
+    scriptComponent.Construct(name);
 }
 
 //

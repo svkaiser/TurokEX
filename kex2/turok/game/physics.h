@@ -25,7 +25,6 @@
 
 #include "common.h"
 #include "mathlib.h"
-#include "clipmesh.h"
 #include "collisionMap.h"
 #include "script.h"
 
@@ -58,6 +57,8 @@ typedef struct {
     kexActor                *owner;
     kexSector               **sector;
 } traceInfo_t;
+
+#include "clipmesh.h"
 
 BEGIN_EXTENDED_CLASS(kexPhysics, kexObject);
 public:

@@ -25,7 +25,13 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "scriptAPI/scriptSystem.h"
+#include "scriptAPI/component.h"
+
+//-----------------------------------------------------------------------------
+//
+// kexComponent
+//
+//-----------------------------------------------------------------------------
 
 //
 // kexComponent:: kexComponent
@@ -34,14 +40,10 @@
 kexComponent::kexComponent(void) {
     this->obj           = NULL;
     this->type          = NULL;
-    this->onThink       = NULL;
-    this->onSpawn       = NULL;
-    this->onTouch       = NULL;
-    this->onDamage      = NULL;
-    this->onPreDraw     = NULL;
-    this->onDraw        = NULL;
-    this->onPostDraw    = NULL;
     this->mod           = scriptManager.Module();
+    this->onThink       = NULL;
+    this->onLocalThink  = NULL;
+    this->onSpawn       = NULL;
 }
 
 //
@@ -58,50 +60,32 @@ kexComponent::~kexComponent(void) {
 }
 
 //
-// kexComponent::Init
+// kexComponent::Construct
 //
 
-void kexComponent::Init(void) {
-    scriptManager.Engine()->RegisterInterface("Component");
-    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnThink(void)");
-    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnLocalThink(void)");
-    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnSpawn(void)");
-    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnTouch(void)");
-    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnDamage(void)");
-    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnPreDraw(void)");
-    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnDraw(void)");
-    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnPostDraw(void)");
+void kexComponent::Construct(const char *className) {
 }
 
 //
 // kexComponent::Spawn
 //
 
-void kexComponent::Spawn(const char *className) {
+bool kexComponent::Spawn(const char *className) {
     mod = scriptManager.Module();
 
     if(mod == NULL) {
         common.Error("kexComponent::Spawn: attempted to spawn %s while no script is loaded", className);
-        return;
+        return false;
     }
 
     type = scriptManager.Engine()->GetObjectTypeById(mod->GetTypeIdByDecl(className));
 
     if(type == NULL) {
         common.Warning("kexComponent::Spawn: %s not found\n", className);
-        return;
+        return false;
     }
 
-    CallConstructor((kexStr(className) + " @" + className + "(kActor@)").c_str());
-
-    onThink         = type->GetMethodByDecl("void OnThink(void)");
-    onLocalThink    = type->GetMethodByDecl("void OnLocalThink(void)");
-    onSpawn         = type->GetMethodByDecl("void OnSpawn(void)");
-    onTouch         = type->GetMethodByDecl("void OnTouch(void)");
-    onDamage        = type->GetMethodByDecl("void OnDamage(void)");
-    onPreDraw       = type->GetMethodByDecl("void OnPreDraw(void)");
-    onDraw          = type->GetMethodByDecl("void OnDraw(void)");
-    onPostDraw      = type->GetMethodByDecl("void OnPostDraw(void)");
+    return true;
 }
 
 //
@@ -109,13 +93,15 @@ void kexComponent::Spawn(const char *className) {
 //
 
 bool kexComponent::CallFunction(asIScriptFunction *func) {
-    if(func == NULL)
+    if(func == NULL) {
         return false;
+    }
 
     int state = scriptManager.Context()->GetState();
 
-    if(state == asEXECUTION_ACTIVE)
+    if(state == asEXECUTION_ACTIVE) {
         scriptManager.Context()->PushState();
+    }
 
     scriptManager.Context()->Prepare(func);
     scriptManager.Context()->SetObject(obj);
@@ -124,8 +110,9 @@ bool kexComponent::CallFunction(asIScriptFunction *func) {
         return false;
     }
 
-    if(state == asEXECUTION_ACTIVE)
+    if(state == asEXECUTION_ACTIVE) {
         scriptManager.Context()->PopState();
+    }
 
     return true;
 }
@@ -138,8 +125,9 @@ bool kexComponent::CallConstructor(const char *decl) {
     int state = scriptManager.Context()->GetState();
     bool ok = false;
 
-    if(state == asEXECUTION_ACTIVE)
+    if(state == asEXECUTION_ACTIVE) {
         scriptManager.Context()->PushState();
+    }
 
     scriptManager.Context()->Prepare(type->GetFactoryByDecl(decl));
     scriptManager.Context()->SetArgObject(0, objHandle.owner);
@@ -154,8 +142,9 @@ bool kexComponent::CallConstructor(const char *decl) {
     objHandle.Set(obj, type);
     ok = true;
 
-    if(state == asEXECUTION_ACTIVE)
+    if(state == asEXECUTION_ACTIVE) {
         scriptManager.Context()->PopState();
+    }
 
     return ok;
 }
@@ -167,8 +156,9 @@ bool kexComponent::CallConstructor(const char *decl) {
 bool kexComponent::CallFunction(const char *decl, int *val) {
     int state = scriptManager.Context()->GetState();
     bool ok = false;
-    if(state == asEXECUTION_ACTIVE)
+    if(state == asEXECUTION_ACTIVE) {
         scriptManager.Context()->PushState();
+    }
 
     *val = 0;
 
@@ -177,8 +167,117 @@ bool kexComponent::CallFunction(const char *decl, int *val) {
         ok = true;
     }
 
-    if(state == asEXECUTION_ACTIVE)
+    if(state == asEXECUTION_ACTIVE) {
         scriptManager.Context()->PopState();
+    }
 
     return ok;
+}
+
+//-----------------------------------------------------------------------------
+//
+// kexActorComponent
+//
+//-----------------------------------------------------------------------------
+
+//
+// kexActorComponent:: kexActorComponent
+//
+
+kexActorComponent::kexActorComponent(void) {
+    this->onTouch       = NULL;
+    this->onDamage      = NULL;
+}
+
+//
+// kexActorComponent::~kexActorComponent
+//
+
+kexActorComponent::~kexActorComponent(void) {
+}
+
+//
+// kexActorComponent::Init
+//
+
+void kexActorComponent::Init(void) {
+    scriptManager.Engine()->RegisterInterface("Component");
+    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnThink(void)");
+    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnLocalThink(void)");
+    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnSpawn(void)");
+    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnTouch(void)");
+    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnDamage(void)");
+}
+
+//
+// kexActorComponent::Construct
+//
+
+void kexActorComponent::Construct(const char *className) {
+    if(!Spawn(className)) {
+        return;
+    }
+
+    CallConstructor((kexStr(className) + " @" + className + "(kActor@)").c_str());
+
+    onThink         = type->GetMethodByDecl("void OnThink(void)");
+    onLocalThink    = type->GetMethodByDecl("void OnLocalThink(void)");
+    onSpawn         = type->GetMethodByDecl("void OnSpawn(void)");
+    onTouch         = type->GetMethodByDecl("void OnTouch(void)");
+    onDamage        = type->GetMethodByDecl("void OnDamage(void)");
+}
+
+//-----------------------------------------------------------------------------
+//
+// kexAreaComponent
+//
+//-----------------------------------------------------------------------------
+
+//
+// kexAreaComponent:: kexAreaComponent
+//
+
+kexAreaComponent::kexAreaComponent(void) {
+    this->onThink       = NULL;
+    this->onLocalThink  = NULL;
+    this->onEnter       = NULL;
+    this->onExit        = NULL;
+}
+
+//
+// kexAreaComponent::~kexAreaComponent
+//
+
+kexAreaComponent::~kexAreaComponent(void) {
+}
+
+//
+// kexAreaComponent::Init
+//
+
+void kexAreaComponent::Init(void) {
+    scriptManager.Engine()->RegisterInterface("AreaComponent");
+    scriptManager.Engine()->RegisterInterfaceMethod("AreaComponent", "void OnThink(void)");
+    scriptManager.Engine()->RegisterInterfaceMethod("AreaComponent", "void OnLocalThink(void)");
+    scriptManager.Engine()->RegisterInterfaceMethod("AreaComponent", "void OnSpawn(void)");
+    scriptManager.Engine()->RegisterInterfaceMethod("AreaComponent", "void OnEnter(void)");
+    scriptManager.Engine()->RegisterInterfaceMethod("AreaComponent", "void OnExit(void)");
+}
+
+//
+// kexAreaComponent::Construct
+//
+
+void kexAreaComponent::Construct(const char *className) {
+    if(!Spawn(className)) {
+        return;
+    }
+
+    CallConstructor((kexStr(className) + " @" + className + "(kArea@)").c_str());
+
+    onThink         = type->GetMethodByDecl("void OnThink(void)");
+    onLocalThink    = type->GetMethodByDecl("void OnLocalThink(void)");
+    onSpawn         = type->GetMethodByDecl("void OnSpawn(void)");
+    onEnter         = type->GetMethodByDecl("void OnEnter(void)");
+    onExit          = type->GetMethodByDecl("void OnExit(void)");
 }

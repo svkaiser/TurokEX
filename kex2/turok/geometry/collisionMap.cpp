@@ -38,6 +38,7 @@
 #define CM_ID_DATASIZE  1
 #define CM_ID_POINTS    2
 #define CM_ID_SECTORS   3
+#define CM_ID_AREAS     4
 
 #define STEPHEIGHT      12.0f
 
@@ -253,11 +254,14 @@ kexSector *kexSector::CrossEdge(cMapTrace_t *trace, const int edge) {
 //
 
 kexCollisionMap::kexCollisionMap(void) {
-    this->bLoaded   = false;
-    this->points[0] = NULL;
-    this->points[1] = NULL;
-    this->sectors   = NULL;
-    this->areas     = NULL;
+    this->bLoaded       = false;
+    this->points[0]     = NULL;
+    this->points[1]     = NULL;
+    this->sectors       = NULL;
+    this->areas         = NULL;
+    this->numPoints     = 0;
+    this->numSectors    = 0;
+    this->numAreas      = 0;
 }
 
 //
@@ -274,12 +278,16 @@ kexCollisionMap::~kexCollisionMap(void) {
 void kexCollisionMap::Load(const char *name) {
     kexBinFile binFile;
     kexSector *sec;
+    kexArea *area;
     float *pointPtrs;
     int pt[3];
     int edge[3];
     int i;
     int j;
     int area_id;
+    kexStr key;
+    kexStr value;
+    int len;
 
     if(!binFile.Open(name)) {
         common.Warning("kexCollisionMap::Load: %s not found\n", name);
@@ -289,7 +297,7 @@ void kexCollisionMap::Load(const char *name) {
     pointPtrs = (float*)binFile.GetOffset(CM_ID_POINTS, NULL, &numPoints);
     binFile.GetOffset(CM_ID_SECTORS, NULL, &numSectors);
 
-    if(numSectors <= 0) {
+    if(numSectors <= 0 || numPoints <= 0) {
         binFile.Close();
         return;
     }
@@ -340,20 +348,41 @@ void kexCollisionMap::Load(const char *name) {
         indices[i * 3 + 2] = pt[2];
 
         // build plane for lower triangle
-        sec->lowerTri.plane.SetNormal(
-            *sec->lowerTri.point[0],
-            *sec->lowerTri.point[1],
-            *sec->lowerTri.point[2]);
-        sec->lowerTri.plane.SetDistance(*sec->lowerTri.point[0]);
-        sec->lowerTri.SetBounds();
+        sec->lowerTri.Set(
+            sec->lowerTri.point[0],
+            sec->lowerTri.point[1],
+            sec->lowerTri.point[2]);
 
         // build plane for upper triangle
-        sec->upperTri.plane.SetNormal(
-            *sec->upperTri.point[0],
-            *sec->upperTri.point[1],
-            *sec->upperTri.point[2]);
-        sec->upperTri.plane.SetDistance(*sec->upperTri.point[0]);
-        sec->upperTri.SetBounds();
+        sec->upperTri.Set(
+            sec->upperTri.point[0],
+            sec->upperTri.point[1],
+            sec->upperTri.point[2]);
+    }
+
+    binFile.GetOffset(CM_ID_AREAS, NULL, &numAreas);
+    areas = (kexArea*)Mem_Calloc(sizeof(kexArea) * numAreas,
+        kexCollisionMap::hb_collisionMap);
+
+    for(i = 0; i < numAreas; i++) {
+        area = &areas[i];
+
+        len = binFile.Read16();
+        if(len <= 0) {
+            // value should also be blank as well
+            binFile.Read16();
+            continue;
+        }
+
+        key = binFile.ReadString();
+
+        len = binFile.Read16();
+        if(len <= 0) {
+            continue;
+        }
+
+        value = binFile.ReadString();
+        area->keyMap.Add(key.c_str(), value.c_str());
     }
 
     binFile.Close();

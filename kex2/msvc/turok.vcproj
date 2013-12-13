@@ -420,6 +420,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\areas.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\camera.cpp"
 					>
 				</File>
@@ -665,6 +669,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\areas.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\camera.h"
 					>
 				</File>
@@ -687,6 +695,10 @@
 				<Filter
 					Name="scriptAPI"
 					>
+					<File
+						RelativePath="..\turok\game\scriptAPI\component.h"
+						>
+					</File>
 					<File
 						RelativePath="..\turok\game\scriptAPI\scriptSystem.h"
 						>

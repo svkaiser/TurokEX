@@ -30,7 +30,7 @@
 #include "linkedlist.h"
 #include "clipmesh.h"
 #include "physics.h"
-#include "scriptAPI/scriptSystem.h"
+#include "scriptAPI/component.h"
 
 //-----------------------------------------------------------------------------
 //
@@ -252,7 +252,7 @@ public:
     static void                 InitObject(void);
 
     kexLinklist<kexWorldActor>  worldLink;
-    kexComponent                scriptComponent;
+    kexActorComponent           scriptComponent;
 
     // TODO - need some sort of skin system
     char                        ****textureSwaps;

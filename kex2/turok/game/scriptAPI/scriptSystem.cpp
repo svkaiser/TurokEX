@@ -30,6 +30,7 @@
 #include "world.h"
 #include "physics.h"
 #include "scriptAPI/scriptSystem.h"
+#include "scriptAPI/component.h"
 
 kexScriptManager scriptManager;
 
@@ -152,10 +153,21 @@ void kexScriptManager::Init(void) {
 
     ctx = engine->CreateContext();
 
-    kexComponent::Init();
+    kexActorComponent   ::Init();
+    kexAreaComponent    ::Init();
+    kexScriptObjString  ::Init();
+    kexScriptObjHandle  ::Init();
 
-    kexScriptObjString::Init();
-    RegisterObjects();
+    kexMath             ::InitObject();
+    kexCommon           ::InitObject();
+    kexClient           ::InitObject();
+    kexInputKey         ::InitObject();
+    kexWorldActor       ::InitObject();
+    kexCamera           ::InitObject();
+    kexLocalPlayer      ::InitObject();
+    kexWorld            ::InitObject();
+    kexPhysics          ::InitObject();
+    kexAnimState        ::InitObject();
 
     module = engine->GetModule("core", asGM_CREATE_IF_NOT_EXISTS);
 
@@ -320,22 +332,4 @@ void kexScriptManager::CallCommand(const char *decl) {
         if(state == asEXECUTION_ACTIVE)
             ctx->PopState();
     }
-}
-
-//
-// kexScriptManager::RegisterObjects
-//
-
-void kexScriptManager::RegisterObjects(void) {
-    kexScriptObjHandle::Init();
-    kexMath::InitObject();
-    kexCommon::InitObject();
-    kexClient::InitObject();
-    kexInputKey::InitObject();
-    kexWorldActor::InitObject();
-    kexCamera::InitObject();
-    kexLocalPlayer::InitObject();
-    kexWorld::InitObject();
-    kexPhysics::InitObject();
-    kexAnimState::InitObject();
 }

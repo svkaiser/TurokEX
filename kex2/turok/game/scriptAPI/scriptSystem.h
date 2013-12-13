@@ -73,7 +73,6 @@ public:
 private:
     void                    ProcessScript(const char *file);
     bool                    HasScriptFile(const char *file);
-    void                    RegisterObjects(void);
 
     static void             MessageCallback(const asSMessageInfo *msg, void *param);
 
@@ -132,39 +131,6 @@ protected:
 
     void                    *m_ref;
     asIObjectType           *m_type;
-};
-
-class kexComponent {
-public:
-                            kexComponent(void);
-                            ~kexComponent(void);
-
-    void                    Spawn(const char *className);
-    bool                    CallConstructor(const char *decl);
-    bool                    CallFunction(asIScriptFunction *func);
-    bool                    CallFunction(const char *decl, int *val);
-    kexScriptObjHandle      &Handle(void) { return objHandle; }
-    const asIObjectType     *ScriptType(void) const { return type; }
-    const asIScriptObject   *ScriptObject(void) const { return obj; }
-    void                    SetOwner(kexActor *kobj) { objHandle.owner = kobj; }
-    kexObject               *GetOwner(void) const { return static_cast<kexObject*>(objHandle.owner); }
-
-    static void             Init(void);
-
-    asIScriptFunction       *onThink;
-    asIScriptFunction       *onLocalThink;
-    asIScriptFunction       *onSpawn;
-    asIScriptFunction       *onTouch;
-    asIScriptFunction       *onDamage;
-    asIScriptFunction       *onPreDraw;
-    asIScriptFunction       *onDraw;
-    asIScriptFunction       *onPostDraw;
-
-private:
-    kexScriptObjHandle      objHandle;
-    asIScriptObject         *obj;
-    asIObjectType           *type;
-    asIScriptModule         *mod;
 };
 
 #endif
