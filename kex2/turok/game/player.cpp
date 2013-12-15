@@ -434,6 +434,9 @@ int kexLocalPlayer::ActionHeldTime(const kexStr &str) {
 //
 
 void kexLocalPlayer::LocalTick(void) {
+    kexSector *exitSector;
+    kexSector *enterSector;
+
     if(client.GetState() != CL_STATE_INGAME) {
         return;
     }
@@ -448,8 +451,20 @@ void kexLocalPlayer::LocalTick(void) {
 
     scriptComponent.CallFunction(scriptComponent.onLocalThink);
 
+    exitSector = puppet->Physics()->sector;
+
     puppet->Physics()->Think(frameTime);
     puppet->UpdateTransform();
+
+    enterSector = puppet->Physics()->sector;
+
+    localWorld.CollisionMap().PlayerCrossAreas(enterSector, exitSector);
+
+    // area local thinker
+    if(enterSector != NULL && enterSector->area != NULL) {
+        enterSector->area->scriptComponent.
+            CallFunction(enterSector->area->scriptComponent.onLocalThink);
+    }
 
     angles          = puppet->GetAngles();
     origin          = puppet->GetOrigin();

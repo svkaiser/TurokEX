@@ -160,9 +160,11 @@ void kexScriptManager::Init(void) {
 
     kexMath             ::InitObject();
     kexCommon           ::InitObject();
+    kexKeyMap           ::InitObject();
     kexClient           ::InitObject();
     kexInputKey         ::InitObject();
     kexWorldActor       ::InitObject();
+    kexArea             ::InitObject();
     kexCamera           ::InitObject();
     kexLocalPlayer      ::InitObject();
     kexWorld            ::InitObject();

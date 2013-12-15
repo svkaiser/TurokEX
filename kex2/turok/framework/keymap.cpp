@@ -53,8 +53,9 @@ kexHashKey::~kexHashKey(void) {
 //
 
 kexKeyMap::kexKeyMap(void) {
-    for(int i = 0; i < MAX_HASH; i++)
+    for(int i = 0; i < MAX_HASH; i++) {
         hashlist[i].IsPointer(true);
+    }
 }
 
 //
@@ -78,8 +79,9 @@ void kexKeyMap::Add(const char *key, const char *value) {
 //
 
 void kexKeyMap::Empty(void) {
-    for(int i = 0; i < MAX_HASH; i++)
+    for(int i = 0; i < MAX_HASH; i++) {
         hashlist[i].~kexPtrArray();
+    }
 }
 
 //
@@ -100,3 +102,123 @@ kexHashKey *kexKeyMap::Find(const char *name) {
     }
     return NULL;
 }
+
+//
+// kexKeyMap::GetFloat
+//
+
+bool kexKeyMap::GetFloat(const char *key, float &out, const float defaultValue) {
+    kexHashKey *k;
+
+    out = defaultValue;
+
+    if(!(k = Find(key))) {
+        return false;
+    }
+
+    out = (float)atof(k->GetString());
+    return true;
+}
+
+//
+// kexKeyMap::GetFloat
+//
+
+bool kexKeyMap::GetFloat(const kexStr &key, float &out, const float defaultValue) {
+    return GetFloat(key.c_str(), out, defaultValue);
+}
+
+//
+// kexKeyMap::GetInt
+//
+
+bool kexKeyMap::GetInt(const char *key, int &out, const int defaultValue) {
+    kexHashKey *k;
+
+    out = defaultValue;
+
+    if(!(k = Find(key))) {
+        return false;
+    }
+
+    out = atoi(k->GetString());
+    return true;
+}
+
+//
+// kexKeyMap::GetInt
+//
+
+bool kexKeyMap::GetInt(const kexStr &key, int &out, const int defaultValue) {
+    return GetInt(key.c_str(), out, defaultValue);
+}
+
+//
+// kexKeyMap::GetBool
+//
+
+bool kexKeyMap::GetBool(const char *key, bool &out, const bool defaultValue) {
+    kexHashKey *k;
+
+    out = defaultValue;
+
+    if(!(k = Find(key))) {
+        return false;
+    }
+
+    out = (atoi(k->GetString()) != 0);
+    return true;
+}
+
+//
+// kexKeyMap::GetBool
+//
+
+bool kexKeyMap::GetBool(const kexStr &key, bool &out, const bool defaultValue) {
+    return GetBool(key.c_str(), out, defaultValue);
+}
+
+//
+// kexKeyMap::GetVector
+//
+
+bool kexKeyMap::GetVector(const char *key, kexVec3 &out) {
+    kexHashKey *k;
+
+    out.Clear();
+
+    if(!(k = Find(key))) {
+        return false;
+    }
+
+    sscanf(k->GetString(), "%f %f %f", &out.x, &out.y, &out.z);
+    return true;
+}
+
+//
+// kexKeyMap::GetVector
+//
+
+bool kexKeyMap::GetVector(const kexStr &key, kexVec3 &out) {
+    return GetVector(key.c_str(), out);
+}
+
+#ifndef EDITOR
+#include "scriptAPI/scriptSystem.h"
+//
+// kexKeyMap::InitObject
+//
+
+void kexKeyMap::InitObject(void) {
+    kexScriptManager::RegisterDataObject<kexKeyMap>("kKeyMap");
+    scriptManager.RegisterMethod("kKeyMap", "bool GetFloat(const kStr &in, float &out, const float defaultValue = 0)",
+        asMETHODPR(kexKeyMap, GetFloat,
+        (const kexStr &key, float &out, const float defaultValue), bool));
+    scriptManager.RegisterMethod("kKeyMap", "bool GetInt(const kStr &in, int &out, const int defaultValue = 0)",
+        asMETHODPR(kexKeyMap, GetInt,
+        (const kexStr &key, int &out, const int defaultValue), bool));
+    scriptManager.RegisterMethod("kKeyMap", "bool GetBool(const kStr &in, bool &out, const bool defaultValue = 0)",
+        asMETHODPR(kexKeyMap, GetBool,
+        (const kexStr &key, bool &out, const bool defaultValue), bool));
+}
+#endif

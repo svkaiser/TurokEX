@@ -33,6 +33,8 @@
 #include "collisionMap.h"
 #include "areas.h"
 
+DECLARE_CLASS(kexArea, kexObject)
+
 //
 // kexArea::kexArea
 //
@@ -44,10 +46,11 @@ kexArea::kexArea(void) {
     this->fSurfaceID        = -1;
     this->cSurfaceID        = -1;
     this->wSurfaceID        = -1;
-    this->globalFogRGB[0]   = 0;
-    this->globalFogRGB[1]   = 0;
-    this->globalFogRGB[2]   = 0;
     this->globalFogZFar     = 1024;
+    this->flags             = 0;
+
+    this->globalFogRGB.Clear();
+    this->scriptComponent.SetOwner(this);
 }
 
 //
@@ -55,14 +58,60 @@ kexArea::kexArea(void) {
 //
 
 void kexArea::InitObject(void) {
-    kexScriptManager::RegisterDataObject<kexArea>("kArea");
+    kexScriptManager::RegisterRefObjectNoCount<kexArea>("kArea");
+    scriptManager.Engine()->RegisterObjectProperty("kArea", "kKeyMap key",
+        asOFFSET(kexArea, keyMap));
+    scriptManager.Engine()->RegisterObjectProperty("kArea", "float waterplane",
+        asOFFSET(kexArea, waterplane));
+    scriptManager.Engine()->RegisterObjectProperty("kArea", "int targetID",
+        asOFFSET(kexArea, targetID));
+    scriptManager.Engine()->RegisterObjectProperty("kArea", "float fogZFar",
+        asOFFSET(kexArea, globalFogZFar));
+    scriptManager.Engine()->RegisterObjectProperty("kArea", "kVec3 fogRGB",
+        asOFFSET(kexArea, globalFogRGB));
 }
 
 //
-// kexArea::CreateComponent
+// kexArea::Setup
 //
 
-void kexArea::CreateComponent(const char *name) {
-    // TODO
-    scriptComponent.Construct(name);
+void kexArea::Setup(void) {
+    kexHashKey *key;
+    bool flag;
+
+    keyMap.GetFloat("waterlevel", waterplane);
+    keyMap.GetInt("targetID", targetID);
+    keyMap.GetFloat("globalfog_zfar", globalFogZFar);
+    keyMap.GetVector("globalfog_rgb", globalFogRGB);
+    globalFogRGB /= 255.0f;
+
+    keyMap.GetBool("bDamage", flag);
+    if(flag) {
+        flags |= AAF_DAMAGE;
+    }
+
+    keyMap.GetBool("bToggle", flag);
+    if(flag) {
+        flags |= AAF_TOGGLE;
+    }
+
+    keyMap.GetBool("bClimb", flag);
+    if(flag) {
+        flags |= AAF_CLIMB;
+    }
+
+    keyMap.GetBool("bWater", flag);
+    if(flag) {
+        flags |= AAF_WATER;
+    }
+
+    keyMap.GetBool("bTrigger", flag);
+    if(flag) {
+        flags |= AAF_EVENT;
+    }
+
+    if((key = keyMap.Find("component"))) {
+        scriptComponent.Construct(key->GetString());
+        scriptComponent.CallFunction(scriptComponent.onSpawn);
+    }
 }

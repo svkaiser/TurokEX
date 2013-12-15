@@ -60,13 +60,6 @@ kexComponent::~kexComponent(void) {
 }
 
 //
-// kexComponent::Construct
-//
-
-void kexComponent::Construct(const char *className) {
-}
-
-//
 // kexComponent::Spawn
 //
 
@@ -262,6 +255,37 @@ void kexAreaComponent::Init(void) {
     scriptManager.Engine()->RegisterInterfaceMethod("AreaComponent", "void OnSpawn(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("AreaComponent", "void OnEnter(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("AreaComponent", "void OnExit(void)");
+}
+
+//
+// kexAreaComponent::CallConstructor
+//
+
+bool kexAreaComponent::CallConstructor(const char *decl) {
+    int state = scriptManager.Context()->GetState();
+    bool ok = false;
+
+    if(state == asEXECUTION_ACTIVE) {
+        scriptManager.Context()->PushState();
+    }
+
+    scriptManager.Context()->Prepare(type->GetFactoryByDecl(decl));
+    scriptManager.Context()->SetArgObject(0, objHandle.owner);
+
+    if(scriptManager.Context()->Execute() == asEXECUTION_EXCEPTION) {
+        common.Error("%s", scriptManager.Context()->GetExceptionString());
+        return false;
+    }
+
+    obj = *(asIScriptObject**)scriptManager.Context()->GetAddressOfReturnValue();
+    objHandle.Set(obj, type);
+    ok = true;
+
+    if(state == asEXECUTION_ACTIVE) {
+        scriptManager.Context()->PopState();
+    }
+
+    return ok;
 }
 
 //

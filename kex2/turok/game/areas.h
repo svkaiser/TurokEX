@@ -27,17 +27,51 @@
 #include "keymap.h"
 #include "scriptAPI/component.h"
 
-class kexArea {
+typedef enum {
+    AAF_WATER           = 0x1,
+    AAF_BLOCK           = 0x2,
+    AAF_TOGGLE          = 0x4,
+    AAF_FRONTNOCLIP     = 0x8,
+    AAF_CLIMB           = 0x10,
+    AAF_ONESIDED        = 0x20,
+    AAF_CHECKHEIGHT     = 0x40,
+    AAF_CRAWL           = 0x80,
+    AAF_ENTERCRAWL      = 0x100,
+    AAF_TOUCH           = 0x200,
+    AAF_UNKNOWN400      = 0x400,
+    AAF_UNKNOWN800      = 0x800,
+    AAF_UNKNOWN1000     = 0x1000,
+    AAF_SLOPETEST       = 0x2000,
+    AAF_DEATHPIT        = 0x4000,
+    AAF_MAPPED          = 0x8000,
+    AAF_EVENT           = 0x10000,
+    AAF_REPEATABLE      = 0x20000,
+    AAF_TELEPORT        = 0x40000,
+    AAF_DAMAGE          = 0x80000,
+    AAF_DRAWSKY         = 0x100000,
+    AAF_WARP            = 0x200000,
+    AAF_UNKNOWN400000   = 0x400000,
+    AAF_UNKNOWN800000   = 0x800000,
+    AAF_UNKNOWN1000000  = 0x1000000,
+    AAF_UNKNOWN2000000  = 0x2000000,
+    AAF_CHECKPOINT      = 0x4000000,
+    AAF_SAVEGAME        = 0x8000000
+} areaFlags_t;
+
+BEGIN_EXTENDED_CLASS(kexArea, kexObject);
 public:
                                     kexArea(void);
 
-    void                            CreateComponent(const char *name);
+    void                            Setup(void);
 
-    const float                     WaterPlane(void) const { return waterplane; }
-    const unsigned int              TargetID(void) const { return targetID; }
-    const word                      FloorSurfaceType(void) const { return fSurfaceID; }
-    const word                      CeilingSurfaceType(void) const { return cSurfaceID; }
-    const word                      WallSurfaceType(void) const { return wSurfaceID; }
+    unsigned int                    &Flags(void) { return flags; }
+    float                           &WaterPlane(void) { return waterplane; }
+    int                             &TargetID(void) { return targetID; }
+    kexVec3                         &FogRGB(void) { return globalFogRGB; }
+    float                           &FogZFar(void) { return globalFogZFar; }
+    word                            FloorSurfaceType(void) { return fSurfaceID; }
+    word                            CeilingSurfaceType(void) { return cSurfaceID; }
+    word                            WallSurfaceType(void) { return wSurfaceID; }
 
     static void                     InitObject(void);
 
@@ -45,13 +79,14 @@ public:
     kexAreaComponent                scriptComponent;
 
 private:
+    unsigned int                    flags;
     float                           waterplane;
-    unsigned int                    targetID;
+    int                             targetID;
     char                            *triggerSound;
     word                            fSurfaceID;
     word                            cSurfaceID;
     word                            wSurfaceID;
-    byte                            globalFogRGB[3];
+    kexVec3                         globalFogRGB;
     float                           globalFogZFar;
 };
 

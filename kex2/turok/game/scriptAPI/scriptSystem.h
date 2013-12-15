@@ -49,6 +49,12 @@ public:
     }
 
     template<class type>
+    static void             RegisterRefObjectNoCount(const char *name) {
+        scriptManager.Engine()->RegisterObjectType(name, sizeof(type),
+            asOBJ_REF | asOBJ_NOCOUNT);
+    }
+
+    template<class type>
     static void             RegisterDataObject(const char *name) {
         scriptManager.Engine()->RegisterObjectType(name, sizeof(type),
             asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS);

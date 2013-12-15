@@ -30,6 +30,7 @@
 #include "editorCommon.h"
 #endif
 #include "binFile.h"
+#include "world.h"
 #include "fileSystem.h"
 #include "collisionMap.h"
 #include "renderSystem.h"
@@ -258,10 +259,11 @@ kexCollisionMap::kexCollisionMap(void) {
     this->points[0]     = NULL;
     this->points[1]     = NULL;
     this->sectors       = NULL;
-    this->areas         = NULL;
     this->numPoints     = 0;
     this->numSectors    = 0;
     this->numAreas      = 0;
+
+    this->areas.Empty();
 }
 
 //
@@ -288,10 +290,44 @@ void kexCollisionMap::Load(const char *name) {
     kexStr key;
     kexStr value;
     int len;
+    int numKeys;
 
     if(!binFile.Open(name)) {
         common.Warning("kexCollisionMap::Load: %s not found\n", name);
         return;
+    }
+
+    binFile.GetOffset(CM_ID_AREAS, NULL, &numAreas);
+
+    for(i = 0; i < numAreas; i++) {
+        if(!(area = static_cast<kexArea*>(localWorld.ConstructObject("kexArea")))) {
+            continue;
+        }
+
+        numKeys = binFile.Read16();
+
+        for(j = 0; j < numKeys; j++) {
+            len = binFile.Read16();
+            if(len <= 0) {
+                // value should also be blank as well
+                binFile.Read16();
+                continue;
+            }
+
+            key = binFile.ReadString();
+
+            len = binFile.Read16();
+            if(len <= 0) {
+                continue;
+            }
+
+            value = binFile.ReadString();
+            area->keyMap.Add(key.c_str(), value.c_str());
+            area->scriptComponent.SetID(i);
+        }
+
+        area->Setup();
+        areas.Push(area);
     }
 
     pointPtrs = (float*)binFile.GetOffset(CM_ID_POINTS, NULL, &numPoints);
@@ -327,6 +363,11 @@ void kexCollisionMap::Load(const char *name) {
         sec = &sectors[i];
 
         area_id = binFile.Read16();
+
+        if(area_id >= 0 && area_id < numAreas) {
+            sec->area = areas[area_id];
+        }
+
         sec->flags = binFile.Read16();
 
         for(j = 0; j < 3; j++) {
@@ -358,31 +399,6 @@ void kexCollisionMap::Load(const char *name) {
             sec->upperTri.point[0],
             sec->upperTri.point[1],
             sec->upperTri.point[2]);
-    }
-
-    binFile.GetOffset(CM_ID_AREAS, NULL, &numAreas);
-    areas = (kexArea*)Mem_Calloc(sizeof(kexArea) * numAreas,
-        kexCollisionMap::hb_collisionMap);
-
-    for(i = 0; i < numAreas; i++) {
-        area = &areas[i];
-
-        len = binFile.Read16();
-        if(len <= 0) {
-            // value should also be blank as well
-            binFile.Read16();
-            continue;
-        }
-
-        key = binFile.ReadString();
-
-        len = binFile.Read16();
-        if(len <= 0) {
-            continue;
-        }
-
-        value = binFile.ReadString();
-        area->keyMap.Add(key.c_str(), value.c_str());
     }
 
     binFile.Close();
@@ -501,6 +517,31 @@ void kexCollisionMap::Trace(cMapTraceResult_t *result,
     trace.result->normal = trace.direction;
 
     TraverseSectors(&trace, sector);
+}
+
+//
+// kexCollisionMap::PlayerCrossAreas
+//
+
+void kexCollisionMap::PlayerCrossAreas(kexSector *enter, kexSector *exit) {
+    kexArea *area;
+
+    if(enter == exit) {
+        return;
+    }
+
+    if(exit != NULL && enter != NULL) {
+        area = exit->area;
+        if(area != enter->area) {
+            if(area != NULL) {
+                area->scriptComponent.CallFunction(area->scriptComponent.onExit);
+            }
+            area = enter->area;
+            if(area != NULL) {
+                area->scriptComponent.CallFunction(area->scriptComponent.onEnter);
+            }
+        }
+    }
 }
 
 //

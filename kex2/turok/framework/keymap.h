@@ -44,6 +44,18 @@ public:
     void                        Add(const char *key, const char *value);
     kexHashKey                  *Find(const char *name);
     void                        Empty(void);
+    bool                        GetFloat(const char *key, float &out, const float defaultValue = 0);
+    bool                        GetFloat(const kexStr &key, float &out, const float defaultValue = 0);
+    bool                        GetInt(const char *key, int &out, const int defaultValue = 0);
+    bool                        GetInt(const kexStr &key, int &out, const int defaultValue = 0);
+    bool                        GetBool(const char *key, bool &out, const bool defaultValue = false);
+    bool                        GetBool(const kexStr &key, bool &out, const bool defaultValue = false);
+    bool                        GetVector(const char *key, kexVec3 &out);
+    bool                        GetVector(const kexStr &key, kexVec3 &out);
+
+#ifndef EDITOR
+    static void                 InitObject(void);
+#endif
 
 private:
     kexPtrArray<kexHashKey*>    hashlist[MAX_HASH];

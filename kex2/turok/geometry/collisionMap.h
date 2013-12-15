@@ -108,6 +108,7 @@ public:
                                           const int flags);
     void                            TraverseSectors(cMapTrace_t *trace, kexSector *sector);
     kexSector                       *PointInSector(const kexVec3 &origin);
+    void                            PlayerCrossAreas(kexSector *enter, kexSector *exit);
     void                            DebugDraw(void);
 
     kexVec3                         *points[2];
@@ -116,7 +117,7 @@ public:
     int                             numAreas;
     int                             numPoints;
     kexSector                       *sectors;
-    kexArea                         *areas;
+    kexArray<kexArea*>              areas;
 
     const bool                      IsLoaded(void) const { return bLoaded; }
 

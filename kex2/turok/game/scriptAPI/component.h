@@ -37,9 +37,9 @@ public:
                             ~kexComponent(void);
 
     virtual void            Construct(const char *className) = 0;
+    virtual bool            CallConstructor(const char *decl);
 
     bool                    Spawn(const char *className);
-    bool                    CallConstructor(const char *decl);
     bool                    CallFunction(asIScriptFunction *func);
     bool                    CallFunction(const char *decl, int *val);
     kexScriptObjHandle      &Handle(void) { return objHandle; }
@@ -54,10 +54,10 @@ public:
 
 protected:
     asIObjectType           *type;
-
-private:
     kexScriptObjHandle      objHandle;
     asIScriptObject         *obj;
+
+private:
     asIScriptModule         *mod;
 };
 
@@ -92,11 +92,18 @@ class kexAreaComponent : public kexComponent {
                             ~kexAreaComponent(void);
 
     virtual void            Construct(const char *className);
+    virtual bool            CallConstructor(const char *decl);
+
+    void                    SetID(const int val) { id = val; }
+    const int               GetID(void) const { return id; }
 
     static void             Init(void);
 
     asIScriptFunction       *onEnter;
     asIScriptFunction       *onExit;
+
+private:
+    unsigned int            id;
 };
 
 #endif
