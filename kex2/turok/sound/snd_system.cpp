@@ -216,7 +216,7 @@ bool kexSoundSource::Generate(void) {
     bLooping    = false;
     bPlaying    = false;
     sfx         = NULL;
-    actor       = NULL;
+    obj         = NULL;
     volume      = 1.0f;
 
     alSourcei(handle, AL_LOOPING, AL_FALSE);
@@ -230,15 +230,15 @@ bool kexSoundSource::Generate(void) {
 // kexSoundSource::Set
 //
 
-void kexSoundSource::Set(sfx_t *sfxRef, kexActor *actor) {
+void kexSoundSource::Set(sfx_t *sfxRef, kexGameObject *obj) {
     if(sfxRef == NULL) {
         return;
     }
 
     sfx = sfxRef;
 
-    if(actor) {
-        actor->AddRef();
+    if(obj) {
+        obj->AddRef();
     }
 
     if(sfx->bLerpVol) {
@@ -249,8 +249,8 @@ void kexSoundSource::Set(sfx_t *sfxRef, kexActor *actor) {
         pitch = sfx->freqLerpStart;
     }
 
-    if(actor != NULL && client.LocalPlayer().Puppet() != actor) {
-        kexVec3 org = actor->GetOrigin();
+    if(obj != NULL && client.LocalPlayer().Puppet() != obj) {
+        kexVec3 org = obj->GetOrigin();
         alSource3f(handle, AL_POSITION, org.x, org.y, org.z);
     }
 }
@@ -275,9 +275,9 @@ void kexSoundSource::Free(void) {
     pitch       = 1.0f;
     startTime   = 0;
 
-    if(actor) {
-        actor->RemoveRef();
-        actor = NULL;
+    if(obj) {
+        obj->RemoveRef();
+        obj = NULL;
     }
 
     alSource3f(handle, AL_POSITION, 0, 0, 0);
@@ -337,11 +337,11 @@ void kexSoundSource::Play(void) {
         alSourcef(handle, AL_PITCH, sfx->dbFreq);
     }
 
-    if(actor && actor != client.LocalPlayer().Puppet()) {
+    if(obj && obj != client.LocalPlayer().Puppet()) {
         alSourcef(handle, AL_ROLLOFF_FACTOR, sfx->rolloffFactor);
         alSourcei(handle, AL_SOURCE_RELATIVE, AL_FALSE);
         alSource3f(handle, AL_POSITION,
-            SND_VECTOR2METRICS(actor->GetOrigin().ToFloatPtr()));
+            SND_VECTOR2METRICS(obj->GetOrigin().ToFloatPtr()));
     }
     else {
         alSourcei(handle, AL_SOURCE_RELATIVE, AL_TRUE);
@@ -678,12 +678,12 @@ kexSoundShader *kexSoundSystem::CacheShaderFile(const char *name) {
 // kexSoundSystem::StartSound
 //
 
-void kexSoundSystem::StartSound(const char *name, kexActor *actor) {
+void kexSoundSystem::StartSound(const char *name, kexGameObject *obj) {
     kexSoundShader *sndShader;
 
     if(!(sndShader = CacheShaderFile(name))) {
         return;
     }
 
-    sndShader->Play(actor);
+    sndShader->Play(obj);
 }

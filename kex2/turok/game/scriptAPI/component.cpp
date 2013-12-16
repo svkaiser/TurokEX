@@ -180,6 +180,7 @@ bool kexComponent::CallFunction(const char *decl, int *val) {
 kexActorComponent::kexActorComponent(void) {
     this->onTouch       = NULL;
     this->onDamage      = NULL;
+    this->onTrigger     = NULL;
 }
 
 //
@@ -200,6 +201,7 @@ void kexActorComponent::Init(void) {
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnSpawn(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnTouch(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnDamage(void)");
+    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnTrigger(void)");
 }
 
 //
@@ -218,6 +220,7 @@ void kexActorComponent::Construct(const char *className) {
     onSpawn         = type->GetMethodByDecl("void OnSpawn(void)");
     onTouch         = type->GetMethodByDecl("void OnTouch(void)");
     onDamage        = type->GetMethodByDecl("void OnDamage(void)");
+    onTrigger       = type->GetMethodByDecl("void OnTrigger(void)");
 }
 
 //-----------------------------------------------------------------------------

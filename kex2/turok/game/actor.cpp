@@ -20,216 +20,14 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION: GameActor system
+// DESCRIPTION: Actor system
 //
 //-----------------------------------------------------------------------------
 
 #include "common.h"
 #include "actor.h"
 #include "server.h"
-#include "sound.h"
 #include "world.h"
-
-//
-// kexAttachment::AttachToActor
-//
-
-void kexAttachment::AttachToActor(kexActor *targ) {
-    // If there was a attachment already, decrease its refcount
-    if(actor)
-        actor->RemoveRef();
-
-    // Set new attachment and if non-NULL, increase its counter
-    if((actor = targ))
-        actor->AddRef();
-}
-
-//
-// kexAttachment::DettachActor
-//
-
-void kexAttachment::DettachActor(void) {
-    AttachToActor(NULL);
-}
-
-//
-// kexAttachment::Transform
-//
-
-void kexAttachment::Transform(void) {
-    if(actor != NULL) {
-        owner->SetOrigin((actor->GetOrigin() + sourceOffset) +
-            ((attachOffset - sourceOffset) | actor->GetRotation()));
-
-        if(bAttachRelativeAngles) {
-            owner->SetAngles(actor->GetAngles());
-        }
-    }
-}
-
-DECLARE_ABSTRACT_CLASS(kexActor, kexObject)
-
-//
-// kexActor::kexActor
-//
-
-kexActor::kexActor(void) {
-    this->refCount      = 0;
-    this->bStatic       = true;
-    this->bCollision    = false;
-    this->bTouch        = false;
-    this->bClientOnly   = false;
-    this->bHidden       = false;
-    this->bClientView   = false;
-    this->radius        = 10.24f;
-    this->baseHeight    = 10.24f;
-    this->viewHeight    = 8.192f;
-    this->centerHeight  = 5.12f;
-    this->owner         = NULL;
-    this->target        = NULL;
-    this->model         = NULL;
-    this->gridBound     = NULL;
-    
-    this->attachment.SetOwner(this);
-    this->physics.SetOwner(this);
-
-    this->scale.Set(1, 1, 1);
-}
-
-//
-// kexActor::~kexActor
-//
-
-kexActor::~kexActor(void) {
-}
-
-//
-// kexActor::AddRef
-//
-
-int kexActor::AddRef(void) {
-    return ++refCount;
-}
-
-//
-// kexActor::RemoveRef
-//
-
-int kexActor::RemoveRef(void) {
-    return --refCount;
-}
-
-//
-// kexActor::Remove
-//
-
-void kexActor::Remove(void) {
-    bStale = true;
-}
-
-//
-// kexActor::Removing
-//
-
-const bool kexActor::Removing(void) const {
-    return (bStale && RefCount() <= 0);
-}
-
-//
-// kexActor::SetTarget
-//
-
-void kexActor::SetTarget(kexActor *targ) {
-    // If there was a target already, decrease its refcount
-    if(target)
-        target->RemoveRef();
-
-    // Set new target and if non-NULL, increase its counter
-    if((target = targ))
-        target->AddRef();
-}
-
-//
-// kexActor::SetOwner
-//
-
-void kexActor::SetOwner(kexActor *targ) {
-    // If there was a owner already, decrease its refcount
-    if(owner)
-        owner->RemoveRef();
-
-    // Set new owner and if non-NULL, increase its counter
-    if((owner = targ))
-        owner->AddRef();
-}
-
-//
-// kexActor::SetBoundingBox
-//
-
-void kexActor::SetBoundingBox(const kexVec3 &min, const kexVec3 &max) {
-    baseBBox.min = min;
-    baseBBox.max = max;
-}
-
-//
-// kexActor::Trace
-//
-
-bool kexActor::Trace(traceInfo_t *trace) {
-    kexVec3 org = (origin - trace->start);
-
-    if(trace->dir.Dot(org) <= 0) {
-        return false;
-    }
-
-    float len = trace->dir.Unit();
-
-    if(len == 0) {
-        return false;
-    }
-
-    kexVec3 nDir    = (trace->dir * (1.0f / len));
-    float cp        = nDir.Dot(org);
-    kexVec3 cDist   = (org - (nDir * cp));
-    float rd        = radius * radius - cDist.UnitSq();
-
-    if(rd <= 0) {
-        return false;
-    }
-
-    float frac = (cp - kexMath::Sqrt(rd)) * (1.0f / len);
-
-    if(frac <= 1.0f && frac < trace->fraction) {
-        if(frac < 0) {
-            frac = 0;
-        }
-        trace->hitActor = this;
-        trace->fraction = frac;
-        trace->hitVector = trace->start - (trace->dir * frac);
-        trace->hitNormal = (trace->start - origin);
-        trace->hitNormal.Normalize();
-        return true;
-    }
-
-    return false;
-}
-
-//
-// kexActor::StartSound
-//
-
-void kexActor::StartSound(const char *name) {
-    soundSystem.StartSound(name, this);
-}
-
-//
-// kexActor::StartSound
-//
-
-void kexActor::StartSound(const kexStr &name) {
-    StartSound(name.c_str());
-}
 
 enum {
     scactor_name = 0,
@@ -560,7 +358,7 @@ void kexWorldActor::SetModel(const char* modelFile) {
 
         // set initial animation
         // TODO - rename anim00 to something better
-        if(anim = kexAnimState::GetAnim(m, "anim00")) {
+        if(anim = kexAnimState::GetAnim(m, 0)) {
             animState.Set(anim, 4, ANF_LOOP);
         }
 
@@ -671,6 +469,14 @@ void kexWorldActor::OnTouch(kexWorldActor *instigator) {
 }
 
 //
+// kexWorldActor::OnTrigger
+//
+
+void kexWorldActor::OnTrigger(void) {
+    scriptComponent.CallFunction(scriptComponent.onTrigger);
+}
+
+//
 // kexWorldActor::Think
 //
 
@@ -700,9 +506,9 @@ void kexWorldActor::InitObject(void) {
     scriptManager.RegisterMethod("kAttachment", "void Transform(void)",
         asMETHODPR(kexAttachment, Transform, (void), void));
     scriptManager.RegisterMethod("kAttachment", "void AttachToActor(kActor@)",
-        asMETHODPR(kexAttachment, AttachToActor, (kexActor *targ), void));
+        asMETHODPR(kexAttachment, AttachToObject, (kexDisplayObject *targ), void));
     scriptManager.RegisterMethod("kAttachment", "void DettachActor(void)",
-        asMETHODPR(kexAttachment, DettachActor, (void), void));
+        asMETHODPR(kexAttachment, DettachObject, (void), void));
     scriptManager.RegisterMethod("kAttachment", "kVec3 &GetAttachOffset(void)",
         asMETHODPR(kexAttachment, GetAttachOffset, (void), kexVec3&));
     scriptManager.RegisterMethod("kAttachment", "kVec3 &GetSourceOffset(void)",
@@ -712,11 +518,11 @@ void kexWorldActor::InitObject(void) {
     scriptManager.RegisterMethod("kAttachment", "void SetSourceOffset(const kVec3 &in)",
         asMETHODPR(kexAttachment, SetSourceOffset, (const kexVec3 &vec), void));
     scriptManager.RegisterMethod("kAttachment", "kActor @GetOwner(void)",
-        asMETHODPR(kexAttachment, GetOwner, (void), kexActor*));
+        asMETHODPR(kexAttachment, GetOwner, (void), kexDisplayObject*));
     scriptManager.RegisterMethod("kAttachment", "void SetOwner(kActor@)",
-        asMETHODPR(kexAttachment, SetOwner, (kexActor *o), void));
+        asMETHODPR(kexAttachment, SetOwner, (kexDisplayObject *o), void));
     scriptManager.RegisterMethod("kAttachment", "kActor @GetAttachedActor(void)",
-        asMETHODPR(kexAttachment, GetAttachedActor, (void), kexActor*));
+        asMETHODPR(kexAttachment, GetAttachedObject, (void), kexDisplayObject*));
 
     scriptManager.Engine()->RegisterObjectProperty("kAttachment", "bool bAttachRelativeAngles",
         asOFFSET(kexAttachment, bAttachRelativeAngles));

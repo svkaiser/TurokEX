@@ -24,189 +24,10 @@
 #define __ACTOR_H__
 
 #include "common.h"
-#include "script.h"
+#include "worldObject.h"
 #include "renderModel.h"
 #include "animation.h"
-#include "linkedlist.h"
 #include "clipmesh.h"
-#include "physics.h"
-#include "scriptAPI/component.h"
-
-//-----------------------------------------------------------------------------
-//
-// kexAttachment - each actor thats attached is counted towards its
-// reference counter
-//
-//-----------------------------------------------------------------------------
-
-class kexAttachment {
-public:
-    void                        Transform(void);
-    void                        AttachToActor(kexActor *targ);
-    void                        DettachActor(void);
-
-    kexVec3                     &GetAttachOffset(void) { return attachOffset; }
-    kexVec3                     &GetSourceOffset(void) { return sourceOffset; }
-    void                        SetAttachOffset(const kexVec3 &vec) { attachOffset = vec; }
-    void                        SetSourceOffset(const kexVec3 &vec) { sourceOffset = vec; }
-    kexActor                    *GetOwner(void) { return owner; }
-    void                        SetOwner(kexActor *o) { owner = o; }
-    kexActor                    *GetAttachedActor(void) { return actor; }
-    
-    bool                        bAttachRelativeAngles;
-
-private:
-    kexVec3                     attachOffset;
-    kexVec3                     sourceOffset;
-    kexActor                    *actor;
-    kexActor                    *owner;
-};
-
-//-----------------------------------------------------------------------------
-//
-// kexActor - base class for all actor types
-//
-//-----------------------------------------------------------------------------
-
-BEGIN_EXTENDED_CLASS(kexActor, kexObject);
-public:
-                                kexActor(void);
-                                ~kexActor(void);
-
-    virtual void                LocalTick(void) = 0;
-    virtual void                Tick(void) = 0;
-    virtual void                Remove(void);
-
-    int                         AddRef(void);
-    int                         RemoveRef(void);
-    void                        SetTarget(kexActor *targ);
-    void                        SetOwner(kexActor *targ);
-    const bool                  Removing(void) const;
-
-    void                        SetBoundingBox(const kexVec3 &min, const kexVec3 &max);
-    bool                        Trace(traceInfo_t *trace);
-    void                        StartSound(const char *name);
-    void                        StartSound(const kexStr &name);
-
-    kexVec3                     &GetOrigin(void) { return origin; }
-    void                        SetOrigin(const kexVec3 &org) { origin = org; }
-    kexQuat                     &GetRotation(void) { return rotation; }
-    void                        SetRotation(const kexQuat &rot) { rotation = rot; }
-    kexVec3                     &GetScale(void) { return scale; }
-    void                        SetScale(const kexVec3 &s) { scale = s; }
-    kexActor                    *GetOwner(void) { return owner; }
-    kexActor                    *GetTarget(void) { return target; }
-    kexAttachment               &Attachment(void) { return attachment; }
-    float                       Radius(void) { return radius; }
-    float                       Height(void) { return height; }
-    float                       BaseHeight(void) { return baseHeight; }
-    float                       GetCenterHeight(void) { return centerHeight; }
-    void                        SetCenterHeight(float f) { centerHeight = f; }
-    float                       GetViewHeight(void) { return viewHeight; }
-    void                        SetViewHeight(float f) { viewHeight = f; }
-    kexPhysics                  *Physics(void) { return &physics; }
-    kexAngle                    &GetAngles(void) { return angles; }
-    void                        SetAngles(const kexAngle &an) { angles = an; }
-    const int                   RefCount(void) const { return refCount; }
-    kexMatrix                   &Matrix(void) { return matrix; }
-    kexBBox                     &BoundingBox(void) { return bbox; }
-    const kexModel_t            *Model(void) const { return model; }
-    const bool                  IsStale(void) const { return bStale; }
-
-    struct gridBound_s          *gridBound;
-
-    bool                        bStatic;        // no tick/think behavior
-    bool                        bCollision;     // handle collision with this actor
-    bool                        bTouch;         // can be touched/picked up by other actors
-    bool                        bClientOnly;    // ignored by server / only updated by LocalTick
-    bool                        bHidden;        // don't draw by renderer
-    bool                        bCulled;        // currently culled by frustum or distance
-    bool                        bClientView;    // can only be rendered through user-commands
-
-    //
-    // template for registering default script actor methods and properties
-    //
-    template<class type>
-    static void                 RegisterBaseProperties(const char *scriptClass) {
-    #define OBJMETHOD(str, a, b, c)                     \
-        scriptManager.Engine()->RegisterObjectMethod(   \
-            scriptClass,                                \
-            str,                                        \
-            asMETHODPR(type, a, b, c),                  \
-            asCALL_THISCALL)
-
-        OBJMETHOD("kVec3 &GetOrigin(void)", GetOrigin, (void), kexVec3&);
-        OBJMETHOD("void SetOrigin(const kVec3 &in)", SetOrigin, (const kexVec3 &org), void);
-        OBJMETHOD("void SetTarget(kActor@)", SetTarget, (kexActor *targ), void);
-        OBJMETHOD("kActor @GetTarget(void)", GetTarget, (void), kexActor*);
-        OBJMETHOD("void SetOwner(kActor@)", SetOwner, (kexActor *targ), void);
-        OBJMETHOD("kActor @GetOwner(void)", GetOwner, (void), kexActor*);
-        OBJMETHOD("kQuat &GetRotation(void)", GetRotation, (void), kexQuat&);
-        OBJMETHOD("void SetRotation(const kQuat &in)", SetRotation, (const kexQuat &rot), void);
-        OBJMETHOD("kAngle &GetAngles(void)", GetAngles, (void), kexAngle&);
-        OBJMETHOD("void SetAngles(const kAngle &in)", SetAngles, (const kexAngle &an), void);
-        OBJMETHOD("kVec3 &GetScale(void)", GetScale, (void), kexVec3&);
-        OBJMETHOD("void SetScale(const kVec3 &in)", SetScale, (const kexVec3 &s), void);
-        OBJMETHOD("kAttachment &Attachment(void)", Attachment, (void), kexAttachment&);
-        OBJMETHOD("const kStr ClassName(void) const", ClassString, (void) const, const kexStr);
-        OBJMETHOD("void StartSound(const kStr &in)", StartSound, (const kexStr &name), void);
-        OBJMETHOD("void SetBoundingBox(const kVec3 &in, const kVec3 &in)",
-            SetBoundingBox, (const kexVec3 &min, const kexVec3 &max), void);
-
-    #define OBJPROPERTY(str, p)                         \
-        scriptManager.Engine()->RegisterObjectProperty( \
-            scriptClass,                                \
-            str,                                        \
-            asOFFSET(type, p))
-
-        OBJPROPERTY("bool bStatic", bStatic);
-        OBJPROPERTY("bool bCollision", bCollision);
-        OBJPROPERTY("bool bTouch", bTouch);
-        OBJPROPERTY("bool bHidden", bHidden);
-        OBJPROPERTY("bool bClientOnly", bClientOnly);
-        OBJPROPERTY("bool bCulled", bCulled);
-        OBJPROPERTY("bool bClientView", bClientView);
-        OBJPROPERTY("float radius", radius);
-        OBJPROPERTY("float height", height);
-        OBJPROPERTY("float baseHeight", baseHeight);
-        OBJPROPERTY("float centerHeight", centerHeight);
-        OBJPROPERTY("float viewHeight", viewHeight);
-
-    #undef OBJMETHOD
-    #undef OBJPROPERTY
-    }
-
-protected:
-    kexVec3                     origin;         // (xyz) position
-    kexQuat                     rotation;       // rotations in quaternions
-    kexAngle                    angles;         // yaw, pitch, roll
-    kexBBox                     bbox;           // bounding box
-    kexBBox                     baseBBox;       // unmodified bounding box
-    float                       cullDistance;
-    unsigned int                targetID;
-    kexActor                    *owner;
-    kexActor                    *target;
-    float                       radius;
-    float                       height;
-    float                       baseHeight;
-    float                       centerHeight;
-    float                       viewHeight;
-    kexAttachment               attachment;     // attachment object
-    kexPhysics                  physics;        // physics object
-    kexMatrix                   matrix;         // modelview matrix
-    kexMatrix                   rotMatrix;
-    kexModel_t                  *model;
-    kexVec3                     scale;
-    float                       timeStamp;
-    float                       tickDistance;
-    float                       tickIntervals;
-    float                       nextTickInterval;
-    int                         waterlevel;
-
-private:
-    int                         refCount;
-    bool                        bStale;         // freed on next game tick
-END_CLASS();
 
 class kexClipMesh;
 
@@ -227,6 +48,7 @@ public:
     virtual void                Parse(kexLexer *lexer);
     virtual void                UpdateTransform(void);
     virtual void                OnTouch(kexWorldActor *instigator);
+    virtual void                OnTrigger(void);
     virtual void                Think(void);
 
     void                        Spawn(void);
@@ -246,6 +68,7 @@ public:
     kexVec3                     *GetNodeTranslations(void) { return nodeOffsets_t; }
     kexQuat                     *GetNodeRotations(void) { return nodeOffsets_r; }
     kexAnimState                *AnimState(void) { return &animState; }
+    const kexModel_t            *Model(void) const { return model; }
 
     static unsigned int         id;
 
@@ -297,6 +120,7 @@ protected:
     kexClipMesh                 clipMesh;
     kexStr                      name;
     int                         health;
+    kexModel_t                  *model;
     kexQuat                     lerpRotation;
     kexVec3                     *nodeOffsets_t;
     kexQuat                     *nodeOffsets_r;

@@ -539,6 +539,9 @@ void kexCollisionMap::PlayerCrossAreas(kexSector *enter, kexSector *exit) {
             area = enter->area;
             if(area != NULL) {
                 area->scriptComponent.CallFunction(area->scriptComponent.onEnter);
+                if(area->Flags() & AAF_EVENT) {
+                    localWorld.TriggerActor(area->TargetID());
+                }
             }
         }
     }

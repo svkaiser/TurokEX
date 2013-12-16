@@ -25,7 +25,9 @@
 
 #include "al.h"
 #include "alc.h"
-#include "actor.h"
+#include "gameObject.h"
+#include "script.h"
+#include "cachefilelist.h"
 
 class kexWavFile;
 
@@ -55,7 +57,7 @@ public:
                                         kexSoundShader(void);
                                         ~kexSoundShader(void);
 
-    void                                Play(kexActor *actor);
+    void                                Play(kexGameObject *obj);
     void                                Load(kexLexer *lexer);
 
     filepath_t                          filePath;
@@ -99,7 +101,7 @@ class kexSoundSource {
                                         ~kexSoundSource(void);
 
     bool                                Generate(void);
-    void                                Set(sfx_t *sfxRef, kexActor *actor);
+    void                                Set(sfx_t *sfxRef, kexGameObject *obj);
     void                                Play(void);
     void                                Stop(void);
     void                                Reset(void);
@@ -118,7 +120,7 @@ private:
     float                               volume;
     float                               pitch;
     sfx_t                               *sfx;
-    kexActor                            *actor;
+    kexGameObject                       *obj;
 };
 
 class kexSoundSystem {
@@ -134,7 +136,7 @@ public:
     kexWavFile                          *CacheWavFile(const char *name);
     kexSoundShader                      *CacheShaderFile(const char *name);
     kexSoundSource                      *GetAvailableSource(void);
-    void                                StartSound(const char *name, kexActor *actor);
+    void                                StartSound(const char *name, kexGameObject *obj);
 
     const int                           GetNumActiveSources(void) const { return activeSources; }
     kexSoundSource                      *GetSources(void) { return sources; }

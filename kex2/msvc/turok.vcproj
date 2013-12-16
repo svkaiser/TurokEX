@@ -424,11 +424,23 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\attachment.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\camera.cpp"
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\displayObject.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\fx.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\gameObject.cpp"
 					>
 				</File>
 				<File
@@ -441,6 +453,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\game\world.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\worldObject.cpp"
 					>
 				</File>
 				<Filter
@@ -673,11 +689,23 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\attachment.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\camera.h"
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\displayObject.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\fx.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\gameObject.h"
 					>
 				</File>
 				<File
@@ -690,6 +718,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\game\world.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\worldObject.h"
 					>
 				</File>
 				<Filter

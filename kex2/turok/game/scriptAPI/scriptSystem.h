@@ -94,8 +94,6 @@ extern kexScriptManager scriptManager;
 
 class kexScriptObjString    { public: static void Init(void); };
 
-class kexActor;
-
 class kexScriptObjHandle  {
 public:
                             kexScriptObjHandle();

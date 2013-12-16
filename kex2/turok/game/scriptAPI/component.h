@@ -78,6 +78,7 @@ class kexActorComponent : public kexComponent {
 
     asIScriptFunction       *onTouch;
     asIScriptFunction       *onDamage;
+    asIScriptFunction       *onTrigger;
 };
 
 //-----------------------------------------------------------------------------

@@ -113,7 +113,7 @@ void kexFxPhysics::Think(const float timeDelta) {
     }
 
     if(sector == NULL) {
-        kexActor *source = owner->GetOwner();
+        kexActor *source = static_cast<kexActor*>(owner->GetOwner());
 
         if(source != NULL && source->Physics()->sector) {
             sector = source->Physics()->sector;
@@ -218,8 +218,6 @@ kexFx::kexFx(void) {
     this->bCollision    = true;
     this->owner         = NULL;
     this->target        = NULL;
-    this->model         = NULL;
-    this->gridBound     = NULL;
     
     this->attachment.SetOwner(this);
     this->physics.SetOwner(this);
@@ -488,11 +486,11 @@ void kexFx::Spawn(void) {
         if(fxInfo->bProjectile && owner) {
             kexActor *targ;
 
-            if(targ = owner->GetTarget()) {
+            if(targ = static_cast<kexActor*>(owner->GetTarget())) {
                 kexVec3 torg(targ->GetOrigin());
                 torg.y += targ->GetCenterHeight();
 
-                rotation = owner->GetRotation().RotateFrom(origin, torg, 0);
+                rotation = targ->GetRotation().RotateFrom(origin, torg, 0);
             }
         }
         

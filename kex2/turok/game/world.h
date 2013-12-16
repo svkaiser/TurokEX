@@ -97,9 +97,9 @@ public:
                                             const kexVec3 &origin, const kexAngle &angles);
     kexWorldActor                       *SpawnActor(kexStr &className, kexStr &component,
                                             kexVec3 &origin, kexAngle &angles);
-    kexFx                               *SpawnFX(const char *name, kexActor *source, kexVec3 &velocity,
+    kexFx                               *SpawnFX(const char *name, kexGameObject *source, kexVec3 &velocity,
                                             kexVec3 &origin, kexQuat &rotation);
-    void                                SpawnFX(const kexStr &str, kexActor *source, kexVec3 &velocity,
+    void                                SpawnFX(const kexStr &str, kexGameObject *source, kexVec3 &velocity,
                                             kexVec3 &origin, kexQuat &rotation);
     void                                RemoveActor(kexWorldActor *actor);
     void                                SpawnLocalPlayer(void);
@@ -107,6 +107,7 @@ public:
     void                                StartSound(const char *name);
     void                                StartSound(const kexStr &name);
     void                                SetFogRGB(float r, float g, float b);
+    void                                TriggerActor(const int targetID);
 
     bool                                IsLoaded(void) const { return bLoaded; }
     float                               DeltaTime(void) { return deltaTime; }

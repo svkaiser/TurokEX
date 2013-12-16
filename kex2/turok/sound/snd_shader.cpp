@@ -219,7 +219,7 @@ void kexSoundShader::Load(kexLexer *lexer) {
 // kexSoundShader::Play
 //
 
-void kexSoundShader::Play(kexActor *actor) {
+void kexSoundShader::Play(kexGameObject *obj) {
     kexSoundSource *src;
 
     kexSoundSystem::EnterCriticalSection();
@@ -231,7 +231,7 @@ void kexSoundShader::Play(kexActor *actor) {
             return;
         }
 
-        src->Set(&sfxList[i], actor);
+        src->Set(&sfxList[i], obj);
     }
 
     kexSoundSystem::ExitCriticalSection();

@@ -283,7 +283,7 @@ kexWorldActor *kexWorld::SpawnActor(kexStr &className, kexStr &component,
 // kexWorld::SpawnFX
 //
 
-kexFx *kexWorld::SpawnFX(const char *name, kexActor *source, kexVec3 &velocity,
+kexFx *kexWorld::SpawnFX(const char *name, kexGameObject *source, kexVec3 &velocity,
                          kexVec3 &origin, kexQuat &rotation) {
     kexFx *fx = NULL;
     fxfile_t *fxfile;
@@ -358,7 +358,7 @@ kexFx *kexWorld::SpawnFX(const char *name, kexActor *source, kexVec3 &velocity,
 // kexWorld::SpawnFX
 //
 
-void kexWorld::SpawnFX(const kexStr &str, kexActor *source, kexVec3 &velocity,
+void kexWorld::SpawnFX(const kexStr &str, kexGameObject *source, kexVec3 &velocity,
                          kexVec3 &origin, kexQuat &rotation) {
     SpawnFX(str.c_str(), source, velocity, origin, rotation);
 }
@@ -524,6 +524,25 @@ void kexWorld::StartSound(const kexStr &name) {
 
 void kexWorld::SetFogRGB(float r, float g, float b) {
     fogRGB[0] = r; fogRGB[1] = g; fogRGB[2] = b;
+}
+
+//
+// kexWorld::TriggerActor
+//
+
+void kexWorld::TriggerActor(const int targetID) {
+    for(actorRover = actors.Next(); actorRover != NULL;
+        actorRover = actorRover->worldLink.Next()) {
+            if(actorRover->bStatic) {
+                continue;
+            }
+            if(actorRover->Removing()) {
+                continue;
+            }
+            if(actorRover->TargetID() == targetID) {
+                actorRover->OnTrigger();
+            }
+    }
 }
 
 //
@@ -736,7 +755,7 @@ void kexWorld::InitObject(void) {
         "kWorld",
         "void SpawnFX(kStr &in, kActor@, kVec3 &in, kVec3 &in, kQuat &in)",
         asMETHODPR(kexWorld, SpawnFX,
-        (const kexStr &str, kexActor *source, kexVec3 &velocity,
+        (const kexStr &str, kexGameObject *source, kexVec3 &velocity,
         kexVec3 &origin, kexQuat &rotation), void),
         asCALL_THISCALL);
         

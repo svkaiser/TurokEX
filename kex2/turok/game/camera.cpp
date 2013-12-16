@@ -29,7 +29,7 @@
 #include "actor.h"
 #include "camera.h"
 
-DECLARE_CLASS(kexCamera, kexActor)
+DECLARE_CLASS(kexCamera, kexDisplayObject)
 
 //
 // kexCamera::kexCamera
@@ -42,7 +42,6 @@ kexCamera::kexCamera(void) {
     this->bLetterBox    = false;
     this->bFixedFOV     = false;
     this->aspect        = 4.0f/3.0f;
-    this->bStatic       = false;
 }
 
 //
@@ -136,7 +135,7 @@ void kexCamera::InitObject(void) {
         asMETHOD(kexCamera, RemoveRef),
         asCALL_THISCALL);
 
-    kexActor::RegisterBaseProperties<kexCamera>("kCamera");
+    kexDisplayObject::RegisterBaseProperties<kexCamera>("kCamera");
 
 #define OBJMETHOD(str, a, b, c)                         \
         scriptManager.Engine()->RegisterObjectMethod(   \
@@ -147,7 +146,6 @@ void kexCamera::InitObject(void) {
 
     OBJMETHOD("kAngle &GetOffsetAngle(void)", GetOffsetAngle, (void), kexAngle&);
     OBJMETHOD("void SetOffsetAngle(const kAngle &in)", SetOffsetAngle, (const kexAngle &an), void);
-    OBJMETHOD("kActor @ToActor(void)", ToActor, (void), kexActor*);
 
 #define OBJPROPERTY(str, p)                             \
     scriptManager.Engine()->RegisterObjectProperty(     \
