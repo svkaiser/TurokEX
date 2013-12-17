@@ -48,7 +48,7 @@ public:
 
     kexBBox                             bounds;
     kexPlane                            plane;
-    kexArray<kexWorldActor*>            actors;
+    kexArray<kexActor*>                 actors;
     bool                                bLeaf;
     kexNode                             *children[NODE_SIDES];
 };
@@ -61,7 +61,7 @@ public:
 
 class kexNodeBuilder {
 public:
-    void                                AddActor(kexWorldActor *actor);
+    void                                AddActor(kexActor *actor);
     void                                Build(kexNode *node);
 
 private:
@@ -70,7 +70,7 @@ private:
                                             float *splitX, float *splitZ,
                                             nodeSide_t side, int split);
 
-    kexArray<kexWorldActor*>            actors;
+    kexArray<kexActor*>                 actors;
 };
 
 //-----------------------------------------------------------------------------
@@ -91,17 +91,17 @@ public:
     void                                Unload(void);
     const char                          *GetMapFileFromID(const int id);
     kexObject                           *ConstructObject(const char *className);
-    kexWorldActor                       *ConstructActor(const char *className);
-    void                                AddActor(kexWorldActor *actor);
-    kexWorldActor                       *SpawnActor(const char *className, const char *component,
+    kexActor                            *ConstructActor(const char *className);
+    void                                AddActor(kexActor *actor);
+    kexActor                            *SpawnActor(const char *className, const char *component,
                                             const kexVec3 &origin, const kexAngle &angles);
-    kexWorldActor                       *SpawnActor(kexStr &className, kexStr &component,
+    kexActor                            *SpawnActor(kexStr &className, kexStr &component,
                                             kexVec3 &origin, kexAngle &angles);
     kexFx                               *SpawnFX(const char *name, kexGameObject *source, kexVec3 &velocity,
                                             kexVec3 &origin, kexQuat &rotation);
     void                                SpawnFX(const kexStr &str, kexGameObject *source, kexVec3 &velocity,
                                             kexVec3 &origin, kexQuat &rotation);
-    void                                RemoveActor(kexWorldActor *actor);
+    void                                RemoveActor(kexActor *actor);
     void                                SpawnLocalPlayer(void);
     void                                Trace(traceInfo_t *trace);
     void                                StartSound(const char *name);
@@ -124,11 +124,11 @@ public:
     bool                                FogEnabled(void) { return bEnableFog; }
     void                                ToggleFog(bool toggle) { bEnableFog = toggle; }
 
-    kexLinklist<kexWorldActor>          actors;
-    kexLinklist<kexWorldActor>          staticActors;
+    kexLinklist<kexActor>               actors;
+    kexLinklist<kexActor>               staticActors;
     kexLinklist<kexFx>                  fxList;
 
-    kexWorldActor                       *actorRover;
+    kexActor                            *actorRover;
     kexFx                               *fxRover;
     kexNode                             worldNode;
 

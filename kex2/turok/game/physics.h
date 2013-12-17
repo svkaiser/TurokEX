@@ -38,7 +38,7 @@ typedef enum {
     WLT_UNDER    = 3
 } waterLevelType_t;
 
-class kexActor;
+class kexWorldObject;
 class kexClipMesh;
 
 typedef struct {
@@ -47,14 +47,14 @@ typedef struct {
     kexVec3                 dir;
     kexClipMesh             *hitMesh;
     kexTri                  *hitTri;
-    kexActor                *hitActor;
+    kexWorldObject          *hitActor;
     kexVec3                 hitNormal;
     kexVec3                 hitVector;
     float                   fraction;
     bool                    bUseBBox;
     kexBBox                 bbox;
     kexBBox                 localBBox;
-    kexActor                *owner;
+    kexWorldObject          *owner;
     kexSector               **sector;
 } traceInfo_t;
 
@@ -76,8 +76,8 @@ public:
 
     kexVec3                 &GetVelocity(void) { return velocity; }
     void                    SetVelocity(const kexVec3 &vel) { velocity = vel; }
-    kexActor                *GetOwner(void) { return owner; }
-    void                    SetOwner(kexActor *actor) { owner = actor; }
+    kexWorldObject                *GetOwner(void) { return owner; }
+    void                    SetOwner(kexWorldObject *actor) { owner = actor; }
 
     static void             InitObject(void);
 
@@ -98,7 +98,7 @@ public:
     bool                    bOnGround;
 
 protected:
-    kexActor                *owner;
+    kexWorldObject          *owner;
 END_CLASS();
 
 #endif

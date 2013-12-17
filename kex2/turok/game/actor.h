@@ -33,21 +33,21 @@ class kexClipMesh;
 
 //-----------------------------------------------------------------------------
 //
-// kexWorldActor - common actor type used by game world. majority of the level
+// kexActor - common actor type used by game world. majority of the level
 // content is made up of these types of actors
 //
 //-----------------------------------------------------------------------------
 
-BEGIN_EXTENDED_CLASS(kexWorldActor, kexActor);
+BEGIN_EXTENDED_CLASS(kexActor, kexWorldObject);
 public:
-                                kexWorldActor(void);
-                                ~kexWorldActor(void);
+                                kexActor(void);
+                                ~kexActor(void);
 
     virtual void                LocalTick(void);
     virtual void                Tick(void);
     virtual void                Parse(kexLexer *lexer);
     virtual void                UpdateTransform(void);
-    virtual void                OnTouch(kexWorldActor *instigator);
+    virtual void                OnTouch(kexActor *instigator);
     virtual void                OnTrigger(void);
     virtual void                Think(void);
 
@@ -74,7 +74,7 @@ public:
 
     static void                 InitObject(void);
 
-    kexLinklist<kexWorldActor>  worldLink;
+    kexLinklist<kexActor>       worldLink;
     kexActorComponent           scriptComponent;
 
     // TODO - need some sort of skin system
@@ -94,7 +94,7 @@ public:
             asMETHODPR(type, a, b, c),                  \
             asCALL_THISCALL)
 
-        kexActor::RegisterBaseProperties<type>(scriptClass);
+        kexWorldObject::RegisterBaseProperties<type>(scriptClass);
 
         OBJMETHOD("void SetModel(const kStr &in)", SetModel, (const kexStr &modelFile), void);
         OBJMETHOD("void SpawnFX(const kStr &in, float, float, float)", SpawnFX,

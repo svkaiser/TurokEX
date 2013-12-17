@@ -83,15 +83,15 @@ static const sctokens_t mapactortokens[scactor_end+1] = {
     { -1,                       NULL                }
 };
 
-DECLARE_CLASS(kexWorldActor, kexActor)
+DECLARE_CLASS(kexActor, kexWorldObject)
 
-unsigned int kexWorldActor::id = 0;
+unsigned int kexActor::id = 0;
 
 //
-// kexWorldActor::kexWorldActor
+// kexActor::kexActor
 //
 
-kexWorldActor::kexWorldActor(void) {
+kexActor::kexActor(void) {
     this->baseBBox.min.Set(-32, -32, -32);
     this->baseBBox.max.Set(32, 32, 32);
 
@@ -106,17 +106,17 @@ kexWorldActor::kexWorldActor(void) {
 }
 
 //
-// kexWorldActor::~kexWorldActor
+// kexActor::~kexActor
 //
 
-kexWorldActor::~kexWorldActor(void) {
+kexActor::~kexActor(void) {
 }
 
 //
-// kexWorldActor::LocalTick
+// kexActor::LocalTick
 //
 
-void kexWorldActor::LocalTick(void) {
+void kexActor::LocalTick(void) {
     if(bStatic == true) {
         return;
     }
@@ -131,10 +131,10 @@ void kexWorldActor::LocalTick(void) {
 }
 
 //
-// kexWorldActor::Tick
+// kexActor::Tick
 //
 
-void kexWorldActor::Tick(void) {
+void kexActor::Tick(void) {
     if(bStatic == true) {
         return;
     }
@@ -147,10 +147,10 @@ void kexWorldActor::Tick(void) {
 }
 
 //
-// kexWorldActor::Spawn
+// kexActor::Spawn
 //
 
-void kexWorldActor::Spawn(void) {
+void kexActor::Spawn(void) {
     if(rotation.x == 0 && rotation.y == 0 && rotation.z == 0 && rotation.w == 0) {
         rotation = kexQuat(angles.yaw, 0, 1, 0);
     }
@@ -177,10 +177,10 @@ void kexWorldActor::Spawn(void) {
 }
 
 //
-// kexWorldActor::ParseDefault
+// kexActor::ParseDefault
 //
 
-void kexWorldActor::ParseDefault(kexLexer *lexer) {
+void kexActor::ParseDefault(kexLexer *lexer) {
     switch(lexer->GetIDForTokenList(mapactortokens, lexer->Token())) {
     case scactor_name:
         lexer->GetString();
@@ -209,7 +209,7 @@ void kexWorldActor::ParseDefault(kexLexer *lexer) {
         break;
     case scactor_textureSwaps:
         if(model == NULL)
-            parser.Error("kexWorldActor::ParseDefault: attempted to parse \"textureSwaps\" token while model is null\n");
+            parser.Error("kexActor::ParseDefault: attempted to parse \"textureSwaps\" token while model is null\n");
 
         // texture swap block
         lexer->ExpectNextToken(TK_LBRACK);
@@ -285,7 +285,7 @@ void kexWorldActor::ParseDefault(kexLexer *lexer) {
         break;
     default:
         if(lexer->TokenType() == TK_IDENIFIER) {
-            parser.Error("kexWorldActor::ParseDefault: unknown token: %s\n",
+            parser.Error("kexActor::ParseDefault: unknown token: %s\n",
                 lexer->Token());
         }
         break;
@@ -293,10 +293,10 @@ void kexWorldActor::ParseDefault(kexLexer *lexer) {
 }
 
 //
-// kexWorldActor::Parse
+// kexActor::Parse
 //
 
-void kexWorldActor::Parse(kexLexer *lexer) {
+void kexActor::Parse(kexLexer *lexer) {
     // read into nested block
     lexer->ExpectNextToken(TK_LBRACK);
     lexer->Find();
@@ -308,10 +308,10 @@ void kexWorldActor::Parse(kexLexer *lexer) {
 }
 
 //
-// kexWorldActor::UpdateTransform
+// kexActor::UpdateTransform
 //
 
-void kexWorldActor::UpdateTransform(void) {
+void kexActor::UpdateTransform(void) {
     attachment.Transform();
 
     if(physics.bRotor) {
@@ -341,10 +341,10 @@ void kexWorldActor::UpdateTransform(void) {
 }
 
 //
-// kexWorldActor::SetModel
+// kexActor::SetModel
 //
 
-void kexWorldActor::SetModel(const char* modelFile) {
+void kexActor::SetModel(const char* modelFile) {
     if(modelFile)
         model = modelManager.LoadModel(modelFile);
 
@@ -403,18 +403,18 @@ void kexWorldActor::SetModel(const char* modelFile) {
 }
 
 //
-// kexWorldActor::SetModel
+// kexActor::SetModel
 //
 
-void kexWorldActor::SetModel(const kexStr &modelFile) {
+void kexActor::SetModel(const kexStr &modelFile) {
     SetModel(modelFile.c_str());
 }
 
 //
-// kexWorldActor::ToLocalOrigin
+// kexActor::ToLocalOrigin
 //
 
-kexVec3 kexWorldActor::ToLocalOrigin(const float x, const float y, const float z) {
+kexVec3 kexActor::ToLocalOrigin(const float x, const float y, const float z) {
     kexMatrix mtx(DEG2RAD(-90), 1);
     mtx.Scale(-1, 1, 1);
     
@@ -422,18 +422,18 @@ kexVec3 kexWorldActor::ToLocalOrigin(const float x, const float y, const float z
 }
 
 //
-// kexWorldActor::ToLocalOrigin
+// kexActor::ToLocalOrigin
 //
 
-kexVec3 kexWorldActor::ToLocalOrigin(const kexVec3 &org) {
+kexVec3 kexActor::ToLocalOrigin(const kexVec3 &org) {
     return ToLocalOrigin(org.x, org.y, org.z);
 }
 
 //
-// kexWorldActor::SpawnFX
+// kexActor::SpawnFX
 //
 
-void kexWorldActor::SpawnFX(const char *fxName, const float x, const float y, const float z) {
+void kexActor::SpawnFX(const char *fxName, const float x, const float y, const float z) {
     if(bStatic || bCulled)
         return;
 
@@ -445,63 +445,63 @@ void kexWorldActor::SpawnFX(const char *fxName, const float x, const float y, co
 }
 
 //
-// kexWorldActor::SpawnFX
+// kexActor::SpawnFX
 //
 
-void kexWorldActor::SpawnFX(const kexStr &str, const float x, const float y, const float z) {
+void kexActor::SpawnFX(const kexStr &str, const float x, const float y, const float z) {
     SpawnFX(str.c_str(), x, y, z);
 }
 
 //
-// kexWorldActor::CreateComponent
+// kexActor::CreateComponent
 //
 
-void kexWorldActor::CreateComponent(const char *name) {
+void kexActor::CreateComponent(const char *name) {
     // TODO
     scriptComponent.Construct(name);
 }
 
 //
-// kexWorldActor::OnTouch
+// kexActor::OnTouch
 //
 
-void kexWorldActor::OnTouch(kexWorldActor *instigator) {
+void kexActor::OnTouch(kexActor *instigator) {
 }
 
 //
-// kexWorldActor::OnTrigger
+// kexActor::OnTrigger
 //
 
-void kexWorldActor::OnTrigger(void) {
+void kexActor::OnTrigger(void) {
     scriptComponent.CallFunction(scriptComponent.onTrigger);
 }
 
 //
-// kexWorldActor::Think
+// kexActor::Think
 //
 
-void kexWorldActor::Think(void) {
+void kexActor::Think(void) {
 }
 
 //
-// kexWorldActor::AlignToSurface
+// kexActor::AlignToSurface
 //
 
-bool kexWorldActor::AlignToSurface(void) {
+bool kexActor::AlignToSurface(void) {
     return false;
 }
 
 //
-// kexWorldActor::InitObject
+// kexActor::InitObject
 //
 
-void kexWorldActor::InitObject(void) {
-    kexScriptManager::RegisterRefObject<kexWorldActor>("kActor");
+void kexActor::InitObject(void) {
+    kexScriptManager::RegisterRefObject<kexActor>("kActor");
     kexScriptManager::RegisterDataObject<kexAttachment>("kAttachment");
-    kexScriptManager::RegisterAddRef<kexWorldActor>("kActor");
-    kexScriptManager::RegisterRemoveRef<kexWorldActor>("kActor");
+    kexScriptManager::RegisterAddRef<kexActor>("kActor");
+    kexScriptManager::RegisterRemoveRef<kexActor>("kActor");
 
-    kexWorldActor::RegisterBaseProperties<kexWorldActor>("kActor");
+    kexActor::RegisterBaseProperties<kexActor>("kActor");
 
     scriptManager.RegisterMethod("kAttachment", "void Transform(void)",
         asMETHODPR(kexAttachment, Transform, (void), void));

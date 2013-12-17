@@ -61,7 +61,7 @@ private:
     void            DrawViewActors(void);
     void            DrawFX(void);
     void            DrawSurface(const surface_t *surface, const char *texturePath);
-    void            TraverseDrawActorNode(kexWorldActor *actor,
+    void            TraverseDrawActorNode(kexActor *actor,
                         const modelNode_t *node, kexAnimState *animState);
 
     kexWorld        *world;

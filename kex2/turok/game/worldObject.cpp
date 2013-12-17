@@ -28,13 +28,13 @@
 #include "worldObject.h"
 #include "world.h"
 
-DECLARE_ABSTRACT_CLASS(kexActor, kexDisplayObject)
+DECLARE_ABSTRACT_CLASS(kexWorldObject, kexDisplayObject)
 
 //
-// kexActor::kexActor
+// kexWorldObject::kexWorldObject
 //
 
-kexActor::kexActor(void) {
+kexWorldObject::kexWorldObject(void) {
     this->bStatic       = true;
     this->bCollision    = false;
     this->bTouch        = false;
@@ -47,26 +47,26 @@ kexActor::kexActor(void) {
 }
 
 //
-// kexActor::~kexActor
+// kexWorldObject::~kexWorldObject
 //
 
-kexActor::~kexActor(void) {
+kexWorldObject::~kexWorldObject(void) {
 }
 
 //
-// kexActor::SetBoundingBox
+// kexWorldObject::SetBoundingBox
 //
 
-void kexActor::SetBoundingBox(const kexVec3 &min, const kexVec3 &max) {
+void kexWorldObject::SetBoundingBox(const kexVec3 &min, const kexVec3 &max) {
     baseBBox.min = min;
     baseBBox.max = max;
 }
 
 //
-// kexActor::Trace
+// kexWorldObject::Trace
 //
 
-bool kexActor::Trace(traceInfo_t *trace) {
+bool kexWorldObject::Trace(traceInfo_t *trace) {
     kexVec3 org = (origin - trace->start);
 
     if(trace->dir.Dot(org) <= 0) {

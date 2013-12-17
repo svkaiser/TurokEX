@@ -35,10 +35,10 @@
 //
 //-----------------------------------------------------------------------------
 
-BEGIN_EXTENDED_CLASS(kexActor, kexDisplayObject);
+BEGIN_EXTENDED_CLASS(kexWorldObject, kexDisplayObject);
 public:
-                                kexActor(void);
-                                ~kexActor(void);
+                                kexWorldObject(void);
+                                ~kexWorldObject(void);
 
     virtual void                LocalTick(void) = 0;
     virtual void                Tick(void) = 0;

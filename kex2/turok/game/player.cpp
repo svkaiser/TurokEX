@@ -144,7 +144,7 @@ static const sctokens_t playerLocationTokens[scplocation_end+1] = {
     { -1,                       NULL                    }
 };
 
-DECLARE_CLASS(kexPlayerPuppet, kexWorldActor)
+DECLARE_CLASS(kexPlayerPuppet, kexActor)
 
 //
 // kexPlayerPuppet::kexPlayerPuppet
@@ -192,7 +192,7 @@ void kexPlayerPuppet::Parse(kexLexer *lexer) {
 void kexPlayerPuppet::LocalTick(void) {
 }
 
-DECLARE_ABSTRACT_CLASS(kexPlayer, kexWorldActor)
+DECLARE_ABSTRACT_CLASS(kexPlayer, kexActor)
 
 //
 // kexPlayer::kexPlayer
@@ -278,9 +278,9 @@ void kexPlayer::UnpossessPuppet(void) {
 // kexPlayer::PuppetToActor
 //
 
-kexWorldActor *kexPlayer::PuppetToActor(void) {
+kexActor *kexPlayer::PuppetToActor(void) {
     puppet->AddRef();
-    return static_cast<kexWorldActor*>(puppet);
+    return static_cast<kexActor*>(puppet);
 }
 
 DECLARE_CLASS(kexLocalPlayer, kexPlayer)
@@ -511,7 +511,7 @@ void kexLocalPlayer::InitObject(void) {
         sizeof(kexPlayerMove),
         asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS);
 
-    kexWorldActor::RegisterBaseProperties<kexLocalPlayer>("kLocalPlayer");
+    kexActor::RegisterBaseProperties<kexLocalPlayer>("kLocalPlayer");
 
 #define OBJMETHOD(str, a, b, c)                     \
     scriptManager.Engine()->RegisterObjectMethod(   \
@@ -522,8 +522,8 @@ void kexLocalPlayer::InitObject(void) {
 
     OBJMETHOD("bool ActionDown(const kStr &in)", ActionDown, (const kexStr&), bool);
     OBJMETHOD("int ActionHeldTime(const kStr &in)", ActionHeldTime, (const kexStr&), int);
-    OBJMETHOD("kActor @ToActor(void)", ToWorldActor, (void), kexWorldActor*);
-    OBJMETHOD("kActor @Puppet(void)", PuppetToActor, (void), kexWorldActor*);
+    OBJMETHOD("kActor @ToActor(void)", ToWorldActor, (void), kexActor*);
+    OBJMETHOD("kActor @Puppet(void)", PuppetToActor, (void), kexActor*);
     OBJMETHOD("kVec3 &GetAcceleration(void)", GetAcceleration, (void), kexVec3&);
     OBJMETHOD("void SetAcceleration(const kVec3 &in)", SetAcceleration, (const kexVec3&), void);
     OBJMETHOD("float GetCrawlHeight(void)", GetCrawlHeight, (void), float);

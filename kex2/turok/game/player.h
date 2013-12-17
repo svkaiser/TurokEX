@@ -45,7 +45,7 @@ public:
     void                    Accelerate(int direction, int axis, const float deltaTime);
 };
 
-BEGIN_EXTENDED_CLASS(kexPlayerPuppet, kexWorldActor);
+BEGIN_EXTENDED_CLASS(kexPlayerPuppet, kexActor);
 public:
                             kexPlayerPuppet(void);
                             ~kexPlayerPuppet(void);
@@ -60,7 +60,7 @@ private:
     int                     id;
 END_CLASS();
 
-BEGIN_EXTENDED_CLASS(kexPlayer, kexWorldActor);
+BEGIN_EXTENDED_CLASS(kexPlayer, kexActor);
 public:
                             kexPlayer(void);
                             ~kexPlayer(void);
@@ -89,7 +89,7 @@ public:
     
     ticcmd_t                *Cmd(void) { return &cmd; }
     kexPlayerPuppet         *Puppet(void) { return puppet; }
-    kexWorldActor           *PuppetToActor(void);
+    kexActor           *PuppetToActor(void);
     ENetPeer                *GetPeer(void) { return peer; }
     void                    SetPeer(ENetPeer *_peer) { peer = _peer; }
     int                     GetID(void) const { return id; }
@@ -132,7 +132,7 @@ public:
     int                     ActionHeldTime(const kexStr &str);
 
     kexVec3                 &MoveDiff(void) { return moveDiff; }
-    kexWorldActor           *ToWorldActor(void) { return static_cast<kexWorldActor*>(this); }
+    kexActor           *ToWorldActor(void) { return static_cast<kexActor*>(this); }
 
     static void             InitObject(void);
 

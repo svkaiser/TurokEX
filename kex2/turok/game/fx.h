@@ -163,7 +163,7 @@ public:
     virtual void                Think(const float timeDelta);
 END_CLASS();
 
-BEGIN_EXTENDED_CLASS(kexFx, kexActor);
+BEGIN_EXTENDED_CLASS(kexFx, kexWorldObject);
 public:
                                 kexFx(void);
                                 ~kexFx(void);
@@ -174,7 +174,7 @@ public:
     void                        Spawn(void);
     void                        SetViewDistance(void);
     kexFx                       *SpawnChild(const char *name);
-    void                        Event(fxEvent_t *fxEvent, kexActor *target);
+    void                        Event(fxEvent_t *fxEvent, kexWorldObject *target);
 
     kexVec3                     &GetVelocityOffset(void) { return velOffset; }
     void                        SetVelocityOffset(const kexVec3 &vel) { velOffset = vel; }

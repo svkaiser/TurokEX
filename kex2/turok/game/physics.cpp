@@ -547,8 +547,8 @@ void kexPhysics::InitObject(void) {
         asMETHODPR(kexPhysics, a, b, c),            \
         asCALL_THISCALL)
 
-    OBJMETHOD("kActor @GetOwner(void)", GetOwner, (void), kexActor*);
-    OBJMETHOD("void SetOwner(kActor@)", SetOwner, (kexActor *o), void);
+    OBJMETHOD("kActor @GetOwner(void)", GetOwner, (void), kexWorldObject*);
+    OBJMETHOD("void SetOwner(kActor@)", SetOwner, (kexWorldObject *o), void);
     OBJMETHOD("kVec3 &GetVelocity(void)", GetVelocity, (void), kexVec3&);
     OBJMETHOD("void SetVelocity(const kVec3 &in)", SetVelocity, (const kexVec3 &vel), void);
     OBJMETHOD("bool OnGround(void)", OnGround, (void), bool);
@@ -584,6 +584,6 @@ void kexPhysics::InitObject(void) {
     scriptManager.Engine()->RegisterObjectMethod(
         "kActor",
         "kPhysics @Physics(void)",
-        asMETHODPR(kexWorldActor, Physics, (void), kexPhysics*),
+        asMETHODPR(kexActor, Physics, (void), kexPhysics*),
         asCALL_THISCALL);
 }

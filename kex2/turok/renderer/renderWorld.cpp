@@ -352,7 +352,7 @@ void kexRenderWorld::DrawSurface(const surface_t *surface, const char *texturePa
 // kexRenderWorld::TraverseDrawActorNode
 //
 
-void kexRenderWorld::TraverseDrawActorNode(kexWorldActor *actor,
+void kexRenderWorld::TraverseDrawActorNode(kexActor *actor,
                                            const modelNode_t *node,
                                            kexAnimState *animState) {
     unsigned int i;
@@ -480,7 +480,7 @@ void kexRenderWorld::DrawStaticActors(void) {
     kexBBox box;
     kexFrustum frustum = world->Camera()->Frustum();
 
-    for(kexWorldActor *actor = world->staticActors.Next();
+    for(kexActor *actor = world->staticActors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
             if(!actor->bStatic) {
                 continue;
@@ -546,7 +546,7 @@ void kexRenderWorld::DrawActors(void) {
     kexMatrix mtx(DEG2RAD(-90), 1);
     mtx.Scale(-1, 1, 1);
 
-    for(kexWorldActor *actor = world->actors.Next();
+    for(kexActor *actor = world->actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
             if(actor->bStatic) {
                 continue;
@@ -616,7 +616,7 @@ void kexRenderWorld::DrawViewActors(void) {
     renderSystem.SetCull(GLCULL_FRONT);
     renderSystem.SetState(GLSTATE_LIGHTING, true);
 
-    for(kexWorldActor *actor = world->actors.Next();
+    for(kexActor *actor = world->actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
             if(actor->bHidden || !actor->bClientView) {
                 continue;

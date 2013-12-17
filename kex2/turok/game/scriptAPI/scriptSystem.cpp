@@ -163,7 +163,7 @@ void kexScriptManager::Init(void) {
     kexKeyMap           ::InitObject();
     kexClient           ::InitObject();
     kexInputKey         ::InitObject();
-    kexWorldActor       ::InitObject();
+    kexActor            ::InitObject();
     kexArea             ::InitObject();
     kexCamera           ::InitObject();
     kexLocalPlayer      ::InitObject();

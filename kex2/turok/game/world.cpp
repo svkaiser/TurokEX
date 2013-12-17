@@ -202,31 +202,31 @@ kexObject *kexWorld::ConstructObject(const char *className) {
 // kexWorld::ConstructActor
 //
 
-kexWorldActor *kexWorld::ConstructActor(const char *className) {
-    return static_cast<kexWorldActor*>(ConstructObject(className));
+kexActor *kexWorld::ConstructActor(const char *className) {
+    return static_cast<kexActor*>(ConstructObject(className));
 }
 
 //
 // kexWorld::AddActor
 //
 
-void kexWorld::AddActor(kexWorldActor *actor) {
+void kexWorld::AddActor(kexActor *actor) {
     actors.Add(actor->worldLink);
 
     if(actor->GetName().Length() <= 0) {
         actor->SetName(kexStr(kva("%s_%i",
-            actor->ClassName(), kexWorldActor::id)));
+            actor->ClassName(), kexActor::id)));
     }
 
     actor->CallSpawn();
-    kexWorldActor::id++;
+    kexActor::id++;
 }
 
 //
 // kexWorld::RemoveActor
 //
 
-void kexWorld::RemoveActor(kexWorldActor *actor) {
+void kexWorld::RemoveActor(kexActor *actor) {
     actor->worldLink.Remove();
 
    /* Note that actorRover is guaranteed to point to us,
@@ -243,10 +243,10 @@ void kexWorld::RemoveActor(kexWorldActor *actor) {
 // kexWorld::SpawnActor
 // 
 
-kexWorldActor *kexWorld::SpawnActor(const char *className, const char *component,
+kexActor *kexWorld::SpawnActor(const char *className, const char *component,
                                     const kexVec3 &origin, const kexAngle &angles) {
     
-    kexWorldActor *actor = ConstructActor(className);
+    kexActor *actor = ConstructActor(className);
     
     if(actor == NULL)
         return NULL;
@@ -266,7 +266,7 @@ kexWorldActor *kexWorld::SpawnActor(const char *className, const char *component
 // kexWorld::SpawnActor
 //
 
-kexWorldActor *kexWorld::SpawnActor(kexStr &className, kexStr &component,
+kexActor *kexWorld::SpawnActor(kexStr &className, kexStr &component,
                                     kexVec3 &origin, kexAngle &angles) {
     const char *componentName;
 
@@ -368,7 +368,7 @@ void kexWorld::SpawnFX(const kexStr &str, kexGameObject *source, kexVec3 &veloci
 //
 
 void kexWorld::SpawnLocalPlayer(void) {
-    for(kexWorldActor *actor = actors.Next();
+    for(kexActor *actor = actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
         
         // find a kexPlayerPuppet and see if its not occupied
@@ -398,7 +398,7 @@ void kexWorld::SpawnLocalPlayer(void) {
 void kexWorld::TraverseWorldNodes(kexNode *node, traceInfo_t *trace) {
     if(node->bLeaf) {
         kexBBox box;
-        kexWorldActor *actor;
+        kexActor *actor;
         float r = 16.384f;
 
         if(trace->bUseBBox) {
@@ -563,7 +563,7 @@ void kexWorld::Load(const char *mapFile) {
     worldLightModelAmbience.Set(1, 1, 1, 1);
     
     kexLexer *lexer;
-    kexWorldActor *actor;
+    kexActor *actor;
     kexNodeBuilder builder;
     kexStr file(mapFile);
 
@@ -748,7 +748,7 @@ void kexWorld::InitObject(void) {
         "kActor @SpawnActor(kStr &in, kStr &in, kVec3 &in, kAngle &in)",
         asMETHODPR(kexWorld, SpawnActor,
         (kexStr &className, kexStr &component,
-        kexVec3 &origin, kexAngle &angles), kexWorldActor*),
+        kexVec3 &origin, kexAngle &angles), kexActor*),
         asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectMethod(
@@ -781,7 +781,7 @@ kexNode::kexNode(void) {
 // kexNodeBuilder::AddActor
 //
 
-void kexNodeBuilder::AddActor(kexWorldActor *actor) {
+void kexNodeBuilder::AddActor(kexActor *actor) {
     if(actor->bStatic == false || actor->bCollision == false) {
         return;
     }

@@ -76,7 +76,7 @@ typedef struct {
     int                     nextFrame;
 } animTrack_t;
 
-class kexWorldActor;
+class kexActor;
 
 class kexAnimState {
 public:
@@ -99,7 +99,7 @@ public:
     static bool             CheckAnimID(const kexModel_t *model, const int id);
     static void             LoadKAnim(const kexModel_t *model);
 
-    void                    SetOwner(kexWorldActor *actor) { owner = actor; }
+    void                    SetOwner(kexActor *actor) { owner = actor; }
     const int               CurrentFrame(void) const { return currentFrame; }
     const float             PlayTime(void) const { return playTime; }
 
@@ -122,7 +122,7 @@ private:
     float                   playTime;
     float                   blendTime;
     unsigned int            restartFrame;
-    kexWorldActor           *owner;
+    kexActor                *owner;
 };
 
 #endif

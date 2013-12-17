@@ -40,7 +40,7 @@ typedef enum {
     CMT_CUSTOM          = 8
 } clipMeshType_t;
 
-class kexWorldActor;
+class kexActor;
 
 class kexClipMesh {
 public:
@@ -55,8 +55,8 @@ public:
 
     const clipMeshType_t    GetType(void) const { return type; }
     void                    SetType(const clipMeshType_t _type) { type = _type; }
-    kexWorldActor           *GetOwner(void) { return owner; }
-    void                    SetOwner(kexWorldActor *actor) { owner = actor; }
+    kexActor                *GetOwner(void) { return owner; }
+    void                    SetOwner(kexActor *actor) { owner = actor; }
 
     static kexHeapBlock     hb_clipMesh;
 
@@ -84,7 +84,7 @@ private:
     cmGroup_t               *cmGroups;
     kexVec3                 origin;
     clipMeshType_t          type;
-    kexWorldActor           *owner;
+    kexActor                *owner;
 };
 
 #endif

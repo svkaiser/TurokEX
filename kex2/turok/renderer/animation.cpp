@@ -684,7 +684,7 @@ void kexAnimState::InitObject(void) {
     scriptManager.Engine()->RegisterObjectMethod(
         "kActor",
         "kAnimState @AnimState(void)",
-        asMETHODPR(kexWorldActor, AnimState, (void), kexAnimState*),
+        asMETHODPR(kexActor, AnimState, (void), kexAnimState*),
         asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterEnum("AnimStateFlags");

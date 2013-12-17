@@ -113,7 +113,7 @@ void kexFxPhysics::Think(const float timeDelta) {
     }
 
     if(sector == NULL) {
-        kexActor *source = static_cast<kexActor*>(owner->GetOwner());
+        kexWorldObject *source = static_cast<kexWorldObject*>(owner->GetOwner());
 
         if(source != NULL && source->Physics()->sector) {
             sector = source->Physics()->sector;
@@ -207,7 +207,7 @@ void kexFxPhysics::Think(const float timeDelta) {
     */
 }
 
-DECLARE_CLASS(kexFx, kexActor)
+DECLARE_CLASS(kexFx, kexWorldObject)
 
 //
 // kexFx::kexFx
@@ -432,7 +432,7 @@ kexFx *kexFx::SpawnChild(const char *name) {
 // kexFx::Event
 //
 
-void kexFx::Event(fxEvent_t *fxEvent, kexActor *target) {
+void kexFx::Event(fxEvent_t *fxEvent, kexWorldObject *target) {
     kexFx *nfx = NULL;
 
     if(fxEvent->fx != NULL) {
@@ -484,9 +484,9 @@ void kexFx::Spawn(void) {
     }
     else {
         if(fxInfo->bProjectile && owner) {
-            kexActor *targ;
+            kexWorldObject *targ;
 
-            if(targ = static_cast<kexActor*>(owner->GetTarget())) {
+            if(targ = static_cast<kexWorldObject*>(owner->GetTarget())) {
                 kexVec3 torg(targ->GetOrigin());
                 torg.y += targ->GetCenterHeight();
 
