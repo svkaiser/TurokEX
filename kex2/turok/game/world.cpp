@@ -234,6 +234,7 @@ void kexWorld::RemoveActor(kexActor *actor) {
     * point it to actor->prev, so the iterator will correctly move on to
     * actor->prev->next = actor->next */
     actorRover = actor->worldLink.Prev();
+    actor->scriptComponent.~kexActorComponent();
     Mem_Free(actor);
 
     actor = NULL;

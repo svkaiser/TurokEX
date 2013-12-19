@@ -69,6 +69,8 @@ void kexArea::InitObject(void) {
         asOFFSET(kexArea, globalFogZFar));
     scriptManager.Engine()->RegisterObjectProperty("kArea", "kVec3 fogRGB",
         asOFFSET(kexArea, globalFogRGB));
+    scriptManager.Engine()->RegisterObjectProperty("kArea", "ref @obj",
+        asOFFSET(kexArea, scriptComponent.Handle()));
 }
 
 //
@@ -108,6 +110,11 @@ void kexArea::Setup(void) {
     keyMap.GetBool("bTrigger", flag);
     if(flag) {
         flags |= AAF_EVENT;
+    }
+
+    keyMap.GetBool("bRepeatable", flag);
+    if(flag) {
+        flags |= AAF_REPEATABLE;
     }
 
     if((key = keyMap.Find("component"))) {

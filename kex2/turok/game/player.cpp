@@ -480,25 +480,7 @@ void kexLocalPlayer::LocalTick(void) {
 //
 
 void kexLocalPlayer::InitObject(void) {
-    scriptManager.Engine()->RegisterObjectType(
-        "kLocalPlayer",
-        sizeof(kexLocalPlayer),
-        asOBJ_REF);
-
-    scriptManager.Engine()->RegisterObjectBehaviour(
-        "kLocalPlayer",
-        asBEHAVE_ADDREF,
-        "void f()",
-        asMETHOD(kexLocalPlayer, AddRef),
-        asCALL_THISCALL);
-
-    scriptManager.Engine()->RegisterObjectBehaviour(
-        "kLocalPlayer",
-        asBEHAVE_RELEASE,
-        "void f()",
-        asMETHOD(kexLocalPlayer, RemoveRef),
-        asCALL_THISCALL);
-
+    kexScriptManager::RegisterRefObjectNoCount<kexLocalPlayer>("kLocalPlayer");
     scriptManager.Engine()->RegisterObjectBehaviour(
         "kActor",
         asBEHAVE_REF_CAST,
@@ -506,12 +488,8 @@ void kexLocalPlayer::InitObject(void) {
         asFUNCTION((kexScriptManager::RefCast<kexLocalPlayer, kexActor>)),
         asCALL_CDECL_OBJLAST);
 
-    scriptManager.Engine()->RegisterObjectType(
-        "kPlayerMove",
-        sizeof(kexPlayerMove),
-        asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS);
-
     kexActor::RegisterBaseProperties<kexLocalPlayer>("kLocalPlayer");
+    kexScriptManager::RegisterDataObject<kexPlayerMove>("kPlayerMove");
 
 #define OBJMETHOD(str, a, b, c)                     \
     scriptManager.Engine()->RegisterObjectMethod(   \

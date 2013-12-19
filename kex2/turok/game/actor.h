@@ -76,6 +76,7 @@ public:
 
     kexLinklist<kexActor>       worldLink;
     kexActorComponent           scriptComponent;
+    kexKeyMap                   args;
 
     // TODO - need some sort of skin system
     char                        ****textureSwaps;
@@ -109,6 +110,7 @@ public:
     OBJPROPERTY("ref @obj", scriptComponent.Handle());
     OBJPROPERTY("int health", health);
     OBJPROPERTY("kQuat lerpRotation", lerpRotation);
+    OBJPROPERTY("kKeyMap args", args);
 
     #undef OBJMETHOD
     #undef OBJPROPERTY

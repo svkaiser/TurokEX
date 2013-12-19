@@ -116,25 +116,7 @@ void kexCamera::Remove(void) {
 //
 
 void kexCamera::InitObject(void) {
-    scriptManager.Engine()->RegisterObjectType(
-        "kCamera",
-        sizeof(kexCamera),
-        asOBJ_REF);
-
-    scriptManager.Engine()->RegisterObjectBehaviour(
-        "kCamera",
-        asBEHAVE_ADDREF,
-        "void f()",
-        asMETHOD(kexCamera, AddRef),
-        asCALL_THISCALL);
-
-    scriptManager.Engine()->RegisterObjectBehaviour(
-        "kCamera",
-        asBEHAVE_RELEASE,
-        "void f()",
-        asMETHOD(kexCamera, RemoveRef),
-        asCALL_THISCALL);
-
+    kexScriptManager::RegisterRefObjectNoCount<kexCamera>("kCamera");
     kexDisplayObject::RegisterBaseProperties<kexCamera>("kCamera");
 
 #define OBJMETHOD(str, a, b, c)                         \

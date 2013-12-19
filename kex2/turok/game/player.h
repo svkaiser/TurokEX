@@ -89,7 +89,7 @@ public:
     
     ticcmd_t                *Cmd(void) { return &cmd; }
     kexPlayerPuppet         *Puppet(void) { return puppet; }
-    kexActor           *PuppetToActor(void);
+    kexActor                *PuppetToActor(void);
     ENetPeer                *GetPeer(void) { return peer; }
     void                    SetPeer(ENetPeer *_peer) { peer = _peer; }
     int                     GetID(void) const { return id; }

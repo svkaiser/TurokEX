@@ -151,14 +151,8 @@ void kexActor::Tick(void) {
 //
 
 void kexActor::Spawn(void) {
-    if(rotation.x == 0 && rotation.y == 0 && rotation.z == 0 && rotation.w == 0) {
-        rotation = kexQuat(angles.yaw, 0, 1, 0);
-    }
-
-    rotation.Normalize();
     UpdateTransform();
 
-    timeStamp = (float)server.GetRunTime();
     height = bStatic ? baseHeight : 0;
 
     if(bTouch) {
@@ -496,10 +490,8 @@ bool kexActor::AlignToSurface(void) {
 //
 
 void kexActor::InitObject(void) {
-    kexScriptManager::RegisterRefObject<kexActor>("kActor");
+    kexScriptManager::RegisterRefObjectNoCount<kexActor>("kActor");
     kexScriptManager::RegisterDataObject<kexAttachment>("kAttachment");
-    kexScriptManager::RegisterAddRef<kexActor>("kActor");
-    kexScriptManager::RegisterRemoveRef<kexActor>("kActor");
 
     kexActor::RegisterBaseProperties<kexActor>("kActor");
 
