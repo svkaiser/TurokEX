@@ -444,6 +444,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\mover.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\physics.cpp"
 					>
 				</File>
@@ -706,6 +710,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\game\gameObject.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\mover.h"
 					>
 				</File>
 				<File

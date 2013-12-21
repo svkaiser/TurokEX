@@ -109,6 +109,8 @@ public:
     void                            TraverseSectors(cMapTrace_t *trace, kexSector *sector);
     kexSector                       *PointInSector(const kexVec3 &origin);
     void                            PlayerCrossAreas(kexSector *enter, kexSector *exit);
+    void                            RecursiveChangeHeight(kexSector *sector, float destHeight,
+                                        unsigned int areaID);
     void                            DebugDraw(void);
 
     kexVec3                         *points[2];

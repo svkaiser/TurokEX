@@ -104,3 +104,11 @@ bool kexWorldObject::Trace(traceInfo_t *trace) {
 
     return false;
 }
+
+//
+// kexWorldObject::AlignToSurface
+//
+
+bool kexWorldObject::AlignToSurface(void) {
+    return false;
+}

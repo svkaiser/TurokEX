@@ -45,6 +45,7 @@ public:
 
     void                        SetBoundingBox(const kexVec3 &min, const kexVec3 &max);
     bool                        Trace(traceInfo_t *trace);
+    bool                        AlignToSurface(void);
 
     float                       Radius(void) { return radius; }
     float                       Height(void) { return height; }
@@ -59,6 +60,7 @@ public:
     bool                        bStatic;        // no tick/think behavior
     bool                        bCollision;     // handle collision with this actor
     bool                        bTouch;         // can be touched/picked up by other actors
+    bool                        bOrientOnSlope;
 
     //
     // template for registering default script actor methods and properties
@@ -86,6 +88,7 @@ public:
         OBJPROPERTY("bool bStatic", bStatic);
         OBJPROPERTY("bool bCollision", bCollision);
         OBJPROPERTY("bool bTouch", bTouch);
+        OBJPROPERTY("bool bOrientOnSlope", bOrientOnSlope);
         OBJPROPERTY("float radius", radius);
         OBJPROPERTY("float height", height);
         OBJPROPERTY("float baseHeight", baseHeight);

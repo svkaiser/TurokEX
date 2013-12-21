@@ -59,3 +59,17 @@ void kexDisplayObject::Spawn(void) {
 
     rotation.Normalize();
 }
+
+//
+// kexDisplayObject::UpdateTransform
+//
+
+void kexDisplayObject::UpdateTransform(void) {
+    attachment.Transform();
+
+    matrix = kexMatrix(rotation);
+
+    rotMatrix = matrix;
+    matrix.Scale(scale);
+    matrix.AddTranslation(origin);
+}

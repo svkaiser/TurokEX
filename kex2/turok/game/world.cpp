@@ -138,6 +138,7 @@ void kexWorld::Tick(void) {
         if(actorRover->bClientOnly || actorRover->bStatic) {
             continue;
         }
+        actorRover->TimeStamp() = deltaTime;
         actorRover->Tick();
     }
 }

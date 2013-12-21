@@ -72,8 +72,10 @@ public:
     word                            FloorSurfaceType(void) { return fSurfaceID; }
     word                            CeilingSurfaceType(void) { return cSurfaceID; }
     word                            WallSurfaceType(void) { return wSurfaceID; }
+    const unsigned int              WorldID(void) const { return worldID; }
 
     static void                     InitObject(void);
+    static unsigned int             id;
 
     kexKeyMap                       keyMap;
     kexAreaComponent                scriptComponent;
@@ -88,6 +90,7 @@ private:
     word                            wSurfaceID;
     kexVec3                         globalFogRGB;
     float                           globalFogZFar;
+    unsigned int                    worldID;
 };
 
 #endif

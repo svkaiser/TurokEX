@@ -41,7 +41,7 @@ typedef enum
     SVC_STATE_INGAME
 } svclient_state_e;
 
-#define SERVER_RUNTIME  16
+#define SERVER_RUNTIME  100
 
 class kexServer : public kexNetwork {
 public:

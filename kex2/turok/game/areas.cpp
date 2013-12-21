@@ -35,6 +35,8 @@
 
 DECLARE_CLASS(kexArea, kexObject)
 
+unsigned int kexArea::id = 0;
+
 //
 // kexArea::kexArea
 //
@@ -48,6 +50,7 @@ kexArea::kexArea(void) {
     this->wSurfaceID        = -1;
     this->globalFogZFar     = 1024;
     this->flags             = 0;
+    this->worldID           = 0;
 
     this->globalFogRGB.Clear();
     this->scriptComponent.SetOwner(this);
@@ -80,6 +83,8 @@ void kexArea::InitObject(void) {
 void kexArea::Setup(void) {
     kexHashKey *key;
     bool flag;
+
+    worldID = kexArea::id++;
 
     keyMap.GetFloat("waterlevel", waterplane);
     keyMap.GetInt("targetID", targetID);

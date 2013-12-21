@@ -40,6 +40,7 @@ public:
 
     virtual void                LocalTick(void) = 0;
     virtual void                Tick(void) = 0;
+    virtual void                UpdateTransform(void);
     
     void                        Spawn(void);
 
@@ -74,6 +75,7 @@ public:
         OBJMETHOD("kVec3 &GetScale(void)", GetScale, (void), kexVec3&);
         OBJMETHOD("void SetScale(const kVec3 &in)", SetScale, (const kexVec3 &s), void);
         OBJMETHOD("kAttachment &Attachment(void)", Attachment, (void), kexAttachment&);
+        OBJMETHOD("void UpdateTransform(void)", UpdateTransform, (void), void);
 
     #define OBJPROPERTY(str, p)                         \
         scriptManager.Engine()->RegisterObjectProperty( \

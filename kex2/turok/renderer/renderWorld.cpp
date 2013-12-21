@@ -543,7 +543,7 @@ void kexRenderWorld::DrawStaticActors(void) {
 void kexRenderWorld::DrawActors(void) {
     kexBBox box;
     kexFrustum frustum = world->Camera()->Frustum();
-    kexMatrix mtx(DEG2RAD(-90), 1);
+    kexMatrix mtx;
     mtx.Scale(-1, 1, 1);
 
     for(kexActor *actor = world->actors.Next();

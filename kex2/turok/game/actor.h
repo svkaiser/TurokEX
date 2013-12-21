@@ -52,7 +52,6 @@ public:
     virtual void                Think(void);
 
     void                        Spawn(void);
-    bool                        AlignToSurface(void);
     kexVec3                     ToLocalOrigin(const float x, const float y, const float z);
     kexVec3                     ToLocalOrigin(const kexVec3 &org);
     void                        SpawnFX(const char *fxName, const float x, const float y, const float z);

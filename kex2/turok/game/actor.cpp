@@ -39,6 +39,7 @@ enum {
     scactor_bHidden,
     scactor_bStatic,
     scactor_bTouch,
+    scactor_bOrientOnSlope,
     scactor_origin,
     scactor_scale,
     scactor_angles,
@@ -66,6 +67,7 @@ static const sctokens_t mapactortokens[scactor_end+1] = {
     { scactor_bHidden,          "bHidden"           },
     { scactor_bStatic,          "bStatic"           },
     { scactor_bTouch,           "bTouch"            },
+    { scactor_bOrientOnSlope,   "bOrientOnSlope"    },
     { scactor_origin,           "origin"            },
     { scactor_scale,            "scale"             },
     { scactor_angles,           "angles"            },
@@ -175,6 +177,8 @@ void kexActor::Spawn(void) {
 //
 
 void kexActor::ParseDefault(kexLexer *lexer) {
+    kexStr keyName;
+
     switch(lexer->GetIDForTokenList(mapactortokens, lexer->Token())) {
     case scactor_name:
         lexer->GetString();
@@ -247,6 +251,9 @@ void kexActor::ParseDefault(kexLexer *lexer) {
     case scactor_bTouch:
         bTouch = (lexer->GetNumber() > 0);
         break;
+    case scactor_bOrientOnSlope:
+        bOrientOnSlope = (lexer->GetNumber() > 0);
+        break;
     case scactor_radius:
         radius = (float)lexer->GetFloat();
         break;
@@ -278,10 +285,13 @@ void kexActor::ParseDefault(kexLexer *lexer) {
         clipMesh.Parse(lexer);
         break;
     default:
-        if(lexer->TokenType() == TK_IDENIFIER) {
+        if(lexer->TokenType() != TK_IDENIFIER) {
             parser.Error("kexActor::ParseDefault: unknown token: %s\n",
                 lexer->Token());
         }
+        keyName = (char*)lexer->Token();
+        lexer->Find();
+        args.Add(keyName.c_str(), lexer->Token());
         break;
     }
 }
@@ -467,7 +477,9 @@ void kexActor::OnTouch(kexActor *instigator) {
 //
 
 void kexActor::OnTrigger(void) {
-    scriptComponent.CallFunction(scriptComponent.onTrigger);
+    if(scriptComponent.onTrigger) {
+        scriptComponent.CallFunction(scriptComponent.onTrigger);
+    }
 }
 
 //
@@ -475,14 +487,6 @@ void kexActor::OnTrigger(void) {
 //
 
 void kexActor::Think(void) {
-}
-
-//
-// kexActor::AlignToSurface
-//
-
-bool kexActor::AlignToSurface(void) {
-    return false;
 }
 
 //

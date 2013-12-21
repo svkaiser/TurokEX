@@ -57,6 +57,7 @@ public:
     kexGameObject               *GetOwner(void) { return owner; }
     kexGameObject               *GetTarget(void) { return target; }
     unsigned int                &TargetID(void) { return targetID; }
+    float                       &TimeStamp(void) { return timeStamp; }
     
     static unsigned int         id;
     

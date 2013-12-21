@@ -453,6 +453,54 @@ kexSector *kexCollisionMap::PointInSector(const kexVec3 &origin) {
 }
 
 //
+// kexCollisionMap::RecursiveChangeHeight
+//
+
+void kexCollisionMap::RecursiveChangeHeight(kexSector *sector, float destHeight,
+                                            unsigned int areaID) {
+    kexSector *sec;
+
+    if(sector == NULL) {
+        return;
+    }
+
+    sec = sector;
+
+    while(sec->area->WorldID() == areaID) {
+        int i;
+
+        if( sec->lowerTri.point[0]->y == destHeight &&
+            sec->lowerTri.point[1]->y == destHeight &&
+            sec->lowerTri.point[2]->y == destHeight) {
+                break;
+        }
+
+        for(i = 0; i < 3; i++) {
+            sec->lowerTri.point[i]->y = destHeight;
+        }
+
+        sec->lowerTri.Set(
+            sec->lowerTri.point[0],
+            sec->lowerTri.point[1],
+            sec->lowerTri.point[2]);
+
+        if(sec->link[0]) {
+            RecursiveChangeHeight(sec->link[0], destHeight, areaID);
+        }
+
+        if(sec->link[1]) {
+            RecursiveChangeHeight(sec->link[1], destHeight, areaID);
+        }
+
+        if(sec->link[2] == NULL) {
+            break;
+        }
+
+        sec = sec->link[2];
+    }
+}
+
+//
 // kexCollisionMap::TraverseSectors
 //
 
