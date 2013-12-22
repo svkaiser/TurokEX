@@ -292,7 +292,7 @@ void kexRenderWorld::DrawSurface(const surface_t *surface, const char *texturePa
         texturePath = surface->texturePath;
     }
 
-    renderSystem.SetState(GLSTATE_FOG, (localWorld.FogEnabled() && !bWireframe));
+    renderSystem.SetState(GLSTATE_FOG, (localWorld.FogEnabled() && !bWireframe && !bShowCollisionMap));
     renderSystem.SetState(GLSTATE_CULL, (surface->flags & MDF_NOCULLFACES) == 0);
     renderSystem.SetState(GLSTATE_BLEND, (surface->flags & (MDF_MASKED|MDF_TRANSPARENT1)) != 0);
     renderSystem.SetState(GLSTATE_ALPHATEST, (surface->flags & (MDF_MASKED|MDF_TRANSPARENT1)) != 0);
@@ -543,7 +543,7 @@ void kexRenderWorld::DrawStaticActors(void) {
 void kexRenderWorld::DrawActors(void) {
     kexBBox box;
     kexFrustum frustum = world->Camera()->Frustum();
-    kexMatrix mtx;
+    kexMatrix mtx(DEG2RAD(-90), 1);
     mtx.Scale(-1, 1, 1);
 
     for(kexActor *actor = world->actors.Next();
@@ -577,6 +577,13 @@ void kexRenderWorld::DrawActors(void) {
 
                 dglPopMatrix();
                 dglPopMatrix();
+
+                if(bShowOrigin) {
+                    DrawOrigin(
+                        actor->GetOrigin().x,
+                        actor->GetOrigin().y,
+                        actor->GetOrigin().z, 32);
+                }
             }
 
             if(bShowBBox) {
@@ -937,6 +944,8 @@ void kexRenderWorld::DrawRadius(float x, float y, float z, float radius, float h
 
 void kexRenderWorld::DrawOrigin(float x, float y, float z, float size) {
     renderSystem.SetState(GLSTATE_TEXTURE0, false);
+    renderSystem.SetState(GLSTATE_FOG, false);
+    renderSystem.SetState(GLSTATE_LIGHTING, false);
 
     dglDepthRange(0.0f, 0.0f);
     dglLineWidth(2.0f);

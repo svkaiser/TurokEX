@@ -256,6 +256,10 @@ void kexPlayer::PossessPuppet(kexPlayerPuppet *puppetActor) {
     
     puppet->AddRef();
     puppet->SetOwner(static_cast<kexActor*>(this));
+
+    if(puppet->Physics()->sector) {
+        puppet->Physics()->sector->area->Enter();
+    }
 }
 
 //

@@ -133,6 +133,11 @@ void kexWorld::Tick(void) {
         return;
     }
 
+    // don't update on first two ticks
+    if(ticks <= 1) {
+        return;
+    }
+
     for(actorRover = actors.Next(); actorRover != NULL;
         actorRover = actorRover->worldLink.Next()) {
         if(actorRover->bClientOnly || actorRover->bStatic) {
@@ -149,6 +154,19 @@ void kexWorld::Tick(void) {
 
 void kexWorld::LocalTick(void) {
     camera.LocalTick();
+
+    if(bEnableFog) {
+        currentFogRGB[0]    = (fogRGB[0] - currentFogRGB[0]) * FOG_LERP_SPEED + currentFogRGB[0];
+        currentFogRGB[1]    = (fogRGB[1] - currentFogRGB[1]) * FOG_LERP_SPEED + currentFogRGB[1];
+        currentFogRGB[2]    = (fogRGB[2] - currentFogRGB[2]) * FOG_LERP_SPEED + currentFogRGB[2];
+        currentFogFar       = (fogFar - currentFogFar) * FOG_LERP_SPEED + currentFogFar;
+        currentFogNear      = (fogNear - currentFogNear) * FOG_LERP_SPEED + currentFogNear;
+    }
+
+    // don't update on first two ticks
+    if(ticks <= 1) {
+        return;
+    }
 
     for(actorRover = actors.Next(); actorRover != NULL;
         actorRover = actorRover->worldLink.Next()) {
@@ -168,14 +186,6 @@ void kexWorld::LocalTick(void) {
     }
 
     fxManager.UpdateWorld(this);
-
-    if(bEnableFog) {
-        currentFogRGB[0]    = (fogRGB[0] - currentFogRGB[0]) * FOG_LERP_SPEED + currentFogRGB[0];
-        currentFogRGB[1]    = (fogRGB[1] - currentFogRGB[1]) * FOG_LERP_SPEED + currentFogRGB[1];
-        currentFogRGB[2]    = (fogRGB[2] - currentFogRGB[2]) * FOG_LERP_SPEED + currentFogRGB[2];
-        currentFogFar       = (fogFar - currentFogFar) * FOG_LERP_SPEED + currentFogFar;
-        currentFogNear      = (fogNear - currentFogNear) * FOG_LERP_SPEED + currentFogNear;
-    }
 }
 
 //

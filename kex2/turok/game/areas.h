@@ -63,6 +63,7 @@ public:
                                     kexArea(void);
 
     void                            Setup(void);
+    void                            Enter(void);
 
     unsigned int                    &Flags(void) { return flags; }
     float                           &WaterPlane(void) { return waterplane; }

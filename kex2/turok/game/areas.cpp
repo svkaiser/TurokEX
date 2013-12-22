@@ -32,6 +32,7 @@
 #include "binFile.h"
 #include "collisionMap.h"
 #include "areas.h"
+#include "world.h"
 
 DECLARE_CLASS(kexArea, kexObject)
 
@@ -74,6 +75,20 @@ void kexArea::InitObject(void) {
         asOFFSET(kexArea, globalFogRGB));
     scriptManager.Engine()->RegisterObjectProperty("kArea", "ref @obj",
         asOFFSET(kexArea, scriptComponent.Handle()));
+}
+
+//
+// kexArea::Enter
+//
+
+void kexArea::Enter(void) {
+    scriptComponent.CallFunction(scriptComponent.onEnter);
+    if(flags & AAF_EVENT) {
+        localWorld.TriggerActor(targetID);
+        if(!(flags & AAF_REPEATABLE)) {
+            flags &= ~AAF_EVENT;
+        }
+    }
 }
 
 //

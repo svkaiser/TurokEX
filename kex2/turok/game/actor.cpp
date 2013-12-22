@@ -167,6 +167,7 @@ void kexActor::Spawn(void) {
 
     if(bStatic == false) {
         physics.sector = localWorld.CollisionMap().PointInSector(origin);
+        angles.yaw += M_PI;
     }
 
     scriptComponent.CallFunction(scriptComponent.onSpawn);
@@ -332,8 +333,9 @@ void kexActor::UpdateTransform(void) {
     if(!AlignToSurface())
         matrix = kexMatrix(rotation);
 
-    rotMatrix = matrix;
     matrix.Scale(scale);
+    rotMatrix = matrix;
+
     matrix.AddTranslation(origin);
 
     if(!bStatic) {
@@ -349,8 +351,9 @@ void kexActor::UpdateTransform(void) {
 //
 
 void kexActor::SetModel(const char* modelFile) {
-    if(modelFile)
+    if(modelFile) {
         model = modelManager.LoadModel(modelFile);
+    }
 
     if(model) {
         unsigned int i;
@@ -362,7 +365,7 @@ void kexActor::SetModel(const char* modelFile) {
 
         // set initial animation
         // TODO - rename anim00 to something better
-        if(anim = kexAnimState::GetAnim(m, 0)) {
+        if(anim = kexAnimState::GetAnim(m, "anim00")) {
             animState.Set(anim, 4, ANF_LOOP);
         }
 

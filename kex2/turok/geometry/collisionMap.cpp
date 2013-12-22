@@ -393,12 +393,14 @@ void kexCollisionMap::Load(const char *name) {
             sec->lowerTri.point[0],
             sec->lowerTri.point[1],
             sec->lowerTri.point[2]);
+        sec->lowerTri.id = kexTri::globalID++;
 
         // build plane for upper triangle
         sec->upperTri.Set(
             sec->upperTri.point[0],
             sec->upperTri.point[1],
             sec->upperTri.point[2]);
+        sec->upperTri.id = kexTri::globalID++;
     }
 
     binFile.Close();
@@ -459,6 +461,7 @@ kexSector *kexCollisionMap::PointInSector(const kexVec3 &origin) {
 void kexCollisionMap::RecursiveChangeHeight(kexSector *sector, float destHeight,
                                             unsigned int areaID) {
     kexSector *sec;
+    int i;
 
     if(sector == NULL) {
         return;
@@ -466,9 +469,18 @@ void kexCollisionMap::RecursiveChangeHeight(kexSector *sector, float destHeight,
 
     sec = sector;
 
-    while(sec->area->WorldID() == areaID) {
-        int i;
+    for(i = 0; i < 3; i++) {
+        if(sec->link[i] == NULL) {
+            continue;
+        }
 
+        sec->link[i]->lowerTri.Set(
+            sec->link[i]->lowerTri.point[0],
+            sec->link[i]->lowerTri.point[1],
+            sec->link[i]->lowerTri.point[2]);
+    }
+
+    while(sec->area->WorldID() == areaID) {
         if( sec->lowerTri.point[0]->y == destHeight &&
             sec->lowerTri.point[1]->y == destHeight &&
             sec->lowerTri.point[2]->y == destHeight) {
@@ -478,11 +490,6 @@ void kexCollisionMap::RecursiveChangeHeight(kexSector *sector, float destHeight,
         for(i = 0; i < 3; i++) {
             sec->lowerTri.point[i]->y = destHeight;
         }
-
-        sec->lowerTri.Set(
-            sec->lowerTri.point[0],
-            sec->lowerTri.point[1],
-            sec->lowerTri.point[2]);
 
         if(sec->link[0]) {
             RecursiveChangeHeight(sec->link[0], destHeight, areaID);
@@ -497,6 +504,17 @@ void kexCollisionMap::RecursiveChangeHeight(kexSector *sector, float destHeight,
         }
 
         sec = sec->link[2];
+
+        for(i = 0; i < 3; i++) {
+            if(sec->link[i] == NULL) {
+                continue;
+            }
+
+            sec->link[i]->lowerTri.Set(
+                sec->link[i]->lowerTri.point[0],
+                sec->link[i]->lowerTri.point[1],
+                sec->link[i]->lowerTri.point[2]);
+        }
     }
 }
 
@@ -586,13 +604,7 @@ void kexCollisionMap::PlayerCrossAreas(kexSector *enter, kexSector *exit) {
             }
             area = enter->area;
             if(area != NULL) {
-                area->scriptComponent.CallFunction(area->scriptComponent.onEnter);
-                if(area->Flags() & AAF_EVENT) {
-                    localWorld.TriggerActor(area->TargetID());
-                    if(!(area->Flags() & AAF_REPEATABLE)) {
-                        area->Flags() &= ~AAF_EVENT;
-                    }
-                }
+                area->Enter();
             }
         }
     }
@@ -603,6 +615,8 @@ void kexCollisionMap::PlayerCrossAreas(kexSector *enter, kexSector *exit) {
 //
 
 void kexCollisionMap::DebugDraw(void) {
+    float xyz[3];
+
     if(numSectors <= 0 || numPoints <= 0 || sectors == NULL) {
         return;
     }
@@ -647,6 +661,34 @@ void kexCollisionMap::DebugDraw(void) {
         GL_UNSIGNED_SHORT, indices);
 
     dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    renderSystem.SetState(GLSTATE_CULL, false);
+
+    dglDepthRange(0.0f, 0.0f);
+    dglLineWidth(2.0f);
+    dglBegin(GL_LINES);
+
+    for(int i = 0; i < numSectors; i++) {
+        kexSector *sector = &sectors[i];
+        kexTri *tri = &sector->lowerTri;
+        kexVec3 n = tri->plane.Normal();
+
+        for(int j = 0; j < 3; j++) {
+            xyz[j] = ((*tri->point[0])[j] + (*tri->point[1])[j] + (*tri->point[2])[j]) / 3;
+        }
+
+        dglColor4ub(0, 32, 255, 255);
+        dglVertex3fv(xyz);
+        dglColor4ub(0, 255, 0, 255);
+        dglVertex3f(
+            xyz[0] + (16 * n[0]),
+            xyz[1] + (16 * n[1]),
+            xyz[2] + (16 * n[2]));
+    }
+
+    dglEnd();
+    dglLineWidth(1.0f);
+    dglDepthRange(0.0f, 1.0f);
 
     dglEnableClientState(GL_NORMAL_ARRAY);
     dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
