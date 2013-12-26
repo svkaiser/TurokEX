@@ -35,7 +35,6 @@ public:
     void                Push(type o);
     void                Pop(void);
     void                Empty(void);
-    void                EmptyContents(void);
     type                IndexOf(unsigned int index) const;
     void                Splice(const unsigned int start, unsigned int len);
     const unsigned int  Length(void) const { return length; }

@@ -30,7 +30,9 @@ public:
                     ~kexLinklist();
                     
     void            Add(kexLinklist &link);
+    void            AddBefore(kexLinklist &link);
     void            Remove(void);
+    void            Clear(void);
     int             GetCount(void) const;
     void            SetData(type *src);
     type            *GetData(void) const;
@@ -66,10 +68,21 @@ kexLinklist<type>::~kexLinklist() {
 //
 template<class type>
 void kexLinklist<type>::Add(kexLinklist &link) {
-    prev->next  = &link;
-    link.next   = this;
-    link.prev   = prev;
     prev        = &link;
+    next        = link.next;
+    link.next   = this;
+    next->prev  = this;
+}
+
+//
+// kexLinklist::AddBefore
+//
+template<class type>
+void kexLinklist<type>::AddBefore(kexLinklist &link) {
+    next        = &link;
+    prev        = link.prev;
+    link.prev   = this;
+    prev->next  = this;
 }
 
 //
@@ -77,7 +90,25 @@ void kexLinklist<type>::Add(kexLinklist &link) {
 //
 template<class type>
 void kexLinklist<type>::Remove(void) {
-    (next->prev = prev)->next = next;
+    next->prev = prev;
+    prev->next = next;
+
+    next = prev = this;
+}
+
+//
+// kexLinklist:Clear
+//
+template<class type>
+void kexLinklist<type>::Clear(void) {
+    while(next != this) {
+        if(next == NULL) {
+            break;
+        }
+        next->Remove();
+    }
+
+    next = prev = this;
 }
 
 //
