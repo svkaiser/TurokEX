@@ -102,9 +102,10 @@ kexActor::kexActor(void) {
     this->clipMesh.SetOwner(this);
     this->AnimState()->SetOwner(this);
 
-    this->bbox          = baseBBox;
-    this->bTraced       = false;
-    this->validcount    = 0;
+    this->bbox              = baseBBox;
+    this->bTraced           = false;
+    this->validcount        = 0;
+    this->bNoFixedTransform = false;
 }
 
 //
@@ -141,8 +142,6 @@ void kexActor::Tick(void) {
         return;
     }
 
-    UpdateTransform();
-
     if(scriptComponent.onThink) {
         scriptComponent.CallFunction(scriptComponent.onThink);
     }
@@ -158,7 +157,6 @@ void kexActor::Spawn(void) {
     height = bStatic ? baseHeight : 0;
 
     if(bTouch) {
-        bCollision = false;
         viewHeight = baseHeight * 0.5f;
     }
 
@@ -167,7 +165,6 @@ void kexActor::Spawn(void) {
 
     if(bStatic == false) {
         physics.sector = localWorld.CollisionMap().PointInSector(origin);
-        angles.yaw += M_PI;
     }
 
     scriptComponent.CallFunction(scriptComponent.onSpawn);
@@ -320,9 +317,11 @@ void kexActor::UpdateTransform(void) {
     attachment.Transform();
 
     if(physics.bRotor) {
-        angles.yaw      += (physics.rotorVector.y * physics.rotorSpeed * timeStamp);
-        angles.pitch    += (physics.rotorVector.x * physics.rotorSpeed * timeStamp);
-        angles.roll     += (physics.rotorVector.z * physics.rotorSpeed * timeStamp);
+        float delta = client.GetRunTime();
+
+        angles.yaw      += (physics.rotorVector.y * physics.rotorSpeed * delta);
+        angles.pitch    += (physics.rotorVector.x * physics.rotorSpeed * delta);
+        angles.roll     += (physics.rotorVector.z * physics.rotorSpeed * delta);
     }
 
     if(!bStatic || physics.bRotor) {
@@ -473,6 +472,9 @@ void kexActor::CreateComponent(const char *name) {
 //
 
 void kexActor::OnTouch(kexActor *instigator) {
+    if(scriptComponent.onTouch) {
+        scriptComponent.CallFunction(scriptComponent.onTouch);
+    }
 }
 
 //

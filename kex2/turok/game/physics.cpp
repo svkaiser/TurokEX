@@ -337,6 +337,10 @@ void kexPhysics::Think(const float timeDelta) {
         groundGeom = trace.hitTri;
     }
 
+    if(trace.hitActor && trace.hitActor->bTouch) {
+        trace.hitActor->OnTouch(owner);
+    }
+
     bOnGround = OnGround();
 
     // handle freefall if not touching the ground
@@ -360,6 +364,7 @@ void kexPhysics::Think(const float timeDelta) {
     if(trace.fraction != 1) {
         start = trace.hitVector - (gravity * 1.024f);
         owner->SetOrigin(start);
+        owner->LinkArea();
     }
 
     for(int i = 0; i < TRYMOVE_COUNT; i++) {
@@ -380,11 +385,21 @@ void kexPhysics::Think(const float timeDelta) {
         if(trace.fraction >= 1) {
             // went the entire distance
             owner->SetOrigin(end);
+            owner->LinkArea();
             break;
         }
 
         // update origin and nudge origin away from plane
         owner->SetOrigin(trace.hitVector - (direction * 0.125f));
+        owner->LinkArea();
+
+        if(trace.hitActor && trace.hitActor->bTouch) {
+            trace.hitActor->OnTouch(owner);
+            // don't clip against pickups
+            if(!strcmp(trace.hitActor->ClassName(), "kexPickup")) {
+                break;
+            }
+        }
 
         // test if walking on steep slopes
         slope = trace.hitNormal.Dot(gravity);
@@ -464,6 +479,7 @@ void kexPhysics::Think(const float timeDelta) {
                     // don't try to step up against a wall
                     if(!(stepFraction < 0.99f && slope <= 0.5f)) {
                         owner->SetOrigin(trace.hitVector - (gravity * 0.125f));
+                        owner->LinkArea();
 
                         if(stepFraction >= 1) {
                             break;
@@ -519,6 +535,7 @@ void kexPhysics::Think(const float timeDelta) {
 
     ApplyFriction();
 
+    // correct position
     if(sector) {
         kexVec3 org = owner->GetOrigin();
         float dist = (org[1] - sector->lowerTri.GetDistance(org));

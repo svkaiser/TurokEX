@@ -425,7 +425,7 @@ void kexClipMesh::CreateMeshFromModel(void) {
     surface_t *surface;
     cmGroup_t *cmGroup;
 
-    origin = owner->BoundingBox().Center();
+    origin = owner->Bounds().Center();
     numGroups = group->numSurfaces;
 
     if(numGroups <= 0) {
@@ -477,7 +477,7 @@ void kexClipMesh::CreateConvexHull(void) {
         return;
     }
 
-    origin = owner->BoundingBox().Center();
+    origin = owner->Bounds().Center();
     numGroups = 1;
 
     cmGroups = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
@@ -594,22 +594,22 @@ void kexClipMesh::CreateShape(void) {
 
     switch(type) {
     case CMT_BOX:
-        CreateBox(owner->BoundingBox());
+        CreateBox(owner->Bounds());
         break;
     case CMT_TETRAHEDRON:
-        CreateTetrahedron(owner->BoundingBox());
+        CreateTetrahedron(owner->Bounds());
         break;
     case CMT_OCTAHEDRON:
-        CreateOctahedron(owner->BoundingBox());
+        CreateOctahedron(owner->Bounds());
         break;
     case CMT_DODECAHEDRON:
-        CreateDodecahedron(owner->BoundingBox());
+        CreateDodecahedron(owner->Bounds());
         break;
     case CMT_MESH:
         CreateMeshFromModel();
         break;
     case CMT_CYLINDER:
-        CreateCylinder(owner->BoundingBox());
+        CreateCylinder(owner->Bounds());
         break;
     case CMT_CONVEXHULL:
         CreateConvexHull();

@@ -38,12 +38,15 @@ kexWorldObject::kexWorldObject(void) {
     this->bStatic       = true;
     this->bCollision    = false;
     this->bTouch        = false;
+    this->bCanPickup    = false;
     this->radius        = 10.24f;
     this->baseHeight    = 10.24f;
     this->viewHeight    = 8.192f;
-    this->centerHeight  = 5.12f; 
+    this->centerHeight  = 5.12f;
+    this->areaNode      = NULL;
     
     this->physics.SetOwner(this);
+    this->areaLink.SetData(this);
 }
 
 //
@@ -60,6 +63,64 @@ kexWorldObject::~kexWorldObject(void) {
 void kexWorldObject::SetBoundingBox(const kexVec3 &min, const kexVec3 &max) {
     baseBBox.min = min;
     baseBBox.max = max;
+}
+
+//
+// kexWorldObject::OnTouch
+//
+
+void kexWorldObject::OnTouch(kexWorldObject *instigator) {
+}
+
+//
+// kexWorldObject::LinkArea
+//
+
+void kexWorldObject::LinkArea(void) {
+    areaNode_t *node;
+    kexBBox box;
+
+    if(IsStale()) {
+        return;
+    }
+
+    UnlinkArea();
+
+    node = localWorld.areaNodes;
+    box.min.Set(-radius, 0, -radius);
+    box.max.Set(radius, 0, radius);
+    box.min *= 0.5f;
+    box.max *= 0.5f;
+    box.min += origin;
+    box.max += origin;
+    box += 8.0f;
+
+    while(1) {
+        if(node->axis == -1) {
+            break;
+        }
+        if(box.min[node->axis] > node->dist) {
+            node = node->children[0];
+        }
+        else if(box.max[node->axis] < node->dist) {
+            node = node->children[1];
+        }
+        else {
+            break;
+        }
+    }
+
+    areaLink.AddBefore(node->objects);
+    areaNode = node;
+}
+
+//
+// kexWorldObject::UnlinkArea
+//
+
+void kexWorldObject::UnlinkArea(void) {
+    areaLink.Remove();
+    areaNode = NULL;
 }
 
 //

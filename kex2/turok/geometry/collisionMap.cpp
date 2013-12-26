@@ -664,7 +664,6 @@ void kexCollisionMap::DebugDraw(void) {
 
     renderSystem.SetState(GLSTATE_CULL, false);
 
-    dglDepthRange(0.0f, 0.0f);
     dglLineWidth(2.0f);
     dglBegin(GL_LINES);
 
@@ -688,7 +687,6 @@ void kexCollisionMap::DebugDraw(void) {
 
     dglEnd();
     dglLineWidth(1.0f);
-    dglDepthRange(0.0f, 1.0f);
 
     dglEnableClientState(GL_NORMAL_ARRAY);
     dglEnableClientState(GL_TEXTURE_COORD_ARRAY);

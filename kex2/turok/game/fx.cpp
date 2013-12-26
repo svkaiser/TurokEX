@@ -843,10 +843,11 @@ void kexFxManager::UpdateWorld(kexWorld *world) {
 
             if(world->fxRover->Removing()) {
                 // unlink from world and free fx
+                tmpFx = world->fxRover->worldLink.Prev();
                 world->fxRover->worldLink.Remove();
-                tmpFx = world->fxRover;
-                world->fxRover = world->fxRover->worldLink.Prev();
-                Mem_Free(tmpFx);
+                Mem_Free(world->fxRover);
+
+                world->fxRover = tmpFx;
 
                 if(world->fxRover == NULL) {
                     break;

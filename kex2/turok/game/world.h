@@ -30,48 +30,30 @@
 #include "fx.h"
 #include "collisionMap.h"
 
-//-----------------------------------------------------------------------------
-//
-// kexNode
-//
-//-----------------------------------------------------------------------------
-
 typedef enum {
     NODE_FRONT  = 0,
     NODE_BACK,
     NODE_SIDES
 } nodeSide_t;
 
-class kexNode {
-public:
-                                        kexNode(void);
-
+typedef struct worldNode_s {
     kexBBox                             bounds;
     kexPlane                            plane;
     kexArray<kexActor*>                 actors;
     bool                                bLeaf;
-    kexNode                             *children[NODE_SIDES];
-};
+    struct worldNode_s                  *children[NODE_SIDES];
+} worldNode_t;
 
-//-----------------------------------------------------------------------------
-//
-// kexNodeBuilder
-//
-//-----------------------------------------------------------------------------
+#define MAX_AREA_DEPTH                  8
+#define MAX_AREA_NODES                  512
 
-class kexNodeBuilder {
-public:
-    void                                AddActor(kexActor *actor);
-    void                                Build(kexNode *node);
-
-private:
-    void                                AddNode(kexNode *node, int split);
-    bool                                SetupChildNode(kexNode *parent, kexNode *child,
-                                            float *splitX, float *splitZ,
-                                            nodeSide_t side, int split);
-
-    kexArray<kexActor*>                 actors;
-};
+typedef struct areaNode_s {
+    kexBBox                             bounds;
+    int                                 axis;
+    float                               dist;
+    kexLinklist<kexWorldObject>         objects;
+    struct areaNode_s                   *children[NODE_SIDES];
+} areaNode_t;
 
 //-----------------------------------------------------------------------------
 //
@@ -123,6 +105,7 @@ public:
     float                               *GetCurrentFogRGB(void) { return currentFogRGB; }
     bool                                FogEnabled(void) { return bEnableFog; }
     void                                ToggleFog(bool toggle) { bEnableFog = toggle; }
+    const int                           NumAreaNodes(void) const { return numAreaNodes; }
 
     kexLinklist<kexActor>               actors;
     kexLinklist<kexActor>               staticActors;
@@ -130,7 +113,8 @@ public:
 
     kexActor                            *actorRover;
     kexFx                               *fxRover;
-    kexNode                             worldNode;
+    worldNode_t                         worldNode;
+    areaNode_t                          areaNodes[MAX_AREA_NODES];
 
     // TEMP
     kexVec4                             worldLightOrigin;
@@ -142,7 +126,14 @@ public:
     static void                         InitObject(void);
 
 private:
-    void                                TraverseWorldNodes(kexNode *node, traceInfo_t *trace);
+    void                                BuildWorldNodes(void);
+    void                                BuildAreaNodes(void);
+    void                                AddWorldNode(worldNode_t *node, int split);
+    areaNode_t                          *AddAreaNode(int depth, kexBBox &box);
+    bool                                SetupChildWorldNode(worldNode_t *parent, worldNode_t *child,
+                                            float *splitX, float *splitZ,
+                                            nodeSide_t side, int split);
+    void                                TraverseWorldNodes(worldNode_t *node, traceInfo_t *trace);
 
     bool                                bLoaded;
     bool                                bReadyUnload;
@@ -163,6 +154,7 @@ private:
     float                               currentFogFar;
     float                               currentFogRGB[4];
     int                                 validcount;
+    int                                 numAreaNodes;
 };
 
 extern kexWorld localWorld;

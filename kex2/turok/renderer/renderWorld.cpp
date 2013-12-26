@@ -139,6 +139,18 @@ static void FCmd_ShowWorldNode(void) {
 }
 
 //
+// FCmd_ShowAreaNode
+//
+
+static void FCmd_ShowAreaNode(void) {
+    if(command.GetArgc() < 2) {
+        return;
+    }
+
+    renderWorld.showAreaNode = atoi(command.GetArgv(1));
+}
+
+//
 // kexRenderWorld::kexRenderWorld
 //
 
@@ -154,6 +166,7 @@ kexRenderWorld::kexRenderWorld(void) {
     this->bShowClipMesh     = false;
     this->bShowCollisionMap = false;
     this->showWorldNode     = -1;
+    this->showAreaNode      = -1;
 }
 
 //
@@ -168,6 +181,7 @@ void kexRenderWorld::Init(void) {
     command.Add("showorigin", FCmd_ShowOrigin);
     command.Add("drawwireframe", FCmd_ShowWireFrame);
     command.Add("showworldnode", FCmd_ShowWorldNode);
+    command.Add("showareanode", FCmd_ShowAreaNode);
     command.Add("showcollision", FCmd_ShowCollisionMap);
 }
 
@@ -206,6 +220,17 @@ void kexRenderWorld::RenderScene(void) {
     SetupGlobalLight();
     DrawStaticActors();
     DrawActors();
+
+    if(showWorldNode >= 0 || showAreaNode >= 0) {
+        renderSystem.SetState(GLSTATE_DEPTHTEST, false);
+        if(showWorldNode >= 0) {
+            DrawWorldNode(&world->worldNode);
+        }
+        if(showAreaNode >= 0) {
+            DrawAreaNode();
+        }
+        renderSystem.SetState(GLSTATE_DEPTHTEST, true);
+    }
 
     if(bShowCollisionMap) {
         world->CollisionMap().DebugDraw();
@@ -482,9 +507,6 @@ void kexRenderWorld::DrawStaticActors(void) {
 
     for(kexActor *actor = world->staticActors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
-            if(!actor->bStatic) {
-                continue;
-            }
             if(actor->bHidden) {
                 if(bShowClipMesh) {
                     actor->ClipMesh().DebugDraw();
@@ -492,7 +514,7 @@ void kexRenderWorld::DrawStaticActors(void) {
                 continue;
             }
 
-            box = actor->BoundingBox();
+            box = actor->Bounds();
             actor->bCulled = !frustum.TestBoundingBox(box);
 
             if(actor->bCulled) {
@@ -528,12 +550,6 @@ void kexRenderWorld::DrawStaticActors(void) {
                     actor->Radius(), actor->Height(), 255, 128, 128);
             }
     }
-
-    if(showWorldNode >= 0) {
-        renderSystem.SetState(GLSTATE_DEPTHTEST, false);
-        DrawWorldNode(&world->worldNode);
-        renderSystem.SetState(GLSTATE_DEPTHTEST, true);
-    }
 }
 
 //
@@ -555,7 +571,7 @@ void kexRenderWorld::DrawActors(void) {
                 continue;
             }
 
-            box = actor->BoundingBox();
+            box = actor->Bounds();
             actor->bCulled = !frustum.TestBoundingBox(box);
 
             if(actor->bCulled) {
@@ -565,9 +581,11 @@ void kexRenderWorld::DrawActors(void) {
             if(actor->Model()) {
                 dglPushMatrix();
                 dglMultMatrixf(actor->Matrix().ToFloatPtr());
-                dglPushMatrix();
 
-                dglMultMatrixf(mtx.ToFloatPtr());
+                if(actor->bNoFixedTransform == false) {
+                    dglPushMatrix();
+                    dglMultMatrixf(mtx.ToFloatPtr());
+                }
 
                 if(bWireframe) {
                     dglColor4ub(192, 192, 192, 255);
@@ -576,7 +594,10 @@ void kexRenderWorld::DrawActors(void) {
                 TraverseDrawActorNode(actor, &actor->Model()->nodes[0], actor->AnimState());
 
                 dglPopMatrix();
-                dglPopMatrix();
+
+                if(actor->bNoFixedTransform == false) {
+                    dglPopMatrix();
+                }
 
                 if(bShowOrigin) {
                     DrawOrigin(
@@ -592,7 +613,10 @@ void kexRenderWorld::DrawActors(void) {
                     actor->bTraced = false;
                 }
                 else {
-                    DrawBoundingBox(box, 255, 128, 128);
+                    DrawBoundingBox(box,
+                        actor->bTouch ? 0 : 255,
+                        actor->bTouch ? 255 : 128,
+                        actor->bTouch ? 0 : 128);
                 }
             }
             if(bShowRadius && actor->bCollision) {
@@ -975,12 +999,12 @@ void kexRenderWorld::DrawOrigin(float x, float y, float z, float size) {
 // kexRenderWorld::DrawWorldNode
 //
 
-void kexRenderWorld::DrawWorldNode(kexNode *node) {
+void kexRenderWorld::DrawWorldNode(worldNode_t *node) {
     if(node->bLeaf) {
         DrawBoundingBox(node->bounds, 0, 255, 0);
         if(showWorldNode >= 1) {
-            for(unsigned i = 0; i < node->actors.Length(); i++) {
-                DrawBoundingBox(node->actors[i]->BoundingBox(), 0, 255, 255);
+            for(unsigned int i = 0; i < node->actors.Length(); i++) {
+                DrawBoundingBox(node->actors[i]->Bounds(), 0, 255, 255);
             }
         }
         return;
@@ -1011,4 +1035,41 @@ void kexRenderWorld::DrawWorldNode(kexNode *node) {
             DrawWorldNode(node->children[1]);
         }
     }
+}
+
+//
+// kexRenderWorld::DrawAreaNode
+//
+
+void kexRenderWorld::DrawAreaNode(void) {
+    areaNode_t *nodes;
+
+    dglDepthRange(0.0f, 0.0f);
+
+    for(int i = 0; i < world->NumAreaNodes(); i++) {
+        nodes = &world->areaNodes[i];
+        DrawBoundingBox(nodes->bounds, 64, 128, 255);
+    }
+
+    for(int i = 0; i < world->NumAreaNodes(); i++) {
+        nodes = &world->areaNodes[i];
+        for(kexActor *actor = static_cast<kexActor*>(nodes->objects.Next());
+            actor != NULL;
+            actor = static_cast<kexActor*>(actor->areaLink.Next())) {
+                if(actor == client.LocalPlayer().Puppet()) {
+                    DrawBoundingBox(nodes->bounds, 255, 0, 0);
+                }
+                else {
+                    renderSystem.SetState(GLSTATE_TEXTURE0, false);
+                    dglBegin(GL_LINES);
+                    dglColor4ub(255, 0, 0, 255);
+                    dglVertex3fv(nodes->bounds.Center().ToFloatPtr());
+                    dglVertex3fv(actor->GetOrigin().ToFloatPtr());
+                    dglEnd();
+                    renderSystem.SetState(GLSTATE_TEXTURE0, true);
+                }
+        }
+    }
+
+    dglDepthRange(0.0f, 1.0f);
 }

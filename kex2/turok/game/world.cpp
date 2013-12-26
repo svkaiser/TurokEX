@@ -170,10 +170,6 @@ void kexWorld::LocalTick(void) {
 
     for(actorRover = actors.Next(); actorRover != NULL;
         actorRover = actorRover->worldLink.Next()) {
-            if(actorRover->bStatic) {
-                continue;
-            }
-            
             actorRover->LocalTick();
 
             if(actorRover->Removing()) {
@@ -222,7 +218,7 @@ kexActor *kexWorld::ConstructActor(const char *className) {
 //
 
 void kexWorld::AddActor(kexActor *actor) {
-    actors.Add(actor->worldLink);
+    actor->worldLink.Add(actors);
 
     if(actor->GetName().Length() <= 0) {
         actor->SetName(kexStr(kva("%s_%i",
@@ -238,13 +234,16 @@ void kexWorld::AddActor(kexActor *actor) {
 //
 
 void kexWorld::RemoveActor(kexActor *actor) {
+    kexActor *next = actorRover->worldLink.Next();
+
     actor->worldLink.Remove();
+    actor->UnlinkArea();
 
    /* Note that actorRover is guaranteed to point to us,
     * and since we're freeing our memory, we had better change that. So
     * point it to actor->prev, so the iterator will correctly move on to
     * actor->prev->next = actor->next */
-    actorRover = actor->worldLink.Prev();
+    actorRover = next;
     actor->scriptComponent.~kexActorComponent();
     Mem_Free(actor);
 
@@ -269,6 +268,7 @@ kexActor *kexWorld::SpawnActor(const char *className, const char *component,
 
     actor->SetOrigin(origin);
     actor->SetAngles(angles);
+    actor->LinkArea();
     
     AddActor(actor);
     return actor;
@@ -358,7 +358,7 @@ kexFx *kexWorld::SpawnFX(const char *name, kexGameObject *source, kexVec3 &veloc
                 fx->SetOwner(source);
             }
 
-            fxList.Add(fx->worldLink);
+            fx->worldLink.Add(fxList);
             fx->CallSpawn();
         }
     }
@@ -407,7 +407,7 @@ void kexWorld::SpawnLocalPlayer(void) {
 // kexWorld::TraverseWorldNodes
 //
 
-void kexWorld::TraverseWorldNodes(kexNode *node, traceInfo_t *trace) {
+void kexWorld::TraverseWorldNodes(worldNode_t *node, traceInfo_t *trace) {
     if(node->bLeaf) {
         kexBBox box;
         kexActor *actor;
@@ -425,7 +425,7 @@ void kexWorld::TraverseWorldNodes(kexNode *node, traceInfo_t *trace) {
                 continue;
             }
 
-            box = actor->BoundingBox() + r;
+            box = actor->Bounds() + r;
             actor->validcount = validcount;
 
             if(box.LineIntersect(trace->start, trace->end)) {
@@ -470,6 +470,17 @@ void kexWorld::Trace(traceInfo_t *trace) {
     trace->hitMesh = NULL;
     trace->hitVector = trace->end;
     trace->hitNormal.Clear();
+
+    if(trace->owner && trace->owner->areaNode) {
+        for(kexWorldObject *obj = trace->owner->areaNode->objects.Next();
+            obj != NULL;
+            obj = obj->areaLink.Next()) {
+                if(obj == trace->owner || !obj->bCollision) {
+                    continue;
+                }
+                obj->Trace(trace);
+        }
+    }
 
     TraverseWorldNodes(&worldNode, trace);
 
@@ -576,7 +587,6 @@ void kexWorld::Load(const char *mapFile) {
     
     kexLexer *lexer;
     kexActor *actor;
-    kexNodeBuilder builder;
     kexStr file(mapFile);
 
     collisionMap.Load((file + ".kclm").c_str());
@@ -635,7 +645,7 @@ void kexWorld::Load(const char *mapFile) {
                         lexer->GetString();
                         actor = ConstructActor(lexer->StringToken());
                         actor->Parse(lexer);
-                        staticActors.Add(actor->worldLink);
+                        actor->worldLink.Add(staticActors);
                         actor->CallSpawn();
                         break;
                     default:
@@ -665,11 +675,8 @@ void kexWorld::Load(const char *mapFile) {
     nextMapID = -1;
     bLoaded = true;
 
-    for(actor = staticActors.Next(); actor != NULL; actor = actor->worldLink.Next()) {
-        builder.AddActor(actor);
-    }
-
-    builder.Build(&worldNode);
+    BuildWorldNodes();
+    BuildAreaNodes();
 }
 
 //
@@ -777,40 +784,15 @@ void kexWorld::InitObject(void) {
 }
 
 //
-// kexNode::kexNode
+// kexWorld::SetupChildWorldNode
 //
 
-kexNode::kexNode(void) {
-    this->bLeaf         = false;
-    this->children[0]   = NULL;
-    this->children[1]   = NULL;
-
-    this->bounds.min.Clear();
-    this->bounds.max.Clear();
-}
-
-//
-// kexNodeBuilder::AddActor
-//
-
-void kexNodeBuilder::AddActor(kexActor *actor) {
-    if(actor->bStatic == false || actor->bCollision == false) {
-        return;
-    }
-    actors.Push(actor);
-}
-
-//
-// kexNodeBuilder::SetupChildNode
-//
-
-bool kexNodeBuilder::SetupChildNode(kexNode *parent, kexNode *child,
+bool kexWorld::SetupChildWorldNode(worldNode_t *parent, worldNode_t *child,
                                     float *splitX, float *splitZ,
                                     nodeSide_t side, int split) {
     float rx;
     float rz;
     float r;
-    unsigned int i;
     kexBBox *box = &child->bounds;
     kexBBox abox;
 
@@ -843,24 +825,29 @@ bool kexNodeBuilder::SetupChildNode(kexNode *parent, kexNode *child,
     r = kexMath::Sqrt(rx*rx+rz*rz);
 
     // test all actors bounding boxes with this node
-    for(i = 0; i < actors.Length(); i++) {
-        abox = actors[i]->BoundingBox();
-
-        // expand a little bit
-        abox += (((abox.max - abox.Center()).Unit()) * 0.5f);
-        
-        if(abox.max.x > child->bounds.max.x && abox.min.x < child->bounds.min.x &&
-            abox.max.z > child->bounds.max.z && abox.min.z < child->bounds.min.z) {
-                // node box completely inside actor box
-                child->actors.Push(actors[i]);
+    for(kexActor *actor = staticActors.Next(); actor != NULL;
+        actor = actor->worldLink.Next()) {
+            if(actor->bStatic == false || actor->bCollision == false) {
                 continue;
-        }
+            }
+            
+            abox = actor->Bounds();
 
-        if(!(abox.max.x < child->bounds.min.x || abox.max.z < child->bounds.min.z ||
-            abox.min.x > child->bounds.max.x || abox.min.z > child->bounds.max.z)) {
-                // node box intersecting with actor box
-                child->actors.Push(actors[i]);
-        }
+            // expand a little bit
+            abox += (((abox.max - abox.Center()).Unit()) * 0.5f);
+            
+            if(abox.max.x > child->bounds.max.x && abox.min.x < child->bounds.min.x &&
+                abox.max.z > child->bounds.max.z && abox.min.z < child->bounds.min.z) {
+                    // node box completely inside actor box
+                    child->actors.Push(actor);
+                    continue;
+            }
+
+            if(!(abox.max.x < child->bounds.min.x || abox.max.z < child->bounds.min.z ||
+                abox.min.x > child->bounds.max.x || abox.min.z > child->bounds.max.z)) {
+                    // node box intersecting with actor box
+                    child->actors.Push(actor);
+            }
     }
 
     // determine if we need to break this grid volume down even more
@@ -876,16 +863,16 @@ bool kexNodeBuilder::SetupChildNode(kexNode *parent, kexNode *child,
 }
 
 //
-// kexNodeBuilder::AddNode
+// kexWorld::AddWorldNode
 //
 
-void kexNodeBuilder::AddNode(kexNode *node, int split) {
+void kexWorld::AddWorldNode(worldNode_t *node, int split) {
     float mx = (node->bounds.max.x + node->bounds.min.x) * 0.5f;
     float mz = (node->bounds.max.z + node->bounds.min.z) * 0.5f;
     float splitX[2];
     float splitZ[2];
-    kexNode *frontNode;
-    kexNode *backNode;
+    worldNode_t *frontNode;
+    worldNode_t *backNode;
     kexPlane *plane;
 
     if(split == 0) {
@@ -909,32 +896,30 @@ void kexNodeBuilder::AddNode(kexNode *node, int split) {
     plane->c = (split == 0 ? -1.0f : 0);
     plane->d = (plane->a * splitX[0] + plane->c * splitZ[0]);
 
-    frontNode = (kexNode*)Mem_Calloc(sizeof(kexNode), hb_static);
+    frontNode = (worldNode_t*)Mem_Calloc(sizeof(worldNode_t), hb_static);
     node->children[NODE_FRONT] = frontNode;
 
-    if(!SetupChildNode(node, frontNode, splitX, splitZ, NODE_FRONT, split)) {
-        AddNode(frontNode, split ^ 1);
+    if(!SetupChildWorldNode(node, frontNode, splitX, splitZ, NODE_FRONT, split)) {
+        AddWorldNode(frontNode, split ^ 1);
     }
 
-    backNode = (kexNode*)Mem_Calloc(sizeof(kexNode), hb_static);
+    backNode = (worldNode_t*)Mem_Calloc(sizeof(worldNode_t), hb_static);
     node->children[NODE_BACK] = backNode;
 
-    if(!SetupChildNode(node, backNode, splitX, splitZ, NODE_BACK, split)) {
-        AddNode(backNode, split ^ 1);
+    if(!SetupChildWorldNode(node, backNode, splitX, splitZ, NODE_BACK, split)) {
+        AddWorldNode(backNode, split ^ 1);
     }
 }
 
 //
-// kexNodeBuilder::Build
+// kexWorld::BuildWorldNodes
 //
 // Recursively split a group of bounding boxes
 // into grid volumes
 //
 
-void kexNodeBuilder::Build(kexNode *node) {
-    if(actors.Length() <= 0) {
-        return;
-    }
+void kexWorld::BuildWorldNodes(void) {
+    kexActor *actor;
 
     float maxX = -M_INFINITY;
     float maxZ = -M_INFINITY;
@@ -942,19 +927,121 @@ void kexNodeBuilder::Build(kexNode *node) {
     float minZ =  M_INFINITY;
 
     kexBBox box;
+    int count = 0;
 
     // setup the root node bounding box
-    for(unsigned int i = 0; i < actors.Length(); i++) {
-        box = actors[i]->BoundingBox();
+    for(actor = staticActors.Next(); actor != NULL;
+        actor = actor->worldLink.Next()) {
+            if(actor->bStatic == false || actor->bCollision == false) {
+                continue;
+            }
+
+            box = actor->Bounds();
         
-        if(box.min[0] < minX) minX = box.min[0];
-        if(box.min[2] < minZ) minZ = box.min[2];
-        if(box.max[0] > maxX) maxX = box.max[0];
-        if(box.max[2] > maxZ) maxZ = box.max[2];
+            if(box.min[0] < minX) minX = box.min[0];
+            if(box.min[2] < minZ) minZ = box.min[2];
+            if(box.max[0] > maxX) maxX = box.max[0];
+            if(box.max[2] > maxZ) maxZ = box.max[2];
+
+            count++;
     }
 
-    node->bounds.min.Set(minX, 0, minZ);
-    node->bounds.max.Set(maxX, 0, maxZ);
+    if(count <= 0) {
+        return;
+    }
 
-    AddNode(node, 0);
+    worldNode.bounds.min.Set(minX, 0, minZ);
+    worldNode.bounds.max.Set(maxX, 0, maxZ);
+
+    AddWorldNode(&worldNode, 0);
+}
+
+//
+// kexWorld::AddAreaNode
+//
+
+areaNode_t *kexWorld::AddAreaNode(int depth, kexBBox &box) {
+    areaNode_t *node = &areaNodes[numAreaNodes++];
+
+    node->objects.Clear();
+    node->bounds = box;
+
+    if(depth == MAX_AREA_DEPTH || ((box.max - box.min) * 0.5f).Unit() <= 512) {
+        node->axis = -1;
+        node->children[0] = NULL;
+        node->children[1] = NULL;
+    }
+    else {
+        kexVec3 size = box.max - box.min;
+        kexBBox box1, box2;
+
+        node->axis = (size.x > size.z) ? 0 : 2;
+        node->dist = (box.max[node->axis] + box.min[node->axis]) * 0.5f;
+
+        box1 = box;
+        box2 = box;
+
+        box1.max[node->axis] = node->dist;
+        box2.min[node->axis] = node->dist;
+
+        node->children[0] = AddAreaNode(depth+1, box2);
+        node->children[1] = AddAreaNode(depth+1, box1);
+    }
+
+    return node;
+}
+
+//
+// kexWorld::BuildAreaNodes
+//
+
+void kexWorld::BuildAreaNodes(void) {
+    float maxX = -M_INFINITY;
+    float maxZ = -M_INFINITY;
+    float minX =  M_INFINITY;
+    float minZ =  M_INFINITY;
+    kexBBox box;
+
+    numAreaNodes = 0;
+    memset(areaNodes, 0, sizeof(areaNodes));
+
+    if(collisionMap.IsLoaded()) {
+        for(int i = 0; i < collisionMap.numSectors; i++) {
+            kexSector *s;
+
+            s = &collisionMap.sectors[i];
+
+            box = s->lowerTri.bounds;
+
+            if(box.min[0] < minX) minX = box.min[0];
+            if(box.min[2] < minZ) minZ = box.min[2];
+            if(box.max[0] > maxX) maxX = box.max[0];
+            if(box.max[2] > maxZ) maxZ = box.max[2];
+        }
+    }
+    else {
+        for(kexActor *actor = staticActors.Next(); actor != NULL;
+            actor = actor->worldLink.Next()) {
+                if(actor->bStatic == false || actor->bCollision == false) {
+                    continue;
+                }
+
+                box = actor->Bounds();
+            
+                if(box.min[0] < minX) minX = box.min[0];
+                if(box.min[2] < minZ) minZ = box.min[2];
+                if(box.max[0] > maxX) maxX = box.max[0];
+                if(box.max[2] > maxZ) maxZ = box.max[2];
+        }
+    }
+
+    box.min.Set(minX, 0, minZ);
+    box.max.Set(maxX, 0, maxZ);
+
+    AddAreaNode(0, box);
+
+    for(actorRover = actors.Next(); actorRover != NULL;
+        actorRover = actorRover->worldLink.Next()) {
+            actorRover->LinkArea();
+    }
 }

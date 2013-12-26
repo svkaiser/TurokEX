@@ -81,6 +81,7 @@ public:
     char                        ****textureSwaps;
     bool                        bTraced;
     int                         validcount;
+    bool                        bNoFixedTransform;
 
     //
     // template for registering default script actor methods and properties
@@ -110,6 +111,7 @@ public:
     OBJPROPERTY("int health", health);
     OBJPROPERTY("kQuat lerpRotation", lerpRotation);
     OBJPROPERTY("kKeyMap args", args);
+    OBJPROPERTY("bool bCanPickup", bCanPickup);
 
     #undef OBJMETHOD
     #undef OBJPROPERTY

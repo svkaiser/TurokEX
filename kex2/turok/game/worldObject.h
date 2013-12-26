@@ -29,6 +29,8 @@
 #include "linkedlist.h"
 #include "physics.h"
 
+typedef struct areaNode_s areaNode_t;
+
 //-----------------------------------------------------------------------------
 //
 // kexWorldObject
@@ -42,10 +44,13 @@ public:
 
     virtual void                LocalTick(void) = 0;
     virtual void                Tick(void) = 0;
+    virtual void                OnTouch(kexWorldObject *instigator);
 
     void                        SetBoundingBox(const kexVec3 &min, const kexVec3 &max);
     bool                        Trace(traceInfo_t *trace);
     bool                        AlignToSurface(void);
+    void                        LinkArea(void);
+    void                        UnlinkArea(void);
 
     float                       Radius(void) { return radius; }
     float                       Height(void) { return height; }
@@ -55,12 +60,16 @@ public:
     float                       GetViewHeight(void) { return viewHeight; }
     void                        SetViewHeight(float f) { viewHeight = f; }
     kexPhysics                  *Physics(void) { return &physics; }
-    kexBBox                     &BoundingBox(void) { return bbox; }
+    kexBBox                     &Bounds(void) { return bbox; }
+
+    kexLinklist<kexWorldObject> areaLink;
+    areaNode_t                  *areaNode;
 
     bool                        bStatic;        // no tick/think behavior
     bool                        bCollision;     // handle collision with this actor
     bool                        bTouch;         // can be touched/picked up by other actors
     bool                        bOrientOnSlope;
+    bool                        bCanPickup;
 
     //
     // template for registering default script actor methods and properties

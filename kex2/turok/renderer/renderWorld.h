@@ -36,7 +36,8 @@ public:
     void            DrawRadius(float x, float y, float z, float radius, float height,
                                byte r, byte g, byte b);
     void            DrawOrigin(float x, float y, float z, float size);
-    void            DrawWorldNode(kexNode *node);
+    void            DrawWorldNode(worldNode_t *node);
+    void            DrawAreaNode(void);
 
     static void     Init(void);
     static int      SortSprites(const void *a, const void *b);
@@ -52,6 +53,7 @@ public:
     bool            bShowCollisionMap;
 
     int             showWorldNode;
+    int             showAreaNode;
 
 private:
     void            SetupGlobalFog(void);
