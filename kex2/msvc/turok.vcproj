@@ -252,6 +252,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\renderer\canvas.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\frustum.cpp"
 					>
 				</File>
@@ -534,6 +538,10 @@
 				>
 				<File
 					RelativePath="..\turok\renderer\animation.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\canvas.h"
 					>
 				</File>
 				<File

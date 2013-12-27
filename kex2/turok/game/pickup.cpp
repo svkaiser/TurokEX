@@ -51,6 +51,9 @@ kexPickup::~kexPickup(void) {
 //
 
 void kexPickup::OnTouch(kexWorldObject *instigator) {
+    if(IsStale()) {
+        return;
+    }
     if(instigator->bCanPickup == false) {
         return;
     }

@@ -61,15 +61,15 @@ public:
     }
 
     template<class type>
-    static void             RegisterAddRef(const char *name) {
+    static void             RegisterIncRef(const char *name) {
         scriptManager.Engine()->RegisterObjectBehaviour(name, asBEHAVE_ADDREF,
-            "void f()", asMETHOD(type, AddRef), asCALL_THISCALL);
+            "void f()", asMETHOD(type, IncRef), asCALL_THISCALL);
     }
 
     template<class type>
-    static void             RegisterRemoveRef(const char *name) {
+    static void             RegisterDecRef(const char *name) {
         scriptManager.Engine()->RegisterObjectBehaviour(name, asBEHAVE_RELEASE,
-            "void f()", asMETHOD(type, AddRef), asCALL_THISCALL);
+            "void f()", asMETHOD(type, DecRef), asCALL_THISCALL);
     }
 
     asIScriptEngine         *Engine(void) { return engine; }

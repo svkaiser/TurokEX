@@ -50,11 +50,11 @@ public:
                             kexTexture(void);
                             ~kexTexture(void);
 
-    void                    Upload(byte *data, texClampMode_t clamp, texFilterMode_t filter);
+    void                    Upload(byte **data, texClampMode_t clamp, texFilterMode_t filter);
     void                    SetParameters(void);
     byte                    *LoadFromFile(const char *file);
     byte                    *LoadFromScreenBuffer(void);
-    void                    PadImage(byte **data);
+    byte                    *PadImage(byte **data);
     void                    VerticalFlipImage(byte **data);
     void                    Bind(void);
     void                    Delete(void);

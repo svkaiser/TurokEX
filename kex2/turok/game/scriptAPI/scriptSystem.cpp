@@ -29,6 +29,7 @@
 #include "fileSystem.h"
 #include "world.h"
 #include "physics.h"
+#include "renderSystem.h"
 #include "scriptAPI/scriptSystem.h"
 #include "scriptAPI/component.h"
 
@@ -170,6 +171,7 @@ void kexScriptManager::Init(void) {
     kexWorld            ::InitObject();
     kexPhysics          ::InitObject();
     kexAnimState        ::InitObject();
+    kexCanvas           ::InitObject();
 
     module = engine->GetModule("core", asGM_CREATE_IF_NOT_EXISTS);
 

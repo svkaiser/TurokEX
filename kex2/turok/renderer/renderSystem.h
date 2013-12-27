@@ -27,6 +27,7 @@
 #include "textureObject.h"
 #include "renderFont.h"
 #include "cachefilelist.h"
+#include "canvas.h"
 
 typedef enum {
     GLSTATE_BLEND   = 0,
@@ -117,6 +118,7 @@ public:
     const float                     MaxAnisotropic(void) const { return maxAnisotropic; }
     const bool                      IsWideScreen(void) const { return bWideScreen; }
     const bool                      IsFullScreen(void) const { return bFullScreen; }
+    kexCanvas                       &Canvas(void) { return canvas; }
 
     static const int                SCREEN_WIDTH        = 320;
     static const int                SCREEN_HEIGHT       = 240;
@@ -166,6 +168,8 @@ private:
     const char                      *gl_vendor;
     const char                      *gl_renderer;
     const char                      *gl_version;
+
+    kexCanvas                       canvas;
 
     word                            indiceCount;
     word                            vertexCount;

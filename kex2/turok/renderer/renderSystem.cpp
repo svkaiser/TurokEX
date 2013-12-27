@@ -250,17 +250,17 @@ void kexRenderSystem::Init(void) {
     byte *data;
 
     if(data = defaultTexture.LoadFromFile("textures/default.tga")) {
-        defaultTexture.Upload(data, TC_CLAMP, TF_LINEAR);
+        defaultTexture.Upload(&data, TC_CLAMP, TF_LINEAR);
         Mem_Free(data);
     }
 
     if(data = whiteTexture.LoadFromFile("textures/white.tga")) {
-        whiteTexture.Upload(data, TC_CLAMP, TF_LINEAR);
+        whiteTexture.Upload(&data, TC_CLAMP, TF_LINEAR);
         Mem_Free(data);
     }
 
     if(data = blackTexture.LoadFromFile("textures/black.tga")) {
-        blackTexture.Upload(data, TC_CLAMP, TF_LINEAR);
+        blackTexture.Upload(&data, TC_CLAMP, TF_LINEAR);
         Mem_Free(data);
     }
 
@@ -590,11 +590,14 @@ kexTexture *kexRenderSystem::CacheTexture(const char *name, texClampMode_t clamp
 
         texture = textureList.Add(name, kexTexture::hb_texture);
         texture->SetMasked(true);
+        strcpy(texture->filePath, name);
 
         data = texture->LoadFromFile(name);
-        texture->Upload(data, clampMode, filterMode);
+        texture->Upload(&data, clampMode, filterMode);
 
-        Mem_Free(data);
+        if(data != NULL) {
+            Mem_Free(data);
+        }
     }
 
     return texture;

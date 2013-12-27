@@ -140,7 +140,6 @@ void kexSystem::Shutdown(void) {
     soundSystem.Shutdown();
     fxManager.Shutdown();
     
-    Mem_Purge(hb_object);
     Mem_Purge(kexClipMesh::hb_clipMesh);
     Mem_Purge(kexCollisionMap::hb_collisionMap);
 
@@ -152,6 +151,8 @@ void kexSystem::Shutdown(void) {
     server.Shutdown();
     cvarManager.Shutdown();
     common.Shutdown();
+
+    Mem_Purge(hb_object);
 
     DestroyInternalConsole();
 

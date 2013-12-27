@@ -379,6 +379,7 @@ byte *kexTexture::LoadFromTGA(byte *input) {
         }
         
         data = (byte*)Mem_Calloc(tga.width * tga.height * bitStride, hb_static);
+
         for(r = tga.height - 1; r >= 0; r--) {
             data_r = data + r * tga.width * bitStride;
             for(c = 0; c < tga.width; c++) {
@@ -538,9 +539,9 @@ byte *kexTexture::LoadFromBMP(byte *input) {
 // kexTexture::PadImage
 //
 
-void kexTexture::PadImage(byte **data) {
+byte *kexTexture::PadImage(byte **data) {
     if(origwidth == width && origheight == height) {
-        return;
+        return *data;
     }
     
     int bitStride = (colorMode == TCR_RGBA) ? 4 : 3;
@@ -552,7 +553,7 @@ void kexTexture::PadImage(byte **data) {
     }
     
     Mem_Free(*data);
-    *data = pad;
+    return pad;
 }
 
 //
@@ -578,8 +579,8 @@ void kexTexture::VerticalFlipImage(byte **data) {
 // kexTexture::Upload
 //
 
-void kexTexture::Upload(byte *data, texClampMode_t clamp, texFilterMode_t filter) {
-    if(data == NULL) {
+void kexTexture::Upload(byte **data, texClampMode_t clamp, texFilterMode_t filter) {
+    if(*data == NULL) {
         return;
     }
     origwidth = width;
@@ -592,9 +593,15 @@ void kexTexture::Upload(byte *data, texClampMode_t clamp, texFilterMode_t filter
     filterMode = filter;
 
     dglGenTextures(1, &texid);
+
+    if(texid == 0) {
+        // renderer is not initialized yet
+        return;
+    }
+
     dglBindTexture(GL_TEXTURE_2D, texid);
 
-    PadImage(&data);
+    *data = PadImage(data);
 
     dglTexImage2D(
         GL_TEXTURE_2D,
@@ -605,7 +612,7 @@ void kexTexture::Upload(byte *data, texClampMode_t clamp, texFilterMode_t filter
         0,
         (colorMode == TCR_RGBA) ? GL_RGBA : GL_RGB,
         GL_UNSIGNED_BYTE,
-        (byte*)data);
+        (byte*)*data);
 
     SetParameters();
 
@@ -618,15 +625,36 @@ void kexTexture::Upload(byte *data, texClampMode_t clamp, texFilterMode_t filter
 //
 
 void kexTexture::Bind(void) {
+    dtexture tid = texid;
+
+    if(bLoaded == false) {
+        // we may have attempted to cache this texture before the renderer was
+        // initialized so try reloading it
+        byte *data = LoadFromFile(filePath);
+        Upload(&data, clampMode, filterMode);
+
+        if(data != NULL) {
+            Mem_Free(data);
+        }
+
+        if(bLoaded == false || texid == 0) {
+            // fall back to default texture
+            tid = *renderSystem.defaultTexture.TextureID();
+        }
+        else {
+            tid = texid;
+        }
+    }
+
     int unit = renderSystem.glState.currentUnit;
     dtexture currentTexture = renderSystem.glState.textureUnits[unit].currentTexture;
 
-    if(texid == currentTexture) {
+    if(tid == currentTexture) {
         return;
     }
 
-    dglBindTexture(GL_TEXTURE_2D, texid);
-    renderSystem.glState.textureUnits[unit].currentTexture = texid;
+    dglBindTexture(GL_TEXTURE_2D, tid);
+    renderSystem.glState.textureUnits[unit].currentTexture = tid;
 }
 
 //

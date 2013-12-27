@@ -54,6 +54,8 @@ public:
     int                 Hash(void);
     kexStr              Substr(int start, int len) const;
     void                Split(kexStrListMem &list, const char seperator);
+    int                 Atoi(void);
+
     int                 Length(void) const { return length; }
     const char          *c_str(void) const { return charPtr; }
 
@@ -69,6 +71,7 @@ public:
     kexStr              &operator+=(const char *str);
     kexStr              &operator+=(const char c);
     kexStr              &operator+=(const bool b);
+    const char          operator[](int index) const;
 
     operator            const char *(void) const { return c_str(); }
     operator            const char *(void) { return c_str(); }

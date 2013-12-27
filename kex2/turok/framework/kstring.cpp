@@ -311,6 +311,15 @@ kexStr &kexStr::operator+=(const bool b) {
 }
 
 //
+// kexStr::operator[]
+//
+
+const char kexStr::operator[](int index) const {
+    assert(index >= 0 && index < length);
+    return charPtr[index];
+}
+
+//
 // kexStr::Resize
 //
 
@@ -520,6 +529,14 @@ void kexStr::Split(kexStrListMem &list, const char seperator) {
     if(splitLen != 0 && startOffs != 0) {
         list.Push(new kexStr(&charPtr[startOffs], splitLen));
     }
+}
+
+//
+// kexStr::Atoi
+//
+
+int kexStr::Atoi(void) {
+    return atoi(charPtr);
 }
 
 //

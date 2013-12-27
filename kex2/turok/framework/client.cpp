@@ -200,6 +200,7 @@ void kexClient::Run(const int msec) {
     // draw
     renderWorld.RenderScene();
     renderSystem.SetOrtho();
+    renderSystem.Canvas().Draw();
     console.Draw();
 
     // finish frame

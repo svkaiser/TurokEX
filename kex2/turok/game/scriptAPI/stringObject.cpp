@@ -78,6 +78,12 @@ void kexScriptObjString::Init(void) {
 
     scriptManager.Engine()->RegisterObjectMethod(
         "kStr",
+        "int Atoi(void)",
+        asMETHODPR(kexStr, Atoi, (void), int),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kStr",
         "kStr &ToUpper(void)",
         asMETHODPR(kexStr, ToUpper, (void), kexStr&),
         asCALL_THISCALL);
@@ -98,6 +104,12 @@ void kexScriptObjString::Init(void) {
         "kStr",
         "kStr opAdd(const kStr &in)",
         asMETHODPR(kexStr, operator+, (const kexStr&), kexStr),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kStr",
+        "int8 opIndex(const int)",
+        asMETHODPR(kexStr, operator[], (const int) const, const char),
         asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectMethod(
