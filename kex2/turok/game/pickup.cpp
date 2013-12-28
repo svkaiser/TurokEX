@@ -58,7 +58,8 @@ void kexPickup::OnTouch(kexWorldObject *instigator) {
         return;
     }
     if(scriptComponent.onTouch) {
-        scriptComponent.CallFunction(scriptComponent.onTouch);
+        scriptComponent.CallFunction(scriptComponent.onTouch,
+            static_cast<kexActor*>(instigator));
     }
 
     if(!bRespawn) {

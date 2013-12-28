@@ -327,6 +327,20 @@ void kexPhysics::Think(const float timeDelta) {
     // resize box to account for movement
     trace.bbox |= (velocity * time);
 
+    // handle interactions with touchable objects
+    if(owner->bCanPickup && owner->areaNode) {
+        for(kexWorldObject *obj = owner->areaNode->objects.Next();
+            obj != NULL;
+            obj = obj->areaLink.Next()) {
+                if(obj == owner || !obj->bTouch) {
+                    continue;
+                }
+                if(obj->Bounds().IntersectingBox(trace.bbox)) {
+                    obj->OnTouch(owner);
+                }
+        }
+    }
+
     trace.start = start;
     trace.end = start + (gravity * mass) * mass;
     trace.dir = gravity;
@@ -392,14 +406,6 @@ void kexPhysics::Think(const float timeDelta) {
         // update origin and nudge origin away from plane
         owner->SetOrigin(trace.hitVector - (direction * 0.125f));
         owner->LinkArea();
-
-        if(trace.hitActor && trace.hitActor->bTouch) {
-            trace.hitActor->OnTouch(owner);
-            // don't clip against pickups
-            if(!strcmp(trace.hitActor->ClassName(), "kexPickup")) {
-                break;
-            }
-        }
 
         // test if walking on steep slopes
         slope = trace.hitNormal.Dot(gravity);

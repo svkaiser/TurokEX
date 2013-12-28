@@ -2224,7 +2224,8 @@ static void ProcessInstances(byte *data, int offs)
         Com_Strcat("bTouch 1\n");
 
         Com_Strcat("component \"TurokPickup\"\n");
-        Com_Strcat("pickupType %i\n", GetObjectType(mapinst->model));
+        Com_Strcat("pickupType %i\n",
+            GetObjectType(mapinst->model) - OT_PICKUP_SMALLHEALTH);
 
         Com_Strcat("mesh \"models/mdl%03d/mdl%03d.kmesh\"\n",
             mapinst->model, mapinst->model);

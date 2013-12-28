@@ -314,7 +314,7 @@ class TurokWeapon : Component {
     // TurokWeapon::OnTouch
     //
     
-    void OnTouch(void) {
+    void OnTouch(kActor @instigator) {
     }
     
     //

@@ -87,6 +87,7 @@ public:
         OBJMETHOD("kAngle &GetAngles(void)", GetAngles, (void), kexAngle&);
         OBJMETHOD("void SetAngles(const kAngle &in)", SetAngles, (const kexAngle &an), void);
         OBJMETHOD("const kStr ClassName(void) const", ClassString, (void) const, const kexStr);
+        OBJMETHOD("const kStr SuperName(void) const", SuperString, (void) const, const kexStr);
         OBJMETHOD("void StartSound(const kStr &in)", StartSound, (const kexStr &name), void);
         OBJMETHOD("void Remove(void)", Remove, (void), void);
         OBJMETHOD("const int RefCount(void)const", RefCount, (void)const, const int);

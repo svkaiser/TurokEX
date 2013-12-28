@@ -688,7 +688,7 @@ final class TurokPlayer : Component {
     // TurokPlayer::OnTouch
     //
     
-    void OnTouch(void) {
+    void OnTouch(kActor @instigator) {
     }
     
     //

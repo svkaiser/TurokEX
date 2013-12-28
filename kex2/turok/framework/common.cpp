@@ -91,6 +91,14 @@ void kexCommon::Warning(const char *string, ...) {
 }
 
 //
+// kexCommon::Warning
+//
+
+void kexCommon::Warning(const kexStr &str) {
+    Warning(str.c_str());
+}
+
+//
 // kexCommon::DPrintf
 //
 
@@ -253,6 +261,12 @@ void kexCommon::InitObject(void) {
         "kCommon",
         "void Print(const kStr &in)",
         asMETHODPR(kexCommon, Printf, (const kexStr &str), void),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kCommon",
+        "void Warning(const kStr &in)",
+        asMETHODPR(kexCommon, Warning, (const kexStr &str), void),
         asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectMethod(

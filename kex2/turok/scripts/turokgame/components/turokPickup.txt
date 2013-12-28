@@ -1,11 +1,74 @@
 ////////////////////////////////////////////////////
 //
+// Enums
+//
+////////////////////////////////////////////////////
+
+enum turokPickupTypes { 
+    pt_smallhealth = 0,
+    pt_health = 2,
+    pt_fullhealth,
+    pt_ultrahealth,
+    pt_mask,
+    pt_backpack,
+    pt_spirit,
+    pt_pistol = 9,
+    pt_assaultrifle,
+    pt_shotgun,
+    pt_ashotgun,
+    pt_minigun,
+    pt_grenadelauncher,
+    pt_pulserifle,
+    pt_alienweapon,
+    pt_rocketlauncher,
+    pt_accelerator,
+    pt_cannon,
+    pt_quiver2,
+    pt_arrows,
+    pt_quiver1,
+    pt_clip,
+    pt_clipbox,
+    pt_shells,
+    pt_shellbox,
+    pt_expshells,
+    pt_expshellbox,
+    pt_minigunammo,
+    pt_grenade,
+    pt_grenadebox,
+    pt_smallcell,
+    pt_cell,
+    pt_rocket,
+    pt_fusioncell = 36,
+    pt_armor,
+    pt_coin1,
+    pt_coin10,
+    pt_key1,
+    pt_key2,
+    pt_key3,
+    pt_key4,
+    pt_key5,
+    pt_key6,
+    pt_finalkey1,
+    pt_chronopiece1,
+    pt_finalkey2 = 49,
+    pt_chronopiece2,
+    pt_chronopiece3,
+    pt_chronopiece4,
+    pt_chronopiece5,
+    pt_chronopiece6,
+    pt_chronopiece7,
+    pt_chronopiece8
+}
+
+////////////////////////////////////////////////////
+//
 // TurokPickup
 //
 ////////////////////////////////////////////////////
 
 class TurokPickup : Component {
     kActor @self;
+    int type;
     
     //
     // TurokPickup::TurokPickup
@@ -13,6 +76,7 @@ class TurokPickup : Component {
     
     TurokPickup(kActor @actor) {
         @self = actor;
+        type = -1;
     }
     
     //
@@ -38,14 +102,60 @@ class TurokPickup : Component {
         self.Physics().rotorSpeed = 1.0f;
         self.Physics().rotorFriction = 0;
         self.Physics().rotorVector = kVec3(0, 1, 0);
+        
+        self.args.GetInt("pickupType", type);
     }
     
     //
     // TurokPickup::OnTouch
     //
     
-    void OnTouch(void) {
+    void OnTouch(kActor @instigator) {
+        TurokPlayer @player;
+
+        if(instigator is null) {
+            return;
+        }
+        
+        kActor @owner = instigator.GetOwner();
+        
+        if(owner is null) {
+            return;
+        }
+        
+        @player = cast<TurokPlayer@>(owner.obj);
+        
+        if(player is null) {
+            return;
+        }
+        
         playerHud.h_flash.alpha = 0.5f;
+        
+        switch(type) {
+            case pt_coin1:
+                player.lifeForces++;
+                playerHud.lifeForceNum.Update(player.lifeForces);
+                break;
+            case pt_coin10:
+                player.lifeForces += 10;
+                playerHud.lifeForceNum.Update(player.lifeForces);
+                break;
+            case pt_clip:
+                player.clips.Give(player, 10);
+                break;
+            case pt_clipbox:
+                player.clips.Give(player, 50);
+                break;
+            case pt_shells:
+                player.shells.Give(player, 5);
+                break;
+            case pt_shellbox:
+                player.shells.Give(player, 20);
+                break;
+            default:
+                Com.Warning("Unknown pickup type: " + type);
+                break;
+        }
     }
     
     //

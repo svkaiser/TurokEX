@@ -91,6 +91,7 @@ public:
     void            Printf(const kexStr &str);
     void            CPrintf(rcolor color, const char *string, ...);
     void            Warning(const char *string, ...);
+    void            Warning(const kexStr &str);
     void            DPrintf(const char *string, ...);
     void            Error(const char *string, ...);
     int             CheckParam(const char *check);

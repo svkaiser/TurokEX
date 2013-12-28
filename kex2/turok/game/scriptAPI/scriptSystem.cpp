@@ -154,8 +154,6 @@ void kexScriptManager::Init(void) {
 
     ctx = engine->CreateContext();
 
-    kexActorComponent   ::Init();
-    kexAreaComponent    ::Init();
     kexScriptObjString  ::Init();
     kexScriptObjHandle  ::Init();
 
@@ -172,6 +170,9 @@ void kexScriptManager::Init(void) {
     kexPhysics          ::InitObject();
     kexAnimState        ::InitObject();
     kexCanvas           ::InitObject();
+
+    kexActorComponent   ::Init();
+    kexAreaComponent    ::Init();
 
     module = engine->GetModule("core", asGM_CREATE_IF_NOT_EXISTS);
 
