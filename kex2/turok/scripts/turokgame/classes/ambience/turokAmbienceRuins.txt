@@ -1,0 +1,29 @@
+#include "scripts/turokAmbienceEmitter.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokAmbienceRuins
+//
+////////////////////////////////////////////////////
+
+class TurokAmbienceRuins : TurokAmbienceEmitter {
+    TurokAmbienceRuins(void) {
+        counter = 0;
+        randFactor = 8;
+        
+        soundList.insertLast("sounds/shaders/wind_blow_5.ksnd");  // 0
+        soundList.insertLast("sounds/shaders/wind_blow_4.ksnd");  // 1
+        soundList.insertLast("sounds/shaders/wind_blow_5.ksnd");  // 2
+        soundList.insertLast("sounds/shaders/wind_blow_4.ksnd");  // 3
+        soundList.insertLast("sounds/shaders/wind_blow_5.ksnd");  // 4
+        soundList.insertLast("sounds/shaders/wind_blow_4.ksnd");  // 5
+        soundList.insertLast("sounds/shaders/wind_blow_5.ksnd");  // 6
+        soundList.insertLast("sounds/shaders/wind_blow_4.ksnd");  // 7
+        soundList.insertLast("sounds/shaders/wind_blow_3.ksnd");  // 8
+        soundList.insertLast("sounds/shaders/wind_blow_3.ksnd");  // 9
+        soundList.insertLast("sounds/shaders/generic_184.ksnd");  // 10
+        soundList.insertLast("sounds/shaders/generic_184.ksnd");  // 11
+        soundList.insertLast("sounds/shaders/generic_64_catacomb_growl_2.ksnd");  // 12
+        soundList.insertLast("sounds/shaders/generic_64_catacomb_growl_2.ksnd");  // 13
+    }
+};

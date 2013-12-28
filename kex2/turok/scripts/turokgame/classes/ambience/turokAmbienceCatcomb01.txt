@@ -1,0 +1,33 @@
+#include "scripts/turokAmbienceEmitter.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokAmbienceCatcomb01
+//
+////////////////////////////////////////////////////
+
+class TurokAmbienceCatcomb01 : TurokAmbienceEmitter {
+    TurokAmbienceCatcomb01(void) {
+        counter = 0;
+        randFactor = 13;
+        
+        soundList.insertLast("sounds/shaders/ominous_cave_growl_1.ksnd");  // 0
+        soundList.insertLast("sounds/shaders/ominous_cave_growl_2.ksnd");  // 1
+        soundList.insertLast("sounds/shaders/ghostly_catacomb_moan_1.ksnd");  // 2
+        soundList.insertLast("sounds/shaders/generic_62_painful_moan_4.ksnd");  // 3
+        soundList.insertLast("sounds/shaders/generic_63_catacomb_growl_1.ksnd");  // 4
+        soundList.insertLast("sounds/shaders/generic_64_catacomb_growl_2.ksnd");  // 5
+        soundList.insertLast("sounds/shaders/wind_blow_5.ksnd");  // 6
+        soundList.insertLast("sounds/shaders/wind_blow_4.ksnd");  // 7
+        soundList.insertLast("sounds/shaders/wind_blow_5.ksnd");  // 8
+        soundList.insertLast("sounds/shaders/wind_blow_4.ksnd");  // 9
+        soundList.insertLast("sounds/shaders/wind_blow_5.ksnd");  // 10
+        soundList.insertLast("sounds/shaders/wind_blow_4.ksnd");  // 11
+        soundList.insertLast("sounds/shaders/wind_blow_3.ksnd");  // 12
+        soundList.insertLast("sounds/shaders/wind_blow_4.ksnd");  // 13
+        soundList.insertLast("sounds/shaders/wind_blow_3.ksnd");  // 14
+        soundList.insertLast("sounds/shaders/wind_blow_4.ksnd");  // 15
+        soundList.insertLast("sounds/shaders/generic_63_catacomb_growl_1.ksnd");  // 16
+        soundList.insertLast("sounds/shaders/generic_64_catacomb_growl_2.ksnd");  // 17
+    }
+};

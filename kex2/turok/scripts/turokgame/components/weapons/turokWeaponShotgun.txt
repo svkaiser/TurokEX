@@ -1,0 +1,65 @@
+#include "scripts/turokWeapon.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokWeaponShotgun
+//
+////////////////////////////////////////////////////
+
+final class TurokWeaponShotgun : TurokWeapon {
+    bool    bReload;
+    
+    //
+    // TurokWeaponShotgun::TurokWeaponShotgun
+    //
+    
+    TurokWeaponShotgun(kActor @actor) {
+        super(actor);
+        bHasAltAmmo = true;
+        bOwned = true;
+        bReload = false;
+    }
+    
+    //
+    // TurokWeaponShotgun::OnAttack
+    //
+    
+    bool OnAttack(void) {
+        self.AnimState().Blend(anim_weaponFire, playSpeed, 4.0f, 0);
+        SpawnFX("fx/muzzle_shotgun.kfx", -5.75f, -3.072f, 15.696f);
+        return true;
+    }
+    
+    //
+    // TurokWeaponShotgun::CheckAttack
+    //
+    
+    void CheckAttack(void) {
+        if(self.AnimState().PlayTime() >= 0.5f) {
+            if(!bReload) {
+                bReload = true;
+                
+                SpawnFX("fx/shotshell.kfx", -11.26f, -6.144f, 15.696f);
+            }
+        }
+        else {
+            bReload = false;
+        }
+        
+        TurokWeapon::CheckAttack();
+    }
+    
+    //
+    // TurokWeaponShotgun::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        xOffset = 170.667f;
+        yOffset = -9.21548f;
+        zOffset = -170.667f;
+        self.SetModel("models/mdl669/mdl669.kmesh");
+        readySound = "sounds/shaders/ready_shotgun.ksnd";
+        
+        TurokWeapon::OnSpawn();
+    }
+};

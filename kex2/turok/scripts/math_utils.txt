@@ -1,0 +1,26 @@
+const float M_PI = 3.1415926535897932384626433832795f;
+
+float DegToRad(const float deg) {
+    return deg * (M_PI / 180.0f);
+}
+
+float RadToDeg(const float rad) {
+    return rad * (180.0f / M_PI);
+}
+
+float LocalLerp(float cur, float next, float time) {
+    float t = (time * (60.0f * Client.GetRunTime()));
+    if(t > 1) {
+        return next;
+    }
+    return (next - cur) * t + cur;
+}
+
+// note that level must be loaded first
+float Lerp(float cur, float next, float time) {
+    float t = (time * (60.0f * LocalWorld.DeltaTime()));
+    if(t > 1) {
+        return next;
+    }
+    return (next - cur) * t + cur;
+}

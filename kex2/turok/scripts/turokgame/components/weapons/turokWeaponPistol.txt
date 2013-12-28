@@ -1,0 +1,44 @@
+#include "scripts/turokWeapon.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokWeaponBow
+//
+////////////////////////////////////////////////////
+
+final class TurokWeaponPistol : TurokWeapon {
+    
+    //
+    // TurokWeaponPistol::TurokWeaponPistol
+    //
+    
+    TurokWeaponPistol(kActor @actor) {
+        super(actor);
+        bOwned = true;
+    }
+    
+    //
+    // TurokWeaponPistol::OnAttack
+    //
+    
+    bool OnAttack(void) {
+        self.AnimState().Blend(anim_weaponFire, playSpeed, 4.0f, 0);
+        SpawnFX("fx/muzzle_pistol.kfx", -6.656f, -3.2f, 15.696f);
+        SpawnFX("fx/bulletshell.kfx", -10.24f, -10.24f, 15.648f);
+        return true;
+    }
+    
+    //
+    // TurokWeaponPistol::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        xOffset = 160.42698f;
+        yOffset = -16.0f;
+        zOffset = -200.32036f;
+        self.SetModel("models/mdl663/mdl663.kmesh");
+        readySound = "sounds/shaders/ready_pistol.ksnd";
+        
+        TurokWeapon::OnSpawn();
+    }
+};

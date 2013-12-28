@@ -1,0 +1,27 @@
+#include "scripts/turokAmbienceEmitter.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokAmbienceValley
+//
+////////////////////////////////////////////////////
+
+class TurokAmbienceValley : TurokAmbienceEmitter {
+    TurokAmbienceValley(void) {
+        counter = 0;
+        randFactor = 8;
+        
+        soundList.insertLast("sounds/shaders/wind_blow_5.ksnd");  // 0
+        soundList.insertLast("sounds/shaders/wind_blow_4.ksnd");  // 1
+        soundList.insertLast("sounds/shaders/wind_blow_5.ksnd");  // 2
+        soundList.insertLast("sounds/shaders/wind_blow_4.ksnd");  // 3
+        soundList.insertLast("sounds/shaders/wind_blow_5.ksnd");  // 4
+        soundList.insertLast("sounds/shaders/wind_blow_4.ksnd");  // 5
+        soundList.insertLast("sounds/shaders/wind_blow_5.ksnd");  // 6
+        soundList.insertLast("sounds/shaders/wind_blow_4.ksnd");  // 7
+        soundList.insertLast("sounds/shaders/wind_blow_3.ksnd");  // 8
+        soundList.insertLast("sounds/shaders/wind_blow_3.ksnd");  // 9
+        soundList.insertLast("sounds/shaders/generic_242.ksnd");  // 10
+        soundList.insertLast("sounds/shaders/generic_184.ksnd");  // 11
+    }
+};

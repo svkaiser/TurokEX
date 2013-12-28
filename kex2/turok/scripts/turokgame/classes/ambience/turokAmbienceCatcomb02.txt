@@ -1,0 +1,20 @@
+#include "scripts/turokAmbienceEmitter.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokAmbienceCatcomb02
+//
+////////////////////////////////////////////////////
+
+class TurokAmbienceCatcomb02 : TurokAmbienceEmitter {
+    TurokAmbienceCatcomb02(void) {
+        counter = 0;
+        randFactor = 5;
+        
+        soundList.insertLast("sounds/shaders/generic_37_mettalic_moan_1.ksnd");  // 0
+        soundList.insertLast("sounds/shaders/generic_38_mettalic_moan_2.ksnd");  // 1
+        soundList.insertLast("sounds/shaders/generic_39_mettalic_moan_3.ksnd");  // 2
+        soundList.insertLast("sounds/shaders/generic_40_mettalic_moan_4.ksnd");  // 3
+        soundList.insertLast("sounds/shaders/generic_41_mettalic_moan_5.ksnd");  // 4
+    }
+};

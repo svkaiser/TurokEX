@@ -1,0 +1,229 @@
+#include "scripts/turokPlayer.txt"
+#include "scripts/turokAmmo.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokHudNumber
+//
+////////////////////////////////////////////////////
+
+final class TurokHudNumber {
+    kCanvasText @number;
+    
+    TurokHudNumber(void) {
+    }
+    
+    void Init(const float x, const float y) {
+        @number = Canvas.CreateText("fonts/turoknumbers.kfont");
+        number.text = "0";
+        number.x = x;
+        number.y = y;
+    }
+    
+    void Update(const int num) {
+        number.text = "" + num;
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// TurokHud
+//
+////////////////////////////////////////////////////
+
+final class TurokHud {
+    kCanvasImage @h_flash;
+    kCanvasImage @h_plaque1;
+    kCanvasImage @h_plaque2;
+    kCanvasImage @h_health;
+    kCanvasImage @h_turok;
+    kCanvasImage @h_coin;
+    kCanvasImage @h_armor;
+    kCanvasImage @h_arrow1;
+    kCanvasImage @h_arrow2;
+    kCanvasImage @h_clip;
+    kCanvasImage @h_shell1;
+    kCanvasImage @h_shell2;
+    kCanvasImage @h_cell;
+    kCanvasImage @h_mags;
+    kCanvasImage @h_grenade;
+    kCanvasImage @h_rockets;
+    kCanvasImage @h_fuse;
+    kCanvasContainer @container;
+    
+    TurokHudNumber healthNum;
+    TurokHudNumber lifeForceNum;
+    TurokHudNumber ammoNum;
+    
+    TurokHud(void) {
+    }
+    
+    void Update(void) {
+        if(h_flash.alpha > 0) {
+            h_flash.bVisible = true;
+            h_flash.alpha -= 0.0315f;
+            
+            if(h_flash.alpha < 0) {
+                h_flash.alpha = 0;
+                h_flash.bVisible = false;
+            }
+        }
+        
+        if(lifeForceNum.number.text.Atoi() < 10) {
+            lifeForceNum.number.x = 278;
+        }
+        else {
+            lifeForceNum.number.x = 269;
+        }
+        
+        if(localPlayer.activeWeaponID == wp_knife) {
+            ammoNum.number.bVisible = false;
+            h_plaque2.bVisible = false;
+        }
+        else {
+            ammoNum.number.bVisible = true;
+            h_plaque2.bVisible = true;
+        }
+        
+        h_arrow1.bVisible = false;
+        h_arrow2.bVisible = false;
+        h_clip.bVisible = false;
+        h_shell1.bVisible = false;
+        h_shell2.bVisible = false;
+        h_cell.bVisible = false;
+        h_mags.bVisible = false;
+        h_grenade.bVisible = false;
+        h_rockets.bVisible = false;
+        h_fuse.bVisible = false;
+        
+        switch(localPlayer.activeWeaponID) {
+            case wp_bow:
+                h_arrow1.bVisible = true;
+                ammoNum.Update(localPlayer.arrows.amount);
+                break;
+            case wp_pistol:
+                h_clip.bVisible = true;
+                ammoNum.Update(localPlayer.clips.amount);
+                break;
+            case wp_shotgun:
+                h_shell1.bVisible = true;
+                ammoNum.Update(localPlayer.shells.amount);
+                break;
+            case wp_rifle:
+                h_clip.bVisible = true;
+                ammoNum.Update(localPlayer.clips.amount);
+                break;
+            case wp_pulserifle:
+                h_cell.bVisible = true;
+                ammoNum.Update(localPlayer.cells.amount);
+                break;
+            case wp_grenade_l:
+                h_grenade.bVisible = true;
+                ammoNum.Update(localPlayer.grenades.amount);
+                break;
+            default:
+                break;
+        }
+    }
+    
+    void Init(void) {
+        @h_plaque1  = Canvas.CreateImage("hud/h_plaque1.tga");
+        @h_plaque2  = Canvas.CreateImage("hud/h_plaque1.tga");
+        @h_health   = Canvas.CreateImage("hud/h_health.tga");
+        @h_turok    = Canvas.CreateImage("hud/h_turok.tga");
+        @h_coin     = Canvas.CreateImage("hud/h_coin.tga");
+        @h_armor    = Canvas.CreateImage("hud/h_armor.tga");
+        @h_flash    = Canvas.CreateImage("textures/white.tga");
+        @h_arrow1   = Canvas.CreateImage("hud/h_a_arrow1.tga");
+        @h_arrow2   = Canvas.CreateImage("hud/h_a_arrow2.tga");
+        @h_clip     = Canvas.CreateImage("hud/h_a_clip.tga");
+        @h_shell1   = Canvas.CreateImage("hud/h_a_shells1.tga");
+        @h_shell2   = Canvas.CreateImage("hud/h_a_shells2.tga");
+        @h_cell     = Canvas.CreateImage("hud/h_a_cell.tga");
+        @h_mags     = Canvas.CreateImage("hud/h_a_mags.tga");
+        @h_grenade  = Canvas.CreateImage("hud/h_a_grenades.tga");
+        @h_rockets  = Canvas.CreateImage("hud/h_a_missiles.tga");
+        @h_fuse     = Canvas.CreateImage("hud/h_a_power.tga");
+        
+        @container  = Canvas.CreateContainer();
+        
+        Canvas.AddChild(h_flash);
+        Canvas.AddChild(container);
+        
+        h_flash.scaleX = 100;
+        h_flash.scaleY = 75;
+        h_flash.SetRGB(0, 0, 44, 148);
+        h_flash.SetRGB(1, 0, 44, 148);
+        h_flash.SetRGB(2, 0, 44, 148);
+        h_flash.SetRGB(3, 0, 44, 148);
+        h_flash.alpha = 0;
+        h_flash.bVisible = false;
+        
+        healthNum.Init(36, 215);
+        lifeForceNum.Init(269, 18);
+        ammoNum.Init(102, 215);
+        
+        h_arrow1.bVisible = false;
+        h_arrow2.bVisible = false;
+        h_clip.bVisible = false;
+        h_shell1.bVisible = false;
+        h_shell2.bVisible = false;
+        h_cell.bVisible = false;
+        h_mags.bVisible = false;
+        h_grenade.bVisible = false;
+        h_rockets.bVisible = false;
+        h_fuse.bVisible = false;
+        
+        container.AddChild(healthNum.number);
+        container.AddChild(lifeForceNum.number);
+        container.AddChild(ammoNum.number);
+        container.AddChild(h_plaque1);
+        container.AddChild(h_arrow1);
+        container.AddChild(h_arrow2);
+        container.AddChild(h_clip);
+        container.AddChild(h_shell1);
+        container.AddChild(h_shell2);
+        container.AddChild(h_cell);
+        container.AddChild(h_mags);
+        container.AddChild(h_grenade);
+        container.AddChild(h_rockets);
+        container.AddChild(h_fuse);
+        container.AddChild(h_plaque2);
+        container.AddChild(h_turok);
+        container.AddChild(h_coin);
+        container.AddChild(h_health);
+        
+        container.bVisible = false;
+        
+        h_plaque1.x = 32.95f;
+        h_plaque1.y = 210;
+        h_plaque2.x = 100;
+        h_plaque2.y = 210;
+        h_coin.x = 286;
+        h_coin.y = 10;
+        h_turok.x = 10;
+        h_turok.y = 10;
+        h_health.x = 12;
+        h_health.y = 210;
+        h_arrow1.x = 82;
+        h_arrow1.y = 210;
+        h_arrow2.x = 82;
+        h_arrow2.y = 210;
+        h_clip.x = 86;
+        h_clip.y = 210;
+        h_shell1.x = 79;
+        h_shell1.y = 210;
+        h_shell2.x = 79;
+        h_shell2.y = 210;
+        h_cell.x = 82;
+        h_cell.y = 210;
+        h_mags.x = 86;
+        h_mags.y = 210;
+        h_grenade.x = 79;
+        h_grenade.y = 210;
+        h_rockets.x = 82;
+        h_rockets.y = 210;
+        h_fuse.x = 82;
+        h_fuse.y = 210;
+    }
+};

@@ -1,0 +1,707 @@
+#include "scripts/math_utils.txt"
+#include "scripts/turokAmmo.txt"
+#include "scripts/turokWeaponKnife.txt"
+#include "scripts/turokWeaponBow.txt"
+#include "scripts/turokWeaponPistol.txt"
+#include "scripts/turokWeaponShotgun.txt"
+#include "scripts/turokWeaponRifle.txt"
+#include "scripts/turokWeaponPulseRifle.txt"
+#include "scripts/turokWeaponGrenade.txt"
+
+////////////////////////////////////////////////////
+//
+// Constants
+//
+////////////////////////////////////////////////////
+
+const float ANGLE_MAXPITCH              = DegToRad(90.0f);
+
+const float VELOCITY_JUMP               = 632;
+
+const float FALL_STOPSPEED              = -7.68f;
+const float FALL_THUMPFACTOR            = -12.8f;
+
+const float VIEWBOB_EPISILON            = 0.001f;
+const float VIEWBOB_MAXSWAY             = DegToRad(22.5f);
+const float VIEWBOB_FREQX               = 0.02f;
+const float VIEWBOB_FREQY               = 0.01f;
+const float VIEWBOB_ANGLE               = 0.0218f;
+const float VIEWBOB_GROUNDHEIGHT        = 2.048f;
+
+const float WALK_STRAFEROLL_ANGLE       = 0.0835f;
+const float WALK_STRAFEROLL_SPEED       = 0.1f;
+
+const float PHYSICS_PLAYER_MASS         = 1800;
+const float PHYSICS_PLAYER_STEPHEIGHT   = 36;
+const float PHYSICS_PLAYER_AIR_FRICTION = 0;
+
+////////////////////////////////////////////////////
+//
+// Enums
+//
+////////////////////////////////////////////////////
+
+enum turokWeapons_e {
+    wp_none = 0,
+    wp_knife,
+    wp_bow,
+    wp_pistol,
+    wp_shotgun,
+    wp_autoshotgun,
+    wp_rifle,
+    wp_pulserifle,
+    wp_minigun,
+    wp_grenade_l,
+    wp_alienrifle,
+    wp_rocket_l,
+    wp_accelerator,
+    wp_fusioncannon,
+    wp_chronoscepter,
+    wp_numweapons
+}
+
+enum turokAmmo_e {
+    am_none = 0,
+    am_arrow,
+    am_tekarrow,
+    am_clip,
+    am_shell,
+    am_expshell,
+    am_cell,
+    am_mag,
+    am_grenade,
+    am_rocket,
+    am_fuse,
+    am_numammo
+} 
+
+////////////////////////////////////////////////////
+//
+// Vars
+//
+////////////////////////////////////////////////////
+
+kLocalPlayer @localClient;
+TurokPlayer @localPlayer;
+
+////////////////////////////////////////////////////
+//
+// Global Functions
+//
+////////////////////////////////////////////////////
+
+void CommandFly(void) {
+    TurokPlayer @player = cast<TurokPlayer@>(localClient.obj);
+    
+    if(player.bFly == false) {
+        player.bFly = true;
+        localClient.Puppet().Physics().airFriction = 1;
+        localClient.Puppet().Physics().mass = 0;
+    }
+    else {
+        player.bFly = false;
+        localClient.Puppet().Physics().airFriction = PHYSICS_PLAYER_AIR_FRICTION;
+        localClient.Puppet().Physics().mass = PHYSICS_PLAYER_MASS;
+    }
+    
+    Com.Print("Fly mode = " + player.bFly);
+}
+
+void CommandToggleFarZ(void) {
+    TurokPlayer @player = cast<TurokPlayer@>(localClient.obj);
+    
+    if(player.bToggleFarZ == false) {
+        player.bToggleFarZ = true;
+        LocalWorld.Camera().zFar = -1;
+    }
+    else {
+        player.bToggleFarZ = false;
+        LocalWorld.Camera().zFar = 2048;
+    }
+}
+
+void CommandNoClip(void) {
+}
+
+////////////////////////////////////////////////////
+//
+// TurokPlayer
+//
+////////////////////////////////////////////////////
+
+final class TurokPlayer : Component {
+    kLocalPlayer        @self;
+    TurokWeapon         @activeWeapon;
+    int                 activeWeaponID;
+    int                 pendingWeaponID;
+    bool                bFly;
+    bool                bToggleFarZ;
+    bool                bJumped;
+    float               fallAmount;
+    kVec3               camOffset;
+    float               camHeight;
+    int                 lives;
+    int                 lifeForces;
+    int                 armor;
+    int                 mortalWound;
+    bool                bHasArmor;
+    bool                bHasBackpack;
+    float               spiritTime;
+    int                 keys_level2;
+    int                 keys_level3;
+    int                 keys_level4;
+    int                 keys_level5;
+    int                 keys_level6;
+    int                 keys_level7;
+    int                 keys_level8;
+    kActor              @weaponKnife;
+    kActor              @weaponBow;
+    kActor              @weaponPistol;
+    kActor              @weaponShotgun;
+    kActor              @weaponRifle;
+    kActor              @weaponPulse;
+    kActor              @weaponGrenade;
+    TurokAmmoArrow      arrows;
+    TurokAmmoTekArrow   tekArrows;
+    TurokAmmoClip       clips;
+    TurokAmmoShell      shells;
+    TurokAmmoExpShell   expShells;
+    TurokAmmoCell       cells;
+    TurokAmmoGrenade    grenades;
+    TurokAmmoMags       ammoMags;
+    TurokAmmoRocket     rockets;
+    TurokAmmoFuseCharge fuses; 
+    
+    //
+    // TurokPlayer::TurokPlayer
+    //
+    
+    TurokPlayer(kActor @actor) {
+        @self           = cast<kLocalPlayer@>(actor);
+        @localClient    = self;
+        @activeWeapon   = null;
+        activeWeaponID  = wp_none;
+        pendingWeaponID = -1;
+        bFly            = false;
+        bJumped         = false;
+        bToggleFarZ     = false;
+        fallAmount      = 0.0f;
+    }
+    
+    //
+    // TurokPlayer::ResetVars
+    //
+    
+    void ResetVars(void) {
+        lives           = 2;
+        lifeForces      = 0;
+        armor           = 0;
+        mortalWound     = 100;
+        bHasArmor       = false;
+        bHasBackpack    = false;
+        spiritTime      = 0.0f;
+        keys_level2     = 0;
+        keys_level3     = 0;
+        keys_level4     = 0;
+        keys_level5     = 0;
+        keys_level6     = 0;
+        keys_level7     = 0;
+        keys_level8     = 0;
+    }
+    
+    //
+    // TurokPlayer::SetupCamera
+    //
+    
+    void SetupCamera(void) {
+        kCamera @camera = LocalWorld.Camera();
+        kActor @puppet = self.Puppet();
+        
+        camHeight = (puppet.height + puppet.viewHeight) + 20.48f;
+        
+        camOffset.x = 0;
+        camOffset.y = camHeight;
+        camOffset.z = 0;
+        
+        camera.Attachment().AttachToActor(puppet);
+        camera.Attachment().SetAttachOffset(camOffset);
+        camera.Attachment().SetSourceOffset(camOffset);
+        camera.Attachment().bAttachRelativeAngles = true;
+        
+        camera.zFar = 2048.0f;
+    }
+    //
+    // TurokPlayer::GetWeaponObj
+    //
+    
+    TurokWeapon @GetWeaponObj(int weapon) {
+        switch(weapon) {
+            case wp_knife:
+                return cast<TurokWeapon@>(weaponKnife.obj);
+            case wp_bow:
+                return cast<TurokWeapon@>(weaponBow.obj);
+            case wp_pistol:
+                return cast<TurokWeapon@>(weaponPistol.obj);
+            case wp_shotgun:
+                return cast<TurokWeapon@>(weaponShotgun.obj);
+            case wp_rifle:
+                return cast<TurokWeapon@>(weaponRifle.obj);
+            case wp_pulserifle:
+                return cast<TurokWeapon@>(weaponPulse.obj);
+            case wp_grenade_l:
+                return cast<TurokWeapon@>(weaponGrenade.obj);
+        }
+        
+        return null;
+    }
+    
+    //
+    // TurokPlayer::SetWeapon
+    //
+    
+    void SetWeapon(void) {
+        if(pendingWeaponID == -1) {
+            return;
+        }
+        
+        @activeWeapon = GetWeaponObj(pendingWeaponID);
+        
+        if(activeWeapon is null) {
+            return;
+        }
+        
+        activeWeapon.ChangeIn();
+        
+        activeWeaponID  = pendingWeaponID;
+        pendingWeaponID = -1;
+    }
+    
+    //
+    // TurokPlayer::SetupWeapons
+    //
+    
+    void SetupWeapons(void) {
+        kVec3 origin = kVec3(0, 0, 0);
+        kAngle angle = kAngle(0, 0, 0);
+        
+        @weaponKnife    = LocalWorld.SpawnActor("kexActor", "TurokWeaponKnife", origin, angle);
+        @weaponBow      = LocalWorld.SpawnActor("kexActor", "TurokWeaponBow", origin, angle);
+        @weaponPistol   = LocalWorld.SpawnActor("kexActor", "TurokWeaponPistol", origin, angle);
+        @weaponShotgun  = LocalWorld.SpawnActor("kexActor", "TurokWeaponShotgun", origin, angle);
+        @weaponRifle    = LocalWorld.SpawnActor("kexActor", "TurokWeaponRifle", origin, angle);
+        @weaponPulse    = LocalWorld.SpawnActor("kexActor", "TurokWeaponPulseRifle", origin, angle);
+        @weaponGrenade  = LocalWorld.SpawnActor("kexActor", "TurokWeaponGrenade", origin, angle);
+        
+        TurokPlayer @player = cast<TurokPlayer@>(self.obj);
+        
+        @cast<TurokWeapon@>(weaponKnife.obj).owner      = player;
+        @cast<TurokWeapon@>(weaponBow.obj).owner        = player;
+        @cast<TurokWeapon@>(weaponPistol.obj).owner     = player;
+        @cast<TurokWeapon@>(weaponShotgun.obj).owner    = player;
+        @cast<TurokWeapon@>(weaponRifle.obj).owner      = player;
+        @cast<TurokWeapon@>(weaponPulse.obj).owner      = player;
+        @cast<TurokWeapon@>(weaponGrenade.obj).owner    = player;
+
+        pendingWeaponID = wp_knife;
+        SetWeapon();
+    }
+    
+    //
+    // TurokPlayer::CheckWeaponChange
+    //
+    
+    bool CheckWeaponChange(void) {
+        if(self.ActionDown('+nextweap') &&
+            self.ActionHeldTime('+nextweap') == 0) {
+            NextWeapon();
+            return true;
+        }
+        else if(self.ActionDown('+prevweap') &&
+            self.ActionHeldTime('+prevweap') == 0) {
+            PrevWeapon();
+            return true;
+        }
+        
+        return false;
+    }
+    
+    //
+    // TurokPlayer::NextWeapon
+    //
+    
+    void NextWeapon(void) {
+        int nextWpn;
+        TurokWeapon @weapon;
+
+        if(pendingWeaponID != -1) {
+            nextWpn = pendingWeaponID + 1;
+        }
+        else {
+            nextWpn = activeWeaponID + 1;
+        }
+            
+        if(nextWpn >= wp_numweapons) {
+            nextWpn = 0;
+        }
+            
+        while(nextWpn != activeWeaponID) {
+            @weapon = GetWeaponObj(nextWpn);
+        
+            if(!(weapon is null)) {
+                if(weapon.bOwned) {
+                    if(pendingWeaponID != -1) {
+                        pendingWeaponID = nextWpn;
+                        return;
+                    }
+                    
+                    if(weapon.bOwned) {
+                        activeWeapon.ChangeOut();
+                    }
+                    pendingWeaponID = nextWpn;
+                    break;
+                }
+            }
+            
+            if(++nextWpn >= wp_numweapons) {
+                nextWpn = 0;
+            }
+        }
+    }
+    
+    //
+    // TurokPlayer::PrevWeapon
+    //
+    
+    void PrevWeapon(void) {
+        int nextWpn;
+        TurokWeapon @weapon;
+
+        if(pendingWeaponID != -1) {
+            nextWpn = pendingWeaponID - 1;
+        }
+        else {
+            nextWpn = activeWeaponID - 1;
+        }
+            
+        if(nextWpn < 0) {
+            nextWpn = wp_numweapons - 1;
+        }
+            
+        while(nextWpn != activeWeaponID) {
+            @weapon = GetWeaponObj(nextWpn);
+        
+            if(!(weapon is null)) {
+                if(weapon.bOwned) {
+                    if(pendingWeaponID != -1) {
+                        pendingWeaponID = nextWpn;
+                        return;
+                    }
+                    
+                    if(weapon.bOwned) {
+                        activeWeapon.ChangeOut();
+                    }
+                    pendingWeaponID = nextWpn;
+                    break;
+                }
+            }
+            
+            if(--nextWpn < 0) {
+                nextWpn = wp_numweapons - 1;
+            }
+        }
+    }
+    
+    //
+    // TurokPlayer::SetDefaultProperties
+    //
+    
+    void SetDefaultProperties(void) {
+        kPlayerMove groundMove      = self.GroundMove();
+        
+        groundMove.accelSpeed       = kVec3(0.25f, 0, 0.09f);
+        groundMove.deaccelSpeed     = kVec3(0.5f, 0, 0.5f);
+        groundMove.forwardSpeed     = kVec3(384, 0, 384);
+        groundMove.backwardSpeed    = kVec3(-384, 0, -292);
+        
+        kPlayerMove swimMove        = self.SwimMove();
+        
+        swimMove.accelSpeed         = kVec3(0.012f, 0.1f, 0.012f);
+        swimMove.deaccelSpeed       = kVec3(0.5f, 0.5f, 0.5f);
+        swimMove.forwardSpeed       = kVec3(246, 340, 246);
+        swimMove.backwardSpeed      = kVec3(-154, -340, -154);
+        
+        self.GroundMove() = groundMove;
+        self.SwimMove() = swimMove;
+        
+        self.Puppet().Physics().mass = PHYSICS_PLAYER_MASS;
+        self.Puppet().Physics().stepHeight = PHYSICS_PLAYER_STEPHEIGHT;
+    }
+    
+    //
+    // TurokPlayer::GiveKey
+    //
+    
+    void GiveKey(int levelID, int bits) {
+        switch(levelID) {
+        case 2:
+            keys_level2 |= (1 << bits);
+            break;
+        case 3:
+            keys_level3 |= (1 << bits);
+            break;
+        case 4:
+            keys_level4 |= (1 << bits);
+            break;
+        case 5:
+            keys_level5 |= (1 << bits);
+            break;
+        case 6:
+            keys_level6 |= (1 << bits);
+            break;
+        case 7:
+            keys_level7 |= (1 << bits);
+            break;
+        case 8:
+            keys_level8 |= (1 << bits);
+            break;
+        default:
+            break;
+        }
+    }
+    
+    //
+    // TurokPlayer::ClampAngles
+    //
+    
+    void ClampAngles(kActor @puppet) {
+        kAngle angles = puppet.GetAngles();
+        angles.yaw -= DegToRad(self.cmdMouseX);
+        angles.pitch -= DegToRad(self.cmdMouseY);
+        
+        if(angles.pitch > ANGLE_MAXPITCH) angles.pitch = ANGLE_MAXPITCH;
+        if(angles.pitch < -ANGLE_MAXPITCH) angles.pitch = -ANGLE_MAXPITCH;
+        
+        puppet.SetAngles(angles);
+    }
+    
+    //
+    // TurokPlayer::HandleMovement
+    //
+    
+    void HandleMovement(kActor @puppet) {
+        kPlayerMove groundMove  = self.GroundMove();
+        float deltaTime         = self.deltaTime;
+        kAngle angles           = puppet.GetAngles();
+        bool bForward           = self.ActionDown("+forward");
+        bool bBack              = self.ActionDown("+back");
+        bool bLeft              = self.ActionDown("+strafeleft");
+        bool bRight             = self.ActionDown("+straferight");
+        
+        if(bForward || bBack) {
+            if(bForward) {
+                groundMove.Accelerate(1, 2, deltaTime);
+            }
+            if(bBack) {
+                groundMove.Accelerate(-1, 2, deltaTime);
+            }
+        }
+        else {
+            groundMove.Accelerate(0, 2, deltaTime);
+        }
+        
+        if(bLeft || bRight) {
+            if(bLeft) {
+                groundMove.Accelerate(1, 0, deltaTime);
+            }
+            if(bRight) {
+                groundMove.Accelerate(-1, 0, deltaTime);
+            }
+        }
+        else {
+            groundMove.Accelerate(0, 0, deltaTime);
+        }
+        
+        kVec3 vel = puppet.Physics().GetVelocity();
+        float landImpact = (fallAmount - vel.y) * deltaTime;
+        
+        if(landImpact <= FALL_STOPSPEED && puppet.Physics().OnGround()) {
+            self.GetAcceleration().Clear();
+            camOffset.y = ((puppet.height + puppet.viewHeight) + 20.48f) * 0.5f;
+            
+            if(landImpact <= FALL_THUMPFACTOR) {
+                puppet.StartSound("sounds/shaders/generic_22_turok_land.ksnd");
+            }
+        }
+        
+        if(bFly) {
+            kVec3 forward = angles.ToForwardAxis();
+            kVec3 up = angles.ToUpAxis();
+            kVec3 right = angles.ToRightAxis();
+            kVec3 accel = self.GetAcceleration();
+            
+            accel.x *= 4;
+            accel.y *= 4;
+            accel.z *= 4;
+            
+            vel.x += (accel.z * forward.x) + (accel.x * right.x) + (accel.y * up.x);
+            vel.y += (accel.z * forward.y) + (accel.x * right.y) + (accel.y * up.y);
+            vel.z += (accel.z * forward.z) + (accel.x * right.z) + (accel.y * up.z);
+        }
+        else {
+            kAngle newAngle(angles.yaw, 0, 0);
+            kVec3 forward = newAngle.ToForwardAxis();
+            kVec3 right = newAngle.ToRightAxis();
+            kVec3 accel = self.GetAcceleration();
+            
+            vel.x += (accel.z * forward.x) + (accel.x * right.x);
+            vel.z += (accel.z * forward.z) + (accel.x * right.z);
+        }
+        
+        puppet.Physics().SetVelocity(vel);
+        BobView(puppet);
+        
+        fallAmount = vel.y;
+    }
+    
+    //
+    // TurokPlayer::HandleJumping
+    //
+    
+    void HandleJumping(kActor @puppet) {
+        bool bOnGround = puppet.Physics().OnGround();
+        kVec3 vel = puppet.Physics().GetVelocity();
+        
+        if(bJumped && bOnGround) {
+            bJumped = false;
+        }
+        
+        if(bJumped == false) {
+            if(self.ActionDown("+jump") && self.ActionHeldTime("+jump") == 0) {
+                if(bOnGround || (vel.y < 0 && vel.y > -VELOCITY_JUMP)) {
+                    vel.y = VELOCITY_JUMP;
+                    bJumped = true;
+                    puppet.StartSound("sounds/shaders/generic_21_turok_jump.ksnd");
+                }
+            }
+        }
+        
+        puppet.Physics().SetVelocity(vel);
+    }
+    
+    //
+    // TurokPlayer::BobView
+    //
+    
+    void BobView(kActor @puppet) {
+        float bob_x = 0;
+        float bob_y = 0;
+        
+        if(puppet.Physics().GroundDistance() <= VIEWBOB_GROUNDHEIGHT) {
+            float d = Math::Fabs(self.GetAcceleration().z * self.deltaTime) * 0.06f;
+            
+            if(d > VIEWBOB_EPISILON) {
+                if(d > VIEWBOB_MAXSWAY) {
+                    d = VIEWBOB_MAXSWAY;
+                }
+                
+                bob_x = Math::Sin(Client.GetTime() * VIEWBOB_FREQX) * VIEWBOB_ANGLE * d;
+                bob_y = Math::Sin(Client.GetTime() * VIEWBOB_FREQY) * VIEWBOB_ANGLE * d;
+            }
+        }
+        
+        kCamera @camera = LocalWorld.Camera();
+        kAngle angle = camera.GetOffsetAngle();
+        
+        angle.yaw = -bob_y;
+        angle.pitch = bob_x;
+        
+        if(self.ActionDown("+strafeleft")) {
+            angle.roll = LocalLerp(angle.roll,
+                -WALK_STRAFEROLL_ANGLE, WALK_STRAFEROLL_SPEED);
+        }
+        else if(self.ActionDown("+straferight")) {
+            angle.roll = LocalLerp(angle.roll,
+                WALK_STRAFEROLL_ANGLE, WALK_STRAFEROLL_SPEED);
+        }
+        else {
+            angle.roll = LocalLerp(angle.roll, 0, WALK_STRAFEROLL_SPEED);
+        }
+        
+        camera.SetOffsetAngle(angle);
+        
+        if(camOffset.y != camHeight) {
+            camOffset.y = LocalLerp(camOffset.y, camHeight, 0.125f);
+            
+            if(camHeight - camOffset.y <= 0.01f) {
+                camOffset.y = camHeight;
+            }
+            
+            camera.Attachment().SetAttachOffset(camOffset);
+            camera.Attachment().SetSourceOffset(camOffset);
+        }
+    }
+    
+    //
+    // TurokWeapon::OnThink
+    //
+    
+    void OnThink(void) {
+    }
+    
+    //
+    // TurokPlayer::OnLocalThink
+    //
+    
+    void OnLocalThink(void) {
+        if(Client.GetState() != STATE_INGAME) {
+            return;
+        }
+        
+        playerHud.Update();
+        
+        kActor @puppet = self.Puppet();
+        
+        ClampAngles(puppet);
+        HandleMovement(puppet);
+        HandleJumping(puppet);
+    }
+    
+    //
+    // TurokPlayer::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        @localPlayer = cast<TurokPlayer@>(localClient.obj);
+        
+        ResetVars();
+        SetupCamera();
+        SetDefaultProperties();
+        SetupWeapons();
+        
+        playerHud.container.bVisible = true;
+        
+        self.Puppet().bHidden = true;
+        self.Puppet().bCanPickup = true;
+    }
+    
+    //
+    // TurokPlayer::OnTouch
+    //
+    
+    void OnTouch(void) {
+    }
+    
+    //
+    // TurokPlayer::OnDamage
+    //
+    
+    void OnDamage(void) {
+    }
+    
+    //
+    // TurokPlayer::OnTrigger
+    //
+    
+    void OnTrigger(void) {
+    }
+};

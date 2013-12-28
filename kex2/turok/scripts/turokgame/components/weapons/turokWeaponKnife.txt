@@ -1,0 +1,93 @@
+#include "scripts/turokWeapon.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokWeaponKnife
+//
+////////////////////////////////////////////////////
+
+final class TurokWeaponKnife : TurokWeapon {
+    bool        bCanAttack;
+    uint8       swishType;
+    
+    //
+    // TurokWeaponKnife::TurokWeaponKnife
+    //
+    
+    TurokWeaponKnife(kActor @actor) {
+        super(actor);
+        
+        bCanAttack = false;
+        bOwned = true;
+        bActive = true;
+        
+        self.bHidden = false;
+    }
+    
+    //
+    // TurokWeaponKnife::OnAttack
+    //
+    
+    bool OnAttack(void) {
+        int rnd = Math::RandMax(100);
+        kActor @src = localClient.Puppet();
+        
+        if(rnd <= 32) {
+            swishType = 0;
+            self.AnimState().Blend(anim_weaponAttack1, playSpeed, 4.0f, 0);
+            src.StartSound("sounds/shaders/knife_swish_2.ksnd");
+        }
+        else if(rnd <= 64) {
+            swishType = 1;
+            self.AnimState().Blend(anim_weaponAttack2, playSpeed, 4.0f, 0);
+            src.StartSound("sounds/shaders/knife_swish_1.ksnd");
+        }
+        else {
+            swishType = 2;
+            self.AnimState().Blend(anim_weaponAttack3, playSpeed, 4.0f, 0);
+            src.StartSound("sounds/shaders/knife_swish_3.ksnd");
+        }
+        
+        bCanAttack = true;
+        return true;
+    }
+    
+    //
+    // TurokWeaponKnife::CheckAttack
+    //
+    
+    void CheckAttack(void) {
+        if(bCanAttack && self.AnimState().PlayTime() >= 0.15f) {
+            bCanAttack = false;
+            /*
+            kActor @src = localClient.Puppet();
+            kPhysics @physics = src.Physics();
+            
+            kVec3 org = src.GetOrigin();
+            org.y += src.BaseHeight();
+            
+            kTraceInfo tInfo = physics.RayTrace(org, src.GetAngles().ToForwardAxis(), 64,
+                TF_TRACEPOINT | TF_CLIPALL);
+            
+            if(tInfo.fraction != 1 && !(tInfo.hitActor is null)) {
+                LocalWorld.DamageActor(tInfo.hitActor, src, 15);
+            }
+            */
+        }
+        
+        TurokWeapon::CheckAttack();
+    }
+    
+    //
+    // TurokWeaponKnife::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        xOffset = 170.667f;
+        yOffset = -9.21548f;
+        zOffset = -153.6f;
+        self.SetModel("models/mdl653/mdl653.kmesh");
+        
+        TurokWeapon::OnSpawn();
+    }
+};

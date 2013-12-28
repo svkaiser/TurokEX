@@ -1,0 +1,64 @@
+////////////////////////////////////////////////////
+//
+// TurokPickup
+//
+////////////////////////////////////////////////////
+
+class TurokPickup : Component {
+    kActor @self;
+    
+    //
+    // TurokPickup::TurokPickup
+    //
+    
+    TurokPickup(kActor @actor) {
+        @self = actor;
+    }
+    
+    //
+    // TurokPickup::OnThink
+    //
+    
+    void OnThink(void) {
+    }
+    
+    //
+    // TurokPickup::OnLocalThink
+    //
+    
+    void OnLocalThink(void) {
+    }
+    
+    //
+    // TurokPickup::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        self.Physics().bRotor = true;
+        self.Physics().rotorSpeed = 1.0f;
+        self.Physics().rotorFriction = 0;
+        self.Physics().rotorVector = kVec3(0, 1, 0);
+    }
+    
+    //
+    // TurokPickup::OnTouch
+    //
+    
+    void OnTouch(void) {
+        playerHud.h_flash.alpha = 0.5f;
+    }
+    
+    //
+    // TurokPickup::OnDamage
+    //
+    
+    void OnDamage(void) {
+    }
+    
+    //
+    // TurokPickup::OnTrigger
+    //
+    
+    void OnTrigger(void) {
+    }
+};

@@ -1,0 +1,77 @@
+#include "scripts/turokWeapon.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokWeaponBow
+//
+////////////////////////////////////////////////////
+
+final class TurokWeaponBow : TurokWeapon {
+    bool bAiming;
+    
+    //
+    // TurokWeaponBow::TurokWeaponBow
+    //
+    
+    TurokWeaponBow(kActor @actor) {
+        super(actor);
+        bAiming = false;
+        bHasAltAmmo = true;
+        bOwned = true;
+    }
+    
+    //
+    // TurokWeaponBow::OnAttack
+    //
+    
+    bool OnAttack(void) {
+        if(bAiming == true) {
+            return true;
+        }
+        
+        localClient.Puppet().StartSound("sounds/shaders/bow_stretch.ksnd");
+        self.AnimState().Blend(anim_weaponFire, playSpeed, 18.0f, ANF_LOOP);
+        
+        bAiming = true;
+        return true;
+    }
+    
+    //
+    // TurokWeaponBow::CheckAttack
+    //
+    
+    void CheckAttack(void) {
+        if(bAiming) {
+            if(localClient.ActionHeldTime("+attack") > 0) {
+                return;
+            }
+            
+            float time = self.AnimState().PlayTime();
+            
+            if(time > 0.4f) {
+                time = 0.4f;
+            }
+            
+            owner.arrows.Consume(1);
+            localClient.Puppet().StartSound("sounds/shaders/bow_twang.ksnd");
+            bAiming = false;
+            
+            self.AnimState().Blend(anim_weaponFireCharged, playSpeed, 4.0f, 0);
+        }
+        
+        TurokWeapon::CheckAttack();
+    }
+    
+    //
+    // TurokWeaponBow::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        xOffset = 133.12026f;
+        yOffset = -12.62882f;
+        zOffset = -150.18696f;
+        self.SetModel("models/mdl644/mdl644.kmesh");
+        
+        TurokWeapon::OnSpawn();
+    }
+};

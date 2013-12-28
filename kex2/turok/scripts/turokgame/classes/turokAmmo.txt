@@ -1,0 +1,219 @@
+////////////////////////////////////////////////////
+//
+// TurokAmmo
+//
+////////////////////////////////////////////////////
+
+class TurokAmmo {
+    int inital;
+    int amount;
+    int max;
+    int maxBackpack;
+    
+    //
+    // TurokAmmo::TurokAmmo
+    //
+    
+    TurokAmmo(void) {
+        inital = 0;
+        amount = 0;
+        max = 0;
+        maxBackpack = 0;
+    }
+    
+    //
+    // TurokAmmo::Give
+    //
+    
+    bool Give(TurokPlayer @player, int amt) {
+        if(player.bHasBackpack) {
+            if(amount >= maxBackpack) {
+                return false;
+            }
+        }
+        else {
+            if(amount >= max) {
+                return false;
+            }
+        }
+        
+        amount += amt;
+        
+        if(player.bHasBackpack) {
+            if(amount > maxBackpack) {
+                amount = maxBackpack;
+            }
+        }
+        else {
+            if(amount > max) {
+                amount = max;
+            }
+        }
+        
+        return true;
+    }
+    
+    //
+    // TurokAmmo::Consume
+    //
+    
+    void Consume(int amt) {
+        amount -= amt;
+        
+        if(amount < 0) {
+            amount = 0;
+        }
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// TurokAmmoArrow
+//
+////////////////////////////////////////////////////
+
+final class TurokAmmoArrow : TurokAmmo {
+    TurokAmmoArrow(void) {
+        super();
+        
+        inital = 30;
+        amount = inital;
+        max = 30;
+        maxBackpack = 30;
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// TurokAmmoTekArrow
+//
+////////////////////////////////////////////////////
+
+final class TurokAmmoTekArrow : TurokAmmo {
+    TurokAmmoTekArrow(void) {
+        super();
+        
+        max = 15;
+        maxBackpack = 15;
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// TurokAmmoClip
+//
+////////////////////////////////////////////////////
+
+final class TurokAmmoClip : TurokAmmo {
+    TurokAmmoClip(void) {
+        super();
+        
+        max = 100;
+        maxBackpack = 200;
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// TurokAmmoShell
+//
+////////////////////////////////////////////////////
+
+final class TurokAmmoShell : TurokAmmo {
+    TurokAmmoShell(void) {
+        super();
+        
+        max = 20;
+        maxBackpack = 40;
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// TurokAmmoExpShell
+//
+////////////////////////////////////////////////////
+
+final class TurokAmmoExpShell : TurokAmmo {
+    TurokAmmoExpShell(void) {
+        super();
+        
+        max = 10;
+        maxBackpack = 20;
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// TurokAmmoCell
+//
+////////////////////////////////////////////////////
+
+final class TurokAmmoCell : TurokAmmo {
+    TurokAmmoCell(void) {
+        super();
+        
+        max = 100;
+        maxBackpack = 100;
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// TurokAmmoGrenade
+//
+////////////////////////////////////////////////////
+
+final class TurokAmmoGrenade : TurokAmmo {
+    TurokAmmoGrenade(void) {
+        super();
+        
+        max = 20;
+        maxBackpack = 30;
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// TurokAmmoMags
+//
+////////////////////////////////////////////////////
+
+final class TurokAmmoMags : TurokAmmo {
+    TurokAmmoMags(void) {
+        super();
+        
+        max = 125;
+        maxBackpack = 125;
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// TurokAmmoRocket
+//
+////////////////////////////////////////////////////
+
+final class TurokAmmoRocket : TurokAmmo {
+    TurokAmmoRocket(void) {
+        super();
+        
+        max = 6;
+        maxBackpack = 12;
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// TurokAmmoFuseCharge
+//
+////////////////////////////////////////////////////
+
+final class TurokAmmoFuseCharge : TurokAmmo {
+    TurokAmmoFuseCharge(void) {
+        super();
+        
+        max = 2;
+        maxBackpack = 3;
+    }
+};

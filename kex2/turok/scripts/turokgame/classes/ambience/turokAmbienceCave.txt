@@ -1,0 +1,27 @@
+#include "scripts/turokAmbienceEmitter.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokAmbienceCave
+//
+////////////////////////////////////////////////////
+
+class TurokAmbienceCave : TurokAmbienceEmitter {
+    TurokAmbienceCave(void) {
+        counter = 0;
+        randFactor = 15;
+        
+        soundList.insertLast("sounds/shaders/generic_42_cave_wing_flutter_w__bat_1.ksnd");  // 0
+        soundList.insertLast("sounds/shaders/generic_43_cave_wing_flutter_w__bat_2.ksnd");  // 1
+        soundList.insertLast("sounds/shaders/generic_44_cave_wing_flutter_1.ksnd");  // 2
+        soundList.insertLast("sounds/shaders/generic_45_cave_wing_flutter_2.ksnd");  // 3
+        soundList.insertLast("sounds/shaders/generic_46_cave_wing_flutter_3.ksnd");  // 4
+        soundList.insertLast("sounds/shaders/generic_59_cave_wing_flutter_4.ksnd");  // 5
+        soundList.insertLast("sounds/shaders/generic_60_bat_screech_1.ksnd");  // 6
+        soundList.insertLast("sounds/shaders/generic_61_bat_screech_2.ksnd");  // 7
+        soundList.insertLast("sounds/shaders/ominous_cave_growl_1.ksnd");  // 8
+        soundList.insertLast("sounds/shaders/ominous_cave_growl_2.ksnd");  // 9
+        soundList.insertLast("sounds/shaders/ominous_cave_growl_1.ksnd");  // 10
+        soundList.insertLast("sounds/shaders/ominous_cave_growl_2.ksnd");  // 11
+    }
+};

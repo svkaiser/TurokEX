@@ -1,0 +1,39 @@
+#include "scripts/turokAmbienceEmitter.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokAmbienceVillage
+//
+////////////////////////////////////////////////////
+
+class TurokAmbienceVillage : TurokAmbienceEmitter {
+    TurokAmbienceVillage(void) {
+        counter = 0;
+        randFactor = 8;
+        
+        soundList.insertLast("sounds/shaders/generic_36_bird_call_19.ksnd");  // 0
+        soundList.insertLast("sounds/shaders/thunder_roll_1.ksnd");  // 1
+        soundList.insertLast("sounds/shaders/bird_call_2.ksnd");  // 2
+        soundList.insertLast("sounds/shaders/thunder_roll_4.ksnd");  // 3
+        soundList.insertLast("sounds/shaders/monkey_chip_scream_3.ksnd");  // 4
+        soundList.insertLast("sounds/shaders/thunder_roll_2.ksnd");  // 5
+        soundList.insertLast("sounds/shaders/generic_55_monkey_chirp_13.ksnd");  // 6
+        soundList.insertLast("sounds/shaders/generic_30_bird_call_13.ksnd");  // 7
+        soundList.insertLast("sounds/shaders/generic_31_bird_call_14.ksnd");  // 8
+        soundList.insertLast("sounds/shaders/thunder_roll_3.ksnd");  // 9
+        soundList.insertLast("sounds/shaders/monkey_chip_scream_3.ksnd");  // 10
+        soundList.insertLast("sounds/shaders/monkey_chip_scream_4.ksnd");  // 11
+        soundList.insertLast("sounds/shaders/monkey_chip_scream_4.ksnd");  // 12
+        soundList.insertLast("sounds/shaders/generic_54_monkey_chirp_12.ksnd");  // 13
+        soundList.insertLast("sounds/shaders/generic_28_bird_call_11.ksnd");  // 14
+        soundList.insertLast("sounds/shaders/generic_51_monkey_chirp_9.ksnd");  // 15
+        soundList.insertLast("sounds/shaders/generic_56_monkey_chirp_14.ksnd");  // 16
+        soundList.insertLast("sounds/shaders/generic_55_monkey_chirp_13.ksnd");  // 17
+        soundList.insertLast("sounds/shaders/generic_49_monkey_chirp_7.ksnd");  // 18
+        soundList.insertLast("sounds/shaders/generic_50_monkey_chirp_8.ksnd");  // 19
+        soundList.insertLast("sounds/shaders/thunder_roll_1.ksnd");  // 20
+        soundList.insertLast("sounds/shaders/thunder_roll_2.ksnd");  // 21
+        soundList.insertLast("sounds/shaders/thunder_roll_3.ksnd");  // 22
+        soundList.insertLast("sounds/shaders/thunder_roll_4.ksnd");  // 23
+    }
+};

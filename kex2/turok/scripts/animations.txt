@@ -1,0 +1,100 @@
+enum turokAnimations {
+    // ai movement/turning
+    anim_aiStanding                 = 0,
+    anim_aiWalking,
+    anim_aiRunning,
+    anim_aiTurn_L_Stand,
+    anim_aiTurn_R_Stand,
+    anim_aiTurn_B_Stand,
+    anim_aiTurn_L_Walk,
+    anim_aiTurn_R_Walk,
+    anim_aiTurn_B_Walk,
+    anim_aiTurn_L_Run,
+    anim_aiTurn_R_Run,
+    anim_aiTurn_B_Run,
+    
+    // ai melee
+    anim_aiMelee1                   = 18,
+    anim_aiMelee2,
+    anim_aiMelee3,
+    anim_aiMelee4,
+    anim_aiMelee5,
+    anim_aiMelee6,
+    anim_aiMelee7                   = 25,
+    anim_aiMelee8,
+    
+    // ai death knockback
+    anim_aiDeathKnockback1          = 30,
+    anim_aiDeathKnockback2,
+    anim_aiDeathKnockback3,
+    anim_aiDeathKnockback4,
+    
+    // ai death
+    anim_aiDeathStand               = 34,
+    anim_aiDeathViolent,
+    anim_aiDeathRunning             = 37,
+    
+    anim_activate                   = 200,
+    
+    // ai specific
+    anim_aiPurlinSpawnDrop          = 205,
+    anim_aiFishSwim                 = 2500,
+    anim_aiFishSwimFast             = 2505,
+    
+    // doors
+    anim_doorIdle                   = 2600,
+    anim_doorOpen,
+    anim_doorClose,
+    
+    // ai grunt
+    anim_aiGruntStandAlt            = 129,
+    anim_aiGruntWalkAlt,
+    anim_aiGruntRunAlt,
+    anim_aiGruntTurn_L_StandAlt,
+    anim_aiGruntTurn_R_StandAlt,
+    anim_aiGruntTurn_B_StandAlt,
+    anim_aiGruntTurn_L_WalkAlt,
+    anim_aiGruntTurn_R_WalkAlt,
+    anim_aiGruntTurn_B_WalkAlt,
+    anim_aiGruntTurn_L_RunAlt,
+    anim_aiGruntTurn_R_RunAlt,
+    anim_aiGruntTurn_B_RunAlt,
+    anim_aiGruntMelee1              = 2700,
+    anim_aiGruntMelee2,
+    anim_aiGruntMelee3,
+    anim_aiGruntDeathStandAlt       = 143,
+    anim_aiGruntDeathViolentAlt,
+    anim_aiGruntDeathRunningAlt,
+    
+    // ai range attack
+    anim_aiRangeAttack1             = 24,
+    anim_aiRangeAttack2             = 59,
+    anim_aiRangeAttack3             = 121,
+    anim_aiRangeAttack4,
+    anim_aiRangeAttack5,
+    anim_aiRangeAttack6,
+    anim_aiRangeAttack7             = 141,
+    anim_aiRangeAttack8,
+    anim_aiRangeAttack9             = 150,
+    anim_aiRangeAttack10,
+    
+    // ai teleport
+    anim_aiTeleportIn               = 2550,
+    anim_aiTeleportOut,
+    
+    // player weapons
+    anim_weaponIdle                 = 39,
+    anim_weaponWalk,
+    anim_weaponRun,
+    anim_weaponAttack1,
+    anim_weaponAttack2,
+    anim_weaponAttack3,
+    anim_weaponFire,
+    anim_weaponFireCharged,
+    anim_weaponSwapIn,
+    anim_weaponSwapOut,
+    anim_weaponFireLoop,
+    anim_weaponAttackUnderwater     = 250,
+    anim_weaponIdleUnderwater,
+    anim_weaponFireBowNoAmmo        = 2000
+}

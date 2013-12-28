@@ -1,0 +1,121 @@
+#include "scripts/math_utils.txt"
+
+// ambience emitters
+#include "scripts/turokAmbienceJungle.txt"
+#include "scripts/turokAmbienceLostWorld.txt"
+#include "scripts/turokAmbienceRuins.txt"
+#include "scripts/turokAmbienceSwamp.txt"
+#include "scripts/turokAmbienceValley.txt"
+#include "scripts/turokAmbienceVillage.txt"
+#include "scripts/turokAmbienceCatcomb01.txt"
+#include "scripts/turokAmbienceCatcomb02.txt"
+#include "scripts/turokAmbienceCave.txt"
+
+////////////////////////////////////////////////////
+//
+// Vars
+//
+////////////////////////////////////////////////////
+
+TurokAmbienceJungle     ambJungle;
+TurokAmbienceLostWorld  ambLostWorld;
+TurokAmbienceRuins      ambRuins;
+TurokAmbienceSwamp      ambSwamp;
+TurokAmbienceValley     ambValley;
+TurokAmbienceVillage    ambVillage;
+TurokAmbienceCatcomb01  ambCatcomb01;
+TurokAmbienceCatcomb02  ambCatcomb02;
+TurokAmbienceCave       ambCave;
+
+////////////////////////////////////////////////////
+//
+// TurokArea
+//
+////////////////////////////////////////////////////
+
+final class TurokArea : AreaComponent {
+    kArea @self;
+    int ambienceType;
+    
+    //
+    // TurokArea::TurokArea
+    //
+    
+    TurokArea(kArea @area) {
+        @self = area;
+        ambienceType = 0;
+    }
+    
+    //
+    // TurokArea::OnThink
+    //
+    
+    void OnThink(void) {
+    }
+    
+    //
+    // TurokArea::OnLocalThink
+    //
+    
+    void OnLocalThink(void) {
+        switch(ambienceType) {
+            case 1:
+                ambJungle.Update();
+                break;
+            case 2:
+                ambSwamp.Update();
+                break;
+            case 3:
+                ambCave.Update();
+                break;
+            case 4:
+                ambCatcomb01.Update();
+                break;
+            case 5:
+                ambLostWorld.Update();
+                break;
+            case 6:
+                ambCatcomb02.Update();
+                break;
+            case 7:
+                ambCatcomb01.Update();
+                break;
+            case 8:
+                ambRuins.Update();
+                break;
+            case 9:
+                ambValley.Update();
+                break;
+            case 10:
+                ambVillage.Update();
+                break;
+            default:
+                break;
+        }
+    }
+    
+    //
+    // TurokArea::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        self.key.GetInt("ambience", ambienceType);
+    }
+    
+    //
+    // TurokArea::OnEnter
+    //
+    
+    void OnEnter(void) {
+        LocalWorld.SetFogRGB(self.fogRGB.x, self.fogRGB.y, self.fogRGB.z);
+        LocalWorld.SetFogFar(self.fogZFar);
+        LocalWorld.SetFogNear(self.fogZFar * 0.5f);
+    }
+    
+    //
+    // TurokArea::OnExit
+    //
+    
+    void OnExit(void) {
+    }
+};

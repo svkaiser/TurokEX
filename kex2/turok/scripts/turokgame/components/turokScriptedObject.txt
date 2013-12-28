@@ -1,0 +1,95 @@
+#include "scripts/animations.txt"
+
+////////////////////////////////////////////////////
+//
+// Constants
+//
+////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////
+//
+// TurokScriptedObject
+//
+////////////////////////////////////////////////////
+
+class TurokScriptedObject : Component {
+    kActor @self;
+    bool bRemoveOnCompletion;
+    
+    //
+    // TurokScriptedObject::TurokScriptedObject
+    //
+    
+    TurokScriptedObject(kActor @actor) {
+        @self = actor;
+        
+        bRemoveOnCompletion = true;
+        
+        self.bStatic = false;
+        self.bClientOnly = true;
+        self.bCollision = false;
+        self.bTouch = false;
+        self.bClientView = false;
+    }
+    
+    //
+    // TurokScriptedObject::OnThink
+    //
+    
+    void OnThink(void) {
+    }
+    
+    //
+    // TurokScriptedObject::OnLocalThink
+    //
+    
+    void OnLocalThink(void) {
+        if(bRemoveOnCompletion) {
+            if((self.AnimState().flags & ANF_STOPPED) != 0) {
+                self.Remove();
+            }
+        }
+    }
+    
+    //
+    // TurokScriptedObject::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        if(self.bHidden == true) {
+            self.AnimState().flags |= ANF_PAUSED;
+        }
+    }
+    
+    //
+    // TurokScriptedObject::OnTouch
+    //
+    
+    void OnTouch(void) {
+    }
+    
+    //
+    // TurokScriptedObject::OnDamage
+    //
+    
+    void OnDamage(void) {
+    }
+    
+    //
+    // TurokScriptedObject::OnTrigger
+    //
+    
+    void OnTrigger(void) {
+        kAnimState @aState = self.AnimState();
+        
+        self.SetBoundingBox(kVec3(-1024, -1024, -1024), kVec3(1024, 1024, 1024));
+        
+        if(self.bHidden == true) {
+            aState.Set(anim_activate, 4.0f, 0);
+            self.bHidden = false;
+        }
+        else {
+            aState.Blend(anim_activate, 4.0f, 8.0f, 0);
+        }
+    }
+};

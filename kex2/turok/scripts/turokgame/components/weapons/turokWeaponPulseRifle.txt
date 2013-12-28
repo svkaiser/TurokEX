@@ -1,0 +1,65 @@
+#include "scripts/turokWeapon.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokWeaponPulseRifle
+//
+////////////////////////////////////////////////////
+
+final class TurokWeaponPulseRifle : TurokWeapon {
+    float shotTime;
+    
+    //
+    // TurokWeaponPulseRifle::TurokWeaponPulseRifle
+    //
+    
+    TurokWeaponPulseRifle(kActor @actor) {
+        super(actor);
+        bOwned = true;
+        shotTime = 0;
+    }
+    
+    //
+    // TurokWeaponPulseRifle::OnAttack
+    //
+    
+    bool OnAttack(void) {
+        self.AnimState().Blend(anim_weaponFireLoop, playSpeed, 4.0f, ANF_LOOP);
+        shotTime = -0.08f;
+        return true;
+    }
+    
+    //
+    // TurokWeaponPulseRifle::CheckAttack
+    //
+    
+    void CheckAttack(void) {
+        float playTime = self.AnimState().PlayTime();
+        
+        if((playTime - shotTime) >= 0.16f) {
+            SpawnFX("fx/projectile_pulseshot.kfx", -10.24f, -14.336f, -81.92f);
+            localClient.Puppet().StartSound("sounds/shaders/machine_gun_shot_2.ksnd");
+            
+            shotTime = playTime;
+        }
+        
+        if(localClient.ActionDown("+attack") == false) {
+            shotTime = 0;
+            ReadyAnimation();
+            state = PWPN_STATE_READY;
+        }
+    }
+    
+    //
+    // TurokWeaponPulseRifle::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        xOffset = 170.667f;
+        yOffset = -9.21548f;
+        zOffset = -170.667f;
+        self.SetModel("models/mdl655/mdl655.kmesh");
+        
+        TurokWeapon::OnSpawn();
+    }
+};

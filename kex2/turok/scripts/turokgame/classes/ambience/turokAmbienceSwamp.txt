@@ -1,0 +1,39 @@
+#include "scripts/turokAmbienceEmitter.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokAmbienceSwamp
+//
+////////////////////////////////////////////////////
+
+class TurokAmbienceSwamp : TurokAmbienceEmitter {
+    TurokAmbienceSwamp(void) {
+        counter = 0;
+        randFactor = 30;
+        
+        soundList.insertLast("sounds/shaders/bird_call_4.ksnd");  // 0
+        soundList.insertLast("sounds/shaders/bird_call_5.ksnd");  // 1
+        soundList.insertLast("sounds/shaders/bird_call_6.ksnd");  // 2
+        soundList.insertLast("sounds/shaders/bird_call_7.ksnd");  // 3
+        soundList.insertLast("sounds/shaders/generic_26_bird_call_9.ksnd");  // 4
+        soundList.insertLast("sounds/shaders/generic_29_bird_call_12.ksnd");  // 5
+        soundList.insertLast("sounds/shaders/generic_30_bird_call_13.ksnd");  // 6
+        soundList.insertLast("sounds/shaders/generic_32_bird_call_15.ksnd");  // 7
+        soundList.insertLast("sounds/shaders/generic_35_bird_call_18.ksnd");  // 8
+        soundList.insertLast("sounds/shaders/generic_31_bird_call_14.ksnd");  // 9
+        soundList.insertLast("sounds/shaders/generic_33_bird_call_16.ksnd");  // 10
+        soundList.insertLast("sounds/shaders/generic_34_bird_call_17.ksnd");  // 11
+        soundList.insertLast("sounds/shaders/cricket_chirp.ksnd");  // 12
+        soundList.insertLast("sounds/shaders/cicaada_chirp.ksnd");  // 13
+        soundList.insertLast("sounds/shaders/locust_chirp.ksnd");  // 14
+        soundList.insertLast("sounds/shaders/cicaada_chirp.ksnd");  // 15
+        soundList.insertLast("sounds/shaders/generic_54_monkey_chirp_12.ksnd");  // 16
+        soundList.insertLast("sounds/shaders/generic_56_monkey_chirp_14.ksnd");  // 17
+        soundList.insertLast("sounds/shaders/monkey_chip_scream_1.ksnd");  // 18
+        soundList.insertLast("sounds/shaders/monkey_chip_scream_2.ksnd");  // 19
+        soundList.insertLast("sounds/shaders/monkey_chip_scream_3.ksnd");  // 20
+        soundList.insertLast("sounds/shaders/generic_53_monkey_chirp_11.ksnd");  // 21
+        soundList.insertLast("sounds/shaders/generic_57_cricket_chirp_2.ksnd");  // 22
+        soundList.insertLast("sounds/shaders/generic_58_locust_chirp_2.ksnd");  // 23
+    }
+};

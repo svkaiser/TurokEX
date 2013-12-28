@@ -1,0 +1,32 @@
+////////////////////////////////////////////////////
+//
+// TurokAmbienceEmitter
+//
+////////////////////////////////////////////////////
+
+class TurokAmbienceEmitter {
+    float           randFactor;
+    int             counter;
+    array<kStr>     soundList;
+    
+    TurokAmbienceEmitter(void) {
+        counter = 0;
+        randFactor = 22;
+    }
+    
+    void Update(void) {
+        counter++;
+        
+        if(counter % 60 != 0) {
+            return;
+        }
+        
+        if(soundList.length() <= 0) {
+            return;
+        }
+        
+        if((Math::SysRand() % 100) < randFactor) {
+            LocalWorld.PlaySound(soundList[Math::SysRand() % soundList.length()]);
+        }
+    }
+};

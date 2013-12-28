@@ -1,0 +1,333 @@
+#include "scripts/animations.txt"
+#include "scripts/turokAmmo.txt"
+
+////////////////////////////////////////////////////
+//
+// Constants
+//
+////////////////////////////////////////////////////
+
+const float WEAPONTURN_MAX          = 0.08f;
+const float WEAPONTURN_EPSILON      = 0.001f;
+
+const float WEPBOB_EPISILON         = 0.001;
+const float WEPBOB_MAXSWAY          = DegToRad(22.5f);
+const float WEPBOB_FREQ             = 0.007f;
+const float WEPBOB_FREQY            = 0.014f;
+const float WEPBOB_ANGLE            = 8;
+
+const uint8 PWPN_STATE_READY        = 0;
+const uint8 PWPN_STATE_SWAPOUT      = 1;
+const uint8 PWPN_STATE_SWAPIN       = 2;
+const uint8 PWPN_STATE_FIRING       = 3;
+const uint8 PWPN_STATE_HOLDSTER     = 4;
+
+////////////////////////////////////////////////////
+//
+// TurokWeapon
+//
+////////////////////////////////////////////////////
+
+class TurokWeapon : Component {
+    kActor          @self;
+    TurokPlayer     @owner;
+    float           xOffset;
+    float           yOffset;
+    float           zOffset;
+    float           playSpeed;
+    bool            bActive;
+    bool            bOwned;
+    bool            bHasAltAmmo;
+    bool            bAltAmmoSet;
+    uint8           state;
+    float           bob_xz;
+    float           bob_y;
+    kStr            readySound;
+    
+    //
+    // TurokWeapon::TurokWeapon
+    //
+    
+    TurokWeapon(kActor @actor) {
+        @self = actor;
+        @owner = null;
+        xOffset = 0;
+        yOffset = 0;
+        zOffset = 0;
+        bob_xz = 0;
+        bob_y = 0;
+        playSpeed = 4.0f;
+        bActive = false;
+        bOwned = false;
+        bHasAltAmmo = false;
+        bAltAmmoSet = false;
+        state = PWPN_STATE_READY;
+        readySound = "";
+        
+        self.bStatic = false;
+        self.bClientOnly = true;
+        self.bCollision = false;
+        self.bTouch = false;
+        self.bClientView = true;
+        self.bHidden = true;
+    }
+    
+    //
+    // TurokWeapon::OnAttack
+    //
+    
+    bool OnAttack(void) {
+        self.AnimState().Blend(anim_weaponFire, playSpeed, 4.0f, 0);
+        return true;
+    }
+    
+    //
+    // TurokWeapon::ReadyAnimation
+    //
+    
+    void ReadyAnimation(void) final {
+        kAnimState @aState = self.AnimState();
+        
+        if((aState.flags & ANF_BLEND) != 0) {
+            return;
+        }
+        
+        if(Com.GetCvarBool("g_weaponbobbing") == true) {
+            aState.Blend(anim_weaponIdle, playSpeed, 8.0f, ANF_LOOP);
+        }
+        else {
+            kVec3 accel = localClient.GetAcceleration();
+            float d = Math::Sqrt(accel.x*accel.x+accel.z*accel.z);
+            
+            if(d >= 1.35f) {
+                aState.Blend(anim_weaponRun, playSpeed, 8.0f, ANF_LOOP);
+            }
+            else if(d >= 0.1f) {
+                aState.Blend(anim_weaponWalk, playSpeed, 8.0f, ANF_LOOP);
+            }
+            else {
+                aState.Blend(anim_weaponIdle, playSpeed, 8.0f, ANF_LOOP);
+            }
+        }
+    }
+    
+    //
+    // TurokWeapon::CheckAttack
+    //
+    
+    void CheckAttack(void) {
+        if((self.AnimState().flags & ANF_STOPPED) != 0) {
+            ReadyAnimation();
+            state = PWPN_STATE_READY;
+        }
+    }
+    
+    //
+    // TurokWeapon::ChangeOut
+    //
+    
+    void ChangeOut(void) final {
+        self.AnimState().Blend(anim_weaponSwapOut, playSpeed, 4.0f, 0);
+        state = PWPN_STATE_SWAPOUT;
+    }
+    
+    //
+    // TurokWeapon::ChangeIn
+    //
+    
+    void ChangeIn(void) final {
+        self.AnimState().Set(anim_weaponSwapIn, playSpeed, 0);
+        self.bHidden = false;
+        bActive = true;
+        state = PWPN_STATE_SWAPIN;
+        localClient.Puppet().StartSound(readySound);
+    }
+    
+    //
+    // TurokWeapon::SpawnFX
+    //
+    
+    void SpawnFX(const kStr str, const float x, const float y, const float z) {
+        kActor @src = localClient.Puppet();
+        kQuat rot = src.GetRotation();
+        kVec3 org = src.GetOrigin();
+        
+        org.y += 51.2f;
+        LocalWorld.SpawnFX(str, src, kVec3(0, 0, 0), org + (kVec3(x, y, z) | rot), rot);
+    }
+    
+    //
+    // TurokWeapon::OnThink
+    //
+    
+    void OnThink(void) {
+    }
+    
+    //
+    // TurokWeapon::OnLocalThink
+    //
+    
+    void OnLocalThink(void) {
+        if(bActive == false) {
+            return;
+        }
+        
+        kPhysics @physics   = localClient.Puppet().Physics();
+        kVec3 velocity      = physics.GetVelocity();
+        kVec3 translation   = self.GetOrigin();
+        float offset        = 0;
+        kAngle angles       = self.GetAngles();
+        
+        angles.yaw -= (localClient.cmdMouseX * 0.00175f);
+        
+        kAngle tmpAngles = angles;
+        tmpAngles.Clamp180InvertSum(kAngle(M_PI, 0, 0));
+        
+        if(tmpAngles.yaw >  WEAPONTURN_MAX) angles.yaw =  (M_PI - WEAPONTURN_MAX);
+        if(tmpAngles.yaw < -WEAPONTURN_MAX) angles.yaw = -(M_PI - WEAPONTURN_MAX);
+        
+        if(angles.yaw < 0) {
+            angles.yaw = LocalLerp(angles.yaw, -M_PI, 0.1f);
+        }
+        else {
+            angles.yaw = LocalLerp(angles.yaw, M_PI, 0.1f);
+        }
+            
+        if(angles.yaw > (M_PI - WEAPONTURN_EPSILON) && angles.yaw < -(M_PI - WEAPONTURN_EPSILON)) {
+            angles.yaw = M_PI;
+        }
+        
+        angles.pitch = (angles.pitch -
+            (localClient.cmdMouseY * 0.00175f)) * 0.9f;
+            
+        if(angles.pitch >  WEAPONTURN_MAX) angles.pitch =  WEAPONTURN_MAX;
+        if(angles.pitch < -WEAPONTURN_MAX) angles.pitch = -WEAPONTURN_MAX;
+        
+        if(angles.pitch <  WEAPONTURN_EPSILON && angles.pitch > -WEAPONTURN_EPSILON) {
+            angles.pitch = 0;
+        }
+        
+        angles.roll = LocalWorld.Camera().GetOffsetAngle().roll * 0.75f;
+        
+        if(!(velocity.y <= 0.01f && velocity.y >= -0.01f)) {
+            offset = velocity.y * 0.025f;
+            
+            if(velocity.y > 0) {
+                offset *= 0.5f;
+            }
+        }
+        
+        if(Com.GetCvarBool("g_weaponbobbing") == true) {
+            if(physics.OnGround()) {
+                float d = localClient.GetAcceleration().z * localClient.deltaTime * 0.06f;
+                
+                if(d < 0) {
+                    d = -d;
+                }
+                
+                if(d > WEPBOB_EPISILON) {
+                    if(d > WEPBOB_MAXSWAY) {
+                        d = WEPBOB_MAXSWAY;
+                    }
+                    
+                    bob_xz = Math::Sin(Client.GetTime() * WEPBOB_FREQ) * WEPBOB_ANGLE * d;
+                    bob_y = Math::Sin(Client.GetTime() * WEPBOB_FREQY) * WEPBOB_ANGLE * d;
+                }
+            }
+            else {
+                bob_xz = LocalLerp(bob_xz, 0, 0.05f);
+                bob_y = LocalLerp(bob_y, 0, 0.05f);
+            }
+        }
+        
+        translation.x = xOffset + bob_xz;
+        translation.y = LocalLerp(translation.y,  yOffset + offset + bob_y, 0.25f);
+        translation.z = zOffset + bob_xz;
+        
+        self.SetOrigin(translation);
+        self.SetAngles(angles);
+        
+        if(bActive == true) {
+            TurokPlayer @player = cast<TurokPlayer@>(localClient.obj);
+            switch(state) {
+            case PWPN_STATE_READY:
+                if(localClient.ActionDown("+attack")) {
+                    if(OnAttack()) {
+                        state = PWPN_STATE_FIRING;
+                        return;
+                    }
+                }
+                if(player.CheckWeaponChange()) {
+                    return;
+                }
+                ReadyAnimation();
+                break;
+            case PWPN_STATE_SWAPOUT:
+                if(player.CheckWeaponChange()) {
+                    return;
+                }
+                if((self.AnimState().flags & ANF_STOPPED) != 0) {
+                    self.bHidden = true;
+                    bActive = false;
+                    player.SetWeapon();
+                }
+                break;
+            case PWPN_STATE_SWAPIN:
+                if(player.CheckWeaponChange()) {
+                    return;
+                }
+                if((self.AnimState().flags & ANF_STOPPED) != 0) {
+                    ReadyAnimation();
+                    state = PWPN_STATE_READY;
+                }
+                break;
+            case PWPN_STATE_FIRING:
+                CheckAttack();
+                break;
+            case PWPN_STATE_HOLDSTER:
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    
+    //
+    // TurokWeapon::Think
+    //
+    
+    void Think(void) final {
+        
+    }
+    
+    //
+    // TurokWeapon::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        self.SetBoundingBox(kVec3(-256, -256, -64), kVec3(256, 64, 256));
+        self.SetAngles(kAngle(M_PI, 0, 0));
+        self.GetOrigin().Set(xOffset, yOffset, zOffset);
+    }
+    
+    //
+    // TurokWeapon::OnTouch
+    //
+    
+    void OnTouch(void) {
+    }
+    
+    //
+    // TurokWeapon::OnDamage
+    //
+    
+    void OnDamage(void) {
+    }
+    
+    //
+    // TurokWeapon::OnTrigger
+    //
+    
+    void OnTrigger(void) {
+    }
+};

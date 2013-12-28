@@ -1,0 +1,72 @@
+#include "scripts/turokWeapon.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokWeaponRifle
+//
+////////////////////////////////////////////////////
+
+final class TurokWeaponRifle : TurokWeapon {
+    array<bool>     bShotsFired;
+    
+    //
+    // TurokWeaponRifle::TurokWeaponRifle
+    //
+    
+    TurokWeaponRifle(kActor @actor) {
+        super(actor);
+        bOwned = true;
+        bShotsFired.insertLast(false);
+        bShotsFired.insertLast(false);
+        bShotsFired.insertLast(false);
+    }
+    
+    //
+    // TurokWeaponRifle::CheckAttack
+    //
+    
+    void CheckAttack(void) {
+        if(self.AnimState().PlayTime() >= 0.0f) {
+            if(bShotsFired[0] == false) {
+                bShotsFired[0] = true;
+                SpawnFX("fx/muzzle_rifle.kfx", -5.12f, -3.8f, 14.758f);
+                SpawnFX("fx/bulletshell.kfx", -10.24f, -14.08f, 13.82f);
+            }
+        }
+        if(self.AnimState().PlayTime() >= 0.1f) {
+            if(bShotsFired[1] == false) {
+                bShotsFired[1] = true;
+                SpawnFX("fx/muzzle_rifle.kfx", -5.12f, -3.8f, 14.758f);
+                SpawnFX("fx/bulletshell.kfx", -10.24f, -14.08f, 13.82f);
+            }
+        }
+        if(self.AnimState().PlayTime() >= 0.2f) {
+            if(bShotsFired[2] == false) {
+                bShotsFired[2] = true;
+                SpawnFX("fx/muzzle_rifle.kfx", -5.12f, -3.8f, 14.758f);
+                SpawnFX("fx/bulletshell.kfx", -10.24f, -14.08f, 13.82f);
+            }
+        }
+        
+        TurokWeapon::CheckAttack();
+        
+        if(state == PWPN_STATE_READY) {
+            bShotsFired[0] = false;
+            bShotsFired[1] = false;
+            bShotsFired[2] = false;
+        }
+    }
+    
+    //
+    // TurokWeaponRifle::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        xOffset = 170.667f;
+        yOffset = -19.4555f;
+        zOffset = -204.8004f;
+        self.SetModel("models/mdl665/mdl665.kmesh");
+        
+        TurokWeapon::OnSpawn();
+    }
+};
