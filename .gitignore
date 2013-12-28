@@ -164,3 +164,4 @@ pip-log.txt
 /kex2/libs/*.exp
 /kex2/msvc/stderr.txt
 /kex2/msvc/stdout.txt
+/kex2/msvc/AS_DEBUG
