@@ -74,6 +74,7 @@ typedef struct {
     kexVec3                         direction;
     kexSector                       *sector;
     int                             flags;
+    float                           height;
     cMapTraceResult_t               *result;
 } cMapTrace_t;
 
@@ -85,7 +86,7 @@ public:
     bool                            InRange(const kexVec3 &origin);
     bool                            CheckHeight(const kexVec3 &pos);
     bool                            IntersectEdge(cMapTrace_t *trace, const int edgeNum);
-    bool                            Trace(cMapTrace_t *trace);
+    bool                            Trace(cMapTrace_t *trace, const bool bTestCeiling);
     kexSector                       *CrossEdge(cMapTrace_t *trace, const int edge);
 
     kexArea                         *area;
@@ -105,7 +106,8 @@ public:
     void                            Trace(cMapTraceResult_t *result,
                                           const kexVec3 &start, const kexVec3 &end,
                                           kexSector *sector,
-                                          const int flags);
+                                          const int flags,
+                                          const float height = 0);
     void                            TraverseSectors(cMapTrace_t *trace, kexSector *sector);
     kexSector                       *PointInSector(const kexVec3 &origin);
     void                            PlayerCrossAreas(kexSector *enter, kexSector *exit);

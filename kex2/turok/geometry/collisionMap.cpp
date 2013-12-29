@@ -42,6 +42,7 @@
 #define CM_ID_AREAS     4
 
 #define STEPHEIGHT      12.0f
+#define CEILING_EXPAND  71.68f
 
 kexHeapBlock kexCollisionMap::hb_collisionMap("collision map", false, NULL, NULL);
 
@@ -141,23 +142,37 @@ bool kexSector::IntersectEdge(cMapTrace_t *trace, const int edgeNum) {
 // kexSector::Trace
 //
 
-bool kexSector::Trace(cMapTrace_t *trace) {
-    kexTri *tri = &lowerTri;
+bool kexSector::Trace(cMapTrace_t *trace, const bool bTestCeiling) {
+    kexTri *tri = bTestCeiling ? &upperTri : &lowerTri;
+    float distStart;
+    float distEnd;
+    float dist;
 
     if(tri->plane.Distance(trace->direction) >= 0) {
         return false;
     }
 
-    float distStart = tri->plane.Distance(trace->start) - tri->plane.d;
-    float distEnd   = tri->plane.Distance(trace->end) - tri->plane.d;
+    dist = tri->plane.d;
+
+    if(bTestCeiling) {
+        dist -= (trace->height * tri->plane.Normal().y);
+    }
+
+    distStart = tri->plane.Distance(trace->start) - dist;
+    distEnd   = tri->plane.Distance(trace->end) - dist;
 
     if(!(distStart <= distEnd || distStart < 0 || distEnd > 0)) {
         float frac = (distStart / (distStart - distEnd));
 
         if(frac >= 0 && frac <= 1 && frac < trace->result->fraction) {
             kexVec3 hit = trace->start.Lerp(trace->end, frac);
+            float expand = 0;
 
-            if(tri->PointInRange(hit, 0)) {
+            if(bTestCeiling) {
+                expand = CEILING_EXPAND;
+            }
+
+            if(tri->PointInRange(hit, expand)) {
                 trace->result->position = hit;
                 trace->result->fraction = frac;
                 trace->result->normal = tri->plane.Normal();
@@ -189,6 +204,13 @@ kexSector *kexSector::CrossEdge(cMapTrace_t *trace, const int edge) {
     if(next->flags & CLF_BLOCK && !(next->flags & CLF_TOGGLE)) {
         result->contactSector = next;
         return NULL;
+    }
+
+    if(next->flags & CLF_CHECKHEIGHT) {
+        if(result->position[1] - ((trace->height * next->upperTri.plane.Normal().y) +
+            next->upperTri.GetDistance(result->position)) >= 0) {
+                return NULL;
+        }
     }
 
     if(Wall()) {
@@ -378,7 +400,7 @@ void kexCollisionMap::Load(const char *name) {
         }
         for(j = 0; j < 3; j++) {
             sec->lowerTri.point[j] = reinterpret_cast<kexVec3*>(&points[0][pt[j]]);
-            sec->upperTri.point[j] = reinterpret_cast<kexVec3*>(&points[1][pt[j]]);
+            sec->upperTri.point[j] = reinterpret_cast<kexVec3*>(&points[1][pt[2 - j]]);
             sec->lowerTri.edgeLink[j] = (edge[j] != -1) ? &sectors[edge[j]].lowerTri : NULL;
             sec->upperTri.edgeLink[j] = (edge[j] != -1) ? &sectors[edge[j]].upperTri : NULL;
             sec->link[j] = (edge[j] != -1) ? &sectors[edge[j]] : NULL;
@@ -533,7 +555,11 @@ void kexCollisionMap::TraverseSectors(cMapTrace_t *trace, kexSector *sector) {
     trace->result->sector = sector;
     trace->result->fraction = 1;
 
-    if(sector->Trace(trace)) {
+    if(sector->flags & CLF_CHECKHEIGHT && sector->Trace(trace, true)) {
+        // made contact
+        return;
+    }
+    if(sector->Trace(trace, false)) {
         // made contact
         return;
     }
@@ -559,7 +585,8 @@ void kexCollisionMap::TraverseSectors(cMapTrace_t *trace, kexSector *sector) {
 void kexCollisionMap::Trace(cMapTraceResult_t *result,
                             const kexVec3 &start, const kexVec3 &end,
                             kexSector *sector,
-                            const int flags) {
+                            const int flags,
+                            const float height) {
     cMapTrace_t trace;
 
     trace.result = result;
@@ -578,6 +605,7 @@ void kexCollisionMap::Trace(cMapTraceResult_t *result,
     trace.end       = end;
     trace.sector    = sector;
     trace.flags     = flags;
+    trace.height    = height;
     trace.direction = (end - start).Normalize();
 
     trace.result->normal = trace.direction;
@@ -632,7 +660,28 @@ void kexCollisionMap::DebugDraw(void) {
 
     for(int i = 0; i < numSectors; i++) {
         kexSector *sector = &sectors[i];
-        kexTri *tri = &sector->lowerTri;
+        kexTri *tri;
+        
+        if(sector->flags & CLF_CHECKHEIGHT) {
+            tri = &sector->upperTri;
+            dglColor4ub(128, 255, 128, 128);
+            dglBegin(GL_TRIANGLES);
+            dglVertex3f((*tri->point[0]).x, (*tri->point[0]).y, (*tri->point[0]).z);
+            dglVertex3f((*tri->point[1]).x, (*tri->point[1]).y, (*tri->point[1]).z);
+            dglVertex3f((*tri->point[2]).x, (*tri->point[2]).y, (*tri->point[2]).z);
+            dglEnd();
+
+            dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
+            dglBegin(GL_TRIANGLES);
+            dglVertex3f((*tri->point[0]).x, (*tri->point[0]).y, (*tri->point[0]).z);
+            dglVertex3f((*tri->point[1]).x, (*tri->point[1]).y, (*tri->point[1]).z);
+            dglVertex3f((*tri->point[2]).x, (*tri->point[2]).y, (*tri->point[2]).z);
+            dglEnd();
+            dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+
+        tri = &sector->lowerTri;
 
         if(sector->bTraced == false) {
             continue;
@@ -683,6 +732,23 @@ void kexCollisionMap::DebugDraw(void) {
             xyz[0] + (16 * n[0]),
             xyz[1] + (16 * n[1]),
             xyz[2] + (16 * n[2]));
+
+        if(sector->flags & CLF_CHECKHEIGHT) {
+            tri = &sector->upperTri;
+            n = tri->plane.Normal();
+
+            for(int j = 0; j < 3; j++) {
+                xyz[j] = ((*tri->point[0])[j] + (*tri->point[1])[j] + (*tri->point[2])[j]) / 3;
+            }
+
+            dglColor4ub(255, 255, 32, 255);
+            dglVertex3fv(xyz);
+            dglColor4ub(255, 0, 0, 255);
+            dglVertex3f(
+                xyz[0] + (16 * n[0]),
+                xyz[1] + (16 * n[1]),
+                xyz[2] + (16 * n[2]));
+        }
     }
 
     dglEnd();
