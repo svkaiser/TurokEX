@@ -42,7 +42,7 @@ public:
     bool                    Spawn(const char *className);
     bool                    CallFunction(asIScriptFunction *func);
     bool                    CallFunction(const char *decl, int *val);
-    bool                    CallFunction(asIScriptFunction *func, void *object);
+    bool                    CallFunction(asIScriptFunction *func, void *object, bool *val);
     kexScriptObjHandle      &Handle(void) { return objHandle; }
     const asIObjectType     *ScriptType(void) const { return type; }
     const asIScriptObject   *ScriptObject(void) const { return obj; }

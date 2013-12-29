@@ -171,7 +171,7 @@ bool kexComponent::CallFunction(const char *decl, int *val) {
 // kexComponent::CallFunction
 //
 
-bool kexComponent::CallFunction(asIScriptFunction *func, void *object) {
+bool kexComponent::CallFunction(asIScriptFunction *func, void *object, bool *val) {
     if(func == NULL) {
         return false;
     }
@@ -188,6 +188,10 @@ bool kexComponent::CallFunction(asIScriptFunction *func, void *object) {
     if(scriptManager.Context()->Execute() == asEXECUTION_EXCEPTION) {
         common.Error("%s", scriptManager.Context()->GetExceptionString());
         return false;
+    }
+
+    if(val) {
+        *val = (bool)scriptManager.Context()->GetReturnByte();
     }
 
     if(state == asEXECUTION_ACTIVE) {
@@ -229,7 +233,7 @@ void kexActorComponent::Init(void) {
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnThink(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnLocalThink(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnSpawn(void)");
-    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnTouch(kActor@)");
+    scriptManager.Engine()->RegisterInterfaceMethod("Component", "bool OnTouch(kActor@)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnDamage(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnTrigger(void)");
 }
@@ -248,7 +252,7 @@ void kexActorComponent::Construct(const char *className) {
     onThink         = type->GetMethodByDecl("void OnThink(void)");
     onLocalThink    = type->GetMethodByDecl("void OnLocalThink(void)");
     onSpawn         = type->GetMethodByDecl("void OnSpawn(void)");
-    onTouch         = type->GetMethodByDecl("void OnTouch(kActor@)");
+    onTouch         = type->GetMethodByDecl("bool OnTouch(kActor@)");
     onDamage        = type->GetMethodByDecl("void OnDamage(void)");
     onTrigger       = type->GetMethodByDecl("void OnTrigger(void)");
 }

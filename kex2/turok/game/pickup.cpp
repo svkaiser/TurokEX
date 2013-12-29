@@ -20,7 +20,7 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION:
+// DESCRIPTION: Pickup objects
 //
 //-----------------------------------------------------------------------------
 
@@ -58,8 +58,17 @@ void kexPickup::OnTouch(kexWorldObject *instigator) {
         return;
     }
     if(scriptComponent.onTouch) {
+        bool ok = false;
         scriptComponent.CallFunction(scriptComponent.onTouch,
-            static_cast<kexActor*>(instigator));
+            static_cast<kexActor*>(instigator), &ok);
+
+        if(ok == false) {
+            return;
+        }
+    }
+
+    if(instigator && pickupSound.Length() > 0) {
+        instigator->StartSound(pickupSound.c_str());
     }
 
     if(!bRespawn) {
@@ -77,7 +86,7 @@ void kexPickup::Spawn(void) {
     bCanPickup = false;
     bNoFixedTransform = true;
 
-    //args.GetString("pickupSound", pickupSound);
+    args.GetString("pickupSound", pickupSound);
     args.GetBool("bRespawn", bRespawn);
     args.GetFloat("respawnTime", respawnTime);
 }

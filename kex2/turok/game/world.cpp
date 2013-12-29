@@ -493,7 +493,8 @@ void kexWorld::Trace(traceInfo_t *trace) {
 
         collisionMap.Trace(&cmResult, trace->start, trace->end,
             *trace->sector,
-            PF_CLIPEDGES|PF_DROPOFF);
+            PF_CLIPEDGES|PF_DROPOFF,
+            (trace->owner && trace->bUseBBox) ? trace->owner->BaseHeight() : 0);
 
         if(cmResult.sector) {
             *trace->sector = cmResult.sector;
