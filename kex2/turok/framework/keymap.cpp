@@ -179,6 +179,29 @@ bool kexKeyMap::GetBool(const kexStr &key, bool &out, const bool defaultValue) {
 }
 
 //
+// kexKeyMap::GetString
+//
+
+bool kexKeyMap::GetString(const char *key, kexStr &out) {
+    kexHashKey *k;
+
+    if(!(k = Find(key))) {
+        return false;
+    }
+
+    out = k->GetString();
+    return true;
+}
+
+//
+// kexKeyMap::GetString
+//
+
+bool kexKeyMap::GetString(const kexStr &key, kexStr &out) {
+    return GetString(key.c_str(), out);
+}
+
+//
 // kexKeyMap::GetVector
 //
 
@@ -220,5 +243,8 @@ void kexKeyMap::InitObject(void) {
     scriptManager.RegisterMethod("kKeyMap", "bool GetBool(const kStr &in, bool &out, const bool defaultValue = 0)",
         asMETHODPR(kexKeyMap, GetBool,
         (const kexStr &key, bool &out, const bool defaultValue), bool));
+    scriptManager.RegisterMethod("kKeyMap", "bool GetString(const kStr &in, kStr &out)",
+        asMETHODPR(kexKeyMap, GetString,
+        (const kexStr &key, kexStr &out), bool));
 }
 #endif
