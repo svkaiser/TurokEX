@@ -2227,6 +2227,61 @@ static void ProcessInstances(byte *data, int offs)
         Com_Strcat("pickupType %i\n",
             GetObjectType(mapinst->model) - OT_PICKUP_SMALLHEALTH);
 
+        switch(GetObjectType(mapinst->model))
+            {
+            case OT_PICKUP_MASK:
+            case OT_PICKUP_BACKPACK:
+            case OT_PICKUP_SPIRIT:
+            case OT_PICKUP_KEY1:
+            case OT_PICKUP_KEY2:
+            case OT_PICKUP_KEY3:
+            case OT_PICKUP_KEY4:
+            case OT_PICKUP_KEY5:
+            case OT_PICKUP_KEY6:
+                Com_Strcat("pickupSound \"sounds/shaders/generic_4_non_weapon_pickup.ksnd\"\n");
+                break;
+            case OT_PICKUP_PISTOL:
+            case OT_PICKUP_ASSAULTRIFLE:
+            case OT_PICKUP_MINIGUN:
+            case OT_PICKUP_QUIVER2:
+            case OT_PICKUP_ARROWS:
+            case OT_PICKUP_QUIVER1:
+            case OT_PICKUP_CLIP:
+            case OT_PICKUP_CLIPBOX:
+            case OT_PICKUP_MINIGUNAMMO:
+            case OT_PICKUP_GRENADE:
+            case OT_PICKUP_GRENADEBOX:
+            case OT_PICKUP_SMALLCELL:
+            case OT_PICKUP_CELL:
+                Com_Strcat("pickupSound \"sounds/shaders/generic_1_bullet_pickup.ksnd\"\n");
+                break;
+            case OT_PICKUP_SHOTGUN:
+            case OT_PICKUP_ASHOTGUN:
+            case OT_PICKUP_SHELLS:
+            case OT_PICKUP_SHELLBOX:
+            case OT_PICKUP_EXPSHELLS:
+            case OT_PICKUP_EXPSHELLBOX:
+                Com_Strcat("pickupSound \"sounds/shaders/generic_2_shell_pickup.ksnd\"\n");
+                break;
+            case OT_PICKUP_GRENADELAUNCHER:
+                Com_Strcat("pickupSound \"sounds/shaders/generic_5_grenade_pickup.ksnd\"\n");
+                break;
+            case OT_PICKUP_ROCKETLAUNCHER:
+            case OT_PICKUP_ROCKET: 
+                Com_Strcat("pickupSound \"sounds/shaders/generic_7_rocket_pickup.ksnd\"\n");
+                break;
+            case OT_PICKUP_PULSERIFLE:
+            case OT_PICKUP_ALIENWEAPON:
+            case OT_PICKUP_ACCELERATOR:
+            case OT_PICKUP_CANNON:
+            case OT_PICKUP_FUSIONCELL:
+                Com_Strcat("pickupSound \"sounds/shaders/generic_3_energy_pickup.ksnd\"\n");
+                break;
+            default:
+                Com_Strcat("pickupSound \"sounds/shaders/health_pickup_1.ksnd\"\n");
+                break;
+            }
+
         Com_Strcat("mesh \"models/mdl%03d/mdl%03d.kmesh\"\n",
             mapinst->model, mapinst->model);
         Com_Strcat("cullDistance %f\n", bboxUnit + 4096.0f);
