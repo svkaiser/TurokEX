@@ -49,8 +49,9 @@ void kexStr::Init(void) {
 //
 
 void kexStr::CheckSize(int size, bool bKeepString) {
-    if(size <= bufferLength)
+    if(size <= bufferLength) {
         return;
+    }
 
     Resize(size, bKeepString);
 }
@@ -80,8 +81,9 @@ kexStr::kexStr(void) {
 kexStr::kexStr(const char *string) {
     Init();
 
-    if(string == NULL)
+    if(string == NULL) {
         return;
+    }
 
     CopyNew(string, strlen(string));
 }
@@ -93,8 +95,9 @@ kexStr::kexStr(const char *string) {
 kexStr::kexStr(const char *string, const int length) {
     Init();
 
-    if(string == NULL)
+    if(string == NULL) {
         return;
+    }
 
     CopyNew(string, length);
 }
@@ -106,8 +109,9 @@ kexStr::kexStr(const char *string, const int length) {
 kexStr::kexStr(const kexStr &string) {
     Init();
 
-    if(string.charPtr == NULL)
+    if(string.charPtr == NULL) {
         return;
+    }
 
     CopyNew(string.charPtr, string.Length());
 }
@@ -331,11 +335,13 @@ void kexStr::Resize(int size, bool bKeepString) {
     int newsize = size + ((32 - (size & 31)) & 31);
     char *newbuffer = new char[newsize];
 
-    if(bKeepString)
+    if(bKeepString) {
         strncpy(newbuffer, charPtr, length);
+    }
 
-    if(charPtr != defaultBuffer)
+    if(charPtr != defaultBuffer) {
         delete[] charPtr;
+    }
 
     charPtr = newbuffer;
     bufferLength = newsize;
@@ -445,8 +451,9 @@ kexStr &kexStr::StripPath(void) {
 kexStr &kexStr::StripExtension(void) {
     int pos = IndexOf(".");
     
-    if(pos == -1)
+    if(pos == -1) {
         return *this;
+    }
     
     length = pos;
     CheckSize(length, true);
@@ -572,21 +579,20 @@ kexStr &kexStr::ToLower(void) {
 }
 
 //
-// kexStr::Compare
+// kexStr::CompareCase
 //
 
-bool kexStr::Compare(const kexStr &a, const kexStr &b) {
-    const char *s1 = a.charPtr;
-    const char *s2 = b.charPtr;
-    
+bool kexStr::CompareCase(const char *s1, const char *s2) {
     while(*s1 && *s2) {
-        if(*s1 != *s2)
+        if(*s1 != *s2) {
             return (*s2 - *s1) != 0;
+        }
         s1++;
         s2++;
     }
-    if(*s1 != *s2)
+    if(*s1 != *s2) {
         return (*s2 - *s1) != 0;
+    }
         
     return false;
 }
@@ -595,7 +601,15 @@ bool kexStr::Compare(const kexStr &a, const kexStr &b) {
 // kexStr::CompareCase
 //
 
-bool kexStr::CompareCase(const char *s1, const char *s2) {
+bool kexStr::CompareCase(const kexStr &a, const kexStr &b) {
+    return CompareCase(a.c_str(), b.c_str());
+}
+
+//
+// kexStr::Compare
+//
+
+bool kexStr::Compare(const char *s1, const char *s2) {
     const byte *us1 = (const byte*)s1;
     const byte *us2 = (const byte*)s2;
 
@@ -608,6 +622,14 @@ bool kexStr::CompareCase(const char *s1, const char *s2) {
     }
 
     return (tolower(*us1) - tolower(*us2)) != 0;
+}
+
+//
+// kexStr::Compare
+//
+
+bool kexStr::Compare(const kexStr &a, const kexStr &b) {
+    return Compare(a.c_str(), b.c_str());
 }
 
 #ifndef EDITOR

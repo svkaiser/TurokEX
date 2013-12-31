@@ -128,16 +128,16 @@ bool kexLexer::CheckState(void) {
 //
 
 void kexLexer::CheckKeywords(void) {
-    if(!kexStr::CompareCase(token, "define")) {
+    if(!kexStr::Compare(token, "define")) {
         tokentype = TK_DEFINE;
     }
-    else if(!kexStr::CompareCase(token, "include")) {
+    else if(!kexStr::Compare(token, "include")) {
         tokentype = TK_INCLUDE;
     }
-    else if(!kexStr::CompareCase(token, "setdir")) {
+    else if(!kexStr::Compare(token, "setdir")) {
         tokentype = TK_SETDIR;
     }
-    else if(!kexStr::CompareCase(token, "undef")) {
+    else if(!kexStr::Compare(token, "undef")) {
         tokentype = TK_UNDEF;
     }
 }

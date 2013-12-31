@@ -49,7 +49,7 @@ bool kexCommand::Run(void) {
     }
 
     for(cmd = cmd_functions; cmd; cmd = cmd->next) {
-        if(!kexStr::CompareCase(cmd_argv[0], cmd->name)) {
+        if(!kexStr::Compare(cmd_argv[0], cmd->name)) {
             if(cmd->function) {
                 cmd->function();
             }

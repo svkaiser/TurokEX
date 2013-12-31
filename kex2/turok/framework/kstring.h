@@ -76,8 +76,10 @@ public:
     operator            const char *(void) const { return c_str(); }
     operator            const char *(void) { return c_str(); }
     
-    static bool         Compare(const kexStr &a, const kexStr &b);
     static bool         CompareCase(const char *s1, const char *s2);
+    static bool         CompareCase(const kexStr &a, const kexStr &b);
+    static bool         Compare(const char *s1, const char *s2);
+    static bool         Compare(const kexStr &a, const kexStr &b);
     static int          IndexOf(const char *string, const char *pattern);
     static int          Hash(const char *s);
 
