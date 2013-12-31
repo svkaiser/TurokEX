@@ -1884,6 +1884,18 @@ static void ProcessActors(byte *data)
             Com_Strcat("}\n\n");
             break;
 
+        case OT_DYNAMIC_DOOR:
+            Com_Strcat("actor \"kexDoor\"\n");
+            Com_Strcat("{\n");
+            WriteGenericActorProps(actor, attr);
+            Com_Strcat("delayTime %i\n", attr->u22);
+            Com_Strcat("targetID %i\n", attr->tid);
+            Com_Strcat("idleAnim %i\n", 2600);
+            Com_Strcat("openAnim %i\n", 2601);
+            Com_Strcat("closeAnim %i\n", 2602);
+            Com_Strcat("}\n\n");
+            break;
+
         case OT_AI_ANIMAL:
             switch(actor->model)
             {
