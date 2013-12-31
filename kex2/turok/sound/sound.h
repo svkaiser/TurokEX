@@ -101,7 +101,7 @@ class kexSoundSource {
                                         ~kexSoundSource(void);
 
     bool                                Generate(void);
-    void                                Set(sfx_t *sfxRef, kexGameObject *obj);
+    void                                Set(sfx_t *sfxRef, kexGameObject *refObj);
     void                                Play(void);
     void                                Stop(void);
     void                                Reset(void);

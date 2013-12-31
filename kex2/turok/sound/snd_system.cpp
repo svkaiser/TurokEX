@@ -36,7 +36,7 @@
 kexCvar cvarPitchShift("s_pitchshift", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 kexCvar cvarSoundVolume("s_sndvolume", CVF_FLOAT|CVF_CONFIG, "0.5", 0, 1, "TODO");
 
-#define SND_METRICS 0.0035f
+#define SND_METRICS 0.0025f
 #define SND_VECTOR2METRICS(vec) \
     vec[0] * SND_METRICS,       \
     vec[1] * SND_METRICS,       \
@@ -230,15 +230,15 @@ bool kexSoundSource::Generate(void) {
 // kexSoundSource::Set
 //
 
-void kexSoundSource::Set(sfx_t *sfxRef, kexGameObject *obj) {
+void kexSoundSource::Set(sfx_t *sfxRef, kexGameObject *refObj) {
     if(sfxRef == NULL) {
         return;
     }
 
     sfx = sfxRef;
 
-    if(obj) {
-        obj->AddRef();
+    if(refObj) {
+        refObj->AddRef();
     }
 
     if(sfx->bLerpVol) {
@@ -249,10 +249,7 @@ void kexSoundSource::Set(sfx_t *sfxRef, kexGameObject *obj) {
         pitch = sfx->freqLerpStart;
     }
 
-    if(obj != NULL && client.LocalPlayer().Puppet() != obj) {
-        kexVec3 org = obj->GetOrigin();
-        alSource3f(handle, AL_POSITION, org.x, org.y, org.z);
-    }
+    obj = refObj;
 }
 
 //
@@ -338,10 +335,10 @@ void kexSoundSource::Play(void) {
     }
 
     if(obj && obj != client.LocalPlayer().Puppet()) {
+        kexVec3 org = obj->GetOrigin();
         alSourcef(handle, AL_ROLLOFF_FACTOR, sfx->rolloffFactor);
         alSourcei(handle, AL_SOURCE_RELATIVE, AL_FALSE);
-        alSource3f(handle, AL_POSITION,
-            SND_VECTOR2METRICS(obj->GetOrigin().ToFloatPtr()));
+        alSource3f(handle, AL_POSITION, SND_VECTOR2METRICS(org));
     }
     else {
         alSourcei(handle, AL_SOURCE_RELATIVE, AL_TRUE);
@@ -580,6 +577,7 @@ void kexSoundSystem::StopAll(void) {
 
 void kexSoundSystem::UpdateListener(void) {
     ALfloat orientation[6];
+    kexVec3 org;
 
     if(localWorld.IsLoaded() == false) {
         return;
@@ -595,11 +593,12 @@ void kexSoundSystem::UpdateListener(void) {
     orientation[4] =  matrix.vectors[1].y;
     orientation[5] =  matrix.vectors[2].y;
 
+    org = camera->GetOrigin();
+
     kexSoundSystem::EnterCriticalSection();
 
     alListenerfv(AL_ORIENTATION, orientation);
-    alListener3f(AL_POSITION,
-        SND_VECTOR2METRICS(camera->GetOrigin().ToFloatPtr()));
+    alListener3f(AL_POSITION, SND_VECTOR2METRICS(org));
 
     kexSoundSystem::ExitCriticalSection();
 }
