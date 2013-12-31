@@ -103,33 +103,28 @@ bool kexSector::CheckHeight(const kexVec3 &pos) {
 //
 
 bool kexSector::IntersectEdge(cMapTrace_t *trace, const int edgeNum) {
-    float x;
-    float z;
-    float dx;
-    float dz;
+    kexVec2 cp;
+    kexVec2 tStart;
+    kexVec2 tEnd;
+    kexVec2 pt1;
+    kexVec2 pt2;
     float d;
-    kexVec3 pt1;
-    kexVec3 pt2;
 
     pt1 = *lowerTri.point[(edgeNum+0)%3];
     pt2 = *lowerTri.point[(edgeNum+1)%3];
 
-    x = pt2[2] - pt1[2];
-    z = pt1[0] - pt2[0];
+    tStart = trace->start;
+    tEnd = trace->end;
 
-    d = x * (trace->end[0] - trace->start[0]) +
-        z * (trace->end[2] - trace->start[2]);
+    d = cp.Cross(pt1, pt2).Dot(tEnd - tStart);
 
     if(d < 0) {
-        dx = pt1[0] - trace->end[0];
-        dz = pt1[2] - trace->end[2];
-
-        d = 1.0f + ((x * dx + z * dz) / d);
+        d = 1.0f + (cp.Dot(pt1 - tEnd) / d);
 
         if(d < 1 && d < trace->result->fraction) {
             trace->result->fraction = d;
             trace->result->position = trace->start.Lerp(trace->end, d);
-            trace->result->normal.Set(x, 0, z);
+            trace->result->normal.Set(cp[0], 0, cp[1]);
             trace->result->normal.Normalize();
             return true;
         }
