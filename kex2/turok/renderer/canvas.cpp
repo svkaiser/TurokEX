@@ -97,6 +97,8 @@ DECLARE_CLASS(kexCanvasImage, kexCanvasObject)
 //
 
 kexCanvasImage::kexCanvasImage(void) {
+    this->width = 0;
+    this->height = 0;
 }
 
 //
@@ -132,6 +134,8 @@ void kexCanvasImage::Draw(void) {
     float ry;
     float rw;
     float rh;
+    float w;
+    float h;
     byte a[4];
 
     if(bVisible == false) {
@@ -142,26 +146,27 @@ void kexCanvasImage::Draw(void) {
     renderSystem.BindDrawPointers();
     texture->Bind();
 
+    w = (width <= 0) ? (float)texture->Width() : width * 2;
+    h = (height <= 0) ? (float)texture->Height() : height * 2;
+
     ratiox = (float)FIXED_WIDTH / sysMain.VideoWidth();
     ratioy = (float)FIXED_HEIGHT / sysMain.VideoHeight();
     rx = x / ratiox;
-    rw = rx + ((float)texture->Width() / ratiox) * 0.5f * scaleX;
+    rw = rx + (w / ratiox) * 0.5f * scaleX;
     ry = y / ratioy;
-    rh = ry + ((float)texture->Height() / ratioy) * 0.5f * scaleY;
+    rh = ry + (h / ratioy) * 0.5f * scaleY;
 
     for(i = 0; i < 4; i++) {
         a[i] = (byte)((float)rgba[i * 4 + 3] * alpha);
     }
 
     if(parent != NULL) {
-        rx += parent->x;
-        rw += parent->x;
-        ry += parent->y;
-        rh += parent->y;
+        rx += parent->x / ratiox;
+        rw += parent->x / ratiox;
+        ry += parent->y / ratioy;
+        rh += parent->y / ratioy;
 
-        rx *= parent->scaleX;
         rw *= parent->scaleX;
-        ry *= parent->scaleY;
         rh *= parent->scaleY;
 
         for(i = 0; i < 4; i++) {
@@ -230,6 +235,7 @@ DECLARE_CLASS(kexCanvasText, kexCanvasObject)
 //
 
 kexCanvasText::kexCanvasText(void) {
+    this->bCentered = false;
 }
 
 //
@@ -288,8 +294,8 @@ void kexCanvasText::Draw(void) {
     ds *= 0.5f;
 
     if(parent != NULL) {
-        dx += parent->x;
-        dy += parent->y;
+        dx += (parent->x / ratiox);
+        dy += (parent->y / ratioy);
         ds *= parent->scaleX;
 
         for(int i = 0; i < 4; i++) {
@@ -298,7 +304,7 @@ void kexCanvasText::Draw(void) {
     }
 
     renderSystem.SetState(GLSTATE_BLEND, true);
-    font->DrawString(text.c_str(), dx, dy, ds, false, (byte*)&color[0 * 4], (byte*)&color[2 * 4]);
+    font->DrawString(text.c_str(), dx, dy, ds, bCentered, (byte*)&color[0 * 4], (byte*)&color[2 * 4]);
     renderSystem.SetState(GLSTATE_BLEND, false);
 }
 
@@ -553,6 +559,23 @@ static void RegisterCanvasObject(const char *name) {
 }
 
 //
+// RegisterContainerChildMethods
+//
+
+static void RegisterContainerChildMethods(const char *name) {
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kCanvasContainer",
+        kva("void AddChild(%s@)", name),
+        asMETHODPR(kexContainer, AddChild, (kexCanvasObject*), void),
+        asCALL_THISCALL);
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kCanvasContainer",
+        kva("void RemoveChild(%s@)", name),
+        asMETHODPR(kexContainer, RemoveChild, (kexCanvasObject*), void),
+        asCALL_THISCALL);
+}
+
+//
 // kexCanvas::InitObject
 //
 
@@ -583,26 +606,10 @@ void kexCanvas::InitObject(void) {
         asMETHODPR(kexCanvas, operator[], (const int), kexCanvasObject*),
         asCALL_THISCALL);
 
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kCanvasContainer",
-        "void AddChild(kCanvasImage@)",
-        asMETHODPR(kexContainer, AddChild, (kexCanvasObject*), void),
-        asCALL_THISCALL);
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kCanvasContainer",
-        "void RemoveChild(kCanvasImage@)",
-        asMETHODPR(kexContainer, RemoveChild, (kexCanvasObject*), void),
-        asCALL_THISCALL);
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kCanvasContainer",
-        "void AddChild(kCanvasText@)",
-        asMETHODPR(kexContainer, AddChild, (kexCanvasObject*), void),
-        asCALL_THISCALL);
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kCanvasContainer",
-        "void RemoveChild(kCanvasText@)",
-        asMETHODPR(kexContainer, RemoveChild, (kexCanvasObject*), void),
-        asCALL_THISCALL);
+    RegisterContainerChildMethods("kCanvasImage");
+    RegisterContainerChildMethods("kCanvasText");
+    RegisterContainerChildMethods("kCanvasContainer");
+
     scriptManager.Engine()->RegisterObjectMethod(
         "kCanvasContainer",
         "kCanvasImage @opIndex(const int)",
@@ -620,8 +627,15 @@ void kexCanvas::InitObject(void) {
         asMETHODPR(kexCanvasText, SetRGB, (const int, const byte, const byte, const byte), void),
         asCALL_THISCALL);
 
+    scriptManager.Engine()->RegisterObjectProperty("kCanvasImage", "float width",
+        asOFFSET(kexCanvasImage, width));
+    scriptManager.Engine()->RegisterObjectProperty("kCanvasImage", "float height",
+        asOFFSET(kexCanvasImage, height));
+
     scriptManager.Engine()->RegisterObjectProperty("kCanvasText", "kStr text",
         asOFFSET(kexCanvasText, text));
+    scriptManager.Engine()->RegisterObjectProperty("kCanvasText", "bool bCentered",
+        asOFFSET(kexCanvasText, bCentered));
 
     scriptManager.Engine()->RegisterGlobalProperty("kCanvas Canvas", &renderSystem.Canvas());
 }

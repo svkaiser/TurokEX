@@ -76,6 +76,8 @@ public:
 
     byte                            rgba[32];
     kexTexture                      *texture;
+    float                           width;
+    float                           height;
 END_CLASS();
 
 //-----------------------------------------------------------------------------
@@ -96,6 +98,7 @@ public:
     byte                            rgba[32];
     kexStr                          text;
     kexFont                         *font;
+    bool                            bCentered;
 END_CLASS();
 
 //-----------------------------------------------------------------------------
