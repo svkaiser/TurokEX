@@ -131,6 +131,63 @@ public:
     static void             ObjectConstructCopy(const kexQuat &in, kexQuat *thisq);
 };
 
+class kexVec3;
+
+class kexVec2 {
+public:
+                            kexVec2(void);
+                            explicit kexVec2(const float x, const float z);
+
+    void                    Set(const float x, const float z);
+    void                    Clear(void);
+    float                   Dot(const kexVec2 &vec) const;
+    static float            Dot(const kexVec2 &vec1, const kexVec2 &vec2);
+    kexVec2                 Cross(const kexVec2 &vec) const;
+    kexVec2                 &Cross(const kexVec2 &vec1, const kexVec2 &vec2);
+    float                   Dot(const kexVec3 &vec) const;
+    static float            Dot(const kexVec3 &vec1, const kexVec3 &vec2);
+    kexVec2                 Cross(const kexVec3 &vec) const;
+    kexVec2                 &Cross(const kexVec3 &vec1, const kexVec3 &vec2);
+    float                   UnitSq(void) const;
+    float                   Unit(void) const;
+    float                   DistanceSq(const kexVec2 &vec) const;
+    float                   Distance(const kexVec2 &vec) const;
+    kexVec2                 &Normalize(void);
+    kexVec2                 Lerp(const kexVec2 &next, float movement) const;
+    kexVec2                 &Lerp(const kexVec2 &start, const kexVec2 &next, float movement);
+    kexStr                  ToString(void) const;
+    float                   *ToFloatPtr(void);
+    kexVec3                 ToVec3(void);
+
+    kexVec2                 operator+(const kexVec2 &vec);
+    kexVec2                 operator+(const kexVec2 &vec) const;
+    kexVec2                 operator+(kexVec2 &vec);
+    kexVec2                 operator-(void) const;
+    kexVec2                 operator-(const kexVec2 &vec) const;
+    kexVec2                 operator*(const kexVec2 &vec);
+    kexVec2                 operator*(const float val);
+    kexVec2                 operator*(const float val) const;
+    kexVec2                 operator/(const kexVec2 &vec);
+    kexVec2                 operator/(const float val);
+    kexVec2                 &operator=(kexVec3 &vec);
+    kexVec2                 &operator=(const kexVec2 &vec);
+    kexVec2                 &operator=(const kexVec3 &vec);
+    kexVec2                 &operator=(const float *vecs);
+    kexVec2                 &operator+=(const kexVec2 &vec);
+    kexVec2                 &operator-=(const kexVec2 &vec);
+    kexVec2                 &operator*=(const kexVec2 &vec);
+    kexVec2                 &operator*=(const float val);
+    kexVec2                 &operator/=(const kexVec2 &vec);
+    kexVec2                 &operator/=(const float val);
+    float                   operator[](int index) const;
+    float                   &operator[](int index);
+
+    operator                float *(void) { return reinterpret_cast<float*>(&x); }
+
+    float                   x;
+    float                   z;
+};
+
 class kexVec3 {
 public:
                             kexVec3(void);
