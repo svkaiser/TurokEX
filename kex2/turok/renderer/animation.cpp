@@ -352,10 +352,77 @@ void kexAnimState::Update(void) {
                     flags |= ANF_STOPPED;
                 }
             }
+
+            ExecuteFrameActions();
         }
     }
 
     playTime += client.GetRunTime();
+}
+
+//
+// kexAnimState::ExecuteFrameActions
+//
+
+void kexAnimState::ExecuteFrameActions(void) {
+    unsigned int inc;
+    int frame;
+    kexAnim_t *anim;
+
+    // this shouldn't happen in the first place
+    if(owner == NULL) {
+        return;
+    }
+
+    anim = track.anim;
+
+    if(anim == NULL || flags & ANF_PAUSED ||
+        anim->actions == NULL || anim->numActions == 0) {
+            return;
+    }
+
+    frame = track.frame;
+
+    if(currentFrame == frame) {
+        return;
+    }
+
+    inc = 0;
+    for(int i = currentFrame; i != frame; i++, inc++) {
+        if(inc >= anim->numFrames) {
+            break;
+        }
+
+        if(i == anim->numFrames) {
+            i = 0;
+        }
+
+        for(unsigned int j = 0; j < anim->numActions; j++) {
+            frameAction_t *action = &track.anim->actions[j];
+
+            if(action->frame != i) {
+                continue;
+            }
+
+            if(!kexStr::Compare(action->function, "playsound")) {
+                owner->StartSound(action->argStrings[0]);
+            }
+            else if(!strcmp(action->function, "fx")) {
+                owner->SpawnFX(action->argStrings[0],
+                    action->args[1],
+                    action->args[2],
+                    action->args[3]);
+            }
+            else if(owner->scriptComponent.ScriptObject() != NULL) {
+            }
+            else if(cvarDeveloper.GetBool()) {
+                common.DPrintf("kexAnimState::ExecuteFrameActions: Couldn't execute \"%s\":%i\n",
+                    action->function, action->frame);
+            }
+        }
+    }
+
+    currentFrame = frame;
 }
 
 //
