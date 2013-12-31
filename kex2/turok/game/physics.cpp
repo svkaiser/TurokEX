@@ -375,7 +375,7 @@ void kexPhysics::Think(const float timeDelta) {
     trace.end = start;
     localWorld.Trace(&trace);
 
-    if(trace.fraction != 1) {
+    if(trace.fraction != 1 && !trace.hitActor) {
         start = trace.hitVector - (gravity * 1.024f);
         owner->SetOrigin(start);
         owner->LinkArea();
@@ -410,7 +410,7 @@ void kexPhysics::Think(const float timeDelta) {
         // test if walking on steep slopes
         slope = trace.hitNormal.Dot(gravity);
 
-        if(trace.hitTri) {
+        if(trace.hitTri && !trace.hitActor) {
             if(slope < 0 && slope >= -0.5f) {
                 if(trace.hitTri == groundGeom) {
                     // remove vertical movement
@@ -455,7 +455,7 @@ void kexPhysics::Think(const float timeDelta) {
 
         normals[moves++] = trace.hitNormal;
         
-        if(trace.hitTri) {
+        if(trace.hitTri && !trace.hitActor) {
             // handle stepping
             if(bCanStep && slope >= -0.5f) {
                 trace.start = owner->GetOrigin();

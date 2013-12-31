@@ -128,22 +128,32 @@ void kexWorldObject::UnlinkArea(void) {
 //
 
 bool kexWorldObject::Trace(traceInfo_t *trace) {
-    kexVec3 org = (origin - trace->start);
+    kexVec2 org;
+    kexVec2 dir;
+    kexVec2 nDir;
+    kexVec2 cDist;
+    float cp;
+    float rd;
+    float r;
 
-    if(trace->dir.Dot(org) <= 0) {
+    org = (origin - trace->start);
+    dir = trace->dir;
+
+    if(dir.Dot(org) <= 0) {
         return false;
     }
 
-    float len = trace->dir.Unit();
+    float len = dir.Unit();
 
     if(len == 0) {
         return false;
     }
 
-    kexVec3 nDir    = (trace->dir * (1.0f / len));
-    float cp        = nDir.Dot(org);
-    kexVec3 cDist   = (org - (nDir * cp));
-    float rd        = radius * radius - cDist.UnitSq();
+    nDir    = (dir * (1.0f / len));
+    cp      = nDir.Dot(org);
+    cDist   = (org - (nDir * cp));
+    r       = radius + 8.192f;
+    rd      = r * r - cDist.UnitSq();
 
     if(rd <= 0) {
         return false;
@@ -152,13 +162,23 @@ bool kexWorldObject::Trace(traceInfo_t *trace) {
     float frac = (cp - kexMath::Sqrt(rd)) * (1.0f / len);
 
     if(frac <= 1.0f && frac < trace->fraction) {
+        kexVec3 hit;
+
         if(frac < 0) {
             frac = 0;
         }
+
+        hit = (trace->start + ((trace->end - trace->start) * frac));
+        if(hit[1] > origin[1] + baseHeight) {
+            return false;
+        }
+
         trace->hitActor = this;
         trace->fraction = frac;
-        trace->hitVector = trace->start - (trace->dir * frac);
+        trace->hitVector = hit + (trace->dir * 0.09375f);
         trace->hitNormal = (trace->start - origin);
+        trace->hitNormal[1] = 0;
+        trace->hitVector[1] = trace->start[1];
         trace->hitNormal.Normalize();
         return true;
     }
