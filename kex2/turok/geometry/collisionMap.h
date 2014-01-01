@@ -113,6 +113,7 @@ public:
     void                            PlayerCrossAreas(kexSector *enter, kexSector *exit);
     void                            RecursiveChangeHeight(kexSector *sector, float destHeight,
                                         unsigned int areaID);
+    void                            ToggleBlock(const kexVec3 pos, bool bToggle);
     void                            DebugDraw(void);
 
     kexVec3                         *points[2];
@@ -128,6 +129,9 @@ public:
     static kexHeapBlock             hb_collisionMap;
 
 private:
+    void                            RecursiveToggleBlock(kexSector *sector, bool bToggle,
+                                        unsigned int areaID);
+
     bool                            bLoaded;
 };
 

@@ -29,6 +29,7 @@
 #include "script.h"
 #include "renderModel.h"
 #include "animation.h"
+#include "world.h"
 
 #define ANIM_CLOCK_SPEED    60
 
@@ -407,11 +408,27 @@ void kexAnimState::ExecuteFrameActions(void) {
             if(!kexStr::Compare(action->function, "playsound")) {
                 owner->StartSound(action->argStrings[0]);
             }
-            else if(!strcmp(action->function, "fx")) {
+            else if(!kexStr::Compare(action->function, "fx")) {
                 owner->SpawnFX(action->argStrings[0],
                     action->args[1],
                     action->args[2],
                     action->args[3]);
+            }
+            else if(!kexStr::Compare(action->function, "unblocksector")) {
+                if(localWorld.CollisionMap().IsLoaded()) {
+                    localWorld.CollisionMap().ToggleBlock(owner->ToLocalOrigin(
+                        action->args[1],
+                        action->args[2],
+                        action->args[3]), true);
+                }
+            }
+            else if(!kexStr::Compare(action->function, "blocksector")) {
+                if(localWorld.CollisionMap().IsLoaded()) {
+                    localWorld.CollisionMap().ToggleBlock(owner->ToLocalOrigin(
+                        action->args[1],
+                        action->args[2],
+                        action->args[3]), false);
+                }
             }
             else if(owner->scriptComponent.ScriptObject() != NULL) {
             }

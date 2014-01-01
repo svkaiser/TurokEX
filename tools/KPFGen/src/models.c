@@ -1170,6 +1170,12 @@ char *GetActionName(int id, float arg0)
     case 160:
         sprintf(actionName, "shockwaveDamage");
         break;
+    case 232:
+        sprintf(actionName, "unblockSector");
+        break;
+    case 233:
+        sprintf(actionName, "blockSector");
+        break;
     case 238:
         sprintf(actionName, "spawnItem");
         break;

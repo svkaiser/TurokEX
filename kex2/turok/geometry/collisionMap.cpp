@@ -634,6 +634,68 @@ void kexCollisionMap::PlayerCrossAreas(kexSector *enter, kexSector *exit) {
 }
 
 //
+// kexCollisionMap::RecursiveToggleBlock
+//
+
+void kexCollisionMap::RecursiveToggleBlock(kexSector *sector, bool bToggle,
+                                           unsigned int areaID) {
+    if(sector == NULL) {
+        return;
+    }
+
+    kexSector *sec = sector;
+
+    while(sec->area->WorldID() == areaID) {
+        if(bToggle) {
+            if(sec->flags & CLF_TOGGLE) {
+                break;
+            }
+
+            sec->flags |= CLF_TOGGLE;
+        }
+        else {
+            if(!(sec->flags & CLF_TOGGLE)) {
+                break;
+            }
+
+            sec->flags &= ~CLF_TOGGLE;
+        }
+
+        if(sec->link[0] != NULL) {
+            RecursiveToggleBlock(sec->link[0], bToggle, areaID);
+        }
+
+        if(sec->link[1] != NULL) {
+            RecursiveToggleBlock(sec->link[1], bToggle, areaID);
+        }
+
+        if(sec->link[2] == NULL) {
+            break;
+        }
+
+        sec = sec->link[2];
+    }
+}
+
+//
+// kexCollisionMap::ToggleBlock
+//
+
+void kexCollisionMap::ToggleBlock(const kexVec3 pos, bool bToggle) {
+    kexSector *sector;
+
+    if(!(sector = PointInSector(pos))) {
+        return;
+    }
+
+    if(!(sector->flags & CLF_BLOCK)) {
+        return;
+    }
+
+    RecursiveToggleBlock(sector, bToggle, sector->area->WorldID());
+}
+
+//
 // kexCollisionMap::DebugDraw
 //
 
