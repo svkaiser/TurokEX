@@ -3,6 +3,19 @@
 
 ////////////////////////////////////////////////////
 //
+// Enums
+//
+////////////////////////////////////////////////////
+
+enum turokHudItemState { 
+    is_none     = 0,
+    is_slideIn,
+    is_pause,
+    is_slideOut
+}
+
+////////////////////////////////////////////////////
+//
 // TurokHudNumber
 //
 ////////////////////////////////////////////////////
@@ -22,6 +35,211 @@ final class TurokHudNumber {
     
     void Update(const int num) {
         number.text = "" + num;
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// TurokHudString
+//
+////////////////////////////////////////////////////
+
+final class TurokHudString {
+    kCanvasContainer @container;
+    kCanvasText @top;
+    kCanvasText @back;
+    
+    TurokHudString(void) {
+    }
+    
+    void Init(void) {
+        @container  = Canvas.CreateContainer();
+        
+        @top = Canvas.CreateText("fonts/turokfont.kfont");
+        top.text = "";
+        
+        @back = Canvas.CreateText("fonts/turokfont.kfont");
+        back.text = "";
+        back.x = 3;
+        back.y = 3;
+        
+        container.AddChild(top);
+        container.AddChild(back);
+        
+        SetRGB(180, 180, 124, 77, 63, 42);
+    }
+    
+    void SetText(const kStr str) {
+        top.text = str;
+        back.text = top.text;
+        
+        top.text.ToUpper();
+        back.text.ToUpper();
+    }
+    
+    void SetRGB(const uint8 r1, const uint8 g1, const uint8 b1,
+                const uint8 r2, const uint8 g2, const uint8 b2) {
+        top.SetRGB(0, r1, g1, b1);
+        top.SetRGB(1, r1, g1, b1);
+        top.SetRGB(2, r2, g2, b2);
+        top.SetRGB(3, r2, g2, b2);
+        
+        back.SetRGB(0, r1>>2, g1>>2, b1>>2);
+        back.SetRGB(1, r1>>2, g1>>2, b1>>2);
+        back.SetRGB(2, r2>>2, g2>>2, b2>>2);
+        back.SetRGB(3, r2>>2, g2>>2, b2>>2);
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// TurokSlideContainer
+//
+////////////////////////////////////////////////////
+
+final class TurokSlideContainer {
+    kCanvasContainer @container;
+    int state;
+    float slideInX;
+    float slideOutX;
+    float speed;
+    float lerpTime;
+    float pauseTime;
+    
+    TurokSlideContainer(void) {
+        state = is_none;
+        slideInX = 0;
+        slideOutX = 0;
+        speed = 4;
+        lerpTime = 1;
+        pauseTime = 0;
+    }
+    
+    void Invoke(void) {
+        state = is_slideIn;
+    }
+    
+    void LerpOffset(void) {
+        container.x = (Math::Cos((1.0f - lerpTime) * M_PI) - 1.0f) * 0.5f *
+            (slideOutX - slideInX) + slideOutX;
+    }
+    
+    void Update(void) {
+        float timeDelta;
+        
+        if(container is null) {
+            return;
+        }
+        
+        if(state != is_none) {
+            switch(state) {
+                case is_slideIn:
+                    timeDelta = speed * Client.GetRunTime();
+                    LerpOffset();
+                    lerpTime -= timeDelta;
+                    if(lerpTime <= 0) {
+                        container.x = slideInX;
+                        state = is_pause;
+                        lerpTime = 0;
+                        pauseTime = 2.0f;
+                    }
+                    break;
+                case is_pause:
+                    pauseTime -= Client.GetRunTime();
+                    if(pauseTime <= 0) {
+                        state = is_slideOut;
+                        lerpTime = 0;
+                        pauseTime = 0;
+                    }
+                    break;
+                case is_slideOut:
+                    timeDelta = speed * Client.GetRunTime();
+                    LerpOffset();
+                    lerpTime += timeDelta;
+                    if(lerpTime >= 1.0f) {
+                        container.x = slideOutX;
+                        state = is_none;
+                        lerpTime = 1;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// TurokHudMessage
+//
+////////////////////////////////////////////////////
+
+final class TurokHudMessage {
+    TurokHudString string;
+    int alpha;
+    float scale;
+    float time;
+    float curTime;
+    int state;
+    
+    TurokHudMessage(void) {
+        alpha   = 0;
+        scale   = 1.0f;
+        time    = 15.0f;
+        curTime = 0;
+        state   = 0;
+    }
+    
+    void AddText(kStr text) {
+        string.SetText(text);
+        state   = 1;
+        alpha   = 0;
+        scale   = 1.0f;
+        time    = 15.0f;
+        curTime = 0;
+    }
+    
+    void Update(void) {
+        float a;
+        
+        switch(state) {
+            case 3:
+                a = 255.0f - alpha * 0.1232f;
+                scale -= (Math::Sin(a) * 0.33333334f);
+                if(scale < 0.02f) {
+                    scale = 0.02f;
+                }
+                alpha -= 24;
+                if(alpha - 24 <= 0) {
+                    alpha = 0;
+                    state = 0;
+                }
+                break;
+            case 2:
+                curTime -= (15 * Client.GetRunTime());
+                scale = 1.0f;
+                if(curTime <= 0) {
+                    state = 3;
+                }
+                break;
+            case 1:
+                alpha += 31;
+                if(alpha >= 255) {
+                    curTime = time;
+                    state = 2;
+                    alpha = 255;
+                    scale = Math::Sin(alpha * 0.00616f);
+                }
+                break;
+            default:
+                break;
+        }
+        
+        string.top.alpha = (alpha / 255.0f);
+        string.back.alpha = (alpha / 255.0f);
+        //string.top.scaleX = scale;
+        //string.back.scaleX = scale;
     }
 };
 
@@ -50,12 +268,36 @@ final class TurokHud {
     kCanvasImage @h_rockets;
     kCanvasImage @h_fuse;
     kCanvasContainer @container;
+    TurokSlideContainer lfSlider;
     
     TurokHudNumber healthNum;
     TurokHudNumber lifeForceNum;
     TurokHudNumber ammoNum;
+    TurokHudNumber livesNum;
+    
+    array<TurokHudMessage@> messages;
+    
+    TurokHudMessage message1;
+    TurokHudMessage message2;
+    TurokHudMessage message3;
+    TurokHudMessage message4;
+    TurokHudMessage message5;
+    TurokHudMessage message6;
+    TurokHudMessage message7;
+    TurokHudMessage message8;
+    
+    int strCounter;
     
     TurokHud(void) {
+        strCounter = 0;
+    }
+    
+    void Flash(const uint8 r, const uint8 g, const uint8 b) {
+        h_flash.SetRGB(0, r, g, b);
+        h_flash.SetRGB(1, r, g, b);
+        h_flash.SetRGB(2, r, g, b);
+        h_flash.SetRGB(3, r, g, b);
+        h_flash.alpha = 0.5f;
     }
     
     void Update(void) {
@@ -70,10 +312,10 @@ final class TurokHud {
         }
         
         if(lifeForceNum.number.text.Atoi() < 10) {
-            lifeForceNum.number.x = 278;
+            lifeForceNum.number.x = -8;
         }
         else {
-            lifeForceNum.number.x = 269;
+            lifeForceNum.number.x = -17;
         }
         
         if(localPlayer.activeWeaponID == wp_knife) {
@@ -124,44 +366,61 @@ final class TurokHud {
             default:
                 break;
         }
+        
+        for(uint i = 0; i < messages.length(); i++) {
+            messages[i].Update();
+        }
+        
+        lfSlider.Update();
+    }
+    
+    void Notify(kStr text) {
+        messages[strCounter].AddText(text);
+        strCounter = (strCounter + 1) & (messages.length() - 1);
+        
+        int cnt = strCounter;
+        float y = 48;
+        
+        for(uint i = 0; i < messages.length(); i++) {
+            messages[cnt].string.container.y = y;
+            cnt = (cnt + 1) & (messages.length() - 1);
+            y += 18;
+        }
     }
     
     void Init(void) {
-        @h_plaque1  = Canvas.CreateImage("hud/h_plaque1.tga");
-        @h_plaque2  = Canvas.CreateImage("hud/h_plaque1.tga");
-        @h_health   = Canvas.CreateImage("hud/h_health.tga");
-        @h_turok    = Canvas.CreateImage("hud/h_turok.tga");
-        @h_coin     = Canvas.CreateImage("hud/h_coin.tga");
-        @h_armor    = Canvas.CreateImage("hud/h_armor.tga");
-        @h_flash    = Canvas.CreateImage("textures/white.tga");
-        @h_arrow1   = Canvas.CreateImage("hud/h_a_arrow1.tga");
-        @h_arrow2   = Canvas.CreateImage("hud/h_a_arrow2.tga");
-        @h_clip     = Canvas.CreateImage("hud/h_a_clip.tga");
-        @h_shell1   = Canvas.CreateImage("hud/h_a_shells1.tga");
-        @h_shell2   = Canvas.CreateImage("hud/h_a_shells2.tga");
-        @h_cell     = Canvas.CreateImage("hud/h_a_cell.tga");
-        @h_mags     = Canvas.CreateImage("hud/h_a_mags.tga");
-        @h_grenade  = Canvas.CreateImage("hud/h_a_grenades.tga");
-        @h_rockets  = Canvas.CreateImage("hud/h_a_missiles.tga");
-        @h_fuse     = Canvas.CreateImage("hud/h_a_power.tga");
+        @h_plaque1          = Canvas.CreateImage("hud/h_plaque1.tga");
+        @h_plaque2          = Canvas.CreateImage("hud/h_plaque1.tga");
+        @h_health           = Canvas.CreateImage("hud/h_health.tga");
+        @h_turok            = Canvas.CreateImage("hud/h_turok.tga");
+        @h_coin             = Canvas.CreateImage("hud/h_coin.tga");
+        @h_armor            = Canvas.CreateImage("hud/h_armor.tga");
+        @h_flash            = Canvas.CreateImage("textures/white.tga");
+        @h_arrow1           = Canvas.CreateImage("hud/h_a_arrow1.tga");
+        @h_arrow2           = Canvas.CreateImage("hud/h_a_arrow2.tga");
+        @h_clip             = Canvas.CreateImage("hud/h_a_clip.tga");
+        @h_shell1           = Canvas.CreateImage("hud/h_a_shells1.tga");
+        @h_shell2           = Canvas.CreateImage("hud/h_a_shells2.tga");
+        @h_cell             = Canvas.CreateImage("hud/h_a_cell.tga");
+        @h_mags             = Canvas.CreateImage("hud/h_a_mags.tga");
+        @h_grenade          = Canvas.CreateImage("hud/h_a_grenades.tga");
+        @h_rockets          = Canvas.CreateImage("hud/h_a_missiles.tga");
+        @h_fuse             = Canvas.CreateImage("hud/h_a_power.tga");
         
-        @container  = Canvas.CreateContainer();
+        @container          = Canvas.CreateContainer();
+        @lfSlider.container = Canvas.CreateContainer();
         
         Canvas.AddChild(h_flash);
         Canvas.AddChild(container);
         
         h_flash.scaleX = 100;
         h_flash.scaleY = 75;
-        h_flash.SetRGB(0, 0, 44, 148);
-        h_flash.SetRGB(1, 0, 44, 148);
-        h_flash.SetRGB(2, 0, 44, 148);
-        h_flash.SetRGB(3, 0, 44, 148);
         h_flash.alpha = 0;
         h_flash.bVisible = false;
         
         healthNum.Init(36, 215);
-        lifeForceNum.Init(269, 18);
         ammoNum.Init(102, 215);
+        livesNum.Init(40, 42);
         
         h_arrow1.bVisible = false;
         h_arrow2.bVisible = false;
@@ -174,9 +433,35 @@ final class TurokHud {
         h_rockets.bVisible = false;
         h_fuse.bVisible = false;
         
+        messages.insertLast(message1);
+        messages.insertLast(message2);
+        messages.insertLast(message3);
+        messages.insertLast(message4);
+        messages.insertLast(message5);
+        messages.insertLast(message6);
+        messages.insertLast(message7);
+        messages.insertLast(message8);
+        
+        for(uint i = 0; i < messages.length(); i++) {
+            messages[i].string.Init();
+            messages[i].string.container.x = 160;
+            messages[i].string.top.bCentered = true;
+            messages[i].string.back.bCentered = true;
+            container.AddChild(messages[i].string.container);
+        }
+        
+        container.AddChild(lfSlider.container);
+        lifeForceNum.Init(-8, 8);
+        lfSlider.container.AddChild(lifeForceNum.number);
+        lfSlider.container.AddChild(h_coin);
+        lfSlider.slideInX = 286;
+        lfSlider.slideOutX = 348;
+        lfSlider.container.x = lfSlider.slideOutX;
+        lfSlider.container.y = 10;
+        
         container.AddChild(healthNum.number);
-        container.AddChild(lifeForceNum.number);
         container.AddChild(ammoNum.number);
+        container.AddChild(livesNum.number);
         container.AddChild(h_plaque1);
         container.AddChild(h_arrow1);
         container.AddChild(h_arrow2);
@@ -190,7 +475,6 @@ final class TurokHud {
         container.AddChild(h_fuse);
         container.AddChild(h_plaque2);
         container.AddChild(h_turok);
-        container.AddChild(h_coin);
         container.AddChild(h_health);
         
         container.bVisible = false;
@@ -199,8 +483,6 @@ final class TurokHud {
         h_plaque1.y = 210;
         h_plaque2.x = 100;
         h_plaque2.y = 210;
-        h_coin.x = 286;
-        h_coin.y = 10;
         h_turok.x = 10;
         h_turok.y = 10;
         h_health.x = 12;

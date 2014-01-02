@@ -35,6 +35,12 @@ const float PHYSICS_PLAYER_MASS         = 1800;
 const float PHYSICS_PLAYER_STEPHEIGHT   = 36;
 const float PHYSICS_PLAYER_AIR_FRICTION = 0;
 
+const int   MAX_LIFEFORCES              = 100;
+const int   MAX_LIVES                   = 9;
+
+const int   TUROK_HEALTH_MAX            = 250;
+const int   TUROK_MORTAL_WOUND_MAX      = 120;
+
 ////////////////////////////////////////////////////
 //
 // Enums
@@ -120,7 +126,8 @@ void CommandToggleFarZ(void) {
     }
 }
 
-void CommandNoClip(void) {
+void CommandToggleCamera(void) {
+    localPlayer.ToggleCamera();
 }
 
 ////////////////////////////////////////////////////
@@ -136,6 +143,7 @@ final class TurokPlayer : Component {
     int                 pendingWeaponID;
     bool                bFly;
     bool                bToggleFarZ;
+    bool                bCameraAttached;
     bool                bJumped;
     float               fallAmount;
     kVec3               camOffset;
@@ -186,6 +194,7 @@ final class TurokPlayer : Component {
         bJumped         = false;
         bToggleFarZ     = false;
         fallAmount      = 0.0f;
+        bCameraAttached = false;
     }
     
     //
@@ -228,8 +237,39 @@ final class TurokPlayer : Component {
         camera.Attachment().SetSourceOffset(camOffset);
         camera.Attachment().bAttachRelativeAngles = true;
         
+        bCameraAttached = true;
+        
         camera.zFar = 2048.0f;
     }
+    
+    //
+    // TurokPlayer::ToggleCamera
+    //
+    
+    void ToggleCamera(void) {
+        kCamera @camera = LocalWorld.Camera();
+        kActor @puppet = self.Puppet();
+        
+        if(!(camera.Attachment().GetAttachedActor() is null)) {
+            camera.Attachment().DettachActor();
+            puppet.bHidden = false;
+            bCameraAttached = false;
+        }
+        else {
+            camera.Attachment().AttachToActor(puppet);
+            puppet.bHidden = true;
+            bCameraAttached = true;
+        }
+        
+        weaponKnife.bClientView     = bCameraAttached;
+        weaponBow.bClientView       = bCameraAttached;
+        weaponPistol.bClientView    = bCameraAttached;
+        weaponShotgun.bClientView   = bCameraAttached;
+        weaponRifle.bClientView     = bCameraAttached;
+        weaponPulse.bClientView     = bCameraAttached;
+        weaponGrenade.bClientView   = bCameraAttached;
+    }
+
     //
     // TurokPlayer::GetWeaponObj
     //
@@ -438,38 +478,6 @@ final class TurokPlayer : Component {
     }
     
     //
-    // TurokPlayer::GiveKey
-    //
-    
-    void GiveKey(int levelID, int bits) {
-        switch(levelID) {
-        case 2:
-            keys_level2 |= (1 << bits);
-            break;
-        case 3:
-            keys_level3 |= (1 << bits);
-            break;
-        case 4:
-            keys_level4 |= (1 << bits);
-            break;
-        case 5:
-            keys_level5 |= (1 << bits);
-            break;
-        case 6:
-            keys_level6 |= (1 << bits);
-            break;
-        case 7:
-            keys_level7 |= (1 << bits);
-            break;
-        case 8:
-            keys_level8 |= (1 << bits);
-            break;
-        default:
-            break;
-        }
-    }
-    
-    //
     // TurokPlayer::ClampAngles
     //
     
@@ -596,6 +604,10 @@ final class TurokPlayer : Component {
         float bob_x = 0;
         float bob_y = 0;
         
+        if(bCameraAttached == false) {
+            return;
+        }
+        
         if(puppet.Physics().GroundDistance() <= VIEWBOB_GROUNDHEIGHT) {
             float d = Math::Fabs(self.GetAcceleration().z * self.deltaTime) * 0.06f;
             
@@ -642,7 +654,113 @@ final class TurokPlayer : Component {
     }
     
     //
-    // TurokWeapon::OnThink
+    // TurokPlayer::GiveLifeForce
+    //
+    
+    void GiveLifeForce(int amount) {
+        lifeForces += amount;
+        if(lifeForces >= MAX_LIFEFORCES) {
+            self.Puppet().StartSound("sounds/shaders/generic_234.ksnd");
+            if(++lives > MAX_LIVES) {
+                lives = MAX_LIVES;
+            }
+            
+            lifeForces -= MAX_LIFEFORCES;
+            playerHud.livesNum.Update(lives);
+        }
+        
+        playerHud.lifeForceNum.Update(lifeForces);
+    }
+    
+    //
+    // TurokPlayer::GiveKey
+    //
+    
+    void GiveKey(int levelID, int bits) {
+        switch(levelID) {
+        case 2:
+            keys_level2 |= (1 << bits);
+            break;
+        case 3:
+            keys_level3 |= (1 << bits);
+            break;
+        case 4:
+            keys_level4 |= (1 << bits);
+            break;
+        case 5:
+            keys_level5 |= (1 << bits);
+            break;
+        case 6:
+            keys_level6 |= (1 << bits);
+            break;
+        case 7:
+            keys_level7 |= (1 << bits);
+            break;
+        case 8:
+            keys_level8 |= (1 << bits);
+            break;
+        default:
+            break;
+        }
+    }
+    
+    //
+    // TurokPlayer::GiveHealth
+    //
+    
+    bool GiveHealth(int amount, bool bMortalWound) {
+        kActor @puppet = self.Puppet();
+        
+        if(amount <= 0) {
+            puppet.health = mortalWound;
+            return true;
+        }
+        
+        int max;
+        
+        if(bMortalWound) {
+            max = mortalWound;
+        }
+        else {
+            max = TUROK_HEALTH_MAX;
+        }
+        
+        if(puppet.health >= max) {
+            return false;
+        }
+        
+        puppet.health += amount;
+        
+        if(puppet.health >= max) {
+            puppet.health = max;
+        }
+        
+        playerHud.healthNum.Update(puppet.health);
+        return true;
+    }
+    
+    //
+    // TurokPlayer::GiveMortalWound
+    //
+    
+    void GiveMortalWound(int amount) {
+        kActor @puppet = self.Puppet();
+        
+        mortalWound += amount;
+        
+        if(mortalWound > TUROK_MORTAL_WOUND_MAX) {
+            mortalWound = TUROK_MORTAL_WOUND_MAX;
+        }
+            
+        if(puppet.health < mortalWound) {
+            puppet.health = mortalWound;
+        }
+        
+        playerHud.healthNum.Update(puppet.health);
+    }
+    
+    //
+    // TurokPlayer::OnThink
     //
     
     void OnThink(void) {
@@ -682,13 +800,18 @@ final class TurokPlayer : Component {
         
         self.Puppet().bHidden = true;
         self.Puppet().bCanPickup = true;
+        
+        self.Puppet().health = 100;
+        playerHud.healthNum.Update(self.Puppet().health);
+        playerHud.livesNum.Update(lives);
     }
     
     //
     // TurokPlayer::OnTouch
     //
     
-    void OnTouch(kActor @instigator) {
+    bool OnTouch(kActor @instigator) {
+        return true;
     }
     
     //

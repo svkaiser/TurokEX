@@ -65,7 +65,8 @@ class TurokScriptedObject : Component {
     // TurokScriptedObject::OnTouch
     //
     
-    void OnTouch(kActor @instigator) {
+    bool OnTouch(kActor @instigator) {
+        return true;
     }
     
     //

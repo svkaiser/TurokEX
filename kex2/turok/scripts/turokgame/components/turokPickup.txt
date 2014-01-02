@@ -6,7 +6,8 @@
 
 enum turokPickupTypes { 
     pt_smallhealth = 0,
-    pt_health = 2,
+    pt_mediumhealth,
+    pt_largehealth,
     pt_fullhealth,
     pt_ultrahealth,
     pt_mask,
@@ -110,52 +111,93 @@ class TurokPickup : Component {
     // TurokPickup::OnTouch
     //
     
-    void OnTouch(kActor @instigator) {
+    bool OnTouch(kActor @instigator) {
         TurokPlayer @player;
 
         if(instigator is null) {
-            return;
+            return false;
         }
         
         kActor @owner = instigator.GetOwner();
         
         if(owner is null) {
-            return;
+            return false;
         }
         
         @player = cast<TurokPlayer@>(owner.obj);
         
         if(player is null) {
-            return;
+            return false;
         }
         
-        playerHud.h_flash.alpha = 0.5f;
-        
         switch(type) {
+            case pt_smallhealth:
+                if(!player.GiveHealth(2, false)) {
+                    return false;
+                }
+                playerHud.Notify("2 health");
+                break;
+            case pt_mediumhealth:
+                if(!player.GiveHealth(10, true)) {
+                    return false;
+                }
+                playerHud.Notify("10 health");
+                break;
+            case pt_largehealth:
+                if(!player.GiveHealth(25, true)) {
+                    return false;
+                }
+                playerHud.Notify("25 health");
+                break;
+            case pt_fullhealth:
+                player.GiveHealth(-1, false);
+                playerHud.Notify("full health");
+                break;
+            case pt_ultrahealth:
+                if(!player.GiveHealth(100, false)) {
+                    return false;
+                }
+                playerHud.Notify("ultra health");
+                break;
             case pt_coin1:
-                player.lifeForces++;
-                playerHud.lifeForceNum.Update(player.lifeForces);
+                player.GiveLifeForce(1);
+                playerHud.lfSlider.Invoke();
                 break;
             case pt_coin10:
-                player.lifeForces += 10;
-                playerHud.lifeForceNum.Update(player.lifeForces);
+                player.GiveLifeForce(10);
+                playerHud.lfSlider.Invoke();
                 break;
             case pt_clip:
-                player.clips.Give(player, 10);
+                if(!player.clips.Give(player, 10)) {
+                    return false;
+                }
+                playerHud.Notify("clip");
                 break;
             case pt_clipbox:
-                player.clips.Give(player, 50);
+                if(!player.clips.Give(player, 50)) {
+                    return false;
+                }
+                playerHud.Notify("box of bullets");
                 break;
             case pt_shells:
-                player.shells.Give(player, 5);
+                if(!player.shells.Give(player, 5)) {
+                    return false;
+                }
+                playerHud.Notify("shotgun shells");
                 break;
             case pt_shellbox:
-                player.shells.Give(player, 20);
+                if(!player.shells.Give(player, 20)) {
+                    return false;
+                }
+                playerHud.Notify("box of shotgun shells");
                 break;
             default:
                 Com.Warning("Unknown pickup type: " + type);
-                break;
+                return true;
         }
+        
+        playerHud.Flash(0, 44, 148);
+        return true;
     }
     
     //

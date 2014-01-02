@@ -3,6 +3,7 @@
 #include "scripts/turokScriptedObject.txt"
 #include "scripts/turokPickup.txt"
 #include "scripts/turokHud.txt"
+#include "scripts/menu.txt"
 
 TurokHud playerHud;
 
