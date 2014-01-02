@@ -209,6 +209,10 @@ kexSector *kexSector::CrossEdge(cMapTrace_t *trace, const int edge) {
     }
 
     if(Wall()) {
+        if(next->flags & CLF_CLIMB) {
+            return next;
+        }
+
         if(!next->Wall()) {
             return next;
         }
@@ -231,7 +235,7 @@ kexSector *kexSector::CrossEdge(cMapTrace_t *trace, const int edge) {
     }
 
     // crossing into a wall or a very steep slope
-    if(next->Wall() && !Wall()) {
+    if(next->Wall() && !Wall() && !(next->flags & CLF_CLIMB)) {
         float dist1 = nextTri->GetDistance(trace->end);
         float dist2 = curTri->GetDistance(trace->start);
 

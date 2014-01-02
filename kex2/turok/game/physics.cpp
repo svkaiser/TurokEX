@@ -278,6 +278,41 @@ void kexPhysics::ApplyFriction(void) {
 }
 
 //
+// kexPhysics::ClimbOnSurface
+//
+
+void kexPhysics::ClimbOnSurface(kexVec3 &start, const kexVec3 &end, kexTri *tri) {
+    kexVec3 dir;
+    float dist;
+    float lenxz;
+    float leny;
+    float y1;
+    float y2;
+
+    if((end - *tri->point[0]).Dot(tri->plane.Normal()) > 0) {
+        return;
+    }
+
+    y1 = tri->GetDistance(start);
+    y2 = tri->GetDistance(end);
+
+    dir.Set(end[0] - start[0], y2 - y1, end[2] - start[2]);
+    lenxz = dir.ToVec2().Unit();
+    leny = dir[1]*dir[1]+lenxz;
+
+    if(leny == 0) {
+        start[1] = y1;
+        return;
+    }
+
+    dist = kexMath::Sqrt(lenxz / leny);
+
+    start[0] = (end[0] - start[0]) * dist + start[0];
+    start[1] = (y2 - y1) * dist + y1;
+    start[2] = (end[2] - start[2]) * dist + start[2];
+}
+
+//
 // kexPhysics::Think
 //
 
@@ -370,6 +405,10 @@ void kexPhysics::Think(const float timeDelta) {
         }
     }
 
+    if(sector && sector->flags & CLF_CLIMB) {
+        bCanStep = false;
+    }
+
     // fudge the origin if we're slightly clipping below the floor
     trace.start = start - (gravity * (stepHeight * 0.5f));
     trace.end = start;
@@ -403,9 +442,23 @@ void kexPhysics::Think(const float timeDelta) {
             break;
         }
 
-        // update origin and nudge origin away from plane
-        owner->SetOrigin(trace.hitVector - (direction * 0.125f));
-        owner->LinkArea();
+        // check if climbing up along a surface
+        if(sector && sector->flags & CLF_CLIMB) {
+            owner->SetOrigin(trace.hitVector);
+            ClimbOnSurface(owner->GetOrigin(), end, &sector->lowerTri);
+
+            // nudge origin away from plane
+            owner->GetOrigin() -= (direction * 0.1f);
+            owner->LinkArea();
+
+            velocity.Clear();
+            break;
+        }
+        else {
+            // update origin and nudge origin away from plane
+            owner->SetOrigin(trace.hitVector - (direction * 0.125f));
+            owner->LinkArea();
+        }
 
         // test if walking on steep slopes
         slope = trace.hitNormal.Dot(gravity);

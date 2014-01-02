@@ -71,6 +71,7 @@ public:
     bool                    OnSteepSlope(void);
     void                    ImpactVelocity(kexVec3 &vel, kexVec3 &normal, const float force);
     void                    ApplyFriction(void);
+    void                    ClimbOnSurface(kexVec3 &start, const kexVec3 &end, kexTri *tri);
 
     virtual void            Think(const float timeDelta);
 
