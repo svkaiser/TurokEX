@@ -65,16 +65,14 @@ void kexFrustum::TransformToView(kexMatrix &proj, kexMatrix &model) {
 
 bool kexFrustum::TestBoundingBox(const kexBBox &bbox) {
     for(int i = 0; i < 6; i++) {
-        kexVec4 vec(p[i].ToVec4());
-        
-        float d1 = vec.x * bbox.min.x + vec.y * bbox.min.y + vec.z * bbox.min.z + vec.w;
-        float d2 = vec.x * bbox.max.x + vec.y * bbox.min.y + vec.z * bbox.min.z + vec.w;
-        float d3 = vec.x * bbox.min.x + vec.y * bbox.max.y + vec.z * bbox.min.z + vec.w;
-        float d4 = vec.x * bbox.max.x + vec.y * bbox.max.y + vec.z * bbox.min.z + vec.w;
-        float d5 = vec.x * bbox.min.x + vec.y * bbox.min.y + vec.z * bbox.max.z + vec.w;
-        float d6 = vec.x * bbox.max.x + vec.y * bbox.min.y + vec.z * bbox.max.z + vec.w;
-        float d7 = vec.x * bbox.min.x + vec.y * bbox.max.y + vec.z * bbox.max.z + vec.w;
-        float d8 = vec.x * bbox.max.x + vec.y * bbox.max.y + vec.z * bbox.max.z + vec.w;
+        float d1 = p[i].a * bbox.min.x + p[i].b * bbox.min.y + p[i].c * bbox.min.z + p[i].d;
+        float d2 = p[i].a * bbox.max.x + p[i].b * bbox.min.y + p[i].c * bbox.min.z + p[i].d;
+        float d3 = p[i].a * bbox.min.x + p[i].b * bbox.max.y + p[i].c * bbox.min.z + p[i].d;
+        float d4 = p[i].a * bbox.max.x + p[i].b * bbox.max.y + p[i].c * bbox.min.z + p[i].d;
+        float d5 = p[i].a * bbox.min.x + p[i].b * bbox.min.y + p[i].c * bbox.max.z + p[i].d;
+        float d6 = p[i].a * bbox.max.x + p[i].b * bbox.min.y + p[i].c * bbox.max.z + p[i].d;
+        float d7 = p[i].a * bbox.min.x + p[i].b * bbox.max.y + p[i].c * bbox.max.z + p[i].d;
+        float d8 = p[i].a * bbox.max.x + p[i].b * bbox.max.y + p[i].c * bbox.max.z + p[i].d;
         
         if(((FLOATSIGNBIT(d1) << 0) |
             (FLOATSIGNBIT(d2) << 1) |
