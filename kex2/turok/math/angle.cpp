@@ -75,18 +75,82 @@ kexAngle::kexAngle(const kexAngle &an) {
 }
 
 //
+// Ang_Clamp
+//
+
+void kexAngle::Clamp(float *angle) {
+    float an = *angle;
+
+    if(an < -M_PI) for(; an < -M_PI; an = an + FULLCIRCLE);
+    if(an >  M_PI) for(; an >  M_PI; an = an - FULLCIRCLE);
+
+    *angle = an;
+}
+
+//
+// kexAngle::ClampInvert
+//
+
+float kexAngle::ClampInvert(float angle) {
+    float an = angle;
+    
+    for(; an < -M_PI; an = an + FULLCIRCLE);
+    for(; an >  M_PI; an = an - FULLCIRCLE);
+
+    return -an;
+}
+
+//
+// kexAngle::ClampInvertSums
+//
+
+float kexAngle::ClampInvertSums(float angle1, float angle2) {
+    return ClampInvert(ClampInvert(angle2) + angle1);
+}
+
+//
+// kexAngle::DiffAngles
+//
+
+float kexAngle::DiffAngles(float angle1, float angle2) {
+    float an1;
+    float an2;
+
+    Clamp(&angle1);
+    Clamp(&angle2);
+
+    an2 = 0.0f;
+
+    if(angle1 <= angle2) {
+        an1 = angle2 + FULLCIRCLE;
+        if(angle1 - angle2 > an1 - angle1) {
+            an2 = angle1 - an1;
+        }
+        else {
+            an2 = angle1 - angle2;
+        }
+    }
+    else {
+        an1 = angle2 - FULLCIRCLE;
+        if(angle2 - angle1 <= angle1 - an1) {
+            an2 = angle1 - angle2;
+        }
+        else {
+            an2 = angle1 - an1;
+        }
+    }
+
+    return an2;
+}
+
+//
 // kexAngle::Clamp180
 //
 
 kexAngle &kexAngle::Clamp180(void) {
-#define CLAMP180(x)                                             \
-    if(x < -M_PI) for(; x < -M_PI; x = x + FULLCIRCLE);         \
-    if(x >  M_PI) for(; x >  M_PI; x = x - FULLCIRCLE)
-    CLAMP180(yaw);
-    CLAMP180(pitch);
-    CLAMP180(roll);
-#undef CLAMP180
-
+    Clamp(&yaw);
+    Clamp(&pitch);
+    Clamp(&roll);
     return *this;
 }
 
@@ -95,17 +159,9 @@ kexAngle &kexAngle::Clamp180(void) {
 //
 
 kexAngle &kexAngle::Clamp180Invert(void) {
-#define CLAMP180(x)                                             \
-    for(; x < -M_PI; x = x + FULLCIRCLE);                       \
-    for(; x >  M_PI; x = x - FULLCIRCLE)
-    CLAMP180(yaw);
-    CLAMP180(pitch);
-    CLAMP180(roll);
-#undef CLAMP180
-
-    yaw     = -yaw;
-    pitch   = -pitch;
-    roll    = -roll;
+    yaw = ClampInvert(yaw);
+    pitch = ClampInvert(pitch);
+    roll = ClampInvert(roll);
 
     return *this;
 }
@@ -115,19 +171,9 @@ kexAngle &kexAngle::Clamp180Invert(void) {
 //
 
 kexAngle &kexAngle::Clamp180InvertSum(const kexAngle &angle) {
-    kexAngle an = angle;
-
-    an.Clamp180Invert();
-
-    an.yaw      += this->yaw;
-    an.pitch    += this->pitch;
-    an.roll     += this->roll;
-
-    an.Clamp180Invert();
-
-    this->yaw   = an.yaw;
-    this->pitch = an.pitch;
-    this->roll  = an.roll;
+    yaw = ClampInvertSums(yaw, angle.yaw);
+    pitch = ClampInvertSums(pitch, angle.pitch);
+    roll = ClampInvertSums(roll, angle.roll);
 
     return *this;
 }
@@ -153,35 +199,11 @@ kexAngle &kexAngle::Round(void) {
 //
 
 kexAngle kexAngle::Diff(kexAngle &angle) {
-    float an;
     kexAngle out;
 
-    Clamp180();
-    angle.Clamp180();
-
-#define DIFF(x)                     \
-    if(x <= angle.x) {              \
-        an = angle.x + FULLCIRCLE;  \
-        if(x - angle.x > an - x) {  \
-            out.x = x - an;         \
-        }                           \
-        else {                      \
-            out.x = x - angle.x;    \
-        }                           \
-    }                               \
-    else {                          \
-        an = angle.x - FULLCIRCLE;  \
-        if(angle.x - x <= x - an) { \
-            out.x = x - angle.x;    \
-        }                           \
-        else {                      \
-            out.x = x - an;         \
-        }                           \
-    }
-    DIFF(yaw);
-    DIFF(pitch);
-    DIFF(roll);
-#undef DIFF
+    out.yaw = DiffAngles(yaw, angle.yaw);
+    out.pitch = DiffAngles(pitch, angle.pitch);
+    out.roll = DiffAngles(roll, angle.roll);
 
     return out;
 }

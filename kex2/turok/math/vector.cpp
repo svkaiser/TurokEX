@@ -657,6 +657,14 @@ float *kexVec3::ToFloatPtr(void) {
 }
 
 //
+// kexVec3::ToVec2
+//
+
+kexVec2 kexVec3::ToVec2(void) {
+    return kexVec2(x, z);
+}
+
+//
 // kexVec3::ScreenProject
 //
 

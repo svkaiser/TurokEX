@@ -212,6 +212,7 @@ public:
     float                   ToPitch(void) const;
     kexStr                  ToString(void) const;
     float                   *ToFloatPtr(void);
+    kexVec2                 ToVec2(void);
     kexVec3                 ScreenProject(kexMatrix &proj, kexMatrix &model,
                                           const int width, const int height,
                                           const int wx, const int wy);
@@ -382,6 +383,11 @@ public:
     kexVec3                 &ToVec3(void);
     kexQuat                 ToQuat(void);
 
+    static void             Clamp(float *angle);
+    static float            ClampInvert(float angle);
+    static float            ClampInvertSums(float angle1, float angle2);
+    static float            DiffAngles(float angle1, float angle2);
+
     kexAngle                operator+(const kexAngle &angle);
     kexAngle                operator-(const kexAngle &angle);
     kexAngle                &operator+=(const kexAngle &angle);
@@ -427,6 +433,8 @@ public:
     kexBBox                 operator|(const kexVec3 &vec) const;
     kexBBox                 &operator|=(const kexVec3 &vec);
     kexBBox                 &operator=(const kexBBox &bbox);
+    kexVec3                 operator[](int index) const;
+    kexVec3                 &operator[](int index);
                         
     kexVec3                 min;
     kexVec3                 max;

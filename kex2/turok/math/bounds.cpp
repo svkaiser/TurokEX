@@ -330,6 +330,24 @@ kexBBox &kexBBox::operator=(const kexBBox &bbox) {
 }
 
 //
+// kexBBox::operator[]
+//
+
+kexVec3 kexBBox::operator[](int index) const {
+    assert(index >= 0 && index < 2);
+    return index == 0 ? min : max;
+}
+
+//
+// kexBBox::operator[]
+//
+
+kexVec3 &kexBBox::operator[](int index) {
+    assert(index >= 0 && index < 2);
+    return index == 0 ? min : max;
+}
+
+//
 // kexBBox:LineIntersect
 //
 
