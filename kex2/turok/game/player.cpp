@@ -215,6 +215,7 @@ kexPlayer::kexPlayer(void) {
     this->crawlMove.accelRef    = &this->acceleration;
     this->flyMove.accelRef      = &this->acceleration;
     this->noClipMove.accelRef   = &this->acceleration;
+    this->bNoClip               = false;
 }
 
 //
@@ -285,6 +286,26 @@ void kexPlayer::UnpossessPuppet(void) {
 kexActor *kexPlayer::PuppetToActor(void) {
     puppet->AddRef();
     return static_cast<kexActor*>(puppet);
+}
+
+//
+// kexPlayer::ToggleClipping
+//
+
+void kexPlayer::ToggleClipping(void) {
+    bool bToggle = bNoClip;
+
+    bNoClip ^= 1;
+
+    if(bToggle == true && bNoClip == false) {
+        if(localWorld.CollisionMap().IsLoaded()) {
+            puppet->Physics()->sector = localWorld.CollisionMap().PointInSector(puppet->GetOrigin());
+        }
+        puppet->LinkArea();
+    }
+    else {
+        puppet->UnlinkArea();
+    }
 }
 
 DECLARE_CLASS(kexLocalPlayer, kexPlayer)
@@ -433,6 +454,7 @@ int kexLocalPlayer::ActionHeldTime(const kexStr &str) {
 
     return heldtime;
 }
+
 //
 // kexLocalPlayer::LocalTick
 //
@@ -457,9 +479,15 @@ void kexLocalPlayer::LocalTick(void) {
 
     exitSector = puppet->Physics()->sector;
 
-    puppet->Physics()->Think(frameTime);
-    puppet->UpdateTransform();
+    if(bNoClip == false) {
+        puppet->Physics()->Think(frameTime);
+    }
+    else {
+        puppet->GetOrigin() += (puppet->Physics()->velocity * frameTime);
+        puppet->Physics()->velocity.Clear();
+    }
 
+    puppet->UpdateTransform();
     enterSector = puppet->Physics()->sector;
 
     localWorld.CollisionMap().PlayerCrossAreas(enterSector, exitSector);

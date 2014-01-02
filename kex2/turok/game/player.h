@@ -69,6 +69,7 @@ public:
     void                    ResetTicCommand(void);
     void                    PossessPuppet(kexPlayerPuppet *puppetActor);
     void                    UnpossessPuppet(void);
+    void                    ToggleClipping(void);
 
     kexPlayerMove           &GroundMove(void) { return groundMove; }
     kexPlayerMove           &AirMove(void) { return airMove; }
@@ -86,6 +87,7 @@ public:
     void                    SetCrawlHeight(const float f) { crawlHeight = f; }
     float                   GetMoveTime(void) { return moveTime; }
     void                    SetMoveTime(const float t) { moveTime = t; }
+    bool                    &NoClip(void) { return bNoClip; }
     
     ticcmd_t                *Cmd(void) { return &cmd; }
     kexPlayerPuppet         *Puppet(void) { return puppet; }
@@ -117,6 +119,7 @@ protected:
     char                    *jsonData;
     float                   frameTime;
     float                   timeStamp;
+    bool                    bNoClip;
 END_CLASS();
 
 BEGIN_EXTENDED_CLASS(kexLocalPlayer, kexPlayer);
@@ -132,7 +135,7 @@ public:
     int                     ActionHeldTime(const kexStr &str);
 
     kexVec3                 &MoveDiff(void) { return moveDiff; }
-    kexActor           *ToWorldActor(void) { return static_cast<kexActor*>(this); }
+    kexActor                *ToWorldActor(void) { return static_cast<kexActor*>(this); }
 
     static void             InitObject(void);
 

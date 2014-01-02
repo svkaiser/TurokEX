@@ -142,11 +142,19 @@ void kexServer::CreateHost(void) {
 //
 
 void kexServer::ClientCommand(ENetEvent *sev, ENetPacket *packet) {
+    ENetPacket *p;
     char *cmd = packetManager.ReadString(packet);
-    /*svclient_t *svcl;
+    kexNetPlayer *player = &players[GetClientID(sev->peer)];
 
-    svcl = &clients[GetClientID(sev->peer)];
-    common.DPrintf("client command: %s (%s)\n", cmd, GetPeerAddress(sev));*/
+    common.DPrintf("client command: %s (%s)\n", cmd, GetPeerAddress(sev));
+    if(!kexStr::Compare(cmd, "noclip")) {
+        if(!(p = packetManager.Create())) {
+            return;
+        }
+
+        packetManager.Write8(p, sp_noclip);
+        packetManager.Send(p, sev->peer);
+    }
 }
 
 //
@@ -156,8 +164,9 @@ void kexServer::ClientCommand(ENetEvent *sev, ENetPacket *packet) {
 void kexServer::SendMessage(ENetEvent *sev, int type) {
     ENetPacket *packet;
 
-    if(!(packet = packetManager.Create()))
+    if(!(packet = packetManager.Create())) {
         return;
+    }
 
     packetManager.Write8(packet, sp_msg);
     packetManager.Write8(packet, type);
@@ -171,8 +180,9 @@ void kexServer::SendMessage(ENetEvent *sev, int type) {
 void kexServer::SendAcknowledgement(ENetEvent *sev) {
     ENetPacket *packet;
 
-    if(!(packet = packetManager.Create()))
+    if(!(packet = packetManager.Create())) {
         return;
+    }
 
     packetManager.Write8(packet, sp_ping);
     packetManager.Send(packet, sev->peer);

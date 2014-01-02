@@ -138,6 +138,10 @@ void kexClient::ProcessPackets(const ENetPacket *packet) {
         PrepareMapChange(packet);
         break;
 
+    case sp_noclip:
+        playerClient.ToggleClipping();
+        break;
+
     default:
         common.Warning("Recieved unknown packet type: %i\n", type);
         break;
