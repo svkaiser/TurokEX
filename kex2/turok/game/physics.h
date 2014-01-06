@@ -31,13 +31,6 @@
 #define ONPLANE_EPSILON     0.512f
 #define VELOCITY_EPSILON    0.0001f
 
-typedef enum {
-    WLT_INVALID  = 0,
-    WLT_OVER     = 1,
-    WLT_BETWEEN  = 2,
-    WLT_UNDER    = 3
-} waterLevelType_t;
-
 class kexWorldObject;
 class kexClipMesh;
 
@@ -72,6 +65,8 @@ public:
     void                    ImpactVelocity(kexVec3 &vel, kexVec3 &normal, const float force);
     void                    ApplyFriction(void);
     void                    ClimbOnSurface(kexVec3 &start, const kexVec3 &end, kexTri *tri);
+    float                   GetWaterDepth(void);
+    void                    CheckWater(float height);
 
     virtual void            Think(const float timeDelta);
 
@@ -94,9 +89,12 @@ public:
     float                   rotorFriction;
     kexVec3                 rotorVector;
     waterLevelType_t        waterLevel;
+    float                   waterHeight;
     kexTri                  *groundGeom;
+    kexClipMesh             *groundMesh;
     kexSector               *sector;
     bool                    bOnGround;
+    bool                    bInWater;
 
 protected:
     kexWorldObject          *owner;

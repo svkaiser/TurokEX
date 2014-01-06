@@ -90,6 +90,7 @@ void kexFxPhysics::Think(const float timeDelta) {
     fxinfo_t *fxinfo;
     traceInfo_t trace;
     kexVec3 start;
+    int oldWL;
 
     if(owner == NULL) {
         return;
@@ -114,8 +115,12 @@ void kexFxPhysics::Think(const float timeDelta) {
 
     if(sector == NULL) {
         kexWorldObject *source = static_cast<kexWorldObject*>(owner->GetOwner());
+        kexFx *parent = fx->GetParent();
 
-        if(source != NULL && source->Physics()->sector) {
+        if(parent != NULL && parent->Physics()->sector) {
+            sector = parent->Physics()->sector;
+        }
+        else if(source != NULL && source->Physics()->sector) {
             sector = source->Physics()->sector;
         }
         else {
@@ -123,6 +128,11 @@ void kexFxPhysics::Think(const float timeDelta) {
         }
     }
 
+    if(sector) {
+        CheckWater(0);
+    }
+
+    oldWL = waterLevel;
     fxinfo = fx->fxInfo;
 
     if(moveAmount < 0.001f || fxinfo->onplane == VFX_DEFAULT) {
@@ -156,6 +166,7 @@ void kexFxPhysics::Think(const float timeDelta) {
                         owner->GetOrigin() += (trace.hitNormal * 1.024f);
                         fx->Event(&fxinfo->onImpact, trace.hitActor);
                         fx->Remove();
+                        fx->SetParent(NULL);
                         break;
                     default:
                         break;
@@ -178,33 +189,31 @@ void kexFxPhysics::Think(const float timeDelta) {
                     owner->GetOrigin() += (trace.hitNormal * 1.024f);
                     fx->Event(&fxinfo->onImpact, NULL);
                     fx->Remove();
+                    fx->SetParent(NULL);
                     break;
             }
         }
     }
 
-    /*
-    wl2 = Map_GetWaterLevel(fx->origin, 0, fx->plane);
+    if(sector != NULL) {
+        // check if in water sector
+        CheckWater(0);
+        if((oldWL == WLT_OVER && waterLevel >= WLT_BETWEEN) ||
+            (oldWL >= WLT_BETWEEN && waterLevel == WLT_OVER)) {
+                float tmpY = owner->GetOrigin()[1];
+                owner->GetOrigin()[1] = waterHeight + 4.096f;
+                fx->Event(&fxinfo->onWaterImpact, NULL);
 
-    if((wl1 == WL_UNDER && wl2 == WL_OVER) ||
-        (wl1 == WL_OVER && wl2 == WL_UNDER)) {
-        vec3_t oTmp;
+                if(fxinfo->bDestroyOnWaterSurface) {
+                    fx->SetOwner(NULL);
+                    fx->SetParent(NULL);
+                    fx->Remove();
+                    velocity.Clear();
+                }
 
-        Vec_Copy3(oTmp, fx->origin);
-
-        if(fx->plane)
-            fx->origin[1] = (Map_GetArea(fx->plane)->waterplane + 4.096f);
-
-        FX_Event(fx, &fx->info->onWaterImpact, NULL);
-        if(fx->info->bDestroyOnWaterSurface) {
-            fx->lifetime = 0;
-            Vec_Set3(fx->translation, 0, 0, 0);
-            Actor_SetTarget((gActor_t**)&fx->source, NULL);
+                owner->GetOrigin()[1] = tmpY;
         }
-
-        Vec_Copy3(fx->origin, oTmp);
     }
-    */
 }
 
 DECLARE_CLASS(kexFx, kexWorldObject)
@@ -218,6 +227,7 @@ kexFx::kexFx(void) {
     this->bCollision    = true;
     this->owner         = NULL;
     this->target        = NULL;
+    this->parent        = NULL;
     
     this->attachment.SetOwner(this);
     this->physics.SetOwner(this);
@@ -230,6 +240,22 @@ kexFx::kexFx(void) {
 //
 
 kexFx::~kexFx(void) {
+}
+
+//
+// kexFx::SetParent
+//
+
+void kexFx::SetParent(kexFx *targ) {
+    // If there was a parent already, decrease its refcount
+    if(parent) {
+        parent->RemoveRef();
+    }
+
+    // Set new target and if non-NULL, increase its counter
+    if((parent = targ)) {
+        parent->AddRef();
+    }
 }
 
 //
@@ -260,8 +286,7 @@ void kexFx::LocalTick(void) {
 
     attachment.Transform();
 
-    //bUnderWater = (Map_GetWaterLevel(origin, 0, fx->plane) == WL_UNDER);
-    bUnderWater = false;
+    bUnderWater = Physics()->bInWater;
 
     //
     // handle 'on tick' events
@@ -383,6 +408,7 @@ void kexFx::LocalTick(void) {
         }
 
         Remove();
+        SetParent(NULL);
     }
 }
 
@@ -425,7 +451,7 @@ kexFx *kexFx::SpawnChild(const char *name) {
         org += (nvec | (mtx1 | mtx3));
     }
 
-    return localWorld.SpawnFX(name, owner, physics.velocity, org, rot);
+    return localWorld.SpawnFX(name, owner, physics.velocity, org, rot, this);
 }
 
 //

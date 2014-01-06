@@ -275,7 +275,7 @@ void kexAnimState::Blend(const kexAnim_t *anim, float animTime, float animBlendT
     prevTrack.anim          = track.anim;
     track.anim              = const_cast<kexAnim_t*>(anim);
     restartFrame            = anim->loopFrame;
-    currentFrame            = 0;
+    currentFrame            = track.frame;
 }
 
 //
@@ -401,7 +401,7 @@ void kexAnimState::ExecuteFrameActions(void) {
         for(unsigned int j = 0; j < anim->numActions; j++) {
             frameAction_t *action = &track.anim->actions[j];
 
-            if(action->frame != i) {
+            if(action->frame-1 != i) {
                 continue;
             }
 
@@ -607,6 +607,10 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                 lexer->ExpectNextToken(TK_LBRACK);
                 for(i = 0; i < anim->numActions; i++) {
                     anim->actions[i].frame = lexer->GetNumber();
+                    if(anim->actions[i].frame == 0) {
+                        common.Warning("Kanim_ParseAnimScript: Frame 0 set on %i (%s)\n",
+                            anim->animFile);
+                    }
                     lexer->GetString();
                     anim->actions[i].function = Mem_Strdup(lexer->StringToken(),
                         hb_model);

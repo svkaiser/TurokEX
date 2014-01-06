@@ -85,6 +85,7 @@ void kexMover::OnTrigger(void) {
     time        = timeStamp;
     lerpTime    = 1.0f;
     distance    = physics.sector->lowerTri.GetDistance(origin);
+    targetID    = 0;
 }
 
 //

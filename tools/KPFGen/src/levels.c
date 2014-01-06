@@ -1365,12 +1365,12 @@ static void WriteGenericActorProps(mapactor_t *actor, attribute_t *attr)
     Com_Strcat("mesh \"models/mdl%03d/mdl%03d.kmesh\"\n",
         actor->model, actor->model);
     Com_Strcat("bounds { %f %f %f } { %f %f %f }\n",
-        mdlboxes[actor->model][0],
+        -mdlboxes[actor->model][0],
         mdlboxes[actor->model][1],
-        mdlboxes[actor->model][2],
-        mdlboxes[actor->model][3],
+        -mdlboxes[actor->model][2],
+        -mdlboxes[actor->model][3],
         mdlboxes[actor->model][4],
-        mdlboxes[actor->model][5]);
+        -mdlboxes[actor->model][5]);
     Com_Strcat("radius %f\n", attr->width);
     Com_Strcat("height %f\n", attr->height);
     Com_Strcat("centerheight %f\n", attr->centerHeight);
@@ -1896,6 +1896,15 @@ static void ProcessActors(byte *data)
             Com_Strcat("}\n\n");
             break;
 
+        case OT_DYNAMIC_PORTAL:
+        case OT_DYNAMIC_PORTALGATE:
+            Com_Strcat("actor \"kexActor\"\n");
+            Com_Strcat("{\n");
+            WriteGenericActorProps(actor, attr);
+            Com_Strcat("targetID %i\n", attr->tid);
+            Com_Strcat("}\n\n");
+            break;
+
         case OT_AI_ANIMAL:
             switch(actor->model)
             {
@@ -2204,6 +2213,7 @@ static void ProcessInstances(byte *data, int offs)
     int size;
     int count;
     int i;
+    int type;
 
     size = Com_GetCartOffset(data, CHUNK_INSTANCE_SIZE, 0);
     count = Com_GetCartOffset(data, CHUNK_INSTANCE_COUNT, 0);
@@ -2216,30 +2226,29 @@ static void ProcessInstances(byte *data, int offs)
         mapinsttype3_t *mapinst = (mapinsttype3_t*)(data + 8 + (i * size));
         float bboxUnit;
 
-        // TEMP
-        if(!IsAPickup(mapinst->model))
-            continue;
-
+        type = GetObjectType(mapinst->model);
         bboxUnit = (float)sqrt(mapinst->bboxsize*mapinst->bboxsize);
 
-        Com_Strcat("actor \"kexPickup\"\n");
-        Com_Strcat("{\n");
-        Com_Strcat("origin { %f %f %f }\n",
-            mapinst->xyz[0], mapinst->xyz[1], mapinst->xyz[2]);
-        Com_Strcat("scale { 0.35 0.35 0.35 }\n");
-        Com_Strcat("bStatic 0\n");
-        Com_Strcat("bCollision 0\n");
-        Com_Strcat("angles { %f 0 0 }\n",
-            (mapinst->angle * ANGLE_LEVELOBJECT) * M_RAD);
-        Com_Strcat("radius %f\n", mapinst->bboxsize);
-        Com_Strcat("height %f\n", mapinst->bboxsize);
-        Com_Strcat("bTouch 1\n");
+        if(IsAPickup(mapinst->model))
+        {
+            Com_Strcat("actor \"kexPickup\"\n");
+            Com_Strcat("{\n");
+            Com_Strcat("origin { %f %f %f }\n",
+                mapinst->xyz[0], mapinst->xyz[1], mapinst->xyz[2]);
+            Com_Strcat("scale { 0.35 0.35 0.35 }\n");
+            Com_Strcat("bStatic 0\n");
+            Com_Strcat("bCollision 0\n");
+            Com_Strcat("angles { %f 0 0 }\n",
+                (mapinst->angle * ANGLE_LEVELOBJECT) * M_RAD);
+            Com_Strcat("radius %f\n", mapinst->bboxsize);
+            Com_Strcat("height %f\n", mapinst->bboxsize);
+            Com_Strcat("bTouch 1\n");
 
-        Com_Strcat("component \"TurokPickup\"\n");
-        Com_Strcat("pickupType %i\n",
-            GetObjectType(mapinst->model) - OT_PICKUP_SMALLHEALTH);
+            Com_Strcat("component \"TurokPickup\"\n");
+            Com_Strcat("pickupType %i\n",
+                GetObjectType(mapinst->model) - OT_PICKUP_SMALLHEALTH);
 
-        switch(GetObjectType(mapinst->model))
+            switch(type)
             {
             case OT_PICKUP_MASK:
             case OT_PICKUP_BACKPACK:
@@ -2294,15 +2303,47 @@ static void ProcessInstances(byte *data, int offs)
                 break;
             }
 
-        Com_Strcat("mesh \"models/mdl%03d/mdl%03d.kmesh\"\n",
-            mapinst->model, mapinst->model);
-        Com_Strcat("cullDistance %f\n", bboxUnit + 4096.0f);
+            Com_Strcat("mesh \"models/mdl%03d/mdl%03d.kmesh\"\n",
+                mapinst->model, mapinst->model);
+            Com_Strcat("cullDistance %f\n", bboxUnit + 4096.0f);
 
-        bboxUnit = mapinst->bboxsize * 2;
+            bboxUnit = mapinst->bboxsize * 2;
 
-        Com_Strcat("bounds { %f 0 %f } { %f %f %f }\n",
-            -bboxUnit, -bboxUnit, bboxUnit, bboxUnit, bboxUnit);
-        Com_Strcat("}\n\n");
+            Com_Strcat("bounds { %f 0 %f } { %f %f %f }\n",
+                -bboxUnit, -bboxUnit, bboxUnit, bboxUnit, bboxUnit);
+            Com_Strcat("}\n\n");
+        }
+        else
+        {
+            switch(type)
+            {
+            case 600:
+            case 800:
+                Com_Strcat("actor \"kexActor\"\n");
+                Com_Strcat("{\n");
+                Com_Strcat("origin { %f %f %f }\n",
+                    mapinst->xyz[0], mapinst->xyz[1], mapinst->xyz[2]);
+                Com_Strcat("scale { 0.35 0.35 0.35 }\n");
+                Com_Strcat("bStatic 0\n");
+                Com_Strcat("bCollision 0\n");
+                Com_Strcat("angles { %f 0 0 }\n",
+                    (mapinst->angle * ANGLE_LEVELOBJECT) * M_RAD);
+                Com_Strcat("radius %f\n", mapinst->bboxsize);
+                Com_Strcat("height %f\n", mapinst->bboxsize);
+                Com_Strcat("bNoFixedTransform 1\n");
+                Com_Strcat("mesh \"models/mdl%03d/mdl%03d.kmesh\"\n",
+                    mapinst->model, mapinst->model);
+                Com_Strcat("cullDistance %f\n", bboxUnit + 4096.0f);
+
+                bboxUnit = mapinst->bboxsize * 2;
+
+                Com_Strcat("bounds { %f %f %f } { %f %f %f }\n",
+                    -bboxUnit, -bboxUnit, -bboxUnit, bboxUnit, bboxUnit, bboxUnit);
+                Com_Strcat("}\n\n");
+                break;
+            }
+        }
+
 
 #if 0
         if(IsAPickup(mapinst->model))

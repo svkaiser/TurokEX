@@ -72,7 +72,7 @@ void kexDoor::OnTrigger(void) {
         return;
     }
 
-    animState.Set(openAnim, 4, 0);
+    animState.Blend(openAnim, 4, 4, 0);
 
     currentTime = timeStamp;
     bTriggered = true;
@@ -90,14 +90,16 @@ void kexDoor::Tick(void) {
     if(animState.track.anim->animID == openAnim) {
         if(delayTime > 0 && animState.flags & ANF_STOPPED) {
             if(((timeStamp - currentTime) / 1000.0f) > delayTime) {
-                animState.Set(closeAnim, 4, 0);
+                animState.Blend(closeAnim, 4, 4, 0);
             }
         }
     }
     else {
+        if(bTriggered) {
+            bTriggered = false;
+        }
         if(animState.flags & ANF_STOPPED) {
             animState.Set(idleAnim, 4, 0);
-            bTriggered = false;
         }
     }
 

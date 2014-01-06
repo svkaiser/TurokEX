@@ -75,6 +75,15 @@ void kexArea::InitObject(void) {
         asOFFSET(kexArea, globalFogRGB));
     scriptManager.Engine()->RegisterObjectProperty("kArea", "ref @obj",
         asOFFSET(kexArea, scriptComponent.Handle()));
+
+    scriptManager.Engine()->RegisterEnum("EnumWaterLevelType");
+    scriptManager.Engine()->RegisterEnumValue("EnumWaterLevelType","WLT_INVALID", WLT_INVALID);
+    scriptManager.Engine()->RegisterEnumValue("EnumWaterLevelType","WLT_OVER", WLT_OVER);
+    scriptManager.Engine()->RegisterEnumValue("EnumWaterLevelType","WLT_BETWEEN", WLT_BETWEEN);
+    scriptManager.Engine()->RegisterEnumValue("EnumWaterLevelType","WLT_UNDER", WLT_UNDER);
+
+    scriptManager.RegisterMethod("kArea", "int GetWaterLevel(const kVec3 &in, const float)",
+        asMETHODPR(kexArea, GetWaterLevel, (const kexVec3&, const float), waterLevelType_t));
 }
 
 //
@@ -85,10 +94,28 @@ void kexArea::Enter(void) {
     scriptComponent.CallFunction(scriptComponent.onEnter);
     if(flags & AAF_EVENT) {
         localWorld.TriggerActor(targetID);
-        if(!(flags & AAF_REPEATABLE)) {
-            flags &= ~AAF_EVENT;
-        }
     }
+}
+
+//
+// kexArea::GetWaterLevel
+//
+
+waterLevelType_t kexArea::GetWaterLevel(const kexVec3 &origin, const float height) {
+    if(flags & AAF_WATER) {
+        if(height + origin[1] >= waterplane) {
+            if(origin[1] < waterplane) {
+                return WLT_BETWEEN;
+            }
+            else {
+                return WLT_OVER;
+            }
+        }
+
+        return WLT_UNDER;
+    }
+
+    return WLT_INVALID;
 }
 
 //
@@ -130,11 +157,6 @@ void kexArea::Setup(void) {
     keyMap.GetBool("bTrigger", flag);
     if(flag) {
         flags |= AAF_EVENT;
-    }
-
-    keyMap.GetBool("bRepeatable", flag);
-    if(flag) {
-        flags |= AAF_REPEATABLE;
     }
 
     if((key = keyMap.Find("component"))) {

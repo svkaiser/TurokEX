@@ -175,12 +175,14 @@ public:
     void                        SetViewDistance(void);
     kexFx                       *SpawnChild(const char *name);
     void                        Event(fxEvent_t *fxEvent, kexWorldObject *target);
+    void                        SetParent(kexFx *targ);
 
     kexVec3                     &GetVelocityOffset(void) { return velOffset; }
     void                        SetVelocityOffset(const kexVec3 &vel) { velOffset = vel; }
     const float                 Distance(void)const { return distance; }
     kexTexture                  *Texture(void) { return textures[frame]; }
     kexFxPhysics                *Physics(void) { return &physics; }
+    kexFx                       *GetParent(void) { return parent; }
 
     kexLinklist<kexFx>          worldLink;
     fxinfo_t                    *fxInfo;
@@ -198,6 +200,7 @@ public:
     byte                        color2[4];
 
 private:
+    kexFx                       *parent;
     kexFxPhysics                physics;
     kexVec3                     offset;
     kexVec3                     velOffset;

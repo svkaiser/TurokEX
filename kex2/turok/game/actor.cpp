@@ -54,6 +54,7 @@ enum {
     scactor_tickDistance,
     scactor_physics,
     scactor_clipmesh,
+    scactor_bNoFixedTransform,
     scactor_end
 };
 
@@ -82,6 +83,7 @@ static const sctokens_t mapactortokens[scactor_end+1] = {
     { scactor_tickDistance,     "tickDistance"      },
     { scactor_physics,          "physics"           },
     { scactor_clipmesh,         "clipMesh"          },
+    { scactor_bNoFixedTransform,"bNoFixedTransform" },
     { -1,                       NULL                }
 };
 
@@ -251,6 +253,9 @@ void kexActor::ParseDefault(kexLexer *lexer) {
         break;
     case scactor_bOrientOnSlope:
         bOrientOnSlope = (lexer->GetNumber() > 0);
+        break;
+    case scactor_bNoFixedTransform:
+        bNoFixedTransform = (lexer->GetNumber() > 0);
         break;
     case scactor_radius:
         radius = (float)lexer->GetFloat();
@@ -485,6 +490,8 @@ void kexActor::OnTrigger(void) {
     if(scriptComponent.onTrigger) {
         scriptComponent.CallFunction(scriptComponent.onTrigger);
     }
+
+    targetID = 0;
 }
 
 //

@@ -34,6 +34,12 @@ typedef struct {
     int                     acks;
 } netSequence_t;
 
+//-----------------------------------------------------------------------------
+//
+// kexPlayerMove
+//
+//-----------------------------------------------------------------------------
+
 class kexPlayerMove {
 public:
     kexVec3                 accelSpeed;
@@ -44,6 +50,12 @@ public:
     
     void                    Accelerate(int direction, int axis, const float deltaTime);
 };
+
+//-----------------------------------------------------------------------------
+//
+// kexPlayerPuppet
+//
+//-----------------------------------------------------------------------------
 
 BEGIN_EXTENDED_CLASS(kexPlayerPuppet, kexActor);
 public:
@@ -59,6 +71,12 @@ public:
 private:
     int                     id;
 END_CLASS();
+
+//-----------------------------------------------------------------------------
+//
+// kexPlayer
+//
+//-----------------------------------------------------------------------------
 
 BEGIN_EXTENDED_CLASS(kexPlayer, kexActor);
 public:
@@ -78,6 +96,8 @@ public:
     kexPlayerMove           &CrawlMove(void) { return crawlMove; }
     kexPlayerMove           &FlyMove(void) { return flyMove; }
     kexPlayerMove           &NoClipMove(void) { return noClipMove; }
+    kexPlayerMove           &GetCurrentMove(void) { return *currentMove; }
+    void                    SetCurrentMove(kexPlayerMove &move) { currentMove = &move; }
 
     kexVec3                 &GetAcceleration(void) { return acceleration; }
     void                    SetAcceleration(const kexVec3 &accel) { acceleration = accel; }
@@ -101,6 +121,7 @@ public:
 protected:
     kexPlayerPuppet         *puppet;
     kexVec3                 acceleration;
+    kexPlayerMove           *currentMove;
     kexPlayerMove           groundMove;
     kexPlayerMove           airMove;
     kexPlayerMove           swimMove;
@@ -121,6 +142,12 @@ protected:
     float                   timeStamp;
     bool                    bNoClip;
 END_CLASS();
+
+//-----------------------------------------------------------------------------
+//
+// kexLocalPlayer
+//
+//-----------------------------------------------------------------------------
 
 BEGIN_EXTENDED_CLASS(kexLocalPlayer, kexPlayer);
 public:
@@ -145,6 +172,12 @@ private:
     kexVec3                 oldMoves[NETBACKUPS];
     ticcmd_t                oldCmds[NETBACKUPS];
 END_CLASS();
+
+//-----------------------------------------------------------------------------
+//
+// kexNetPlayer
+//
+//-----------------------------------------------------------------------------
 
 BEGIN_EXTENDED_CLASS(kexNetPlayer, kexPlayer);
 public:

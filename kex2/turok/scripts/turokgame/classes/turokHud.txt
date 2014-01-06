@@ -251,6 +251,7 @@ final class TurokHudMessage {
 
 final class TurokHud {
     kCanvasImage @h_flash;
+    kCanvasImage @h_underwater;
     kCanvasImage @h_plaque1;
     kCanvasImage @h_plaque2;
     kCanvasImage @h_health;
@@ -327,6 +328,8 @@ final class TurokHud {
             h_plaque2.bVisible = true;
         }
         
+        h_underwater.bVisible = (localPlayer.waterLevel == WLT_UNDER);
+        
         h_arrow1.bVisible = false;
         h_arrow2.bVisible = false;
         h_clip.bVisible = false;
@@ -396,6 +399,7 @@ final class TurokHud {
         @h_coin             = Canvas.CreateImage("hud/h_coin.tga");
         @h_armor            = Canvas.CreateImage("hud/h_armor.tga");
         @h_flash            = Canvas.CreateImage("textures/white.tga");
+        @h_underwater       = Canvas.CreateImage("textures/white.tga");
         @h_arrow1           = Canvas.CreateImage("hud/h_a_arrow1.tga");
         @h_arrow2           = Canvas.CreateImage("hud/h_a_arrow2.tga");
         @h_clip             = Canvas.CreateImage("hud/h_a_clip.tga");
@@ -411,12 +415,22 @@ final class TurokHud {
         @lfSlider.container = Canvas.CreateContainer();
         
         Canvas.AddChild(h_flash);
+        Canvas.AddChild(h_underwater);
         Canvas.AddChild(container);
         
         h_flash.scaleX = 100;
         h_flash.scaleY = 75;
         h_flash.alpha = 0;
         h_flash.bVisible = false;
+        
+        h_underwater.scaleX = 100;
+        h_underwater.scaleY = 75;
+        h_underwater.alpha = 0.62f;
+        h_underwater.bVisible = false;
+        h_underwater.SetRGB(0, 0, 18, 95);
+        h_underwater.SetRGB(1, 0, 18, 95);
+        h_underwater.SetRGB(2, 0, 18, 95);
+        h_underwater.SetRGB(3, 0, 18, 95);
         
         healthNum.Init(36, 215);
         ammoNum.Init(102, 215);

@@ -296,7 +296,7 @@ kexActor *kexWorld::SpawnActor(kexStr &className, kexStr &component,
 //
 
 kexFx *kexWorld::SpawnFX(const char *name, kexGameObject *source, kexVec3 &velocity,
-                         kexVec3 &origin, kexQuat &rotation) {
+                         kexVec3 &origin, kexQuat &rotation, kexFx *parentFx) {
     kexFx *fx = NULL;
     fxfile_t *fxfile;
     fxinfo_t *info;
@@ -356,6 +356,10 @@ kexFx *kexWorld::SpawnFX(const char *name, kexGameObject *source, kexVec3 &veloc
 
             if(source) {
                 fx->SetOwner(source);
+            }
+
+            if(parentFx) {
+                fx->SetParent(parentFx);
             }
 
             fx->worldLink.Add(fxList);

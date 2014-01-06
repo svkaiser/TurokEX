@@ -34,6 +34,12 @@
 #include "world.h"
 #include "console.h"
 
+//-----------------------------------------------------------------------------
+//
+// kexPlayerMove
+//
+//-----------------------------------------------------------------------------
+
 //
 // kexPlayerMove::Accelerate
 //
@@ -144,6 +150,12 @@ static const sctokens_t playerLocationTokens[scplocation_end+1] = {
     { -1,                       NULL                    }
 };
 
+//-----------------------------------------------------------------------------
+//
+// kexPlayerPuppet
+//
+//-----------------------------------------------------------------------------
+
 DECLARE_CLASS(kexPlayerPuppet, kexActor)
 
 //
@@ -192,6 +204,12 @@ void kexPlayerPuppet::Parse(kexLexer *lexer) {
 void kexPlayerPuppet::LocalTick(void) {
 }
 
+//-----------------------------------------------------------------------------
+//
+// kexPlayer
+//
+//-----------------------------------------------------------------------------
+
 DECLARE_ABSTRACT_CLASS(kexPlayer, kexActor)
 
 //
@@ -216,6 +234,8 @@ kexPlayer::kexPlayer(void) {
     this->flyMove.accelRef      = &this->acceleration;
     this->noClipMove.accelRef   = &this->acceleration;
     this->bNoClip               = false;
+
+    SetCurrentMove(groundMove);
 }
 
 //
@@ -307,6 +327,12 @@ void kexPlayer::ToggleClipping(void) {
         puppet->UnlinkArea();
     }
 }
+
+//-----------------------------------------------------------------------------
+//
+// kexLocalPlayer
+//
+//-----------------------------------------------------------------------------
 
 DECLARE_CLASS(kexLocalPlayer, kexPlayer)
 
@@ -462,6 +488,7 @@ int kexLocalPlayer::ActionHeldTime(const kexStr &str) {
 void kexLocalPlayer::LocalTick(void) {
     kexSector *exitSector;
     kexSector *enterSector;
+    int current;
 
     if(client.GetState() != CL_STATE_INGAME) {
         return;
@@ -470,7 +497,7 @@ void kexLocalPlayer::LocalTick(void) {
     timeStamp = (float)cmd.timestamp.i;
     frameTime = cmd.frametime.f;
 
-    int current = (netseq.outgoing-1) & (NETBACKUPS-1);
+    current = (netseq.outgoing-1) & (NETBACKUPS-1);
 
     oldMoves[current] = puppet->GetOrigin();
     latency[current] = client.GetTime();
@@ -490,14 +517,6 @@ void kexLocalPlayer::LocalTick(void) {
     puppet->UpdateTransform();
     enterSector = puppet->Physics()->sector;
 
-    localWorld.CollisionMap().PlayerCrossAreas(enterSector, exitSector);
-
-    // area local thinker
-    if(enterSector != NULL && enterSector->area != NULL) {
-        enterSector->area->scriptComponent.
-            CallFunction(enterSector->area->scriptComponent.onLocalThink);
-    }
-
     angles          = puppet->GetAngles();
     origin          = puppet->GetOrigin();
     viewHeight      = puppet->GetViewHeight();
@@ -505,6 +524,21 @@ void kexLocalPlayer::LocalTick(void) {
     rotation        = puppet->GetRotation();
 
     angles.Clamp180();
+
+    localWorld.CollisionMap().PlayerCrossAreas(enterSector, exitSector);
+
+    if(puppet->Physics()->waterLevel > WLT_OVER) {
+        SetCurrentMove(swimMove);
+    }
+    else {
+        SetCurrentMove(groundMove);
+    }
+
+    // area local thinker
+    if(enterSector != NULL && enterSector->area != NULL) {
+        enterSector->area->scriptComponent.
+            CallFunction(enterSector->area->scriptComponent.onLocalThink);
+    }
 }
 
 //
@@ -544,6 +578,8 @@ void kexLocalPlayer::InitObject(void) {
     OBJMETHOD("kPlayerMove &CrawlMove(void)", CrawlMove, (void), kexPlayerMove&);
     OBJMETHOD("kPlayerMove &FlyMove(void)", FlyMove, (void), kexPlayerMove&);
     OBJMETHOD("kPlayerMove &NoClipMove(void)", NoClipMove, (void), kexPlayerMove&);
+    OBJMETHOD("kPlayerMove &GetCurrentMove(void)", GetCurrentMove, (void), kexPlayerMove&);
+    OBJMETHOD("void SetCurrentMove(kPlayerMove &in)", SetCurrentMove, (kexPlayerMove&), void);
 
 #define OBJPROPERTY(str, p)                         \
     scriptManager.Engine()->RegisterObjectProperty( \
@@ -587,6 +623,12 @@ void kexLocalPlayer::InitObject(void) {
 #undef OBJMETHOD
 #undef OBJPROPERTY
 }
+
+//-----------------------------------------------------------------------------
+//
+// kexNetPlayer
+//
+//-----------------------------------------------------------------------------
 
 DECLARE_CLASS(kexNetPlayer, kexPlayer)
 

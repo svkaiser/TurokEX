@@ -58,12 +58,20 @@ typedef enum {
     AAF_SAVEGAME        = 0x8000000
 } areaFlags_t;
 
+typedef enum {
+    WLT_INVALID  = 0,
+    WLT_OVER     = 1,
+    WLT_BETWEEN  = 2,
+    WLT_UNDER    = 3
+} waterLevelType_t;
+
 BEGIN_EXTENDED_CLASS(kexArea, kexObject);
 public:
                                     kexArea(void);
 
     void                            Setup(void);
     void                            Enter(void);
+    waterLevelType_t                GetWaterLevel(const kexVec3 &origin, const float height);
 
     unsigned int                    &Flags(void) { return flags; }
     float                           &WaterPlane(void) { return waterplane; }

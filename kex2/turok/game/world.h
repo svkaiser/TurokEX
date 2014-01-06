@@ -80,7 +80,7 @@ public:
     kexActor                            *SpawnActor(kexStr &className, kexStr &component,
                                             kexVec3 &origin, kexAngle &angles);
     kexFx                               *SpawnFX(const char *name, kexGameObject *source, kexVec3 &velocity,
-                                            kexVec3 &origin, kexQuat &rotation);
+                                            kexVec3 &origin, kexQuat &rotation, kexFx *parentFx = NULL);
     void                                SpawnFX(const kexStr &str, kexGameObject *source, kexVec3 &velocity,
                                             kexVec3 &origin, kexQuat &rotation);
     void                                RemoveActor(kexActor *actor);

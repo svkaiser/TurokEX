@@ -43,6 +43,7 @@ kexGameObject::kexGameObject(void) {
     this->owner         = NULL;
     this->target        = NULL;
     this->bStale        = false;
+    this->targetID      = 0;
 }
 
 //

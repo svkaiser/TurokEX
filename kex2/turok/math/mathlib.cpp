@@ -190,6 +190,8 @@ void kexMath::InitObject(void) {
         asMETHODPR(kexVec3, Normalize, (void), kexVec3&), asCALL_THISCALL);
     scriptManager.Engine()->RegisterObjectMethod("kVec3", "float Dot(const kVec3 &in) const",
         asMETHODPR(kexVec3, Dot, (const kexVec3 &vec)const, float), asCALL_THISCALL);
+    scriptManager.Engine()->RegisterObjectMethod("kVec3", "float Unit(void) const",
+        asMETHODPR(kexVec3, Unit, (void) const, float), asCALL_THISCALL);
     scriptManager.Engine()->RegisterObjectMethod("kVec3", "kStr ToString(void)",
         asMETHODPR(kexVec3, ToString, (void)const, kexStr), asCALL_THISCALL);
     scriptManager.Engine()->RegisterObjectMethod("kVec3", "void Clear(void)",

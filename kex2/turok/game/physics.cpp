@@ -73,11 +73,14 @@ kexPhysics::kexPhysics(void) {
     this->stepHeight            = 48;
     this->rotorSpeed            = 0;
     this->rotorFriction         = 1;
+    this->waterHeight           = 0;
     this->bRotor                = false;
     this->bOrientOnSlope        = false;
     this->bOnGround             = false;
+    this->bInWater              = false;
     this->waterLevel            = WLT_INVALID;
     this->groundGeom            = NULL;
+    this->groundMesh            = NULL;
     this->sector                = NULL;
 
     this->rotorVector.Clear();
@@ -146,20 +149,13 @@ void kexPhysics::Parse(kexLexer *lexer) {
 //
 
 float kexPhysics::GroundDistance(void) {
+    kexVec3 org = owner->GetOrigin();
+
     if(groundGeom == NULL) {
         return 0;
     }
 
-    float radius = owner->Radius();
-    float height = owner->BaseHeight();
-    kexVec3 org = owner->GetOrigin();
-
-    kexVec3 offset(groundGeom->plane.a < 0 ? radius : -radius,
-                   groundGeom->plane.b < 0 ? height : 0,
-                   groundGeom->plane.c < 0 ? radius : -radius);
-
-    return org.y - (-offset.Dot(groundGeom->plane.Normal()) +
-        groundGeom->GetDistance(org));
+    return (org[1] - groundGeom->GetDistance(org));
 }
 
 //
@@ -170,7 +166,7 @@ bool kexPhysics::OnSteepSlope(void) {
     if(groundGeom == NULL) {
         return false;
     }
-    return (groundGeom->plane.Normal().Dot(-localWorld.GetGravity()) <= 0.5f);
+    return (groundGeom->plane.Normal().Dot(-localWorld.GetGravity()) <= ONPLANE_EPSILON);
 }
 
 //
@@ -224,6 +220,10 @@ void kexPhysics::ApplyFriction(void) {
     if(speed < VELOCITY_EPSILON) {
         velocity.x = 0;
         velocity.z = 0;
+
+        if(bInWater && waterLevel == WLT_UNDER) {
+            velocity.y = 0;
+        }
     }
     else {
         float clipspeed = speed - (speed * friction);
@@ -237,43 +237,53 @@ void kexPhysics::ApplyFriction(void) {
         // de-accelerate velocity
         velocity.x = velocity.x * clipspeed;
         velocity.z = velocity.z * clipspeed;
+
+        if(bInWater && waterLevel == WLT_UNDER) {
+            velocity.y = velocity.y * clipspeed;
+        }
     }
 
-    float yFriction = 0;
+    if(!bInWater) {
+        float yFriction = 0;
 
-    if(airFriction == 0) {
-        if(groundGeom == NULL) {
-            return;
+        if(airFriction == 0) {
+            float dist;
+
+            if(groundGeom == NULL) {
+                return;
+            }
+
+            dist = GroundDistance();
+
+            // apply vertical friction only if we're rubbing up against the floor
+            if((dist > ONPLANE_EPSILON || dist < -ONPLANE_EPSILON) ||
+                velocity.Dot(groundGeom->plane.Normal()) <= 0) {
+                return;
+            }
+
+            yFriction = friction;
+        }
+        else {
+            yFriction = airFriction;
         }
 
-        // apply vertical friction only if we're rubbing up against the floor
-        if(GroundDistance() > ONPLANE_EPSILON ||
-            velocity.Dot(groundGeom->plane.Normal()) <= 0) {
-            return;
+        speed = velocity.y;
+
+        if(speed < VELOCITY_EPSILON) {
+            velocity.y = 0;
         }
+        else {
+            float clipspeed = speed - (speed * yFriction);
 
-        yFriction = friction;
-    }
-    else {
-        yFriction = airFriction;
-    }
+            if(clipspeed < 0) {
+                clipspeed = 0;
+            }
 
-    speed = velocity.y;
+            clipspeed /= speed;
 
-    if(speed < VELOCITY_EPSILON) {
-        velocity.y = 0;
-    }
-    else {
-        float clipspeed = speed - (speed * yFriction);
-
-        if(clipspeed < 0) {
-            clipspeed = 0;
+            // de-accelerate velocity
+            velocity.y = velocity.y * clipspeed;
         }
-
-        clipspeed /= speed;
-
-        // de-accelerate velocity
-        velocity.y = velocity.y * clipspeed;
     }
 }
 
@@ -313,11 +323,74 @@ void kexPhysics::ClimbOnSurface(kexVec3 &start, const kexVec3 &end, kexTri *tri)
 }
 
 //
+// kexPhysics::CheckWater
+//
+
+void kexPhysics::CheckWater(float height) {
+    if(owner && sector && sector->area) {
+        waterLevel = sector->area->GetWaterLevel(owner->GetOrigin(), height);
+        waterHeight = sector->area->WaterPlane();
+        bInWater = (waterLevel > WLT_OVER);
+    }
+}
+
+//
+// kexPhysics::GetWaterDepth
+//
+
+float kexPhysics::GetWaterDepth(void) {
+    float dist;
+    float sink;
+
+    if(groundGeom == NULL) {
+        return 0;
+    }
+
+    dist = GroundDistance();
+
+    if(dist <= ONPLANE_EPSILON) {
+        dist = 0;
+    }
+
+    sink = dist;
+
+    if(dist * 0.125f >= 2) {
+        dist = dist * 0.125f;
+    }
+    else {
+        dist = 2;
+    }
+
+    return dist * 4;
+}
+
+//
 // kexPhysics::Think
 //
 
 void kexPhysics::Think(const float timeDelta) {
-    if(owner == NULL) {
+    traceInfo_t trace;
+    float       slope;
+    int         moves;
+    int         hits;
+    float       d;
+    float       time;
+    float       currentMass;
+    float       massAmount;
+    float       radius;
+    float       height;
+    float       stepFraction;
+    bool        bCanStep;
+    kexVec3     start;
+    kexVec3     end;
+    kexVec3     direction;
+    kexVec3     vel;
+    kexVec3     normals[TRYMOVE_COUNT];
+    kexVec3     slideNormal;
+    kexVec3     gravity;
+    kexVec3     cDir;
+
+    if(owner == NULL || timeDelta == 0) {
         return;
     }
     if(owner->bStatic == true) {
@@ -329,27 +402,15 @@ void kexPhysics::Think(const float timeDelta) {
         return;
     }
 
-    traceInfo_t trace;
-    kexVec3 start = owner->GetOrigin();
-    kexVec3 end;
-    kexVec3 direction;
-    kexVec3 vel;
-    kexVec3 normals[TRYMOVE_COUNT];
-    kexVec3 slideNormal;
-    kexVec3 gravity;
-    kexVec3 cDir;
-    float slope;
-    int moves = 0;
-    int hits;
-    float d;
-    float time = timeDelta;
-    float massAmount = (mass * timeDelta);
-    float radius = owner->Radius();
-    float height = owner->BaseHeight();
-    float stepFraction;
-    bool bCanStep = true;
-
-    gravity = localWorld.GetGravity();
+    currentMass = (bInWater && waterLevel >= WLT_BETWEEN) ? 0 : mass;
+    start       = owner->GetOrigin();
+    moves       = 0;
+    time        = timeDelta;
+    massAmount  = (currentMass * timeDelta);
+    radius      = owner->Radius();
+    height      = owner->BaseHeight();
+    bCanStep    = true;
+    gravity     = localWorld.GetGravity();
 
     trace.owner = owner;
     trace.bUseBBox = true;
@@ -384,24 +445,36 @@ void kexPhysics::Think(const float timeDelta) {
     localWorld.Trace(&trace);
     if(trace.hitTri) {
         groundGeom = trace.hitTri;
+        groundMesh = trace.hitMesh;
     }
 
     if(trace.hitActor && trace.hitActor->bTouch) {
         trace.hitActor->OnTouch(owner);
     }
 
-    bOnGround = OnGround();
+    if(bInWater && waterLevel >= WLT_BETWEEN) {
+        bOnGround = false;
 
-    // handle freefall if not touching the ground
-    if(!bOnGround) {
-        velocity += (gravity * massAmount);
+        // slowly drift to the bottom
+        if(waterLevel == WLT_UNDER) {
+            kexVec3 sinkVel = (-gravity * (GetWaterDepth() / timeDelta)) + velocity;
+            velocity = velocity.Lerp(sinkVel, -0.2f * timeDelta);
+        }
     }
     else {
-        // project along the ground plane
-        if(velocity.Dot(groundGeom->plane.Normal()) <= 1.024f) {
-            ImpactVelocity(velocity, groundGeom->plane.Normal(), 1.024f);
+        bOnGround = OnGround();
 
-            normals[moves++] = trace.hitNormal;
+        // handle freefall if not touching the ground
+        if(!bOnGround) {
+            velocity += (gravity * massAmount);
+        }
+        else {
+            // project along the ground plane
+            if(velocity.Dot(groundGeom->plane.Normal()) <= 1.024f) {
+                ImpactVelocity(velocity, groundGeom->plane.Normal(), 1.024f);
+
+                normals[moves++] = trace.hitNormal;
+            }
         }
     }
 
@@ -603,6 +676,9 @@ void kexPhysics::Think(const float timeDelta) {
             owner->GetOrigin()[1] = org[1] - dist;
             velocity.Clear();
         }
+
+        // check if in water sector
+        CheckWater((owner->GetViewHeight() + owner->GetCenterHeight()) * 0.5f);
     }
 }
 
@@ -630,6 +706,7 @@ void kexPhysics::InitObject(void) {
     OBJMETHOD("bool OnGround(void)", OnGround, (void), bool);
     OBJMETHOD("bool OnSteepSlope(void)", OnSteepSlope, (void), bool);
     OBJMETHOD("float GroundDistance(void)", GroundDistance, (void), float);
+    OBJMETHOD("float GetWaterDepth(void)", GetWaterDepth, (void), float);
 
 #define OBJPROPERTY(str, p)                         \
     scriptManager.Engine()->RegisterObjectProperty( \
@@ -647,15 +724,12 @@ void kexPhysics::InitObject(void) {
     OBJPROPERTY("float rotorSpeed", rotorSpeed);
     OBJPROPERTY("float rotorFriction", rotorFriction);
     OBJPROPERTY("kVec3 rotorVector", rotorVector);
+    OBJPROPERTY("bool bInWater", bInWater);
+    OBJPROPERTY("int waterLevel", waterLevel);
+    OBJPROPERTY("float waterHeight", waterHeight);
 
 #undef OBJMETHOD
 #undef OBJPROPERTY
-
-    scriptManager.Engine()->RegisterEnum("EnumWaterLevelType");
-    scriptManager.Engine()->RegisterEnumValue("EnumWaterLevelType","WLT_INVALID", WLT_INVALID);
-    scriptManager.Engine()->RegisterEnumValue("EnumWaterLevelType","WLT_OVER", WLT_OVER);
-    scriptManager.Engine()->RegisterEnumValue("EnumWaterLevelType","WLT_BETWEEN", WLT_BETWEEN);
-    scriptManager.Engine()->RegisterEnumValue("EnumWaterLevelType","WLT_UNDER", WLT_UNDER);
 
     scriptManager.Engine()->RegisterObjectMethod(
         "kActor",

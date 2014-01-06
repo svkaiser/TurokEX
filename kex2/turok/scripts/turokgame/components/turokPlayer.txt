@@ -27,6 +27,12 @@ const float VIEWBOB_FREQX               = 0.02f;
 const float VIEWBOB_FREQY               = 0.01f;
 const float VIEWBOB_ANGLE               = 0.0218f;
 const float VIEWBOB_GROUNDHEIGHT        = 2.048f;
+const float VIEWBOB_SWIMFREQX           = 0.00200f;
+const float VIEWBOB_SWIMFREQY           = 0.00125f;
+const float VIEWBOB_SWIMANGLE           = 0.025f;
+
+const float SWIM_STRAFEROLL_ANGLE       = 0.33f;
+const float SWIM_STRAFEROLL_SPEED       = 0.05f;
 
 const float WALK_STRAFEROLL_ANGLE       = 0.0835f;
 const float WALK_STRAFEROLL_SPEED       = 0.1f;
@@ -145,9 +151,14 @@ final class TurokPlayer : Component {
     bool                bToggleFarZ;
     bool                bCameraAttached;
     bool                bJumped;
+    bool                bLerpToWaterSurface;
     float               fallAmount;
     kVec3               camOffset;
     float               camHeight;
+    int                 waterLevel;
+    int                 bubbleTime;
+    bool                bThrusting;
+    float               thrustTime;
     int                 lives;
     int                 lifeForces;
     int                 armor;
@@ -178,23 +189,28 @@ final class TurokPlayer : Component {
     TurokAmmoGrenade    grenades;
     TurokAmmoMags       ammoMags;
     TurokAmmoRocket     rockets;
-    TurokAmmoFuseCharge fuses; 
+    TurokAmmoFuseCharge fuses;
     
     //
     // TurokPlayer::TurokPlayer
     //
     
     TurokPlayer(kActor @actor) {
-        @self           = cast<kLocalPlayer@>(actor);
-        @localClient    = self;
-        @activeWeapon   = null;
-        activeWeaponID  = wp_none;
-        pendingWeaponID = -1;
-        bFly            = false;
-        bJumped         = false;
-        bToggleFarZ     = false;
-        fallAmount      = 0.0f;
-        bCameraAttached = false;
+        @self               = cast<kLocalPlayer@>(actor);
+        @localClient        = self;
+        @activeWeapon       = null;
+        activeWeaponID      = wp_none;
+        pendingWeaponID     = -1;
+        bFly                = false;
+        bJumped             = false;
+        bToggleFarZ         = false;
+        fallAmount          = 0.0f;
+        bCameraAttached     = false;
+        waterLevel          = WLT_INVALID;
+        bLerpToWaterSurface = false;
+        bubbleTime          = 0;
+        bThrusting          = false;
+        thrustTime          = 0;
     }
     
     //
@@ -465,8 +481,8 @@ final class TurokPlayer : Component {
         
         kPlayerMove swimMove        = self.SwimMove();
         
-        swimMove.accelSpeed         = kVec3(0.012f, 0.1f, 0.012f);
-        swimMove.deaccelSpeed       = kVec3(0.5f, 0.5f, 0.5f);
+        swimMove.accelSpeed         = kVec3(0.05f, 0.01f, 0.05f);
+        swimMove.deaccelSpeed       = kVec3(0.05f, 0.01f, 0.05f);
         swimMove.forwardSpeed       = kVec3(246, 340, 246);
         swimMove.backwardSpeed      = kVec3(-154, -340, -154);
         
@@ -483,8 +499,14 @@ final class TurokPlayer : Component {
     
     void ClampAngles(kActor @puppet) {
         kAngle angles = puppet.GetAngles();
-        angles.yaw -= DegToRad(self.cmdMouseX);
-        angles.pitch -= DegToRad(self.cmdMouseY);
+        float factor = 1.0f;
+        
+        if(waterLevel >= WLT_BETWEEN) {
+            factor = 0.35f;
+        }
+        
+        angles.yaw -= DegToRad(self.cmdMouseX * factor);
+        angles.pitch -= DegToRad(self.cmdMouseY * factor);
         
         if(angles.pitch > ANGLE_MAXPITCH) angles.pitch = ANGLE_MAXPITCH;
         if(angles.pitch < -ANGLE_MAXPITCH) angles.pitch = -ANGLE_MAXPITCH;
@@ -497,36 +519,66 @@ final class TurokPlayer : Component {
     //
     
     void HandleMovement(kActor @puppet) {
-        kPlayerMove groundMove  = self.GroundMove();
+        kPlayerMove groundMove  = self.GetCurrentMove();
         float deltaTime         = self.deltaTime;
         kAngle angles           = puppet.GetAngles();
         bool bForward           = self.ActionDown("+forward");
         bool bBack              = self.ActionDown("+back");
         bool bLeft              = self.ActionDown("+strafeleft");
         bool bRight             = self.ActionDown("+straferight");
+        int wt                  = puppet.Physics().waterLevel;
         
-        if(bForward || bBack) {
-            if(bForward) {
-                groundMove.Accelerate(1, 2, deltaTime);
+        if(waterLevel >= WLT_BETWEEN) {
+            if(bForward && self.ActionHeldTime("+forward") == 0 && thrustTime <= 0) {
+                bThrusting = true;
+                thrustTime = 0.63f;
+                self.GetAcceleration().z = 480;
+                
+                if(waterLevel == WLT_UNDER) {
+                    puppet.StartSound("sounds/shaders/underwater_swim_2.ksnd");
+                }
+                else if(waterLevel == WLT_BETWEEN) {
+                    puppet.StartSound("sounds/shaders/water_splash_2.ksnd");
+                }
             }
-            if(bBack) {
-                groundMove.Accelerate(-1, 2, deltaTime);
+        }
+        
+        if(bThrusting == false) {
+            if(bForward || bBack) {
+                if(bForward) {
+                    groundMove.Accelerate(1, 2, deltaTime);
+                }
+                if(bBack) {
+                    groundMove.Accelerate(-1, 2, deltaTime);
+                }
+            }
+            else {
+                groundMove.Accelerate(0, 2, deltaTime);
+            }
+        
+            if(bLeft || bRight) {
+                if(bLeft) {
+                    groundMove.Accelerate(1, 0, deltaTime);
+                }
+                if(bRight) {
+                    groundMove.Accelerate(-1, 0, deltaTime);
+                }
+            }
+            else {
+                groundMove.Accelerate(0, 0, deltaTime);
             }
         }
         else {
-            groundMove.Accelerate(0, 2, deltaTime);
+            float az = self.GetAcceleration().z;
+            
+            self.GetAcceleration().z = (480 - az) * (thrustTime / 4) + az;
+            if(thrustTime <= 0.58f) {
+                bThrusting = false;
+            }
         }
         
-        if(bLeft || bRight) {
-            if(bLeft) {
-                groundMove.Accelerate(1, 0, deltaTime);
-            }
-            if(bRight) {
-                groundMove.Accelerate(-1, 0, deltaTime);
-            }
-        }
-        else {
-            groundMove.Accelerate(0, 0, deltaTime);
+        if(thrustTime > 0) {
+            thrustTime -= deltaTime;
         }
         
         kVec3 vel = puppet.Physics().GetVelocity();
@@ -541,19 +593,56 @@ final class TurokPlayer : Component {
             }
         }
         
-        if(bFly) {
+        if(waterLevel != wt) {
+            if(waterLevel != WLT_UNDER && wt == WLT_UNDER) {
+                puppet.StartSound("sounds/shaders/water_splash_1.ksnd");
+                bubbleTime = 100;
+                bJumped = false;
+            }
+            
+            if(waterLevel == WLT_UNDER && wt == WLT_BETWEEN) {
+                puppet.StartSound("sounds/shaders/generic_16_turok_small_water_gasp.ksnd");
+                bLerpToWaterSurface = true;
+                bJumped = false;
+            }
+            
+            if(waterLevel <= WLT_OVER && wt > WLT_OVER && vel.y < 0) {
+                float speed = self.SwimMove().forwardSpeed.y;
+                
+                if(speed != 0) {
+                    self.GetAcceleration().y = (speed * (vel.y / speed)) * 0.5f;
+                    bJumped = false;
+                }
+            }
+        }
+        
+        waterLevel = wt;
+        
+        if(bFly || puppet.Physics().bInWater) {
             kVec3 forward = angles.ToForwardAxis();
-            kVec3 up = angles.ToUpAxis();
             kVec3 right = angles.ToRightAxis();
             kVec3 accel = self.GetAcceleration();
             
-            accel.x *= 4;
-            accel.y *= 4;
-            accel.z *= 4;
+            if(bFly) {
+                accel.x *= 4;
+                accel.y *= 4;
+                accel.z *= 4;
+            }
             
-            vel.x += (accel.z * forward.x) + (accel.x * right.x) + (accel.y * up.x);
-            vel.y += (accel.z * forward.y) + (accel.x * right.y) + (accel.y * up.y);
-            vel.z += (accel.z * forward.z) + (accel.x * right.z) + (accel.y * up.z);
+            vel.x += (accel.z * forward.x) + (accel.x * right.x);
+            vel.y += (accel.z * forward.y) + (accel.x * right.y);
+            vel.z += (accel.z * forward.z) + (accel.x * right.z);
+            
+             if(waterLevel > WLT_OVER && bJumped == false) {
+                if(self.ActionDown("+jump")) {
+                    groundMove.Accelerate(1, 1, deltaTime);
+                }
+                else {
+                    groundMove.Accelerate(0, 1, deltaTime);
+                }
+                
+                vel.y += accel.y;
+            }
         }
         else {
             kAngle newAngle(angles.yaw, 0, 0);
@@ -563,6 +652,32 @@ final class TurokPlayer : Component {
             
             vel.x += (accel.z * forward.x) + (accel.x * right.x);
             vel.z += (accel.z * forward.z) + (accel.x * right.z);
+        }
+        
+        if(bJumped == false) {
+            if(waterLevel == WLT_BETWEEN) {
+                if(angles.pitch < DegToRad(45) && vel.y > -150) {
+                    vel.y = 0;
+                    self.GetAcceleration().y = 0;
+                }
+            }
+            
+            if(bLerpToWaterSurface) {
+                float oy = puppet.GetOrigin().y;
+                float desiredHeight = puppet.Physics().waterHeight -
+                    ((puppet.centerHeight + puppet.viewHeight) * 0.5f) + 10.24f;
+                
+                oy = LocalLerp(oy, desiredHeight, 0.1f);
+                vel.y = 0;
+                self.GetAcceleration().y = 0;
+                
+                if(oy >= (desiredHeight-0.1f)) {
+                    oy = desiredHeight;
+                    bLerpToWaterSurface = false;
+                }
+                
+                puppet.GetOrigin().y = oy;
+            }
         }
         
         puppet.Physics().SetVelocity(vel);
@@ -576,19 +691,37 @@ final class TurokPlayer : Component {
     //
     
     void HandleJumping(kActor @puppet) {
-        bool bOnGround = puppet.Physics().OnGround();
         kVec3 vel = puppet.Physics().GetVelocity();
         
-        if(bJumped && bOnGround) {
-            bJumped = false;
-        }
-        
-        if(bJumped == false) {
-            if(self.ActionDown("+jump") && self.ActionHeldTime("+jump") == 0) {
-                if(bOnGround || (vel.y < 0 && vel.y > -VELOCITY_JUMP)) {
+        if(puppet.Physics().bInWater) {
+            if(bJumped == false && waterLevel == WLT_BETWEEN &&
+                self.ActionDown("+jump") && self.ActionHeldTime("+jump") == 0) {
                     vel.y = VELOCITY_JUMP;
                     bJumped = true;
+                    bLerpToWaterSurface = false;
                     puppet.StartSound("sounds/shaders/generic_21_turok_jump.ksnd");
+            }
+            else {
+                return;
+            }
+        }
+        else {
+            bool bOnGround = puppet.Physics().OnGround();
+            
+            if(bJumped && bOnGround) {
+                bJumped = false;
+            }
+            
+            if(bJumped == false) {
+                if(self.ActionDown("+jump") && self.ActionHeldTime("+jump") == 0) {
+                    if(bOnGround || (vel.y < 0 && vel.y > -VELOCITY_JUMP)) {
+                        vel.y = VELOCITY_JUMP;
+                        bJumped = true;
+                        puppet.StartSound("sounds/shaders/generic_21_turok_jump.ksnd");
+                    }
+                }
+                else {
+                    return;
                 }
             }
         }
@@ -603,12 +736,19 @@ final class TurokPlayer : Component {
     void BobView(kActor @puppet) {
         float bob_x = 0;
         float bob_y = 0;
+        float roll = 0;
+        float rollAngle = WALK_STRAFEROLL_ANGLE;
+        float rollSpeed = WALK_STRAFEROLL_SPEED;
         
         if(bCameraAttached == false) {
             return;
         }
         
-        if(puppet.Physics().GroundDistance() <= VIEWBOB_GROUNDHEIGHT) {
+        if(waterLevel >= WLT_BETWEEN) {
+            bob_x = Math::Sin(Client.GetTime() * VIEWBOB_SWIMFREQX) * VIEWBOB_SWIMANGLE;
+            bob_y = Math::Sin(Client.GetTime() * VIEWBOB_SWIMFREQY) * VIEWBOB_SWIMANGLE;
+        }
+        else if(puppet.Physics().GroundDistance() <= VIEWBOB_GROUNDHEIGHT) {
             float d = Math::Fabs(self.GetAcceleration().z * self.deltaTime) * 0.06f;
             
             if(d > VIEWBOB_EPISILON) {
@@ -627,17 +767,33 @@ final class TurokPlayer : Component {
         angle.yaw = -bob_y;
         angle.pitch = bob_x;
         
+        if(waterLevel >= WLT_BETWEEN) {
+            float t = 60.0f * self.deltaTime;
+            
+            if(t != 0) {
+                roll = self.cmdMouseX * 0.05f * 1 / t;
+            }
+            
+            if(roll > SWIM_STRAFEROLL_ANGLE) {
+                roll = SWIM_STRAFEROLL_ANGLE;
+            }
+                
+            if(roll < -SWIM_STRAFEROLL_ANGLE) {
+                roll = -SWIM_STRAFEROLL_ANGLE;
+            }
+            
+            rollAngle = (SWIM_STRAFEROLL_ANGLE * 0.5f);
+            rollSpeed = SWIM_STRAFEROLL_SPEED;
+        }
+        
         if(self.ActionDown("+strafeleft")) {
-            angle.roll = LocalLerp(angle.roll,
-                -WALK_STRAFEROLL_ANGLE, WALK_STRAFEROLL_SPEED);
+            roll += rollAngle;
         }
         else if(self.ActionDown("+straferight")) {
-            angle.roll = LocalLerp(angle.roll,
-                WALK_STRAFEROLL_ANGLE, WALK_STRAFEROLL_SPEED);
+            roll -= rollAngle;
         }
-        else {
-            angle.roll = LocalLerp(angle.roll, 0, WALK_STRAFEROLL_SPEED);
-        }
+        
+        angle.roll = LocalLerp(angle.roll, roll, rollSpeed);
         
         camera.SetOffsetAngle(angle);
         
@@ -782,6 +938,38 @@ final class TurokPlayer : Component {
         ClampAngles(puppet);
         HandleMovement(puppet);
         HandleJumping(puppet);
+        
+        // random splash/swimming sounds
+        if(puppet.Physics().bInWater) {
+            if(self.GetAcceleration().Unit() >= 64 && (Client.GetTicks() % 100) == 0) {
+                if(waterLevel == WLT_UNDER) {
+                    puppet.StartSound("sounds/shaders/underwater_swim_1.ksnd");
+                }
+                else if(waterLevel == WLT_BETWEEN) {
+                    puppet.StartSound("sounds/shaders/water_splash_3.ksnd");
+                }
+            }
+            
+            // random bubbles from impacting the water
+            if(--bubbleTime > 0) {
+                if(waterLevel == WLT_UNDER) {
+                    kVec3 spot = puppet.GetOrigin() + kVec3(0, 30.72f, 0);
+                    kVec3 offset = kVec3(0, 0, 0);
+                    kQuat rot = puppet.GetRotation();
+                    
+                    LocalWorld.SpawnFX("fx/fx_121.kfx", puppet, offset, spot, rot);
+                    LocalWorld.SpawnFX("fx/fx_121.kfx", puppet, offset, spot, rot);
+                    LocalWorld.SpawnFX("fx/fx_121.kfx", puppet, offset, spot, rot);
+                    LocalWorld.SpawnFX("fx/fx_121.kfx", puppet, offset, spot, rot);
+                }
+                else {
+                    bubbleTime = 0;
+                }
+            }
+        }
+        else {
+            bubbleTime = 0;
+        }
     }
     
     //
@@ -800,6 +988,8 @@ final class TurokPlayer : Component {
         
         self.Puppet().bHidden = true;
         self.Puppet().bCanPickup = true;
+        
+        waterLevel = self.Puppet().Physics().waterLevel;
         
         self.Puppet().health = 100;
         playerHud.healthNum.Update(self.Puppet().health);
