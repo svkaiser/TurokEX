@@ -243,6 +243,8 @@ kexPlayer::kexPlayer(void) {
 //
 
 kexPlayer::~kexPlayer(void) {
+    scriptComponent.Handle().Clear();
+    scriptComponent.Clear();
 }
 
 //
@@ -273,7 +275,9 @@ void kexPlayer::PossessPuppet(kexPlayerPuppet *puppetActor) {
     
     puppet = puppetActor;
     // TODO - what if we possess another puppet mid-game?
-    CreateComponent(puppet->playerComponent.c_str());
+    if(scriptComponent.ScriptObject() == NULL) {
+        CreateComponent(puppet->playerComponent.c_str());
+    }
     
     puppet->AddRef();
     puppet->SetOwner(static_cast<kexActor*>(this));
@@ -297,6 +301,10 @@ void kexPlayer::UnpossessPuppet(void) {
     
     this->puppet = NULL;
     // TODO - destroy component
+    if(sysMain.IsShuttingDown()) {
+        scriptComponent.Release();
+        scriptComponent.~kexActorComponent();
+    }
 }
 
 //

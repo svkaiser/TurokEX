@@ -37,6 +37,7 @@ public:
                             ~kexComponent(void);
 
     virtual void            Construct(const char *className) = 0;
+    virtual void            Deconstruct(void);
     virtual bool            CallConstructor(const char *decl);
 
     bool                    Spawn(const char *className);
@@ -45,8 +46,10 @@ public:
     bool                    CallFunction(asIScriptFunction *func, void *object, bool *val);
     kexScriptObjHandle      &Handle(void) { return objHandle; }
     const asIObjectType     *ScriptType(void) const { return type; }
-    const asIScriptObject   *ScriptObject(void) const { return obj; }
+    asIScriptObject         *ScriptObject(void) { return obj; }
     void                    SetOwner(kexObject *kobj) { objHandle.owner = kobj; }
+    void                    Clear(void) { obj = NULL; type = NULL; }
+    void                    Release(void) { if(obj) { obj->Release(); } }
     kexObject               *GetOwner(void) const { return static_cast<kexObject*>(objHandle.owner); }
 
     asIScriptFunction       *onThink;
@@ -60,6 +63,7 @@ protected:
 
 private:
     asIScriptModule         *mod;
+    kexStr                  name;
 };
 
 //-----------------------------------------------------------------------------

@@ -169,7 +169,7 @@ kexScriptObjHandle::~kexScriptObjHandle() {
 
 void kexScriptObjHandle::ReleaseHandle(void) {
     if(m_ref && m_type) {
-        asIScriptEngine *engine = m_type->GetEngine();
+        asIScriptEngine *engine = scriptManager.Engine();
         engine->ReleaseScriptObject(m_ref, m_type);
 
         m_ref   = 0;
@@ -184,7 +184,7 @@ void kexScriptObjHandle::ReleaseHandle(void) {
 
 void kexScriptObjHandle::AddRefHandle(void) {
     if(m_ref && m_type) {
-        asIScriptEngine *engine = m_type->GetEngine();
+        asIScriptEngine *engine = scriptManager.Engine();
         engine->AddRefScriptObject(m_ref, m_type);
     }
 }
@@ -254,7 +254,7 @@ kexScriptObjHandle &kexScriptObjHandle::Assign(void *ref, int typeId) {
 
     // Get the object type
     asIScriptContext *ctx    = asGetActiveContext();
-    asIScriptEngine  *engine = ctx->GetEngine();
+    asIScriptEngine  *engine = scriptManager.Engine();
     asIObjectType    *type   = engine->GetObjectTypeById(typeId);
 
     Set(ref, type);
@@ -317,6 +317,7 @@ bool kexScriptObjHandle::Equals(void *ref, int typeId) const {
 //
 // AngelScript: used as '@obj = cast<obj>(ref);'
 //
+
 void kexScriptObjHandle::Cast(void **outRef, int typeId) {
     // If we hold a null handle, then just return null
     if(m_type == 0) {
@@ -329,7 +330,7 @@ void kexScriptObjHandle::Cast(void **outRef, int typeId) {
 
     // Compare the type id of the actual object
     typeId &= ~asTYPEID_OBJHANDLE;
-    asIScriptEngine  *engine = m_type->GetEngine();
+    asIScriptEngine  *engine = scriptManager.Engine();
     asIObjectType    *type   = engine->GetObjectTypeById(typeId);
 
     *outRef = 0;

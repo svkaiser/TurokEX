@@ -44,6 +44,9 @@ kexGameObject::kexGameObject(void) {
     this->target        = NULL;
     this->bStale        = false;
     this->targetID      = 0;
+    this->fracTime      = 0;
+    this->timeStamp     = 0;
+    this->oldTimeStamp  = 0;
 }
 
 //

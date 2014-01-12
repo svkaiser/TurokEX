@@ -103,6 +103,7 @@ public:
                                     ~kexCollisionMap(void);
 
     void                            Load(const char *name);
+    void                            Unload(void);
     void                            Trace(cMapTraceResult_t *result,
                                           const kexVec3 &start, const kexVec3 &end,
                                           kexSector *sector,

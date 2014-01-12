@@ -429,6 +429,19 @@ void kexCollisionMap::Load(const char *name) {
 }
 
 //
+// kexCollisionMap::Unload
+//
+
+void kexCollisionMap::Unload(void) {
+    for(int i = 0; i < numAreas; i++) {
+        delete areas[i];
+    }
+
+    areas.Empty();
+    Mem_Purge(kexCollisionMap::hb_collisionMap);
+}
+
+//
 // kexCollisionMap::PointInSector
 //
 

@@ -38,6 +38,8 @@
 #define NODE_MAX_CONTENTS   16
 #define NODE_MAX_SIZE       128
 
+kexHeapBlock kexWorld::hb_world("world", false, NULL, NULL);
+
 kexWorld localWorld;
 
 enum {
@@ -117,10 +119,9 @@ const char *kexWorld::GetMapFileFromID(const int id) {
 //
 
 void kexWorld::Tick(void) {
+    kexActor *next;
+
     if(bLoaded == false) {
-        if(nextMapID >= 0) {
-            Load(GetMapFileFromID(nextMapID));
-        }
         return;
     }
 
@@ -128,21 +129,20 @@ void kexWorld::Tick(void) {
     time = (float)(ticks * SERVER_RUNTIME);
     deltaTime = (float)server.GetElaspedTime();
 
-    if(bReadyUnload) {
-        Unload();
-        return;
-    }
-
     // don't update on first two ticks
     if(ticks <= 1) {
         return;
     }
 
-    for(actorRover = actors.Next(); actorRover != NULL;
-        actorRover = actorRover->worldLink.Next()) {
+    for(actorRover = actors.Next(); actorRover != NULL; actorRover = next) {
+        next = actorRover->worldLink.Next();
+
         if(actorRover->bClientOnly || actorRover->bStatic) {
             continue;
         }
+
+        actorRover->OldTimeStamp() = actorRover->TimeStamp();
+        actorRover->FracTime() = 0;
         actorRover->TimeStamp() = deltaTime;
         actorRover->Tick();
     }
@@ -153,6 +153,13 @@ void kexWorld::Tick(void) {
 //
 
 void kexWorld::LocalTick(void) {
+    float cfrac;
+    kexActor *next;
+
+    if(bLoaded == false) {
+        return;
+    }
+
     camera.LocalTick();
 
     if(bEnableFog) {
@@ -168,17 +175,25 @@ void kexWorld::LocalTick(void) {
         return;
     }
 
-    for(actorRover = actors.Next(); actorRover != NULL;
-        actorRover = actorRover->worldLink.Next()) {
-            actorRover->LocalTick();
+    for(actorRover = actors.Next(); actorRover != NULL; actorRover = next) {
+        next = actorRover->worldLink.Next();
+        actorRover->LocalTick();
 
-            if(actorRover->Removing()) {
-                RemoveActor(actorRover);
+        cfrac = -(actorRover->TimeStamp() -
+            client.GetTime()) * (SERVER_RUNTIME / 10000.0f);
 
-                if(actorRover == NULL) {
-                    break;
-                }
-            }
+        if(cfrac > 1) {
+            cfrac = 1;
+        }
+        if(cfrac < 0) {
+            cfrac = 0;
+        }
+
+        actorRover->FracTime() = cfrac;
+
+        if(actorRover->Removing()) {
+            RemoveActor(actorRover);
+        }
     }
 
     fxManager.UpdateWorld(this);
@@ -234,20 +249,11 @@ void kexWorld::AddActor(kexActor *actor) {
 //
 
 void kexWorld::RemoveActor(kexActor *actor) {
-    kexActor *next = actorRover->worldLink.Next();
-
+    actor->SetOwner(NULL);
+    actor->SetTarget(NULL);
     actor->worldLink.Remove();
     actor->UnlinkArea();
-
-   /* Note that actorRover is guaranteed to point to us,
-    * and since we're freeing our memory, we had better change that. So
-    * point it to actor->prev, so the iterator will correctly move on to
-    * actor->prev->next = actor->next */
-    actorRover = next;
-    actor->scriptComponent.~kexActorComponent();
-    Mem_Free(actor);
-
-    actor = NULL;
+    delete actor;
 }
 
 //
@@ -580,7 +586,7 @@ void kexWorld::TriggerActor(const int targetID) {
 void kexWorld::Load(const char *mapFile) {
     if(client.GetState() < CL_STATE_READY || bLoaded)
         return;
-        
+
     kexRand::SetSeed(-470403613);
     bLoaded = false;
     bReadyUnload = false;
@@ -682,6 +688,8 @@ void kexWorld::Load(const char *mapFile) {
 
     BuildWorldNodes();
     BuildAreaNodes();
+
+    SpawnLocalPlayer();
 }
 
 //
@@ -689,6 +697,60 @@ void kexWorld::Load(const char *mapFile) {
 //
 
 void kexWorld::Unload(void) {
+    kexLocalPlayer *localPlayer;
+    kexActor *actor;
+    kexActor *next;
+    kexFx *nextFx;
+
+    if(bLoaded == false) {
+        // nothing is currently loaded
+        return;
+    }
+    
+    bLoaded = false;
+    
+    soundSystem.StopAll();
+    
+    localPlayer = &client.LocalPlayer();
+    localPlayer->UnpossessPuppet();
+
+    if(collisionMap.IsLoaded()) {
+        collisionMap.Unload();
+    }
+    
+    // remove all fx
+    for(fxRover = fxList.Next(); fxRover != NULL; fxRover = nextFx) {
+        nextFx = fxRover->worldLink.Prev();
+
+        fxRover->SetParent(NULL);
+        fxRover->worldLink.Remove();
+
+        delete fxRover;
+    }
+
+    // remove all actors
+    for(actor = actors.Next(); actor != NULL; actor = next) {
+        next = actor->worldLink.Next();
+        RemoveActor(actor);
+    }
+    
+    // remove all static actors
+    for(actor = staticActors.Next(); actor != NULL; actor = next) {
+        next = actor->worldLink.Next();
+
+        actor->worldLink.Remove();
+        delete actor;
+    }
+
+    fxList.Clear();
+    actors.Clear();
+    staticActors.Clear();
+    
+    Mem_Purge(hb_world);
+
+    worldNode.actors.Empty();
+    worldNode.children[0] = NULL;
+    worldNode.children[1] = NULL;
 }
 
 //
@@ -901,14 +963,14 @@ void kexWorld::AddWorldNode(worldNode_t *node, int split) {
     plane->c = (split == 0 ? -1.0f : 0);
     plane->d = (plane->a * splitX[0] + plane->c * splitZ[0]);
 
-    frontNode = (worldNode_t*)Mem_Calloc(sizeof(worldNode_t), hb_static);
+    frontNode = (worldNode_t*)Mem_Calloc(sizeof(worldNode_t), hb_world);
     node->children[NODE_FRONT] = frontNode;
 
     if(!SetupChildWorldNode(node, frontNode, splitX, splitZ, NODE_FRONT, split)) {
         AddWorldNode(frontNode, split ^ 1);
     }
 
-    backNode = (worldNode_t*)Mem_Calloc(sizeof(worldNode_t), hb_static);
+    backNode = (worldNode_t*)Mem_Calloc(sizeof(worldNode_t), hb_world);
     node->children[NODE_BACK] = backNode;
 
     if(!SetupChildWorldNode(node, backNode, splitX, splitZ, NODE_BACK, split)) {

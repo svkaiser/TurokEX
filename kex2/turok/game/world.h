@@ -106,6 +106,8 @@ public:
     bool                                FogEnabled(void) { return bEnableFog; }
     void                                ToggleFog(bool toggle) { bEnableFog = toggle; }
     const int                           NumAreaNodes(void) const { return numAreaNodes; }
+    bool                                &ReadyUnLoad(void) { return bReadyUnload; }
+    int                                 &NextMapID(void) { return nextMapID; }
 
     kexLinklist<kexActor>               actors;
     kexLinklist<kexActor>               staticActors;
@@ -122,6 +124,8 @@ public:
     kexVec4                             worldLightAmbience;
     kexVec4                             worldLightModelAmbience;
     //
+
+    static kexHeapBlock                 hb_world;
 
     static void                         InitObject(void);
 

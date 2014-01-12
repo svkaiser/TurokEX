@@ -63,7 +63,7 @@ kexKeyMap::kexKeyMap(void) {
 //
 
 kexKeyMap::~kexKeyMap(void) {
-    Empty();
+    //Empty();
 }
 
 //

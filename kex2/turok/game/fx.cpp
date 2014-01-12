@@ -863,22 +863,17 @@ void kexFxManager::Shutdown(void) {
 void kexFxManager::UpdateWorld(kexWorld *world) {
     kexFx *tmpFx;
 
-    for(world->fxRover = world->fxList.Next(); world->fxRover != NULL;
-        world->fxRover = world->fxRover->worldLink.Next()) {
-            world->fxRover->LocalTick();
+    for(world->fxRover = world->fxList.Next(); world->fxRover != NULL; world->fxRover = tmpFx) {
+        tmpFx = world->fxRover->worldLink.Next();
 
-            if(world->fxRover->Removing()) {
-                // unlink from world and free fx
-                tmpFx = world->fxRover->worldLink.Prev();
-                world->fxRover->worldLink.Remove();
-                Mem_Free(world->fxRover);
+        world->fxRover->LocalTick();
 
-                world->fxRover = tmpFx;
-
-                if(world->fxRover == NULL) {
-                    break;
-                }
-            }
+        if(world->fxRover->Removing()) {
+            // unlink from world and free fx
+            world->fxRover->worldLink.Remove();
+            world->fxRover->SetParent(NULL);
+            delete world->fxRover;
+        }
     }
 }
 

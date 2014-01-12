@@ -58,6 +58,8 @@ public:
     kexGameObject               *GetTarget(void) { return target; }
     unsigned int                &TargetID(void) { return targetID; }
     float                       &TimeStamp(void) { return timeStamp; }
+    float                       &OldTimeStamp(void) { return oldTimeStamp; }
+    float                       &FracTime(void) { return fracTime; }
     
     static unsigned int         id;
     
@@ -91,6 +93,8 @@ public:
         OBJMETHOD("void StartSound(const kStr &in)", StartSound, (const kexStr &name), void);
         OBJMETHOD("void Remove(void)", Remove, (void), void);
         OBJMETHOD("const int RefCount(void)const", RefCount, (void)const, const int);
+        OBJMETHOD("float &TimeStamp(void)", TimeStamp, (void), float&);
+        OBJMETHOD("float &FracTime(void)", FracTime, (void), float&);
 
     #define OBJPROPERTY(str, p)                         \
         scriptManager.Engine()->RegisterObjectProperty( \
@@ -112,9 +116,9 @@ protected:
     kexGameObject               *owner;
     kexGameObject               *target;
     float                       timeStamp;
+    float                       oldTimeStamp;
     float                       tickDistance;
-    float                       tickIntervals;
-    float                       nextTickInterval;
+    float                       fracTime;
 
 private:
     int                         refCount;

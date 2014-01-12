@@ -137,6 +137,8 @@ void kexSystem::Shutdown(void) {
 
     bShuttingDown = true;
 
+    localWorld.Unload();
+
     soundSystem.Shutdown();
     fxManager.Shutdown();
     

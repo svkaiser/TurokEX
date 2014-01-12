@@ -115,6 +115,9 @@ kexActor::kexActor(void) {
 //
 
 kexActor::~kexActor(void) {
+    if(scriptComponent.ScriptObject() != NULL) {
+        scriptComponent.Release();
+    }
 }
 
 //
@@ -122,7 +125,7 @@ kexActor::~kexActor(void) {
 //
 
 void kexActor::LocalTick(void) {
-    if(bStatic == true) {
+    if(bStatic == true || IsStale()) {
         return;
     }
 

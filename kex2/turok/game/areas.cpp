@@ -58,6 +58,16 @@ kexArea::kexArea(void) {
 }
 
 //
+// kexArea::~kexArea
+//
+
+kexArea::~kexArea(void) {
+    if(scriptComponent.ScriptObject() != NULL) {
+        scriptComponent.Release();
+    }
+}
+
+//
 // kexArea::InitObject
 //
 

@@ -72,13 +72,22 @@ static void FCmd_MemUsage(void) {
 }
 
 //
+// FCmd_DrawGCStats
+//
+
+static void FCmd_DrawGCStats(void) {
+    scriptManager.bDrawGCStats ^= 1;
+}
+
+//
 // kexScriptManager::kexScriptManager
 //
 
 kexScriptManager::kexScriptManager(void) {
-    this->engine    = NULL;
-    this->ctx       = NULL;
-    this->module    = NULL;
+    this->engine        = NULL;
+    this->ctx           = NULL;
+    this->module        = NULL;
+    this->bDrawGCStats  = false;
 }
 
 //
@@ -193,6 +202,7 @@ void kexScriptManager::Init(void) {
 
     command.Add("call", FCmd_Call);
     command.Add("callfile", FCmd_CallFile);
+    command.Add("showGCStats", FCmd_DrawGCStats);
     command.Add("scriptMem", FCmd_MemUsage);
     common.Printf("Script System Initialized\n");
 }
@@ -337,4 +347,40 @@ void kexScriptManager::CallCommand(const char *decl) {
         if(state == asEXECUTION_ACTIVE)
             ctx->PopState();
     }
+}
+
+//
+// kexScriptManager::DrawGCStats
+//
+
+void kexScriptManager::DrawGCStats(void) {
+    unsigned int data[5];
+    unsigned int c;
+    byte *cb;
+
+    if(scriptManager.bDrawGCStats == false) {
+        return;
+    }
+
+    scriptManager.Engine()->GetGCStatistics(
+        &data[0],
+        &data[1],
+        &data[2],
+        &data[3],
+        &data[4]);
+
+    c = RGBA(255, 255, 0, 255);
+    cb = (byte*)&c;
+
+    renderSystem.consoleFont.DrawString("Current Size:", 32, 32, 1, false, cb, cb);
+    renderSystem.consoleFont.DrawString("Total Destroyed:", 32, 48, 1, false, cb, cb);
+    renderSystem.consoleFont.DrawString("Total Detected:", 32, 64, 1, false, cb, cb);
+    renderSystem.consoleFont.DrawString("New Objects:", 32, 80, 1, false, cb, cb);
+    renderSystem.consoleFont.DrawString("Total New Destroyed:", 32, 96, 1, false, cb, cb);
+
+    renderSystem.consoleFont.DrawString(kva("%i", data[0]), 192, 32, 1, false, cb, cb);
+    renderSystem.consoleFont.DrawString(kva("%i", data[1]), 192, 48, 1, false, cb, cb);
+    renderSystem.consoleFont.DrawString(kva("%i", data[2]), 192, 64, 1, false, cb, cb);
+    renderSystem.consoleFont.DrawString(kva("%i", data[3]), 192, 80, 1, false, cb, cb);
+    renderSystem.consoleFont.DrawString(kva("%i", data[4]), 192, 96, 1, false, cb, cb);
 }

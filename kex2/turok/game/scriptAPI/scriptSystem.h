@@ -34,6 +34,7 @@ public:
     void                    Shutdown(void);
     void                    CallExternalScript(const char *file, const char *function);
     void                    CallCommand(const char *decl);
+    void                    DrawGCStats(void);
     void                    RegisterMethod(const char *name, const char *decl,
                                            const asSFuncPtr &funcPointer);
 
@@ -46,6 +47,8 @@ public:
     template<class type>
     static void             RegisterRefObject(const char *name) {
         scriptManager.Engine()->RegisterObjectType(name, sizeof(type), asOBJ_REF);
+        kexScriptManager::RegisterIncRef<type>(name);
+        kexScriptManager::RegisterDecRef<type>(name);
     }
 
     template<class type>
@@ -75,6 +78,8 @@ public:
     asIScriptEngine         *Engine(void) { return engine; }
     asIScriptContext        *Context(void) { return ctx; }
     asIScriptModule         *Module(void) { return module; }
+
+    bool                    bDrawGCStats;
 
 private:
     void                    ProcessScript(const char *file);

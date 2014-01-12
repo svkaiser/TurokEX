@@ -105,12 +105,14 @@ void kexClient::PrepareMapChange(const ENetPacket *packet) {
     // TEMP
     unsigned int mapID;
 
-    packetManager.Read8((ENetPacket*)packet, &mapID);
     client.SetState(CL_STATE_CHANGINGLEVEL);
 
+    packetManager.Read8((ENetPacket*)packet, &mapID);
+
+    localWorld.Unload();
     localWorld.Load(kva("maps/map%02d/map%02d", mapID, mapID));
+
     client.SetState(CL_STATE_INGAME);
-    localWorld.SpawnLocalPlayer();
 }
 
 //
@@ -206,6 +208,7 @@ void kexClient::Run(const int msec) {
     renderSystem.SetOrtho();
     renderSystem.Canvas().Draw();
     console.Draw();
+    scriptManager.DrawGCStats();
 
     // finish frame
     inputSystem.UpdateGrab();

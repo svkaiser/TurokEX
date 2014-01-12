@@ -68,6 +68,7 @@ typedef enum {
 BEGIN_EXTENDED_CLASS(kexArea, kexObject);
 public:
                                     kexArea(void);
+                                    ~kexArea(void);
 
     void                            Setup(void);
     void                            Enter(void);

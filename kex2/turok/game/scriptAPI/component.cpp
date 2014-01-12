@@ -44,6 +44,8 @@ kexComponent::kexComponent(void) {
     this->onThink       = NULL;
     this->onLocalThink  = NULL;
     this->onSpawn       = NULL;
+
+    objHandle.Clear();
 }
 
 //
@@ -51,12 +53,7 @@ kexComponent::kexComponent(void) {
 //
 
 kexComponent::~kexComponent(void) {
-    if(obj && !sysMain.IsShuttingDown()) {
-        obj->Release();
-    }
-    else {
-        objHandle.Clear();
-    }
+    objHandle.Set(NULL, NULL);
 }
 
 //
@@ -77,6 +74,8 @@ bool kexComponent::Spawn(const char *className) {
         common.Warning("kexComponent::Spawn: %s not found\n", className);
         return false;
     }
+
+    name = className;
 
     return true;
 }
@@ -191,7 +190,7 @@ bool kexComponent::CallFunction(asIScriptFunction *func, void *object, bool *val
     }
 
     if(val) {
-        *val = (bool)scriptManager.Context()->GetReturnByte();
+        *val = (scriptManager.Context()->GetReturnByte() == 1);
     }
 
     if(state == asEXECUTION_ACTIVE) {
@@ -199,6 +198,14 @@ bool kexComponent::CallFunction(asIScriptFunction *func, void *object, bool *val
     }
 
     return true;
+}
+
+//
+// kexComponent::Deconstruct
+//
+
+void kexComponent::Deconstruct(void) {
+    CallFunction(type->GetMethodByIndex(asBEHAVE_DESTRUCT));
 }
 
 //-----------------------------------------------------------------------------
@@ -315,6 +322,7 @@ bool kexAreaComponent::CallConstructor(const char *decl) {
     }
 
     obj = *(asIScriptObject**)scriptManager.Context()->GetAddressOfReturnValue();
+    obj->AddRef();
     objHandle.Set(obj, type);
     ok = true;
 
