@@ -38,8 +38,8 @@ public:
 
     virtual void                    Draw(void) = 0;
 
-    void                            IncRef(void);
-    void                            DecRef(void);
+    int                             IncRef(void);
+    int                             DecRef(void);
 
     kexCanvasObject                 *parent;
     kexLinklist<kexCanvasObject>    link;
@@ -56,7 +56,7 @@ public:
     bool                            bVisible;
 
 private:
-    int                             refCount;
+    int                             scriptRef;
 END_CLASS();
 
 //-----------------------------------------------------------------------------

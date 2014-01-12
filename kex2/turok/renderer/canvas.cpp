@@ -55,7 +55,7 @@ kexCanvasObject::kexCanvasObject(void) {
     this->alpha     = 1;
     this->bVisible  = true;
     this->parent    = NULL;
-    this->refCount  = 0;
+    this->scriptRef  = 0;
 
     this->link.SetData(this);
 }
@@ -65,6 +65,7 @@ kexCanvasObject::kexCanvasObject(void) {
 //
 
 kexCanvasObject::~kexCanvasObject(void) {
+    scriptRef = 0;
     this->link.Remove();
 }
 
@@ -72,16 +73,16 @@ kexCanvasObject::~kexCanvasObject(void) {
 // kexCanvasObject::IncRef
 //
 
-void kexCanvasObject::IncRef(void) {
-    refCount++;
+int kexCanvasObject::IncRef(void) {
+    return ++scriptRef;
 }
 
 //
 // kexCanvasObject::DecRef
 //
 
-void kexCanvasObject::DecRef(void) {
-    refCount--;
+int kexCanvasObject::DecRef(void) {
+    return --scriptRef;
 }
 
 //-----------------------------------------------------------------------------
@@ -527,8 +528,6 @@ void kexCanvas::Draw(void) {
 template<class type>
 static void RegisterCanvasObject(const char *name) {
     kexScriptManager::RegisterRefObject<type>(name);
-    kexScriptManager::RegisterIncRef<type>(name);
-    kexScriptManager::RegisterDecRef<type>(name);
     scriptManager.Engine()->RegisterObjectProperty(name, "float x",
         asOFFSET(type, x));
     scriptManager.Engine()->RegisterObjectProperty(name, "float y",
