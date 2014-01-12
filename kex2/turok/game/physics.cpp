@@ -469,9 +469,24 @@ void kexPhysics::Think(const float timeDelta) {
             velocity += (gravity * massAmount);
         }
         else {
+            vel = velocity;
+
             // project along the ground plane
             if(velocity.Dot(groundGeom->plane.Normal()) <= 1.024f) {
+                float oldDist;
+                float newDist;
+
                 ImpactVelocity(velocity, groundGeom->plane.Normal(), 1.024f);
+
+                if(vel.Dot(velocity) > 0) {
+                    oldDist = vel.UnitSq();
+                    if(oldDist > 1) {
+                        newDist = velocity.UnitSq();
+                        if(oldDist != newDist && newDist > 1) {
+                            velocity *= kexMath::Sqrt(oldDist / newDist);
+                        }
+                    }
+                }
 
                 normals[moves++] = trace.hitNormal;
             }
