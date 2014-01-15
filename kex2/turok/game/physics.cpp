@@ -307,7 +307,7 @@ void kexPhysics::ClimbOnSurface(kexVec3 &start, const kexVec3 &end, kexTri *tri)
     y2 = tri->GetDistance(end);
 
     dir.Set(end[0] - start[0], y2 - y1, end[2] - start[2]);
-    lenxz = dir.ToVec2().Unit();
+    lenxz = dir.ToVec2().UnitSq();
     leny = dir[1]*dir[1]+lenxz;
 
     if(leny == 0) {

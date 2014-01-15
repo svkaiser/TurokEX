@@ -1,4 +1,4 @@
-#include "scripts/turokWeapon.txt"
+#include "scripts/turokgame/components/weapons/turokWeapon.txt"
 
 ////////////////////////////////////////////////////
 //
@@ -18,6 +18,9 @@ final class TurokWeaponBow : TurokWeapon {
         bAiming = false;
         bHasAltAmmo = true;
         bOwned = true;
+    }
+    
+    ~TurokWeaponBow() {
     }
     
     //

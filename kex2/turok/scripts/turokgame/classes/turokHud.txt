@@ -1,5 +1,5 @@
-#include "scripts/turokPlayer.txt"
-#include "scripts/turokAmmo.txt"
+#include "scripts/turokgame/components/turokPlayer.txt"
+#include "scripts/turokgame/classes/turokAmmo.txt"
 
 ////////////////////////////////////////////////////
 //
@@ -319,7 +319,9 @@ final class TurokHud {
             lifeForceNum.number.x = -17;
         }
         
-        if(localPlayer.activeWeaponID == wp_knife) {
+        TurokPlayer @player = cast<TurokPlayer@>(localClient.obj);
+        
+        if(player.activeWeaponID == wp_knife) {
             ammoNum.number.bVisible = false;
             h_plaque2.bVisible = false;
         }
@@ -328,7 +330,7 @@ final class TurokHud {
             h_plaque2.bVisible = true;
         }
         
-        h_underwater.bVisible = (localPlayer.waterLevel == WLT_UNDER);
+        h_underwater.bVisible = (player.waterLevel == WLT_UNDER);
         
         h_arrow1.bVisible = false;
         h_arrow2.bVisible = false;
@@ -341,30 +343,35 @@ final class TurokHud {
         h_rockets.bVisible = false;
         h_fuse.bVisible = false;
         
-        switch(localPlayer.activeWeaponID) {
+        switch(player.activeWeaponID) {
             case wp_bow:
                 h_arrow1.bVisible = true;
-                ammoNum.Update(localPlayer.arrows.amount);
+                ammoNum.Update(player.arrows.amount);
                 break;
             case wp_pistol:
                 h_clip.bVisible = true;
-                ammoNum.Update(localPlayer.clips.amount);
+                ammoNum.Update(player.clips.amount);
                 break;
             case wp_shotgun:
+            case wp_autoshotgun:
                 h_shell1.bVisible = true;
-                ammoNum.Update(localPlayer.shells.amount);
+                ammoNum.Update(player.shells.amount);
                 break;
             case wp_rifle:
                 h_clip.bVisible = true;
-                ammoNum.Update(localPlayer.clips.amount);
+                ammoNum.Update(player.clips.amount);
                 break;
             case wp_pulserifle:
                 h_cell.bVisible = true;
-                ammoNum.Update(localPlayer.cells.amount);
+                ammoNum.Update(player.cells.amount);
                 break;
             case wp_grenade_l:
                 h_grenade.bVisible = true;
-                ammoNum.Update(localPlayer.grenades.amount);
+                ammoNum.Update(player.grenades.amount);
+                break;
+            case wp_minigun:
+                h_mags.bVisible = true;
+                ammoNum.Update(player.ammoMags.amount);
                 break;
             default:
                 break;

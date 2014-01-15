@@ -1,12 +1,14 @@
 #include "scripts/math_utils.txt"
-#include "scripts/turokAmmo.txt"
-#include "scripts/turokWeaponKnife.txt"
-#include "scripts/turokWeaponBow.txt"
-#include "scripts/turokWeaponPistol.txt"
-#include "scripts/turokWeaponShotgun.txt"
-#include "scripts/turokWeaponRifle.txt"
-#include "scripts/turokWeaponPulseRifle.txt"
-#include "scripts/turokWeaponGrenade.txt"
+#include "scripts/turokgame/classes/turokAmmo.txt"
+#include "scripts/turokgame/components/weapons/turokWeaponKnife.txt"
+#include "scripts/turokgame/components/weapons/turokWeaponBow.txt"
+#include "scripts/turokgame/components/weapons/turokWeaponPistol.txt"
+#include "scripts/turokgame/components/weapons/turokWeaponShotgun.txt"
+#include "scripts/turokgame/components/weapons/turokWeaponAutoShotgun.txt"
+#include "scripts/turokgame/components/weapons/turokWeaponRifle.txt"
+#include "scripts/turokgame/components/weapons/turokWeaponPulseRifle.txt"
+#include "scripts/turokgame/components/weapons/turokWeaponGrenade.txt"
+#include "scripts/turokgame/components/weapons/turokWeaponMiniGun.txt"
 
 ////////////////////////////////////////////////////
 //
@@ -144,21 +146,41 @@ void CommandToggleCamera(void) {
 
 final class TurokPlayer : Component {
     kLocalPlayer        @self;
+    
+    //
+    // weapon info
+    //
     TurokWeapon         @activeWeapon;
     int                 activeWeaponID;
     int                 pendingWeaponID;
+    
+    //
+    // debugging
+    //
     bool                bFly;
     bool                bToggleFarZ;
+    
+    //
+    // camera
+    //
     bool                bCameraAttached;
+    kVec3               camOffset;
+    float               camHeight;
+    
+    //
+    // local variables
+    //
     bool                bJumped;
     bool                bLerpToWaterSurface;
     float               fallAmount;
-    kVec3               camOffset;
-    float               camHeight;
     int                 waterLevel;
     int                 bubbleTime;
     bool                bThrusting;
     float               thrustTime;
+    
+    //
+    // game variables
+    //
     int                 lives;
     int                 lifeForces;
     int                 armor;
@@ -166,6 +188,10 @@ final class TurokPlayer : Component {
     bool                bHasArmor;
     bool                bHasBackpack;
     float               spiritTime;
+    
+    //
+    // keys
+    //
     int                 keys_level2;
     int                 keys_level3;
     int                 keys_level4;
@@ -173,13 +199,23 @@ final class TurokPlayer : Component {
     int                 keys_level6;
     int                 keys_level7;
     int                 keys_level8;
+    
+    //
+    // weapon references
+    //
     kActor              @weaponKnife;
     kActor              @weaponBow;
     kActor              @weaponPistol;
     kActor              @weaponShotgun;
+    kActor              @weaponAutoShotgun;
     kActor              @weaponRifle;
     kActor              @weaponPulse;
     kActor              @weaponGrenade;
+    kActor              @weaponMinigun;
+    
+    //
+    // ammo
+    //
     TurokAmmoArrow      arrows;
     TurokAmmoTekArrow   tekArrows;
     TurokAmmoClip       clips;
@@ -211,6 +247,14 @@ final class TurokPlayer : Component {
         bubbleTime          = 0;
         bThrusting          = false;
         thrustTime          = 0;
+    }
+    
+    //
+    // TurokPlayer::~TurokPlayer
+    //
+    
+    ~TurokPlayer() {
+        @activeWeapon = null;
     }
     
     //
@@ -277,13 +321,15 @@ final class TurokPlayer : Component {
             bCameraAttached = true;
         }
         
-        weaponKnife.bClientView     = bCameraAttached;
-        weaponBow.bClientView       = bCameraAttached;
-        weaponPistol.bClientView    = bCameraAttached;
-        weaponShotgun.bClientView   = bCameraAttached;
-        weaponRifle.bClientView     = bCameraAttached;
-        weaponPulse.bClientView     = bCameraAttached;
-        weaponGrenade.bClientView   = bCameraAttached;
+        weaponKnife.bClientView         = bCameraAttached;
+        weaponBow.bClientView           = bCameraAttached;
+        weaponPistol.bClientView        = bCameraAttached;
+        weaponShotgun.bClientView       = bCameraAttached;
+        weaponAutoShotgun.bClientView   = bCameraAttached;
+        weaponRifle.bClientView         = bCameraAttached;
+        weaponPulse.bClientView         = bCameraAttached;
+        weaponGrenade.bClientView       = bCameraAttached;
+        weaponMinigun.bClientView       = bCameraAttached;
     }
 
     //
@@ -300,12 +346,16 @@ final class TurokPlayer : Component {
                 return cast<TurokWeapon@>(weaponPistol.obj);
             case wp_shotgun:
                 return cast<TurokWeapon@>(weaponShotgun.obj);
+            case wp_autoshotgun:
+                return cast<TurokWeapon@>(weaponAutoShotgun.obj);
             case wp_rifle:
                 return cast<TurokWeapon@>(weaponRifle.obj);
             case wp_pulserifle:
                 return cast<TurokWeapon@>(weaponPulse.obj);
             case wp_grenade_l:
                 return cast<TurokWeapon@>(weaponGrenade.obj);
+            case wp_minigun:
+                return cast<TurokWeapon@>(weaponMinigun.obj);
         }
         
         return null;
@@ -340,23 +390,27 @@ final class TurokPlayer : Component {
         kVec3 origin = kVec3(0, 0, 0);
         kAngle angle = kAngle(0, 0, 0);
         
-        @weaponKnife    = LocalWorld.SpawnActor("kexActor", "TurokWeaponKnife", origin, angle);
-        @weaponBow      = LocalWorld.SpawnActor("kexActor", "TurokWeaponBow", origin, angle);
-        @weaponPistol   = LocalWorld.SpawnActor("kexActor", "TurokWeaponPistol", origin, angle);
-        @weaponShotgun  = LocalWorld.SpawnActor("kexActor", "TurokWeaponShotgun", origin, angle);
-        @weaponRifle    = LocalWorld.SpawnActor("kexActor", "TurokWeaponRifle", origin, angle);
-        @weaponPulse    = LocalWorld.SpawnActor("kexActor", "TurokWeaponPulseRifle", origin, angle);
-        @weaponGrenade  = LocalWorld.SpawnActor("kexActor", "TurokWeaponGrenade", origin, angle);
+        @weaponKnife        = LocalWorld.SpawnActor("kexActor", "TurokWeaponKnife", origin, angle);
+        @weaponBow          = LocalWorld.SpawnActor("kexActor", "TurokWeaponBow", origin, angle);
+        @weaponPistol       = LocalWorld.SpawnActor("kexActor", "TurokWeaponPistol", origin, angle);
+        @weaponShotgun      = LocalWorld.SpawnActor("kexActor", "TurokWeaponShotgun", origin, angle);
+        @weaponAutoShotgun  = LocalWorld.SpawnActor("kexActor", "TurokWeaponAutoShotgun", origin, angle);
+        @weaponRifle        = LocalWorld.SpawnActor("kexActor", "TurokWeaponRifle", origin, angle);
+        @weaponPulse        = LocalWorld.SpawnActor("kexActor", "TurokWeaponPulseRifle", origin, angle);
+        @weaponGrenade      = LocalWorld.SpawnActor("kexActor", "TurokWeaponGrenade", origin, angle);
+        @weaponMinigun      = LocalWorld.SpawnActor("kexActor", "TurokWeaponMiniGun", origin, angle);
         
         TurokPlayer @player = cast<TurokPlayer@>(self.obj);
         
-        @cast<TurokWeapon@>(weaponKnife.obj).owner      = player;
-        @cast<TurokWeapon@>(weaponBow.obj).owner        = player;
-        @cast<TurokWeapon@>(weaponPistol.obj).owner     = player;
-        @cast<TurokWeapon@>(weaponShotgun.obj).owner    = player;
-        @cast<TurokWeapon@>(weaponRifle.obj).owner      = player;
-        @cast<TurokWeapon@>(weaponPulse.obj).owner      = player;
-        @cast<TurokWeapon@>(weaponGrenade.obj).owner    = player;
+        @cast<TurokWeapon@>(weaponKnife.obj).owner          = player;
+        @cast<TurokWeapon@>(weaponBow.obj).owner            = player;
+        @cast<TurokWeapon@>(weaponPistol.obj).owner         = player;
+        @cast<TurokWeapon@>(weaponShotgun.obj).owner        = player;
+        @cast<TurokWeapon@>(weaponAutoShotgun.obj).owner    = player;
+        @cast<TurokWeapon@>(weaponRifle.obj).owner          = player;
+        @cast<TurokWeapon@>(weaponPulse.obj).owner          = player;
+        @cast<TurokWeapon@>(weaponGrenade.obj).owner        = player;
+        @cast<TurokWeapon@>(weaponMinigun.obj).owner        = player;
 
         pendingWeaponID = wp_knife;
         SetWeapon();

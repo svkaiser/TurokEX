@@ -417,6 +417,24 @@ void kexActor::SetModel(const char* modelFile) {
 }
 
 //
+// kexActor::SetRotationOffset
+//
+
+void kexActor::SetRotationOffset(const int node, const float angle,
+                                 const float x, const float y, const float z) {
+     float an;
+
+     if(node < 0 || node >= (int)model->numNodes) {
+         return;
+     }
+
+     an = angle;
+     kexAngle::Clamp(&an);
+
+     nodeOffsets_r[node] = kexQuat(an, x, y, z);
+}
+
+//
 // kexActor::SetModel
 //
 

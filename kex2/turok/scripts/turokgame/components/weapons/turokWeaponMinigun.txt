@@ -1,0 +1,106 @@
+#include "scripts/turokgame/components/weapons/turokWeapon.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokWeaponMiniGun
+//
+////////////////////////////////////////////////////
+
+final class TurokWeaponMiniGun : TurokWeapon {
+    float spinSpeed;
+    float spinAngle;
+    bool bSpinning;
+    float shotTime;
+    
+    //
+    // TurokWeaponMiniGun::TurokWeaponMiniGun
+    //
+    
+    TurokWeaponMiniGun(kActor @actor) {
+        super(actor);
+        bOwned = true;
+        spinSpeed = 0;
+        spinAngle = 0;
+        bSpinning = false;
+    }
+    
+    //
+    // TurokWeaponMiniGun::~TurokWeaponMiniGun
+    //
+    
+    ~TurokWeaponMiniGun() {
+    }
+    
+    //
+    // TurokWeaponMiniGun::OnLocalThink
+    //
+    
+    void OnLocalThink(void) {
+        if(bSpinning) {
+            if(state == PWPN_STATE_FIRING) {
+                spinSpeed = LocalLerp(spinSpeed, 40.0f, 0.35f);
+            }
+            else {
+                spinSpeed = LocalLerp(spinSpeed, 0, 0.025f);
+            }
+            
+            if(spinSpeed < 0.01f) {
+                spinSpeed = 0;
+                bSpinning = false;
+            }
+            
+            spinAngle += spinSpeed * Client.GetRunTime();
+            self.SetRotationOffset(1, spinAngle, 0, 1, 0);
+        }
+        
+        TurokWeapon::OnLocalThink();
+    }
+    
+    //
+    // TurokWeaponMiniGun::OnAttack
+    //
+    
+    bool OnAttack(void) {
+        owner.self.Puppet().StartSound("sounds/shaders/mini_gun_whir.ksnd");
+        self.AnimState().Blend(anim_weaponFireLoop, playSpeed, 4.0f, ANF_LOOP);
+        bSpinning = true;
+        return true;
+    }
+    
+    //
+    // TurokWeaponMiniGun::CheckAttack
+    //
+    
+    void CheckAttack(void) {
+        float playTime = self.AnimState().PlayTime();
+        
+        if((playTime - shotTime) >= 0.11f) {
+            shotTime = playTime;
+            
+            SpawnFX("fx/fx_037.kfx", -4.608f, -2.8f, 14.848f);
+            SpawnFX("fx/bulletshell.kfx", -10.24f, -12.8f, 13.82f);
+            SpawnFX("fx/projectile_minibullet.kfx", -8.192f, -10.24f, 25.6f);
+            owner.self.Puppet().StartSound("sounds/shaders/mini_gun_shot.ksnd");
+        }
+        
+        if(!owner.self.ActionDown("+attack")) {
+            owner.self.Puppet().StartSound("sounds/shaders/minigun_stop.ksnd");
+            shotTime = 0;
+            ReadyAnimation();
+            state = PWPN_STATE_READY;
+        }
+    }
+    
+    //
+    // TurokWeaponMiniGun::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        xOffset = 163.84032f;
+        yOffset = -5.80214f;
+        zOffset = -163.84032f;
+        self.SetModel("models/mdl661/mdl661.kmesh");
+        
+        TurokWeapon::OnSpawn();
+    }
+};

@@ -33,6 +33,13 @@ class TurokScriptedObject : Component {
     }
     
     //
+    // TurokScriptedObject::TurokScriptedObject
+    //
+    
+    ~TurokScriptedObject() {
+    }
+    
+    //
     // TurokScriptedObject::OnThink
     //
     

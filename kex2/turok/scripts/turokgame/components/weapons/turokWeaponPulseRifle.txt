@@ -1,4 +1,4 @@
-#include "scripts/turokWeapon.txt"
+#include "scripts/turokgame/components/weapons/turokWeapon.txt"
 
 ////////////////////////////////////////////////////
 //
@@ -17,6 +17,9 @@ final class TurokWeaponPulseRifle : TurokWeapon {
         super(actor);
         bOwned = true;
         shotTime = 0;
+    }
+    
+    ~TurokWeaponPulseRifle() {
     }
     
     //

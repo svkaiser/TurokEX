@@ -1884,6 +1884,14 @@ static void ProcessActors(byte *data)
             Com_Strcat("}\n\n");
             break;
 
+        case OT_DYNAMIC_GENERIC:
+            Com_Strcat("actor \"kexActor\"\n");
+            Com_Strcat("{\n");
+            WriteGenericActorProps(actor, attr);
+            Com_Strcat("targetID %i\n", attr->tid);
+            Com_Strcat("}\n\n");
+            break;
+
         case OT_DYNAMIC_DOOR:
             Com_Strcat("actor \"kexDoor\"\n");
             Com_Strcat("{\n");

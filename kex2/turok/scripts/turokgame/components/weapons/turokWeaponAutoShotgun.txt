@@ -1,0 +1,101 @@
+#include "scripts/turokgame/components/weapons/turokWeaponShotgun.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokWeaponAutoShotgun
+//
+////////////////////////////////////////////////////
+
+final class TurokWeaponAutoShotgun : TurokWeaponShotgun {
+    float spinAngle;
+    bool bSpinning;
+    
+    //
+    // TurokWeaponAutoShotgun::TurokWeaponAutoShotgun
+    //
+    
+    TurokWeaponAutoShotgun(kActor @actor) {
+        super(actor);
+        
+        spinAngle = 0;
+        bSpinning = false;
+    }
+    
+    //
+    // TurokWeaponAutoShotgun::~TurokWeaponAutoShotgun
+    //
+    
+    ~TurokWeaponAutoShotgun() {
+    }
+    
+    //
+    // TurokWeaponAutoShotgun::OnLocalThink
+    //
+    
+    void OnLocalThink(void) {
+        if(bSpinning) {
+            if(spinAngle > 0) {
+                spinAngle -= 0.03f;
+            }
+            else {
+                spinAngle = 0;
+                bSpinning = true;
+            }
+            
+            self.SetRotationOffset(1, spinAngle, 1, 0, 0);
+        }
+        
+        TurokWeapon::OnLocalThink();
+    }
+    
+    //
+    // TurokWeaponAutoShotgun::OnAttack
+    //
+    
+    bool OnAttack(void) {
+        self.AnimState().Blend(anim_weaponFire, playSpeed, 4.0f, 0);
+        
+        SpawnFX("fx/muzzle_shotgun.kfx", -5.888f, -2.304f, 15.696f);
+        SpawnFX("fx/shotshell.kfx", -14.336f, -12.288f, 20.736f);
+        SpawnFX("fx/projectile_shell.kfx", -12.288f, -7.1680f, 25.6f);
+        
+        bReload = false;
+        bSpinning = true;
+        spinAngle = DegToRad(36);
+        
+        owner.shells.Consume(1);
+        owner.self.Puppet().StartSound("sounds/shaders/riot_shotgun_shot.ksnd");
+        return true;
+    }
+    
+    //
+    // TurokWeaponAutoShotgun::CheckAttack
+    //
+    
+    void CheckAttack(void) {
+        if(self.AnimState().PlayTime() >= 0.0125f) {
+            if(!bReload) {
+                bReload = true;
+                owner.self.Puppet().StartSound("sounds/shaders/reload_auto_shotgun.ksnd");
+            }
+        }
+        else {
+            bReload = false;
+        }
+        
+        TurokWeapon::CheckAttack();
+    }
+    
+    //
+    // TurokWeaponAutoShotgun::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        xOffset = 170.667f;
+        yOffset = -2.3888f;
+        zOffset = -177.49368f;
+        self.SetModel("models/mdl642/mdl642.kmesh");
+        
+        TurokWeapon::OnSpawn();
+    }
+};

@@ -1,4 +1,4 @@
-#include "scripts/turokWeapon.txt"
+#include "scripts/turokgame/components/weapons/turokWeapon.txt"
 
 ////////////////////////////////////////////////////
 //
@@ -19,6 +19,9 @@ final class TurokWeaponRifle : TurokWeapon {
         bShotsFired.insertLast(false);
         bShotsFired.insertLast(false);
         bShotsFired.insertLast(false);
+    }
+    
+    ~TurokWeaponRifle() {
     }
     
     //

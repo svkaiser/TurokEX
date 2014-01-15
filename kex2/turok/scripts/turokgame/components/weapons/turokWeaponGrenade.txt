@@ -1,4 +1,4 @@
-#include "scripts/turokWeapon.txt"
+#include "scripts/turokgame/components/weapons/turokWeapon.txt"
 
 ////////////////////////////////////////////////////
 //
@@ -14,6 +14,9 @@ final class TurokWeaponGrenade : TurokWeapon {
     TurokWeaponGrenade(kActor @actor) {
         super(actor);
         bOwned = true;
+    }
+    
+    ~TurokWeaponGrenade() {
     }
     
     //

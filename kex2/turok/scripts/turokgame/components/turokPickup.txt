@@ -80,6 +80,9 @@ class TurokPickup : Component {
         type = -1;
     }
     
+    ~TurokPickup() {
+    }
+    
     //
     // TurokPickup::OnThink
     //

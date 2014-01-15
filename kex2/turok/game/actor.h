@@ -59,6 +59,8 @@ public:
     void                        SetModel(const char *modelFile);
     void                        SetModel(const kexStr &modelFile);
     void                        CreateComponent(const char *name);
+    void                        SetRotationOffset(const int node, const float angle,
+                                                  const float x, const float y, const float z);
 
     const int                   Variant(void) const { return variant; }
     kexStr                      &GetName(void) { return name; }
@@ -100,6 +102,8 @@ public:
         OBJMETHOD("void SetModel(const kStr &in)", SetModel, (const kexStr &modelFile), void);
         OBJMETHOD("void SpawnFX(const kStr &in, float, float, float)", SpawnFX,
             (const kexStr &str, float x, float y, float z), void);
+        OBJMETHOD("void SetRotationOffset(const int, const float, const float, const float, const float)",
+            SetRotationOffset, (const int, const float, const float, const float, const float), void);
 
     #define OBJPROPERTY(str, p)                         \
         scriptManager.Engine()->RegisterObjectProperty( \

@@ -449,7 +449,7 @@ void kexRenderWorld::TraverseDrawActorNode(kexActor *actor,
                 }
             }
 
-            rot *= actor->GetNodeRotations()[nodenum];
+            rot = rot * actor->GetNodeRotations()[nodenum];
             kexMatrix translation(rot);
             translation.AddTranslation(pos);
 

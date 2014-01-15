@@ -1,4 +1,4 @@
-#include "scripts/turokWeapon.txt"
+#include "scripts/turokgame/components/weapons/turokWeapon.txt"
 
 ////////////////////////////////////////////////////
 //
@@ -6,7 +6,7 @@
 //
 ////////////////////////////////////////////////////
 
-final class TurokWeaponShotgun : TurokWeapon {
+class TurokWeaponShotgun : TurokWeapon {
     bool    bReload;
     
     //
@@ -18,6 +18,9 @@ final class TurokWeaponShotgun : TurokWeapon {
         bHasAltAmmo = true;
         bOwned = true;
         bReload = false;
+    }
+    
+    ~TurokWeaponShotgun() {
     }
     
     //

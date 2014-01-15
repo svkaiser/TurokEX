@@ -1,4 +1,4 @@
-#include "scripts/turokWeapon.txt"
+#include "scripts/turokgame/components/weapons/turokWeapon.txt"
 
 ////////////////////////////////////////////////////
 //
@@ -22,6 +22,9 @@ final class TurokWeaponKnife : TurokWeapon {
         bActive = true;
         
         self.bHidden = false;
+    }
+    
+    ~TurokWeaponKnife() {
     }
     
     //

@@ -1,5 +1,5 @@
 #include "scripts/animations.txt"
-#include "scripts/turokAmmo.txt"
+#include "scripts/turokgame/classes/turokAmmo.txt"
 
 ////////////////////////////////////////////////////
 //
@@ -70,6 +70,14 @@ class TurokWeapon : Component {
         self.bTouch = false;
         self.bClientView = true;
         self.bHidden = true;
+    }
+    
+    //
+    // TurokWeapon::~TurokWeapon
+    //
+    
+    ~TurokWeapon() {
+        @owner = null;
     }
     
     //
