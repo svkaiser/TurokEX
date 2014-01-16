@@ -324,6 +324,9 @@ int GetGLType(glinfo_t* info)
     else if(!strcmp(temp, "GLsizeiptr"))
         info->type = 19;
 
+    else if(!strcmp(temp, "GLhandleARB"))
+        info->type = 20;
+
     return 1;
 }
 
@@ -394,6 +397,9 @@ char* ReturnGLType(glinfo_t* info)
         break;
     case 19:
         return "GLsizeiptr";
+        break;
+    case 20:
+        return "GLhandleARB";
         break;
     }
 
@@ -521,6 +527,9 @@ void SlapGLStuffToFile(FILE* f, int count, dboolean addunderscore)
                     fprintf(f, "%%f");
                     break;
                 case 15:
+                    break;
+                case 20:
+                    fprintf(f, "%%i");
                     break;
                 }
             }
@@ -678,7 +687,7 @@ void SlapGLExtensionsToFile(FILE* f, char* arbstring)
         }
     }
 
-    fprintf(f, "extern dboolean has_%s;\n", arbstring);
+    fprintf(f, "extern bool has_%s;\n", arbstring);
 
     if(i > 0)
         fprintf(f, "\n");
@@ -690,7 +699,7 @@ void SlapGLExtensionsToFile(FILE* f, char* arbstring)
 
     fprintf(f, "\n");
     fprintf(f, "#define %s_Define() \\\n", arbstring);
-    fprintf(f, "dboolean has_%s = false;", arbstring);
+    fprintf(f, "bool has_%s = false;", arbstring);
 
     if(i > 0)
         fprintf(f, " \\\n");
@@ -718,7 +727,7 @@ void SlapGLExtensionsToFile(FILE* f, char* arbstring)
 
     for(j = 0; j < i; j++)
     {
-        fprintf(f, "_%s = GL_RegisterProc(\"%s\")", gldata[j].name, gldata[j].name);
+        fprintf(f, "_%s = (%s)GL_RegisterProc(\"%s\")", gldata[j].name, gldata[j].extname, gldata[j].name);
         if(j < (i - 1))
             fprintf(f, "; \\\n");
         else
@@ -796,6 +805,7 @@ int main(int argc, char** argv)
     SlapGLExtensionsToFile(f, "GL_ARB_texture_env_combine");
     SlapGLExtensionsToFile(f, "GL_EXT_texture_env_combine");
     SlapGLExtensionsToFile(f, "GL_EXT_texture_filter_anisotropic");
+    SlapGLExtensionsToFile(f, "GL_ARB_shader_objects");
 
     fclose(f);
 

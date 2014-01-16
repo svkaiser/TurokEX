@@ -3696,7 +3696,7 @@ d_inline static void glViewport_DEBUG (GLint x, GLint y, GLsizei width, GLsizei 
 //
 // GL_ARB_multitexture
 //
-extern dboolean has_GL_ARB_multitexture;
+extern bool has_GL_ARB_multitexture;
 
 extern PFNGLACTIVETEXTUREARBPROC _glActiveTextureARB;
 extern PFNGLCLIENTACTIVETEXTUREARBPROC _glClientActiveTextureARB;
@@ -3734,7 +3734,7 @@ extern PFNGLMULTITEXCOORD4SARBPROC _glMultiTexCoord4sARB;
 extern PFNGLMULTITEXCOORD4SVARBPROC _glMultiTexCoord4svARB;
 
 #define GL_ARB_multitexture_Define() \
-dboolean has_GL_ARB_multitexture = false; \
+bool has_GL_ARB_multitexture = false; \
 PFNGLACTIVETEXTUREARBPROC _glActiveTextureARB = NULL; \
 PFNGLCLIENTACTIVETEXTUREARBPROC _glClientActiveTextureARB = NULL; \
 PFNGLMULTITEXCOORD1DARBPROC _glMultiTexCoord1dARB = NULL; \
@@ -3772,40 +3772,40 @@ PFNGLMULTITEXCOORD4SVARBPROC _glMultiTexCoord4svARB = NULL
 
 #define GL_ARB_multitexture_Init() \
 has_GL_ARB_multitexture = GL_CheckExtension("GL_ARB_multitexture"); \
-_glActiveTextureARB = GL_RegisterProc("glActiveTextureARB"); \
-_glClientActiveTextureARB = GL_RegisterProc("glClientActiveTextureARB"); \
-_glMultiTexCoord1dARB = GL_RegisterProc("glMultiTexCoord1dARB"); \
-_glMultiTexCoord1dvARB = GL_RegisterProc("glMultiTexCoord1dvARB"); \
-_glMultiTexCoord1fARB = GL_RegisterProc("glMultiTexCoord1fARB"); \
-_glMultiTexCoord1fvARB = GL_RegisterProc("glMultiTexCoord1fvARB"); \
-_glMultiTexCoord1iARB = GL_RegisterProc("glMultiTexCoord1iARB"); \
-_glMultiTexCoord1ivARB = GL_RegisterProc("glMultiTexCoord1ivARB"); \
-_glMultiTexCoord1sARB = GL_RegisterProc("glMultiTexCoord1sARB"); \
-_glMultiTexCoord1svARB = GL_RegisterProc("glMultiTexCoord1svARB"); \
-_glMultiTexCoord2dARB = GL_RegisterProc("glMultiTexCoord2dARB"); \
-_glMultiTexCoord2dvARB = GL_RegisterProc("glMultiTexCoord2dvARB"); \
-_glMultiTexCoord2fARB = GL_RegisterProc("glMultiTexCoord2fARB"); \
-_glMultiTexCoord2fvARB = GL_RegisterProc("glMultiTexCoord2fvARB"); \
-_glMultiTexCoord2iARB = GL_RegisterProc("glMultiTexCoord2iARB"); \
-_glMultiTexCoord2ivARB = GL_RegisterProc("glMultiTexCoord2ivARB"); \
-_glMultiTexCoord2sARB = GL_RegisterProc("glMultiTexCoord2sARB"); \
-_glMultiTexCoord2svARB = GL_RegisterProc("glMultiTexCoord2svARB"); \
-_glMultiTexCoord3dARB = GL_RegisterProc("glMultiTexCoord3dARB"); \
-_glMultiTexCoord3dvARB = GL_RegisterProc("glMultiTexCoord3dvARB"); \
-_glMultiTexCoord3fARB = GL_RegisterProc("glMultiTexCoord3fARB"); \
-_glMultiTexCoord3fvARB = GL_RegisterProc("glMultiTexCoord3fvARB"); \
-_glMultiTexCoord3iARB = GL_RegisterProc("glMultiTexCoord3iARB"); \
-_glMultiTexCoord3ivARB = GL_RegisterProc("glMultiTexCoord3ivARB"); \
-_glMultiTexCoord3sARB = GL_RegisterProc("glMultiTexCoord3sARB"); \
-_glMultiTexCoord3svARB = GL_RegisterProc("glMultiTexCoord3svARB"); \
-_glMultiTexCoord4dARB = GL_RegisterProc("glMultiTexCoord4dARB"); \
-_glMultiTexCoord4dvARB = GL_RegisterProc("glMultiTexCoord4dvARB"); \
-_glMultiTexCoord4fARB = GL_RegisterProc("glMultiTexCoord4fARB"); \
-_glMultiTexCoord4fvARB = GL_RegisterProc("glMultiTexCoord4fvARB"); \
-_glMultiTexCoord4iARB = GL_RegisterProc("glMultiTexCoord4iARB"); \
-_glMultiTexCoord4ivARB = GL_RegisterProc("glMultiTexCoord4ivARB"); \
-_glMultiTexCoord4sARB = GL_RegisterProc("glMultiTexCoord4sARB"); \
-_glMultiTexCoord4svARB = GL_RegisterProc("glMultiTexCoord4svARB")
+_glActiveTextureARB = (PFNGLACTIVETEXTUREARBPROC)GL_RegisterProc("glActiveTextureARB"); \
+_glClientActiveTextureARB = (PFNGLCLIENTACTIVETEXTUREARBPROC)GL_RegisterProc("glClientActiveTextureARB"); \
+_glMultiTexCoord1dARB = (PFNGLMULTITEXCOORD1DARBPROC)GL_RegisterProc("glMultiTexCoord1dARB"); \
+_glMultiTexCoord1dvARB = (PFNGLMULTITEXCOORD1DVARBPROC)GL_RegisterProc("glMultiTexCoord1dvARB"); \
+_glMultiTexCoord1fARB = (PFNGLMULTITEXCOORD1FARBPROC)GL_RegisterProc("glMultiTexCoord1fARB"); \
+_glMultiTexCoord1fvARB = (PFNGLMULTITEXCOORD1FVARBPROC)GL_RegisterProc("glMultiTexCoord1fvARB"); \
+_glMultiTexCoord1iARB = (PFNGLMULTITEXCOORD1IARBPROC)GL_RegisterProc("glMultiTexCoord1iARB"); \
+_glMultiTexCoord1ivARB = (PFNGLMULTITEXCOORD1IVARBPROC)GL_RegisterProc("glMultiTexCoord1ivARB"); \
+_glMultiTexCoord1sARB = (PFNGLMULTITEXCOORD1SARBPROC)GL_RegisterProc("glMultiTexCoord1sARB"); \
+_glMultiTexCoord1svARB = (PFNGLMULTITEXCOORD1SVARBPROC)GL_RegisterProc("glMultiTexCoord1svARB"); \
+_glMultiTexCoord2dARB = (PFNGLMULTITEXCOORD2DARBPROC)GL_RegisterProc("glMultiTexCoord2dARB"); \
+_glMultiTexCoord2dvARB = (PFNGLMULTITEXCOORD2DVARBPROC)GL_RegisterProc("glMultiTexCoord2dvARB"); \
+_glMultiTexCoord2fARB = (PFNGLMULTITEXCOORD2FARBPROC)GL_RegisterProc("glMultiTexCoord2fARB"); \
+_glMultiTexCoord2fvARB = (PFNGLMULTITEXCOORD2FVARBPROC)GL_RegisterProc("glMultiTexCoord2fvARB"); \
+_glMultiTexCoord2iARB = (PFNGLMULTITEXCOORD2IARBPROC)GL_RegisterProc("glMultiTexCoord2iARB"); \
+_glMultiTexCoord2ivARB = (PFNGLMULTITEXCOORD2IVARBPROC)GL_RegisterProc("glMultiTexCoord2ivARB"); \
+_glMultiTexCoord2sARB = (PFNGLMULTITEXCOORD2SARBPROC)GL_RegisterProc("glMultiTexCoord2sARB"); \
+_glMultiTexCoord2svARB = (PFNGLMULTITEXCOORD2SVARBPROC)GL_RegisterProc("glMultiTexCoord2svARB"); \
+_glMultiTexCoord3dARB = (PFNGLMULTITEXCOORD3DARBPROC)GL_RegisterProc("glMultiTexCoord3dARB"); \
+_glMultiTexCoord3dvARB = (PFNGLMULTITEXCOORD3DVARBPROC)GL_RegisterProc("glMultiTexCoord3dvARB"); \
+_glMultiTexCoord3fARB = (PFNGLMULTITEXCOORD3FARBPROC)GL_RegisterProc("glMultiTexCoord3fARB"); \
+_glMultiTexCoord3fvARB = (PFNGLMULTITEXCOORD3FVARBPROC)GL_RegisterProc("glMultiTexCoord3fvARB"); \
+_glMultiTexCoord3iARB = (PFNGLMULTITEXCOORD3IARBPROC)GL_RegisterProc("glMultiTexCoord3iARB"); \
+_glMultiTexCoord3ivARB = (PFNGLMULTITEXCOORD3IVARBPROC)GL_RegisterProc("glMultiTexCoord3ivARB"); \
+_glMultiTexCoord3sARB = (PFNGLMULTITEXCOORD3SARBPROC)GL_RegisterProc("glMultiTexCoord3sARB"); \
+_glMultiTexCoord3svARB = (PFNGLMULTITEXCOORD3SVARBPROC)GL_RegisterProc("glMultiTexCoord3svARB"); \
+_glMultiTexCoord4dARB = (PFNGLMULTITEXCOORD4DARBPROC)GL_RegisterProc("glMultiTexCoord4dARB"); \
+_glMultiTexCoord4dvARB = (PFNGLMULTITEXCOORD4DVARBPROC)GL_RegisterProc("glMultiTexCoord4dvARB"); \
+_glMultiTexCoord4fARB = (PFNGLMULTITEXCOORD4FARBPROC)GL_RegisterProc("glMultiTexCoord4fARB"); \
+_glMultiTexCoord4fvARB = (PFNGLMULTITEXCOORD4FVARBPROC)GL_RegisterProc("glMultiTexCoord4fvARB"); \
+_glMultiTexCoord4iARB = (PFNGLMULTITEXCOORD4IARBPROC)GL_RegisterProc("glMultiTexCoord4iARB"); \
+_glMultiTexCoord4ivARB = (PFNGLMULTITEXCOORD4IVARBPROC)GL_RegisterProc("glMultiTexCoord4ivARB"); \
+_glMultiTexCoord4sARB = (PFNGLMULTITEXCOORD4SARBPROC)GL_RegisterProc("glMultiTexCoord4sARB"); \
+_glMultiTexCoord4svARB = (PFNGLMULTITEXCOORD4SVARBPROC)GL_RegisterProc("glMultiTexCoord4svARB")
 
 #ifndef USE_DEBUG_GLFUNCS
 
@@ -4193,20 +4193,20 @@ d_inline static void glMultiTexCoord4svARB_DEBUG (GLenum target, GLshort* v, con
 //
 // GL_EXT_compiled_vertex_array
 //
-extern dboolean has_GL_EXT_compiled_vertex_array;
+extern bool has_GL_EXT_compiled_vertex_array;
 
 extern PFNGLLOCKARRAYSEXTPROC _glLockArraysEXT;
 extern PFNGLUNLOCKARRAYSEXTPROC _glUnlockArraysEXT;
 
 #define GL_EXT_compiled_vertex_array_Define() \
-dboolean has_GL_EXT_compiled_vertex_array = false; \
+bool has_GL_EXT_compiled_vertex_array = false; \
 PFNGLLOCKARRAYSEXTPROC _glLockArraysEXT = NULL; \
 PFNGLUNLOCKARRAYSEXTPROC _glUnlockArraysEXT = NULL
 
 #define GL_EXT_compiled_vertex_array_Init() \
 has_GL_EXT_compiled_vertex_array = GL_CheckExtension("GL_EXT_compiled_vertex_array"); \
-_glLockArraysEXT = GL_RegisterProc("glLockArraysEXT"); \
-_glUnlockArraysEXT = GL_RegisterProc("glUnlockArraysEXT")
+_glLockArraysEXT = (PFNGLLOCKARRAYSEXTPROC)GL_RegisterProc("glLockArraysEXT"); \
+_glUnlockArraysEXT = (PFNGLUNLOCKARRAYSEXTPROC)GL_RegisterProc("glUnlockArraysEXT")
 
 #ifndef USE_DEBUG_GLFUNCS
 
@@ -4242,20 +4242,20 @@ d_inline static void glUnlockArraysEXT_DEBUG (const char* file, int line)
 //
 // GL_EXT_multi_draw_arrays
 //
-extern dboolean has_GL_EXT_multi_draw_arrays;
+extern bool has_GL_EXT_multi_draw_arrays;
 
 extern PFNGLMULTIDRAWARRAYSEXTPROC _glMultiDrawArraysEXT;
 extern PFNGLMULTIDRAWELEMENTSEXTPROC _glMultiDrawElementsEXT;
 
 #define GL_EXT_multi_draw_arrays_Define() \
-dboolean has_GL_EXT_multi_draw_arrays = false; \
+bool has_GL_EXT_multi_draw_arrays = false; \
 PFNGLMULTIDRAWARRAYSEXTPROC _glMultiDrawArraysEXT = NULL; \
 PFNGLMULTIDRAWELEMENTSEXTPROC _glMultiDrawElementsEXT = NULL
 
 #define GL_EXT_multi_draw_arrays_Init() \
 has_GL_EXT_multi_draw_arrays = GL_CheckExtension("GL_EXT_multi_draw_arrays"); \
-_glMultiDrawArraysEXT = GL_RegisterProc("glMultiDrawArraysEXT"); \
-_glMultiDrawElementsEXT = GL_RegisterProc("glMultiDrawElementsEXT")
+_glMultiDrawArraysEXT = (PFNGLMULTIDRAWARRAYSEXTPROC)GL_RegisterProc("glMultiDrawArraysEXT"); \
+_glMultiDrawElementsEXT = (PFNGLMULTIDRAWELEMENTSEXTPROC)GL_RegisterProc("glMultiDrawElementsEXT")
 
 #ifndef USE_DEBUG_GLFUNCS
 
@@ -4291,7 +4291,7 @@ d_inline static void glMultiDrawElementsEXT_DEBUG (GLenum mode, GLsizei* count, 
 //
 // GL_EXT_fog_coord
 //
-extern dboolean has_GL_EXT_fog_coord;
+extern bool has_GL_EXT_fog_coord;
 
 extern PFNGLFOGCOORDFEXTPROC _glFogCoordfEXT;
 extern PFNGLFOGCOORDFVEXTPROC _glFogCoordfvEXT;
@@ -4300,7 +4300,7 @@ extern PFNGLFOGCOORDDVEXTPROC _glFogCoorddvEXT;
 extern PFNGLFOGCOORDPOINTEREXTPROC _glFogCoordPointerEXT;
 
 #define GL_EXT_fog_coord_Define() \
-dboolean has_GL_EXT_fog_coord = false; \
+bool has_GL_EXT_fog_coord = false; \
 PFNGLFOGCOORDFEXTPROC _glFogCoordfEXT = NULL; \
 PFNGLFOGCOORDFVEXTPROC _glFogCoordfvEXT = NULL; \
 PFNGLFOGCOORDDEXTPROC _glFogCoorddEXT = NULL; \
@@ -4309,11 +4309,11 @@ PFNGLFOGCOORDPOINTEREXTPROC _glFogCoordPointerEXT = NULL
 
 #define GL_EXT_fog_coord_Init() \
 has_GL_EXT_fog_coord = GL_CheckExtension("GL_EXT_fog_coord"); \
-_glFogCoordfEXT = GL_RegisterProc("glFogCoordfEXT"); \
-_glFogCoordfvEXT = GL_RegisterProc("glFogCoordfvEXT"); \
-_glFogCoorddEXT = GL_RegisterProc("glFogCoorddEXT"); \
-_glFogCoorddvEXT = GL_RegisterProc("glFogCoorddvEXT"); \
-_glFogCoordPointerEXT = GL_RegisterProc("glFogCoordPointerEXT")
+_glFogCoordfEXT = (PFNGLFOGCOORDFEXTPROC)GL_RegisterProc("glFogCoordfEXT"); \
+_glFogCoordfvEXT = (PFNGLFOGCOORDFVEXTPROC)GL_RegisterProc("glFogCoordfvEXT"); \
+_glFogCoorddEXT = (PFNGLFOGCOORDDEXTPROC)GL_RegisterProc("glFogCoorddEXT"); \
+_glFogCoorddvEXT = (PFNGLFOGCOORDDVEXTPROC)GL_RegisterProc("glFogCoorddvEXT"); \
+_glFogCoordPointerEXT = (PFNGLFOGCOORDPOINTEREXTPROC)GL_RegisterProc("glFogCoordPointerEXT")
 
 #ifndef USE_DEBUG_GLFUNCS
 
@@ -4382,7 +4382,7 @@ d_inline static void glFogCoordPointerEXT_DEBUG (GLenum type, GLsizei stride, GL
 //
 // GL_ARB_vertex_buffer_object
 //
-extern dboolean has_GL_ARB_vertex_buffer_object;
+extern bool has_GL_ARB_vertex_buffer_object;
 
 extern PFNGLBINDBUFFERARBPROC _glBindBufferARB;
 extern PFNGLDELETEBUFFERSARBPROC _glDeleteBuffersARB;
@@ -4397,7 +4397,7 @@ extern PFNGLGETBUFFERPARAMETERIVARBPROC _glGetBufferParameterivARB;
 extern PFNGLGETBUFFERPOINTERVARBPROC _glGetBufferPointervARB;
 
 #define GL_ARB_vertex_buffer_object_Define() \
-dboolean has_GL_ARB_vertex_buffer_object = false; \
+bool has_GL_ARB_vertex_buffer_object = false; \
 PFNGLBINDBUFFERARBPROC _glBindBufferARB = NULL; \
 PFNGLDELETEBUFFERSARBPROC _glDeleteBuffersARB = NULL; \
 PFNGLGENBUFFERSARBPROC _glGenBuffersARB = NULL; \
@@ -4412,17 +4412,17 @@ PFNGLGETBUFFERPOINTERVARBPROC _glGetBufferPointervARB = NULL
 
 #define GL_ARB_vertex_buffer_object_Init() \
 has_GL_ARB_vertex_buffer_object = GL_CheckExtension("GL_ARB_vertex_buffer_object"); \
-_glBindBufferARB = GL_RegisterProc("glBindBufferARB"); \
-_glDeleteBuffersARB = GL_RegisterProc("glDeleteBuffersARB"); \
-_glGenBuffersARB = GL_RegisterProc("glGenBuffersARB"); \
-_glIsBufferARB = GL_RegisterProc("glIsBufferARB"); \
-_glBufferDataARB = GL_RegisterProc("glBufferDataARB"); \
-_glBufferSubDataARB = GL_RegisterProc("glBufferSubDataARB"); \
-_glGetBufferSubDataARB = GL_RegisterProc("glGetBufferSubDataARB"); \
-_glMapBufferARB = GL_RegisterProc("glMapBufferARB"); \
-_glUnmapBufferARB = GL_RegisterProc("glUnmapBufferARB"); \
-_glGetBufferParameterivARB = GL_RegisterProc("glGetBufferParameterivARB"); \
-_glGetBufferPointervARB = GL_RegisterProc("glGetBufferPointervARB")
+_glBindBufferARB = (PFNGLBINDBUFFERARBPROC)GL_RegisterProc("glBindBufferARB"); \
+_glDeleteBuffersARB = (PFNGLDELETEBUFFERSARBPROC)GL_RegisterProc("glDeleteBuffersARB"); \
+_glGenBuffersARB = (PFNGLGENBUFFERSARBPROC)GL_RegisterProc("glGenBuffersARB"); \
+_glIsBufferARB = (PFNGLISBUFFERARBPROC)GL_RegisterProc("glIsBufferARB"); \
+_glBufferDataARB = (PFNGLBUFFERDATAARBPROC)GL_RegisterProc("glBufferDataARB"); \
+_glBufferSubDataARB = (PFNGLBUFFERSUBDATAARBPROC)GL_RegisterProc("glBufferSubDataARB"); \
+_glGetBufferSubDataARB = (PFNGLGETBUFFERSUBDATAARBPROC)GL_RegisterProc("glGetBufferSubDataARB"); \
+_glMapBufferARB = (PFNGLMAPBUFFERARBPROC)GL_RegisterProc("glMapBufferARB"); \
+_glUnmapBufferARB = (PFNGLUNMAPBUFFERARBPROC)GL_RegisterProc("glUnmapBufferARB"); \
+_glGetBufferParameterivARB = (PFNGLGETBUFFERPARAMETERIVARBPROC)GL_RegisterProc("glGetBufferParameterivARB"); \
+_glGetBufferPointervARB = (PFNGLGETBUFFERPOINTERVARBPROC)GL_RegisterProc("glGetBufferPointervARB")
 
 #ifndef USE_DEBUG_GLFUNCS
 
@@ -4557,10 +4557,10 @@ d_inline static void glGetBufferPointervARB_DEBUG (GLenum target, GLenum pname, 
 //
 // GL_ARB_texture_non_power_of_two
 //
-extern dboolean has_GL_ARB_texture_non_power_of_two;
+extern bool has_GL_ARB_texture_non_power_of_two;
 
 #define GL_ARB_texture_non_power_of_two_Define() \
-dboolean has_GL_ARB_texture_non_power_of_two = false;
+bool has_GL_ARB_texture_non_power_of_two = false;
 
 #define GL_ARB_texture_non_power_of_two_Init() \
 has_GL_ARB_texture_non_power_of_two = GL_CheckExtension("GL_ARB_texture_non_power_of_two");
@@ -4568,10 +4568,10 @@ has_GL_ARB_texture_non_power_of_two = GL_CheckExtension("GL_ARB_texture_non_powe
 //
 // GL_ARB_texture_env_combine
 //
-extern dboolean has_GL_ARB_texture_env_combine;
+extern bool has_GL_ARB_texture_env_combine;
 
 #define GL_ARB_texture_env_combine_Define() \
-dboolean has_GL_ARB_texture_env_combine = false;
+bool has_GL_ARB_texture_env_combine = false;
 
 #define GL_ARB_texture_env_combine_Init() \
 has_GL_ARB_texture_env_combine = GL_CheckExtension("GL_ARB_texture_env_combine");
@@ -4579,10 +4579,10 @@ has_GL_ARB_texture_env_combine = GL_CheckExtension("GL_ARB_texture_env_combine")
 //
 // GL_EXT_texture_env_combine
 //
-extern dboolean has_GL_EXT_texture_env_combine;
+extern bool has_GL_EXT_texture_env_combine;
 
 #define GL_EXT_texture_env_combine_Define() \
-dboolean has_GL_EXT_texture_env_combine = false;
+bool has_GL_EXT_texture_env_combine = false;
 
 #define GL_EXT_texture_env_combine_Init() \
 has_GL_EXT_texture_env_combine = GL_CheckExtension("GL_EXT_texture_env_combine");
@@ -4590,11 +4590,578 @@ has_GL_EXT_texture_env_combine = GL_CheckExtension("GL_EXT_texture_env_combine")
 //
 // GL_EXT_texture_filter_anisotropic
 //
-extern dboolean has_GL_EXT_texture_filter_anisotropic;
+extern bool has_GL_EXT_texture_filter_anisotropic;
 
 #define GL_EXT_texture_filter_anisotropic_Define() \
-dboolean has_GL_EXT_texture_filter_anisotropic = false;
+bool has_GL_EXT_texture_filter_anisotropic = false;
 
 #define GL_EXT_texture_filter_anisotropic_Init() \
 has_GL_EXT_texture_filter_anisotropic = GL_CheckExtension("GL_EXT_texture_filter_anisotropic");
+
+//
+// GL_ARB_shader_objects
+//
+extern bool has_GL_ARB_shader_objects;
+
+extern PFNGLDELETEOBJECTARBPROC _glDeleteObjectARB;
+extern PFNGLGETHANDLEARBPROC _glGetHandleARB;
+extern PFNGLDETACHOBJECTARBPROC _glDetachObjectARB;
+extern PFNGLCREATESHADEROBJECTARBPROC _glCreateShaderObjectARB;
+extern PFNGLSHADERSOURCEARBPROC _glShaderSourceARB;
+extern PFNGLCOMPILESHADERARBPROC _glCompileShaderARB;
+extern PFNGLCREATEPROGRAMOBJECTARBPROC _glCreateProgramObjectARB;
+extern PFNGLATTACHOBJECTARBPROC _glAttachObjectARB;
+extern PFNGLLINKPROGRAMARBPROC _glLinkProgramARB;
+extern PFNGLUSEPROGRAMOBJECTARBPROC _glUseProgramObjectARB;
+extern PFNGLVALIDATEPROGRAMARBPROC _glValidateProgramARB;
+extern PFNGLUNIFORM1FARBPROC _glUniform1fARB;
+extern PFNGLUNIFORM2FARBPROC _glUniform2fARB;
+extern PFNGLUNIFORM3FARBPROC _glUniform3fARB;
+extern PFNGLUNIFORM4FARBPROC _glUniform4fARB;
+extern PFNGLUNIFORM1IARBPROC _glUniform1iARB;
+extern PFNGLUNIFORM2IARBPROC _glUniform2iARB;
+extern PFNGLUNIFORM3IARBPROC _glUniform3iARB;
+extern PFNGLUNIFORM4IARBPROC _glUniform4iARB;
+extern PFNGLUNIFORM1FVARBPROC _glUniform1fvARB;
+extern PFNGLUNIFORM2FVARBPROC _glUniform2fvARB;
+extern PFNGLUNIFORM3FVARBPROC _glUniform3fvARB;
+extern PFNGLUNIFORM4FVARBPROC _glUniform4fvARB;
+extern PFNGLUNIFORM1IVARBPROC _glUniform1ivARB;
+extern PFNGLUNIFORM2IVARBPROC _glUniform2ivARB;
+extern PFNGLUNIFORM3IVARBPROC _glUniform3ivARB;
+extern PFNGLUNIFORM4IVARBPROC _glUniform4ivARB;
+extern PFNGLUNIFORMMATRIX2FVARBPROC _glUniformMatrix2fvARB;
+extern PFNGLUNIFORMMATRIX3FVARBPROC _glUniformMatrix3fvARB;
+extern PFNGLUNIFORMMATRIX4FVARBPROC _glUniformMatrix4fvARB;
+extern PFNGLGETOBJECTPARAMETERFVARBPROC _glGetObjectParameterfvARB;
+extern PFNGLGETOBJECTPARAMETERIVARBPROC _glGetObjectParameterivARB;
+extern PFNGLGETINFOLOGARBPROC _glGetInfoLogARB;
+extern PFNGLGETATTACHEDOBJECTSARBPROC _glGetAttachedObjectsARB;
+extern PFNGLGETUNIFORMLOCATIONARBPROC _glGetUniformLocationARB;
+extern PFNGLGETACTIVEUNIFORMARBPROC _glGetActiveUniformARB;
+extern PFNGLGETUNIFORMFVARBPROC _glGetUniformfvARB;
+extern PFNGLGETUNIFORMIVARBPROC _glGetUniformivARB;
+extern PFNGLGETSHADERSOURCEARBPROC _glGetShaderSourceARB;
+
+#define GL_ARB_shader_objects_Define() \
+bool has_GL_ARB_shader_objects = false; \
+PFNGLDELETEOBJECTARBPROC _glDeleteObjectARB = NULL; \
+PFNGLGETHANDLEARBPROC _glGetHandleARB = NULL; \
+PFNGLDETACHOBJECTARBPROC _glDetachObjectARB = NULL; \
+PFNGLCREATESHADEROBJECTARBPROC _glCreateShaderObjectARB = NULL; \
+PFNGLSHADERSOURCEARBPROC _glShaderSourceARB = NULL; \
+PFNGLCOMPILESHADERARBPROC _glCompileShaderARB = NULL; \
+PFNGLCREATEPROGRAMOBJECTARBPROC _glCreateProgramObjectARB = NULL; \
+PFNGLATTACHOBJECTARBPROC _glAttachObjectARB = NULL; \
+PFNGLLINKPROGRAMARBPROC _glLinkProgramARB = NULL; \
+PFNGLUSEPROGRAMOBJECTARBPROC _glUseProgramObjectARB = NULL; \
+PFNGLVALIDATEPROGRAMARBPROC _glValidateProgramARB = NULL; \
+PFNGLUNIFORM1FARBPROC _glUniform1fARB = NULL; \
+PFNGLUNIFORM2FARBPROC _glUniform2fARB = NULL; \
+PFNGLUNIFORM3FARBPROC _glUniform3fARB = NULL; \
+PFNGLUNIFORM4FARBPROC _glUniform4fARB = NULL; \
+PFNGLUNIFORM1IARBPROC _glUniform1iARB = NULL; \
+PFNGLUNIFORM2IARBPROC _glUniform2iARB = NULL; \
+PFNGLUNIFORM3IARBPROC _glUniform3iARB = NULL; \
+PFNGLUNIFORM4IARBPROC _glUniform4iARB = NULL; \
+PFNGLUNIFORM1FVARBPROC _glUniform1fvARB = NULL; \
+PFNGLUNIFORM2FVARBPROC _glUniform2fvARB = NULL; \
+PFNGLUNIFORM3FVARBPROC _glUniform3fvARB = NULL; \
+PFNGLUNIFORM4FVARBPROC _glUniform4fvARB = NULL; \
+PFNGLUNIFORM1IVARBPROC _glUniform1ivARB = NULL; \
+PFNGLUNIFORM2IVARBPROC _glUniform2ivARB = NULL; \
+PFNGLUNIFORM3IVARBPROC _glUniform3ivARB = NULL; \
+PFNGLUNIFORM4IVARBPROC _glUniform4ivARB = NULL; \
+PFNGLUNIFORMMATRIX2FVARBPROC _glUniformMatrix2fvARB = NULL; \
+PFNGLUNIFORMMATRIX3FVARBPROC _glUniformMatrix3fvARB = NULL; \
+PFNGLUNIFORMMATRIX4FVARBPROC _glUniformMatrix4fvARB = NULL; \
+PFNGLGETOBJECTPARAMETERFVARBPROC _glGetObjectParameterfvARB = NULL; \
+PFNGLGETOBJECTPARAMETERIVARBPROC _glGetObjectParameterivARB = NULL; \
+PFNGLGETINFOLOGARBPROC _glGetInfoLogARB = NULL; \
+PFNGLGETATTACHEDOBJECTSARBPROC _glGetAttachedObjectsARB = NULL; \
+PFNGLGETUNIFORMLOCATIONARBPROC _glGetUniformLocationARB = NULL; \
+PFNGLGETACTIVEUNIFORMARBPROC _glGetActiveUniformARB = NULL; \
+PFNGLGETUNIFORMFVARBPROC _glGetUniformfvARB = NULL; \
+PFNGLGETUNIFORMIVARBPROC _glGetUniformivARB = NULL; \
+PFNGLGETSHADERSOURCEARBPROC _glGetShaderSourceARB = NULL
+
+#define GL_ARB_shader_objects_Init() \
+has_GL_ARB_shader_objects = GL_CheckExtension("GL_ARB_shader_objects"); \
+_glDeleteObjectARB = (PFNGLDELETEOBJECTARBPROC)GL_RegisterProc("glDeleteObjectARB"); \
+_glGetHandleARB = (PFNGLGETHANDLEARBPROC)GL_RegisterProc("glGetHandleARB"); \
+_glDetachObjectARB = (PFNGLDETACHOBJECTARBPROC)GL_RegisterProc("glDetachObjectARB"); \
+_glCreateShaderObjectARB = (PFNGLCREATESHADEROBJECTARBPROC)GL_RegisterProc("glCreateShaderObjectARB"); \
+_glShaderSourceARB = (PFNGLSHADERSOURCEARBPROC)GL_RegisterProc("glShaderSourceARB"); \
+_glCompileShaderARB = (PFNGLCOMPILESHADERARBPROC)GL_RegisterProc("glCompileShaderARB"); \
+_glCreateProgramObjectARB = (PFNGLCREATEPROGRAMOBJECTARBPROC)GL_RegisterProc("glCreateProgramObjectARB"); \
+_glAttachObjectARB = (PFNGLATTACHOBJECTARBPROC)GL_RegisterProc("glAttachObjectARB"); \
+_glLinkProgramARB = (PFNGLLINKPROGRAMARBPROC)GL_RegisterProc("glLinkProgramARB"); \
+_glUseProgramObjectARB = (PFNGLUSEPROGRAMOBJECTARBPROC)GL_RegisterProc("glUseProgramObjectARB"); \
+_glValidateProgramARB = (PFNGLVALIDATEPROGRAMARBPROC)GL_RegisterProc("glValidateProgramARB"); \
+_glUniform1fARB = (PFNGLUNIFORM1FARBPROC)GL_RegisterProc("glUniform1fARB"); \
+_glUniform2fARB = (PFNGLUNIFORM2FARBPROC)GL_RegisterProc("glUniform2fARB"); \
+_glUniform3fARB = (PFNGLUNIFORM3FARBPROC)GL_RegisterProc("glUniform3fARB"); \
+_glUniform4fARB = (PFNGLUNIFORM4FARBPROC)GL_RegisterProc("glUniform4fARB"); \
+_glUniform1iARB = (PFNGLUNIFORM1IARBPROC)GL_RegisterProc("glUniform1iARB"); \
+_glUniform2iARB = (PFNGLUNIFORM2IARBPROC)GL_RegisterProc("glUniform2iARB"); \
+_glUniform3iARB = (PFNGLUNIFORM3IARBPROC)GL_RegisterProc("glUniform3iARB"); \
+_glUniform4iARB = (PFNGLUNIFORM4IARBPROC)GL_RegisterProc("glUniform4iARB"); \
+_glUniform1fvARB = (PFNGLUNIFORM1FVARBPROC)GL_RegisterProc("glUniform1fvARB"); \
+_glUniform2fvARB = (PFNGLUNIFORM2FVARBPROC)GL_RegisterProc("glUniform2fvARB"); \
+_glUniform3fvARB = (PFNGLUNIFORM3FVARBPROC)GL_RegisterProc("glUniform3fvARB"); \
+_glUniform4fvARB = (PFNGLUNIFORM4FVARBPROC)GL_RegisterProc("glUniform4fvARB"); \
+_glUniform1ivARB = (PFNGLUNIFORM1IVARBPROC)GL_RegisterProc("glUniform1ivARB"); \
+_glUniform2ivARB = (PFNGLUNIFORM2IVARBPROC)GL_RegisterProc("glUniform2ivARB"); \
+_glUniform3ivARB = (PFNGLUNIFORM3IVARBPROC)GL_RegisterProc("glUniform3ivARB"); \
+_glUniform4ivARB = (PFNGLUNIFORM4IVARBPROC)GL_RegisterProc("glUniform4ivARB"); \
+_glUniformMatrix2fvARB = (PFNGLUNIFORMMATRIX2FVARBPROC)GL_RegisterProc("glUniformMatrix2fvARB"); \
+_glUniformMatrix3fvARB = (PFNGLUNIFORMMATRIX3FVARBPROC)GL_RegisterProc("glUniformMatrix3fvARB"); \
+_glUniformMatrix4fvARB = (PFNGLUNIFORMMATRIX4FVARBPROC)GL_RegisterProc("glUniformMatrix4fvARB"); \
+_glGetObjectParameterfvARB = (PFNGLGETOBJECTPARAMETERFVARBPROC)GL_RegisterProc("glGetObjectParameterfvARB"); \
+_glGetObjectParameterivARB = (PFNGLGETOBJECTPARAMETERIVARBPROC)GL_RegisterProc("glGetObjectParameterivARB"); \
+_glGetInfoLogARB = (PFNGLGETINFOLOGARBPROC)GL_RegisterProc("glGetInfoLogARB"); \
+_glGetAttachedObjectsARB = (PFNGLGETATTACHEDOBJECTSARBPROC)GL_RegisterProc("glGetAttachedObjectsARB"); \
+_glGetUniformLocationARB = (PFNGLGETUNIFORMLOCATIONARBPROC)GL_RegisterProc("glGetUniformLocationARB"); \
+_glGetActiveUniformARB = (PFNGLGETACTIVEUNIFORMARBPROC)GL_RegisterProc("glGetActiveUniformARB"); \
+_glGetUniformfvARB = (PFNGLGETUNIFORMFVARBPROC)GL_RegisterProc("glGetUniformfvARB"); \
+_glGetUniformivARB = (PFNGLGETUNIFORMIVARBPROC)GL_RegisterProc("glGetUniformivARB"); \
+_glGetShaderSourceARB = (PFNGLGETSHADERSOURCEARBPROC)GL_RegisterProc("glGetShaderSourceARB")
+
+#ifndef USE_DEBUG_GLFUNCS
+
+#define dglDeleteObjectARB(obj) _glDeleteObjectARB(obj)
+#define dglGetHandleARB(pname) _glGetHandleARB(pname)
+#define dglDetachObjectARB(containerObj, attachedObj) _glDetachObjectARB(containerObj, attachedObj)
+#define dglCreateShaderObjectARB(shaderType) _glCreateShaderObjectARB(shaderType)
+#define dglShaderSourceARB(shaderObj, count, string, length) _glShaderSourceARB(shaderObj, count, string, length)
+#define dglCompileShaderARB(shaderObj) _glCompileShaderARB(shaderObj)
+#define dglCreateProgramObjectARB() _glCreateProgramObjectARB()
+#define dglAttachObjectARB(containerObj, obj) _glAttachObjectARB(containerObj, obj)
+#define dglLinkProgramARB(programObj) _glLinkProgramARB(programObj)
+#define dglUseProgramObjectARB(programObj) _glUseProgramObjectARB(programObj)
+#define dglValidateProgramARB(programObj) _glValidateProgramARB(programObj)
+#define dglUniform1fARB(location, v0) _glUniform1fARB(location, v0)
+#define dglUniform2fARB(location, v0, v1) _glUniform2fARB(location, v0, v1)
+#define dglUniform3fARB(location, v0, v1, v2) _glUniform3fARB(location, v0, v1, v2)
+#define dglUniform4fARB(location, v0, v1, v2, v3) _glUniform4fARB(location, v0, v1, v2, v3)
+#define dglUniform1iARB(location, v0) _glUniform1iARB(location, v0)
+#define dglUniform2iARB(location, v0, v1) _glUniform2iARB(location, v0, v1)
+#define dglUniform3iARB(location, v0, v1, v2) _glUniform3iARB(location, v0, v1, v2)
+#define dglUniform4iARB(location, v0, v1, v2, v3) _glUniform4iARB(location, v0, v1, v2, v3)
+#define dglUniform1fvARB(location, count, value) _glUniform1fvARB(location, count, value)
+#define dglUniform2fvARB(location, count, value) _glUniform2fvARB(location, count, value)
+#define dglUniform3fvARB(location, count, value) _glUniform3fvARB(location, count, value)
+#define dglUniform4fvARB(location, count, value) _glUniform4fvARB(location, count, value)
+#define dglUniform1ivARB(location, count, value) _glUniform1ivARB(location, count, value)
+#define dglUniform2ivARB(location, count, value) _glUniform2ivARB(location, count, value)
+#define dglUniform3ivARB(location, count, value) _glUniform3ivARB(location, count, value)
+#define dglUniform4ivARB(location, count, value) _glUniform4ivARB(location, count, value)
+#define dglUniformMatrix2fvARB(location, count, transpose, value) _glUniformMatrix2fvARB(location, count, transpose, value)
+#define dglUniformMatrix3fvARB(location, count, transpose, value) _glUniformMatrix3fvARB(location, count, transpose, value)
+#define dglUniformMatrix4fvARB(location, count, transpose, value) _glUniformMatrix4fvARB(location, count, transpose, value)
+#define dglGetObjectParameterfvARB(obj, pname, params) _glGetObjectParameterfvARB(obj, pname, params)
+#define dglGetObjectParameterivARB(obj, pname, params) _glGetObjectParameterivARB(obj, pname, params)
+#define dglGetInfoLogARB(obj, maxLength, length, infoLog) _glGetInfoLogARB(obj, maxLength, length, infoLog)
+#define dglGetAttachedObjectsARB(containerObj, maxCount, count, obj) _glGetAttachedObjectsARB(containerObj, maxCount, count, obj)
+#define dglGetUniformLocationARB(programObj, name) _glGetUniformLocationARB(programObj, name)
+#define dglGetActiveUniformARB(programObj, index, maxLength, length, size, type, name) _glGetActiveUniformARB(programObj, index, maxLength, length, size, type, name)
+#define dglGetUniformfvARB(programObj, location, params) _glGetUniformfvARB(programObj, location, params)
+#define dglGetUniformivARB(programObj, location, params) _glGetUniformivARB(programObj, location, params)
+#define dglGetShaderSourceARB(obj, maxLength, length, source) _glGetShaderSourceARB(obj, maxLength, length, source)
+
+#else
+
+d_inline static void glDeleteObjectARB_DEBUG (GLhandleARB obj, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glDeleteObjectARB(obj=%i)\n", file, line, obj);
+#endif
+    _glDeleteObjectARB(obj);
+    dglLogError("glDeleteObjectARB", file, line);
+}
+
+d_inline static GLhandleARB glGetHandleARB_DEBUG (GLenum pname, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetHandleARB(pname=0x%x)\n", file, line, pname);
+#endif
+    _glGetHandleARB(pname);
+    dglLogError("glGetHandleARB", file, line);
+}
+
+d_inline static void glDetachObjectARB_DEBUG (GLhandleARB containerObj, GLhandleARB attachedObj, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glDetachObjectARB(containerObj=%i, attachedObj=%i)\n", file, line, containerObj, attachedObj);
+#endif
+    _glDetachObjectARB(containerObj, attachedObj);
+    dglLogError("glDetachObjectARB", file, line);
+}
+
+d_inline static GLhandleARB glCreateShaderObjectARB_DEBUG (GLenum shaderType, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glCreateShaderObjectARB(shaderType=0x%x)\n", file, line, shaderType);
+#endif
+    _glCreateShaderObjectARB(shaderType);
+    dglLogError("glCreateShaderObjectARB", file, line);
+}
+
+d_inline static void glShaderSourceARB_DEBUG (GLhandleARB shaderObj, GLsizei count, void* string, GLint* length, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glShaderSourceARB(shaderObj=%i, count=0x%x, string=%p, length=%p)\n", file, line, shaderObj, count, string, length);
+#endif
+    _glShaderSourceARB(shaderObj, count, string, length);
+    dglLogError("glShaderSourceARB", file, line);
+}
+
+d_inline static void glCompileShaderARB_DEBUG (GLhandleARB shaderObj, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glCompileShaderARB(shaderObj=%i)\n", file, line, shaderObj);
+#endif
+    _glCompileShaderARB(shaderObj);
+    dglLogError("glCompileShaderARB", file, line);
+}
+
+d_inline static GLhandleARB glCreateProgramObjectARB_DEBUG (const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glCreateProgramObjectARB()\n", file, line);
+#endif
+    _glCreateProgramObjectARB();
+    dglLogError("glCreateProgramObjectARB", file, line);
+}
+
+d_inline static void glAttachObjectARB_DEBUG (GLhandleARB containerObj, GLhandleARB obj, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glAttachObjectARB(containerObj=%i, obj=%i)\n", file, line, containerObj, obj);
+#endif
+    _glAttachObjectARB(containerObj, obj);
+    dglLogError("glAttachObjectARB", file, line);
+}
+
+d_inline static void glLinkProgramARB_DEBUG (GLhandleARB programObj, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glLinkProgramARB(programObj=%i)\n", file, line, programObj);
+#endif
+    _glLinkProgramARB(programObj);
+    dglLogError("glLinkProgramARB", file, line);
+}
+
+d_inline static void glUseProgramObjectARB_DEBUG (GLhandleARB programObj, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUseProgramObjectARB(programObj=%i)\n", file, line, programObj);
+#endif
+    _glUseProgramObjectARB(programObj);
+    dglLogError("glUseProgramObjectARB", file, line);
+}
+
+d_inline static void glValidateProgramARB_DEBUG (GLhandleARB programObj, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glValidateProgramARB(programObj=%i)\n", file, line, programObj);
+#endif
+    _glValidateProgramARB(programObj);
+    dglLogError("glValidateProgramARB", file, line);
+}
+
+d_inline static void glUniform1fARB_DEBUG (GLint location, GLfloat v0, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform1fARB(location=%i, v0=%f)\n", file, line, location, v0);
+#endif
+    _glUniform1fARB(location, v0);
+    dglLogError("glUniform1fARB", file, line);
+}
+
+d_inline static void glUniform2fARB_DEBUG (GLint location, GLfloat v0, GLfloat v1, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform2fARB(location=%i, v0=%f, v1=%f)\n", file, line, location, v0, v1);
+#endif
+    _glUniform2fARB(location, v0, v1);
+    dglLogError("glUniform2fARB", file, line);
+}
+
+d_inline static void glUniform3fARB_DEBUG (GLint location, GLfloat v0, GLfloat v1, GLfloat v2, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform3fARB(location=%i, v0=%f, v1=%f, v2=%f)\n", file, line, location, v0, v1, v2);
+#endif
+    _glUniform3fARB(location, v0, v1, v2);
+    dglLogError("glUniform3fARB", file, line);
+}
+
+d_inline static void glUniform4fARB_DEBUG (GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform4fARB(location=%i, v0=%f, v1=%f, v2=%f, v3=%f)\n", file, line, location, v0, v1, v2, v3);
+#endif
+    _glUniform4fARB(location, v0, v1, v2, v3);
+    dglLogError("glUniform4fARB", file, line);
+}
+
+d_inline static void glUniform1iARB_DEBUG (GLint location, GLint v0, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform1iARB(location=%i, v0=%i)\n", file, line, location, v0);
+#endif
+    _glUniform1iARB(location, v0);
+    dglLogError("glUniform1iARB", file, line);
+}
+
+d_inline static void glUniform2iARB_DEBUG (GLint location, GLint v0, GLint v1, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform2iARB(location=%i, v0=%i, v1=%i)\n", file, line, location, v0, v1);
+#endif
+    _glUniform2iARB(location, v0, v1);
+    dglLogError("glUniform2iARB", file, line);
+}
+
+d_inline static void glUniform3iARB_DEBUG (GLint location, GLint v0, GLint v1, GLint v2, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform3iARB(location=%i, v0=%i, v1=%i, v2=%i)\n", file, line, location, v0, v1, v2);
+#endif
+    _glUniform3iARB(location, v0, v1, v2);
+    dglLogError("glUniform3iARB", file, line);
+}
+
+d_inline static void glUniform4iARB_DEBUG (GLint location, GLint v0, GLint v1, GLint v2, GLint v3, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform4iARB(location=%i, v0=%i, v1=%i, v2=%i, v3=%i)\n", file, line, location, v0, v1, v2, v3);
+#endif
+    _glUniform4iARB(location, v0, v1, v2, v3);
+    dglLogError("glUniform4iARB", file, line);
+}
+
+d_inline static void glUniform1fvARB_DEBUG (GLint location, GLsizei count, GLfloat* value, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform1fvARB(location=%i, count=0x%x, value=%p)\n", file, line, location, count, value);
+#endif
+    _glUniform1fvARB(location, count, value);
+    dglLogError("glUniform1fvARB", file, line);
+}
+
+d_inline static void glUniform2fvARB_DEBUG (GLint location, GLsizei count, GLfloat* value, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform2fvARB(location=%i, count=0x%x, value=%p)\n", file, line, location, count, value);
+#endif
+    _glUniform2fvARB(location, count, value);
+    dglLogError("glUniform2fvARB", file, line);
+}
+
+d_inline static void glUniform3fvARB_DEBUG (GLint location, GLsizei count, GLfloat* value, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform3fvARB(location=%i, count=0x%x, value=%p)\n", file, line, location, count, value);
+#endif
+    _glUniform3fvARB(location, count, value);
+    dglLogError("glUniform3fvARB", file, line);
+}
+
+d_inline static void glUniform4fvARB_DEBUG (GLint location, GLsizei count, GLfloat* value, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform4fvARB(location=%i, count=0x%x, value=%p)\n", file, line, location, count, value);
+#endif
+    _glUniform4fvARB(location, count, value);
+    dglLogError("glUniform4fvARB", file, line);
+}
+
+d_inline static void glUniform1ivARB_DEBUG (GLint location, GLsizei count, GLint* value, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform1ivARB(location=%i, count=0x%x, value=%p)\n", file, line, location, count, value);
+#endif
+    _glUniform1ivARB(location, count, value);
+    dglLogError("glUniform1ivARB", file, line);
+}
+
+d_inline static void glUniform2ivARB_DEBUG (GLint location, GLsizei count, GLint* value, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform2ivARB(location=%i, count=0x%x, value=%p)\n", file, line, location, count, value);
+#endif
+    _glUniform2ivARB(location, count, value);
+    dglLogError("glUniform2ivARB", file, line);
+}
+
+d_inline static void glUniform3ivARB_DEBUG (GLint location, GLsizei count, GLint* value, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform3ivARB(location=%i, count=0x%x, value=%p)\n", file, line, location, count, value);
+#endif
+    _glUniform3ivARB(location, count, value);
+    dglLogError("glUniform3ivARB", file, line);
+}
+
+d_inline static void glUniform4ivARB_DEBUG (GLint location, GLsizei count, GLint* value, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniform4ivARB(location=%i, count=0x%x, value=%p)\n", file, line, location, count, value);
+#endif
+    _glUniform4ivARB(location, count, value);
+    dglLogError("glUniform4ivARB", file, line);
+}
+
+d_inline static void glUniformMatrix2fvARB_DEBUG (GLint location, GLsizei count, GLboolean transpose, GLfloat* value, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniformMatrix2fvARB(location=%i, count=0x%x, transpose=%i, value=%p)\n", file, line, location, count, transpose, value);
+#endif
+    _glUniformMatrix2fvARB(location, count, transpose, value);
+    dglLogError("glUniformMatrix2fvARB", file, line);
+}
+
+d_inline static void glUniformMatrix3fvARB_DEBUG (GLint location, GLsizei count, GLboolean transpose, GLfloat* value, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniformMatrix3fvARB(location=%i, count=0x%x, transpose=%i, value=%p)\n", file, line, location, count, transpose, value);
+#endif
+    _glUniformMatrix3fvARB(location, count, transpose, value);
+    dglLogError("glUniformMatrix3fvARB", file, line);
+}
+
+d_inline static void glUniformMatrix4fvARB_DEBUG (GLint location, GLsizei count, GLboolean transpose, GLfloat* value, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glUniformMatrix4fvARB(location=%i, count=0x%x, transpose=%i, value=%p)\n", file, line, location, count, transpose, value);
+#endif
+    _glUniformMatrix4fvARB(location, count, transpose, value);
+    dglLogError("glUniformMatrix4fvARB", file, line);
+}
+
+d_inline static void glGetObjectParameterfvARB_DEBUG (GLhandleARB obj, GLenum pname, GLfloat* params, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetObjectParameterfvARB(obj=%i, pname=0x%x, params=%p)\n", file, line, obj, pname, params);
+#endif
+    _glGetObjectParameterfvARB(obj, pname, params);
+    dglLogError("glGetObjectParameterfvARB", file, line);
+}
+
+d_inline static void glGetObjectParameterivARB_DEBUG (GLhandleARB obj, GLenum pname, GLint* params, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetObjectParameterivARB(obj=%i, pname=0x%x, params=%p)\n", file, line, obj, pname, params);
+#endif
+    _glGetObjectParameterivARB(obj, pname, params);
+    dglLogError("glGetObjectParameterivARB", file, line);
+}
+
+d_inline static void glGetInfoLogARB_DEBUG (GLhandleARB obj, GLsizei maxLength, GLsizei* length, void* infoLog, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetInfoLogARB(obj=%i, maxLength=0x%x, length=%p, infoLog=%p)\n", file, line, obj, maxLength, length, infoLog);
+#endif
+    _glGetInfoLogARB(obj, maxLength, length, infoLog);
+    dglLogError("glGetInfoLogARB", file, line);
+}
+
+d_inline static void glGetAttachedObjectsARB_DEBUG (GLhandleARB containerObj, GLsizei maxCount, GLsizei* count, GLhandleARB* obj, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetAttachedObjectsARB(containerObj=%i, maxCount=0x%x, count=%p, obj=%p)\n", file, line, containerObj, maxCount, count, obj);
+#endif
+    _glGetAttachedObjectsARB(containerObj, maxCount, count, obj);
+    dglLogError("glGetAttachedObjectsARB", file, line);
+}
+
+d_inline static GLint glGetUniformLocationARB_DEBUG (GLhandleARB programObj, void* name, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetUniformLocationARB(programObj=%i, name=%p)\n", file, line, programObj, name);
+#endif
+    _glGetUniformLocationARB(programObj, name);
+    dglLogError("glGetUniformLocationARB", file, line);
+}
+
+d_inline static void glGetActiveUniformARB_DEBUG (GLhandleARB programObj, GLuint index, GLsizei maxLength, GLsizei* length, GLint* size, GLenum* type, void* name, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetActiveUniformARB(programObj=%i, index=%i, maxLength=0x%x, length=%p, size=%p, type=%p, name=%p)\n", file, line, programObj, index, maxLength, length, size, type, name);
+#endif
+    _glGetActiveUniformARB(programObj, index, maxLength, length, size, type, name);
+    dglLogError("glGetActiveUniformARB", file, line);
+}
+
+d_inline static void glGetUniformfvARB_DEBUG (GLhandleARB programObj, GLint location, GLfloat* params, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetUniformfvARB(programObj=%i, location=%i, params=%p)\n", file, line, programObj, location, params);
+#endif
+    _glGetUniformfvARB(programObj, location, params);
+    dglLogError("glGetUniformfvARB", file, line);
+}
+
+d_inline static void glGetUniformivARB_DEBUG (GLhandleARB programObj, GLint location, GLint* params, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetUniformivARB(programObj=%i, location=%i, params=%p)\n", file, line, programObj, location, params);
+#endif
+    _glGetUniformivARB(programObj, location, params);
+    dglLogError("glGetUniformivARB", file, line);
+}
+
+d_inline static void glGetShaderSourceARB_DEBUG (GLhandleARB obj, GLsizei maxLength, GLsizei* length, void* source, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetShaderSourceARB(obj=%i, maxLength=0x%x, length=%p, source=%p)\n", file, line, obj, maxLength, length, source);
+#endif
+    _glGetShaderSourceARB(obj, maxLength, length, source);
+    dglLogError("glGetShaderSourceARB", file, line);
+}
+
+
+#define dglDeleteObjectARB(obj) glDeleteObjectARB_DEBUG(obj, __FILE__, __LINE__)
+#define dglGetHandleARB(pname) glGetHandleARB_DEBUG(pname, __FILE__, __LINE__)
+#define dglDetachObjectARB(containerObj, attachedObj) glDetachObjectARB_DEBUG(containerObj, attachedObj, __FILE__, __LINE__)
+#define dglCreateShaderObjectARB(shaderType) glCreateShaderObjectARB_DEBUG(shaderType, __FILE__, __LINE__)
+#define dglShaderSourceARB(shaderObj, count, string, length) glShaderSourceARB_DEBUG(shaderObj, count, string, length, __FILE__, __LINE__)
+#define dglCompileShaderARB(shaderObj) glCompileShaderARB_DEBUG(shaderObj, __FILE__, __LINE__)
+#define dglCreateProgramObjectARB() glCreateProgramObjectARB_DEBUG(__FILE__, __LINE__)
+#define dglAttachObjectARB(containerObj, obj) glAttachObjectARB_DEBUG(containerObj, obj, __FILE__, __LINE__)
+#define dglLinkProgramARB(programObj) glLinkProgramARB_DEBUG(programObj, __FILE__, __LINE__)
+#define dglUseProgramObjectARB(programObj) glUseProgramObjectARB_DEBUG(programObj, __FILE__, __LINE__)
+#define dglValidateProgramARB(programObj) glValidateProgramARB_DEBUG(programObj, __FILE__, __LINE__)
+#define dglUniform1fARB(location, v0) glUniform1fARB_DEBUG(location, v0, __FILE__, __LINE__)
+#define dglUniform2fARB(location, v0, v1) glUniform2fARB_DEBUG(location, v0, v1, __FILE__, __LINE__)
+#define dglUniform3fARB(location, v0, v1, v2) glUniform3fARB_DEBUG(location, v0, v1, v2, __FILE__, __LINE__)
+#define dglUniform4fARB(location, v0, v1, v2, v3) glUniform4fARB_DEBUG(location, v0, v1, v2, v3, __FILE__, __LINE__)
+#define dglUniform1iARB(location, v0) glUniform1iARB_DEBUG(location, v0, __FILE__, __LINE__)
+#define dglUniform2iARB(location, v0, v1) glUniform2iARB_DEBUG(location, v0, v1, __FILE__, __LINE__)
+#define dglUniform3iARB(location, v0, v1, v2) glUniform3iARB_DEBUG(location, v0, v1, v2, __FILE__, __LINE__)
+#define dglUniform4iARB(location, v0, v1, v2, v3) glUniform4iARB_DEBUG(location, v0, v1, v2, v3, __FILE__, __LINE__)
+#define dglUniform1fvARB(location, count, value) glUniform1fvARB_DEBUG(location, count, value, __FILE__, __LINE__)
+#define dglUniform2fvARB(location, count, value) glUniform2fvARB_DEBUG(location, count, value, __FILE__, __LINE__)
+#define dglUniform3fvARB(location, count, value) glUniform3fvARB_DEBUG(location, count, value, __FILE__, __LINE__)
+#define dglUniform4fvARB(location, count, value) glUniform4fvARB_DEBUG(location, count, value, __FILE__, __LINE__)
+#define dglUniform1ivARB(location, count, value) glUniform1ivARB_DEBUG(location, count, value, __FILE__, __LINE__)
+#define dglUniform2ivARB(location, count, value) glUniform2ivARB_DEBUG(location, count, value, __FILE__, __LINE__)
+#define dglUniform3ivARB(location, count, value) glUniform3ivARB_DEBUG(location, count, value, __FILE__, __LINE__)
+#define dglUniform4ivARB(location, count, value) glUniform4ivARB_DEBUG(location, count, value, __FILE__, __LINE__)
+#define dglUniformMatrix2fvARB(location, count, transpose, value) glUniformMatrix2fvARB_DEBUG(location, count, transpose, value, __FILE__, __LINE__)
+#define dglUniformMatrix3fvARB(location, count, transpose, value) glUniformMatrix3fvARB_DEBUG(location, count, transpose, value, __FILE__, __LINE__)
+#define dglUniformMatrix4fvARB(location, count, transpose, value) glUniformMatrix4fvARB_DEBUG(location, count, transpose, value, __FILE__, __LINE__)
+#define dglGetObjectParameterfvARB(obj, pname, params) glGetObjectParameterfvARB_DEBUG(obj, pname, params, __FILE__, __LINE__)
+#define dglGetObjectParameterivARB(obj, pname, params) glGetObjectParameterivARB_DEBUG(obj, pname, params, __FILE__, __LINE__)
+#define dglGetInfoLogARB(obj, maxLength, length, infoLog) glGetInfoLogARB_DEBUG(obj, maxLength, length, infoLog, __FILE__, __LINE__)
+#define dglGetAttachedObjectsARB(containerObj, maxCount, count, obj) glGetAttachedObjectsARB_DEBUG(containerObj, maxCount, count, obj, __FILE__, __LINE__)
+#define dglGetUniformLocationARB(programObj, name) glGetUniformLocationARB_DEBUG(programObj, name, __FILE__, __LINE__)
+#define dglGetActiveUniformARB(programObj, index, maxLength, length, size, type, name) glGetActiveUniformARB_DEBUG(programObj, index, maxLength, length, size, type, name, __FILE__, __LINE__)
+#define dglGetUniformfvARB(programObj, location, params) glGetUniformfvARB_DEBUG(programObj, location, params, __FILE__, __LINE__)
+#define dglGetUniformivARB(programObj, location, params) glGetUniformivARB_DEBUG(programObj, location, params, __FILE__, __LINE__)
+#define dglGetShaderSourceARB(obj, maxLength, length, source) glGetShaderSourceARB_DEBUG(obj, maxLength, length, source, __FILE__, __LINE__)
+
+#endif // USE_DEBUG_GLFUNCS
 
