@@ -276,6 +276,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\renderer\shaderProg.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\textureObject.cpp"
 					>
 				</File>
@@ -566,6 +570,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\renderWorld.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\shaderProg.h"
 					>
 				</File>
 				<File

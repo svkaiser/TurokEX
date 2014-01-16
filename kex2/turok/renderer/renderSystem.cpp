@@ -37,6 +37,7 @@ GL_ARB_texture_non_power_of_two_Define();
 GL_ARB_texture_env_combine_Define();
 GL_EXT_texture_env_combine_Define();
 GL_EXT_texture_filter_anisotropic_Define();
+GL_ARB_shader_objects_Define();
 
 //
 // FindExtension
@@ -246,6 +247,7 @@ void kexRenderSystem::Init(void) {
     GL_ARB_texture_env_combine_Init();
     GL_EXT_texture_env_combine_Init();
     GL_EXT_texture_filter_anisotropic_Init();
+    GL_ARB_shader_objects_Init();
 
     byte *data;
 
@@ -265,6 +267,13 @@ void kexRenderSystem::Init(void) {
     }
 
     consoleFont.LoadKFont("fonts/confont.kfont");
+
+    defaultProg.InitProgram();
+
+    defaultProg.Compile("progs/default.vert", RST_VERTEX);
+    defaultProg.Compile("progs/default.frag", RST_FRAGMENT);
+
+    defaultProg.Link();
 
     if(has_GL_EXT_texture_filter_anisotropic) {
         dglGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropic);
@@ -616,6 +625,14 @@ kexFont *kexRenderSystem::CacheFont(const char *name) {
     }
 
     return font;
+}
+
+//
+// kexRenderSystem::DisableShaders
+//
+
+void kexRenderSystem::DisableShaders(void) {
+    dglUseProgramObjectARB(0);
 }
 
 //

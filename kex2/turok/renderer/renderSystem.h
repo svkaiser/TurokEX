@@ -25,6 +25,7 @@
 
 #include "dgl.h"
 #include "textureObject.h"
+#include "shaderProg.h"
 #include "renderFont.h"
 #include "cachefilelist.h"
 #include "canvas.h"
@@ -100,6 +101,7 @@ public:
     void                            SetCull(int type);
     void                            SetTextureUnit(int unit);
     void                            SetViewDimensions(void);
+    void                            DisableShaders(void);
     kexFont                         *CacheFont(const char *name);
     kexTexture                      *CacheTexture(const char *name, texClampMode_t clampMode,
                                         texFilterMode_t filterMode = TF_LINEAR);
@@ -127,6 +129,8 @@ public:
     kexTexture                      defaultTexture;
     kexTexture                      whiteTexture;
     kexTexture                      blackTexture;
+
+    kexShaderObj                    defaultProg;
 
     kexFont                         consoleFont;
 
