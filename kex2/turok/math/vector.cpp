@@ -1091,7 +1091,7 @@ kexVec4 &kexVec4::operator|=(const kexMatrix &mtx) {
 //
 
 float kexVec4::operator[](int index) const {
-    assert(index >= 0 && index < 3);
+    assert(index >= 0 && index < 4);
     return (&x)[index];
 }
 
@@ -1099,7 +1099,7 @@ float kexVec4::operator[](int index) const {
 // kexVec4::operator[]
 //
 
-float kexVec4::operator[](int index) {
-    assert(index >= 0 && index < 3);
+float &kexVec4::operator[](int index) {
+    assert(index >= 0 && index < 4);
     return (&x)[index];
 }

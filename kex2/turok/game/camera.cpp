@@ -80,6 +80,7 @@ void kexCamera::SetupMatrices(void) {
         kexVec3(0, kexMath::Sin(angles.pitch), kexMath::Cos(angles.pitch)));
 
     modelMatrix = kexMatrix((yaw * roll) * pitch);
+    rotMatrix = modelMatrix;
     modelMatrix.AddTranslation(-(origin | modelMatrix));
 
     // frustum

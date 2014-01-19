@@ -69,7 +69,7 @@ void kexDisplayObject::UpdateTransform(void) {
 
     matrix = kexMatrix(rotation);
 
-    rotMatrix = matrix;
     matrix.Scale(scale);
+    rotMatrix = matrix;
     matrix.AddTranslation(origin);
 }

@@ -131,6 +131,7 @@ public:
     kexTexture                      blackTexture;
 
     kexShaderObj                    defaultProg;
+    kexShaderObj                    *currentProg;
 
     kexFont                         consoleFont;
 

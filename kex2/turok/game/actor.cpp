@@ -196,6 +196,7 @@ void kexActor::ParseDefault(kexLexer *lexer) {
         break;
     case scactor_angles:
         angles = lexer->GetVector3();
+        rotation = angles.ToQuat();
         break;
     case scactor_scale:
         scale = lexer->GetVector3();
@@ -337,8 +338,9 @@ void kexActor::UpdateTransform(void) {
         rotation = angles.ToQuat();
     }
 
-    if(!AlignToSurface())
+    if(!AlignToSurface()) {
         matrix = kexMatrix(rotation);
+    }
 
     matrix.Scale(scale);
     rotMatrix = matrix;

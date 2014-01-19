@@ -40,6 +40,12 @@ public:
     void                        Compile(const char *name, rShaderType_t type);
     void                        Link(void);
     void                        Enable(void);
+    void                        SetUniform(const char *name, const int val);
+    void                        SetUniform(const char *name, const float val);
+    void                        SetUniform(const char *name, kexVec2 &val);
+    void                        SetUniform(const char *name, kexVec3 &val);
+    void                        SetUniform(const char *name, kexVec4 &val);
+    void                        SetUniform(const char *name, kexMatrix &val, bool bTranspose = false);
     
     rhandle                     &Program(void) { return programObj; }
     rhandle                     &VertexProgram(void) { return vertexProgram; }

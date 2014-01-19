@@ -271,7 +271,7 @@ public:
     kexVec4                 operator|(const kexMatrix &mtx);
     kexVec4                 &operator|=(const kexMatrix &mtx);
     float                   operator[](int index) const;
-    float                   operator[](int index);
+    float                   &operator[](int index);
 
     float                   x;
     float                   y;
@@ -298,6 +298,7 @@ public:
     static kexMatrix        Scale(const kexMatrix &mtx, const float x, const float y, const float z);
     kexMatrix               &Transpose(void);
     static kexMatrix        Transpose(const kexMatrix &mtx);
+    static kexMatrix        Invert(kexMatrix &mtx);
     float                   *ToFloatPtr(void);
     void                    SetViewProjection(float aspect, float fov, float zNear, float zFar);
     

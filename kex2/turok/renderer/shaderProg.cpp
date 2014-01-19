@@ -101,19 +101,83 @@ void kexShaderObj::Compile(const char *name, rShaderType_t type) {
     dglAttachObjectARB(programObj, *handle);
 
     if(type == RST_FRAGMENT) {
-        int loc;
-
-        loc = dglGetUniformLocationARB(programObj, "diffuse1");
-        if(loc != -1) {
-            dglUniform1iARB(loc, 0);
-        }
-        loc = dglGetUniformLocationARB(programObj, "diffuse2");
-        if(loc != -1) {
-            dglUniform1iARB(loc, 1);
-        }
+        SetUniform("diffuse1", 0);
+        SetUniform("diffuse2", 1);
     }
     
     Mem_Free(data);
+}
+
+//
+// kexShaderObj::SetUniform
+//
+
+void kexShaderObj::SetUniform(const char *name, const int val) {
+    int loc = dglGetUniformLocationARB(programObj, name);
+
+    if(loc != -1) {
+        dglUniform1iARB(loc, val);
+    }
+}
+
+//
+// kexShaderObj::SetUniform
+//
+
+void kexShaderObj::SetUniform(const char *name, const float val) {
+    int loc = dglGetUniformLocationARB(programObj, name);
+
+    if(loc != -1) {
+        dglUniform1fARB(loc, val);
+    }
+}
+
+//
+// kexShaderObj::SetUniform
+//
+
+void kexShaderObj::SetUniform(const char *name, kexVec2 &val) {
+    int loc = dglGetUniformLocationARB(programObj, name);
+
+    if(loc != -1) {
+        dglUniform2fvARB(loc, 1, val.ToFloatPtr());
+    }
+}
+
+//
+// kexShaderObj::SetUniform
+//
+
+void kexShaderObj::SetUniform(const char *name, kexVec3 &val) {
+    int loc = dglGetUniformLocationARB(programObj, name);
+
+    if(loc != -1) {
+        dglUniform3fvARB(loc, 1, val.ToFloatPtr());
+    }
+}
+
+//
+// kexShaderObj::SetUniform
+//
+
+void kexShaderObj::SetUniform(const char *name, kexVec4 &val) {
+    int loc = dglGetUniformLocationARB(programObj, name);
+
+    if(loc != -1) {
+        dglUniform4fvARB(loc, 1, val.ToFloatPtr());
+    }
+}
+
+//
+// kexShaderObj::SetUniform
+//
+
+void kexShaderObj::SetUniform(const char *name, kexMatrix &val, bool bTranspose) {
+    int loc = dglGetUniformLocationARB(programObj, name);
+
+    if(loc != -1) {
+        dglUniformMatrix4fvARB(loc, 1, bTranspose, val.ToFloatPtr());
+    }
 }
 
 //

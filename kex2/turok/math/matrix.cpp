@@ -297,6 +297,68 @@ kexMatrix kexMatrix::Transpose(const kexMatrix &mtx) {
 }
 
 //
+// kexMatrix::Invert
+//
+
+kexMatrix kexMatrix::Invert(kexMatrix &mtx) {
+    float d;
+    float *m;
+
+    m = mtx.ToFloatPtr();
+
+    d = m[ 0] * m[10] * m[ 5] -
+        m[ 0] * m[ 9] * m[ 6] -
+        m[ 1] * m[ 4] * m[10] +
+        m[ 2] * m[ 4] * m[ 9] +
+        m[ 1] * m[ 6] * m[ 8] -
+        m[ 2] * m[ 5] * m[ 8];
+
+    if(d != 0.0f) {
+        kexMatrix inv;
+
+        d = (1.0f / d);
+
+        inv.vectors[0].x = (  m[10] * m[ 5] - m[ 9] * m[ 6]) * d;
+        inv.vectors[0].y = -((m[ 1] * m[10] - m[ 2] * m[ 9]) * d);
+        inv.vectors[0].z = (  m[ 1] * m[ 6] - m[ 2] * m[ 5]) * d;
+        inv.vectors[0].w = 0;
+        inv.vectors[1].x = (  m[ 6] * m[ 8] - m[ 4] * m[10]) * d;
+        inv.vectors[1].y = (  m[ 0] * m[10] - m[ 2] * m[ 8]) * d;
+        inv.vectors[1].z = -((m[ 0] * m[ 6] - m[ 2] * m[ 4]) * d);
+        inv.vectors[1].w = 0;
+        inv.vectors[2].x = -((m[ 5] * m[ 8] - m[ 4] * m[ 9]) * d);
+        inv.vectors[2].y = (  m[ 1] * m[ 8] - m[ 0] * m[ 9]) * d;
+        inv.vectors[2].z = -((m[ 1] * m[ 4] - m[ 0] * m[ 5]) * d);
+        inv.vectors[2].w = 0;
+        inv.vectors[3].x = (
+            ( m[13] * m[10] - m[14] * m[ 9]) * m[ 4]
+            + m[14] * m[ 5] * m[ 8]
+            - m[13] * m[ 6] * m[ 8]
+            - m[12] * m[10] * m[ 5]
+            + m[12] * m[ 9] * m[ 6]) * d;
+        inv.vectors[3].y = (
+              m[ 0] * m[14] * m[ 9]
+            - m[ 0] * m[13] * m[10]
+            - m[14] * m[ 1] * m[ 8]
+            + m[13] * m[ 2] * m[ 8]
+            + m[12] * m[ 1] * m[10]
+            - m[12] * m[ 2] * m[ 9]) * d;
+        inv.vectors[3].z = -(
+            ( m[ 0] * m[14] * m[ 5]
+            - m[ 0] * m[13] * m[ 6]
+            - m[14] * m[ 1] * m[ 4]
+            + m[13] * m[ 2] * m[ 4]
+            + m[12] * m[ 1] * m[ 6]
+            - m[12] * m[ 2] * m[ 5]) * d);
+        inv.vectors[3].w = 1.0f;
+
+        return inv;
+    }
+
+    return mtx;
+}
+
+//
 // kexMatrix::SetViewProjection
 //
 

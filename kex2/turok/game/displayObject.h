@@ -49,6 +49,7 @@ public:
     kexVec3                     &GetScale(void) { return scale; }
     void                        SetScale(const kexVec3 &s) { scale = s; }
     kexMatrix                   &Matrix(void) { return matrix; }
+    kexMatrix                   &RotationMatrix(void) { return rotMatrix; }
     kexAttachment               &Attachment(void) { return attachment; }
     float                       &CullDistance(void) { return cullDistance; }
 
