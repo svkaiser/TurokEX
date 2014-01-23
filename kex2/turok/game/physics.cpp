@@ -523,6 +523,10 @@ void kexPhysics::Think(const float timeDelta) {
         localWorld.Trace(&trace);
         time -= (time * trace.fraction);
 
+        if(sector) {
+            groundGeom = &sector->lowerTri;
+        }
+
         if(trace.fraction >= 1) {
             // went the entire distance
             owner->SetOrigin(end);
@@ -689,6 +693,7 @@ void kexPhysics::Think(const float timeDelta) {
 
         if(dist < 0) {
             owner->GetOrigin()[1] = org[1] - dist;
+            groundGeom = &sector->lowerTri;
             velocity.Clear();
         }
 

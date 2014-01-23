@@ -257,6 +257,31 @@ void kexWorld::RemoveActor(kexActor *actor) {
 }
 
 //
+// kexWorld::TeleportActor
+//
+
+void kexWorld::TeleportActor(kexActor *actor, const kexVec3 &position,
+                             const kexAngle &angle, int sectorID) {
+
+    kexSector *sector = NULL;
+
+    if(sectorID != -1 && sectorID >= 0 && sectorID < collisionMap.numSectors) {
+        sector = &collisionMap.sectors[sectorID];
+    }
+    else {
+        sector = collisionMap.PointInSector(position);
+    }
+
+    actor->UnlinkArea();
+
+    actor->Physics()->sector = sector;
+    actor->SetOrigin(position);
+    actor->SetAngles(angle);
+
+    actor->LinkArea();
+}
+
+//
 // kexWorld::SpawnActor
 // 
 
@@ -706,6 +731,8 @@ void kexWorld::Unload(void) {
         // nothing is currently loaded
         return;
     }
+
+    common.Printf("Unloading %s\n", title);
     
     bLoaded = false;
     
@@ -831,10 +858,23 @@ void kexWorld::InitObject(void) {
 
     scriptManager.Engine()->RegisterObjectMethod(
         "kWorld",
+        "const int MapID(void) const",
+        asMETHODPR(kexWorld, MapID, (void) const, const int),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
         "kActor @SpawnActor(kStr &in, kStr &in, kVec3 &in, kAngle &in)",
         asMETHODPR(kexWorld, SpawnActor,
         (kexStr &className, kexStr &component,
         kexVec3 &origin, kexAngle &angles), kexActor*),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "void TeleportActor(kActor@, const kVec3 &in, const kAngle &in, int sectorID = -1)",
+        asMETHODPR(kexWorld, TeleportActor,
+        (kexActor *actor, const kexVec3 &position, const kexAngle &angle, int sectorID), void),
         asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectMethod(

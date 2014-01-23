@@ -84,6 +84,8 @@ public:
     void                                SpawnFX(const kexStr &str, kexGameObject *source, kexVec3 &velocity,
                                             kexVec3 &origin, kexQuat &rotation);
     void                                RemoveActor(kexActor *actor);
+    void                                TeleportActor(kexActor *actor, const kexVec3 &position,
+                                                      const kexAngle &angle, int sectorID = -1);
     void                                SpawnLocalPlayer(void);
     void                                Trace(traceInfo_t *trace);
     void                                StartSound(const char *name);
@@ -107,6 +109,7 @@ public:
     void                                ToggleFog(bool toggle) { bEnableFog = toggle; }
     const int                           NumAreaNodes(void) const { return numAreaNodes; }
     bool                                &ReadyUnLoad(void) { return bReadyUnload; }
+    const int                           MapID(void) const { return mapID; }
     int                                 &NextMapID(void) { return nextMapID; }
 
     kexLinklist<kexActor>               actors;
