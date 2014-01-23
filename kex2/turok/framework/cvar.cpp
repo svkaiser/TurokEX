@@ -264,6 +264,9 @@ void kexCvarManager::Init(void) {
 
 void kexCvarManager::Shutdown(void) {
     kexCvar *cvar = first;
+
+    common.Printf("Shutting down cvar system\n");
+
     while(1) {
         if(cvar == NULL)
             break;

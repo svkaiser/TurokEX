@@ -246,5 +246,8 @@ void kexKeyMap::InitObject(void) {
     scriptManager.RegisterMethod("kKeyMap", "bool GetString(const kStr &in, kStr &out)",
         asMETHODPR(kexKeyMap, GetString,
         (const kexStr &key, kexStr &out), bool));
+    scriptManager.RegisterMethod("kKeyMap", "bool GetVector(const kStr &in, kVec3 &out)",
+        asMETHODPR(kexKeyMap, GetVector,
+        (const kexStr &key, kexVec3 &out), bool));
 }
 #endif

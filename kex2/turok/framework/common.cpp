@@ -155,6 +155,7 @@ int kexCommon::CheckParam(const char *check) {
 //
 
 void kexCommon::Shutdown(void) {
+    common.Printf("Purging all generic allocations\n");
     Mem_Purge(hb_static);
 }
 

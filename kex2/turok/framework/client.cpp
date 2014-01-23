@@ -70,6 +70,7 @@ void kexClient::Destroy(void) {
 //
 
 void kexClient::Shutdown(void) {
+    common.Printf("Shutting down client\n");
     Destroy();
 }
 

@@ -212,6 +212,8 @@ void kexScriptManager::Init(void) {
 //
 
 void kexScriptManager::Shutdown(void) {
+    common.Printf("Shutting down scripting system\n");
+
     ctx->Release();
     engine->Release();
 

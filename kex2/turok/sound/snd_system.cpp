@@ -479,6 +479,8 @@ void kexSoundSystem::Shutdown(void) {
     int i;
     kexWavFile *wavFile;
 
+    common.Printf("Shutting down audio\n");
+
     kexSoundSystem::EnterCriticalSection();
     bKillSoundThread = true;
     kexSoundSystem::ExitCriticalSection();

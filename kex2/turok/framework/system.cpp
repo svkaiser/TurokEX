@@ -168,6 +168,8 @@ void kexSystem::Shutdown(void) {
         window = NULL;
     }
 
+    common.Printf("Shutting down\n");
+
     SDL_Quit();
 
     fclose(f_stdout);

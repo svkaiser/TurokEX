@@ -100,6 +100,8 @@ char *kexFileSystem::GetBaseDirectory(void) {
 void kexFileSystem::Shutdown(void) {
     kpf_t *pack;
 
+    common.Printf("Shutting down file system\n");
+
     for(pack = root; pack; pack = pack->next) {
         unzClose(pack->filehandle);
     }

@@ -294,6 +294,8 @@ void kexRenderSystem::Init(void) {
 void kexRenderSystem::Shutdown(void) {
     kexTexture *texture;
 
+    common.Printf("Shutting down render system\n");
+
     defaultTexture.Delete();
     whiteTexture.Delete();
     blackTexture.Delete();
