@@ -75,6 +75,7 @@ void kexServer::Destroy(void) {
 //
 
 void kexServer::Shutdown(void) {
+    common.Printf("Shutting down server\n");
     Destroy();
     enet_deinitialize();
 }
@@ -357,8 +358,13 @@ void kexServer::Run(int msec) {
     SetTicks(GetTicks() + 1);
     SetTime(GetTicks() * SERVER_RUNTIME);
 
-    //G_Ticker();
-    // TODO
+    // update net players
+    for(int i = 0; i < GetMaxClients(); i++) {
+        if(players[i].GetState() == SVC_STATE_ACTIVE) {
+            players[i].Tick();
+        }
+    }
+
     localWorld.Tick();
 
     if(GetTime() < GetRunTime()) {

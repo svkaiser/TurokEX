@@ -659,4 +659,13 @@ kexNetPlayer::~kexNetPlayer(void) {
 //
 
 void kexNetPlayer::Tick(void) {
+    if(GetState() == SVC_STATE_INGAME) {
+        if(puppet != NULL) {
+            kexSector *sector = puppet->Physics()->sector;
+            if(sector != NULL && sector->area != NULL) {
+                kexAreaComponent *ac = &sector->area->scriptComponent;
+                ac->CallFunction(ac->onThink);
+            }
+        }
+    }
 }
