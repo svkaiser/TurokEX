@@ -109,15 +109,14 @@ static void ConvertPalette(dPalette_t* palette, word* data, int indexes, dboolea
         
         // Unpack and expand to 8bpp, then flip from BGR to RGB.
         
-
         if(fxTexture)
         {
-            /*palette[i].r = (val & 0xF800) >> 8;
-            palette[i].g = (val & 0xF800) >> 8;
-            palette[i].b = (val & 0xF800) >> 8;*/
-            palette[i].r = (val & 0x003E) << 2;
-            palette[i].g = (val & 0x07C0) >> 3;
-            palette[i].b = (val & 0xF800) >> 8;
+            float stride = 255.0f / (float)(indexes-1);
+            byte cbit = ((int)((float)i * stride)) & 0xff;
+
+            palette[i].r = cbit;
+            palette[i].g = cbit;
+            palette[i].b = cbit;
             palette[i].a = (val & 0x00FF);
         }
         else

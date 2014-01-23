@@ -1143,7 +1143,25 @@ static void ProcessAreas(byte *buffer, byte *data)
 
         *total = 0;
 
-        WRITEAREAKEY("component", "TurokArea");
+        if(area->flags & AAF_TELEPORT)
+        {
+            warp_t *warp = GetWarpPoint(area->args1);
+            float yaw = warp->angle + (float)M_PI;
+
+            ClampAngle(&yaw);
+
+            WRITEAREAKEY("component", "TurokAreaTeleport");
+
+            WRITEAREAKEY("position", va("%f %f %f",
+                warp->dest[0], warp->dest[1], warp->dest[2]));
+            WRITEAREAKEY("facingYaw", va("%f", yaw));
+            WRITEAREAKEY("mapID", va("%i", warp->level));
+            WRITEAREAKEY("sectorNum", va("%i", warp->u1));
+        }
+        else
+        {
+            WRITEAREAKEY("component", "TurokArea");
+        }
 
         if(area->flags & AAF_WATER)
         {
@@ -1929,6 +1947,13 @@ static void ProcessActors(byte *data)
                 break;
             }
             break;
+
+        default:
+            Com_Strcat("actor \"kexActor\"\n");
+            Com_Strcat("{\n");
+            WriteGenericActorProps(actor, attr);
+            Com_Strcat("targetID %i\n", attr->tid);
+            Com_Strcat("}\n\n");
         }
 
         Com_UpdateDataProgress();
