@@ -1,0 +1,48 @@
+#include "scripts/turokgame/components/weapons/turokWeapon.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokWeaponRocketLauncher
+//
+////////////////////////////////////////////////////
+
+final class TurokWeaponRocketLauncher : TurokWeapon {
+    
+    //
+    // TurokWeaponRocketLauncher::TurokWeaponRocketLauncher
+    //
+    
+    TurokWeaponRocketLauncher(kActor @actor) {
+        super(actor);
+        bOwned = true;
+    }
+    
+    ~TurokWeaponRocketLauncher() {
+    }
+    
+    //
+    // TurokWeaponRocketLauncher::OnAttack
+    //
+    
+    bool OnAttack(void) {
+        self.AnimState().Blend(anim_weaponFire, playSpeed, 4.0f, 0);
+        SpawnFX("fx/projectile_rocket.kfx", -56.32f, -14.336f, -25.6f);
+        owner.self.Puppet().StartSound("sounds/shaders/missile_launch.ksnd");
+        owner.self.Puppet().StartSound("sounds/shaders/reload_missile_launcher.ksnd");
+        return true;
+    }
+    
+    //
+    // TurokWeaponRocketLauncher::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        xOffset = 170.667f;
+        yOffset = -9.21548f;
+        zOffset = -153.6f;
+        self.SetModel("models/mdl666/mdl666.kmesh");
+        readySound = "sounds/shaders/ready_missile_launcher.ksnd";
+        
+        TurokWeapon::OnSpawn();
+    }
+};

@@ -1,5 +1,6 @@
 #include "scripts/turokgame/components/turokPlayer.txt"
 #include "scripts/turokgame/components/turokArea.txt"
+#include "scripts/turokgame/components/turokAreaTeleport.txt"
 #include "scripts/turokgame/components/turokScriptedObject.txt"
 #include "scripts/turokgame/components/turokPickup.txt"
 #include "scripts/turokgame/classes/turokHud.txt"

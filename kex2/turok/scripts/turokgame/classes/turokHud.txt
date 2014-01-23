@@ -362,6 +362,7 @@ final class TurokHud {
                 ammoNum.Update(player.clips.amount);
                 break;
             case wp_pulserifle:
+            case wp_alienrifle:
                 h_cell.bVisible = true;
                 ammoNum.Update(player.cells.amount);
                 break;
@@ -372,6 +373,10 @@ final class TurokHud {
             case wp_minigun:
                 h_mags.bVisible = true;
                 ammoNum.Update(player.ammoMags.amount);
+                break;
+            case wp_rocket_l:
+                h_rockets.bVisible = true;
+                ammoNum.Update(player.rockets.amount);
                 break;
             default:
                 break;

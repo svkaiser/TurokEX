@@ -33,7 +33,7 @@ TurokAmbienceCave       ambCave;
 //
 ////////////////////////////////////////////////////
 
-final class TurokArea : AreaComponent {
+class TurokArea : AreaComponent {
     kArea @self;
     int ambienceType;
     

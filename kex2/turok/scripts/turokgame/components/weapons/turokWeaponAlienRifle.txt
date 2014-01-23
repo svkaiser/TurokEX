@@ -1,0 +1,47 @@
+#include "scripts/turokgame/components/weapons/turokWeapon.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokWeaponAlienRifle
+//
+////////////////////////////////////////////////////
+
+final class TurokWeaponAlienRifle : TurokWeapon {
+    
+    //
+    // TurokWeaponAlienRifle::TurokWeaponAlienRifle
+    //
+    
+    TurokWeaponAlienRifle(kActor @actor) {
+        super(actor);
+        bOwned = true;
+    }
+    
+    ~TurokWeaponAlienRifle() {
+    }
+    
+    //
+    // TurokWeaponAlienRifle::OnAttack
+    //
+    
+    bool OnAttack(void) {
+        self.AnimState().Blend(anim_weaponFire, playSpeed, 4.0f, 0);
+        SpawnFX("fx/projectile_tekshot.kfx", -4.096f, -14.336f, -25.6f);
+        owner.self.Puppet().StartSound("sounds/shaders/tek_weapon_1.ksnd");
+        return true;
+    }
+    
+    //
+    // TurokWeaponAlienRifle::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        xOffset = 170.667f;
+        yOffset = -9.21548f;
+        zOffset = -153.6f;
+        self.SetModel("models/mdl652/mdl652.kmesh");
+        readySound = "sounds/shaders/ready_tek_weapon_1.ksnd";
+        
+        TurokWeapon::OnSpawn();
+    }
+};

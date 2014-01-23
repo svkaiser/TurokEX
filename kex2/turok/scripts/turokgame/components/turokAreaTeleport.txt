@@ -1,0 +1,75 @@
+#include "scripts/turokgame/components/turokArea.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokAreaTeleport
+//
+////////////////////////////////////////////////////
+
+final class TurokAreaTeleport : TurokArea {
+    kVec3   position;
+    float   facingYaw;
+    int     mapID;
+    int     sectorNum;
+    
+    //
+    // TurokAreaTeleport::TurokAreaTeleport
+    //
+    
+    TurokAreaTeleport(kArea @area) {
+        super(area);
+    }
+    
+    ~TurokAreaTeleport() {
+    }
+    
+    //
+    // TurokAreaTeleport::OnThink
+    //
+    
+    void OnThink(void) {
+    }
+    
+    //
+    // TurokAreaTeleport::OnLocalThink
+    //
+    
+    void OnLocalThink(void) {
+        // TODO: THIS SHOULD BE HANDLED BY SERVER
+        if(LocalWorld.MapID() == mapID) {
+            if(localClient.Puppet().Physics().OnGround()) {
+                LocalWorld.TeleportActor(localClient.Puppet(), position, kAngle(facingYaw, 0, 0));
+            }
+        }
+        TurokArea::OnLocalThink();
+    }
+    
+    //
+    // TurokAreaTeleport::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        self.key.GetVector("position", position);
+        self.key.GetFloat("facingYaw", facingYaw);
+        self.key.GetInt("mapID", mapID);
+        self.key.GetInt("sectorNum", sectorNum);
+        
+        TurokArea::OnSpawn();
+    }
+    
+    //
+    // TurokAreaTeleport::OnEnter
+    //
+    
+    void OnEnter(void) {
+        TurokArea::OnEnter();
+    }
+    
+    //
+    // TurokAreaTeleport::OnExit
+    //
+    
+    void OnExit(void) {
+        TurokArea::OnExit();
+    }
+};
