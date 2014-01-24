@@ -547,8 +547,11 @@ void kexPhysics::Think(const float timeDelta) {
             break;
         }
         else {
-            // update origin and nudge origin away from plane
-            owner->SetOrigin(trace.hitVector - (direction * 0.125f));
+            owner->SetOrigin(trace.hitVector);
+            if(!trace.hitActor) {
+                // update origin and nudge origin away from plane
+                owner->GetOrigin() -= (direction * 0.125f);
+            }
             owner->LinkArea();
         }
 
