@@ -29,7 +29,10 @@ class TurokWeaponShotgun : TurokWeapon {
     
     bool OnAttack(void) {
         self.AnimState().Blend(anim_weaponFire, playSpeed, 4.0f, 0);
-        SpawnFX("fx/muzzle_shotgun.kfx", -5.75f, -3.072f, 15.696f);
+        owner.self.Puppet().StartSound("sounds/shaders/riot_shotgun_shot.ksnd");
+        
+        MuzzleFX("fx/muzzle_shotgun.kfx", -5.75f, -3.072f, 15.696f);
+        SpawnFX("fx/projectile_shell.kfx", -12.288f, -7.1680f, 25.6f);
         return true;
     }
     
@@ -43,6 +46,7 @@ class TurokWeaponShotgun : TurokWeapon {
                 bReload = true;
                 
                 SpawnFX("fx/shotshell.kfx", -11.26f, -6.144f, 15.696f);
+                owner.self.Puppet().StartSound("sounds/shaders/ready_shotgun.ksnd");
             }
         }
         else {

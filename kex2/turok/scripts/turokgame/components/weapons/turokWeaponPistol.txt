@@ -26,8 +26,14 @@ final class TurokWeaponPistol : TurokWeapon {
     
     bool OnAttack(void) {
         self.AnimState().Blend(anim_weaponFire, playSpeed, 4.0f, 0);
-        SpawnFX("fx/muzzle_pistol.kfx", -6.656f, -3.2f, 15.696f);
+        
+        owner.self.Puppet().StartSound("sounds/shaders/pistol_shot.ksnd");
+        
+        MuzzleFX("fx/muzzle_pistol.kfx", -6.656f, -3.584f, 15.696f);
         SpawnFX("fx/bulletshell.kfx", -10.24f, -10.24f, 15.648f);
+        SpawnFX("fx/projectile_bullet.kfx", -13.1072f, -10.24f, 25.6f);
+        
+        owner.clips.Consume(1);
         return true;
     }
     

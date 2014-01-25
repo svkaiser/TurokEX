@@ -363,6 +363,7 @@ final class TurokHud {
                 break;
             case wp_pulserifle:
             case wp_alienrifle:
+            case wp_accelerator:
                 h_cell.bVisible = true;
                 ammoNum.Update(player.cells.amount);
                 break;

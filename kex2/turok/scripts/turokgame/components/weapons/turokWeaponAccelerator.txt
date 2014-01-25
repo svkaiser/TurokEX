@@ -1,0 +1,109 @@
+#include "scripts/turokgame/components/weapons/turokWeapon.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokWeaponAccelerator
+//
+////////////////////////////////////////////////////
+
+final class TurokWeaponAccelerator : TurokWeapon {
+    float spinSpeed;
+    float spinAngle;
+    bool bSpinning;
+    bool bAiming;
+    
+    //
+    // TurokWeaponAccelerator::TurokWeaponAccelerator
+    //
+    
+    TurokWeaponAccelerator(kActor @actor) {
+        super(actor);
+        bOwned = true;
+        spinSpeed = 2;
+        spinAngle = 0;
+        bSpinning = false;
+        bAiming = false;
+    }
+    
+    //
+    // TurokWeaponAccelerator::~TurokWeaponAccelerator
+    //
+    
+    ~TurokWeaponAccelerator() {
+    }
+    
+    //
+    // TurokWeaponAccelerator::OnLocalThink
+    //
+    
+    void OnLocalThink(void) {
+        if(state == PWPN_STATE_READY) {
+            spinAngle += spinSpeed * Client.GetRunTime();
+            self.SetRotationOffset(1, spinAngle, 0, 1, 0);
+        }
+        else if(state == PWPN_STATE_SWAPIN || state == PWPN_STATE_SWAPOUT) {
+            self.SetRotationOffset(1, 0, 0, 1, 0);
+            spinAngle = 0;
+        }
+        
+        if(bAiming == true || state == PWPN_STATE_FIRING) {
+            spinSpeed = LocalLerp(spinSpeed, 20.0f, 0.004f);
+            spinAngle += spinSpeed * Client.GetRunTime();
+            self.SetRotationOffset(1, spinAngle, 0, 1, 0);
+        }
+        
+        if(spinSpeed > 2 && bAiming == false) {
+            spinSpeed = LocalLerp(spinSpeed, 2, 0.025f);
+        }
+        
+        TurokWeapon::OnLocalThink();
+    }
+    
+    //
+    // TurokWeaponAccelerator::OnAttack
+    //
+    
+    bool OnAttack(void) {
+        if(bAiming == true) {
+            return true;
+        }
+        
+        self.AnimState().Blend(anim_weaponFire, playSpeed, 250.0f, ANF_LOOP);
+        bAiming = true;
+        
+        return true;
+    }
+    
+    //
+    // TurokWeaponAccelerator::CheckAttack
+    //
+    
+    void CheckAttack(void) {
+        if(bAiming) {
+            if(owner.self.ActionHeldTime("+attack") > 0) {
+                return;
+            }
+            
+            owner.self.Puppet().StartSound("sounds/shaders/generic_190.ksnd");
+            SpawnFX("fx/projectile_particleshot_1.kfx", -4.096f, -14.336f, 25.6f);
+            
+            self.AnimState().Blend(anim_weaponFireCharged, playSpeed, 4.0f, 0);
+            bAiming = false;
+        }
+        
+        TurokWeapon::CheckAttack();
+    }
+    
+    //
+    // TurokWeaponAccelerator::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        xOffset = 170.667f;
+        yOffset = -9.21548f;
+        zOffset = -153.6f;
+        self.SetModel("models/mdl668/mdl668.kmesh");
+        
+        TurokWeapon::OnSpawn();
+    }
+};

@@ -37,7 +37,7 @@ final class TurokWeaponGrenade : TurokWeapon {
         kActor @src = localClient.Puppet();
             
         SpawnFX("fx/projectile_grenade.kfx", -18.432f, -5.12f, -15.696f);
-        SpawnFX("fx/muzzle_grenade_launcher.kfx", -10.35f, -2.048f, 18.432f);
+        MuzzleFX("fx/muzzle_grenade_launcher.kfx", -10.35f, -2.048f, 18.432f);
         src.StartSound("sounds/shaders/grenade_launch.ksnd");
         return true;
     }

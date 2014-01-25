@@ -11,6 +11,7 @@
 #include "scripts/turokgame/components/weapons/turokWeaponMiniGun.txt"
 #include "scripts/turokgame/components/weapons/turokWeaponAlienRifle.txt"
 #include "scripts/turokgame/components/weapons/turokWeaponRocketLauncher.txt"
+#include "scripts/turokgame/components/weapons/turokWeaponAccelerator.txt"
 
 ////////////////////////////////////////////////////
 //
@@ -45,9 +46,12 @@ const float PHYSICS_PLAYER_MASS         = 1800;
 const float PHYSICS_PLAYER_STEPHEIGHT   = 36;
 const float PHYSICS_PLAYER_AIR_FRICTION = 0;
 
-const int   MAX_LIFEFORCES              = 100;
-const int   MAX_LIVES                   = 9;
+const float SWIM_THRUST_SPEED           = 480;
+const float SWIM_THRUST_TIME            = 0.63f;
+const float SWIM_THRUST_THRESHOLD       = (SWIM_THRUST_TIME - 0.05f);
 
+const int   TUROK_MAX_LIFEFORCES        = 100;
+const int   TUROK_MAX_LIVES             = 9;
 const int   TUROK_HEALTH_MAX            = 250;
 const int   TUROK_MORTAL_WOUND_MAX      = 120;
 
@@ -216,6 +220,7 @@ final class TurokPlayer : Component {
     kActor              @weaponMinigun;
     kActor              @weaponAlienRifle;
     kActor              @weaponRocketLauncher;
+    kActor              @weaponAccelerator;
     
     //
     // ammo
@@ -318,11 +323,13 @@ final class TurokPlayer : Component {
             camera.Attachment().DettachActor();
             puppet.bHidden = false;
             bCameraAttached = false;
+            playerHud.container.bVisible = false;
         }
         else {
             camera.Attachment().AttachToActor(puppet);
             puppet.bHidden = true;
             bCameraAttached = true;
+            playerHud.container.bVisible = true;
         }
         
         weaponKnife.bClientView             = bCameraAttached;
@@ -336,6 +343,7 @@ final class TurokPlayer : Component {
         weaponMinigun.bClientView           = bCameraAttached;
         weaponAlienRifle.bClientView        = bCameraAttached;
         weaponRocketLauncher.bClientView    = bCameraAttached;
+        weaponAccelerator.bClientView       = bCameraAttached;
     }
 
     //
@@ -366,6 +374,8 @@ final class TurokPlayer : Component {
                 return cast<TurokWeapon@>(weaponAlienRifle.obj);
             case wp_rocket_l:
                 return cast<TurokWeapon@>(weaponRocketLauncher.obj);
+            case wp_accelerator:
+                return cast<TurokWeapon@>(weaponAccelerator.obj);
         }
         
         return null;
@@ -411,6 +421,7 @@ final class TurokPlayer : Component {
         @weaponMinigun          = LocalWorld.SpawnActor("kexActor", "TurokWeaponMiniGun", origin, angle);
         @weaponAlienRifle       = LocalWorld.SpawnActor("kexActor", "TurokWeaponAlienRifle", origin, angle);
         @weaponRocketLauncher   = LocalWorld.SpawnActor("kexActor", "TurokWeaponRocketLauncher", origin, angle);
+        @weaponAccelerator      = LocalWorld.SpawnActor("kexActor", "TurokWeaponAccelerator", origin, angle);
         
         TurokPlayer @player = cast<TurokPlayer@>(self.obj);
         
@@ -425,6 +436,7 @@ final class TurokPlayer : Component {
         @cast<TurokWeapon@>(weaponMinigun.obj).owner        = player;
         @cast<TurokWeapon@>(weaponAlienRifle.obj).owner     = player;
         @cast<TurokWeapon@>(weaponRocketLauncher.obj).owner = player;
+        @cast<TurokWeapon@>(weaponAccelerator.obj).owner    = player;
 
         pendingWeaponID = wp_knife;
         SetWeapon();
@@ -596,11 +608,12 @@ final class TurokPlayer : Component {
         bool bRight             = self.ActionDown("+straferight");
         int wt                  = puppet.Physics().waterLevel;
         
+        // swim thrusts
         if(waterLevel >= WLT_BETWEEN) {
             if(bForward && self.ActionHeldTime("+forward") == 0 && thrustTime <= 0) {
                 bThrusting = true;
-                thrustTime = 0.63f;
-                self.GetAcceleration().z = 480;
+                thrustTime = SWIM_THRUST_TIME;
+                self.GetAcceleration().z = SWIM_THRUST_SPEED;
                 
                 if(waterLevel == WLT_UNDER) {
                     puppet.StartSound("sounds/shaders/underwater_swim_2.ksnd");
@@ -611,6 +624,7 @@ final class TurokPlayer : Component {
             }
         }
         
+        // ground movement
         if(bThrusting == false) {
             if(bForward || bBack) {
                 if(bForward) {
@@ -636,11 +650,12 @@ final class TurokPlayer : Component {
                 groundMove.Accelerate(0, 0, deltaTime);
             }
         }
+        // swim movement
         else {
             float az = self.GetAcceleration().z;
             
-            self.GetAcceleration().z = (480 - az) * (thrustTime / 4) + az;
-            if(thrustTime <= 0.58f) {
+            self.GetAcceleration().z = (SWIM_THRUST_SPEED - az) * (thrustTime / 4) + az;
+            if(thrustTime <= SWIM_THRUST_THRESHOLD) {
                 bThrusting = false;
             }
         }
@@ -649,6 +664,7 @@ final class TurokPlayer : Component {
             thrustTime -= deltaTime;
         }
         
+        // handle landing on ground
         kVec3 vel = puppet.Physics().GetVelocity();
         float landImpact = (fallAmount - vel.y) * deltaTime;
         
@@ -661,19 +677,23 @@ final class TurokPlayer : Component {
             }
         }
         
+        // handle transitioning between land and water
         if(waterLevel != wt) {
+            // entering water
             if(waterLevel != WLT_UNDER && wt == WLT_UNDER) {
                 puppet.StartSound("sounds/shaders/water_splash_1.ksnd");
                 bubbleTime = 100;
                 bJumped = false;
             }
             
+            // exiting water
             if(waterLevel == WLT_UNDER && wt == WLT_BETWEEN) {
                 puppet.StartSound("sounds/shaders/generic_16_turok_small_water_gasp.ksnd");
                 bLerpToWaterSurface = true;
                 bJumped = false;
             }
             
+            // handle drifting when impacting into the water
             if(waterLevel <= WLT_OVER && wt > WLT_OVER && vel.y < 0) {
                 float speed = self.SwimMove().forwardSpeed.y;
                 
@@ -684,8 +704,10 @@ final class TurokPlayer : Component {
             }
         }
         
+        // keep track of water surface
         waterLevel = wt;
         
+        // directional movement
         if(bFly || puppet.Physics().bInWater) {
             kVec3 forward = angles.ToForwardAxis();
             kVec3 right = angles.ToRightAxis();
@@ -701,17 +723,19 @@ final class TurokPlayer : Component {
             vel.y += (accel.z * forward.y) + (accel.x * right.y);
             vel.z += (accel.z * forward.z) + (accel.x * right.z);
             
-             if(waterLevel > WLT_OVER && bJumped == false) {
+            // swim vertically when holding the jump button
+            if(waterLevel > WLT_OVER && bJumped == false) {
                 if(self.ActionDown("+jump")) {
                     groundMove.Accelerate(1, 1, deltaTime);
                 }
                 else {
                     groundMove.Accelerate(0, 1, deltaTime);
                 }
-                
+
                 vel.y += accel.y;
             }
         }
+        // xz-axis movement
         else {
             kAngle newAngle(angles.yaw, 0, 0);
             kVec3 forward = newAngle.ToForwardAxis();
@@ -723,6 +747,9 @@ final class TurokPlayer : Component {
         }
         
         if(bJumped == false) {
+            // restrict movement while swiming at the surface
+            // allow going underwater when looking below 45 degrees
+            // ignore if making a hard impact
             if(waterLevel == WLT_BETWEEN) {
                 if(angles.pitch < DegToRad(45) && vel.y > -150) {
                     vel.y = 0;
@@ -730,6 +757,7 @@ final class TurokPlayer : Component {
                 }
             }
             
+            // pull player to surface and lock in place
             if(bLerpToWaterSurface) {
                 float oy = puppet.GetOrigin().y;
                 float desiredHeight = puppet.Physics().waterHeight -
@@ -748,6 +776,7 @@ final class TurokPlayer : Component {
             }
         }
         
+        // update velocity
         puppet.Physics().SetVelocity(vel);
         BobView(puppet);
         
@@ -883,13 +912,13 @@ final class TurokPlayer : Component {
     
     void GiveLifeForce(int amount) {
         lifeForces += amount;
-        if(lifeForces >= MAX_LIFEFORCES) {
+        if(lifeForces >= TUROK_MAX_LIFEFORCES) {
             self.Puppet().StartSound("sounds/shaders/generic_234.ksnd");
-            if(++lives > MAX_LIVES) {
-                lives = MAX_LIVES;
+            if(++lives > TUROK_MAX_LIVES) {
+                lives = TUROK_MAX_LIVES;
             }
             
-            lifeForces -= MAX_LIFEFORCES;
+            lifeForces -= TUROK_MAX_LIFEFORCES;
             playerHud.livesNum.Update(lives);
         }
         
@@ -1056,12 +1085,22 @@ final class TurokPlayer : Component {
         
         self.Puppet().bHidden = true;
         self.Puppet().bCanPickup = true;
+        self.Puppet().SetScale(kVec3(0.15f, 0.15f, 0.15f));
         
         waterLevel = self.Puppet().Physics().waterLevel;
         
         self.Puppet().health = 100;
         playerHud.healthNum.Update(self.Puppet().health);
         playerHud.livesNum.Update(lives);
+        
+        // TODO
+        if(LocalWorld.MapID() == 42) {
+            kCamera @camera = LocalWorld.Camera();
+            ToggleCamera();
+            
+            camera.SetOrigin(kVec3(0, 56.0f, -64.0f));
+            camera.SetAngles(kAngle(0, 0, 0));
+        }
     }
     
     //

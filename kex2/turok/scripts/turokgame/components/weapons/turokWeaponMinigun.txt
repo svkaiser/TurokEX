@@ -77,7 +77,7 @@ final class TurokWeaponMiniGun : TurokWeapon {
         if((playTime - shotTime) >= 0.11f) {
             shotTime = playTime;
             
-            SpawnFX("fx/fx_037.kfx", -4.608f, -2.8f, 14.848f);
+            MuzzleFX("fx/fx_037.kfx", -4.608f, -2.8f, 14.848f);
             SpawnFX("fx/bulletshell.kfx", -10.24f, -12.8f, 13.82f);
             SpawnFX("fx/projectile_minibullet.kfx", -8.192f, -10.24f, 25.6f);
             owner.self.Puppet().StartSound("sounds/shaders/mini_gun_shot.ksnd");

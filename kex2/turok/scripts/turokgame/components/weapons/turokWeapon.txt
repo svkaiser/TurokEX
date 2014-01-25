@@ -104,7 +104,7 @@ class TurokWeapon : Component {
             aState.Blend(anim_weaponIdle, playSpeed, 8.0f, ANF_LOOP);
         }
         else {
-            kVec3 accel = localClient.GetAcceleration();
+            kVec3 accel = owner.self.GetAcceleration();
             float d = Math::Sqrt(accel.x*accel.x+accel.z*accel.z);
             
             if(d >= 1.35f) {
@@ -148,7 +148,7 @@ class TurokWeapon : Component {
         self.bHidden = false;
         bActive = true;
         state = PWPN_STATE_SWAPIN;
-        localClient.Puppet().StartSound(readySound);
+        owner.self.Puppet().StartSound(readySound);
     }
     
     //
@@ -156,12 +156,36 @@ class TurokWeapon : Component {
     //
     
     void SpawnFX(const kStr str, const float x, const float y, const float z) {
-        kActor @src = localClient.Puppet();
+        kActor @src = owner.self.Puppet();
         kQuat rot = src.GetRotation();
         kVec3 org = src.GetOrigin();
         
         org.y += 51.2f;
         LocalWorld.SpawnFX(str, src, kVec3(0, 0, 0), org + (kVec3(x, y, z) | rot), rot);
+    }
+    
+    //
+    // TurokWeapon::MuzzleFX
+    //
+    
+    void MuzzleFX(const kStr str, const float x, const float y, const float z) {
+        kAngle angles = self.GetAngles();
+        float xoffs = 0;
+        float yoffs = 0;
+        
+        if(angles.yaw >= 0) {
+            xoffs = M_PI - angles.yaw;
+        }
+        else if(angles.yaw < 0) {
+            xoffs = -(angles.yaw + M_PI);
+        }
+        
+        yoffs = angles.roll + angles.pitch;
+        
+        xoffs *= 10;
+        yoffs *= 10;
+        
+        SpawnFX(str, x-xoffs, y-yoffs, z);
     }
     
     //
@@ -180,13 +204,13 @@ class TurokWeapon : Component {
             return;
         }
         
-        kPhysics @physics   = localClient.Puppet().Physics();
+        kPhysics @physics   = owner.self.Puppet().Physics();
         kVec3 velocity      = physics.GetVelocity();
         kVec3 translation   = self.GetOrigin();
         float offset        = 0;
         kAngle angles       = self.GetAngles();
         
-        angles.yaw -= (localClient.cmdMouseX * 0.00175f);
+        angles.yaw -= (owner.self.cmdMouseX * 0.00175f);
         
         kAngle tmpAngles = angles;
         tmpAngles.Clamp180InvertSum(kAngle(M_PI, 0, 0));
@@ -206,7 +230,7 @@ class TurokWeapon : Component {
         }
         
         angles.pitch = (angles.pitch -
-            (localClient.cmdMouseY * 0.00175f)) * 0.9f;
+            (owner.self.cmdMouseY * 0.00175f)) * 0.9f;
             
         if(angles.pitch >  WEAPONTURN_MAX) angles.pitch =  WEAPONTURN_MAX;
         if(angles.pitch < -WEAPONTURN_MAX) angles.pitch = -WEAPONTURN_MAX;
@@ -227,7 +251,7 @@ class TurokWeapon : Component {
         
         if(Com.GetCvarBool("g_weaponbobbing") == true) {
             if(physics.OnGround()) {
-                float d = localClient.GetAcceleration().z * localClient.deltaTime * 0.06f;
+                float d = owner.self.GetAcceleration().z * owner.self.deltaTime * 0.06f;
                 
                 if(d < 0) {
                     d = -d;
@@ -256,10 +280,10 @@ class TurokWeapon : Component {
         self.SetAngles(angles);
         
         if(bActive == true) {
-            TurokPlayer @player = cast<TurokPlayer@>(localClient.obj);
+            TurokPlayer @player = cast<TurokPlayer@>(owner.self.obj);
             switch(state) {
             case PWPN_STATE_READY:
-                if(localClient.ActionDown("+attack")) {
+                if(owner.self.ActionDown("+attack")) {
                     if(OnAttack()) {
                         state = PWPN_STATE_FIRING;
                         return;

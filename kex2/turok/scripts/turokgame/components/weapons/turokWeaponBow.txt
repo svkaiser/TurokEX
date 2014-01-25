@@ -32,7 +32,7 @@ final class TurokWeaponBow : TurokWeapon {
             return true;
         }
         
-        localClient.Puppet().StartSound("sounds/shaders/bow_stretch.ksnd");
+        owner.self.Puppet().StartSound("sounds/shaders/bow_stretch.ksnd");
         self.AnimState().Blend(anim_weaponFire, playSpeed, 18.0f, ANF_LOOP);
         
         bAiming = true;
@@ -45,19 +45,32 @@ final class TurokWeaponBow : TurokWeapon {
     
     void CheckAttack(void) {
         if(bAiming) {
-            if(localClient.ActionHeldTime("+attack") > 0) {
+            if(owner.self.ActionHeldTime("+attack") > 0) {
                 return;
             }
             
-            float time = self.AnimState().PlayTime();
+            float time  = self.AnimState().PlayTime();
+            kActor @src = owner.self.Puppet();
+            kQuat rot   = src.GetRotation();
+            kVec3 org   = src.GetOrigin();
+        
+            org.y += 51.2f;
             
             if(time > 0.4f) {
                 time = 0.4f;
             }
             
             owner.arrows.Consume(1);
-            localClient.Puppet().StartSound("sounds/shaders/bow_twang.ksnd");
+            owner.self.Puppet().StartSound("sounds/shaders/bow_twang.ksnd");
             bAiming = false;
+            
+            LocalWorld.SpawnFX(
+                "fx/projectile_arrow.kfx",
+                src,
+                kVec3(0, 0, time * 512 * 15) | rot,
+                org + (kVec3(0.2048f, -6.144f, 25.6f) | rot),
+                rot
+            );
             
             self.AnimState().Blend(anim_weaponFireCharged, playSpeed, 4.0f, 0);
         }
