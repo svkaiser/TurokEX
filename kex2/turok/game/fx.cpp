@@ -469,8 +469,9 @@ void kexFx::Event(fxEvent_t *fxEvent, kexWorldObject *target) {
         nfx = this;
     }
 
-    //if(fxEvent->snd != NULL && nfx->refcount <= 0)
-        //soundSystem.PlaySound(fxEvent->snd, (gActor_t*)nfx);
+    if(fxEvent->snd != NULL) {
+        soundSystem.StartSound(fxEvent->snd, nfx);
+    }
 
     if(fxEvent->action.function != NULL && owner) {
         //Actor_FXEvent(fx->source, actor, fx->origin,

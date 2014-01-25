@@ -112,7 +112,6 @@ public:
             asOFFSET(type, p))
 
     OBJPROPERTY("ref @obj", scriptComponent.Handle());
-    OBJPROPERTY("int health", health);
     OBJPROPERTY("kQuat lerpRotation", lerpRotation);
     OBJPROPERTY("kKeyMap args", args);
     OBJPROPERTY("bool bCanPickup", bCanPickup);
@@ -126,7 +125,6 @@ protected:
 
     kexClipMesh                 clipMesh;
     kexStr                      name;
-    int                         health;
     kexModel_t                  *model;
     kexQuat                     lerpRotation;
     kexVec3                     *nodeOffsets_t;

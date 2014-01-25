@@ -39,6 +39,7 @@ kexWorldObject::kexWorldObject(void) {
     this->bCollision    = false;
     this->bTouch        = false;
     this->bCanPickup    = false;
+    this->health        = 100;
     this->radius        = 10.24f;
     this->baseHeight    = 10.24f;
     this->viewHeight    = 8.192f;

@@ -98,6 +98,7 @@ public:
         OBJPROPERTY("bool bCollision", bCollision);
         OBJPROPERTY("bool bTouch", bTouch);
         OBJPROPERTY("bool bOrientOnSlope", bOrientOnSlope);
+        OBJPROPERTY("int health", health);
         OBJPROPERTY("float radius", radius);
         OBJPROPERTY("float height", height);
         OBJPROPERTY("float baseHeight", baseHeight);
@@ -111,6 +112,7 @@ public:
 protected:
     kexBBox                     bbox;           // bounding box
     kexBBox                     baseBBox;       // unmodified bounding box
+    int                         health;
     float                       radius;
     float                       height;
     float                       baseHeight;
