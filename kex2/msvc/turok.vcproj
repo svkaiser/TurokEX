@@ -468,10 +468,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\turok\game\player.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\turok\game\world.cpp"
 					>
 				</File>
@@ -496,6 +492,22 @@
 					</File>
 					<File
 						RelativePath="..\turok\game\scriptAPI\stringObject.cpp"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="player"
+					>
+					<File
+						RelativePath="..\turok\game\player\player.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\game\player\player_client.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\game\player\player_net.cpp"
 						>
 					</File>
 				</Filter>
@@ -753,10 +765,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\turok\game\player.h"
-					>
-				</File>
-				<File
 					RelativePath="..\turok\game\world.h"
 					>
 				</File>
@@ -773,6 +781,22 @@
 					</File>
 					<File
 						RelativePath="..\turok\game\scriptAPI\scriptSystem.h"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="player"
+					>
+					<File
+						RelativePath="..\turok\game\player\player.h"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\game\player\player_client.h"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\game\player\player_net.h"
 						>
 					</File>
 				</Filter>

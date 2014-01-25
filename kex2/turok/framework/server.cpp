@@ -213,7 +213,7 @@ void kexServer::ProcessPackets(const ENetPacket *packet) {
         break;
 
     case cp_cmd:
-        P_RunCommand(netEvent, (ENetPacket*)packet);
+        //P_RunCommand(netEvent, (ENetPacket*)packet);
         break;
 
     case cp_msgserver:

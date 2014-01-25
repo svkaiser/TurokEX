@@ -25,7 +25,7 @@
 
 #include "enet/enet.h"
 #include "system.h"
-#include "player.h"
+#include "player/player.h"
 #include "network.h"
 
 #define MAXEVENTS 64

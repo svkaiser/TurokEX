@@ -23,10 +23,9 @@
 #ifndef _PLAYER_H_
 #define _PLAYER_H_
 
+#include "enet/enet.h"
 #include "common.h"
 #include "actor.h"
-
-void P_RunCommand(ENetEvent *sev, ENetPacket *packet);
 
 typedef struct {
     int                     ingoing;
@@ -143,53 +142,7 @@ protected:
     bool                    bNoClip;
 END_CLASS();
 
-//-----------------------------------------------------------------------------
-//
-// kexLocalPlayer
-//
-//-----------------------------------------------------------------------------
-
-BEGIN_EXTENDED_CLASS(kexLocalPlayer, kexPlayer);
-public:
-                            kexLocalPlayer(void);
-                            ~kexLocalPlayer(void);
-
-    virtual void            LocalTick(void);
-
-    bool                    ProcessInput(event_t *ev);
-    void                    BuildCommands(void);
-    bool                    ActionDown(const kexStr &str);
-    int                     ActionHeldTime(const kexStr &str);
-
-    kexVec3                 &MoveDiff(void) { return moveDiff; }
-    kexActor                *ToWorldActor(void) { return static_cast<kexActor*>(this); }
-
-    static void             InitObject(void);
-
-private:
-    int                     latency[NETBACKUPS];
-    kexVec3                 moveDiff;
-    kexVec3                 oldMoves[NETBACKUPS];
-    ticcmd_t                oldCmds[NETBACKUPS];
-END_CLASS();
-
-//-----------------------------------------------------------------------------
-//
-// kexNetPlayer
-//
-//-----------------------------------------------------------------------------
-
-BEGIN_EXTENDED_CLASS(kexNetPlayer, kexPlayer);
-public:
-                            kexNetPlayer(void);
-                            ~kexNetPlayer(void);
-
-    virtual void            Tick(void);
-    int                     GetState(void) const { return state; }
-    void                    SetState(const int s) { state = s; }
-
-private:
-    int                     state;
-END_CLASS();
+#include "player/player_client.h"
+#include "player/player_net.h"
 
 #endif
