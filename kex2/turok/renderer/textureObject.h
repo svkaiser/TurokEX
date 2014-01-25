@@ -32,7 +32,8 @@ typedef struct {
 
 typedef enum {
     TC_CLAMP    = 0,
-    TC_REPEAT
+    TC_REPEAT,
+    TC_MIRRORED
 } texClampMode_t;
 
 typedef enum {
@@ -52,6 +53,7 @@ public:
 
     void                    Upload(byte **data, texClampMode_t clamp, texFilterMode_t filter);
     void                    SetParameters(void);
+    void                    ChangeParameters(const texClampMode_t clamp, const texFilterMode_t filter);
     byte                    *LoadFromFile(const char *file);
     byte                    *LoadFromScreenBuffer(void);
     byte                    *PadImage(byte **data);

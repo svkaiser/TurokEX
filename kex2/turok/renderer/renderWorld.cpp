@@ -696,7 +696,7 @@ int kexRenderWorld::SortSprites(const void *a, const void *b) {
 
 void kexRenderWorld::DrawFX(void) {
     static const word   spriteIndices[6] = { 0, 1, 2, 2, 1, 3 };
-    static const float  spriteTexCoords[8] = { 0, 1, 1, 1, 0, 0, 1, 0 };
+    static float        spriteTexCoords[8] = { 0, 1, 1, 1, 0, 0, 1, 0 };
     static float        spriteVertices[4][3];
     static byte         spriteColors[4][4];
     bool                bShowTexture;
@@ -760,6 +760,10 @@ void kexRenderWorld::DrawFX(void) {
 
     if(!bWireframe) {
         dglEnableClientState(GL_COLOR_ARRAY);
+    }
+
+    if(!bWireframe) {
+        dglEnable(GL_POLYGON_OFFSET_FILL);
     }
 
     // draw sorted fx list
@@ -841,10 +845,28 @@ void kexRenderWorld::DrawFX(void) {
         else {
             if(bShowTexture) {
                 texture->Bind();
+                if(fxinfo->bTextureWrapMirror) {
+                    texture->ChangeParameters(TC_MIRRORED, TF_LINEAR);
+                    spriteTexCoords[1] = 2;
+                    spriteTexCoords[2] = 2;
+                    spriteTexCoords[3] = 2;
+                    spriteTexCoords[6] = 2;
+                }
+                else {
+                    texture->ChangeParameters(TC_CLAMP, TF_LINEAR);
+                    spriteTexCoords[1] = 1;
+                    spriteTexCoords[2] = 1;
+                    spriteTexCoords[3] = 1;
+                    spriteTexCoords[6] = 1;
+                }
             }
             else {
                 renderSystem.whiteTexture.Bind();
             }
+        }
+
+        if(!bWireframe) {
+            dglPolygonOffset(-i*1.5f, -i*1.5f);
         }
 
         dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, spriteIndices);
@@ -853,6 +875,11 @@ void kexRenderWorld::DrawFX(void) {
         if(fxinfo->lifetime.value == 1 && fx->bClientOnly) {
             fx->Remove();
         }
+    }
+
+    if(!bWireframe) {
+        dglPolygonOffset(0, 0);
+        dglDisable(GL_POLYGON_OFFSET_FILL);
     }
 
     renderSystem.SetState(GLSTATE_DEPTHTEST, true);

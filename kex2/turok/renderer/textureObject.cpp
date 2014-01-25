@@ -168,6 +168,9 @@ void kexTexture::SetParameters(void) {
     case TC_REPEAT:
         clamp = GL_REPEAT;
         break;
+    case TC_MIRRORED:
+        clamp = GL_MIRRORED_REPEAT;
+        break;
     default:
         return;
     }
@@ -196,6 +199,21 @@ void kexTexture::SetParameters(void) {
             dglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 0);
         }
     }
+}
+
+//
+// kexTexture::ChangeParameters
+//
+
+void kexTexture::ChangeParameters(const texClampMode_t clamp, const texFilterMode_t filter) {
+    if(clampMode == clamp && filterMode == filter) {
+        return;
+    }
+
+    clampMode = clamp;
+    filterMode = filter;
+
+    SetParameters();
 }
 
 //
