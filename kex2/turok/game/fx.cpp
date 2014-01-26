@@ -650,9 +650,16 @@ void kexFx::Spawn(void) {
     if(fxInfo->offset.rand[1] != 0) offset.y += FX_RAND_FLOAT(fxInfo->offset.rand[1]);
     if(fxInfo->offset.rand[2] != 0) offset.z += FX_RAND_FLOAT(fxInfo->offset.rand[2]);
 
-    // TODO - HANDLE CLIPPING IF OUTSIDE OF WORLD
     if(offset.Unit() != 0) {
-        origin += (offset | matrix);
+        kexVec3 newDest = origin + (offset | matrix);
+
+        // clip position if outside of collision map. non-moving particles are ignored
+        if(localWorld.CollisionMap().IsLoaded() && owner && fxInfo->translation_randomscale != 0) {
+            physics.sector = static_cast<kexWorldObject*>(owner)->Physics()->sector;
+            TryMove(owner->GetOrigin(), newDest, &physics.sector);
+        }
+
+        origin = newDest;
     }
 
     // TODO

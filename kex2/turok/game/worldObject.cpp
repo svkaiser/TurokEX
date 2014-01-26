@@ -185,6 +185,35 @@ bool kexWorldObject::Trace(traceInfo_t *trace) {
 }
 
 //
+// kexWorldObject::TryMove
+//
+
+bool kexWorldObject::TryMove(const kexVec3 &position, kexVec3 &dest, kexSector **sector) {
+    traceInfo_t trace;
+
+    trace.start     = position;
+    trace.end       = dest;
+    trace.dir       = (trace.end - trace.start).Normalize();
+    trace.fraction  = 1.0f;
+    trace.hitActor  = NULL;
+    trace.hitTri    = NULL;
+    trace.hitMesh   = NULL;
+    trace.hitVector = trace.start;
+    trace.owner     = this;
+    trace.sector    = sector;
+    trace.bUseBBox  = false;
+
+    localWorld.Trace(&trace);
+    dest = trace.hitVector;
+
+    if(sector) {
+        return (*sector)->InRange(dest);
+    }
+
+    return (trace.fraction != 1);
+}
+
+//
 // kexWorldObject::AlignToSurface
 //
 

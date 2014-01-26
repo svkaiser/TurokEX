@@ -48,6 +48,7 @@ public:
 
     void                        SetBoundingBox(const kexVec3 &min, const kexVec3 &max);
     bool                        Trace(traceInfo_t *trace);
+    bool                        TryMove(const kexVec3 &position, kexVec3 &dest, kexSector **sector = NULL);
     bool                        AlignToSurface(void);
     void                        LinkArea(void);
     void                        UnlinkArea(void);
