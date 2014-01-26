@@ -67,6 +67,7 @@ public:
     void                    ClimbOnSurface(kexVec3 &start, const kexVec3 &end, kexTri *tri);
     float                   GetWaterDepth(void);
     void                    CheckWater(float height);
+    kexVec3                 GroundNormal(void);
 
     virtual void            Think(const float timeDelta);
 

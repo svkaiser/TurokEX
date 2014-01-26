@@ -184,6 +184,18 @@ bool kexPhysics::OnGround(void) {
 }
 
 //
+// kexPhysics::GroundNormal
+//
+
+kexVec3 kexPhysics::GroundNormal(void) {
+    if(groundGeom == NULL) {
+        return -localWorld.GetGravity();
+    }
+
+    return groundGeom->plane.Normal();
+}
+
+//
 // kexPhysics::ImpactVelocity
 //
 
@@ -730,6 +742,7 @@ void kexPhysics::InitObject(void) {
     OBJMETHOD("bool OnSteepSlope(void)", OnSteepSlope, (void), bool);
     OBJMETHOD("float GroundDistance(void)", GroundDistance, (void), float);
     OBJMETHOD("float GetWaterDepth(void)", GetWaterDepth, (void), float);
+    OBJMETHOD("kVec3 GroundNormal(void)", GroundNormal, (void), kexVec3);
 
 #define OBJPROPERTY(str, p)                         \
     scriptManager.Engine()->RegisterObjectProperty( \
