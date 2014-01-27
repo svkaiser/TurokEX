@@ -23,8 +23,8 @@ const float ANGLE_MAXPITCH              = DegToRad(90.0f);
 
 const float VELOCITY_JUMP               = 632;
 
-const float FALL_STOPSPEED              = -7.68f;
-const float FALL_THUMPFACTOR            = -12.8f;
+const float FALL_STOPSPEED              = -460.8f;
+const float FALL_THUMPFACTOR            = -768;
 
 const float VIEWBOB_EPISILON            = 0.001f;
 const float VIEWBOB_MAXSWAY             = DegToRad(22.5f);
@@ -668,11 +668,11 @@ final class TurokPlayer : Component {
         kVec3 vel = puppet.Physics().GetVelocity();
         float landImpact = (fallAmount - vel.y) * deltaTime;
         
-        if(landImpact <= FALL_STOPSPEED && puppet.Physics().OnGround()) {
+        if(landImpact <= (FALL_STOPSPEED * deltaTime) && puppet.Physics().OnGround()) {
             self.GetAcceleration().Clear();
             camOffset.y = ((puppet.height + puppet.viewHeight) + 20.48f) * 0.5f;
             
-            if(landImpact <= FALL_THUMPFACTOR) {
+            if(landImpact <= (FALL_THUMPFACTOR * deltaTime)) {
                 puppet.StartSound("sounds/shaders/generic_22_turok_land.ksnd");
             }
         }
@@ -811,7 +811,7 @@ final class TurokPlayer : Component {
             
             if(bJumped == false) {
                 if(self.ActionDown("+jump") && self.ActionHeldTime("+jump") == 0) {
-                    if(bOnGround || (vel.y < 0 && vel.y > -VELOCITY_JUMP)) {
+                    if(bOnGround || (vel.y <= 0 && vel.y > -VELOCITY_JUMP)) {
                         vel.y = VELOCITY_JUMP;
                         bJumped = true;
                         puppet.StartSound("sounds/shaders/generic_21_turok_jump.ksnd");
@@ -1054,10 +1054,10 @@ final class TurokPlayer : Component {
                     kVec3 offset = kVec3(0, 0, 0);
                     kQuat rot = puppet.GetRotation();
                     
-                    LocalWorld.SpawnFX("fx/fx_121.kfx", puppet, offset, spot, rot);
-                    LocalWorld.SpawnFX("fx/fx_121.kfx", puppet, offset, spot, rot);
-                    LocalWorld.SpawnFX("fx/fx_121.kfx", puppet, offset, spot, rot);
-                    LocalWorld.SpawnFX("fx/fx_121.kfx", puppet, offset, spot, rot);
+                    LocalWorld.SpawnFX("fx/impact_bubbles.kfx", puppet, offset, spot, rot);
+                    LocalWorld.SpawnFX("fx/impact_bubbles.kfx", puppet, offset, spot, rot);
+                    LocalWorld.SpawnFX("fx/impact_bubbles.kfx", puppet, offset, spot, rot);
+                    LocalWorld.SpawnFX("fx/impact_bubbles.kfx", puppet, offset, spot, rot);
                 }
                 else {
                     bubbleTime = 0;
