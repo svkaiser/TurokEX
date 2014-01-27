@@ -428,7 +428,8 @@ typedef struct
     short   args3;
     short   args4;
     short   args5;
-    short   args6;
+    byte    floorImpactID;
+    byte    wallImpactID;
     byte    u20;
     byte    ambience;
     byte    u22;
@@ -1142,6 +1143,9 @@ static void ProcessAreas(byte *buffer, byte *data)
         Com_WriteBuffer16(buffer, 0);
 
         *total = 0;
+
+        WRITEAREAKEY("fSurfaceID", va("%i", area->floorImpactID));
+        WRITEAREAKEY("wSurfaceID", va("%i", area->wallImpactID));
 
         if(area->flags & AAF_TELEPORT)
         {
@@ -1891,6 +1895,7 @@ static void ProcessActors(byte *data)
             Com_Strcat("actor \"kexMover\"\n");
             Com_Strcat("{\n");
             WriteGenericActorProps(actor, attr);
+            Com_Strcat("delayTime %i\n", 15 * attr->health);
             Com_Strcat("moveSpeed %i\n", attr->u22);
             Com_Strcat("moveAmount %f\n", (5 * attr->variant2) * -10.24f);
             if(attr->target >= 0)

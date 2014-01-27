@@ -569,10 +569,33 @@ void FX_StoreParticleEffects(void)
                     break;
                 }
 
-                FX_WriteEvents(fxevent, "onHitSurface",
+                Com_Strcat("        onImpact\n");
+                Com_Strcat("        {\n");
+                FX_WriteEvents(fxevent, "[0]",
                     fxevent->b_fx.hitplane,
                     fxevent->b_sound.hitplane,
+                    fxevent->b_action.hitplane, 0);
+                FX_WriteEvents(fxevent, "[2]",
+                    fxevent->b_fx.onhitmetal,
+                    fxevent->b_sound.onhitmetal,
+                    fxevent->b_action.onhitmetal, 2);
+                FX_WriteEvents(fxevent, "[3]",
+                    fxevent->b_fx.onhitstone,
+                    fxevent->b_sound.onhitstone,
+                    fxevent->b_action.onhitstone, 3);
+                FX_WriteEvents(fxevent, "[4]",
+                    fxevent->b_fx.onhitflesh,
+                    fxevent->b_sound.onhitflesh,
                     fxevent->b_action.onhitflesh, 4);
+                FX_WriteEvents(fxevent, "[5]",
+                    fxevent->b_fx.onhitmonster,
+                    fxevent->b_sound.onhitmonster,
+                    fxevent->b_action.onhitmonster, 5);
+                FX_WriteEvents(fxevent, "[9]",
+                    fxevent->b_fx.onhitforcefield,
+                    fxevent->b_sound.onhitforcefield,
+                    fxevent->b_action.onhitforcefield, 9);
+                Com_Strcat("        }\n");
 
                 FX_WriteEvents(fxevent, "onTick",
                     fxevent->b_fx.active,

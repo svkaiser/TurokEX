@@ -1162,7 +1162,7 @@ char *GetActionName(int id, float arg0)
         sprintf(actionName, "weakKnockBack");
         break;
     case 122:
-        sprintf(actionName, "arrowDamage");
+        sprintf(actionName, "impactDamage");
         break;
     case 123:
         sprintf(actionName, "customDamage");
