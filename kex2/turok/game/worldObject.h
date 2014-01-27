@@ -62,6 +62,8 @@ public:
     void                        SetViewHeight(float f) { viewHeight = f; }
     kexPhysics                  *Physics(void) { return &physics; }
     kexBBox                     &Bounds(void) { return bbox; }
+    const impactType_t          GetImpactType(void) const { return impactType; }
+    void                        SetImpactType(const impactType_t iType) { impactType = iType; }
 
     kexLinklist<kexWorldObject> areaLink;
     areaNode_t                  *areaNode;
@@ -120,6 +122,7 @@ protected:
     float                       centerHeight;
     float                       viewHeight;
     kexPhysics                  physics;        // physics object
+    impactType_t                impactType;
 END_CLASS();
 
 #endif

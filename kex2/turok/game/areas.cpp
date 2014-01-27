@@ -142,6 +142,9 @@ void kexArea::Setup(void) {
     keyMap.GetInt("targetID", targetID);
     keyMap.GetFloat("globalfog_zfar", globalFogZFar);
     keyMap.GetVector("globalfog_rgb", globalFogRGB);
+    keyMap.GetInt("fSurfaceID", fSurfaceID);
+    keyMap.GetInt("cSurfaceID", cSurfaceID);
+    keyMap.GetInt("wSurfaceID", wSurfaceID);
     globalFogRGB /= 255.0f;
 
     keyMap.GetBool("bDamage", flag);

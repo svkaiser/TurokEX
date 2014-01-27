@@ -116,7 +116,7 @@ typedef struct {
     int                         saturation_randomscale;
     int                         fadein_time;
     int                         fadeout_time;
-    fxEvent_t                   onImpact;
+    fxEvent_t                   onImpact[IT_NUMIMPACTTYPES];
     fxEvent_t                   onTick;
     fxEvent_t                   onExpire;
     fxEvent_t                   onWaterImpact;

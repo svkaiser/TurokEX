@@ -90,7 +90,9 @@ void kexFxPhysics::Think(const float timeDelta) {
     fxinfo_t *fxinfo;
     traceInfo_t trace;
     kexVec3 start;
+    kexArea *area;
     int oldWL;
+    short iType;
 
     if(owner == NULL) {
         return;
@@ -153,6 +155,7 @@ void kexFxPhysics::Think(const float timeDelta) {
         }
         else {
             owner->SetOrigin(trace.hitVector - (trace.dir * 0.125f));
+            area = sector->area;
 
             if(trace.hitActor != NULL) {
                 switch(fxinfo->ontouch) {
@@ -164,13 +167,20 @@ void kexFxPhysics::Think(const float timeDelta) {
                         break;
                     case VFX_DESTROY:
                         owner->GetOrigin() += (trace.hitNormal * 1.024f);
-                        fx->Event(&fxinfo->onImpact, trace.hitActor);
+                        iType = trace.hitActor->GetImpactType();
+
+                        if(iType != -1) {
+                            fx->Event(&fxinfo->onImpact[iType], trace.hitActor);
+                        }
+
                         fx->Remove();
                         fx->SetParent(NULL);
                         break;
                     default:
                         break;
                 }
+
+                return;
             }
 
             if(trace.hitTri != NULL) {
@@ -187,7 +197,18 @@ void kexFxPhysics::Think(const float timeDelta) {
                     break;
                 case VFX_DESTROY:
                     owner->GetOrigin() += (trace.hitNormal * 1.024f);
-                    fx->Event(&fxinfo->onImpact, NULL);
+
+                    if(trace.hitTri == NULL) {
+                        iType = area->WallSurfaceType();
+                    }
+                    else {
+                        iType = area->FloorSurfaceType();
+                    }
+
+                    if(iType != -1) {
+                        fx->Event(&fxinfo->onImpact[iType], NULL);
+                    }
+
                     fx->Remove();
                     fx->SetParent(NULL);
                     break;
@@ -286,7 +307,7 @@ void kexFx::LocalTick(void) {
 
     attachment.Transform();
 
-    bUnderWater = Physics()->bInWater;
+    bUnderWater = physics.bInWater;
 
     //
     // handle 'on tick' events
@@ -735,7 +756,7 @@ enum {
     scvfx_fadein_time,
     scvfx_fadeout_time,
     scvfx_animtype,
-    scvfx_onHitSurface,
+    scvfx_onImpact,
     scvfx_onExpire,
     scvfx_onTick,
     scvfx_onWaterHit,
@@ -796,7 +817,7 @@ static const sctokens_t vfxtokens[scvfx_end+1] = {
     { scvfx_fadein_time,                    "fadein_time"                       },
     { scvfx_fadeout_time,                   "fadeout_time"                      },
     { scvfx_animtype,                       "animtype"                          },
-    { scvfx_onHitSurface,                   "onHitSurface"                      },
+    { scvfx_onImpact,                       "onImpact"                          },
     { scvfx_onExpire,                       "onExpire"                          },
     { scvfx_onTick,                         "onTick"                            },
     { scvfx_bNoDirection,                   "bNoDirection"                      },
@@ -890,31 +911,49 @@ void kexFxManager::UpdateWorld(kexWorld *world) {
 //
 
 void kexFxManager::ParseEvent(fxEvent_t *fxEvent, kexLexer *lexer) {
+    fxEvent_t *currentEvent = fxEvent;
+    bool bImpactBlock = false;
+
     lexer->ExpectNextToken(TK_LBRACK);
     while(1) {
         lexer->Find();
         if(!strcmp(lexer->Token(), "fx")) {
             lexer->ExpectNextToken(TK_EQUAL);
             lexer->GetString();
-            fxEvent->fx = Mem_Strdup(lexer->StringToken(), hb_static);
+            currentEvent->fx = Mem_Strdup(lexer->StringToken(), hb_static);
         }
         else if(!strcmp(lexer->Token(), "sound")) {
             lexer->ExpectNextToken(TK_EQUAL);
             lexer->GetString();
-            fxEvent->snd = Mem_Strdup(lexer->StringToken(), hb_static);
+            currentEvent->snd = Mem_Strdup(lexer->StringToken(), hb_static);
         }
         else if(!strcmp(lexer->Token(), "action")) {
             lexer->ExpectNextToken(TK_EQUAL);
             lexer->ExpectNextToken(TK_LBRACK);
 
             lexer->GetString();
-            fxEvent->action.function = Mem_Strdup(lexer->StringToken(), hb_static);
-            fxEvent->action.args[0] = (float)lexer->GetFloat();
+            currentEvent->action.function = Mem_Strdup(lexer->StringToken(), hb_static);
+            currentEvent->action.args[0] = (float)lexer->GetFloat();
 
             lexer->ExpectNextToken(TK_RBRACK);
         }
-        else if(lexer->TokenType() == TK_RBRACK)
-            break;
+        else if(lexer->TokenType() == TK_LSQBRACK) {
+            int iType = lexer->GetNumber();
+
+            currentEvent = &fxEvent[iType];
+            bImpactBlock = true;
+
+            lexer->ExpectNextToken(TK_RSQBRACK);
+            lexer->ExpectNextToken(TK_LBRACK);
+        }
+        else if(lexer->TokenType() == TK_RBRACK) {
+            if(bImpactBlock == true) {
+                bImpactBlock = false;
+            }
+            else {
+                break;
+            }
+        }
         else {
             parser.Error("kexFxManager::ParseEvent: Unknown token: %s\n",
                 lexer->Token());
@@ -1139,8 +1178,8 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                     else
                         info->animtype = VFX_ANIMDEFAULT;
                     break;
-                case scvfx_onHitSurface:
-                    ParseEvent(&info->onImpact, lexer);
+                case scvfx_onImpact:
+                    ParseEvent(info->onImpact, lexer);
                     break;
                 case scvfx_onExpire:
                     ParseEvent(&info->onExpire, lexer);

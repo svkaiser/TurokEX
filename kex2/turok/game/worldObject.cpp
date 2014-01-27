@@ -45,6 +45,7 @@ kexWorldObject::kexWorldObject(void) {
     this->viewHeight    = 8.192f;
     this->centerHeight  = 5.12f;
     this->areaNode      = NULL;
+    this->impactType    = IT_DEFAULT;
     
     this->physics.SetOwner(this);
     this->areaLink.SetData(this);

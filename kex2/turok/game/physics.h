@@ -34,6 +34,20 @@
 class kexWorldObject;
 class kexClipMesh;
 
+typedef enum {
+    IT_DEFAULT = 0,
+    IT_WOOD,
+    IT_METAL,
+    IT_STONE,
+    IT_FLESH_HUMAN,
+    IT_FLESH_CREATURE,
+    IT_FLESH_UNDEAD,
+    IT_RESERVED1,
+    IT_RESERVED2,
+    IT_FORCEFIELD,
+    IT_NUMIMPACTTYPES
+} impactType_t;
+
 typedef struct {
     kexVec3                 start;
     kexVec3                 end;

@@ -95,9 +95,9 @@ private:
     float                           waterplane;
     int                             targetID;
     char                            *triggerSound;
-    word                            fSurfaceID;
-    word                            cSurfaceID;
-    word                            wSurfaceID;
+    int                             fSurfaceID;
+    int                             cSurfaceID;
+    int                             wSurfaceID;
     kexVec3                         globalFogRGB;
     float                           globalFogZFar;
     unsigned int                    worldID;
