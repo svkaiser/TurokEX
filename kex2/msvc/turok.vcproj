@@ -312,6 +312,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\framework\defs.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\fileSystem.cpp"
 					>
 				</File>
@@ -626,6 +630,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\cvar.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\defs.h"
 					>
 				</File>
 				<File
