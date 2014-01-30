@@ -25,6 +25,7 @@
 
 #include "actor.h"
 #include "textureObject.h"
+#include "defs.h"
 
 typedef struct {
     float value[3];
@@ -52,7 +53,8 @@ typedef enum {
     VFX_DRAWDEFAULT     = 0,
     VFX_DRAWFLAT,
     VFX_DRAWDECAL,
-    VFX_DRAWBILLBOARD
+    VFX_DRAWBILLBOARD,
+    VFX_DRAWSURFACE
 } fxDrawType_t;
 
 typedef enum {
@@ -65,7 +67,7 @@ typedef enum {
 typedef struct {
     char                        *fx;
     char                        *snd;
-    action_t                    action;
+    defEntry_t                  *damageDef;
 } fxEvent_t;
 
 typedef struct {

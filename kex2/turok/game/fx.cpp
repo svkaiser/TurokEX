@@ -494,11 +494,11 @@ void kexFx::Event(fxEvent_t *fxEvent, kexWorldObject *target) {
         soundSystem.StartSound(fxEvent->snd, nfx);
     }
 
-    if(fxEvent->action.function != NULL && owner) {
+    /*if(fxEvent->action.function != NULL && owner) {
         //Actor_FXEvent(fx->source, actor, fx->origin,
             //fx->translation, Map_PlaneToIndex(fx->plane),
             //&fxEvent->action);
-    }
+    }*/
 }
 
 //
@@ -927,15 +927,10 @@ void kexFxManager::ParseEvent(fxEvent_t *fxEvent, kexLexer *lexer) {
             lexer->GetString();
             currentEvent->snd = Mem_Strdup(lexer->StringToken(), hb_static);
         }
-        else if(!strcmp(lexer->Token(), "action")) {
+        else if(!strcmp(lexer->Token(), "damageDef")) {
             lexer->ExpectNextToken(TK_EQUAL);
-            lexer->ExpectNextToken(TK_LBRACK);
-
             lexer->GetString();
-            currentEvent->action.function = Mem_Strdup(lexer->StringToken(), hb_static);
-            currentEvent->action.args[0] = (float)lexer->GetFloat();
-
-            lexer->ExpectNextToken(TK_RBRACK);
+            currentEvent->damageDef = defManager.FindDefEntry(lexer->StringToken());
         }
         else if(lexer->TokenType() == TK_LSQBRACK) {
             int iType = lexer->GetNumber();
@@ -1135,48 +1130,66 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                 case scvfx_ontouch:
                     lexer->ExpectNextToken(TK_EQUAL);
                     lexer->Find();
-                    if(!strcmp(lexer->Token(), "destroy"))
+                    if(!strcmp(lexer->Token(), "destroy")) {
                         info->ontouch = VFX_DESTROY;
-                    else if(!strcmp(lexer->Token(), "reflect"))
+                    }
+                    else if(!strcmp(lexer->Token(), "reflect")) {
                         info->ontouch = VFX_REFLECT;
-                    else
+                    }
+                    else {
                         info->ontouch = VFX_DEFAULT;
+                    }
                     break;
                 case scvfx_onplane:
                     lexer->ExpectNextToken(TK_EQUAL);
                     lexer->Find();
-                    if(!strcmp(lexer->Token(), "destroy"))
+                    if(!strcmp(lexer->Token(), "destroy")) {
                         info->onplane = VFX_DESTROY;
-                    else if(!strcmp(lexer->Token(), "reflect"))
+                    }
+                    else if(!strcmp(lexer->Token(), "reflect")) {
                         info->onplane = VFX_REFLECT;
-                    else if(!strcmp(lexer->Token(), "bounce"))
+                    }
+                    else if(!strcmp(lexer->Token(), "bounce")) {
                         info->onplane = VFX_BOUNCE;
-                    else
+                    }
+                    else {
                         info->onplane = VFX_DEFAULT;
+                    }
                     break;
                 case scvfx_drawtype:
                     lexer->ExpectNextToken(TK_EQUAL);
                     lexer->Find();
-                    if(!strcmp(lexer->Token(), "flat"))
+                    if(!strcmp(lexer->Token(), "flat")) {
                         info->drawtype = VFX_DRAWFLAT;
-                    else if(!strcmp(lexer->Token(), "decal"))
+                    }
+                    else if(!strcmp(lexer->Token(), "decal")) {
                         info->drawtype = VFX_DRAWDECAL;
-                    else if(!strcmp(lexer->Token(), "billboard"))
+                    }
+                    else if(!strcmp(lexer->Token(), "billboard")) {
                         info->drawtype = VFX_DRAWBILLBOARD;
-                    else
+                    }
+                    else if(!strcmp(lexer->Token(), "surface")) {
+                        info->drawtype = VFX_DRAWSURFACE;
+                    }
+                    else {
                         info->drawtype = VFX_DRAWDEFAULT;
+                    }
                     break;
                 case scvfx_animtype:
                     lexer->ExpectNextToken(TK_EQUAL);
                     lexer->Find();
-                    if(!strcmp(lexer->Token(), "onetime"))
+                    if(!strcmp(lexer->Token(), "onetime")) {
                         info->animtype = VFX_ANIMONETIME;
-                    else if(!strcmp(lexer->Token(), "loop"))
+                    }
+                    else if(!strcmp(lexer->Token(), "loop")) {
                         info->animtype = VFX_ANIMLOOP;
-                    else if(!strcmp(lexer->Token(), "sinwave"))
+                    }
+                    else if(!strcmp(lexer->Token(), "sinwave")) {
                         info->animtype = VFX_ANIMSINWAVE;
-                    else
+                    }
+                    else {
                         info->animtype = VFX_ANIMDEFAULT;
+                    }
                     break;
                 case scvfx_onImpact:
                     ParseEvent(info->onImpact, lexer);

@@ -115,19 +115,16 @@ kexDefinition *kexDefManager::LoadDefinition(const char *file) {
 
     if(!(def = defs.Find(file))) {
         kexLexer *lexer;
-        kexStr fileStr(file);
 
-        if(fileStr.Length() >= MAX_FILEPATH) {
+        if(strlen(file) >= MAX_FILEPATH) {
             common.Error("kexDefManager::LoadDefinition: \"%s\" is too long", file);
         }
-
-        fileStr.StripExtension();
 
         if(!(lexer = parser.Open(file))) {
             return NULL;
         }
 
-        def = defs.Add(fileStr.c_str());
+        def = defs.Add(file);
         strncpy(def->fileName, file, MAX_FILEPATH);
 
         def->Parse(lexer);
@@ -171,6 +168,8 @@ defEntry_t *kexDefManager::FindDefEntry(const char *name) {
         if(defEntry = def->entries.Find(tStr)) {
             return defEntry;
         }
+
+        common.Warning("kexDefManager::FindDefEntry: %s not found\n", tStr);
     }
 
     return NULL;
