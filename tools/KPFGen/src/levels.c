@@ -1138,14 +1138,20 @@ static void ProcessAreas(byte *buffer, byte *data)
     for(i = 0; i < count; i++)
     {
         maparea_t *area = (maparea_t*)(data + 8 + (i * size));
+        int tmp;
 
         total = (short*)&buffer[com_fileoffset];
         Com_WriteBuffer16(buffer, 0);
 
         *total = 0;
 
-        WRITEAREAKEY("fSurfaceID", va("%i", area->floorImpactID));
-        WRITEAREAKEY("wSurfaceID", va("%i", area->wallImpactID));
+        tmp = area->floorImpactID;
+        if(tmp == 1) tmp = 0;
+        WRITEAREAKEY("fSurfaceID", va("%i", tmp));
+
+        tmp = area->wallImpactID;
+        if(tmp == 1) tmp = 0;
+        WRITEAREAKEY("wSurfaceID", va("%i", tmp));
 
         if(area->flags & AAF_TELEPORT)
         {

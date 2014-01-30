@@ -85,9 +85,9 @@ typedef struct
     short onhitstone;
     short onhitflesh;
     short onhitmonster;
-    short u07;
-    short u08;
-    short u09;
+    short onhitalien;
+    short onhitlava;
+    short onhitslime;
     short onhitforcefield;
     short onexpire;
     short active;
@@ -347,7 +347,16 @@ void FX_GetName(int index, char *name)
     }
 }
 
-static FX_WriteEvents(fxevent_t *fxevent, const char *eventName,
+static char *FX_GetDamageClass(int id, float arg0)
+{
+    static char damageClass[128];
+    int iArg0 = (int)arg0;
+
+    strcpy(damageClass, va("defs/damage.def@damageClass_%03d_%i", id, iArg0));
+    return damageClass;
+}
+
+static void FX_WriteEvents(fxevent_t *fxevent, const char *eventName,
                       short fxEvent, short soundEvent, short actionEvent, short actionSlot)
 {
     char name[256];
@@ -374,8 +383,10 @@ static FX_WriteEvents(fxevent_t *fxevent, const char *eventName,
 
             evf = fxevent->f[actionSlot];
 
-            Com_Strcat("            action = { \"%s\" %f }\n",
-                GetActionName(actionEvent, evf), evf);
+            //Com_Strcat("            action = { \"%s\" %f }\n",
+                //GetActionName(actionEvent, evf), evf);
+            Com_Strcat("            damageDef = \"%s\"\n",
+                FX_GetDamageClass(actionEvent, evf));
         }
         Com_Strcat("        }\n");
     }
@@ -543,6 +554,9 @@ void FX_StoreParticleEffects(void)
                 case 2:
                     Com_Strcat("        drawtype = decal\n");
                     break;
+                case 4:
+                    Com_Strcat("        drawtype = surface\n");
+                    break;
                 case 5:
                     Com_Strcat("        drawtype = billboard\n");
                     break;
@@ -569,33 +583,50 @@ void FX_StoreParticleEffects(void)
                     break;
                 }
 
-                Com_Strcat("        onImpact\n");
-                Com_Strcat("        {\n");
-                FX_WriteEvents(fxevent, "[0]",
-                    fxevent->b_fx.hitplane,
-                    fxevent->b_sound.hitplane,
-                    fxevent->b_action.hitplane, 0);
-                FX_WriteEvents(fxevent, "[2]",
-                    fxevent->b_fx.onhitmetal,
-                    fxevent->b_sound.onhitmetal,
-                    fxevent->b_action.onhitmetal, 2);
-                FX_WriteEvents(fxevent, "[3]",
-                    fxevent->b_fx.onhitstone,
-                    fxevent->b_sound.onhitstone,
-                    fxevent->b_action.onhitstone, 3);
-                FX_WriteEvents(fxevent, "[4]",
-                    fxevent->b_fx.onhitflesh,
-                    fxevent->b_sound.onhitflesh,
-                    fxevent->b_action.onhitflesh, 4);
-                FX_WriteEvents(fxevent, "[5]",
-                    fxevent->b_fx.onhitmonster,
-                    fxevent->b_sound.onhitmonster,
-                    fxevent->b_action.onhitmonster, 5);
-                FX_WriteEvents(fxevent, "[9]",
-                    fxevent->b_fx.onhitforcefield,
-                    fxevent->b_sound.onhitforcefield,
-                    fxevent->b_action.onhitforcefield, 9);
-                Com_Strcat("        }\n");
+                // fxevent ## 11 appears to be blank, so we'll just
+                // take advantage of that
+                if(vfx[0] != 11)
+                {
+                    Com_Strcat("        onImpact\n");
+                    Com_Strcat("        {\n");
+                    FX_WriteEvents(fxevent, "[0]",
+                        fxevent->b_fx.hitplane,
+                        fxevent->b_sound.hitplane,
+                        fxevent->b_action.hitplane, 0);
+                    FX_WriteEvents(fxevent, "[2]",
+                        fxevent->b_fx.onhitmetal,
+                        fxevent->b_sound.onhitmetal,
+                        fxevent->b_action.onhitmetal, 2);
+                    FX_WriteEvents(fxevent, "[3]",
+                        fxevent->b_fx.onhitstone,
+                        fxevent->b_sound.onhitstone,
+                        fxevent->b_action.onhitstone, 3);
+                    FX_WriteEvents(fxevent, "[4]",
+                        fxevent->b_fx.onhitflesh,
+                        fxevent->b_sound.onhitflesh,
+                        fxevent->b_action.onhitflesh, 4);
+                    FX_WriteEvents(fxevent, "[5]",
+                        fxevent->b_fx.onhitmonster,
+                        fxevent->b_sound.onhitmonster,
+                        fxevent->b_action.onhitmonster, 5);
+                    FX_WriteEvents(fxevent, "[6]",
+                        fxevent->b_fx.onhitalien,
+                        fxevent->b_sound.onhitalien,
+                        fxevent->b_action.onhitalien, 6);
+                    FX_WriteEvents(fxevent, "[7]",
+                        fxevent->b_fx.onhitlava,
+                        fxevent->b_sound.onhitlava,
+                        fxevent->b_action.onhitlava, 7);
+                    FX_WriteEvents(fxevent, "[8]",
+                        fxevent->b_fx.onhitslime,
+                        fxevent->b_sound.onhitslime,
+                        fxevent->b_action.onhitslime, 8);
+                    FX_WriteEvents(fxevent, "[9]",
+                        fxevent->b_fx.onhitforcefield,
+                        fxevent->b_sound.onhitforcefield,
+                        fxevent->b_action.onhitforcefield, 9);
+                    Com_Strcat("        }\n");
+                }
 
                 FX_WriteEvents(fxevent, "onTick",
                     fxevent->b_fx.active,
