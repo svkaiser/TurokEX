@@ -25,7 +25,7 @@
 
 #include "actor.h"
 #include "textureObject.h"
-#include "defs.h"
+#include "keymap.h"
 
 typedef struct {
     float value[3];
@@ -67,7 +67,7 @@ typedef enum {
 typedef struct {
     char                        *fx;
     char                        *snd;
-    defEntry_t                  *damageDef;
+    kexKeyMap                   *damageDef;
 } fxEvent_t;
 
 typedef struct {
@@ -86,6 +86,7 @@ typedef struct {
     bool                        bClientSpace;
     bool                        bProjectile;
     bool                        bDestroyOnWaterSurface;
+    bool                        bLinkArea;
     bool                        bAttachToSource;
     float                       mass;
     float                       translation_randomscale;

@@ -33,6 +33,7 @@
 #include "fileSystem.h"
 #include "renderSystem.h"
 #include "world.h"
+#include "defs.h"
 
 //
 // FCmd_SpawnFX
@@ -103,7 +104,7 @@ void kexFxPhysics::Think(const float timeDelta) {
     move = velocity * timeDelta;
     moveAmount = move.UnitSq();
 
-    if(moveAmount < 0.001f) {
+    if(moveAmount < 0.01f) {
         return;
     }
 
@@ -150,11 +151,20 @@ void kexFxPhysics::Think(const float timeDelta) {
 
         localWorld.Trace(&trace);
 
-        if(trace.fraction >= 1) {
+        if(trace.fraction >= 1 || (trace.hitActor && trace.hitActor == owner->GetOwner())) {
             owner->SetOrigin(start + move);
+
+            if(fxinfo->bLinkArea) {
+                owner->LinkArea();
+            }
         }
         else {
             owner->SetOrigin(trace.hitVector - (trace.dir * 0.125f));
+
+            if(fxinfo->bLinkArea) {
+                owner->LinkArea();
+            }
+
             area = sector->area;
 
             if(trace.hitActor != NULL) {
@@ -249,6 +259,8 @@ kexFx::kexFx(void) {
     this->owner         = NULL;
     this->target        = NULL;
     this->parent        = NULL;
+    this->radius        = 4.0f;
+    this->height        = 4.0f;
     
     this->attachment.SetOwner(this);
     this->physics.SetOwner(this);
@@ -494,11 +506,9 @@ void kexFx::Event(fxEvent_t *fxEvent, kexWorldObject *target) {
         soundSystem.StartSound(fxEvent->snd, nfx);
     }
 
-    /*if(fxEvent->action.function != NULL && owner) {
-        //Actor_FXEvent(fx->source, actor, fx->origin,
-            //fx->translation, Map_PlaneToIndex(fx->plane),
-            //&fxEvent->action);
-    }*/
+    if(fxEvent->damageDef != NULL && owner && target) {
+        nfx->InflictDamage(target, fxEvent->damageDef);
+    }
 }
 
 //
@@ -699,6 +709,10 @@ void kexFx::Spawn(void) {
     physics.airFriction = 0;
     physics.mass = -gravity;
     physics.bounceDamp = fxInfo->mass;
+
+    if(fxInfo->bLinkArea) {
+        LinkArea();
+    }
 }
 
 enum {
@@ -763,6 +777,7 @@ enum {
     scvfx_onWaterExpire,
     scvfx_onWaterTick,
     scvfx_bDestroyOnWaterSurface,
+    scvfx_bLinkArea,
     scvfx_end
 };
 
@@ -827,7 +842,8 @@ static const sctokens_t vfxtokens[scvfx_end+1] = {
     { scvfx_onWaterHit,                     "onWaterImpact"                     },
     { scvfx_onWaterExpire,                  "onWaterExpire"                     },
     { scvfx_onWaterTick,                    "onWaterTick"                       },
-    { scvfx_bDestroyOnWaterSurface,         "bDestroyOnWaterSurface",           },
+    { scvfx_bDestroyOnWaterSurface,         "bDestroyOnWaterSurface"            },
+    { scvfx_bLinkArea,                      "bLinkArea"                         },
     { -1,                                   NULL                                }
 };
 
@@ -901,6 +917,7 @@ void kexFxManager::UpdateWorld(kexWorld *world) {
             // unlink from world and free fx
             world->fxRover->worldLink.Remove();
             world->fxRover->SetParent(NULL);
+            world->fxRover->UnlinkArea();
             delete world->fxRover;
         }
     }
@@ -1067,6 +1084,7 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                 CHECK_BOOL(bProjectile);
                 CHECK_BOOL(bDestroyOnWaterSurface);
                 CHECK_BOOL(bActorInstance);
+                CHECK_BOOL(bLinkArea);
                 CHECK_BOOL(bAttachToSource);
 
                 CHECK_INT(animspeed);

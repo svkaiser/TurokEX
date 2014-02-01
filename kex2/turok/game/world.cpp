@@ -751,6 +751,7 @@ void kexWorld::Unload(void) {
 
         fxRover->SetParent(NULL);
         fxRover->worldLink.Remove();
+        fxRover->UnlinkArea();
 
         delete fxRover;
     }

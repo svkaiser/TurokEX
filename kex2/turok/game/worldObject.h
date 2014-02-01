@@ -28,6 +28,7 @@
 #include "script.h"
 #include "linkedlist.h"
 #include "physics.h"
+#include "keymap.h"
 
 typedef struct areaNode_s areaNode_t;
 
@@ -45,6 +46,8 @@ public:
     virtual void                LocalTick(void) = 0;
     virtual void                Tick(void) = 0;
     virtual void                OnTouch(kexWorldObject *instigator);
+    virtual void                OnDamage(kexWorldObject *instigator, kexKeyMap *damageDef);
+    virtual void                OnDeath(kexWorldObject *instigator, kexKeyMap *damageDef);
 
     void                        SetBoundingBox(const kexVec3 &min, const kexVec3 &max);
     bool                        Trace(traceInfo_t *trace);
@@ -52,6 +55,7 @@ public:
     bool                        AlignToSurface(void);
     void                        LinkArea(void);
     void                        UnlinkArea(void);
+    void                        InflictDamage(kexWorldObject *target, kexKeyMap *damageDef);
 
     float                       Radius(void) { return radius; }
     float                       Height(void) { return height; }
@@ -64,6 +68,7 @@ public:
     kexBBox                     &Bounds(void) { return bbox; }
     const impactType_t          GetImpactType(void) const { return impactType; }
     void                        SetImpactType(const impactType_t iType) { impactType = iType; }
+    int                         &Health(void) { return health; }
 
     kexLinklist<kexWorldObject> areaLink;
     areaNode_t                  *areaNode;
@@ -73,6 +78,7 @@ public:
     bool                        bTouch;         // can be touched/picked up by other actors
     bool                        bOrientOnSlope;
     bool                        bCanPickup;
+    bool                        bAllowDamage;
 
     //
     // template for registering default script actor methods and properties

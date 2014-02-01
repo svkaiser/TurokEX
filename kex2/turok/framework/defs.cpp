@@ -49,7 +49,7 @@ kexDefinition::~kexDefinition(void) {
 //
 
 void kexDefinition::Parse(kexLexer *lexer) {
-    defEntry_t *defEntry;
+    kexKeyMap *defEntry;
     kexStr key;
     kexStr val;
 
@@ -61,7 +61,6 @@ void kexDefinition::Parse(kexLexer *lexer) {
             return;
         case TK_IDENIFIER:
             defEntry = entries.Add(lexer->Token());
-            defEntry->name = lexer->Token();
 
             lexer->ExpectNextToken(TK_LBRACK);
             while(1) {
@@ -79,7 +78,7 @@ void kexDefinition::Parse(kexLexer *lexer) {
 
                 val = lexer->Token();
 
-                defEntry->key.Add(key.c_str(), val.c_str());
+                defEntry->Add(key.c_str(), val.c_str());
             }
             break;
         default:
@@ -144,9 +143,9 @@ kexDefinition *kexDefManager::LoadDefinition(const char *file) {
 // Example: defs/damage.def@MeleeBlunt
 //
 
-defEntry_t *kexDefManager::FindDefEntry(const char *name) {
+kexKeyMap *kexDefManager::FindDefEntry(const char *name) {
     kexDefinition *def;
-    defEntry_t *defEntry;
+    kexKeyMap *defEntry;
     char tStr[64];
     int pos;
     int len;

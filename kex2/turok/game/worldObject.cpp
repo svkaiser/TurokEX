@@ -39,6 +39,7 @@ kexWorldObject::kexWorldObject(void) {
     this->bCollision    = false;
     this->bTouch        = false;
     this->bCanPickup    = false;
+    this->bAllowDamage  = false;
     this->health        = 100;
     this->radius        = 10.24f;
     this->baseHeight    = 10.24f;
@@ -137,6 +138,13 @@ bool kexWorldObject::Trace(traceInfo_t *trace) {
     float rd;
     float r;
 
+    // fx can't collide with each other
+    if(trace->owner) {
+        if(InstanceOf(&kexFx::info) && trace->owner->InstanceOf(&kexFx::info)) {
+            return false;
+        }
+    }
+
     org = (origin - trace->start);
     dir = trace->dir;
 
@@ -212,6 +220,45 @@ bool kexWorldObject::TryMove(const kexVec3 &position, kexVec3 &dest, kexSector *
     }
 
     return (trace.fraction != 1);
+}
+
+//
+// kexWorldObject::OnDamage
+//
+
+void kexWorldObject::OnDamage(kexWorldObject *instigator, kexKeyMap *damageDef) {
+}
+
+//
+// kexWorldObject::OnDeath
+//
+
+void kexWorldObject::OnDeath(kexWorldObject *instigator, kexKeyMap *damageDef) {
+    Remove();
+}
+
+//
+// kexWorldObject::InflictDamage
+//
+
+void kexWorldObject::InflictDamage(kexWorldObject *target, kexKeyMap *damageDef) {
+    int dmgAmount = 0;
+    kexStr dmgSound;
+
+    if(damageDef == NULL || target->bAllowDamage == false) {
+        return;
+    }
+
+    damageDef->GetInt("damage", dmgAmount);
+    damageDef->GetString("sound", dmgSound);
+
+    target->StartSound(dmgSound.c_str());
+    target->OnDamage(this, damageDef);
+
+    target->Health() -= dmgAmount;
+    if(target->Health() <= 0) {
+        target->OnDeath(this, damageDef);
+    }
 }
 
 //

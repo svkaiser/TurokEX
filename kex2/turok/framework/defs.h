@@ -28,11 +28,6 @@
 #include "cachefilelist.h"
 #include "script.h"
 
-typedef struct {
-    kexKeyMap                       key;
-    kexStr                          name;
-} defEntry_t;
-
 class kexDefinition {
 public:
                                     kexDefinition(void);
@@ -41,7 +36,7 @@ public:
     void                            Parse(kexLexer *lexer);
 
     filepath_t                      fileName;
-    kexHashList<defEntry_t>         entries;
+    kexHashList<kexKeyMap>          entries;
 };
 
 class kexDefManager {
@@ -50,7 +45,7 @@ public:
                                     ~kexDefManager(void);
                                     
     kexDefinition                   *LoadDefinition(const char *file);
-    defEntry_t                      *FindDefEntry(const char *name);
+    kexKeyMap                       *FindDefEntry(const char *name);
                                     
     kexHashList<kexDefinition>      defs;
 };

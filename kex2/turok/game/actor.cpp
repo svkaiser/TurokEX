@@ -55,6 +55,8 @@ enum {
     scactor_physics,
     scactor_clipmesh,
     scactor_bNoFixedTransform,
+    scactor_bAllowDamage,
+    scactor_impactType,
     scactor_end
 };
 
@@ -84,6 +86,8 @@ static const sctokens_t mapactortokens[scactor_end+1] = {
     { scactor_physics,          "physics"           },
     { scactor_clipmesh,         "clipMesh"          },
     { scactor_bNoFixedTransform,"bNoFixedTransform" },
+    { scactor_bAllowDamage,     "bAllowDamage"      },
+    { scactor_impactType,       "impactType"        },
     { -1,                       NULL                }
 };
 
@@ -159,7 +163,7 @@ void kexActor::Tick(void) {
 void kexActor::Spawn(void) {
     UpdateTransform();
 
-    height = bStatic ? baseHeight : 0;
+    height = baseHeight;
 
     if(bTouch) {
         viewHeight = baseHeight * 0.5f;
@@ -261,6 +265,9 @@ void kexActor::ParseDefault(kexLexer *lexer) {
     case scactor_bNoFixedTransform:
         bNoFixedTransform = (lexer->GetNumber() > 0);
         break;
+    case scactor_bAllowDamage:
+        bAllowDamage = (lexer->GetNumber() > 0);
+        break;
     case scactor_radius:
         radius = (float)lexer->GetFloat();
         break;
@@ -278,6 +285,9 @@ void kexActor::ParseDefault(kexLexer *lexer) {
         break;
     case scactor_modelVariant:
         variant = lexer->GetNumber();
+        break;
+    case scactor_impactType:
+        impactType = (impactType_t)lexer->GetNumber();
         break;
     case scactor_cullDistance:
         cullDistance = (float)lexer->GetFloat();
