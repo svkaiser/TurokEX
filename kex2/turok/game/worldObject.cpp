@@ -138,10 +138,16 @@ bool kexWorldObject::Trace(traceInfo_t *trace) {
     float rd;
     float r;
 
-    // fx can't collide with each other
+    // fx can't collide with each other nor with its owner
     if(trace->owner) {
-        if(InstanceOf(&kexFx::info) && trace->owner->InstanceOf(&kexFx::info)) {
-            return false;
+        if(trace->owner->InstanceOf(&kexFx::info)) {
+            if(InstanceOf(&kexFx::info)) {
+                return false;
+            }
+
+            if(this == trace->owner->GetOwner()) {
+                return false;
+            }
         }
     }
 
@@ -226,7 +232,7 @@ bool kexWorldObject::TryMove(const kexVec3 &position, kexVec3 &dest, kexSector *
 // kexWorldObject::OnDamage
 //
 
-void kexWorldObject::OnDamage(kexWorldObject *instigator, kexKeyMap *damageDef) {
+void kexWorldObject::OnDamage(kexWorldObject *instigator, int damage, kexKeyMap *damageDef) {
 }
 
 //
@@ -242,18 +248,35 @@ void kexWorldObject::OnDeath(kexWorldObject *instigator, kexKeyMap *damageDef) {
 //
 
 void kexWorldObject::InflictDamage(kexWorldObject *target, kexKeyMap *damageDef) {
-    int dmgAmount = 0;
+    int dmgAmount;
+    bool bImpact;
     kexStr dmgSound;
 
     if(damageDef == NULL || target->bAllowDamage == false) {
         return;
     }
 
+    dmgAmount = 0;
+    bImpact = false;
+
     damageDef->GetInt("damage", dmgAmount);
+    damageDef->GetBool("bImpact", bImpact);
     damageDef->GetString("sound", dmgSound);
 
+    if(bImpact == true && dmgAmount > 0) {
+        float impactFalloff;
+
+        damageDef->GetFloat("impactFalloff", impactFalloff);
+        if(impactFalloff < 1) {
+            impactFalloff = 1;
+        }
+
+        impactFalloff = 1.0f / impactFalloff;
+        dmgAmount = (int)((physics.velocity.Unit() * (1.0f / (float)dmgAmount)) * impactFalloff);
+    }
+
     target->StartSound(dmgSound.c_str());
-    target->OnDamage(this, damageDef);
+    target->OnDamage(this, dmgAmount, damageDef);
 
     target->Health() -= dmgAmount;
     if(target->Health() <= 0) {

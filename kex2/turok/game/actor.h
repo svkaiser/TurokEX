@@ -49,7 +49,8 @@ public:
     virtual void                UpdateTransform(void);
     virtual void                OnTouch(kexActor *instigator);
     virtual void                OnTrigger(void);
-    virtual void                Think(void);
+    virtual void                OnDamage(kexWorldObject *instigator, int damage, kexKeyMap *damageDef);
+    virtual void                OnDeath(kexWorldObject *instigator, kexKeyMap *damageDef);
 
     void                        Spawn(void);
     kexVec3                     ToLocalOrigin(const float x, const float y, const float z);

@@ -528,10 +528,48 @@ void kexActor::OnTrigger(void) {
 }
 
 //
-// kexActor::Think
+// kexActor::OnDamage
 //
 
-void kexActor::Think(void) {
+void kexActor::OnDamage(kexWorldObject *instigator, int damage, kexKeyMap *damageDef) {
+    int state;
+
+    state = scriptComponent.PrepareFunction("void OnDamage(kActor@, int, kKeyMapMem@)");
+    if(state == -1) {
+        return;
+    }
+
+    scriptComponent.SetCallArgument(0, static_cast<kexActor*>(instigator));
+    scriptComponent.SetCallArgument(1, damage);
+    scriptComponent.SetCallArgument(2, damageDef);
+
+    if(!scriptComponent.ExecuteFunction(state)) {
+        return;
+    }
+
+    scriptComponent.FinishFunction(state);
+}
+
+//
+// kexActor::OnDeath
+//
+
+void kexActor::OnDeath(kexWorldObject *instigator, kexKeyMap *damageDef) {
+    int state;
+
+    state = scriptComponent.PrepareFunction("void OnDeath(kActor@, kKeyMapMem@)");
+    if(state == -1) {
+        return;
+    }
+
+    scriptComponent.SetCallArgument(0, static_cast<kexActor*>(instigator));
+    scriptComponent.SetCallArgument(1, damageDef);
+
+    if(!scriptComponent.ExecuteFunction(state)) {
+        return;
+    }
+
+    scriptComponent.FinishFunction(state);
 }
 
 //

@@ -228,26 +228,37 @@ bool kexKeyMap::GetVector(const kexStr &key, kexVec3 &out) {
 
 #ifndef EDITOR
 #include "scriptAPI/scriptSystem.h"
+
+//
+// RegisterKeyMapMethods
+//
+
+static void RegisterKeyMapMethods(const char *name) {
+    scriptManager.RegisterMethod(name, "bool GetFloat(const kStr &in, float &out, const float defaultValue = 0)",
+        asMETHODPR(kexKeyMap, GetFloat,
+        (const kexStr &key, float &out, const float defaultValue), bool));
+    scriptManager.RegisterMethod(name, "bool GetInt(const kStr &in, int &out, const int defaultValue = 0)",
+        asMETHODPR(kexKeyMap, GetInt,
+        (const kexStr &key, int &out, const int defaultValue), bool));
+    scriptManager.RegisterMethod(name, "bool GetBool(const kStr &in, bool &out, const bool defaultValue = 0)",
+        asMETHODPR(kexKeyMap, GetBool,
+        (const kexStr &key, bool &out, const bool defaultValue), bool));
+    scriptManager.RegisterMethod(name, "bool GetString(const kStr &in, kStr &out)",
+        asMETHODPR(kexKeyMap, GetString,
+        (const kexStr &key, kexStr &out), bool));
+    scriptManager.RegisterMethod(name, "bool GetVector(const kStr &in, kVec3 &out)",
+        asMETHODPR(kexKeyMap, GetVector,
+        (const kexStr &key, kexVec3 &out), bool));
+}
+
 //
 // kexKeyMap::InitObject
 //
 
 void kexKeyMap::InitObject(void) {
     kexScriptManager::RegisterDataObject<kexKeyMap>("kKeyMap");
-    scriptManager.RegisterMethod("kKeyMap", "bool GetFloat(const kStr &in, float &out, const float defaultValue = 0)",
-        asMETHODPR(kexKeyMap, GetFloat,
-        (const kexStr &key, float &out, const float defaultValue), bool));
-    scriptManager.RegisterMethod("kKeyMap", "bool GetInt(const kStr &in, int &out, const int defaultValue = 0)",
-        asMETHODPR(kexKeyMap, GetInt,
-        (const kexStr &key, int &out, const int defaultValue), bool));
-    scriptManager.RegisterMethod("kKeyMap", "bool GetBool(const kStr &in, bool &out, const bool defaultValue = 0)",
-        asMETHODPR(kexKeyMap, GetBool,
-        (const kexStr &key, bool &out, const bool defaultValue), bool));
-    scriptManager.RegisterMethod("kKeyMap", "bool GetString(const kStr &in, kStr &out)",
-        asMETHODPR(kexKeyMap, GetString,
-        (const kexStr &key, kexStr &out), bool));
-    scriptManager.RegisterMethod("kKeyMap", "bool GetVector(const kStr &in, kVec3 &out)",
-        asMETHODPR(kexKeyMap, GetVector,
-        (const kexStr &key, kexVec3 &out), bool));
+    RegisterKeyMapMethods("kKeyMap");
+    kexScriptManager::RegisterRefObjectNoCount<kexKeyMap>("kKeyMapMem");
+    RegisterKeyMapMethods("kKeyMapMem");
 }
 #endif

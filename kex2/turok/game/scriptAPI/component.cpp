@@ -81,15 +81,24 @@ bool kexComponent::Spawn(const char *className) {
 }
 
 //
-// kexComponent::CallFunction
+// kexComponent::PrepareFunction
 //
 
-bool kexComponent::CallFunction(asIScriptFunction *func) {
-    if(func == NULL) {
-        return false;
+int kexComponent::PrepareFunction(const char *decl) {
+    asIScriptFunction *func;
+    int state;
+
+    if(obj == NULL) {
+        return -1;
     }
 
-    int state = scriptManager.Context()->GetState();
+    func = type->GetMethodByDecl(decl);
+
+    if(func == NULL) {
+        return -1;
+    }
+
+    state = scriptManager.Context()->GetState();
 
     if(state == asEXECUTION_ACTIVE) {
         scriptManager.Context()->PushState();
@@ -97,15 +106,176 @@ bool kexComponent::CallFunction(asIScriptFunction *func) {
 
     scriptManager.Context()->Prepare(func);
     scriptManager.Context()->SetObject(obj);
+
+    return state;
+}
+
+//
+// kexComponent::PrepareFunction
+//
+
+int kexComponent::PrepareFunction(asIScriptFunction *func) {
+    int state;
+
+    if(func == NULL || obj == NULL) {
+        return -1;
+    }
+
+    state = scriptManager.Context()->GetState();
+
+    if(state == asEXECUTION_ACTIVE) {
+        scriptManager.Context()->PushState();
+    }
+
+    scriptManager.Context()->Prepare(func);
+    scriptManager.Context()->SetObject(obj);
+
+    return state;
+}
+
+//
+// kexComponent::SetCallArgument
+//
+
+void kexComponent::SetCallArgument(const int arg, int val) {
+    scriptManager.Context()->SetArgDWord(arg, val);
+}
+
+//
+// kexComponent::SetCallArgument
+//
+
+void kexComponent::SetCallArgument(const int arg, byte val) {
+    scriptManager.Context()->SetArgByte(arg, val);
+}
+
+//
+// kexComponent::SetCallArgument
+//
+
+void kexComponent::SetCallArgument(const int arg, float val) {
+    scriptManager.Context()->SetArgFloat(arg, val);
+}
+
+//
+// kexComponent::SetCallArgument
+//
+
+void kexComponent::SetCallArgument(const int arg, bool val) {
+    scriptManager.Context()->SetArgByte(arg, val);
+}
+
+//
+// kexComponent::SetCallArgument
+//
+
+void kexComponent::SetCallArgument(const int arg, void *val) {
+    scriptManager.Context()->SetArgObject(arg, val);
+}
+
+//
+// kexComponent::ExecuteFunction
+//
+
+bool kexComponent::ExecuteFunction(int state) {
     if(scriptManager.Context()->Execute() == asEXECUTION_EXCEPTION) {
         common.Error("%s", scriptManager.Context()->GetExceptionString());
+
+        if(state == asEXECUTION_ACTIVE) {
+            scriptManager.Context()->PopState();
+        }
         return false;
     }
+
+    return true;
+}
+
+//
+// kexComponent::FinishFunction
+//
+
+void kexComponent::FinishFunction(int state) {
+    if(state == asEXECUTION_ACTIVE) {
+        scriptManager.Context()->PopState();
+    }
+}
+
+//
+// kexComponent::FinishFunction
+//
+
+void kexComponent::FinishFunction(int state, int *val) {
+    *val = (int)scriptManager.Context()->GetReturnDWord();
 
     if(state == asEXECUTION_ACTIVE) {
         scriptManager.Context()->PopState();
     }
+}
 
+//
+// kexComponent::FinishFunction
+//
+
+void kexComponent::FinishFunction(int state, byte *val) {
+    *val = (byte)scriptManager.Context()->GetReturnByte();
+
+    if(state == asEXECUTION_ACTIVE) {
+        scriptManager.Context()->PopState();
+    }
+}
+
+//
+// kexComponent::FinishFunction
+//
+
+void kexComponent::FinishFunction(int state, float *val) {
+    *val = scriptManager.Context()->GetReturnFloat();
+
+    if(state == asEXECUTION_ACTIVE) {
+        scriptManager.Context()->PopState();
+    }
+}
+
+//
+// kexComponent::FinishFunction
+//
+
+void kexComponent::FinishFunction(int state, bool *val) {
+    *val = (scriptManager.Context()->GetReturnByte() == 1);
+
+    if(state == asEXECUTION_ACTIVE) {
+        scriptManager.Context()->PopState();
+    }
+}
+
+//
+// kexComponent::FinishFunction
+//
+
+void kexComponent::FinishFunction(int state, void **val) {
+    *val = scriptManager.Context()->GetAddressOfReturnValue();
+
+    if(state == asEXECUTION_ACTIVE) {
+        scriptManager.Context()->PopState();
+    }
+}
+
+//
+// kexComponent::CallFunction
+//
+
+bool kexComponent::CallFunction(asIScriptFunction *func) {
+    int state = PrepareFunction(func);
+
+    if(state == -1) {
+        return false;
+    }
+
+    if(!ExecuteFunction(state)) {
+        return false;
+    }
+
+    FinishFunction(state);
     return true;
 }
 
@@ -142,65 +312,6 @@ bool kexComponent::CallConstructor(const char *decl) {
 }
 
 //
-// kexComponent::CallFunction
-//
-
-bool kexComponent::CallFunction(const char *decl, int *val) {
-    int state = scriptManager.Context()->GetState();
-    bool ok = false;
-    if(state == asEXECUTION_ACTIVE) {
-        scriptManager.Context()->PushState();
-    }
-
-    *val = 0;
-
-    if(CallFunction(type->GetMethodByDecl(decl))) {
-        *val = (int)scriptManager.Context()->GetReturnDWord();
-        ok = true;
-    }
-
-    if(state == asEXECUTION_ACTIVE) {
-        scriptManager.Context()->PopState();
-    }
-
-    return ok;
-}
-
-//
-// kexComponent::CallFunction
-//
-
-bool kexComponent::CallFunction(asIScriptFunction *func, void *object, bool *val) {
-    if(func == NULL) {
-        return false;
-    }
-
-    int state = scriptManager.Context()->GetState();
-
-    if(state == asEXECUTION_ACTIVE) {
-        scriptManager.Context()->PushState();
-    }
-
-    scriptManager.Context()->Prepare(func);
-    scriptManager.Context()->SetObject(obj);
-    scriptManager.Context()->SetArgObject(0, object);
-    if(scriptManager.Context()->Execute() == asEXECUTION_EXCEPTION) {
-        common.Error("%s", scriptManager.Context()->GetExceptionString());
-        return false;
-    }
-
-    if(val) {
-        *val = (scriptManager.Context()->GetReturnByte() == 1);
-    }
-
-    if(state == asEXECUTION_ACTIVE) {
-        scriptManager.Context()->PopState();
-    }
-
-    return true;
-}
-
-//
 // kexComponent::Deconstruct
 //
 
@@ -220,7 +331,6 @@ void kexComponent::Deconstruct(void) {
 
 kexActorComponent::kexActorComponent(void) {
     this->onTouch       = NULL;
-    this->onDamage      = NULL;
     this->onTrigger     = NULL;
 }
 
@@ -241,7 +351,6 @@ void kexActorComponent::Init(void) {
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnLocalThink(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnSpawn(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "bool OnTouch(kActor@)");
-    scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnDamage(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("Component", "void OnTrigger(void)");
 }
 
@@ -260,7 +369,6 @@ void kexActorComponent::Construct(const char *className) {
     onLocalThink    = type->GetMethodByDecl("void OnLocalThink(void)");
     onSpawn         = type->GetMethodByDecl("void OnSpawn(void)");
     onTouch         = type->GetMethodByDecl("bool OnTouch(kActor@)");
-    onDamage        = type->GetMethodByDecl("void OnDamage(void)");
     onTrigger       = type->GetMethodByDecl("void OnTrigger(void)");
 }
 

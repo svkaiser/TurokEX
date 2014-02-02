@@ -151,7 +151,7 @@ void kexFxPhysics::Think(const float timeDelta) {
 
         localWorld.Trace(&trace);
 
-        if(trace.fraction >= 1 || (trace.hitActor && trace.hitActor == owner->GetOwner())) {
+        if(trace.fraction >= 1) {
             owner->SetOrigin(start + move);
 
             if(fxinfo->bLinkArea) {

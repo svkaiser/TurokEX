@@ -59,8 +59,20 @@ void kexPickup::OnTouch(kexWorldObject *instigator) {
     }
     if(scriptComponent.onTouch) {
         bool ok = false;
-        scriptComponent.CallFunction(scriptComponent.onTouch,
-            static_cast<kexActor*>(instigator), &ok);
+        int state;
+
+        state = scriptComponent.PrepareFunction(scriptComponent.onTouch);
+        if(state == -1) {
+            return;
+        }
+
+        scriptComponent.SetCallArgument(0, static_cast<kexActor*>(instigator));
+
+        if(!scriptComponent.ExecuteFunction(state)) {
+            return;
+        }
+
+        scriptComponent.FinishFunction(state, &ok);
 
         if(ok == false) {
             return;

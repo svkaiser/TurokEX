@@ -46,7 +46,7 @@ public:
     virtual void                LocalTick(void) = 0;
     virtual void                Tick(void) = 0;
     virtual void                OnTouch(kexWorldObject *instigator);
-    virtual void                OnDamage(kexWorldObject *instigator, kexKeyMap *damageDef);
+    virtual void                OnDamage(kexWorldObject *instigator, int damage, kexKeyMap *damageDef);
     virtual void                OnDeath(kexWorldObject *instigator, kexKeyMap *damageDef);
 
     void                        SetBoundingBox(const kexVec3 &min, const kexVec3 &max);

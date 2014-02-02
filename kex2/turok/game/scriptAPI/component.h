@@ -40,10 +40,23 @@ public:
     virtual void            Deconstruct(void);
     virtual bool            CallConstructor(const char *decl);
 
+    int                     PrepareFunction(const char *decl);
+    int                     PrepareFunction(asIScriptFunction *func);
+    void                    SetCallArgument(const int arg, int val);
+    void                    SetCallArgument(const int arg, byte val);
+    void                    SetCallArgument(const int arg, float val);
+    void                    SetCallArgument(const int arg, bool val);
+    void                    SetCallArgument(const int arg, void *val);
+    bool                    ExecuteFunction(int state);
+    void                    FinishFunction(int state);
+    void                    FinishFunction(int state, int *val);
+    void                    FinishFunction(int state, byte *val);
+    void                    FinishFunction(int state, float *val);
+    void                    FinishFunction(int state, bool *val);
+    void                    FinishFunction(int state, void **val);
+
     bool                    Spawn(const char *className);
     bool                    CallFunction(asIScriptFunction *func);
-    bool                    CallFunction(const char *decl, int *val);
-    bool                    CallFunction(asIScriptFunction *func, void *object, bool *val);
     kexScriptObjHandle      &Handle(void) { return objHandle; }
     const asIObjectType     *ScriptType(void) const { return type; }
     asIScriptObject         *ScriptObject(void) { return obj; }
@@ -82,7 +95,6 @@ class kexActorComponent : public kexComponent {
     static void             Init(void);
 
     asIScriptFunction       *onTouch;
-    asIScriptFunction       *onDamage;
     asIScriptFunction       *onTrigger;
 };
 
