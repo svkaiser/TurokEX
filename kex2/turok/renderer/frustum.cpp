@@ -64,26 +64,42 @@ void kexFrustum::TransformToView(kexMatrix &proj, kexMatrix &model) {
 //
 
 bool kexFrustum::TestBoundingBox(const kexBBox &bbox) {
+    float d;
     for(int i = 0; i < 6; i++) {
-        float d1 = p[i].a * bbox.min.x + p[i].b * bbox.min.y + p[i].c * bbox.min.z + p[i].d;
-        float d2 = p[i].a * bbox.max.x + p[i].b * bbox.min.y + p[i].c * bbox.min.z + p[i].d;
-        float d3 = p[i].a * bbox.min.x + p[i].b * bbox.max.y + p[i].c * bbox.min.z + p[i].d;
-        float d4 = p[i].a * bbox.max.x + p[i].b * bbox.max.y + p[i].c * bbox.min.z + p[i].d;
-        float d5 = p[i].a * bbox.min.x + p[i].b * bbox.min.y + p[i].c * bbox.max.z + p[i].d;
-        float d6 = p[i].a * bbox.max.x + p[i].b * bbox.min.y + p[i].c * bbox.max.z + p[i].d;
-        float d7 = p[i].a * bbox.min.x + p[i].b * bbox.max.y + p[i].c * bbox.max.z + p[i].d;
-        float d8 = p[i].a * bbox.max.x + p[i].b * bbox.max.y + p[i].c * bbox.max.z + p[i].d;
-        
-        if(((FLOATSIGNBIT(d1) << 0) |
-            (FLOATSIGNBIT(d2) << 1) |
-            (FLOATSIGNBIT(d3) << 2) |
-            (FLOATSIGNBIT(d4) << 3) |
-            (FLOATSIGNBIT(d5) << 4) |
-            (FLOATSIGNBIT(d6) << 5) |
-            (FLOATSIGNBIT(d7) << 6) |
-            (FLOATSIGNBIT(d8) << 7)) == 0xff) {
-                return false;
+        d = p[i].a * bbox.min.x + p[i].b * bbox.min.y + p[i].c * bbox.min.z + p[i].d;
+        if(!FLOATSIGNBIT(d)) {
+            continue;
         }
+        d = p[i].a * bbox.max.x + p[i].b * bbox.min.y + p[i].c * bbox.min.z + p[i].d;
+        if(!FLOATSIGNBIT(d)) {
+            continue;
+        }
+        d = p[i].a * bbox.min.x + p[i].b * bbox.max.y + p[i].c * bbox.min.z + p[i].d;
+        if(!FLOATSIGNBIT(d)) {
+            continue;
+        }
+        d = p[i].a * bbox.max.x + p[i].b * bbox.max.y + p[i].c * bbox.min.z + p[i].d;
+        if(!FLOATSIGNBIT(d)) {
+            continue;
+        }
+        d = p[i].a * bbox.min.x + p[i].b * bbox.min.y + p[i].c * bbox.max.z + p[i].d;
+        if(!FLOATSIGNBIT(d)) {
+            continue;
+        }
+        d = p[i].a * bbox.max.x + p[i].b * bbox.min.y + p[i].c * bbox.max.z + p[i].d;
+        if(!FLOATSIGNBIT(d)) {
+            continue;
+        }
+        d = p[i].a * bbox.min.x + p[i].b * bbox.max.y + p[i].c * bbox.max.z + p[i].d;
+        if(!FLOATSIGNBIT(d)) {
+            continue;
+        }
+        d = p[i].a * bbox.max.x + p[i].b * bbox.max.y + p[i].c * bbox.max.z + p[i].d;
+        if(!FLOATSIGNBIT(d)) {
+            continue;
+        }
+
+        return false;
     }
     
     return true;
