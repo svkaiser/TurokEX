@@ -26,7 +26,10 @@
 class kexHashKey {
 public:
                                 kexHashKey(const char *key, const char *value);
+                                kexHashKey(void);
                                 ~kexHashKey(void);
+
+    void                        operator=(kexHashKey &hashKey);
 
     const char                  *GetName(void) { return key.c_str(); }
     const char                  *GetString(void) { return value.c_str(); }
@@ -44,6 +47,10 @@ public:
     void                        Add(const char *key, const char *value);
     kexHashKey                  *Find(const char *name);
     void                        Empty(void);
+    void                        Resize(int newSize);
+
+    void                        SetMask(const int mask) { hashMask = mask; }
+
     bool                        GetFloat(const char *key, float &out, const float defaultValue = 0);
     bool                        GetFloat(const kexStr &key, float &out, const float defaultValue = 0);
     bool                        GetInt(const char *key, int &out, const int defaultValue = 0);
@@ -60,7 +67,9 @@ public:
 #endif
 
 private:
-    kexPtrArray<kexHashKey*>    hashlist[MAX_HASH];
+    int                         hashMask;
+    int                         hashSize;
+    kexArray<kexHashKey>        *hashlist;
 };
 
 #endif

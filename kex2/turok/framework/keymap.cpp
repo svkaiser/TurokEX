@@ -42,6 +42,15 @@ kexHashKey::kexHashKey(const char *key, const char *value) {
 }
 
 //
+// kexHashKey::kexHashKey
+//
+
+kexHashKey::kexHashKey(void) {
+    this->key = "";
+    this->value = "";
+}
+
+//
 // kexHashKey::~kexHashKey
 //
 
@@ -49,13 +58,22 @@ kexHashKey::~kexHashKey(void) {
 }
 
 //
+// kexHashKey::operator=
+//
+
+void kexHashKey::operator=(kexHashKey &hashKey) {
+    this->key = hashKey.key;
+    this->value = hashKey.value;
+}
+
+//
 // kexKeyMap::kexKeyMap
 //
 
 kexKeyMap::kexKeyMap(void) {
-    for(int i = 0; i < MAX_HASH; i++) {
-        hashlist[i].IsPointer(true);
-    }
+    this->hashMask = MAX_HASH;
+    this->hashSize = 0;
+    this->hashlist = NULL;
 }
 
 //
@@ -63,7 +81,9 @@ kexKeyMap::kexKeyMap(void) {
 //
 
 kexKeyMap::~kexKeyMap(void) {
-    //Empty();
+    if(hashlist != NULL && hashSize != 0) {
+        delete[] hashlist;
+    }
 }
 
 //
@@ -71,7 +91,10 @@ kexKeyMap::~kexKeyMap(void) {
 //
 
 void kexKeyMap::Add(const char *key, const char *value) {
-    hashlist[kexStr::Hash(key)].Push(new kexHashKey(key, value));
+    int hash = kexStr::Hash(key) & (hashMask-1);
+
+    Resize(hash);
+    hashlist[hash].Push(kexHashKey(key, value));
 }
 
 //
@@ -79,9 +102,37 @@ void kexKeyMap::Add(const char *key, const char *value) {
 //
 
 void kexKeyMap::Empty(void) {
-    for(int i = 0; i < MAX_HASH; i++) {
-        hashlist[i].~kexPtrArray();
+}
+
+//
+// kexKeyMap::Resize
+//
+
+void kexKeyMap::Resize(int newSize) {
+    kexArray<kexHashKey> *oldList;
+
+    if(hashlist == NULL && hashSize == 0) {
+        hashlist = new kexArray<kexHashKey>[newSize+1];
+        hashSize = newSize+1;
+        return;
     }
+
+    if(newSize < hashSize || hashSize <= 0) {
+        return;
+    }
+
+    oldList = hashlist;
+    hashlist = new kexArray<kexHashKey>[newSize+1];
+
+    for(int i = 0; i < hashSize; i++) {
+        for(unsigned int j = 0; j < oldList[i].Length(); j++) {
+            hashlist[i].Push(oldList[i][j]);
+        }
+    }
+
+    delete[] oldList;
+
+    hashSize = newSize+1;
 }
 
 //
@@ -90,12 +141,17 @@ void kexKeyMap::Empty(void) {
 
 kexHashKey *kexKeyMap::Find(const char *name) {
     kexHashKey *k;
-    kexPtrArray<kexHashKey*> *keyList;
+    kexArray<kexHashKey> *keyList;
+    int hash = kexStr::Hash(name) & (hashMask-1);
 
-    keyList = &hashlist[kexStr::Hash(name)];
+    if(hash >= hashSize) {
+        return NULL;
+    }
+
+    keyList = &hashlist[hash];
 
     for(unsigned int i = 0; i < keyList->Length(); i++) {
-        k = keyList->GetData(i);
+        k = &hashlist[hash][i];
         if(!strcmp(name, k->GetName())) {
             return k;
         }
