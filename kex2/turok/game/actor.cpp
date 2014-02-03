@@ -533,21 +533,29 @@ void kexActor::OnTrigger(void) {
 
 void kexActor::OnDamage(kexWorldObject *instigator, int damage, kexKeyMap *damageDef) {
     int state;
+    kexActorComponent *ac;
 
-    state = scriptComponent.PrepareFunction("void OnDamage(kActor@, int, kKeyMapMem@)");
+    if(InstanceOf(&kexPlayerPuppet::info)) {
+        ac = &static_cast<kexActor*>(owner)->scriptComponent;
+    }
+    else {
+        ac = &scriptComponent;
+    }
+
+    state = ac->PrepareFunction("void OnDamage(kActor@, int, kKeyMapMem@)");
     if(state == -1) {
         return;
     }
 
-    scriptComponent.SetCallArgument(0, static_cast<kexActor*>(instigator));
-    scriptComponent.SetCallArgument(1, damage);
-    scriptComponent.SetCallArgument(2, damageDef);
+    ac->SetCallArgument(0, static_cast<kexActor*>(instigator));
+    ac->SetCallArgument(1, damage);
+    ac->SetCallArgument(2, damageDef);
 
-    if(!scriptComponent.ExecuteFunction(state)) {
+    if(!ac->ExecuteFunction(state)) {
         return;
     }
 
-    scriptComponent.FinishFunction(state);
+    ac->FinishFunction(state);
 }
 
 //
@@ -556,20 +564,28 @@ void kexActor::OnDamage(kexWorldObject *instigator, int damage, kexKeyMap *damag
 
 void kexActor::OnDeath(kexWorldObject *instigator, kexKeyMap *damageDef) {
     int state;
+    kexActorComponent *ac;
 
-    state = scriptComponent.PrepareFunction("void OnDeath(kActor@, kKeyMapMem@)");
+    if(InstanceOf(&kexPlayerPuppet::info)) {
+        ac = &static_cast<kexActor*>(owner)->scriptComponent;
+    }
+    else {
+        ac = &scriptComponent;
+    }
+
+    state = ac->PrepareFunction("void OnDeath(kActor@, kKeyMapMem@)");
     if(state == -1) {
         return;
     }
 
-    scriptComponent.SetCallArgument(0, static_cast<kexActor*>(instigator));
-    scriptComponent.SetCallArgument(1, damageDef);
+    ac->SetCallArgument(0, static_cast<kexActor*>(instigator));
+    ac->SetCallArgument(1, damageDef);
 
-    if(!scriptComponent.ExecuteFunction(state)) {
+    if(!ac->ExecuteFunction(state)) {
         return;
     }
 
-    scriptComponent.FinishFunction(state);
+    ac->FinishFunction(state);
 }
 
 //

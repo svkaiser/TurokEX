@@ -93,6 +93,8 @@ public:
     }
 
 protected:
+    virtual void                EmitSound(const char *name);
+
     kexQuat                     rotation;       // rotations in quaternions
     kexAttachment               attachment;     // attachment object
     float                       cullDistance;

@@ -27,6 +27,7 @@
 #include "common.h"
 #include "worldObject.h"
 #include "world.h"
+#include "defs.h"
 
 DECLARE_ABSTRACT_CLASS(kexWorldObject, kexDisplayObject)
 
@@ -244,6 +245,17 @@ void kexWorldObject::OnDeath(kexWorldObject *instigator, kexKeyMap *damageDef) {
 }
 
 //
+// kexWorldObject::ObjectDistance
+//
+
+float kexWorldObject::ObjectDistance(kexWorldObject *obj, const kexVec3 &offset) {
+    kexVec3 offs = obj->GetOrigin() - offset;
+    offs[1] += viewHeight;
+
+    return offs.UnitSq();
+}
+
+//
 // kexWorldObject::InflictDamage
 //
 
@@ -282,6 +294,45 @@ void kexWorldObject::InflictDamage(kexWorldObject *target, kexKeyMap *damageDef)
     if(target->Health() <= 0) {
         target->OnDeath(this, damageDef);
     }
+}
+
+//
+// kexWorldObject::RangeDamage
+//
+
+void kexWorldObject::RangeDamage(const char *damageDef,
+                                 const float dmgRadius,
+                                 const kexVec3 &dmgOrigin) {
+    if(areaNode) {
+        float dist;
+
+        for(kexWorldObject *obj = areaNode->objects.Next(); obj != NULL;
+            obj = obj->areaLink.Next()) {
+                if(obj == this || !obj->bCollision) {
+                    continue;
+                }
+                if(target && obj != target) {
+                    continue;
+                }
+
+                dist = ObjectDistance(obj, dmgOrigin);
+
+                if(kexMath::Sqrt(dist) * 0.5f < radius + dmgRadius) {
+                    InflictDamage(obj, defManager.FindDefEntry(damageDef));
+                    return;
+                }
+        }
+    }
+}
+
+//
+// kexWorldObject::RangeDamage
+//
+
+void kexWorldObject::RangeDamage(const kexStr &damageDef,
+                                 const float dmgRadius,
+                                 const kexVec3 &dmgOrigin) {
+    RangeDamage(damageDef.c_str(), dmgRadius, dmgOrigin);
 }
 
 //

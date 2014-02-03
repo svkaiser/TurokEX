@@ -55,7 +55,14 @@ public:
     bool                        AlignToSurface(void);
     void                        LinkArea(void);
     void                        UnlinkArea(void);
+    float                       ObjectDistance(kexWorldObject *obj, const kexVec3 &offset);
     void                        InflictDamage(kexWorldObject *target, kexKeyMap *damageDef);
+    void                        RangeDamage(const char *damageDef,
+                                            const float dmgRadius,
+                                            const kexVec3 &dmgOrigin);
+    void                        RangeDamage(const kexStr &damageDef,
+                                            const float dmgRadius,
+                                            const kexVec3 &dmgOrigin);
 
     float                       Radius(void) { return radius; }
     float                       Height(void) { return height; }
@@ -96,6 +103,13 @@ public:
 
         OBJMETHOD("void SetBoundingBox(const kVec3 &in, const kVec3 &in)",
             SetBoundingBox, (const kexVec3 &min, const kexVec3 &max), void);
+        OBJMETHOD("float ObjectDistance(kActor@, const kVec3 &in)",
+            ObjectDistance, (kexWorldObject *obj, const kexVec3 &offset), float);
+        OBJMETHOD("void RangeDamage(const kStr &in, const float, const kVec3 &in)",
+            RangeDamage, (
+            const kexStr &damageDef,
+            const float dmgRadius,
+            const kexVec3 &dmgOrigin), void);
 
     #define OBJPROPERTY(str, p)                         \
         scriptManager.Engine()->RegisterObjectProperty( \

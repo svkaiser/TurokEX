@@ -26,6 +26,7 @@
 
 #include "common.h"
 #include "displayObject.h"
+#include "sound.h"
 
 DECLARE_ABSTRACT_CLASS(kexDisplayObject, kexGameObject)
 
@@ -58,6 +59,16 @@ void kexDisplayObject::Spawn(void) {
     }
 
     rotation.Normalize();
+}
+
+//
+// kexDisplayObject::EmitSound
+//
+
+void kexDisplayObject::EmitSound(const char *name) {
+    if(bCulled == false) {
+        soundSystem.StartSound(name, this);
+    }
 }
 
 //

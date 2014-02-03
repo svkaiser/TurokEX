@@ -110,6 +110,8 @@ public:
     }
 
 protected:
+    virtual void                EmitSound(const char *name);
+
     kexVec3                     origin;         // (xyz) position
     kexAngle                    angles;         // yaw, pitch, roll
     unsigned int                targetID;

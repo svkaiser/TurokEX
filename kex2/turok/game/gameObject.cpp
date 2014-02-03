@@ -129,11 +129,19 @@ void kexGameObject::Spawn(void) {
 }
 
 //
+// kexGameObject::EmitSound
+//
+
+void kexGameObject::EmitSound(const char *name) {
+    soundSystem.StartSound(name, this);
+}
+
+//
 // kexGameObject::StartSound
 //
 
 void kexGameObject::StartSound(const char *name) {
-    soundSystem.StartSound(name, this);
+    EmitSound(name);
 }
 
 //
