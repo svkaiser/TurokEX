@@ -28,63 +28,76 @@
 template<class type>
 class kexArray {
 public:
-                        kexArray();
-                        kexArray(bool bIsPointer);
-                        ~kexArray();
+                        kexArray(void);
+                        ~kexArray(void);
 
     void                Push(type o);
     void                Pop(void);
     void                Empty(void);
+    void                Init(void);
+    void                Resize(unsigned int size);
     type                IndexOf(unsigned int index) const;
     void                Splice(const unsigned int start, unsigned int len);
     const unsigned int  Length(void) const { return length; }
-    void                IsPointer(bool IsPointer) { bPointer = IsPointer; }
     type                GetData(const int index) { return data[index]; }
 
     type                &operator[](unsigned int index);
+    kexArray<type>      &operator=(const kexArray<type> &arr);
 
 protected:
     type                *data;
     unsigned int        length;
-    bool                bPointer;
-};
-
-template <class type>
-class kexPtrArray : public kexArray<type> {
-public:
-                    kexPtrArray(void);
-                    ~kexPtrArray(void);
-
-    void            DeleteContents(void);
 };
 
 //
 // kexArray::kexArray
 //
 template<class type>
-kexArray<type>::kexArray() {
-    data = NULL;
-    length = 0;
-    bPointer = false;
-}
-
-//
-// kexArray::kexArray
-//
-template<class type>
-kexArray<type>::kexArray(bool bIsPointer) {
-    data = NULL;
-    length = 0;
-    bPointer = bIsPointer;
+kexArray<type>::kexArray(void) {
+    Init();
 }
 
 //
 // kexArray::~kexArray
 //
 template<class type>
-kexArray<type>::~kexArray() {
-    if(data)
-        delete[] data;
+kexArray<type>::~kexArray(void) {
+    Empty();
+}
+
+//
+// kexArray::Init
+//
+template<class type>
+void kexArray<type>::Init(void) {
+    data = NULL;
+    length = 0;
+}
+
+//
+// kexArray::Resize
+//
+template<class type>
+void kexArray<type>::Resize(unsigned int size) {
+    type *tmp;
+
+    if(size == length) {
+        return;
+    }
+
+    if(length == 0) {
+        data = new type[size];
+        return;
+    }
+
+    tmp = data;
+    data = new type[size];
+
+    for(unsigned int i = 0; i < length; i++) {
+        data[i] = tmp[i];
+    }
+
+    delete[] tmp;
 }
 
 //
@@ -92,21 +105,8 @@ kexArray<type>::~kexArray() {
 //
 template<class type>
 void kexArray<type>::Push(type o) {
-    if(length == 0) {
-        data = new type[length+1];
-        data[length] = o;
-    }
-    else {
-        type *tmp = data;
-        data = new type[length+1];
-        for(unsigned int i = 0; i < length; i++)
-            data[i] = tmp[i];
-
-        delete[] tmp;
-        data[length] = o;
-    }
-
-    length++;
+    Resize(length+1);
+    data[length++] = o;
 }
 
 //
@@ -114,31 +114,11 @@ void kexArray<type>::Push(type o) {
 //
 template<class type>
 void kexArray<type>::Pop(void) {
-    if(length == 0)
+    if(length == 0) {
         return;
-
-    if(length != 1) {
-        type *tmp = data;
-        
-        data = new type[length-1];
-
-        for(unsigned int i = 0; i < length-1; i++)
-            data[i] = tmp[i];
-        if(bPointer) {
-            delete tmp[length-1];
-            tmp[length-1] = NULL;
-        }
-
-        delete[] tmp;
     }
-    else {
-        if(bPointer) {
-            delete data[0];
-        }
-        delete[] data;
-        data = NULL;
-    }
-
+    
+    Resize(length-1);
     length--;
 }
 
@@ -147,8 +127,10 @@ void kexArray<type>::Pop(void) {
 //
 template<class type>
 void kexArray<type>::Empty(void) {
-    while(length) {
-        Pop();
+    if(data) {
+        delete[] data;
+        data = NULL;
+        length = 0;
     }
 }
 
@@ -157,8 +139,9 @@ void kexArray<type>::Empty(void) {
 //
 template<class type>
 type kexArray<type>::IndexOf(unsigned int index) const {
-    if(index >= length)
+    if(index >= length) {
         index = length-1;
+    }
 
     return data[index];
 }
@@ -168,28 +151,18 @@ type kexArray<type>::IndexOf(unsigned int index) const {
 //
 template<class type>
 void kexArray<type>::Splice(const unsigned int start, unsigned int len) {
-    if(length == 0 || len == 0)
+    if(length == 0 || len == 0) {
         return;
+    }
 
-    if(len >= length)
+    if(len >= length) {
         len = length;
+    }
 
     type *tmp = new type[len];
 
-    if(bPointer && start > 0) {
-        for(unsigned int i = 0; i < start; i++) {
-            delete data[i];
-            data[i] = NULL;
-        }
-    }
     for(unsigned int i = 0; i < len; i++) {
         tmp[i] = data[start+i];
-    }
-    if(bPointer && len < length) {
-        for(unsigned int i = len; i < length; i++) {
-            delete data[i];
-            data[i] = NULL;
-        }
     }
 
     delete[] data;
@@ -207,30 +180,24 @@ type &kexArray<type>::operator[](unsigned int index) {
 }
 
 //
-// kexPtrArray::kexPtrArray
+// kexArray::operator=
 //
 template <class type>
-kexPtrArray<type>::kexPtrArray(void) {
-    bPointer = true;
-}
-
-//
-// kexPtrArray::~kexPtrArray
-//
-template<class type>
-kexPtrArray<type>::~kexPtrArray() {
-    DeleteContents();
-}
-
-//
-// kexPtrArray::EmptyContents
-//
-template<class type>
-void kexPtrArray<type>::DeleteContents(void) {
-    for(unsigned int i = 0; i < length; i++) {
-        delete (void*)data[i];
-        data[i] = NULL;
+kexArray<type> &kexArray<type>::operator=(const kexArray<type> &arr) {
+    delete[] data;
+    
+    data = NULL;
+    length = arr.length;
+    
+    if(arr.length > 0) {
+        data = new type[arr.length];
+        
+        for(unsigned int i = 0; i < arr.length; i++) {
+            data[i] = arr.data[i];
+        }
     }
+    
+    return *this;
 }
 
 #endif
