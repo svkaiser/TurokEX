@@ -121,6 +121,7 @@ public:
         OBJPROPERTY("bool bCollision", bCollision);
         OBJPROPERTY("bool bTouch", bTouch);
         OBJPROPERTY("bool bOrientOnSlope", bOrientOnSlope);
+        OBJPROPERTY("bool bAllowDamage", bAllowDamage);
         OBJPROPERTY("int health", health);
         OBJPROPERTY("float radius", radius);
         OBJPROPERTY("float height", height);
