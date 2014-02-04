@@ -122,6 +122,46 @@ kexActor::~kexActor(void) {
     if(scriptComponent.ScriptObject() != NULL) {
         scriptComponent.Release();
     }
+
+    if(nodeOffsets_t) {
+        Mem_Free(nodeOffsets_t);
+    }
+
+    if(nodeOffsets_r) {
+        Mem_Free(nodeOffsets_r);
+    }
+
+    if(model) {
+        for(unsigned int j = 0; j < (int)model->numNodes; j++) {
+            modelNode_t *node = &model->nodes[j];
+
+            for(unsigned int k = 0; k < node->numSurfaceGroups; k++) {
+                surfaceGroup_t *group = &node->surfaceGroups[k];
+                
+                for(unsigned int l = 0; l < group->numSurfaces; l++) {
+                    if(textureSwaps[j][k][l]) {
+                        Mem_Free(textureSwaps[j][k][l]);
+                        textureSwaps[j][k][l] = NULL;
+                    }
+                }
+
+                if(textureSwaps[j][k]) {
+                    Mem_Free(textureSwaps[j][k]);
+                    textureSwaps[j][k] = NULL;
+                }
+            }
+
+            if(textureSwaps[j]) {
+                Mem_Free(textureSwaps[j]);
+                textureSwaps[j] = NULL;
+            }
+        }
+
+        if(textureSwaps) {
+            Mem_Free(textureSwaps);
+            textureSwaps = NULL;
+        }
+    }
 }
 
 //
@@ -232,7 +272,7 @@ void kexActor::ParseDefault(kexLexer *lexer) {
                 for(unsigned int l = 0; l < group->numSurfaces; l++) {
                     // parse sections
                     lexer->GetString();
-                    textureSwaps[j][k][l] = Mem_Strdup(lexer->StringToken(), hb_object);
+                    textureSwaps[j][k][l] = Mem_Strdup(lexer->StringToken(), hb_static);
                 }
                 // end mesh block
                 lexer->ExpectNextToken(TK_RBRACK);
@@ -389,12 +429,10 @@ void kexActor::SetModel(const char* modelFile) {
         }
 
         // allocate node translation offset data
-        nodeOffsets_t = (kexVec3*)Mem_Realloc(nodeOffsets_t,
-            sizeof(kexVec3) * m->numNodes, hb_object);
+        nodeOffsets_t = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * m->numNodes, hb_static);
 
         // allocate node rotation offset data
-        nodeOffsets_r = (kexQuat*)Mem_Realloc(
-            nodeOffsets_r, sizeof(kexQuat) * m->numNodes, hb_object);
+        nodeOffsets_r = (kexQuat*)Mem_Calloc(sizeof(kexQuat) * m->numNodes, hb_static);
 
         // set default rotation offsets
         for(i = 0; i < m->numNodes; i++)
@@ -402,7 +440,7 @@ void kexActor::SetModel(const char* modelFile) {
 
         // allocate data for texture swap array
         textureSwaps = (char****)Mem_Calloc(sizeof(char***) *
-            m->numNodes, hb_object);
+            m->numNodes, hb_static);
 
         for(j = 0; j < m->numNodes; j++) {
             unsigned int k;
@@ -411,7 +449,7 @@ void kexActor::SetModel(const char* modelFile) {
             node = &m->nodes[j];
 
             textureSwaps[j] = (char***)Mem_Calloc(sizeof(char**) *
-                node->numSurfaceGroups, hb_object);
+                node->numSurfaceGroups, hb_static);
 
             for(k = 0; k < node->numSurfaceGroups; k++) {
                 surfaceGroup_t *group;
@@ -422,7 +460,7 @@ void kexActor::SetModel(const char* modelFile) {
                     continue;
 
                 textureSwaps[j][k] = (char**)Mem_Calloc(sizeof(char*) *
-                    group->numSurfaces, hb_object);
+                    group->numSurfaces, hb_static);
             }
         }
     }
