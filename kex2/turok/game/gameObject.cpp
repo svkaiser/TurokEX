@@ -54,6 +54,8 @@ kexGameObject::kexGameObject(void) {
 //
 
 kexGameObject::~kexGameObject(void) {
+    SetTarget(NULL);
+    SetOwner(NULL);
 }
 
 //
