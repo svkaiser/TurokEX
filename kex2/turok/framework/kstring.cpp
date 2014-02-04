@@ -515,7 +515,7 @@ kexStr kexStr::Substr(int start, int len) const {
 // kexStr::Split
 //
 
-void kexStr::Split(kexStrListMem &list, const char seperator) {
+void kexStr::Split(kexStrList &list, const char seperator) {
     int splitLen = 0;
     int startOffs = 0;
     for(int i = 0; i < length; i++) {
@@ -524,7 +524,7 @@ void kexStr::Split(kexStrListMem &list, const char seperator) {
                 continue;
             }
             
-            list.Push(new kexStr(&charPtr[startOffs], splitLen));
+            list.Push(kexStr(&charPtr[startOffs], splitLen));
             startOffs += (splitLen+1);
             splitLen = 0;
             continue;
@@ -534,7 +534,7 @@ void kexStr::Split(kexStrListMem &list, const char seperator) {
     }
 
     if(splitLen != 0 && startOffs != 0) {
-        list.Push(new kexStr(&charPtr[startOffs], splitLen));
+        list.Push(kexStr(&charPtr[startOffs], splitLen));
     }
 }
 

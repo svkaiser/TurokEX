@@ -29,7 +29,6 @@
 class kexStr;
 
 typedef kexArray<kexStr>        kexStrList;
-typedef kexPtrArray<kexStr*>    kexStrListMem;
 
 class kexStr {
 public:
@@ -53,7 +52,7 @@ public:
     kexStr              &ToLower(void);
     int                 Hash(void);
     kexStr              Substr(int start, int len) const;
-    void                Split(kexStrListMem &list, const char seperator);
+    void                Split(kexStrList &list, const char seperator);
     int                 Atoi(void);
 
     int                 Length(void) const { return length; }

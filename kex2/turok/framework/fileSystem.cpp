@@ -254,9 +254,7 @@ int kexFileSystem::OpenFile(const char *filename, byte **data, kexHeapBlock &hb)
 // kexFileSystem::GetMatchingFiles
 //
 
-kexStrListMem *kexFileSystem::GetMatchingFiles(const char *search) {
-    kexStrListMem *strlist = new kexStrListMem();
-
+void kexFileSystem::GetMatchingFiles(kexStrList &list, const char *search) {
     for(kpf_t *pack = root; pack; pack = pack->next) {
         for(unsigned int i = 0; i < pack->numfiles; i++) {
             file_t *file = &pack->files[i];
@@ -265,12 +263,10 @@ kexStrListMem *kexFileSystem::GetMatchingFiles(const char *search) {
                 if(kexStr::IndexOf(file->name, ".") == -1)
                     continue;
 
-                strlist->Push(new kexStr(file->name));
+                list.Push(kexStr(file->name));
             }
         }
     }
-
-    return strlist;
 }
 
 //

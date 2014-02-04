@@ -35,7 +35,7 @@ public:
     void                Shutdown(void);
     void                LoadZipFile(const char *file);
     int                 OpenFile(const char *filename, byte **data, kexHeapBlock &hb) const;
-    kexStrListMem       *GetMatchingFiles(const char *search);
+    void                GetMatchingFiles(kexStrList &list, const char *search);
     int                 ReadExternalTextFile(const char *name, byte **buffer) const;
     void                Init(void);
 
