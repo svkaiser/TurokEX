@@ -459,13 +459,7 @@ void kexConsole::Draw(void) {
     float   h;
     rcolor  color;
 
-    if(state == CON_STATE_UP && !cvarDisplayConsole.GetBool())
-        return;
-
-    bOverlay = (state == CON_STATE_UP && cvarDisplayConsole.GetBool());
-
     w = (float)sysMain.VideoWidth();
-    h = (float)sysMain.VideoHeight() * 0.6875f;
 
     if(cvarShowFPS.GetBool()) {
         color = RGBA(255, 255, 255, 255);
@@ -473,6 +467,12 @@ void kexConsole::Draw(void) {
             false, (byte*)&color, (byte*)&color);
     }
 
+    if(state == CON_STATE_UP && !cvarDisplayConsole.GetBool())
+        return;
+
+    bOverlay = (state == CON_STATE_UP && cvarDisplayConsole.GetBool());
+
+    h = (float)sysMain.VideoHeight() * 0.6875f;
     renderSystem.SetState(GLSTATE_BLEND, true);
 
     if(!bOverlay) {
