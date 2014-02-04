@@ -356,6 +356,19 @@ static char *FX_GetDamageClass(int id, float arg0)
     return damageClass;
 }
 
+static dboolean FX_CanDamage(fxevent_t *fxevent)
+{
+    return
+        (fxevent->b_action.onhitalien       != -1 ||
+         fxevent->b_action.onhitflesh       != -1 ||
+         fxevent->b_action.onhitforcefield  != -1 ||
+         fxevent->b_action.onhitlava        != -1 ||
+         fxevent->b_action.onhitmetal       != -1 ||
+         fxevent->b_action.onhitmonster     != -1 ||
+         fxevent->b_action.onhitslime       != -1 ||
+         fxevent->b_action.onhitstone       != -1);
+}
+
 static void FX_WriteEvents(fxevent_t *fxevent, const char *eventName,
                       short fxEvent, short soundEvent, short actionEvent, short actionSlot)
 {
@@ -390,6 +403,36 @@ static void FX_WriteEvents(fxevent_t *fxevent, const char *eventName,
         }
         Com_Strcat("        }\n");
     }
+}
+
+static void FX_PrintFlag(const char *flagName, const int flags, const int bit)
+{
+    if(flags & bit)
+        Com_Strcat("        %s = 1\n", flagName);
+}
+
+static void FX_PrintInt(const char *name, short val)
+{
+    if(val != 0)
+        Com_Strcat("        %s = %i\n", name, val);
+}
+
+static void FX_PrintFloat(const char *name, short val)
+{
+    float f = CoerceFloat(val);
+
+    if(f != 0)
+        Com_Strcat("        %s = %f\n", name, f);
+}
+
+static void FX_PrintVector(const char *name, short *val)
+{
+    float f1 = CoerceFloat(val[0]);
+    float f2 = CoerceFloat(val[1]);
+    float f3 = CoerceFloat(val[2]);
+
+    if(f1 != 0 || f2 != 0 || f3 != 0)
+        Com_Strcat("        %s = { %f %f %f }\n", name, f1, f2, f3);
 }
 
 void FX_StoreParticleEffects(void)
@@ -447,66 +490,72 @@ void FX_StoreParticleEffects(void)
                 flags = vfx[2] | (vfx[3] << 16);
 
                 Com_Strcat("    {\n");
-                Com_Strcat("        bFadeout = %i\n", (flags & FXF_FADEOUT) ? 1 : 0);
-                Com_Strcat("        bStopAnimOnImpact = %i\n", (flags & FXF_STOPANIMONHIT) ? 1 : 0);
-                Com_Strcat("        bOffsetFromFloor = %i\n", (flags & FXF_FLOOROFFSET) ? 1 : 0);
-                Com_Strcat("        bTextureWrapMirror = %i\n", (flags & FXF_MIRROR) ? 1 : 0);
-                Com_Strcat("        bDepthBuffer = %i\n", (flags & FXF_DEPTHBUFFER) ? 1 : 0);
-                Com_Strcat("        bActorInstance = %i\n", (flags & FXF_ACTORINSTANCE) ? 1 : 0);
-                Com_Strcat("        bScaleLerp = %i\n", (flags & FXF_SCALELERP) ? 1 : 0);
-                Com_Strcat("        bLensFlares = %i\n", (flags & FXF_LENSFLARES) ? 1 : 0);
-                Com_Strcat("        bBlood = %i\n", (flags & FXF_BLOOD) ? 1 : 0);
-                Com_Strcat("        bAddOffset = %i\n", (flags & FXF_ADDOFFSET) ? 1 : 0);
-                Com_Strcat("        bNoDirection = %i\n", (flags & FXF_NODIRECTION) ? 1 : 0);
-                Com_Strcat("        bLocalAxis = %i\n", (flags & FXF_LOCALAXIS) ? 1 : 0);
-                Com_Strcat("        bProjectile = %i\n", (flags & FXF_PROJECTILE) ? 1 : 0);
-                Com_Strcat("        bDestroyOnWaterSurface = %i\n", (flags & FXF_DESTROYONWATER) ? 1 : 0);
-                Com_Strcat("        mass = %f\n", CoerceFloat(vfx[4]));
-                Com_Strcat("        translation_global_randomscale = %f\n", CoerceFloat(vfx[5]));
-                Com_Strcat("        translation_randomscale = { %f %f %f }\n",
-                    CoerceFloat(vfx[6]), CoerceFloat(vfx[7]), CoerceFloat(vfx[8]));
-                Com_Strcat("        translation = { %f %f %f }\n",
-                    CoerceFloat(vfx[9]), CoerceFloat(vfx[10]), CoerceFloat(vfx[11]));
-                Com_Strcat("        gravity = %f\n", CoerceFloat(vfx[12]));
-                Com_Strcat("        gravity_randomscale = %f\n", CoerceFloat(vfx[13]));
-                Com_Strcat("        friction = %f\n", CoerceFloat(vfx[14]));
-                Com_Strcat("        animFriction = %f\n", CoerceFloat(vfx[15]));
-                Com_Strcat("        scale = %f\n", CoerceFloat(vfx[18]));
-                Com_Strcat("        scale_randomscale = %f\n", CoerceFloat(vfx[19]));
-                Com_Strcat("        scale_dest = %f\n", CoerceFloat(vfx[20]));
-                Com_Strcat("        scale_dest_randomscale = %f\n", CoerceFloat(vfx[21]));
-                Com_Strcat("        forward_speed = %f\n", CoerceFloat(vfx[22]));
-                Com_Strcat("        forward_speed_randomscale = %f\n", CoerceFloat(vfx[23]));
-                Com_Strcat("        offset_random = { %f %f %f }\n",
-                    CoerceFloat(vfx[24]), CoerceFloat(vfx[25]), CoerceFloat(vfx[26]));
-                Com_Strcat("        rotation_offset = %f\n", CoerceFloat(vfx[27]));
-                Com_Strcat("        rotation_offset_randomscale = %f\n", CoerceFloat(vfx[28]));
-                Com_Strcat("        rotation_speed = %f\n", CoerceFloat(vfx[29]));
-                Com_Strcat("        rotation_speed_randomscale = %f\n", CoerceFloat(vfx[30]));
-                Com_Strcat("        screen_offset_x = %f\n", CoerceFloat(vfx[31]));
-                Com_Strcat("        screen_offset_y = %f\n", CoerceFloat(vfx[32]));
-                Com_Strcat("        offset = { %f %f %f }\n",
-                    CoerceFloat(vfx[33]), CoerceFloat(vfx[34]), CoerceFloat(vfx[35]));
+
+                FX_PrintFlag("bFadeout", flags, FXF_FADEOUT);
+                FX_PrintFlag("bStopAnimOnImpact", flags, FXF_STOPANIMONHIT);
+                FX_PrintFlag("bOffsetFromFloor", flags, FXF_FLOOROFFSET);
+                FX_PrintFlag("bTextureWrapMirror", flags, FXF_MIRROR);
+                FX_PrintFlag("bDepthBuffer", flags, FXF_DEPTHBUFFER);
+                FX_PrintFlag("bActorInstance", flags, FXF_ACTORINSTANCE);
+                FX_PrintFlag("bScaleLerp", flags, FXF_SCALELERP);
+                FX_PrintFlag("bLensFlares", flags, FXF_LENSFLARES);
+                FX_PrintFlag("bBlood", flags, FXF_BLOOD);
+                FX_PrintFlag("bAddOffset", flags, FXF_ADDOFFSET);
+                FX_PrintFlag("bNoDirection", flags, FXF_NODIRECTION);
+                FX_PrintFlag("bLocalAxis", flags, FXF_LOCALAXIS);
+                FX_PrintFlag("bProjectile", flags, FXF_PROJECTILE);
+                FX_PrintFlag("bDestroyOnWaterSurface", flags, FXF_DESTROYONWATER);
+
+                if(FX_CanDamage(fxevent))
+                    Com_Strcat("        bLinkArea = 1\n");
+
+                FX_PrintFloat("mass", vfx[4]);
+                FX_PrintFloat("translation_global_randomscale", vfx[5]);
+                FX_PrintVector("translation_randomscale", &vfx[6]);
+                FX_PrintVector("translation", &vfx[9]);
+                FX_PrintFloat("gravity", vfx[12]);
+                FX_PrintFloat("gravity_randomscale", vfx[13]);
+                FX_PrintFloat("friction", vfx[14]);
+                FX_PrintFloat("animFriction", vfx[15]);
+                FX_PrintFloat("scale", vfx[18]);
+                FX_PrintFloat("scale_randomscale", vfx[19]);
+                FX_PrintFloat("scale_dest", vfx[20]);
+                FX_PrintFloat("scale_dest_randomscale", vfx[21]);
+                FX_PrintFloat("forward_speed", vfx[22]);
+                FX_PrintFloat("forward_speed_randomscale", vfx[23]);
+                FX_PrintVector("offset_random", &vfx[24]);
+                FX_PrintFloat("rotation_offset", vfx[27]);
+                FX_PrintFloat("rotation_offset_randomscale", vfx[28]);
+                FX_PrintFloat("rotation_speed", vfx[29]);
+                FX_PrintFloat("rotation_speed_randomscale", vfx[30]);
+                FX_PrintFloat("screen_offset_x", vfx[31]);
+                FX_PrintFloat("screen_offset_y", vfx[32]);
+                FX_PrintVector("offset", &vfx[33]);
+
                 Com_Strcat("        textures[%i] =\n", texindexes[vfx[36]]);
                 Com_Strcat("        {\n");
                 for(k = 0; k < texindexes[vfx[36]]; k++)
                     Com_Strcat("            \"textures/tex%04d_%02d.tga\"\n", vfx[36], k);
                 Com_Strcat("        }\n");
-                Com_Strcat("        instances = %i\n", vfx[37]);
-                Com_Strcat("        instances_randomscale = %i\n", vfx[38]);
-                Com_Strcat("        lifetime = %i\n", vfx[39]);
-                Com_Strcat("        lifetime_randomscale = %i\n", vfx[40]);
-                Com_Strcat("        restart = %i\n", vfx[41]);
-                Com_Strcat("        animspeed = %i\n", vfx[42] & 0xff);
+
+                FX_PrintInt("instances", vfx[37]);
+                FX_PrintInt("instances_randomscale", vfx[38]);
+                FX_PrintInt("lifetime", vfx[39]);
+                FX_PrintInt("lifetime_randomscale", vfx[40]);
+                FX_PrintInt("restart", vfx[41]);
+                FX_PrintInt("animspeed", vfx[42] & 0xff);
+
                 Com_Strcat("        color1 = [%i %i %i]\n",
                     (vfx[44] >> 8) & 0xff, vfx[45] & 0xff, (vfx[45] >> 8) & 0xff);
                 Com_Strcat("        color2 = [%i %i %i]\n",
                     vfx[46] & 0xff, (vfx[46] >> 8) & 0xff, vfx[47] & 0xff);
-                Com_Strcat("        color1_randomscale = %i\n", (vfx[47] >> 8) & 0xff);
-                Com_Strcat("        color2_randomscale = %i\n", (vfx[48] >> 8) & 0xff);
-                Com_Strcat("        saturation_randomscale = %i\n", vfx[48] & 0xff);
-                Com_Strcat("        fadein_time = %i\n", (vfx[50] >> 8) & 0xff);
-                Com_Strcat("        fadeout_time = %i\n", vfx[51]);
+
+                FX_PrintInt("color1_randomscale", (vfx[47] >> 8) & 0xff);
+                FX_PrintInt("color2_randomscale", (vfx[48] >> 8) & 0xff);
+                FX_PrintInt("saturation_randomscale", vfx[48] & 0xff);
+                FX_PrintInt("fadein_time", (vfx[50] >> 8) & 0xff);
+                FX_PrintInt("fadeout_time", vfx[51]);
+
                 switch((vfx[42] >> 8) & 0xff)
                 {
                 case 0:

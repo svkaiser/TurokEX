@@ -1099,37 +1099,37 @@ char *GetActionName(int id, float arg0)
         sprintf(actionName, "fireWeapon");
         break;
     case 31:
-        sprintf(actionName, "veryWimpyMelee");
+        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntVeryWimpy\"");
         break;
     case 32:
-        sprintf(actionName, "wimpyMelee");
+        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntWimpy\"");
         break;
     case 33:
-        sprintf(actionName, "weakMelee");
+        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntWeak\"");
         break;
     case 34:
-        sprintf(actionName, "melee");
+        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBlunt\"");
         break;
     case 35:
-        sprintf(actionName, "strongMelee");
+        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntStrong\"");
         break;
     case 36:
-        sprintf(actionName, "veryStrongMelee");
+        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntVeryStrong\"");
         break;
     case 37:
-        sprintf(actionName, "heavyMelee");
+        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntHeavy\"");
         break;
     case 38:
-        sprintf(actionName, "veryHeavyMelee");
+        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntVeryHeavy\"");
         break;
     case 39:
-        sprintf(actionName, "fatalMelee");
+        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntFatal\"");
         break;
     case 40:
-        sprintf(actionName, "veryFatalMelee");
+        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntVeryFatal\"");
         break;
     case 41:
-        sprintf(actionName, "deathBlow");
+        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntDeathBlow\"");
         break;
     case 44:
         sprintf(actionName, "footstepPuff");
@@ -1298,21 +1298,38 @@ static char *GetActionFunction(factions_t *action)
 
         FX_GetName(fx, name);
 
-        return va("\"fx\" \"%s\" %f %f %f",
+        return va("\"fx\" \"%s\" %f %f %f 0",
             name, action->args[1],
             action->args[2], action->args[3]);
     }
 
-    if(action->type == 248)
+    switch(action->type)
     {
-        return va("%s %f %f %f",
+    case 31:
+    case 32:
+    case 33:
+    case 34:
+    case 35:
+    case 36:
+    case 37:
+    case 38:
+    case 39:
+    case 40:
+    case 41:
+        return va("%s %f %f %f %f",
+            GetActionName(action->type, action->args[0]),
+            action->args[0]*10.24f, action->args[1], action->args[2], action->args[3]);
+
+    case 248:
+        return va("%s %f %f %f 0",
             GetActionName(action->type, action->args[0]),
             action->args[1], action->args[2], action->args[3]);
-    }
 
-    return va("\"%s\" %f %f %f %f",
+    default:
+        return va("\"%s\" %f %f %f %f 0",
             GetActionName(action->type, action->args[0]),
             action->args[0], action->args[1], action->args[2], action->args[3]);
+    }
 }
 
 //
@@ -1348,7 +1365,7 @@ static void ProcessActions(byte *data, int animIndex)
             fa->frame, GetActionFunction(fa));
     }
 
-    Com_Strcat("\n    }\n\n");
+    Com_Strcat("\n}\n\n");
 }
 
 //
@@ -1416,7 +1433,7 @@ static void ProcessAnimation(byte *data, int index, int animIndex)
 
         lookup += 2;
     }
-    Com_Strcat("\n    }\n\n");
+    Com_Strcat("\n}\n\n");
 
     ProcessActions(Com_GetCartData(data, CHUNK_ANIMROOT_ACTIONS, 0), animIndex);
 
