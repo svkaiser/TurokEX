@@ -36,7 +36,7 @@
 kexCvar cvarPitchShift("s_pitchshift", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 kexCvar cvarSoundVolume("s_sndvolume", CVF_FLOAT|CVF_CONFIG, "0.5", 0, 1, "TODO");
 
-#define SND_METRICS 0.0025f
+#define SND_METRICS 0.0035f
 #define SND_VECTOR2METRICS(vec) \
     vec[0] * SND_METRICS,       \
     vec[1] * SND_METRICS,       \
@@ -568,9 +568,12 @@ void kexSoundSystem::ExitCriticalSection(void) {
 void kexSoundSystem::StopAll(void) {
     int i;
 
+    kexSoundSystem::EnterCriticalSection();
     for(i = 0; i < activeSources; i++) {
         sources[i].Stop();
+        sources[i].Free();
     }
+    kexSoundSystem::ExitCriticalSection();
 }
 
 //
