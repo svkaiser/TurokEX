@@ -145,6 +145,7 @@ kexModelManager::~kexModelManager(void) {
 void kexModelManager::Shutdown(void) {
     common.Printf("Freeing model resources\n");
     Mem_Purge(hb_model);
+    Mem_Purge(hb_animation);
 }
 
 //

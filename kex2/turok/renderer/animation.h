@@ -23,12 +23,7 @@
 #ifndef __ANIMATION_H__
 #define __ANIMATION_H__
 
-typedef struct {
-    int                     frame;
-    char                    *function;
-    float                   args[4];
-    char                    *argStrings[4];
-} action_t;
+extern kexHeapBlock hb_animation;
 
 typedef enum {
     ANF_BLEND       = 1,
@@ -45,11 +40,13 @@ typedef struct {
     kexQuat                 *rotations;
 } frameSet_t;
 
+#define NUMFRAMEACTIONS     5
+
 typedef struct {
     int                     frame;
     char                    *function;
-    float                   args[4];
-    char                    *argStrings[4];
+    float                   args[NUMFRAMEACTIONS];
+    char                    *argStrings[NUMFRAMEACTIONS];
 } frameAction_t;
 
 typedef struct kexAnim_s {
