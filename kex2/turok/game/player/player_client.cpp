@@ -96,6 +96,10 @@ void kexLocalPlayer::BuildCommands(void) {
     if(client.GetState() != CL_STATE_INGAME)
         return;
 
+    if(bLocked == true) {
+        return;
+    }
+
     buildCmd = &cmd;
     ctrl = inputKey.Controls();
 
@@ -211,12 +215,14 @@ void kexLocalPlayer::LocalTick(void) {
 
     exitSector = puppet->Physics()->sector;
 
-    if(bNoClip == false) {
-        puppet->Physics()->Think(frameTime);
-    }
-    else {
-        puppet->GetOrigin() += (puppet->Physics()->velocity * frameTime);
-        puppet->Physics()->velocity.Clear();
+    if(bLocked == false) {
+        if(bNoClip == false) {
+            puppet->Physics()->Think(frameTime);
+        }
+        else {
+            puppet->GetOrigin() += (puppet->Physics()->velocity * frameTime);
+            puppet->Physics()->velocity.Clear();
+        }
     }
 
     puppet->UpdateTransform();
@@ -285,6 +291,8 @@ void kexLocalPlayer::InitObject(void) {
     OBJMETHOD("kPlayerMove &NoClipMove(void)", NoClipMove, (void), kexPlayerMove&);
     OBJMETHOD("kPlayerMove &GetCurrentMove(void)", GetCurrentMove, (void), kexPlayerMove&);
     OBJMETHOD("void SetCurrentMove(kPlayerMove &in)", SetCurrentMove, (kexPlayerMove&), void);
+    OBJMETHOD("void Lock(void)", Lock, (void), void);
+    OBJMETHOD("void Unlock(void)", Unlock, (void), void);
 
 #define OBJPROPERTY(str, p)                         \
     scriptManager.Engine()->RegisterObjectProperty( \

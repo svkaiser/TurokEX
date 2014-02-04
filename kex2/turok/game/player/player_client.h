@@ -43,6 +43,8 @@ public:
 
     kexVec3                 &MoveDiff(void) { return moveDiff; }
     kexActor                *ToWorldActor(void) { return static_cast<kexActor*>(this); }
+    void                    Lock(void) { bLocked = true; }
+    void                    Unlock(void) { bLocked = false; }
 
     static void             InitObject(void);
 
@@ -51,6 +53,7 @@ private:
     kexVec3                 moveDiff;
     kexVec3                 oldMoves[NETBACKUPS];
     ticcmd_t                oldCmds[NETBACKUPS];
+    bool                    bLocked;
 END_CLASS();
 
 #endif
