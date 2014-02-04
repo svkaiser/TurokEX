@@ -275,6 +275,11 @@ void kexHeap::Free(void *ptr, const char *file, int line) {
     memBlock_t* block;
 
     block = kexHeap::GetBlock(ptr, file, line);
+
+    if(block->heapTag != kexHeap::HeapTag) {
+        common.Error("kexHeap::Free: Freeing without heap tag (%s:%d)", file, line);
+    }
+
     if(block->ptrRef) {
         *block->ptrRef = NULL;
     }
