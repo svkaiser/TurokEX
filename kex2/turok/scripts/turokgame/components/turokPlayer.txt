@@ -142,6 +142,7 @@ void CommandToggleFarZ(void) {
 
 void CommandToggleCamera(void) {
     localPlayer.ToggleCamera();
+    localClient.Unlock();
 }
 
 ////////////////////////////////////////////////////
@@ -295,7 +296,7 @@ final class TurokPlayer : Component {
         kCamera @camera = LocalWorld.Camera();
         kActor @puppet = self.Puppet();
         
-        camHeight = (puppet.height + puppet.viewHeight) + 20.48f;
+        camHeight = puppet.viewHeight + 20.48f;
         
         camOffset.x = 0;
         camOffset.y = camHeight;
@@ -670,7 +671,7 @@ final class TurokPlayer : Component {
         
         if(landImpact <= (FALL_STOPSPEED * deltaTime) && puppet.Physics().OnGround()) {
             self.GetAcceleration().Clear();
-            camOffset.y = ((puppet.height + puppet.viewHeight) + 20.48f) * 0.5f;
+            camOffset.y = (puppet.viewHeight + 20.48f) * 0.5f;
             
             if(landImpact <= (FALL_THUMPFACTOR * deltaTime)) {
                 puppet.StartSound("sounds/shaders/generic_22_turok_land.ksnd");
@@ -931,29 +932,29 @@ final class TurokPlayer : Component {
     
     void GiveKey(int levelID, int bits) {
         switch(levelID) {
-        case 2:
-            keys_level2 |= (1 << bits);
-            break;
-        case 3:
-            keys_level3 |= (1 << bits);
-            break;
-        case 4:
-            keys_level4 |= (1 << bits);
-            break;
-        case 5:
-            keys_level5 |= (1 << bits);
-            break;
-        case 6:
-            keys_level6 |= (1 << bits);
-            break;
-        case 7:
-            keys_level7 |= (1 << bits);
-            break;
-        case 8:
-            keys_level8 |= (1 << bits);
-            break;
-        default:
-            break;
+            case 2:
+                keys_level2 |= (1 << bits);
+                break;
+            case 3:
+                keys_level3 |= (1 << bits);
+                break;
+            case 4:
+                keys_level4 |= (1 << bits);
+                break;
+            case 5:
+                keys_level5 |= (1 << bits);
+                break;
+            case 6:
+                keys_level6 |= (1 << bits);
+                break;
+            case 7:
+                keys_level7 |= (1 << bits);
+                break;
+            case 8:
+                keys_level8 |= (1 << bits);
+                break;
+            default:
+                break;
         }
     }
     
@@ -1084,8 +1085,10 @@ final class TurokPlayer : Component {
         playerHud.container.bVisible = true;
         
         self.Puppet().bHidden = true;
+        self.Puppet().bAllowDamage = true;
         self.Puppet().bCanPickup = true;
         self.Puppet().SetScale(kVec3(0.15f, 0.15f, 0.15f));
+        self.Unlock();
         
         waterLevel = self.Puppet().Physics().waterLevel;
         
@@ -1094,13 +1097,50 @@ final class TurokPlayer : Component {
         playerHud.livesNum.Update(lives);
         
         // TODO
-        if(LocalWorld.MapID() == 42) {
-            kCamera @camera = LocalWorld.Camera();
-            ToggleCamera();
-            
-            camera.SetOrigin(kVec3(0, 56.0f, -64.0f));
-            camera.SetAngles(kAngle(0, 0, 0));
+        kCamera @camera = LocalWorld.Camera();
+        
+        switch(LocalWorld.MapID()) {
+            case 42:
+                ToggleCamera();
+                self.Lock();
+                camera.SetOrigin(kVec3(0, 56.0f, -64.0f));
+                camera.SetAngles(kAngle(0, 0, 0));
+                break;
+            case 44:
+                ToggleCamera();
+                self.Lock();
+                camera.SetOrigin(kVec3(0.69813168f, -20.48f, -153.6f));
+                camera.SetAngles(kAngle(0, 0, 0));
+                break;
+            default:
+                break;
         }
+    }
+    
+    //
+    // TurokPlayer::OnDamage
+    //
+    
+    void OnDamage(kActor @instigator, int damage, kKeyMapMem @damageDef) {
+        kActor @puppet = self.Puppet();
+        
+        switch((Math::SysRand() % 5) & 3) {
+            case 0:
+                puppet.StartSound("sounds/shaders/generic_10_turok_injury_1.ksnd");
+                break;
+            case 1:
+                puppet.StartSound("sounds/shaders/generic_11_turok_injury_2.ksnd");
+                break;
+            case 2:
+                puppet.StartSound("sounds/shaders/generic_12_turok_injury_3.ksnd");
+                break;
+            case 3:
+                puppet.StartSound("sounds/shaders/generic_13_turok_injury_4.ksnd");
+                break;
+        }
+        
+        playerHud.Flash(192, 0, 0);
+        playerHud.healthNum.Update(puppet.health);
     }
     
     //
@@ -1109,13 +1149,6 @@ final class TurokPlayer : Component {
     
     bool OnTouch(kActor @instigator) {
         return true;
-    }
-    
-    //
-    // TurokPlayer::OnDamage
-    //
-    
-    void OnDamage(void) {
     }
     
     //

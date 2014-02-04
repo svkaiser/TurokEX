@@ -77,13 +77,6 @@ class TurokScriptedObject : Component {
     }
     
     //
-    // TurokScriptedObject::OnDamage
-    //
-    
-    void OnDamage(void) {
-    }
-    
-    //
     // TurokScriptedObject::OnTrigger
     //
     

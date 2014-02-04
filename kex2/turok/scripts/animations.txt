@@ -46,6 +46,10 @@ enum turokAnimations {
     anim_doorOpen,
     anim_doorClose,
     
+    // destructibles
+    anim_destructibleIdle           = 2626,
+    anim_destructibleDeath,
+    
     // ai grunt
     anim_aiGruntStandAlt            = 129,
     anim_aiGruntWalkAlt,

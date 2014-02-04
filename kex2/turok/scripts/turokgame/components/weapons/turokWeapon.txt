@@ -351,13 +351,6 @@ class TurokWeapon : Component {
     }
     
     //
-    // TurokWeapon::OnDamage
-    //
-    
-    void OnDamage(void) {
-    }
-    
-    //
     // TurokWeapon::OnTrigger
     //
     

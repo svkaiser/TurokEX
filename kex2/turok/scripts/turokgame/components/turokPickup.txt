@@ -204,13 +204,6 @@ class TurokPickup : Component {
     }
     
     //
-    // TurokPickup::OnDamage
-    //
-    
-    void OnDamage(void) {
-    }
-    
-    //
     // TurokPickup::OnTrigger
     //
     
