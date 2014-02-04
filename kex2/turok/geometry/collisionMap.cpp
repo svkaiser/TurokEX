@@ -320,6 +320,12 @@ void kexCollisionMap::Load(const char *name) {
 
     binFile.GetOffset(CM_ID_AREAS, NULL, &numAreas);
 
+    if(numAreas <= 0) {
+        binFile.Close();
+        common.Warning("kexCollisionMap::Load: couldn't load %s\n", name);
+        return;
+    }
+
     for(i = 0; i < numAreas; i++) {
         if(!(area = static_cast<kexArea*>(localWorld.ConstructObject("kexArea")))) {
             continue;
@@ -435,9 +441,9 @@ void kexCollisionMap::Load(const char *name) {
 void kexCollisionMap::Unload(void) {
     for(int i = 0; i < numAreas; i++) {
         delete areas[i];
+        areas[i] = NULL;
     }
 
-    areas.Empty();
     Mem_Purge(kexCollisionMap::hb_collisionMap);
 }
 
