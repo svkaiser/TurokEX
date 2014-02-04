@@ -82,6 +82,10 @@ kexKeyMap::kexKeyMap(void) {
 
 kexKeyMap::~kexKeyMap(void) {
     if(hashlist != NULL && hashSize != 0) {
+        for(int i = 0; i < hashSize; i++) {
+            hashlist[i].Empty();
+        }
+        
         delete[] hashlist;
     }
 }
@@ -93,7 +97,7 @@ kexKeyMap::~kexKeyMap(void) {
 void kexKeyMap::Add(const char *key, const char *value) {
     int hash = kexStr::Hash(key) & (hashMask-1);
 
-    Resize(hash);
+    Resize(hash+1);
     hashlist[hash].Push(kexHashKey(key, value));
 }
 
@@ -102,6 +106,11 @@ void kexKeyMap::Add(const char *key, const char *value) {
 //
 
 void kexKeyMap::Empty(void) {
+    if(hashlist != NULL && hashSize != 0) {
+        for(int i = 0; i < hashSize; i++) {
+            hashlist[i].Empty();
+        }
+    }
 }
 
 //
@@ -110,10 +119,15 @@ void kexKeyMap::Empty(void) {
 
 void kexKeyMap::Resize(int newSize) {
     kexArray<kexHashKey> *oldList;
+    int i;
+    
+    if(newSize == hashSize) {
+        return;
+    }
 
     if(hashlist == NULL && hashSize == 0) {
-        hashlist = new kexArray<kexHashKey>[newSize+1];
-        hashSize = newSize+1;
+        hashlist = new kexArray<kexHashKey>[newSize];
+        hashSize = newSize;
         return;
     }
 
@@ -122,17 +136,16 @@ void kexKeyMap::Resize(int newSize) {
     }
 
     oldList = hashlist;
-    hashlist = new kexArray<kexHashKey>[newSize+1];
+    hashlist = new kexArray<kexHashKey>[newSize];
 
-    for(int i = 0; i < hashSize; i++) {
-        for(unsigned int j = 0; j < oldList[i].Length(); j++) {
-            hashlist[i].Push(oldList[i][j]);
-        }
+    for(i = 0; i < hashSize; i++) {
+        hashlist[i] = oldList[i];
     }
-
+    
+    oldList->Empty();
     delete[] oldList;
-
-    hashSize = newSize+1;
+    
+    hashSize = newSize;
 }
 
 //
