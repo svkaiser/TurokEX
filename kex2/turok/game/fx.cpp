@@ -273,6 +273,11 @@ kexFx::kexFx(void) {
 //
 
 kexFx::~kexFx(void) {
+    if(textures) {
+        Mem_Free(textures);
+    }
+
+    SetParent(NULL);
 }
 
 //
@@ -559,7 +564,7 @@ void kexFx::Spawn(void) {
     bForcedRestart = false;
     frameTime = client.GetTime() + fxInfo->animspeed;
     textures = (kexTexture**)Mem_Calloc(sizeof(kexTexture*) *
-        fxInfo->numTextures, hb_object);
+        fxInfo->numTextures, hb_static);
 
     // setup texture lookup array
     for(i = 0; i < fxInfo->numTextures; i++) {
@@ -870,9 +875,12 @@ void kexFxManager::Init(void) {
 
     if(common.CheckParam("-nofxcache") == 0) {
         // precache all particle textures
-        kexStrListMem *fxList = fileSystem.GetMatchingFiles("fx/");
-        for(unsigned int i = 0; i < fxList->Length(); i++) {
-            fxfile_t *fxfile = LoadKFX(fxList->GetData(i)->c_str());
+        kexStrList fxList;
+        
+        fileSystem.GetMatchingFiles(fxList, "fx/");
+
+        for(unsigned int i = 0; i < fxList.Length(); i++) {
+            fxfile_t *fxfile = LoadKFX(fxList[i].c_str());
 
             if(!fxfile) {
                 continue;
@@ -888,8 +896,6 @@ void kexFxManager::Init(void) {
                 }
             }
         }
-
-        delete fxList;
     }
 }
 
