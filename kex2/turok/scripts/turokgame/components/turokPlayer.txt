@@ -12,6 +12,7 @@
 #include "scripts/turokgame/components/weapons/turokWeaponAlienRifle.txt"
 #include "scripts/turokgame/components/weapons/turokWeaponRocketLauncher.txt"
 #include "scripts/turokgame/components/weapons/turokWeaponAccelerator.txt"
+#include "scripts/turokgame/components/weapons/turokWeaponFusionCannon.txt"
 
 ////////////////////////////////////////////////////
 //
@@ -222,6 +223,7 @@ final class TurokPlayer : Component {
     kActor              @weaponAlienRifle;
     kActor              @weaponRocketLauncher;
     kActor              @weaponAccelerator;
+    kActor              @weaponFusionCannon;
     
     //
     // ammo
@@ -345,6 +347,7 @@ final class TurokPlayer : Component {
         weaponAlienRifle.bClientView        = bCameraAttached;
         weaponRocketLauncher.bClientView    = bCameraAttached;
         weaponAccelerator.bClientView       = bCameraAttached;
+        weaponFusionCannon.bClientView      = bCameraAttached;
     }
 
     //
@@ -377,6 +380,8 @@ final class TurokPlayer : Component {
                 return cast<TurokWeapon@>(weaponRocketLauncher.obj);
             case wp_accelerator:
                 return cast<TurokWeapon@>(weaponAccelerator.obj);
+            case wp_fusioncannon:
+                return cast<TurokWeapon@>(weaponFusionCannon.obj);
         }
         
         return null;
@@ -423,6 +428,7 @@ final class TurokPlayer : Component {
         @weaponAlienRifle       = LocalWorld.SpawnActor("kexActor", "TurokWeaponAlienRifle", origin, angle);
         @weaponRocketLauncher   = LocalWorld.SpawnActor("kexActor", "TurokWeaponRocketLauncher", origin, angle);
         @weaponAccelerator      = LocalWorld.SpawnActor("kexActor", "TurokWeaponAccelerator", origin, angle);
+        @weaponFusionCannon     = LocalWorld.SpawnActor("kexActor", "TurokWeaponFusionCannon", origin, angle);
         
         TurokPlayer @player = cast<TurokPlayer@>(self.obj);
         
@@ -438,6 +444,7 @@ final class TurokPlayer : Component {
         @cast<TurokWeapon@>(weaponAlienRifle.obj).owner     = player;
         @cast<TurokWeapon@>(weaponRocketLauncher.obj).owner = player;
         @cast<TurokWeapon@>(weaponAccelerator.obj).owner    = player;
+        @cast<TurokWeapon@>(weaponFusionCannon.obj).owner   = player;
 
         pendingWeaponID = wp_knife;
         SetWeapon();

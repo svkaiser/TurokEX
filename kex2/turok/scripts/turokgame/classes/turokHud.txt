@@ -379,6 +379,9 @@ final class TurokHud {
                 h_rockets.bVisible = true;
                 ammoNum.Update(player.rockets.amount);
                 break;
+            case wp_fusioncannon:
+                h_fuse.bVisible = true;
+                ammoNum.Update(player.fuses.amount);
             default:
                 break;
         }
@@ -532,7 +535,7 @@ final class TurokHud {
         h_grenade.y = 210;
         h_rockets.x = 82;
         h_rockets.y = 210;
-        h_fuse.x = 82;
+        h_fuse.x = 86;
         h_fuse.y = 210;
     }
 };

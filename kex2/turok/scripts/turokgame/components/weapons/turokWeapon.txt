@@ -209,14 +209,21 @@ class TurokWeapon : Component {
         kVec3 translation   = self.GetOrigin();
         float offset        = 0;
         kAngle angles       = self.GetAngles();
+        float turnMax       = WEAPONTURN_MAX;
         
-        angles.yaw -= (owner.self.cmdMouseX * 0.00175f);
+        if(owner.activeWeaponID == wp_fusioncannon) {
+            angles.yaw -= (owner.self.cmdMouseX * 0.000875f);
+            turnMax *= 0.35f;
+        }
+        else {
+            angles.yaw -= (owner.self.cmdMouseX * 0.00175f);
+        }
         
         kAngle tmpAngles = angles;
         tmpAngles.Clamp180InvertSum(kAngle(M_PI, 0, 0));
         
-        if(tmpAngles.yaw >  WEAPONTURN_MAX) angles.yaw =  (M_PI - WEAPONTURN_MAX);
-        if(tmpAngles.yaw < -WEAPONTURN_MAX) angles.yaw = -(M_PI - WEAPONTURN_MAX);
+        if(tmpAngles.yaw >  turnMax) angles.yaw =  (M_PI - turnMax);
+        if(tmpAngles.yaw < -turnMax) angles.yaw = -(M_PI - turnMax);
         
         if(angles.yaw < 0) {
             angles.yaw = LocalLerp(angles.yaw, -M_PI, 0.1f);
@@ -229,11 +236,17 @@ class TurokWeapon : Component {
             angles.yaw = M_PI;
         }
         
-        angles.pitch = (angles.pitch -
-            (owner.self.cmdMouseY * 0.00175f)) * 0.9f;
+        if(owner.activeWeaponID == wp_fusioncannon) {
+            angles.pitch = (angles.pitch -
+                (owner.self.cmdMouseY * 0.000875f)) * 0.9f;
+        }
+        else {
+            angles.pitch = (angles.pitch -
+                (owner.self.cmdMouseY * 0.00175f)) * 0.9f;
+        }
             
-        if(angles.pitch >  WEAPONTURN_MAX) angles.pitch =  WEAPONTURN_MAX;
-        if(angles.pitch < -WEAPONTURN_MAX) angles.pitch = -WEAPONTURN_MAX;
+        if(angles.pitch >  turnMax) angles.pitch =  turnMax;
+        if(angles.pitch < -turnMax) angles.pitch = -turnMax;
         
         if(angles.pitch <  WEAPONTURN_EPSILON && angles.pitch > -WEAPONTURN_EPSILON) {
             angles.pitch = 0;

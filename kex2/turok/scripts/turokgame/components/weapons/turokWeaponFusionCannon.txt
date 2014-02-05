@@ -1,0 +1,67 @@
+#include "scripts/turokgame/components/weapons/turokWeapon.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokWeaponFusionCannon
+//
+////////////////////////////////////////////////////
+
+final class TurokWeaponFusionCannon : TurokWeapon {
+    bool    bFired;
+    
+    //
+    // TurokWeaponFusionCannon::TurokWeaponFusionCannon
+    //
+    
+    TurokWeaponFusionCannon(kActor @actor) {
+        super(actor);
+        bOwned = true;
+        bFired = false;
+    }
+    
+    ~TurokWeaponFusionCannon() {
+    }
+    
+    //
+    // TurokWeaponFusionCannon::CheckAttack
+    //
+    
+    void CheckAttack(void) {
+        if(self.AnimState().PlayTime() >= 1.1333f) {
+            if(bFired == false) {
+                bFired = true;
+                SpawnFX("fx/projectile_fusionshot.kfx", -4.096f, -14.336f, -25.6f);
+                owner.fuses.Consume(1);
+            }
+        }
+        else {
+            bFired = false;
+        }
+        
+        TurokWeapon::CheckAttack();
+    }
+    
+    //
+    // TurokWeaponFusionCannon::OnAttack
+    //
+    
+    bool OnAttack(void) {
+        self.AnimState().Blend(anim_weaponFire, playSpeed, 4.0f, 0);
+        owner.self.Puppet().StartSound("sounds/shaders/tek_weapon_2.ksnd");
+        return true;
+    }
+    
+    //
+    // TurokWeaponFusionCannon::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        xOffset = 170.667f;
+        yOffset = -43.34888f;
+        zOffset = 238.9338f;
+        self.SetModel("models/mdl662/mdl662.kmesh");
+        readySound = "sounds/shaders/ready_tek_weapon_2.ksnd";
+        
+        TurokWeapon::OnSpawn();
+    }
+};
