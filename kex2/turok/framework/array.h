@@ -184,7 +184,9 @@ type &kexArray<type>::operator[](unsigned int index) {
 //
 template <class type>
 kexArray<type> &kexArray<type>::operator=(const kexArray<type> &arr) {
-    delete[] data;
+    if(data) {
+        delete[] data;
+    }
     
     data = NULL;
     length = arr.length;
