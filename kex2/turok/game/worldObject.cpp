@@ -150,6 +150,10 @@ bool kexWorldObject::Trace(traceInfo_t *trace) {
                 return false;
             }
         }
+        // only fx can collide with objects
+        else if(InstanceOf(&kexFx::info)) {
+            return false;
+        }
     }
 
     org = (origin - trace->start);
