@@ -277,7 +277,9 @@ void kexPlayer::PossessPuppet(kexPlayerPuppet *puppetActor) {
     puppet->SetOwner(static_cast<kexActor*>(this));
 
     if(puppet->Physics()->sector) {
-        puppet->Physics()->sector->area->Enter();
+        if(puppet->Physics()->sector->area) {
+            puppet->Physics()->sector->area->Enter();
+        }
     }
 }
 
