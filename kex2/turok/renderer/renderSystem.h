@@ -102,6 +102,7 @@ public:
     void                            SetTextureUnit(int unit);
     void                            SetViewDimensions(void);
     void                            DisableShaders(void);
+    void                            DrawLoadingScreen(const char *text);
     kexFont                         *CacheFont(const char *name);
     kexTexture                      *CacheTexture(const char *name, texClampMode_t clampMode,
                                         texFilterMode_t filterMode = TF_LINEAR);

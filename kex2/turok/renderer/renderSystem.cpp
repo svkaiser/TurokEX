@@ -638,6 +638,29 @@ void kexRenderSystem::DisableShaders(void) {
 }
 
 //
+// kexRenderSystem::DrawLoadingScreen
+//
+
+void kexRenderSystem::DrawLoadingScreen(const char *text) {
+    rcolor c = 0xffffffff;
+
+    dglClearColor(0, 0, 0, 1.0f);
+    dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    SetOrtho();
+    consoleFont.DrawString(
+        text,
+        (float)sysMain.VideoWidth() * 0.5f,
+        (float)sysMain.VideoHeight() * 0.5f,
+        1,
+        true,
+        (byte*)&c,
+        (byte*)&c);
+
+    SwapBuffers();
+}
+
+//
 // kexRenderSystem::BindDrawPointers
 //
 
