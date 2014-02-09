@@ -69,7 +69,7 @@ public:
     void                                Init(void);
     void                                Tick(void);
     void                                LocalTick(void);
-    void                                Load(const char *mapFile);
+    bool                                Load(const char *mapFile);
     void                                Unload(void);
     const char                          *GetMapFileFromID(const int id);
     kexObject                           *ConstructObject(const char *className);

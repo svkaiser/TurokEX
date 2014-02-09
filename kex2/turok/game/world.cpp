@@ -32,6 +32,7 @@
 #include "server.h"
 #include "world.h"
 #include "sound.h"
+#include "renderSystem.h"
 
 #define FOG_LERP_SPEED      0.025f
 
@@ -168,6 +169,10 @@ void kexWorld::LocalTick(void) {
         currentFogRGB[2]    = (fogRGB[2] - currentFogRGB[2]) * FOG_LERP_SPEED + currentFogRGB[2];
         currentFogFar       = (fogFar - currentFogFar) * FOG_LERP_SPEED + currentFogFar;
         currentFogNear      = (fogNear - currentFogNear) * FOG_LERP_SPEED + currentFogNear;
+
+        if(camera.IsClampZFarToFog()) {
+            camera.ZFar() = currentFogFar;
+        }
     }
 
     // don't update on first two ticks
@@ -608,9 +613,10 @@ void kexWorld::TriggerActor(const int targetID) {
 // kexWorld::Load
 //
 
-void kexWorld::Load(const char *mapFile) {
-    if(client.GetState() < CL_STATE_READY || bLoaded)
-        return;
+bool kexWorld::Load(const char *mapFile) {
+    if(client.GetState() < CL_STATE_READY || bLoaded) {
+        return false;
+    }
 
     kexRand::SetSeed(-470403613);
     bLoaded = false;
@@ -625,10 +631,14 @@ void kexWorld::Load(const char *mapFile) {
     kexActor *actor;
     kexStr file(mapFile);
 
+    renderSystem.DrawLoadingScreen("Loading Collision...");
     collisionMap.Load((file + ".kclm").c_str());
     
-    if(!(lexer = parser.Open((file + ".kmap").c_str())))
-        return;
+    if(!(lexer = parser.Open((file + ".kmap").c_str()))) {
+        return false;
+    }
+
+    renderSystem.DrawLoadingScreen("Loading Objects...");
 
     // begin parsing
     while(lexer->CheckState()) {
@@ -675,6 +685,7 @@ void kexWorld::Load(const char *mapFile) {
                 // read into nested block
                 lexer->ExpectNextToken(TK_LBRACK);
                 lexer->Find();
+                renderSystem.DrawLoadingScreen("Loading Static Meshes...");
                 while(lexer->TokenType() != TK_RBRACK) {
                     switch(lexer->GetIDForTokenList(maptokens, lexer->Token())) {
                     case scmap_actor:
@@ -715,6 +726,7 @@ void kexWorld::Load(const char *mapFile) {
     BuildAreaNodes();
 
     SpawnLocalPlayer();
+    return true;
 }
 
 //
