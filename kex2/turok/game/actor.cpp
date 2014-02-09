@@ -519,11 +519,11 @@ void kexActor::SpawnFX(const char *fxName, const float x, const float y, const f
     if(bStatic || bCulled)
         return;
 
-    kexVec3 org = origin;
+    kexVec3 org = ToLocalOrigin(x, y, z);
     org.y += viewHeight;
 
-    localWorld.SpawnFX(fxName, this, kexVec3(0, 0, 0),
-        org + (kexVec3(x, y, z) | rotation), rotation);
+
+    localWorld.SpawnFX(fxName, this, kexVec3(0, 0, 0), org, rotation);
 }
 
 //
