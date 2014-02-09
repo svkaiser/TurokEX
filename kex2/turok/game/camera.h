@@ -45,6 +45,12 @@ public:
     const kexFrustum    &Frustum(void) const { return viewFrustum; }
     kexAngle            &GetOffsetAngle(void) { return offsetAngle; }
     void                SetOffsetAngle(const kexAngle &an) { offsetAngle = an; }
+    float               &ZFar(void) { return zFar; }
+    float               &ZNear(void) { return zNear; }
+    float               &FOV(void) { return fov; }
+    bool                &IsFixedFOV(void) { return bFixedFOV; }
+    bool                &IsLetterBox(void) { return bLetterBox; }
+    bool                &IsClampZFarToFog(void) { return bClampZFarToFog; }
 
     static void         InitObject(void);
 
@@ -59,6 +65,7 @@ private:
     float               aspect;
     bool                bFixedFOV;
     bool                bLetterBox;
+    bool                bClampZFarToFog;
 END_CLASS();
 
 #endif

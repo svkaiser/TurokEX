@@ -36,12 +36,13 @@ DECLARE_CLASS(kexCamera, kexDisplayObject)
 //
 
 kexCamera::kexCamera(void) {
-    this->zFar          = -1;
-    this->zNear         = 0.1f;
-    this->fov           = 45.0f;
-    this->bLetterBox    = false;
-    this->bFixedFOV     = false;
-    this->aspect        = 4.0f/3.0f;
+    this->zFar              = -1;
+    this->zNear             = 0.1f;
+    this->fov               = 45.0f;
+    this->bLetterBox        = false;
+    this->bFixedFOV         = false;
+    this->aspect            = 4.0f/3.0f;
+    this->bClampZFarToFog   = false;
 }
 
 //
@@ -142,6 +143,7 @@ void kexCamera::InitObject(void) {
     OBJPROPERTY("float aspect", aspect);
     OBJPROPERTY("bool bLetterBox", bLetterBox);
     OBJPROPERTY("bool bFixedFOV", bFixedFOV);
+    OBJPROPERTY("bool bClampZFarToFog", bClampZFarToFog);
 
 #undef OBJMETHOD
 #undef OBJPROPERTY
