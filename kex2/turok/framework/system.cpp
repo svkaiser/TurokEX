@@ -366,6 +366,7 @@ void kexSystem::MainLoop(void) {
 
     server.CreateHost();
     client.Connect("localhost");
+    server.InitGameDef();
 
     prevmsec = GetMS();
 
@@ -418,6 +419,7 @@ void kexSystem::Main(int argc, char **argv) {
     client.Init();
 
     command.Add("quit", FCmd_Quit);
+    cvarManager.InitCustomCvars();
 
     scriptManager.Init();
 

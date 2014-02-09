@@ -78,6 +78,7 @@ public:
 
 private:
     void                PrepareMapChange(const ENetPacket *packet);
+    void                SetupClientInfo(const ENetPacket *packet);
 
     bool                bLocal;
     ENetPeer            *peer;

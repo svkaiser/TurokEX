@@ -30,6 +30,7 @@ public:
     type                *Find(const char *tname) const;
     type                *GetData(const int index);
     type                *Next(void);
+    char                *GetName(const int index);
 
     typedef struct hashKey_s {
         type            data;
@@ -98,6 +99,14 @@ type *kexHashList<type>::Next(void) {
     }
 
     return NULL;
+}
+
+//
+// kexHashList::GetName
+//
+template<class type>
+char *kexHashList<type>::GetName(const int index) {
+    return rover->name;
 }
 
 #endif

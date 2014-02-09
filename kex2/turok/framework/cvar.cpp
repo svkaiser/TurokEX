@@ -29,6 +29,7 @@
 #else
 #include "editorCommon.h"
 #endif
+#include "defs.h"
 
 kexCvarManager cvarManager;
 
@@ -205,11 +206,13 @@ void kexCvarManager::AutoComplete(const char *partial) {
 //
 
 void kexCvarManager::Register(kexCvar *variable) {
-    if(first == NULL)
+    if(first == NULL) {
         first = variable;
+    }
 
-    if(next != NULL)
+    if(next != NULL) {
         next->SetNext(variable);
+    }
 
     next = variable;
 }
@@ -222,10 +225,43 @@ void kexCvarManager::WriteToFile(FILE *file) {
     kexCvar *cvar;
 
     for(cvar = first; cvar; cvar = cvar->GetNext()) {
-        if(!(cvar->GetFlags() & CVF_CONFIG))
+        if(!(cvar->GetFlags() & CVF_CONFIG)) {
             continue;
+        }
 
         fprintf(file, "seta %s \"%s\"\n", cvar->GetName(), cvar->GetValue());
+    }
+}
+
+//
+// kexCvarManager::InitCustomCvars
+//
+
+void kexCvarManager::InitCustomCvars(void) {
+    kexDefinition *def;
+
+    if(def = defManager.LoadDefinition("defs/cvars.def")) {
+        kexKeyMap *key;
+        kexStr name;
+        kexStr desc;
+        kexStr value;
+        int flags;
+
+        for(int i = 0; i < MAX_HASH; i++) {
+            desc = "";
+            value = "";
+            flags = 0;
+
+            for(key = def->entries.GetData(i); key; key = def->entries.Next()) {
+                key->GetString("defaultValue", value);
+                key->GetString("description", desc);
+                key->GetInt("flags", flags);
+
+                name = def->entries.GetName(i);
+
+                common.AddCvar(name, value, desc, flags);
+            }
+        }
     }
 }
 
@@ -268,13 +304,15 @@ void kexCvarManager::Shutdown(void) {
     common.Printf("Shutting down cvar system\n");
 
     while(1) {
-        if(cvar == NULL)
+        if(cvar == NULL) {
             break;
+        }
 
         kexCvar *tmpVar = cvar->GetNext();
 
-        if(cvar->GetFlags() & CVF_ALLOCATED)
+        if(cvar->GetFlags() & CVF_ALLOCATED) {
             delete cvar;
+        }
 
         cvar = tmpVar;
     }

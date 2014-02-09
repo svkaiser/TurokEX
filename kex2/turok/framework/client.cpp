@@ -36,6 +36,7 @@
 #include "world.h"
 #include "renderSystem.h"
 #include "renderWorld.h"
+#include "server.h"
 
 kexCvar cvarClientName("cl_name", CVF_STRING|CVF_CONFIG, "Player", "Name for client player");
 kexCvar cvarClientFOV("cl_fov", CVF_FLOAT|CVF_CONFIG, "74.0", "Client's field of view");
@@ -111,9 +112,38 @@ void kexClient::PrepareMapChange(const ENetPacket *packet) {
     packetManager.Read8((ENetPacket*)packet, &mapID);
 
     localWorld.Unload();
-    localWorld.Load(kva("maps/map%02d/map%02d", mapID, mapID));
+    if(!localWorld.Load(kva("maps/map%02d/map%02d", mapID, mapID))) {
+        SetState(CL_STATE_READY);
+        return;
+    }
 
     client.SetState(CL_STATE_INGAME);
+}
+
+//
+// kexClient::SetupClientInfo
+//
+
+void kexClient::SetupClientInfo(const ENetPacket *packet) {
+    packetManager.Read8((ENetPacket*)packet, &id);
+    playerClient.SetID(id);
+    SetState(CL_STATE_READY);
+    common.DPrintf("CL_ReadClientInfo: ID is %i\n", id);
+
+    if(bLocal && server.GameDef()) {
+        kexStr startMap;
+
+        if(server.GameDef()->GetString("initialMap", startMap)) {
+            client.SetState(CL_STATE_CHANGINGLEVEL);
+
+            if(!localWorld.Load(startMap.c_str())) {
+                SetState(CL_STATE_READY);
+                return;
+            }
+
+            client.SetState(CL_STATE_INGAME);
+        }
+    }
 }
 
 //
@@ -131,10 +161,7 @@ void kexClient::ProcessPackets(const ENetPacket *packet) {
         break;
 
     case sp_clientinfo:
-        packetManager.Read8((ENetPacket*)packet, &id);
-        playerClient.SetID(id);
-        SetState(CL_STATE_READY);
-        common.DPrintf("CL_ReadClientInfo: ID is %i\n", id);
+        SetupClientInfo(packet);
         break;
 
     case sp_changemap:

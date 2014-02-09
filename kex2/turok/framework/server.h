@@ -26,16 +26,15 @@
 #include "enet/enet.h"
 #include "client.h"
 #include "player/player.h"
+#include "defs.h"
 
-typedef enum
-{
+typedef enum {
     SV_STATE_UNAVAILABLE,
     SV_STATE_BUSY,
     SV_STATE_ACTIVE
 } server_state_e;
 
-typedef enum
-{
+typedef enum {
     SVC_STATE_INACTIVE,
     SVC_STATE_ACTIVE,
     SVC_STATE_INGAME
@@ -54,11 +53,14 @@ public:
     virtual void        OnConnect(void);
     virtual void        OnDisconnect(void);
 
+    void                InitGameDef(void);
+
     bool                IsLocal(void) { return bLocal; }
     int                 GetElaspedTime(void) { return elaspedTime; }
     void                SetElaspedTime(int _time) { elaspedTime = _time; }
     int                 GetMaxClients(void) { return maxClients; }
     void                SetMaxClients(int _max) { maxClients = _max; }
+    kexKeyMap           *GameDef(void) { return gameDef; }
 
     char                *GetPeerAddress(ENetEvent *sev);
     //void                SendMoveData(svclient_t *svcl);
@@ -75,6 +77,8 @@ private:
     bool                bLocal;
     int                 maxClients;
     int                 elaspedTime;
+
+    kexKeyMap           *gameDef;
 };
 
 extern kexServer server;

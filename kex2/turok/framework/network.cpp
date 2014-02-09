@@ -32,8 +32,9 @@
 //
 
 void kexNetwork::Destroy(void) {
-    if(host)
+    if(host) {
         enet_host_destroy(host);
+    }
 }
 
 //
@@ -50,20 +51,19 @@ void kexNetwork::Shutdown(void) {
 //
 
 void kexNetwork::CheckMessages(void) {
-    while(enet_host_service(host, &netEvent, 0) > 0)
-    {
+    while(enet_host_service(host, &netEvent, 0) > 0) {
         switch(netEvent.type) {
-        case ENET_EVENT_TYPE_CONNECT:
-            OnConnect();
-            break;
+            case ENET_EVENT_TYPE_CONNECT:
+                OnConnect();
+                break;
 
-        case ENET_EVENT_TYPE_DISCONNECT:
-            OnDisconnect();
-            break;
+            case ENET_EVENT_TYPE_DISCONNECT:
+                OnDisconnect();
+                break;
 
-        case ENET_EVENT_TYPE_RECEIVE:
-            OnRecieve();
-            break;
+            case ENET_EVENT_TYPE_RECEIVE:
+                OnRecieve();
+                break;
         }
     }
 }

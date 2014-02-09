@@ -47,6 +47,7 @@ public:
 protected:
     type                *data;
     unsigned int        length;
+    unsigned int        aidx;
 };
 
 //
@@ -72,6 +73,7 @@ template<class type>
 void kexArray<type>::Init(void) {
     data = NULL;
     length = 0;
+    aidx = 0;
 }
 
 //
@@ -85,8 +87,16 @@ void kexArray<type>::Resize(unsigned int size) {
         return;
     }
 
+    if(size <= 0 && length != 0) {
+        delete[] data;
+        data = NULL;
+        length = 0;
+        return;
+    }
+
     if(length == 0) {
         data = new type[size];
+        length = size;
         return;
     }
 
@@ -97,6 +107,7 @@ void kexArray<type>::Resize(unsigned int size) {
         data[i] = tmp[i];
     }
 
+    length = size;
     delete[] tmp;
 }
 
@@ -106,7 +117,7 @@ void kexArray<type>::Resize(unsigned int size) {
 template<class type>
 void kexArray<type>::Push(type o) {
     Resize(length+1);
-    data[length++] = o;
+    data[aidx++] = o;
 }
 
 //
@@ -119,7 +130,7 @@ void kexArray<type>::Pop(void) {
     }
     
     Resize(length-1);
-    length--;
+    aidx--;
 }
 
 //
@@ -131,6 +142,7 @@ void kexArray<type>::Empty(void) {
         delete[] data;
         data = NULL;
         length = 0;
+        aidx = 0;
     }
 }
 
@@ -168,6 +180,7 @@ void kexArray<type>::Splice(const unsigned int start, unsigned int len) {
     delete[] data;
     data = tmp;
     length = length - len;
+    aidx = length-1;
 }
 
 //
@@ -190,6 +203,7 @@ kexArray<type> &kexArray<type>::operator=(const kexArray<type> &arr) {
     
     data = NULL;
     length = arr.length;
+    aidx = arr.aidx;
     
     if(arr.length > 0) {
         data = new type[arr.length];

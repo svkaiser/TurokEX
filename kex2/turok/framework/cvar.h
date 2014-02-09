@@ -90,6 +90,7 @@ public:
     void            WriteToFile(FILE *file);
     kexCvar         *GetFirst(void) const { return first; }
     void            Shutdown(void);
+    void            InitCustomCvars(void);
 
 private:
     kexCvar         *first;
