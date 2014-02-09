@@ -326,6 +326,8 @@ void kexCollisionMap::Load(const char *name) {
         return;
     }
 
+    renderSystem.DrawLoadingScreen("Loading Areas...");
+
     for(i = 0; i < numAreas; i++) {
         if(!(area = static_cast<kexArea*>(localWorld.ConstructObject("kexArea")))) {
             continue;
@@ -357,6 +359,8 @@ void kexCollisionMap::Load(const char *name) {
         areas.Push(area);
     }
 
+    bLoaded = true;
+
     pointPtrs = (float*)binFile.GetOffset(CM_ID_POINTS, NULL, &numPoints);
     binFile.GetOffset(CM_ID_SECTORS, NULL, &numSectors);
 
@@ -372,6 +376,8 @@ void kexCollisionMap::Load(const char *name) {
     indices = (word*)Mem_Calloc((sizeof(word) * numSectors) * 3,
         kexCollisionMap::hb_collisionMap);
 
+    renderSystem.DrawLoadingScreen("Loading Points...");
+
     for(i = 0; i < numPoints; i++) {
         points[0][i].Set(
             pointPtrs[i * 4 + 0],
@@ -385,6 +391,8 @@ void kexCollisionMap::Load(const char *name) {
 
     sectors = (kexSector*)Mem_Calloc(sizeof(kexSector) * numSectors,
         kexCollisionMap::hb_collisionMap);
+
+    renderSystem.DrawLoadingScreen("Loading Sectors...");
 
     for(i = 0; i < numSectors; i++) {
         sec = &sectors[i];
@@ -431,7 +439,9 @@ void kexCollisionMap::Load(const char *name) {
     }
 
     binFile.Close();
-    bLoaded = true;
+
+    renderSystem.DrawLoadingScreen("Setting Up Sector Stacks...");
+    SetupSectorStackList();
 }
 
 //
@@ -439,12 +449,63 @@ void kexCollisionMap::Load(const char *name) {
 //
 
 void kexCollisionMap::Unload(void) {
-    for(int i = 0; i < numAreas; i++) {
-        delete areas[i];
+    int i;
+    kexArea *area;
+
+    for(i = 0; i < numAreas; i++) {
+        area = areas[i];
+
+        delete area;
         areas[i] = NULL;
     }
 
+    for(i = 0; i < numSectors; i++) {
+        sectors[i].stacks.Empty();
+    }
+
+    areas.Empty();
     Mem_Purge(kexCollisionMap::hb_collisionMap);
+}
+
+//
+// kexCollisionMap::SetupSectorStackList
+//
+
+void kexCollisionMap::SetupSectorStackList(void) {
+    kexSector *sector;
+    kexBBox box1;
+    kexBBox box2;
+
+    for(int i = 0; i < numSectors; i++) {
+        sector = &sectors[i];
+
+        box1 = sector->lowerTri.bounds;
+        box1.min.y = 0;
+        box1.max.y = 0;
+
+        for(int j = 0; j < numSectors; j++) {
+            kexSector *check = &sectors[j];
+            kexTri *tri = &check->lowerTri;
+
+            if(check == sector) {
+                continue;
+            }
+            if(!(check->flags & CLF_ONESIDED)) {
+                continue;
+            }
+            if(tri->plane.Distance(*sector->lowerTri.point[0]) - tri->plane.d > 0) {
+                continue;
+            }
+
+            box2 = tri->bounds;
+            box2.min.y = 0;
+            box2.max.y = 0;
+
+            if(box1.IntersectingBox(box2)) {
+                sector->stacks.Push(check);
+            }
+        }
+    }
 }
 
 //
@@ -606,6 +667,8 @@ void kexCollisionMap::Trace(cMapTraceResult_t *result,
                             const int flags,
                             const float height) {
     cMapTrace_t trace;
+    kexVec3 pos;
+    kexSector *s;
 
     trace.result = result;
 
@@ -629,6 +692,15 @@ void kexCollisionMap::Trace(cMapTraceResult_t *result,
     trace.result->normal = trace.direction;
 
     TraverseSectors(&trace, sector);
+
+    for(unsigned int i = 0; i < trace.result->sector->stacks.Length(); i++) {
+        s = trace.result->sector->stacks[i];
+        pos = trace.result->position;
+        
+        if((pos[1] - s->lowerTri.GetDistance(pos)) >= 0 && s->InRange(pos)) {
+            trace.result->sector = s;
+        }
+    }
 }
 
 //
@@ -773,6 +845,18 @@ void kexCollisionMap::DebugDraw(void) {
         dglVertex3f((*tri->point[1]).x, (*tri->point[1]).y, (*tri->point[1]).z);
         dglVertex3f((*tri->point[2]).x, (*tri->point[2]).y, (*tri->point[2]).z);
         dglEnd();
+
+        for(unsigned k = 0; k < sector->stacks.Length(); k++) {
+            kexSector *ssec = sector->stacks[k];
+            kexTri *stri = &ssec->lowerTri;
+
+            dglColor4ub(0xFF, 0xFF, 0xFF, 192);
+            dglBegin(GL_TRIANGLES);
+            dglVertex3f((*stri->point[0]).x, (*stri->point[0]).y, (*stri->point[0]).z);
+            dglVertex3f((*stri->point[1]).x, (*stri->point[1]).y, (*stri->point[1]).z);
+            dglVertex3f((*stri->point[2]).x, (*stri->point[2]).y, (*stri->point[2]).z);
+            dglEnd();
+        }
 
         sector->bTraced = false;
     }

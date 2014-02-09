@@ -95,6 +95,8 @@ public:
     kexTri                          upperTri;
     kexSector                       *link[3];
     bool                            bTraced;
+
+    kexArray<kexSector*>            stacks;
 };
 
 class kexCollisionMap {
@@ -130,6 +132,7 @@ public:
     static kexHeapBlock             hb_collisionMap;
 
 private:
+    void                            SetupSectorStackList(void);
     void                            RecursiveToggleBlock(kexSector *sector, bool bToggle,
                                         unsigned int areaID);
 
