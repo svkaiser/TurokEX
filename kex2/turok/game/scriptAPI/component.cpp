@@ -41,9 +41,6 @@ kexComponent::kexComponent(void) {
     this->obj           = NULL;
     this->type          = NULL;
     this->mod           = scriptManager.Module();
-    this->onThink       = NULL;
-    this->onLocalThink  = NULL;
-    this->onSpawn       = NULL;
 
     objHandle.Clear();
 }
@@ -332,6 +329,9 @@ void kexComponent::Deconstruct(void) {
 kexActorComponent::kexActorComponent(void) {
     this->onTouch       = NULL;
     this->onTrigger     = NULL;
+    this->onThink       = NULL;
+    this->onLocalThink  = NULL;
+    this->onSpawn       = NULL;
 }
 
 //
@@ -387,6 +387,7 @@ kexAreaComponent::kexAreaComponent(void) {
     this->onLocalThink  = NULL;
     this->onEnter       = NULL;
     this->onExit        = NULL;
+    this->onSpawn       = NULL;
 }
 
 //

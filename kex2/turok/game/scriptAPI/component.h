@@ -65,10 +65,6 @@ public:
     void                    Release(void) { if(obj) { obj->Release(); } }
     kexObject               *GetOwner(void) const { return static_cast<kexObject*>(objHandle.owner); }
 
-    asIScriptFunction       *onThink;
-    asIScriptFunction       *onLocalThink;
-    asIScriptFunction       *onSpawn;
-
 protected:
     asIObjectType           *type;
     kexScriptObjHandle      objHandle;
@@ -94,6 +90,9 @@ class kexActorComponent : public kexComponent {
 
     static void             Init(void);
 
+    asIScriptFunction       *onThink;
+    asIScriptFunction       *onLocalThink;
+    asIScriptFunction       *onSpawn;
     asIScriptFunction       *onTouch;
     asIScriptFunction       *onTrigger;
 };
@@ -117,6 +116,9 @@ class kexAreaComponent : public kexComponent {
 
     static void             Init(void);
 
+    asIScriptFunction       *onThink;
+    asIScriptFunction       *onLocalThink;
+    asIScriptFunction       *onSpawn;
     asIScriptFunction       *onEnter;
     asIScriptFunction       *onExit;
 
