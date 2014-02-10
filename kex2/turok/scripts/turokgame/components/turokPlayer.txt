@@ -63,7 +63,7 @@ const int   TUROK_MORTAL_WOUND_MAX      = 120;
 ////////////////////////////////////////////////////
 
 enum turokWeapons_e {
-    wp_none = 0,
+    wp_none = -1,
     wp_knife,
     wp_bow,
     wp_pistol,
@@ -77,7 +77,7 @@ enum turokWeapons_e {
     wp_rocket_l,
     wp_accelerator,
     wp_fusioncannon,
-    wp_chronoscepter,
+    //wp_chronoscepter,
     wp_numweapons
 }
 
@@ -137,7 +137,7 @@ void CommandToggleFarZ(void) {
     }
     else {
         player.bToggleFarZ = false;
-        LocalWorld.Camera().zFar = 2048;
+        LocalWorld.Camera().zFar = LocalWorld.GetFogFar();
     }
 }
 
@@ -209,21 +209,9 @@ final class TurokPlayer : Component {
     int                 keys_level8;
     
     //
-    // weapon references
+    // weapons
     //
-    kActor              @weaponKnife;
-    kActor              @weaponBow;
-    kActor              @weaponPistol;
-    kActor              @weaponShotgun;
-    kActor              @weaponAutoShotgun;
-    kActor              @weaponRifle;
-    kActor              @weaponPulse;
-    kActor              @weaponGrenade;
-    kActor              @weaponMinigun;
-    kActor              @weaponAlienRifle;
-    kActor              @weaponRocketLauncher;
-    kActor              @weaponAccelerator;
-    kActor              @weaponFusionCannon;
+    array<kActor@>      weapons(wp_numweapons);
     
     //
     // ammo
@@ -311,7 +299,8 @@ final class TurokPlayer : Component {
         
         bCameraAttached = true;
         
-        camera.zFar = 2048.0f;
+        camera.zFar = LocalWorld.GetFogFar();
+        camera.bClampZFarToFog = true;
     }
     
     //
@@ -335,19 +324,9 @@ final class TurokPlayer : Component {
             playerHud.container.bVisible = true;
         }
         
-        weaponKnife.bClientView             = bCameraAttached;
-        weaponBow.bClientView               = bCameraAttached;
-        weaponPistol.bClientView            = bCameraAttached;
-        weaponShotgun.bClientView           = bCameraAttached;
-        weaponAutoShotgun.bClientView       = bCameraAttached;
-        weaponRifle.bClientView             = bCameraAttached;
-        weaponPulse.bClientView             = bCameraAttached;
-        weaponGrenade.bClientView           = bCameraAttached;
-        weaponMinigun.bClientView           = bCameraAttached;
-        weaponAlienRifle.bClientView        = bCameraAttached;
-        weaponRocketLauncher.bClientView    = bCameraAttached;
-        weaponAccelerator.bClientView       = bCameraAttached;
-        weaponFusionCannon.bClientView      = bCameraAttached;
+        for(int i = 0; i < wp_numweapons; i++) {
+            weapons[i].bClientView = bCameraAttached;
+        }
     }
 
     //
@@ -355,33 +334,8 @@ final class TurokPlayer : Component {
     //
     
     TurokWeapon @GetWeaponObj(int weapon) {
-        switch(weapon) {
-            case wp_knife:
-                return cast<TurokWeapon@>(weaponKnife.obj);
-            case wp_bow:
-                return cast<TurokWeapon@>(weaponBow.obj);
-            case wp_pistol:
-                return cast<TurokWeapon@>(weaponPistol.obj);
-            case wp_shotgun:
-                return cast<TurokWeapon@>(weaponShotgun.obj);
-            case wp_autoshotgun:
-                return cast<TurokWeapon@>(weaponAutoShotgun.obj);
-            case wp_rifle:
-                return cast<TurokWeapon@>(weaponRifle.obj);
-            case wp_pulserifle:
-                return cast<TurokWeapon@>(weaponPulse.obj);
-            case wp_grenade_l:
-                return cast<TurokWeapon@>(weaponGrenade.obj);
-            case wp_minigun:
-                return cast<TurokWeapon@>(weaponMinigun.obj);
-            case wp_alienrifle:
-                return cast<TurokWeapon@>(weaponAlienRifle.obj);
-            case wp_rocket_l:
-                return cast<TurokWeapon@>(weaponRocketLauncher.obj);
-            case wp_accelerator:
-                return cast<TurokWeapon@>(weaponAccelerator.obj);
-            case wp_fusioncannon:
-                return cast<TurokWeapon@>(weaponFusionCannon.obj);
+        if(weapon >= 0 && weapon < wp_numweapons) {
+            return cast<TurokWeapon@>(weapons[weapon].obj);
         }
         
         return null;
@@ -413,38 +367,34 @@ final class TurokPlayer : Component {
     //
     
     void SetupWeapons(void) {
-        kVec3 origin = kVec3(0, 0, 0);
-        kAngle angle = kAngle(0, 0, 0);
-        
-        @weaponKnife            = LocalWorld.SpawnActor("kexActor", "TurokWeaponKnife", origin, angle);
-        @weaponBow              = LocalWorld.SpawnActor("kexActor", "TurokWeaponBow", origin, angle);
-        @weaponPistol           = LocalWorld.SpawnActor("kexActor", "TurokWeaponPistol", origin, angle);
-        @weaponShotgun          = LocalWorld.SpawnActor("kexActor", "TurokWeaponShotgun", origin, angle);
-        @weaponAutoShotgun      = LocalWorld.SpawnActor("kexActor", "TurokWeaponAutoShotgun", origin, angle);
-        @weaponRifle            = LocalWorld.SpawnActor("kexActor", "TurokWeaponRifle", origin, angle);
-        @weaponPulse            = LocalWorld.SpawnActor("kexActor", "TurokWeaponPulseRifle", origin, angle);
-        @weaponGrenade          = LocalWorld.SpawnActor("kexActor", "TurokWeaponGrenade", origin, angle);
-        @weaponMinigun          = LocalWorld.SpawnActor("kexActor", "TurokWeaponMiniGun", origin, angle);
-        @weaponAlienRifle       = LocalWorld.SpawnActor("kexActor", "TurokWeaponAlienRifle", origin, angle);
-        @weaponRocketLauncher   = LocalWorld.SpawnActor("kexActor", "TurokWeaponRocketLauncher", origin, angle);
-        @weaponAccelerator      = LocalWorld.SpawnActor("kexActor", "TurokWeaponAccelerator", origin, angle);
-        @weaponFusionCannon     = LocalWorld.SpawnActor("kexActor", "TurokWeaponFusionCannon", origin, angle);
-        
+        int i;
+        kVec3 origin        = kVec3(0, -4096, 0);
+        kAngle angle        = kAngle(0, 0, 0);
         TurokPlayer @player = cast<TurokPlayer@>(self.obj);
+ 
+        array<kStr> weaponComponents = {
+            "TurokWeaponKnife",
+            "TurokWeaponBow",
+            "TurokWeaponPistol",
+            "TurokWeaponShotgun",
+            "TurokWeaponAutoShotgun",
+            "TurokWeaponRifle",
+            "TurokWeaponPulseRifle",
+            "TurokWeaponGrenade",
+            "TurokWeaponMiniGun",
+            "TurokWeaponAlienRifle",
+            "TurokWeaponRocketLauncher",
+            "TurokWeaponAccelerator",
+            "TurokWeaponFusionCannon"
+        };
         
-        @cast<TurokWeapon@>(weaponKnife.obj).owner          = player;
-        @cast<TurokWeapon@>(weaponBow.obj).owner            = player;
-        @cast<TurokWeapon@>(weaponPistol.obj).owner         = player;
-        @cast<TurokWeapon@>(weaponShotgun.obj).owner        = player;
-        @cast<TurokWeapon@>(weaponAutoShotgun.obj).owner    = player;
-        @cast<TurokWeapon@>(weaponRifle.obj).owner          = player;
-        @cast<TurokWeapon@>(weaponPulse.obj).owner          = player;
-        @cast<TurokWeapon@>(weaponGrenade.obj).owner        = player;
-        @cast<TurokWeapon@>(weaponMinigun.obj).owner        = player;
-        @cast<TurokWeapon@>(weaponAlienRifle.obj).owner     = player;
-        @cast<TurokWeapon@>(weaponRocketLauncher.obj).owner = player;
-        @cast<TurokWeapon@>(weaponAccelerator.obj).owner    = player;
-        @cast<TurokWeapon@>(weaponFusionCannon.obj).owner   = player;
+        for(int i = 0; i < wp_numweapons; i++) {
+            @weapons[i] = LocalWorld.SpawnActor("kexActor", weaponComponents[i], origin, angle);
+            
+            if(!(weapons[i] is null)) {
+                @cast<TurokWeapon@>(weapons[i].obj).owner = player;
+            }
+        }
 
         pendingWeaponID = wp_knife;
         SetWeapon();
@@ -1116,7 +1066,7 @@ final class TurokPlayer : Component {
             case 44:
                 ToggleCamera();
                 self.Lock();
-                camera.SetOrigin(kVec3(0.69813168f, -20.48f, -153.6f));
+                camera.SetOrigin(kVec3(0.0f, -40.96f, -153.6f));
                 camera.SetAngles(kAngle(0, 0, 0));
                 break;
             default:

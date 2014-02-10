@@ -49,6 +49,8 @@ public:
     void                        Empty(void);
     void                        Resize(int newSize);
 
+    const int                   GetHashSize(void) const { return hashSize; }
+    kexArray<kexHashKey>        *GetHashList(void) { return hashlist; }
     void                        SetMask(const int mask) { hashMask = mask; }
 
     bool                        GetFloat(const char *key, float &out, const float defaultValue = 0);

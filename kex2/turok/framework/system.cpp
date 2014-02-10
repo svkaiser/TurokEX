@@ -41,6 +41,7 @@
 #include "renderSystem.h"
 #include "renderWorld.h"
 #include "scriptAPI/scriptSystem.h"
+#include "gameManager.h"
 
 kexCvar cvarDeveloper("developer", CVF_BOOL|CVF_CONFIG, "0", "Developer mode");
 kexCvar cvarFixedTime("fixedtime", CVF_INT|CVF_CONFIG, "0", "TODO");
@@ -136,6 +137,7 @@ void kexSystem::Shutdown(void) {
     common.WriteConfigFile();
 
     bShuttingDown = true;
+    gameManager.OnShutdown();
 
     localWorld.Unload();
 
@@ -147,6 +149,7 @@ void kexSystem::Shutdown(void) {
 
     renderSystem.Shutdown();
     modelManager.Shutdown();
+    gameManager.Shutdown();
     scriptManager.Shutdown();
     fileSystem.Shutdown();
     client.Shutdown();
@@ -349,9 +352,11 @@ void kexSystem::InitVideo(void) {
         common.Error("kexSystem::InitVideo: Failed to create window");
     }
 
-    if((glContext = SDL_GL_CreateContext(window)) == NULL)
+    if((glContext = SDL_GL_CreateContext(window)) == NULL) {
         common.Error("kexSystem::InitVideo: Failed to create opengl context");
+    }
 
+    gameManager.SetTitle();
     common.Printf("Video Initialized\n");
 }
 
@@ -366,7 +371,6 @@ void kexSystem::MainLoop(void) {
 
     server.CreateHost();
     client.Connect("localhost");
-    server.InitGameDef();
 
     prevmsec = GetMS();
 
@@ -422,6 +426,9 @@ void kexSystem::Main(int argc, char **argv) {
     cvarManager.InitCustomCvars();
 
     scriptManager.Init();
+
+    gameManager.InitGame();
+    inputKey.InitActions();
 
     common.ReadConfigFile("config.cfg");
     common.ReadConfigFile("autoexec.cfg");

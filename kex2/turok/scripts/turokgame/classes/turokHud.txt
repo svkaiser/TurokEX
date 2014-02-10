@@ -382,6 +382,7 @@ final class TurokHud {
             case wp_fusioncannon:
                 h_fuse.bVisible = true;
                 ammoNum.Update(player.fuses.amount);
+                break;
             default:
                 break;
         }

@@ -373,26 +373,6 @@ void kexServer::Run(int msec) {
 }
 
 //
-// kexServer::InitGameDef
-//
-
-void kexServer::InitGameDef(void) {
-    kexStr str;
-
-    // load default game info
-    if(!(gameDef = defManager.FindDefEntry("defs/game.def@default"))) {
-        return;
-    }
-
-    if(gameDef->GetString("gameName", str)) {
-        kexStr title = SDL_GetWindowTitle(sysMain.Window());
-        title = title + "  (" + str + ")";
-
-        SDL_SetWindowTitle(sysMain.Window(), title.c_str());
-    }
-}
-
-//
 // kexServer::Init
 //
 
@@ -404,7 +384,6 @@ void kexServer::Init(void) {
 
     bLocal = (common.CheckParam("-server") == 0);
     maxClients = 0;
-    gameDef = NULL;
 
     SetHost(NULL);
     SetTime(0);

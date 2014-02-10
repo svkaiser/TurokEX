@@ -9,32 +9,58 @@
 TurokHud playerHud;
 
 void main(void) {
-    Input.AddAction(0, "+attack");
-    Input.AddAction(0, "-attack");
-    Input.AddAction(1, "+forward");
-    Input.AddAction(1, "-forward");
-    Input.AddAction(2, "+back");
-    Input.AddAction(2, "-back");
-    Input.AddAction(3, "+left");
-    Input.AddAction(3, "-left");
-    Input.AddAction(4, "+right");
-    Input.AddAction(4, "-right");
-    Input.AddAction(5, "+strafeleft");
-    Input.AddAction(5, "-strafeleft");
-    Input.AddAction(6, "+straferight");
-    Input.AddAction(6, "-straferight");
-    Input.AddAction(7, "+run");
-    Input.AddAction(7, "-run");
-    Input.AddAction(8, "+jump");
-    Input.AddAction(8, "-jump");
-    Input.AddAction(11, "+nextweap");
-    Input.AddAction(11, "-nextweap");
-    Input.AddAction(12, "+prevweap");
-    Input.AddAction(12, "-prevweap");
-    
-    Com.AddCvar("g_weaponbobbing", "0", " ", CVF_BOOL|CVF_CONFIG);
-    Com.AddCvar("g_wpnautoswitch", "1", " ", CVF_BOOL|CVF_CONFIG);
-    Com.AddCvar("g_showcrosshairs", "0", " ", CVF_BOOL|CVF_CONFIG);
-    
-    playerHud.Init();
 }
+
+////////////////////////////////////////////////////
+//
+// TurokGame
+//
+////////////////////////////////////////////////////
+
+final class TurokGame : KexGame {
+    bool bNewGame;
+
+    //
+    // TurokGame::TurokGame
+    //
+    
+    TurokGame(void) {
+        bNewGame = true;
+    }
+    
+    //
+    // TurokGame::~TurokGame
+    //
+    
+    ~TurokGame() {
+    }
+    
+    //
+    // TurokGame::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        playerHud.Init();
+    }
+    
+    //
+    // TurokGame::OnTick
+    //
+    
+    void OnTick(void) {
+    }
+    
+    //
+    // TurokGame::OnLocalTick
+    //
+    
+    void OnLocalTick(void) {
+    }
+    
+    //
+    // TurokGame::OnShutdown
+    //
+    
+    void OnShutdown(void) {
+    }
+};

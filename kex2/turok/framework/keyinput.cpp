@@ -29,6 +29,8 @@
 
 #include "common.h"
 #include "keyinput.h"
+#include "defs.h"
+#include "gameManager.h"
 #include "scriptAPI/scriptSystem.h"
 
 kexInputKey inputKey;
@@ -391,23 +393,45 @@ void kexInputKey::WriteBindings(FILE *file) {
 }
 
 //
+// kexInputKey::InitActions
+//
+
+void kexInputKey::InitActions(void) {
+    kexStr actionDef;
+    kexKeyMap *keys;
+    kexArray<kexHashKey> *list;
+    kexStr name;
+    int value;
+
+    if( !gameManager.GameDef()                                      ||
+        !gameManager.GameDef()->GetString("actionDef", actionDef)   ||
+        !(keys = defManager.FindDefEntry(actionDef))) {
+            common.Warning("kexInputKey::InitActions: No input action definition found\n");
+            return;
+    }
+
+    list = keys->GetHashList();
+
+    for(int i = 0; i < keys->GetHashSize(); i++) {
+        for(unsigned int j = 0; j < list[i].Length(); j++) {
+            name = list[i][j].GetName();
+            if(!keys->GetInt(name, value)) {
+                common.Warning("kexInputKey::InitActions: entry %s contains non-integer value (%s)\n",
+                    name, list[i][j].GetString());
+                continue;
+            }
+
+            AddAction((byte)value, (kexStr("+") + name).c_str());
+            AddAction((byte)value, (kexStr("-") + name).c_str());
+        }
+    }
+}
+
+//
 // kexInputKey::InitObject
 //
 
 void kexInputKey::InitObject(void) {
-    scriptManager.Engine()->RegisterObjectType(
-        "kInput",
-        sizeof(kexInputKey),
-        asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS);
-
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kInput",
-        "void AddAction(const int, const kStr &in)",
-        asMETHODPR(kexInputKey, AddAction, (byte id, const kexStr &str), void),
-        asCALL_THISCALL);
-
-    scriptManager.Engine()->RegisterGlobalProperty("kInput Input", &inputKey);
-
     scriptManager.Engine()->RegisterEnum("EnumInputKey");
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_UNKNOWN", SDLK_UNKNOWN);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_BACKSPACE", SDLK_BACKSPACE);
@@ -481,16 +505,6 @@ void kexInputKey::InitObject(void) {
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_y", SDLK_y);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_z", SDLK_z);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_DELETE", SDLK_DELETE);
-    /*scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_KP0", SDLK_KP0);
-    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_KP1", SDLK_KP1);
-    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_KP2", SDLK_KP2);
-    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_KP3", SDLK_KP3);
-    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_KP4", SDLK_KP4);
-    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_KP5", SDLK_KP5);
-    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_KP6", SDLK_KP6);
-    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_KP7", SDLK_KP7);
-    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_KP8", SDLK_KP8);
-    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_KP9", SDLK_KP9);*/
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_KP_PERIOD", SDLK_KP_PERIOD);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_KP_DIVIDE", SDLK_KP_DIVIDE);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_KP_MULTIPLY", SDLK_KP_MULTIPLY);
@@ -522,28 +536,18 @@ void kexInputKey::InitObject(void) {
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_F13", SDLK_F13);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_F14", SDLK_F14);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_F15", SDLK_F15);
-    //scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_NUMLOCK", SDLK_NUMLOCK);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_CAPSLOCK", SDLK_CAPSLOCK);
-    //scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_SCROLLOCK", SDLK_SCROLLOCK);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_RSHIFT", SDLK_RSHIFT);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_LSHIFT", SDLK_LSHIFT);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_RCTRL", SDLK_RCTRL);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_LCTRL", SDLK_LCTRL);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_RALT", SDLK_RALT);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_LALT", SDLK_LALT);
-    //scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_RMETA", SDLK_RMETA);
-    //scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_LMETA", SDLK_LMETA);
-    //scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_LSUPER", SDLK_LSUPER);
-    //scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_RSUPER", SDLK_RSUPER);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_MODE", SDLK_MODE);
-    //scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_COMPOSE", SDLK_COMPOSE);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_HELP", SDLK_HELP);
-    //scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_PRINT", SDLK_PRINT);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_SYSREQ", SDLK_SYSREQ);
-    //scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_BREAK", SDLK_BREAK);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_MENU", SDLK_MENU);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_POWER", SDLK_POWER);
-    //scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_EURO", SDLK_EURO);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_UNDO", SDLK_UNDO);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","BUTTON_LEFT",SDL_BUTTON_LEFT);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","BUTTON_MIDDLE",SDL_BUTTON_MIDDLE);
@@ -557,8 +561,7 @@ void kexInputKey::InitObject(void) {
 //
 
 void kexInputKey::Init(void) {
-    for(int c = 0; c < MAX_KEYS; c++)
-    {
+    for(int c = 0; c < MAX_KEYS; c++) {
         keycode[0][c] = c;
         keycode[1][c] = c;
         keydown[c] = false;
@@ -587,8 +590,9 @@ void kexInputKey::Init(void) {
     keycode[1]['/'] = '?';
     keycode[1]['`'] = '~';
     
-    for(int c = 'a'; c <= 'z'; c++)
+    for(int c = 'a'; c <= 'z'; c++) {
         keycode[1][c] = toupper(c);
+    }
 
     command.Add("bind", FCmd_Bind);
     command.Add("unbind", FCmd_UnBind);

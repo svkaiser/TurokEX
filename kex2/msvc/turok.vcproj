@@ -456,6 +456,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\gameManager.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\gameObject.cpp"
 					>
 				</File>
@@ -754,6 +758,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\game\fx.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\gameManager.h"
 					>
 				</File>
 				<File

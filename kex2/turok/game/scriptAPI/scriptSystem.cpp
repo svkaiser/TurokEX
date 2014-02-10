@@ -32,6 +32,7 @@
 #include "renderSystem.h"
 #include "scriptAPI/scriptSystem.h"
 #include "scriptAPI/component.h"
+#include "gameManager.h"
 
 kexScriptManager scriptManager;
 
@@ -182,6 +183,8 @@ void kexScriptManager::Init(void) {
 
     kexActorComponent   ::Init();
     kexAreaComponent    ::Init();
+
+    kexGameManager      ::Init();
 
     module = engine->GetModule("core", asGM_CREATE_IF_NOT_EXISTS);
 

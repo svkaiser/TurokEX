@@ -70,6 +70,7 @@ class kexInputKey {
 public:
     void            Init(void);
     void            Clear(void);
+    void            InitActions(void);
     int             FindAction(const char *name);
     void            AddAction(byte id, const char *name);
     void            AddAction(byte id, const kexStr &str);
@@ -80,6 +81,7 @@ public:
     void            BindCommand(char key, const char *string);
     void            ListBindings(void);
     void            HandleControl(int ctrl);
+
     int             GetAsciiKey(char c, bool bShift) { return keycode[bShift][c]; }
     control_t       *Controls(void) { return &control; }
 

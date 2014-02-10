@@ -36,7 +36,7 @@
 #include "world.h"
 #include "renderSystem.h"
 #include "renderWorld.h"
-#include "server.h"
+#include "gameManager.h"
 
 kexCvar cvarClientName("cl_name", CVF_STRING|CVF_CONFIG, "Player", "Name for client player");
 kexCvar cvarClientFOV("cl_fov", CVF_FLOAT|CVF_CONFIG, "74.0", "Client's field of view");
@@ -130,10 +130,10 @@ void kexClient::SetupClientInfo(const ENetPacket *packet) {
     SetState(CL_STATE_READY);
     common.DPrintf("CL_ReadClientInfo: ID is %i\n", id);
 
-    if(bLocal && server.GameDef()) {
+    if(bLocal && gameManager.GameDef()) {
         kexStr startMap;
 
-        if(server.GameDef()->GetString("initialMap", startMap)) {
+        if(gameManager.GameDef()->GetString("initialMap", startMap)) {
             client.SetState(CL_STATE_CHANGINGLEVEL);
 
             if(!localWorld.Load(startMap.c_str())) {
