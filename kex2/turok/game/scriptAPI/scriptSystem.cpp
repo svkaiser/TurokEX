@@ -180,10 +180,10 @@ void kexScriptManager::Init(void) {
     kexPhysics          ::InitObject();
     kexAnimState        ::InitObject();
     kexCanvas           ::InitObject();
+    kexGameManager      ::InitObject();
 
     kexActorComponent   ::Init();
     kexAreaComponent    ::Init();
-
     kexGameManager      ::Init();
 
     module = engine->GetModule("core", asGM_CREATE_IF_NOT_EXISTS);

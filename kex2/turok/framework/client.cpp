@@ -235,6 +235,7 @@ void kexClient::Run(const int msec) {
     renderWorld.RenderScene();
     renderSystem.SetOrtho();
     renderSystem.Canvas().Draw();
+    gameManager.MenuCanvas().Draw();
     console.Draw();
     scriptManager.DrawGCStats();
 
@@ -255,8 +256,9 @@ void kexClient::Run(const int msec) {
 void kexClient::MessageServer(char *string) {
     ENetPacket *packet;
 
-    if(!(packet = packetManager.Create()))
+    if(!(packet = packetManager.Create())) {
         return;
+    }
 
     packetManager.Write8(packet, cp_msgserver);
     packetManager.WriteString(packet, string);
@@ -292,8 +294,9 @@ void kexClient::PostEvent(event_t *ev) {
 event_t *kexClient::GetEvent(void) {
     event_t *ev;
 
-    if(eventtail == eventhead)
+    if(eventtail == eventhead) {
         return NULL;
+    }
 
     ev = &events[eventtail];
     eventtail = (++eventtail)&(MAXEVENTS-1);
@@ -311,11 +314,16 @@ void kexClient::ProcessEvents(void) {
     event_t *oldev = NULL; // TEMP
     
     while((ev = GetEvent()) != NULL) {
-        if(ev == oldev)
+        if(ev == oldev) {
             return;
+        }
 
-        if(console.ProcessInput(ev))
+        if(console.ProcessInput(ev)) {
             continue;
+        }
+        if(gameManager.ProcessInput(ev)) {
+            continue;
+        }
 
         // TODO - TEMP
         eventtail = (--eventtail)&(MAXEVENTS-1);
@@ -380,6 +388,15 @@ void kexClient::InitObject(void) {
     scriptManager.Engine()->RegisterEnumValue("EnumClientState", "STATE_READY", CL_STATE_READY);
     scriptManager.Engine()->RegisterEnumValue("EnumClientState", "STATE_INGAME", CL_STATE_INGAME);
     scriptManager.Engine()->RegisterEnumValue("EnumClientState", "STATE_CHANGINGLEVEL", CL_STATE_CHANGINGLEVEL);
+
+    scriptManager.Engine()->RegisterEnum("EnumInputEventType");
+    scriptManager.Engine()->RegisterEnumValue("EnumInputEventType","IET_KEYDOWN", ev_keydown);
+    scriptManager.Engine()->RegisterEnumValue("EnumInputEventType","IET_KEYUP", ev_keyup);
+    scriptManager.Engine()->RegisterEnumValue("EnumInputEventType","IET_MOUSE", ev_mouse);
+    scriptManager.Engine()->RegisterEnumValue("EnumInputEventType","IET_MOUSEDOWN", ev_mousedown);
+    scriptManager.Engine()->RegisterEnumValue("EnumInputEventType","IET_MOUSEUP", ev_mouseup);
+    scriptManager.Engine()->RegisterEnumValue("EnumInputEventType","IET_MOUSEWHEEL", ev_mousewheel);
+    scriptManager.Engine()->RegisterEnumValue("EnumInputEventType","IET_GAMEPAD", ev_gamepad);
 }
 
 //
@@ -389,8 +406,9 @@ void kexClient::InitObject(void) {
 static void FCmd_Ping(void) {
     ENetPacket *packet;
 
-    if(!(packet = packetManager.Create()))
+    if(!(packet = packetManager.Create())) {
         return;
+    }
 
     packetManager.Write8(packet, cp_ping);
     packetManager.Send(packet, client.GetPeer());
@@ -403,11 +421,13 @@ static void FCmd_Ping(void) {
 static void FCmd_Say(void) {
     ENetPacket *packet;
 
-    if(command.GetArgc() < 2)
+    if(command.GetArgc() < 2) {
         return;
+    }
 
-    if(!(packet = packetManager.Create()))
+    if(!(packet = packetManager.Create())) {
         return;
+    }
 
     packetManager.Write8(packet, cp_say);
     packetManager.WriteString(packet, command.GetArgv(1));
@@ -419,8 +439,9 @@ static void FCmd_Say(void) {
 //
 
 static void FCmd_MsgServer(void) {
-    if(command.GetArgc() < 2)
+    if(command.GetArgc() < 2) {
         return;
+    }
 
     client.MessageServer(command.GetArgv(1));
 }

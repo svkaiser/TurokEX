@@ -25,6 +25,8 @@
 
 #include "common.h"
 #include "keymap.h"
+#include "renderSystem.h"
+#include "client.h"
 #include "scriptAPI/component.h"
 
 //-----------------------------------------------------------------------------
@@ -45,18 +47,23 @@ public:
     void                    Shutdown(void);
     void                    OnShutdown(void);
     void                    SetTitle(void);
+    bool                    ProcessInput(const event_t *ev);
 
     kexKeyMap               *GameDef(void) { return gameDef; }
+    kexCanvas               &MenuCanvas(void) { return menuCanvas; }
 
     static void             Init(void);
+    static void             InitObject(void);
 
 private:
     asIScriptFunction       *onTick;
     asIScriptFunction       *onLocalTick;
     asIScriptFunction       *onSpawn;
     asIScriptFunction       *onShutdown;
+    asIScriptFunction       *onInput;
 
     kexKeyMap               *gameDef;
+    kexCanvas               menuCanvas;
 };
 
 extern kexGameManager       gameManager;

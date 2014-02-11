@@ -20,12 +20,15 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION:
+// DESCRIPTION: Game Management System. Handles global definitions
+//              and non in-game inputs (can be used for menus, etc)
+//              as well as save/loading states.
 //
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "server.h"
+#include "client.h"
+#include "defs.h"
 #include "gameManager.h"
 
 kexGameManager gameManager;
@@ -61,6 +64,29 @@ void kexGameManager::Init(void) {
     scriptManager.Engine()->RegisterInterfaceMethod("KexGame", "void OnLocalTick(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("KexGame", "void OnSpawn(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("KexGame", "void OnShutdown(void)");
+    scriptManager.Engine()->RegisterInterfaceMethod("KexGame", "bool OnInput(int, int, int, int)");
+}
+
+//
+// kexGameManager::InitObject
+//
+
+void kexGameManager::InitObject(void) {
+    kexScriptManager::RegisterDataObject<kexCanvas>("kGame");
+    
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kGame",
+        "kCanvas &MenuCanvas(void)",
+        asMETHODPR(kexGameManager, MenuCanvas, (void), kexCanvas&),
+        asCALL_THISCALL);
+    
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kGame",
+        "kKeyMapMem @GameDef(void)",
+        asMETHODPR(kexGameManager, GameDef, (void), kexKeyMap*),
+        asCALL_THISCALL);
+    
+    scriptManager.Engine()->RegisterGlobalProperty("kGame Game", &gameManager);
 }
 
 //
@@ -95,6 +121,7 @@ void kexGameManager::Construct(const char *className) {
     onLocalTick = type->GetMethodByDecl("void OnLocalTick(void)");
     onSpawn     = type->GetMethodByDecl("void OnSpawn(void)");
     onShutdown  = type->GetMethodByDecl("void OnShutdown(void)");
+    onInput     = type->GetMethodByDecl("bool OnInput(int, int, int, int)");
 }
 
 //
@@ -163,4 +190,29 @@ void kexGameManager::SetTitle(void) {
 
         SDL_SetWindowTitle(sysMain.Window(), title.c_str());
     }
+}
+
+//
+// kexGameManager::ProcessInput
+//
+
+bool kexGameManager::ProcessInput(const event_t *ev) {
+    int state = PrepareFunction(onInput);
+    bool ok = false;
+    
+    if(state == -1) {
+        return false;
+    }
+    
+    SetCallArgument(0, ev->type);
+    SetCallArgument(1, ev->data1);
+    SetCallArgument(2, ev->data2);
+    SetCallArgument(3, ev->data3);
+    
+    if(!ExecuteFunction(state)) {
+        return false;
+    }
+    
+    FinishFunction(state, &ok);
+    return ok;
 }
