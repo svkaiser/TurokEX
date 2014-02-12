@@ -116,6 +116,7 @@ public:
 
     void                            AddChild(kexCanvasObject *object);
     void                            RemoveChild(kexCanvasObject *object);
+    void                            Empty(void);
 
     kexCanvasObject*                operator[](int index);
 
@@ -141,13 +142,13 @@ public:
 
     void                            AddChild(kexCanvasObject *object);
     void                            RemoveChild(kexCanvasObject *object);
+    void                            Empty(void);
 
     kexCanvasObject*                operator[](int index);
 
     void                            Draw(void);
 
     static void                     InitObject(void);
-    static kexHeapBlock             hb_canvas;
 
     kexLinklist<kexCanvasObject>    children;
     kexLinklist<kexCanvasObject>    objects;

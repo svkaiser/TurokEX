@@ -31,8 +31,6 @@
 #include "system.h"
 #include "scriptAPI/scriptSystem.h"
 
-kexHeapBlock kexCanvas::hb_canvas("canvas", false, NULL, NULL);
-
 //-----------------------------------------------------------------------------
 //
 // kexCanvasObject
@@ -160,18 +158,20 @@ void kexCanvasImage::Draw(void) {
     for(i = 0; i < 4; i++) {
         a[i] = (byte)((float)rgba[i * 4 + 3] * alpha);
     }
-
-    if(parent != NULL) {
-        rx += parent->x / ratiox;
-        rw += parent->x / ratiox;
-        ry += parent->y / ratioy;
-        rh += parent->y / ratioy;
-
-        rw *= parent->scaleX;
-        rh *= parent->scaleY;
-
+    
+    for(kexCanvasObject *obj = parent; obj != NULL; obj = obj->parent) {
+        rx += obj->x / ratiox;
+        rw += obj->x / ratiox;
+        ry += obj->y / ratioy;
+        rh += obj->y / ratioy;
+        
+        rx *= obj->scaleX;
+        ry *= obj->scaleY;
+        rw *= obj->scaleX;
+        rh *= obj->scaleY;
+        
         for(i = 0; i < 4; i++) {
-            a[i] = (byte)((float)a[i] * parent->alpha);
+            a[i] = (byte)((float)a[i] * obj->alpha);
         }
     }
 
@@ -294,13 +294,16 @@ void kexCanvasText::Draw(void) {
 
     ds *= 0.5f;
 
-    if(parent != NULL) {
-        dx += (parent->x / ratiox);
-        dy += (parent->y / ratioy);
-        ds *= parent->scaleX;
+    for(kexCanvasObject *obj = parent; obj != NULL; obj = obj->parent) {
+        dx += (obj->x / ratiox);
+        dy += (obj->y / ratioy);
+        ds *= obj->scaleX;
 
+        dx *= obj->scaleX;
+        dy *= obj->scaleY;
+        
         for(int i = 0; i < 4; i++) {
-            color[i * 4 + 3] = (byte)((float)color[i * 4 + 3] * parent->alpha);
+            color[i * 4 + 3] = (byte)((float)color[i * 4 + 3] * obj->alpha);
         }
     }
 
@@ -362,6 +365,24 @@ void kexContainer::RemoveChild(kexCanvasObject *object) {
     object->link.Remove();
     object->parent = NULL;
     object->DecRef();
+    
+    if(object->InstanceOf(&kexContainer::info)) {
+        static_cast<kexContainer*>(object)->Empty();
+    }
+}
+
+//
+// kexContainer::Empty
+//
+
+void kexContainer::Empty(void) {
+    kexCanvasObject *next;
+    
+    for(kexCanvasObject *obj = children.Next(); obj != NULL;) {
+        next = obj->link.Next();
+        RemoveChild(obj);
+        obj = next;
+    }
 }
 
 //
@@ -494,6 +515,20 @@ void kexCanvas::AddChild(kexCanvasObject *object) {
 void kexCanvas::RemoveChild(kexCanvasObject *object) {
     object->link.Remove();
     object->DecRef();
+}
+
+//
+// kexCanvas::Empty
+//
+
+void kexCanvas::Empty(void) {
+    kexCanvasObject *next;
+    
+    for(kexCanvasObject *obj = children.Next(); obj != NULL;) {
+        next = obj->link.Next();
+        RemoveChild(obj);
+        obj = next;
+    }
 }
 
 //
