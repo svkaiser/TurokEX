@@ -52,6 +52,7 @@ public:
     blockFunc_t             freeFunc;
     blockFunc_t             gcFunc;
     int                     purgeID;
+    int                     numAllocated;
     kexHeapBlock            *prev;
     kexHeapBlock            *next;
 };
@@ -70,17 +71,18 @@ public:
     static int              Usage(const kexHeapBlock &heapBlock);
     static void             SetCacheRef(void **ptr, const char *file, int line);
     static void             Init(void);
+    static void             DrawHeapInfo(void);
 
     static int              numHeapBlocks;
     static kexHeapBlock     *currentHeapBlock;
     static int              currentHeapBlockID;
     static kexHeapBlock     *blockList;
+    static bool             bDrawHeapInfo;
 
 private:
     static void             AddBlock(memBlock_t *block, kexHeapBlock *heapBlock);
     static void             RemoveBlock(memBlock_t *block);
     static memBlock_t       *GetBlock(void *ptr, const char *file, int line);
-    static void             PrintHeapBlocks(void);
     
     static const int        HeapTag = 0x03151983;
 };

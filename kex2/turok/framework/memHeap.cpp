@@ -31,9 +31,11 @@
 #include "editorCommon.h"
 #endif
 #include "memHeap.h"
+#include "renderSystem.h"
 
 int kexHeap::numHeapBlocks = 0;
 int kexHeap::currentHeapBlockID = -1;
+bool kexHeap::bDrawHeapInfo = false;
 
 kexHeapBlock *kexHeap::currentHeapBlock = NULL;
 kexHeapBlock *kexHeap::blockList = NULL;
@@ -47,17 +49,26 @@ kexHeapBlock hb_file("file", false, NULL, NULL);
 kexHeapBlock hb_object("object", false, NULL, NULL);
 
 //
+// FCmd_PrintHeapInfo
+//
+
+static void FCmd_PrintHeapInfo(void) {
+    kexHeap::bDrawHeapInfo ^= 1;
+}
+
+//
 // kexHeapBlock::kexHeapBlock
 //
 
 kexHeapBlock::kexHeapBlock(const char *name, bool bGarbageCollect,
                            blockFunc_t funcFree, blockFunc_t funcGC) {
-    this->name      = (char*)name;
-    this->freeFunc  = funcFree;
-    this->gcFunc    = funcGC;
-    this->blocks    = NULL;
-    this->bGC       = bGarbageCollect;
-    this->purgeID   = kexHeap::numHeapBlocks++;
+    this->name          = (char*)name;
+    this->freeFunc      = funcFree;
+    this->gcFunc        = funcGC;
+    this->blocks        = NULL;
+    this->bGC           = bGarbageCollect;
+    this->purgeID       = kexHeap::numHeapBlocks++;
+    this->numAllocated  = 0;
 
     // add heap block to main block list
     if(kexHeap::blockList) {
@@ -120,7 +131,7 @@ kexHeapBlock *kexHeapBlock::operator[](int index) {
 //
 
 void kexHeap::Init(void) {
-    command.Add("printheap", kexHeap::PrintHeapBlocks);
+    command.Add("printheap", FCmd_PrintHeapInfo);
     common.Printf("Heap Manager Initialized\n");
 }
 
@@ -138,6 +149,8 @@ void kexHeap::AddBlock(memBlock_t *block, kexHeapBlock *heapBlock) {
     if(block->next != NULL) {
         block->next->prev = block;
     }
+
+    heapBlock->numAllocated++;
 }
 
 //
@@ -419,17 +432,41 @@ int kexHeap::Usage(const kexHeapBlock &heapBlock) {
 }
 
 //
-// kexHeap::PrintHeapBlocks
+// kexHeap::DrawHeapInfo
 //
 
-void kexHeap::PrintHeapBlocks(void) {
-    kexHeapBlock *heapBlock;
+void kexHeap::DrawHeapInfo(void) {
+    memBlock_t *block;
+    int numBlocks;
+    unsigned int c;
+    byte *cb;
+    float y;
 
-    common.CPrintf(COLOR_GREEN, "-------------- Heap Blocks ---------------\n");
-
-    for(heapBlock = kexHeap::blockList; heapBlock; heapBlock = heapBlock->next) {
-        common.Printf("%s: %ikb\n", heapBlock->name, kexHeap::Usage(*heapBlock) >> 10);
+    if(kexHeap::bDrawHeapInfo == false) {
+        return;
     }
 
-    common.CPrintf(COLOR_GREEN, "----------------------------------------------\n\n");
+    cb = (byte*)&c;
+    y = 32;
+
+    for(kexHeapBlock *heapBlock = kexHeap::blockList; heapBlock; heapBlock = heapBlock->next) {
+        c = RGBA(0, 255, 0, 255);
+        renderSystem.consoleFont.DrawString(kva("%s", heapBlock->name), 32, y, 1, false, cb, cb);
+        c = RGBA(255, 255, 0, 255);
+        renderSystem.consoleFont.DrawString(kva(": %ikb", kexHeap::Usage(*heapBlock) >> 10),
+            128, y, 1, false, cb, cb);
+        renderSystem.consoleFont.DrawString(kva(" allocated: %i", heapBlock->numAllocated),
+            192, y, 1, false, cb, cb);
+
+        numBlocks = 0;
+        for(block = heapBlock->blocks; block != NULL; block = block->next) {
+            numBlocks++;
+        }
+
+        renderSystem.consoleFont.DrawString(kva(" freed: %i", heapBlock->numAllocated - numBlocks),
+            320, y, 1, false, cb, cb);
+
+        heapBlock->numAllocated = numBlocks;
+        y += 16;
+    }
 }

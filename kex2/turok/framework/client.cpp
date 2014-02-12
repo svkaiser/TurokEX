@@ -237,6 +237,7 @@ void kexClient::Run(const int msec) {
     renderSystem.Canvas().Draw();
     gameManager.MenuCanvas().Draw();
     console.Draw();
+    kexHeap::DrawHeapInfo();
     scriptManager.DrawGCStats();
 
     // finish frame
