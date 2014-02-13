@@ -301,6 +301,9 @@ public:
     static kexMatrix        Invert(kexMatrix &mtx);
     float                   *ToFloatPtr(void);
     void                    SetViewProjection(float aspect, float fov, float zNear, float zFar);
+    void                    SetOrtho(float left, float right,
+                                     float bottom, float top,
+                                     float zNear, float zFar);
     
     kexMatrix               operator*(const kexVec3 &vector);
     kexMatrix               &operator*=(const kexVec3 &vector);

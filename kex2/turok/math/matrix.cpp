@@ -389,6 +389,33 @@ void kexMatrix::SetViewProjection(float aspect, float fov, float zNear, float zF
 }
 
 //
+// kexMatrix::SetOrtho
+//
+
+void kexMatrix::SetOrtho(float left, float right,
+                         float bottom, float top,
+                         float zNear, float zFar) {
+    vectors[0].x =  2 / (right - left);
+    vectors[1].y =  2 / (top - bottom);
+    vectors[2].z = -2 / (zFar - zNear);
+    
+    vectors[3].x = -(right + left) / (right - left);
+    vectors[3].y = -(top + bottom) / (top - bottom);
+    vectors[3].z = -(zFar + zNear) / (zFar - zNear);
+    vectors[3].w = 1;
+    
+    vectors[0].y = 0;
+    vectors[0].z = 0;
+    vectors[0].w = 0;
+    vectors[1].x = 0;
+    vectors[1].z = 0;
+    vectors[1].w = 0;
+    vectors[2].x = 0;
+    vectors[2].y = 0;
+    vectors[2].w = 0;
+}
+
+//
 // kexMatrix::operator*
 //
 
