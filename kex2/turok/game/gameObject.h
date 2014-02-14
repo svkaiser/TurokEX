@@ -42,6 +42,9 @@ public:
     virtual void                Remove(void);
 
     void                        Spawn(void);
+    void                        Save(kexBinFile *saveFile);
+    void                        Load(kexBinFile *loadFile);
+
     int                         AddRef(void);
     int                         RemoveRef(void);
     void                        SetTarget(kexGameObject *targ);
@@ -124,6 +127,7 @@ protected:
 
 private:
     int                         refCount;
+    unsigned int                objID;
     bool                        bStale;         // freed on next game tick
 END_CLASS();
 

@@ -28,6 +28,7 @@
 #include "gameObject.h"
 #include "sound.h"
 #include "server.h"
+#include "binFile.h"
 
 DECLARE_ABSTRACT_CLASS(kexGameObject, kexObject)
 
@@ -47,6 +48,7 @@ kexGameObject::kexGameObject(void) {
     this->fracTime      = 0;
     this->timeStamp     = 0;
     this->oldTimeStamp  = 0;
+    this->objID         = 0;
 }
 
 //
@@ -128,6 +130,68 @@ void kexGameObject::SetOwner(kexGameObject *targ) {
 
 void kexGameObject::Spawn(void) {
     timeStamp = (float)server.GetRunTime();
+    objID = ++kexGameObject::id;
+}
+
+//
+// kexGameObject::Save
+//
+
+void kexGameObject::Save(kexBinFile *saveFile) {
+    saveFile->WriteString(ClassString());
+    saveFile->Write32(objID);
+    saveFile->WriteVector3(origin);
+    saveFile->WriteFloat(angles.yaw);
+    saveFile->WriteFloat(angles.pitch);
+    saveFile->WriteFloat(angles.roll);
+    saveFile->Write8(bClientOnly);
+    saveFile->Write32(targetID);
+    saveFile->WriteFloat(timeStamp);
+    saveFile->WriteFloat(oldTimeStamp);
+    saveFile->WriteFloat(tickDistance);
+    saveFile->WriteFloat(fracTime);
+    saveFile->Write8(bStale);
+    
+    saveFile->Write8(owner ? 1 : 0);
+    if(owner) {
+        saveFile->Write32(owner->objID);
+    }
+    
+    saveFile->Write8(target ? 1 : 0);
+    if(target) {
+        saveFile->Write32(target->objID);
+    }
+}
+
+//
+// kexGameObject::Load
+//
+
+void kexGameObject::Load(kexBinFile *loadFile) {
+    loadFile->ReadString();
+
+    objID           = loadFile->Read32();
+    origin          = loadFile->ReadVector3();
+    angles.yaw      = loadFile->ReadFloat();
+    angles.pitch    = loadFile->ReadFloat();
+    angles.roll     = loadFile->ReadFloat();
+    bClientOnly     = (loadFile->Read8() != 0);
+    targetID        = loadFile->Read32();
+    timeStamp       = loadFile->ReadFloat();
+    oldTimeStamp    = loadFile->ReadFloat();
+    tickDistance    = loadFile->ReadFloat();
+    fracTime        = loadFile->ReadFloat();
+    bStale          = (loadFile->Read8() != 0);
+    
+    if(loadFile->Read8()) {
+        // TODO
+        loadFile->Read32();
+    }
+    
+    if(loadFile->Read8()) {
+        // TODO
+        loadFile->Read32();
+    }
 }
 
 //

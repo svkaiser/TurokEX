@@ -39,12 +39,14 @@ public:                                                 \
 
 #define END_CLASS() }
 
-#define DEFINE_CLASS(classname, supername)              \
-    kexRTTI classname::info(#classname, #supername,     \
-        classname::Create,                              \
-        (void(kexObject::*)(void))&classname::Spawn);   \
-    kexRTTI *classname::GetInfo(void) const {           \
-        return &(classname::info);                      \
+#define DEFINE_CLASS(classname, supername)                      \
+    kexRTTI classname::info(#classname, #supername,             \
+        classname::Create,                                      \
+        (void(kexObject::*)(void))&classname::Spawn,            \
+        (void(kexObject::*)(kexBinFile*))&classname::Save,      \
+        (void(kexObject::*)(kexBinFile*))&classname::Load);     \
+    kexRTTI *classname::GetInfo(void) const {                   \
+        return &(classname::info);                              \
     }
 
 #ifdef EDITOR
@@ -71,16 +73,21 @@ public:                                                 \
         return NULL;                                    \
     }
 
+class kexBinFile;
 class kexObject;
 class kexRTTI;
 
 typedef void(kexObject::*spawnObjFunc_t)(void);
+typedef void(kexObject::*saveObjFunc_t)(kexBinFile*);
+typedef void(kexObject::*loadObjFunc_t)(kexBinFile*);
 
 class kexRTTI {
 public:
                             kexRTTI(const char *classname, const char *supername,
                                 kexObject *(*Create)(void),
-                                void(kexObject::*Spawn)(void));
+                                void(kexObject::*Spawn)(void),
+                                void(kexObject::*Save)(kexBinFile*),
+                                void(kexObject::*Load)(kexBinFile*));
                             ~kexRTTI(void);
                             
     void                    Init(void);
@@ -88,6 +95,8 @@ public:
     bool                    InstanceOf(const kexRTTI *objInfo) const;
     kexObject               *(*Create)(void);
     void                    (kexObject::*Spawn)(void);
+    void                    (kexObject::*Save)(kexBinFile*);
+    void                    (kexObject::*Load)(kexBinFile*);
     
     int                     type_id;
     const char              *classname;
@@ -105,8 +114,14 @@ BEGIN_CLASS(kexObject);
     const kexStr            SuperString(void) const;
     bool                    InstanceOf(const kexRTTI *objInfo) const;
     void                    CallSpawn(void);
+    void                    CallSave(kexBinFile *binFile);
+    void                    CallLoad(kexBinFile *binFile);
     void                    Spawn(void);
+    void                    Save(kexBinFile *saveFile);
+    void                    Load(kexBinFile *LoadFile);
     spawnObjFunc_t          ExecSpawnFunction(kexRTTI *objInfo);
+    saveObjFunc_t           ExecSaveFunction(kexRTTI *objInfo, kexBinFile *binFile);
+    loadObjFunc_t           ExecLoadFunction(kexRTTI *objInfo, kexBinFile *binFile);
 
     void                    *operator new(size_t s);
     void                    operator delete(void *ptr);

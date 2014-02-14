@@ -197,15 +197,58 @@ float kexBinFile::ReadFloat(void) {
 }
 
 //
-// kexBinFile::ReadVector
+// kexBinFile::ReadVector2
 //
 
-kexVec3 kexBinFile::ReadVector(void) {
+kexVec2 kexBinFile::ReadVector2(void) {
+    kexVec2 vec;
+
+    vec.x = ReadFloat();
+    vec.z = ReadFloat();
+
+    return vec;
+}
+
+//
+// kexBinFile::ReadVector3
+//
+
+kexVec3 kexBinFile::ReadVector3(void) {
     kexVec3 vec;
 
     vec.x = ReadFloat();
     vec.y = ReadFloat();
     vec.z = ReadFloat();
+
+    return vec;
+}
+
+//
+// kexBinFile::ReadVector4
+//
+
+kexVec4 kexBinFile::ReadVector4(void) {
+    kexVec4 vec;
+
+    vec.x = ReadFloat();
+    vec.y = ReadFloat();
+    vec.z = ReadFloat();
+    vec.w = ReadFloat();
+
+    return vec;
+}
+
+//
+// kexBinFile::ReadQuaternion
+//
+
+kexQuat kexBinFile::ReadQuaternion(void) {
+    kexQuat vec;
+
+    vec.x = ReadFloat();
+    vec.y = ReadFloat();
+    vec.z = ReadFloat();
+    vec.w = ReadFloat();
 
     return vec;
 }
@@ -227,6 +270,21 @@ kexStr kexBinFile::ReadString(void) {
     }
 
     return str;
+}
+
+//
+// kexBinFile::ReadMatrix
+//
+
+kexMatrix kexBinFile::ReadMatrix(void) {
+    kexMatrix mtx;
+
+    mtx.vectors[0] = ReadVector4();
+    mtx.vectors[1] = ReadVector4();
+    mtx.vectors[2] = ReadVector4();
+    mtx.vectors[3] = ReadVector4();
+
+    return mtx;
 }
 
 //
@@ -269,13 +327,44 @@ void kexBinFile::WriteFloat(const float val) {
 }
 
 //
-// kexBinFile::WriteVector
+// kexBinFile::WriteVector2
 //
 
-void kexBinFile::WriteVector(const kexVec3 &val) {
+void kexBinFile::WriteVector2(const kexVec2 &val) {
+    WriteFloat(val.x);
+    WriteFloat(val.z);
+}
+
+//
+// kexBinFile::WriteVector3
+//
+
+void kexBinFile::WriteVector3(const kexVec3 &val) {
     WriteFloat(val.x);
     WriteFloat(val.y);
     WriteFloat(val.z);
+}
+
+//
+// kexBinFile::WriteVector4
+//
+
+void kexBinFile::WriteVector4(const kexVec4 &val) {
+    WriteFloat(val.x);
+    WriteFloat(val.y);
+    WriteFloat(val.z);
+    WriteFloat(val.w);
+}
+
+//
+// kexBinFile::WriteQuaternion
+//
+
+void kexBinFile::WriteQuaternion(const kexQuat &quat) {
+    WriteFloat(quat.x);
+    WriteFloat(quat.y);
+    WriteFloat(quat.z);
+    WriteFloat(quat.w);
 }
 
 //
@@ -290,6 +379,16 @@ void kexBinFile::WriteString(const kexStr &val) {
     }
 
     Write8(0);
+}
+
+//
+// kexBinFile::WriteMatrix
+//
+
+void kexBinFile::WriteMatrix(const kexMatrix &mtx) {
+    for(int i = 0; i < 4; i++) {
+        WriteVector4(mtx.vectors[i]);
+    }
 }
 
 //

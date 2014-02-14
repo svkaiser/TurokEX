@@ -93,8 +93,9 @@ void kexLocalPlayer::BuildCommands(void) {
     int numactions;
     int i;
 
-    if(client.GetState() != CL_STATE_INGAME)
+    if(client.GetState() != CL_STATE_INGAME) {
         return;
+    }
 
     if(bLocked == true) {
         return;
@@ -130,8 +131,9 @@ void kexLocalPlayer::BuildCommands(void) {
     ctrl->mousex = 0;
     ctrl->mousey = 0;
 
-    if(!(packet = packetManager.Create()))
+    if(!(packet = packetManager.Create())) {
         return;
+    }
 
     packetManager.Write8(packet, cp_cmd);
 

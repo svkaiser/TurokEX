@@ -27,6 +27,7 @@
 #include "common.h"
 #include "displayObject.h"
 #include "sound.h"
+#include "binFile.h"
 
 DECLARE_ABSTRACT_CLASS(kexDisplayObject, kexGameObject)
 
@@ -59,6 +60,27 @@ void kexDisplayObject::Spawn(void) {
     }
 
     rotation.Normalize();
+}
+
+//
+// kexDisplayObject::Save
+//
+
+void kexDisplayObject::Save(kexBinFile *saveFile) {
+    saveFile->Write8(bHidden);
+    saveFile->Write8(bCulled);
+    saveFile->Write8(bClientView);
+    saveFile->WriteQuaternion(rotation);
+    saveFile->WriteFloat(cullDistance);
+    saveFile->WriteMatrix(matrix);
+    saveFile->WriteVector3(scale);
+}
+
+//
+// kexDisplayObject::Load
+//
+
+void kexDisplayObject::Load(kexBinFile *loadFile) {
 }
 
 //

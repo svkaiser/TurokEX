@@ -36,31 +36,33 @@
 //
 
 kexRTTI::kexRTTI(const char *classname, const char *supername,
-    kexObject *(*Create)(void), void(kexObject::*Spawn)(void)) {
-    this->classname     = classname;
-    this->supername     = supername;
-    this->Create        = Create;
-    this->Spawn         = Spawn;
-    this->type_id       = ++kexObject::roverID;
-    this->super         = kexObject::Get(supername);
+    kexObject *(*Create)(void), void(kexObject::*Spawn)(void),
+    void(kexObject::*Save)(kexBinFile*), void(kexObject::*Load)(kexBinFile*)) {
+        this->classname     = classname;
+        this->supername     = supername;
+        this->Create        = Create;
+        this->Spawn         = Spawn;
+        this->Save          = Save;
+        this->Load          = Load;
+        this->type_id       = ++kexObject::roverID;
+        this->super         = kexObject::Get(supername);
 
-    // link all classes with supers to this class if not referenced yet
-    for(kexRTTI *rtti = kexObject::root; rtti != NULL; rtti = rtti->next) {
-        if(rtti->super == NULL &&
-            !strcmp(rtti->supername, this->classname) &&
-            strcmp(rtti->classname, "kexObject")) {
-                rtti->super = this;
+        // link all classes with supers to this class if not referenced yet
+        for(kexRTTI *rtti = kexObject::root; rtti != NULL; rtti = rtti->next) {
+            if(rtti->super == NULL && !strcmp(rtti->supername, this->classname) &&
+                strcmp(rtti->classname, "kexObject")) {
+                    rtti->super = this;
+            }
         }
-    }
     
-    if(kexObject::root == NULL) {
-        this->next = NULL;
-        kexObject::root = this;
-    }
-    else {
-        this->next = kexObject::root;
-        kexObject::root = this;
-    }
+        if(kexObject::root == NULL) {
+            this->next = NULL;
+            kexObject::root = this;
+        }
+        else {
+            this->next = kexObject::root;
+            kexObject::root = this;
+        }
 }
 
 //
@@ -113,9 +115,10 @@ kexObject::~kexObject(void) {
 kexObject *kexObject::Create(const char *name) {
     const kexRTTI *info;
 
-    if(name == NULL || !(info = kexObject::Get(name)))
+    if(name == NULL || !(info = kexObject::Get(name))) {
         return NULL;
-        
+    }
+    
     return info->Create();
 }
 
@@ -177,6 +180,74 @@ void kexObject::CallSpawn(void) {
 //
 
 void kexObject::Spawn(void) {
+}
+
+//
+// kexObject::ExecSaveFunction
+//
+
+saveObjFunc_t kexObject::ExecSaveFunction(kexRTTI *objInfo, kexBinFile *binFile) {
+    saveObjFunc_t func;
+    
+    if(objInfo->super) {
+        if((func = ExecSaveFunction(objInfo->super, binFile)) == objInfo->Save) {
+            return func;
+        }
+    }
+    
+    func = objInfo->Save;
+    (this->*objInfo->Save)(binFile);
+    
+    return func;
+}
+
+//
+// kexObject::CallSave
+//
+
+void kexObject::CallSave(kexBinFile *binFile) {
+    ExecSaveFunction(GetInfo(), binFile);
+}
+
+//
+// kexObject::Save
+//
+
+void kexObject::Save(kexBinFile *saveFile) {
+}
+
+//
+// kexObject::ExecLoadFunction
+//
+
+loadObjFunc_t kexObject::ExecLoadFunction(kexRTTI *objInfo, kexBinFile *binFile) {
+    loadObjFunc_t func;
+    
+    if(objInfo->super) {
+        if((func = ExecLoadFunction(objInfo->super, binFile)) == objInfo->Load) {
+            return func;
+        }
+    }
+    
+    func = objInfo->Load;
+    (this->*objInfo->Load)(binFile);
+    
+    return func;
+}
+
+//
+// kexObject::CallLoad
+//
+
+void kexObject::CallLoad(kexBinFile *binFile) {
+    ExecLoadFunction(GetInfo(), binFile);
+}
+
+//
+// kexObject::Load
+//
+
+void kexObject::Load(kexBinFile *loadFile) {
 }
 
 //

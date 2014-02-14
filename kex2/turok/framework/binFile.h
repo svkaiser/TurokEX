@@ -38,15 +38,23 @@ public:
     short               Read16(void);
     int                 Read32(void);
     float               ReadFloat(void);
-    kexVec3             ReadVector(void);
+    kexVec2             ReadVector2(void);
+    kexVec3             ReadVector3(void);
+    kexVec4             ReadVector4(void);
+    kexQuat             ReadQuaternion(void);
+    kexMatrix           ReadMatrix(void);
     kexStr              ReadString(void);
 
     void                Write8(const byte val);
     void                Write16(const short val);
     void                Write32(const int val);
     void                WriteFloat(const float val);
-    void                WriteVector(const kexVec3 &val);
+    void                WriteVector2(const kexVec2 &val);
+    void                WriteVector3(const kexVec3 &val);
+    void                WriteVector4(const kexVec4 &val);
+    void                WriteQuaternion(const kexQuat &quat);
     void                WriteString(const kexStr &val);
+    void                WriteMatrix(const kexMatrix &mtx);
 
     int                 GetOffsetValue(int id);
     byte                *GetOffset(int id,

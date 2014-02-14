@@ -43,6 +43,8 @@ public:
     virtual void                UpdateTransform(void);
     
     void                        Spawn(void);
+    void                        Save(kexBinFile *saveFile);
+    void                        Load(kexBinFile *loadFile);
 
     kexQuat                     &GetRotation(void) { return rotation; }
     void                        SetRotation(const kexQuat &rot) { rotation = rot; }
