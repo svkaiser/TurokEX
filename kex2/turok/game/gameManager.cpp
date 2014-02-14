@@ -21,15 +21,22 @@
 //-----------------------------------------------------------------------------
 //
 // DESCRIPTION: Game Management System. Handles global definitions
-//              and non in-game inputs (can be used for menus, etc)
-//              as well as save/loading states.
+//              and non in-game inputs (can be used for menus, etc),
+//              player managment as well as save/loading states.
 //
 //-----------------------------------------------------------------------------
 
 #include "common.h"
 #include "client.h"
+#include "server.h"
 #include "defs.h"
 #include "gameManager.h"
+#include "packet.h"
+#include "sound.h"
+#include "console.h"
+#include "world.h"
+#include "renderSystem.h"
+#include "renderWorld.h"
 
 kexGameManager gameManager;
 
@@ -85,6 +92,9 @@ void kexGameManager::InitObject(void) {
         "kKeyMapMem @GameDef(void)",
         asMETHODPR(kexGameManager, GameDef, (void), kexKeyMap*),
         asCALL_THISCALL);
+    
+    scriptManager.Engine()->RegisterObjectProperty("kGame",
+        "kLocalPlayer localPlayer", asOFFSET(kexGameManager, localPlayer));
     
     scriptManager.Engine()->RegisterGlobalProperty("kGame Game", &gameManager);
 }
@@ -215,4 +225,215 @@ bool kexGameManager::ProcessInput(const event_t *ev) {
     
     FinishFunction(state, &ok);
     return ok;
+}
+
+//
+// kexGameManager::OnTick
+//
+
+void kexGameManager::OnTick(void) {
+    for(int i = 0; i < server.GetMaxClients(); i++) {
+        if(players[i].State() == PS_STATE_ACTIVE) {
+            players[i].Tick();
+        }
+    }
+    
+    localWorld.Tick();
+}
+
+//
+// kexGameManager::OnLocalTick
+//
+
+void kexGameManager::OnLocalTick(void) {
+    // prep and send input information to server
+    localPlayer.BuildCommands();
+    
+    // run tick
+    localPlayer.LocalTick();
+    console.Tick();
+    localWorld.LocalTick();
+    
+    // draw
+    renderWorld.RenderScene();
+    renderSystem.SetOrtho();
+    renderSystem.Canvas().Draw();
+    gameManager.MenuCanvas().Draw();
+    console.Draw();
+    
+    // draw debug stats
+    kexHeap::DrawHeapInfo();
+    scriptManager.DrawGCStats();
+    
+    // finish frame
+    inputSystem.UpdateGrab();
+    renderSystem.SwapBuffers();
+    
+    // update all sound sources
+    soundSystem.UpdateListener();
+}
+
+//
+// kexGameManager::ServerEvent
+//
+
+void kexGameManager::ServerEvent(const int type, const ENetPacket *packet) {
+    common.Warning("Recieved unknown packet type: %i\n", type);
+}
+
+//
+// kexGameManager::ClientEvent
+//
+
+void kexGameManager::ClientEvent(const int type, const ENetPacket *packet) {
+    switch(type) {
+        case sp_ping:
+            common.Printf("Recieved acknowledgement from server\n");
+            break;
+            
+        case sp_clientinfo:
+            SetupClientInfo(packet);
+            break;
+            
+        case sp_changemap:
+            PrepareMapChange(packet);
+            break;
+            
+        case sp_noclip:
+            localPlayer.ToggleClipping();
+            break;
+            
+        default:
+            common.Warning("Recieved unknown packet type: %i\n", type);
+            break;
+    }
+}
+
+//
+// kexGameManager::ConnectPlayer
+//
+
+bool kexGameManager::ConnectPlayer(ENetEvent *sev) {
+    ENetPacket *packet;
+    kexPlayer *player;
+    
+    for(int i = 0; i < server.GetMaxClients(); i++) {
+        if(players[i].State() == PS_STATE_INACTIVE) {
+            player = &players[i];
+            
+            if(!(packet = packetManager.Create())) {
+                return false;
+            }
+            
+            player->State() = PS_STATE_ACTIVE;
+            player->SetPeer(sev->peer);
+            player->SetID(sev->peer->connectID);
+            player->ResetTicCommand();
+            
+            common.Printf("%s connected...\n", server.GetPeerAddress(sev));
+            
+            packetManager.Write8(packet, sp_clientinfo);
+            packetManager.Write8(packet, player->GetID());
+            packetManager.Send(packet, player->GetPeer());
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+//
+// kexGameManager::NotifyMapChange
+//
+
+void kexGameManager::NotifyMapChange(ENetEvent *sev, const int mapID) {
+    ENetPacket *packet;
+    kexPlayer *player;
+    
+    for(int i = 0; i < server.GetMaxClients(); i++) {
+        if(players[i].State() == PS_STATE_ACTIVE) {
+            player = &players[i];
+            
+            if(!(packet = packetManager.Create())) {
+                continue;
+            }
+            
+            packetManager.Write8(packet, sp_changemap);
+            // TEMP
+            packetManager.Write8(packet, mapID);
+            packetManager.Send(packet, player->GetPeer());
+        }
+    }
+}
+
+//
+// kexGameManager::GetPlayerID
+//
+
+int kexGameManager::GetPlayerID(ENetPeer *peer) const {
+    kexPlayer *p;
+
+    for(int i = 0; i < server.GetMaxClients(); i++) {
+        p = const_cast<kexPlayer*>(&players[i]);
+
+        if(p->State() == PS_STATE_INACTIVE) {
+            continue;
+        }
+        
+        if(peer->connectID == players[i].GetID()) {
+            return i;
+        }
+    }
+    
+    return 0;
+}
+
+//
+// kexGameManager::PrepareMapChange
+//
+
+void kexGameManager::PrepareMapChange(const ENetPacket *packet) {
+    // TEMP
+    unsigned int mapID;
+    
+    client.SetState(CL_STATE_CHANGINGLEVEL);
+    
+    packetManager.Read8((ENetPacket*)packet, &mapID);
+    
+    localWorld.Unload();
+    if(!localWorld.Load(kva("maps/map%02d/map%02d", mapID, mapID))) {
+        client.SetState(CL_STATE_READY);
+        return;
+    }
+    
+    client.SetState(CL_STATE_INGAME);
+}
+
+//
+// kexGameManager::SetupClientInfo
+//
+
+void kexGameManager::SetupClientInfo(const ENetPacket *packet) {
+    unsigned int id;
+
+    packetManager.Read8((ENetPacket*)packet, &id);
+    localPlayer.SetID(id);
+
+    client.SetState(CL_STATE_READY);
+    common.DPrintf("kexGameManager::SetupClientInfo: ID is %i\n", id);
+    
+    if(client.IsLocal() && gameManager.GameDef()) {
+        kexStr startMap;
+        
+        if(gameManager.GameDef()->GetString("initialMap", startMap)) {
+            client.SetState(CL_STATE_CHANGINGLEVEL);
+            
+            if(!localWorld.Load(startMap.c_str())) {
+                client.SetState(CL_STATE_READY);
+                return;
+            }
+            
+            client.SetState(CL_STATE_INGAME);
+        }
+    }
 }

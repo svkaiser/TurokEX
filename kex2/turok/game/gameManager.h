@@ -23,11 +23,13 @@
 #ifndef __GAME_MANAGER_H__
 #define __GAME_MANAGER_H__
 
+#include "enet/enet.h"
 #include "common.h"
 #include "keymap.h"
 #include "renderSystem.h"
 #include "client.h"
 #include "scriptAPI/component.h"
+#include "player/player.h"
 
 //-----------------------------------------------------------------------------
 //
@@ -48,14 +50,27 @@ public:
     void                    OnShutdown(void);
     void                    SetTitle(void);
     bool                    ProcessInput(const event_t *ev);
+    void                    OnTick(void);
+    void                    OnLocalTick(void);
+    void                    ClientEvent(const int type, const ENetPacket *packet);
+    void                    ServerEvent(const int type, const ENetPacket *packet);
+    int                     GetPlayerID(ENetPeer *peer) const;
+    bool                    ConnectPlayer(ENetEvent *sev);
+    void                    NotifyMapChange(ENetEvent *sev, const int mapID);
 
     kexKeyMap               *GameDef(void) { return gameDef; }
     kexCanvas               &MenuCanvas(void) { return menuCanvas; }
 
     static void             Init(void);
     static void             InitObject(void);
+    
+    kexPlayer               players[MAX_PLAYERS];
+    kexLocalPlayer          localPlayer;
 
 private:
+    void                    PrepareMapChange(const ENetPacket *packet);
+    void                    SetupClientInfo(const ENetPacket *packet);
+    
     asIScriptFunction       *onTick;
     asIScriptFunction       *onLocalTick;
     asIScriptFunction       *onSpawn;

@@ -1,0 +1,78 @@
+////////////////////////////////////////////////////
+//
+// CameraEvent
+//
+////////////////////////////////////////////////////
+
+class CameraEvent {
+    float   fade;
+    bool    bFading;
+    bool    bFadeOut;
+    int     stage;
+    float   time;
+    float   fadeSpeed;
+    
+    CameraEvent(void) {
+        fade = 0;
+        bFading = false;
+        bFadeOut = false;
+        stage = 0;
+        time = 0;
+        fadeSpeed = 1000;
+    }
+    
+    ~CameraEvent(void) {
+    }
+    
+    void startEvent(void) {
+        fadeOut();
+        stage = 0;
+    }
+    
+    void fadeIn(void) {
+        bFading = true;
+        bFadeOut = false;
+        fade = 255;
+    }
+    
+    void fadeOut(void) {
+        bFading = true;
+        bFadeOut = true;
+        fade = 0;
+    }
+    
+    void update(bool bCancel) {
+        if(bCancel) {
+            onCancel();
+        }
+        
+        if(bFading == false) {
+            return;
+        }
+        
+        if(bFadeOut) {
+            fade += (fadeSpeed * Client.GetRunTime());
+        }
+        else {
+            fade -= (fadeSpeed * Client.GetRunTime());
+        }
+        
+        if(fade > 255) {
+            fade = 255;
+            bFading = false;
+            stage++;
+        }
+        
+        if(fade < 0) {
+            fade = 0;
+            bFading = false;
+            stage++;
+        }
+    }
+    
+    void onCancel(void) {
+    }
+    
+    void runEvent(void) {
+    }
+};

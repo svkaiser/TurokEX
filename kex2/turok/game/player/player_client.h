@@ -29,6 +29,8 @@
 //
 //-----------------------------------------------------------------------------
 
+class kexClient;
+
 BEGIN_EXTENDED_CLASS(kexLocalPlayer, kexPlayer);
 public:
                             kexLocalPlayer(void);
@@ -38,22 +40,19 @@ public:
 
     bool                    ProcessInput(event_t *ev);
     void                    BuildCommands(void);
-    bool                    ActionDown(const kexStr &str);
-    int                     ActionHeldTime(const kexStr &str);
 
     kexVec3                 &MoveDiff(void) { return moveDiff; }
     kexActor                *ToWorldActor(void) { return static_cast<kexActor*>(this); }
     void                    Lock(void) { bLocked = true; }
     void                    Unlock(void) { bLocked = false; }
+    kexClient               *Client(void) { return clientTarget; }
 
     static void             InitObject(void);
 
 private:
-    int                     latency[NETBACKUPS];
     kexVec3                 moveDiff;
-    kexVec3                 oldMoves[NETBACKUPS];
-    ticcmd_t                oldCmds[NETBACKUPS];
     bool                    bLocked;
+    kexClient               *clientTarget;
 END_CLASS();
 
 #endif

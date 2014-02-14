@@ -67,8 +67,6 @@ public:
     void                SetPeer(ENetPeer *_peer) { peer = _peer; }
     ENetPeer            *GetPeer(void) { return peer; }
     bool                IsLocal(void) { return bLocal; }
-    kexLocalPlayer      &LocalPlayer(void) { return playerClient; }
-    kexLocalPlayer      *GetLocalPlayerRef(void) { return &playerClient; }
 
     unsigned int        id;
     int                 curtime;
@@ -77,12 +75,8 @@ public:
     static void         InitObject(void);
 
 private:
-    void                PrepareMapChange(const ENetPacket *packet);
-    void                SetupClientInfo(const ENetPacket *packet);
-
     bool                bLocal;
     ENetPeer            *peer;
-    kexLocalPlayer      playerClient;
     event_t             events[MAXEVENTS];
     int                 eventhead;
     int                 eventtail;

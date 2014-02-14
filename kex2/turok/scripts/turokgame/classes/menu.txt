@@ -1,5 +1,27 @@
 ////////////////////////////////////////////////////
 //
+// Enums
+//
+////////////////////////////////////////////////////
+
+enum menuStatus_e {
+    ms_ready    = 0,
+    ms_fadein,
+    ms_fadeout
+}
+
+enum menuStatusItem_e {
+    msi_hidden  = 0,
+    msi_enterok,
+    msi_disabled,
+    msi_nocursor,
+    msi_ok,
+    msi_arrowok,
+    msi_slider
+}
+
+////////////////////////////////////////////////////
+//
 // MenuFillBox
 //
 ////////////////////////////////////////////////////
@@ -13,6 +35,19 @@ final class MenuFillBox {
     kCanvasContainer @container;
     
     MenuFillBox(void) {
+        @container = null;
+    }
+    
+    ~MenuFillBox(void) {
+        if(container is null) {
+            return;
+        }
+        
+        container.RemoveChild(tile5);
+        container.RemoveChild(tile4);
+        container.RemoveChild(tile3);
+        container.RemoveChild(tile2);
+        container.RemoveChild(tile1);
     }
     
     void SetStyle(const float width, const float height,
@@ -93,3 +128,239 @@ final class MenuFillBox {
         SetStyle(width, height, borderSize, bTintSide, r, g, b);
     }
 };
+
+////////////////////////////////////////////////////
+//
+// MenuObject
+//
+////////////////////////////////////////////////////
+
+class MenuObject {
+    kCanvasContainer        @container;
+    kCanvasContainer        @itemContainer;
+    MenuObject              @prevMenu;
+    int16                   numItems;
+    int16                   lastOn;
+    int16                   numPageItems;
+    int16                   menuPageOffset;
+    float                   opacity;
+    int8                    status;
+    array<TurokHudString>   itemNames;
+    array<int8>             itemStatus;
+    float                   itemX;
+    float                   itemY;
+    
+    MenuObject(void) {
+        status          = ms_ready;
+        opacity         = 1.0f;
+        numPageItems    = 0;
+        menuPageOffset  = 0;
+        lastOn          = 0;
+        @prevMenu       = null;
+    }
+    
+    bool Responder(MenuManager &inout menu, int type, int key) {
+        if(type != IET_KEYDOWN) {
+            return false;
+        }
+        
+        switch(key) {
+            //
+            // cursor down
+            //
+            case K_DOWN:
+                do {
+                    if(menu.itemOn + 1 > numItems - 1) {
+                        menu.itemOn = 0;
+                    }
+                    else {
+                        menu.itemOn++;
+                    }
+                } while(itemStatus[menu.itemOn] == msi_disabled ||
+                        itemStatus[menu.itemOn] == msi_hidden);
+                return true;
+            //
+            // cursor up
+            //
+            case K_UP:
+                do {
+                    if(menu.itemOn <= 0) {
+                        menu.itemOn = numItems - 1;
+                    }
+                    else {
+                        menu.itemOn--;
+                    }
+                } while(itemStatus[menu.itemOn] == msi_disabled ||
+                        itemStatus[menu.itemOn] == msi_hidden);
+                return true;
+            //
+            // select item
+            //
+            case K_RETURN:
+                Choice(menu.itemOn, true);
+                return true;
+                
+            default:
+                break;
+        }
+        
+        return false;
+    }
+    
+    void Construct(void) {
+        if(numItems <= 0) {
+            return;
+        }
+        
+        itemNames.resize(numItems);
+        itemStatus.resize(numItems);
+        
+        @container = Game.MenuCanvas().CreateContainer();
+        @itemContainer = Game.MenuCanvas().CreateContainer();
+        
+        Game.MenuCanvas().AddChild(container);
+        
+        container.x = itemX / 0.65f;
+        container.y = itemY / 0.65f;
+        container.scaleX = 0.65f;
+        container.scaleY = 0.65f;
+        
+        for(int i = 0; i < numItems; i++) {
+            itemNames[i].Init();
+            itemNames[i].container.y = i * 20;
+            itemNames[i].top.bCentered = true;
+            itemNames[i].back.bCentered = true;
+            
+            itemContainer.AddChild(itemNames[i].container);
+        }
+    }
+    
+    void Deconstruct(void) {
+        Game.MenuCanvas().RemoveChild(container);
+    }
+    
+    void Choice(int which, bool selected) {
+    }
+}
+
+////////////////////////////////////////////////////
+//
+// MenuMain
+//
+////////////////////////////////////////////////////
+
+class MenuMain : MenuObject {
+    MenuFillBox fillBox;
+    
+    MenuMain(void) {
+        super();
+    }
+    
+    void Construct(void) {
+        numItems = 7;
+        itemX = 160;
+        itemY = 121.5f;
+        
+        MenuObject::Construct();
+        
+        itemNames[0].SetText("start game");
+        itemNames[1].SetText("load game");
+        itemNames[2].SetText("options");
+        itemNames[3].SetText("training");
+        itemNames[4].SetText("enter cheat");
+        itemNames[5].SetText("cheat menu");
+        itemNames[6].SetText("quit");
+        
+        itemStatus[0] = msi_enterok;
+        itemStatus[1] = msi_enterok;
+        itemStatus[2] = msi_enterok;
+        itemStatus[3] = msi_enterok;
+        itemStatus[4] = msi_enterok;
+        itemStatus[5] = msi_hidden;
+        itemStatus[6] = msi_enterok;
+        
+        fillBox.Init(250, 152.425f, 2, false, 0, 0, 0);
+        
+        container.AddChild(itemContainer);
+        container.AddChild(fillBox.container);
+        
+        fillBox.container.alpha = 0.65f;
+        fillBox.container.x = -125;
+        fillBox.container.y = -8.5f;
+    }
+    
+    void Choice(int which, bool selected) {
+    }
+}
+
+////////////////////////////////////////////////////
+//
+// MenuManager
+//
+////////////////////////////////////////////////////
+
+final class MenuManager {
+    int16       itemOn;
+    int16       itemSelected;
+    bool        bActive;
+    MenuObject  @oldMenu;
+    MenuObject  @initialMenu;
+    MenuObject  @currentMenu;
+    
+    MenuManager(void) {
+        itemOn          = 0;
+        itemSelected    = -1;
+        bActive         = false;
+        @oldMenu        = null;
+        @currentMenu    = null;
+        @initialMenu    = null;
+    }
+    
+    void Clear(void) {
+        bActive = false;
+        currentMenu.lastOn = itemOn;
+        currentMenu.opacity = 0;
+        currentMenu.status = ms_ready;
+        
+        if(!(oldMenu is null)) {
+            oldMenu.opacity = 0;
+            oldMenu.status = ms_ready;
+            @oldMenu = null;
+        }
+    }
+    
+    bool Responder(int type, int data1, int data2, int data3) {
+        if(currentMenu is null) {
+            return false;
+        }
+        
+        if(type == IET_KEYDOWN) {
+            switch(data1) {
+                case K_ESCAPE:
+                    if(!bActive) {
+                        bActive = true;
+                        // set initial menu
+                        return true;
+                    }
+                    else if(currentMenu.prevMenu is null) {
+                        Clear();
+                        return true;
+                    }
+                    /*else {
+                        // set prev menu
+                        return true;
+                    }*/
+                    break;
+                    
+                default:
+                    break;
+            }
+        }
+        
+        if(currentMenu.status == ms_ready) {
+            return currentMenu.Responder(this, type, data1);
+        }
+        
+        return false;
+    }
+}

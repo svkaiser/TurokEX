@@ -46,6 +46,7 @@ DECLARE_CLASS(kexLocalPlayer, kexPlayer)
 //
 
 kexLocalPlayer::kexLocalPlayer(void) {
+    this->clientTarget = &client;
 }
 
 //
@@ -158,38 +159,7 @@ void kexLocalPlayer::BuildCommands(void) {
         }
     }
 
-    packetManager.Write32(packet, netseq.ingoing);
-    packetManager.Write32(packet, netseq.outgoing);
-    netseq.outgoing++;
-
     packetManager.Send(packet, peer);
-}
-
-//
-// kexLocalPlayer::ActionDown
-//
-
-bool kexLocalPlayer::ActionDown(const kexStr &str) {
-    int action = inputKey.FindAction(str.c_str());
-
-    return (action != -1 && cmd.buttons[action]);
-}
-
-//
-// kexLocalPlayer::ActionHeldTime
-//
-
-int kexLocalPlayer::ActionHeldTime(const kexStr &str) {
-    int action = inputKey.FindAction(str.c_str());
-    int heldtime = 0;
-
-    if(action != -1) {
-        heldtime = (cmd.heldtime[action] - 1);
-        if(heldtime < 0)
-            heldtime = 0;
-    }
-
-    return heldtime;
 }
 
 //
@@ -199,7 +169,6 @@ int kexLocalPlayer::ActionHeldTime(const kexStr &str) {
 void kexLocalPlayer::LocalTick(void) {
     kexSector *exitSector;
     kexSector *enterSector;
-    int current;
 
     if(client.GetState() != CL_STATE_INGAME) {
         return;
@@ -207,14 +176,9 @@ void kexLocalPlayer::LocalTick(void) {
 
     timeStamp = (float)cmd.timestamp.i;
     frameTime = cmd.frametime.f;
-
-    current = (netseq.outgoing-1) & (NETBACKUPS-1);
-
-    oldMoves[current] = puppet->GetOrigin();
-    latency[current] = client.GetTime();
-
+    
     scriptComponent.CallFunction(scriptComponent.onLocalThink);
-
+    
     exitSector = puppet->Physics()->sector;
 
     if(bLocked == false) {
@@ -309,10 +273,6 @@ void kexLocalPlayer::InitObject(void) {
 
 #undef OBJMETHOD
 #undef OBJPROPERTY
-
-    scriptManager.Engine()->RegisterGlobalProperty(
-        "kLocalPlayer LocalPlayer",
-        client.GetLocalPlayerRef());
 
 #define OBJMETHOD(str, a, b, c)                     \
     scriptManager.Engine()->RegisterObjectMethod(   \

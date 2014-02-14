@@ -32,6 +32,7 @@
 #include "world.h"
 #include "renderSystem.h"
 #include "renderWorld.h"
+#include "gameManager.h"
 
 kexCvar cvarRenderFog("r_fog", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 kexCvar cvarRenderCull("r_cull", CVF_BOOL|CVF_CONFIG, "1", "TODO");
@@ -1083,7 +1084,7 @@ void kexRenderWorld::DrawAreaNode(void) {
         for(kexActor *actor = static_cast<kexActor*>(nodes->objects.Next());
             actor != NULL;
             actor = static_cast<kexActor*>(actor->areaLink.Next())) {
-                if(actor == client.LocalPlayer().Puppet()) {
+                if(actor == gameManager.localPlayer.Puppet()) {
                     DrawBoundingBox(nodes->bounds, 255, 0, 0);
                 }
                 else {

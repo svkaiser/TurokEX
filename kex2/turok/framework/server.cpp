@@ -31,6 +31,7 @@
 #include "server.h"
 #include "type.h"
 #include "world.h"
+#include "gameManager.h"
 
 kexCvar cvarServerAddress("sv_address", CVF_STRING|CVF_CONFIG, "localhost", "TODO");
 kexCvar cvarServerPort("sv_port", CVF_INT|CVF_CONFIG, "58304", "TODO");
@@ -94,29 +95,15 @@ char *kexServer::GetPeerAddress(ENetEvent *sev) {
 }
 
 //
-// kexServer::GetClientID
-//
-
-unsigned int kexServer::GetClientID(ENetPeer *peer) const {
-    for(int i = 0; i < maxClients; i++) {
-        if(players[i].GetState() == SVC_STATE_INACTIVE)
-            continue;
-        if(peer->connectID == players[i].GetID())
-            return i;
-    }
-
-   return 0;
-}
-
-//
 // kexServer::CreateHost
 //
 
 void kexServer::CreateHost(void) {
     ENetAddress address;
 
-    if(common.CheckParam("-client"))
+    if(common.CheckParam("-client")) {
         return;
+    }
 
     Destroy();
 
@@ -145,7 +132,6 @@ void kexServer::CreateHost(void) {
 void kexServer::ClientCommand(ENetEvent *sev, ENetPacket *packet) {
     ENetPacket *p;
     char *cmd = packetManager.ReadString(packet);
-    kexNetPlayer *player = &players[GetClientID(sev->peer)];
 
     common.DPrintf("client command: %s (%s)\n", cmd, GetPeerAddress(sev));
     if(!kexStr::Compare(cmd, "noclip")) {
@@ -199,8 +185,7 @@ void kexServer::ProcessPackets(const ENetPacket *packet) {
 
     packetManager.Read8((ENetPacket*)packet, &type);
 
-    switch(type)
-    {
+    switch(type) {
     case cp_ping:
         common.Printf("Recieved ping from %s (channel %i)\n",
             GetPeerAddress(netEvent), netEvent->channelID);
@@ -220,11 +205,8 @@ void kexServer::ProcessPackets(const ENetPacket *packet) {
         ClientCommand(netEvent, (ENetPacket*)packet);
         break;
 
-    case cp_changeweapon:
-        break;
-
     default:
-        common.Warning("Recieved unknown packet type: %i\n", type);
+        gameManager.ServerEvent(type, packet);
         break;
     }
 
@@ -249,31 +231,10 @@ void kexServer::SendClientMessages(void) {
 
 void kexServer::OnConnect(void) {
     ENetEvent *sev = GetEvent();
-    for(int i = 0; i < GetMaxClients(); i++) {
-        if(players[i].GetState() == SVC_STATE_INACTIVE) {
-            kexNetPlayer *player = &players[i];
-            ENetPacket *packet;
-
-            player->SetState(SVC_STATE_ACTIVE);
-            player->SetPeer(sev->peer);
-            player->SetID(sev->peer->connectID);
-            player->ResetNetSequence();
-            player->ResetTicCommand();
-
-            if(!(packet = packetManager.Create()))
-                return;
-
-            common.Printf("%s connected...\n",
-                GetPeerAddress(sev));
-
-            packetManager.Write8(packet, sp_clientinfo);
-            packetManager.Write8(packet, player->GetID());
-            packetManager.Send(packet, player->GetPeer());
-            return;
-        }
+    
+    if(!gameManager.ConnectPlayer(sev)) {
+        SendMessage(sev, sm_full);
     }
-
-    SendMessage(sev, sm_full);
 }
 
 //
@@ -290,58 +251,17 @@ void kexServer::OnDisconnect(void) {
 //
 
 void kexServer::NotifyMapChange(const int mapID) {
-    ENetEvent *sev = GetEvent();
-
-    for(int i = 0; i < GetMaxClients(); i++) {
-        if(players[i].GetState() == SVC_STATE_ACTIVE) {
-            kexNetPlayer *player = &players[i];
-            ENetPacket *packet;
-
-            if(!(packet = packetManager.Create()))
-                continue;
-
-            packetManager.Write8(packet, sp_changemap);
-            // TEMP
-            packetManager.Write8(packet, mapID);
-            packetManager.Send(packet, player->GetPeer());
-        }
-    }
+    gameManager.NotifyMapChange(GetEvent(), mapID);
 }
-
-//
-// kexServer::SendMoveData
-//
-
-/*void kexServer::SendMoveData(svclient_t *svcl) {
-    ENetPacket *packet;
-
-    if(svcl->state != SVC_STATE_INGAME)
-        return;
-
-    if(!(packet = packetManager.Create()))
-        return;
-    
-    packetManager.Write8(packet, sp_pmove);
-    packetManager.Write32(packet, server.tics);
-    packetManager.WriteVector(packet, svcl->pmove.origin);
-    packetManager.WriteVector(packet, svcl->pmove.velocity);
-    packetManager.Write32(packet, svcl->pmove.flags);
-    packetManager.Write32(packet, svcl->pmove.movetype);
-    packetManager.Write32(packet, svcl->pmove.plane);
-    packetManager.Write32(packet, svcl->ns.ingoing);
-    packetManager.Write32(packet, svcl->ns.outgoing);
-    svcl->ns.outgoing++;
-
-    packetManager.Send(packet, svcl->peer);
-}*/
 
 //
 // kexServer::Run
 //
 
 void kexServer::Run(int msec) {
-    if(GetState() != SV_STATE_ACTIVE)
+    if(GetState() != SV_STATE_ACTIVE) {
         return;
+    }
 
     SetRunTime(GetRunTime() + msec);
     server.elaspedTime += msec;
@@ -358,14 +278,8 @@ void kexServer::Run(int msec) {
     SetTicks(GetTicks() + 1);
     SetTime(GetTicks() * SERVER_RUNTIME);
 
-    // update net players
-    for(int i = 0; i < GetMaxClients(); i++) {
-        if(players[i].GetState() == SVC_STATE_ACTIVE) {
-            players[i].Tick();
-        }
-    }
-
-    localWorld.Tick();
+    // run game tick
+    gameManager.OnTick();
 
     if(GetTime() < GetRunTime()) {
         SetRunTime((float)GetTime());

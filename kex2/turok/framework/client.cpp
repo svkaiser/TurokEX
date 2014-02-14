@@ -29,13 +29,7 @@
 #include "packet.h"
 #include "client.h"
 #include "system.h"
-#include "sound.h"
-#include "fx.h"
-#include "network.h"
 #include "console.h"
-#include "world.h"
-#include "renderSystem.h"
-#include "renderWorld.h"
 #include "gameManager.h"
 
 kexCvar cvarClientName("cl_name", CVF_STRING|CVF_CONFIG, "Player", "Name for client player");
@@ -86,7 +80,7 @@ void kexClient::Connect(const char *address) {
     enet_address_set_host(&addr, address);
     addr.port = cvarClientPort.GetInt();
     SetPeer(enet_host_connect(GetHost(), &addr, 2, 0));
-    playerClient.SetPeer(GetPeer());
+    gameManager.localPlayer.SetPeer(GetPeer());
     enet_address_get_host_ip(&addr, ip, 32);
     
     common.Printf("Connecting to %s:%u...\n", ip, addr.port);
@@ -100,53 +94,6 @@ void kexClient::Connect(const char *address) {
 }
 
 //
-// kexClient::PrepareMapChange
-//
-
-void kexClient::PrepareMapChange(const ENetPacket *packet) {
-    // TEMP
-    unsigned int mapID;
-
-    client.SetState(CL_STATE_CHANGINGLEVEL);
-
-    packetManager.Read8((ENetPacket*)packet, &mapID);
-
-    localWorld.Unload();
-    if(!localWorld.Load(kva("maps/map%02d/map%02d", mapID, mapID))) {
-        SetState(CL_STATE_READY);
-        return;
-    }
-
-    client.SetState(CL_STATE_INGAME);
-}
-
-//
-// kexClient::SetupClientInfo
-//
-
-void kexClient::SetupClientInfo(const ENetPacket *packet) {
-    packetManager.Read8((ENetPacket*)packet, &id);
-    playerClient.SetID(id);
-    SetState(CL_STATE_READY);
-    common.DPrintf("CL_ReadClientInfo: ID is %i\n", id);
-
-    if(bLocal && gameManager.GameDef()) {
-        kexStr startMap;
-
-        if(gameManager.GameDef()->GetString("initialMap", startMap)) {
-            client.SetState(CL_STATE_CHANGINGLEVEL);
-
-            if(!localWorld.Load(startMap.c_str())) {
-                SetState(CL_STATE_READY);
-                return;
-            }
-
-            client.SetState(CL_STATE_INGAME);
-        }
-    }
-}
-
-//
 // kexClient::ProcessPackets
 //
 
@@ -154,29 +101,7 @@ void kexClient::ProcessPackets(const ENetPacket *packet) {
     unsigned int type = 0;
 
     packetManager.Read8((ENetPacket*)packet, &type);
-
-    switch(type) {
-    case sp_ping:
-        common.Printf("Recieved acknowledgement from server\n");
-        break;
-
-    case sp_clientinfo:
-        SetupClientInfo(packet);
-        break;
-
-    case sp_changemap:
-        PrepareMapChange(packet);
-        break;
-
-    case sp_noclip:
-        playerClient.ToggleClipping();
-        break;
-
-    default:
-        common.Warning("Recieved unknown packet type: %i\n", type);
-        break;
-    }
-
+    gameManager.ClientEvent(type, packet);
     DestroyPacket();
 }
 
@@ -186,7 +111,6 @@ void kexClient::ProcessPackets(const ENetPacket *packet) {
 
 void kexClient::OnConnect(void) {
     SetState(CL_STATE_CONNECTED);
-    playerClient.ResetNetSequence();
 }
 
 //
@@ -223,29 +147,8 @@ void kexClient::Run(const int msec) {
     // handle input events
     ProcessEvents();
 
-    // prep and send input information to server
-    playerClient.BuildCommands();
-
     // run client-side ticks
-    playerClient.LocalTick();
-    console.Tick();
-    localWorld.LocalTick();
-
-    // draw
-    renderWorld.RenderScene();
-    renderSystem.SetOrtho();
-    renderSystem.Canvas().Draw();
-    gameManager.MenuCanvas().Draw();
-    console.Draw();
-    kexHeap::DrawHeapInfo();
-    scriptManager.DrawGCStats();
-
-    // finish frame
-    inputSystem.UpdateGrab();
-    renderSystem.SwapBuffers();
-
-    // update all sound sources
-    soundSystem.UpdateListener();
+    gameManager.OnLocalTick();
 
     UpdateTicks();
 }
@@ -328,7 +231,7 @@ void kexClient::ProcessEvents(void) {
 
         // TODO - TEMP
         eventtail = (--eventtail)&(MAXEVENTS-1);
-        playerClient.ProcessInput(GetEvent());
+        gameManager.localPlayer.ProcessInput(GetEvent());
 
         oldev = ev;
     }

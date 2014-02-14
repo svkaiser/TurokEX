@@ -1,6 +1,3 @@
-#include "scripts/animations.txt"
-#include "scripts/turokgame/classes/turokAmmo.txt"
-
 ////////////////////////////////////////////////////
 //
 // Constants

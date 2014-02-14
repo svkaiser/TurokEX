@@ -95,43 +95,6 @@ void kexPlayerMove::Accelerate(int direction, int axis, const float deltaTime) {
     }
 }
 
-//
-// P_RunCommand
-//
-
-void P_RunCommand(ENetEvent *sev, ENetPacket *packet)
-{
-    /*netPlayer_t *netplayer;
-    ticcmd_t *cmd;
-    int numactions;
-    int i;
-
-    netplayer = &netPlayers[server.GetClientID(sev->peer)];
-    cmd = &netplayer->info.cmd;
-
-    packetManager.Read32(packet, (unsigned int*)&cmd->mouse[0].i);
-    packetManager.Read32(packet, (unsigned int*)&cmd->mouse[1].i);
-    packetManager.Read32(packet, (unsigned int*)&cmd->timestamp.i);
-    packetManager.Read32(packet, (unsigned int*)&cmd->frametime.i);
-    packetManager.Read32(packet, (unsigned int*)&numactions);
-
-    for(i = 0; i < numactions; i++)
-    {
-        int btn = 0;
-        int held = 0;
-
-        packetManager.Read8(packet, (unsigned int*)&btn);
-        cmd->buttons[btn] = true;
-        packetManager.Read8(packet, (unsigned int*)&held);
-        cmd->heldtime[btn] = held;
-    }
-
-    packetManager.Read32(packet, (unsigned int*)&netplayer->info.netseq.acks);
-    packetManager.Read32(packet, (unsigned int*)&netplayer->info.netseq.ingoing);*/
-
-    // TODO - PROCESS MOVEMENT
-}
-
 enum {
     scplocation_id = 0,
     scplocation_component,
@@ -204,21 +167,17 @@ void kexPlayerPuppet::LocalTick(void) {
 //
 //-----------------------------------------------------------------------------
 
-DECLARE_ABSTRACT_CLASS(kexPlayer, kexActor)
+DECLARE_CLASS(kexPlayer, kexActor)
 
 //
 // kexPlayer::kexPlayer
 //
 
 kexPlayer::kexPlayer(void) {
-    this->bStatic = false;
-
-    ResetNetSequence();
     ResetTicCommand();
 
     acceleration.Clear();
     
-    this->jsonData              = NULL;
     this->name                  = NULL;
     this->groundMove.accelRef   = &this->acceleration;
     this->swimMove.accelRef     = &this->acceleration;
@@ -228,6 +187,7 @@ kexPlayer::kexPlayer(void) {
     this->flyMove.accelRef      = &this->acceleration;
     this->noClipMove.accelRef   = &this->acceleration;
     this->bNoClip               = false;
+    this->state                 = PS_STATE_INACTIVE;
 
     SetCurrentMove(groundMove);
 }
@@ -242,20 +202,38 @@ kexPlayer::~kexPlayer(void) {
 }
 
 //
-// kexPlayer::ResetNetSequence
-//
-
-void kexPlayer::ResetNetSequence(void) {
-    netseq.ingoing = 0;
-    netseq.outgoing = 1;
-}
-
-//
 // kexPlayer::ResetTicCommand
 //
 
 void kexPlayer::ResetTicCommand(void) {
     memset(&cmd, 0, sizeof(ticcmd_t));
+}
+
+//
+// kexPlayer::ActionDown
+//
+
+bool kexPlayer::ActionDown(const kexStr &str) {
+    int action = inputKey.FindAction(str.c_str());
+    
+    return (action != -1 && cmd.buttons[action]);
+}
+
+//
+// kexPlayer::ActionHeldTime
+//
+
+int kexPlayer::ActionHeldTime(const kexStr &str) {
+    int action = inputKey.FindAction(str.c_str());
+    int heldtime = 0;
+    
+    if(action != -1) {
+        heldtime = (cmd.heldtime[action] - 1);
+        if(heldtime < 0)
+            heldtime = 0;
+    }
+    
+    return heldtime;
 }
 
 //
@@ -281,6 +259,8 @@ void kexPlayer::PossessPuppet(kexPlayerPuppet *puppetActor) {
             puppet->Physics()->sector->area->Enter();
         }
     }
+    
+    state = PS_STATE_INGAME;
 }
 
 //

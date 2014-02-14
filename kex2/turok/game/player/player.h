@@ -27,11 +27,11 @@
 #include "common.h"
 #include "actor.h"
 
-typedef struct {
-    int                     ingoing;
-    int                     outgoing;
-    int                     acks;
-} netSequence_t;
+typedef enum {
+    PS_STATE_INACTIVE,
+    PS_STATE_ACTIVE,
+    PS_STATE_INGAME
+} player_state_e;
 
 //-----------------------------------------------------------------------------
 //
@@ -82,11 +82,12 @@ public:
                             kexPlayer(void);
                             ~kexPlayer(void);
 
-    void                    ResetNetSequence(void);
     void                    ResetTicCommand(void);
     void                    PossessPuppet(kexPlayerPuppet *puppetActor);
     void                    UnpossessPuppet(void);
     void                    ToggleClipping(void);
+    bool                    ActionDown(const kexStr &str);
+    int                     ActionHeldTime(const kexStr &str);
 
     kexPlayerMove           &GroundMove(void) { return groundMove; }
     kexPlayerMove           &AirMove(void) { return airMove; }
@@ -107,6 +108,7 @@ public:
     float                   GetMoveTime(void) { return moveTime; }
     void                    SetMoveTime(const float t) { moveTime = t; }
     bool                    &NoClip(void) { return bNoClip; }
+    byte                    &State(void) { return state; }
     
     ticcmd_t                *Cmd(void) { return &cmd; }
     kexPlayerPuppet         *Puppet(void) { return puppet; }
@@ -115,8 +117,7 @@ public:
     void                    SetPeer(ENetPeer *_peer) { peer = _peer; }
     int                     GetID(void) const { return id; }
     void                    SetID(const int _id) { id = _id; }
-    netSequence_t           *NetSeq(void) { return &netseq; }
-    
+
 protected:
     kexPlayerPuppet         *puppet;
     kexVec3                 acceleration;
@@ -132,17 +133,15 @@ protected:
     bool                    bAllowCrawl;
     float                   crawlHeight;
     float                   moveTime;
-    netSequence_t           netseq;
     int                     id;
     char                    *name;
     ENetPeer                *peer;
-    char                    *jsonData;
     float                   frameTime;
     float                   timeStamp;
     bool                    bNoClip;
+    byte                    state;
 END_CLASS();
 
 #include "player/player_client.h"
-#include "player/player_net.h"
 
 #endif

@@ -25,8 +25,6 @@
 
 #include "enet/enet.h"
 #include "client.h"
-#include "player/player.h"
-#include "defs.h"
 
 typedef enum {
     SV_STATE_UNAVAILABLE,
@@ -60,9 +58,7 @@ public:
     void                SetMaxClients(int _max) { maxClients = _max; }
 
     char                *GetPeerAddress(ENetEvent *sev);
-    //void                SendMoveData(svclient_t *svcl);
     void                SendMessage(ENetEvent *sev, int type);
-    unsigned int        GetClientID(ENetPeer *peer) const;
     void                NotifyMapChange(const int mapID);
 
 private:
@@ -70,7 +66,6 @@ private:
     void                ClientCommand(ENetEvent *sev, ENetPacket *packet);
     void                SendAcknowledgement(ENetEvent *sev);
 
-    kexNetPlayer        players[MAX_PLAYERS];
     bool                bLocal;
     int                 maxClients;
     int                 elaspedTime;

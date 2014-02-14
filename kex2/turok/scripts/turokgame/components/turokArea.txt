@@ -1,16 +1,3 @@
-#include "scripts/math_utils.txt"
-
-// ambience emitters
-#include "scripts/turokgame/classes/ambience/turokAmbienceJungle.txt"
-#include "scripts/turokgame/classes/ambience/turokAmbienceLostWorld.txt"
-#include "scripts/turokgame/classes/ambience/turokAmbienceRuins.txt"
-#include "scripts/turokgame/classes/ambience/turokAmbienceSwamp.txt"
-#include "scripts/turokgame/classes/ambience/turokAmbienceValley.txt"
-#include "scripts/turokgame/classes/ambience/turokAmbienceVillage.txt"
-#include "scripts/turokgame/classes/ambience/turokAmbienceCatcomb01.txt"
-#include "scripts/turokgame/classes/ambience/turokAmbienceCatcomb02.txt"
-#include "scripts/turokgame/classes/ambience/turokAmbienceCave.txt"
-
 ////////////////////////////////////////////////////
 //
 // Vars

@@ -32,6 +32,7 @@
 #include "client.h"
 #include "filesystem.h"
 #include "world.h"
+#include "gameManager.h"
 
 kexCvar cvarPitchShift("s_pitchshift", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 kexCvar cvarSoundVolume("s_sndvolume", CVF_FLOAT|CVF_CONFIG, "0.5", 0, 1, "TODO");
@@ -334,7 +335,7 @@ void kexSoundSource::Play(void) {
         alSourcef(handle, AL_PITCH, sfx->dbFreq);
     }
 
-    if(obj && obj != client.LocalPlayer().Puppet()) {
+    if(obj && obj != gameManager.localPlayer.Puppet()) {
         kexVec3 org = obj->GetOrigin();
         alSourcef(handle, AL_ROLLOFF_FACTOR, sfx->rolloffFactor);
         alSourcei(handle, AL_SOURCE_RELATIVE, AL_FALSE);

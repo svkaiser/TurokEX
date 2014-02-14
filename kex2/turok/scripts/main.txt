@@ -1,14 +1,21 @@
-#include "scripts/turokgame/components/turokPlayer.txt"
-#include "scripts/turokgame/components/turokArea.txt"
-#include "scripts/turokgame/components/turokAreaTeleport.txt"
-#include "scripts/turokgame/components/turokScriptedObject.txt"
-#include "scripts/turokgame/components/turokPickup.txt"
-#include "scripts/turokgame/classes/turokHud.txt"
-#include "scripts/turokgame/classes/menu.txt"
+#include "scripts/common.txt"
 
 TurokHud playerHud;
 
 void main(void) {
+}
+
+////////////////////////////////////////////////////
+//
+// Enums
+//
+////////////////////////////////////////////////////
+
+enum turokDifficulty_e {
+    td_easy = 0,
+    td_medium,
+    td_hard,
+    td_hardcore
 }
 
 ////////////////////////////////////////////////////
@@ -18,7 +25,9 @@ void main(void) {
 ////////////////////////////////////////////////////
 
 final class TurokGame : KexGame {
-    bool bNewGame;
+    bool        bNewGame;
+    int         difficulty;
+    MenuManager menu;
 
     //
     // TurokGame::TurokGame
@@ -26,6 +35,7 @@ final class TurokGame : KexGame {
     
     TurokGame(void) {
         bNewGame = true;
+        difficulty = td_medium;
     }
     
     //
@@ -41,6 +51,17 @@ final class TurokGame : KexGame {
     
     void OnSpawn(void) {
         playerHud.Init();
+    }
+    
+    //
+    // TurokGame::OnInput
+    //
+    
+    bool OnInput(int type, int data1, int data2, int data3) {
+        if(menu.Responder(type, data1, data2, data3)) {
+            return true;
+        }
+        return false;
     }
     
     //

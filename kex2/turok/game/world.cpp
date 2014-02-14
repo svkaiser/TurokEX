@@ -33,6 +33,7 @@
 #include "world.h"
 #include "sound.h"
 #include "renderSystem.h"
+#include "gameManager.h"
 
 #define FOG_LERP_SPEED      0.025f
 
@@ -246,7 +247,6 @@ void kexWorld::AddActor(kexActor *actor) {
     }
 
     actor->CallSpawn();
-    kexActor::id++;
 }
 
 //
@@ -295,8 +295,9 @@ kexActor *kexWorld::SpawnActor(const char *className, const char *component,
     
     kexActor *actor = ConstructActor(className);
     
-    if(actor == NULL)
+    if(actor == NULL) {
         return NULL;
+    }
 
     if(component != NULL) {
         actor->CreateComponent(component);
@@ -424,10 +425,11 @@ void kexWorld::SpawnLocalPlayer(void) {
         actor != NULL; actor = actor->worldLink.Next()) {
         
         // find a kexPlayerPuppet and see if its not occupied
-        if(actor->GetOwner() != NULL || !actor->InstanceOf(&kexPlayerPuppet::info))
+        if(actor->GetOwner() != NULL || !actor->InstanceOf(&kexPlayerPuppet::info)) {
             continue;
+        }
 
-        kexLocalPlayer *localPlayer = &client.LocalPlayer();
+        kexLocalPlayer *localPlayer = &gameManager.localPlayer;
         
         // set client's position
         localPlayer->SetOrigin(actor->GetOrigin());
@@ -750,7 +752,7 @@ void kexWorld::Unload(void) {
     
     soundSystem.StopAll();
     
-    localPlayer = &client.LocalPlayer();
+    localPlayer = &gameManager.localPlayer;
     localPlayer->UnpossessPuppet();
 
     if(collisionMap.IsLoaded()) {
