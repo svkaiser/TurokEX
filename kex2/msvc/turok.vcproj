@@ -514,10 +514,6 @@
 						RelativePath="..\turok\game\player\player_client.cpp"
 						>
 					</File>
-					<File
-						RelativePath="..\turok\game\player\player_net.cpp"
-						>
-					</File>
 				</Filter>
 			</Filter>
 			<Filter
@@ -809,10 +805,6 @@
 					</File>
 					<File
 						RelativePath="..\turok\game\player\player_client.h"
-						>
-					</File>
-					<File
-						RelativePath="..\turok\game\player\player_net.h"
 						>
 					</File>
 				</Filter>
