@@ -229,8 +229,9 @@ int kexPlayer::ActionHeldTime(const kexStr &str) {
     
     if(action != -1) {
         heldtime = (cmd.heldtime[action] - 1);
-        if(heldtime < 0)
+        if(heldtime < 0) {
             heldtime = 0;
+        }
     }
     
     return heldtime;

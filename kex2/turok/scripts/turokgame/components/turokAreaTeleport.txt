@@ -38,10 +38,19 @@ final class TurokAreaTeleport : TurokArea {
     
     void OnLocalThink(void) {
         // TODO: THIS SHOULD BE HANDLED BY SERVER
-        if(bEntered == true && LocalWorld.MapID() == mapID) {
+        if(bEntered == true && localPlayer.bDidWarped == false) {
             if(localClient.Puppet().Physics().OnGround()) {
-                LocalWorld.TeleportActor(localClient.Puppet(), position, kAngle(facingYaw, 0, 0));
+                CameraEventTeleport event;
+                
+                turokGame.SetOverlayRGB(255, 255, 255);
+                turokGame.SetOverlayAlpha(0);
+                
+                @event.teleport = this;
+                event.StartEvent();
+                @turokGame.camEvent = event;
+                
                 bEntered = false;
+                localPlayer.bDidWarped = true;
             }
         }
         TurokArea::OnLocalThink();
@@ -75,5 +84,6 @@ final class TurokAreaTeleport : TurokArea {
     
     void OnExit(void) {
         TurokArea::OnExit();
+        localPlayer.bDidWarped = false;
     }
 };

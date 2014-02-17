@@ -57,7 +57,7 @@ void kexCommon::Printf(const char *string, ...) {
 //
 
 void kexCommon::Printf(const kexStr &str) {
-    Printf(str.c_str());
+    Printf(kva("%s\n", str.c_str()));
 }
 
 //

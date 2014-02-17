@@ -18,36 +18,40 @@ class CameraEvent {
         bFadeOut = false;
         stage = 0;
         time = 0;
-        fadeSpeed = 1000;
+        fadeSpeed = 350;
     }
     
     ~CameraEvent(void) {
     }
     
-    void startEvent(void) {
-        fadeOut();
+    void StartEvent(void) {
+        FadeOut();
         stage = 0;
     }
     
-    void fadeIn(void) {
+    void FadeIn(void) {
         bFading = true;
         bFadeOut = false;
         fade = 255;
     }
     
-    void fadeOut(void) {
+    void FadeOut(void) {
         bFading = true;
         bFadeOut = true;
         fade = 0;
     }
     
-    void update(bool bCancel) {
+    bool Update(bool bCancel) {
+        if(LocalWorld.GetTicks() <= 1) {
+            return true;
+        }
+        
         if(bCancel) {
-            onCancel();
+            OnCancel();
         }
         
         if(bFading == false) {
-            return;
+            return false;
         }
         
         if(bFadeOut) {
@@ -68,11 +72,59 @@ class CameraEvent {
             bFading = false;
             stage++;
         }
+        
+        turokGame.SetOverlayAlpha(fade);
+        return true;
     }
     
-    void onCancel(void) {
+    void OnCancel(void) {
     }
     
-    void runEvent(void) {
+    void RunEvent(void) {
+    }
+};
+
+////////////////////////////////////////////////////
+//
+// CameraEventTeleport
+//
+////////////////////////////////////////////////////
+
+class CameraEventTeleport : CameraEvent {
+    TurokAreaTeleport @teleport;
+    
+    CameraEventTeleport(void) {
+        super();
+        @teleport = null;
+    }
+    
+    ~CameraEventTeleport(void) {
+        @teleport = null;
+    }
+    
+    void RunEvent(void) {
+        if(teleport is null) {
+            return;
+        }
+        
+        switch(stage) {
+            case 0:
+                localClient.Lock();
+                stage++;
+                break;
+            case 1:
+                break;
+            case 2:
+                localPlayer.Teleport(teleport);
+                FadeIn();
+                stage++;
+                break;
+            case 3:
+                localClient.Unlock();
+                break;
+            case 4:
+                @teleport = null;
+                break;
+        }
     }
 };

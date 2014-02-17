@@ -92,6 +92,12 @@ void kexGameManager::InitObject(void) {
         "kKeyMapMem @GameDef(void)",
         asMETHODPR(kexGameManager, GameDef, (void), kexKeyMap*),
         asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kGame",
+        "void ClientRequestMapChange(const int)",
+        asMETHODPR(kexGameManager, ClientRequestMapChange, (const int mapID), void),
+        asCALL_THISCALL);
     
     scriptManager.Engine()->RegisterObjectProperty("kGame",
         "kLocalPlayer localPlayer", asOFFSET(kexGameManager, localPlayer));
@@ -205,6 +211,8 @@ void kexGameManager::SetTitle(void) {
 //
 // kexGameManager::ProcessInput
 //
+// Handles custom input events for the game script class
+//
 
 bool kexGameManager::ProcessInput(const event_t *ev) {
     int state = PrepareFunction(onInput);
@@ -246,6 +254,10 @@ void kexGameManager::OnTick(void) {
 //
 
 void kexGameManager::OnLocalTick(void) {
+    if(onLocalTick) {
+        CallFunction(onLocalTick);
+    }
+
     // prep and send input information to server
     localPlayer.BuildCommands();
     
@@ -278,7 +290,15 @@ void kexGameManager::OnLocalTick(void) {
 //
 
 void kexGameManager::ServerEvent(const int type, const ENetPacket *packet) {
-    common.Warning("Recieved unknown packet type: %i\n", type);
+    switch(type) {
+        case cp_mapchange:
+            HandleMapChangeRequest(packet);
+            break;
+            
+        default:
+            common.Warning("Recieved unknown packet type: %i\n", type);
+            break;
+    }
 }
 
 //
@@ -287,10 +307,6 @@ void kexGameManager::ServerEvent(const int type, const ENetPacket *packet) {
 
 void kexGameManager::ClientEvent(const int type, const ENetPacket *packet) {
     switch(type) {
-        case sp_ping:
-            common.Printf("Recieved acknowledgement from server\n");
-            break;
-            
         case sp_clientinfo:
             SetupClientInfo(packet);
             break;
@@ -312,6 +328,9 @@ void kexGameManager::ClientEvent(const int type, const ENetPacket *packet) {
 //
 // kexGameManager::ConnectPlayer
 //
+// Setup a new player that has connected. Return false
+// if there are no more open player slots
+//
 
 bool kexGameManager::ConnectPlayer(ENetEvent *sev) {
     ENetPacket *packet;
@@ -332,6 +351,7 @@ bool kexGameManager::ConnectPlayer(ENetEvent *sev) {
             
             common.Printf("%s connected...\n", server.GetPeerAddress(sev));
             
+            // send the data to the local client
             packetManager.Write8(packet, sp_clientinfo);
             packetManager.Write8(packet, player->GetID());
             packetManager.Send(packet, player->GetPeer());
@@ -343,7 +363,46 @@ bool kexGameManager::ConnectPlayer(ENetEvent *sev) {
 }
 
 //
+// kexGameManager::GetPlayerID
+//
+
+int kexGameManager::GetPlayerID(ENetPeer *peer) const {
+    kexPlayer *p;
+    
+    for(int i = 0; i < server.GetMaxClients(); i++) {
+        p = const_cast<kexPlayer*>(&players[i]);
+        
+        if(p->State() == PS_STATE_INACTIVE) {
+            continue;
+        }
+        
+        if(peer->connectID == players[i].GetID()) {
+            return i;
+        }
+    }
+    
+    return 0;
+}
+
+//
+// kexGameManager::HandleMapChangeRequest
+//
+// Process a map change request from the client. Can also
+// determine if the client can be denied (TODO)
+//
+
+void kexGameManager::HandleMapChangeRequest(const ENetPacket *packet) {
+    unsigned int mapID;
+    
+    packetManager.Read32((ENetPacket*)packet, &mapID);
+    server.NotifyMapChange(mapID);
+}
+
+//
 // kexGameManager::NotifyMapChange
+//
+// Let all clients know that a new map is about
+// to be loaded
 //
 
 void kexGameManager::NotifyMapChange(ENetEvent *sev, const int mapID) {
@@ -367,29 +426,9 @@ void kexGameManager::NotifyMapChange(ENetEvent *sev, const int mapID) {
 }
 
 //
-// kexGameManager::GetPlayerID
-//
-
-int kexGameManager::GetPlayerID(ENetPeer *peer) const {
-    kexPlayer *p;
-
-    for(int i = 0; i < server.GetMaxClients(); i++) {
-        p = const_cast<kexPlayer*>(&players[i]);
-
-        if(p->State() == PS_STATE_INACTIVE) {
-            continue;
-        }
-        
-        if(peer->connectID == players[i].GetID()) {
-            return i;
-        }
-    }
-    
-    return 0;
-}
-
-//
 // kexGameManager::PrepareMapChange
+//
+// Loads a new map on client-side
 //
 
 void kexGameManager::PrepareMapChange(const ENetPacket *packet) {
@@ -407,10 +446,37 @@ void kexGameManager::PrepareMapChange(const ENetPacket *packet) {
     }
     
     client.SetState(CL_STATE_INGAME);
+
+    inputKey.Controls()->mousex = 0;
+    inputKey.Controls()->mousey = 0;
+}
+
+//
+// kexGameManager::ClientRequestMapChange
+//
+// Client has either hit a exit trigger or requested a map
+// change through console. Either way, the client must
+// let the server know
+//
+
+void kexGameManager::ClientRequestMapChange(const int mapID) {
+    ENetPacket *packet;
+    
+    if(!(packet = packetManager.Create())) {
+        return;
+    }
+    
+    packetManager.Write8(packet, cp_mapchange);
+    packetManager.Write32(packet, mapID);
+    packetManager.Send(packet, client.GetPeer());
 }
 
 //
 // kexGameManager::SetupClientInfo
+//
+// A new client has connected. Setup the data for the local
+// client. If connected through a localhost, then load the
+// initial/default map
 //
 
 void kexGameManager::SetupClientInfo(const ENetPacket *packet) {
@@ -422,6 +488,7 @@ void kexGameManager::SetupClientInfo(const ENetPacket *packet) {
     client.SetState(CL_STATE_READY);
     common.DPrintf("kexGameManager::SetupClientInfo: ID is %i\n", id);
     
+    // load the initial map if playing a local/singleplayer game
     if(client.IsLocal() && gameManager.GameDef()) {
         kexStr startMap;
         

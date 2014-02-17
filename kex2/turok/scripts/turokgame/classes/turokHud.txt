@@ -276,16 +276,7 @@ final class TurokHud {
     TurokHudNumber ammoNum;
     TurokHudNumber livesNum;
     
-    array<TurokHudMessage@> messages;
-    
-    TurokHudMessage message1;
-    TurokHudMessage message2;
-    TurokHudMessage message3;
-    TurokHudMessage message4;
-    TurokHudMessage message5;
-    TurokHudMessage message6;
-    TurokHudMessage message7;
-    TurokHudMessage message8;
+    array<TurokHudMessage> messages(8);
     
     int strCounter;
     
@@ -463,15 +454,6 @@ final class TurokHud {
         h_grenade.bVisible = false;
         h_rockets.bVisible = false;
         h_fuse.bVisible = false;
-        
-        messages.insertLast(message1);
-        messages.insertLast(message2);
-        messages.insertLast(message3);
-        messages.insertLast(message4);
-        messages.insertLast(message5);
-        messages.insertLast(message6);
-        messages.insertLast(message7);
-        messages.insertLast(message8);
         
         for(uint i = 0; i < messages.length(); i++) {
             messages[i].string.Init();

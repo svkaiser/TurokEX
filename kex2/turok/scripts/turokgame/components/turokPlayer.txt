@@ -27,7 +27,7 @@ const float SWIM_STRAFEROLL_SPEED       = 0.05f;
 const float WALK_STRAFEROLL_ANGLE       = 0.0835f;
 const float WALK_STRAFEROLL_SPEED       = 0.1f;
 
-const float PHYSICS_PLAYER_MASS         = 1800;
+const float PHYSICS_PLAYER_MASS         = 1843.2f;
 const float PHYSICS_PLAYER_STEPHEIGHT   = 36;
 const float PHYSICS_PLAYER_AIR_FRICTION = 0;
 
@@ -147,6 +147,15 @@ final class TurokPlayer : Component {
     int                 pendingWeaponID;
     
     //
+    // warp info
+    //
+    kVec3               warpPosition;
+    float               warpYaw;
+    int                 warpSectorID;
+    bool                bWarping;
+    bool                bDidWarped;
+    
+    //
     // debugging
     //
     bool                bFly;
@@ -180,17 +189,6 @@ final class TurokPlayer : Component {
     bool                bHasArmor;
     bool                bHasBackpack;
     float               spiritTime;
-    
-    //
-    // keys
-    //
-    int                 keys_level2;
-    int                 keys_level3;
-    int                 keys_level4;
-    int                 keys_level5;
-    int                 keys_level6;
-    int                 keys_level7;
-    int                 keys_level8;
     
     //
     // weapons
@@ -231,6 +229,8 @@ final class TurokPlayer : Component {
         bubbleTime          = 0;
         bThrusting          = false;
         thrustTime          = 0;
+        bWarping            = false;
+        bDidWarped          = false;
     }
     
     //
@@ -253,13 +253,6 @@ final class TurokPlayer : Component {
         bHasArmor       = false;
         bHasBackpack    = false;
         spiritTime      = 0.0f;
-        keys_level2     = 0;
-        keys_level3     = 0;
-        keys_level4     = 0;
-        keys_level5     = 0;
-        keys_level6     = 0;
-        keys_level7     = 0;
-        keys_level8     = 0;
     }
     
     //
@@ -868,38 +861,6 @@ final class TurokPlayer : Component {
     }
     
     //
-    // TurokPlayer::GiveKey
-    //
-    
-    void GiveKey(int levelID, int bits) {
-        switch(levelID) {
-            case 2:
-                keys_level2 |= (1 << bits);
-                break;
-            case 3:
-                keys_level3 |= (1 << bits);
-                break;
-            case 4:
-                keys_level4 |= (1 << bits);
-                break;
-            case 5:
-                keys_level5 |= (1 << bits);
-                break;
-            case 6:
-                keys_level6 |= (1 << bits);
-                break;
-            case 7:
-                keys_level7 |= (1 << bits);
-                break;
-            case 8:
-                keys_level8 |= (1 << bits);
-                break;
-            default:
-                break;
-        }
-    }
-    
-    //
     // TurokPlayer::GiveHealth
     //
     
@@ -952,6 +913,27 @@ final class TurokPlayer : Component {
         }
         
         playerHud.healthNum.Update(puppet.health);
+    }
+    
+    //
+    // TurokPlayer::Teleport
+    //
+    
+    void Teleport(TurokAreaTeleport @teleport) {
+        kActor @puppet = self.Puppet();
+        
+        if(LocalWorld.MapID() != teleport.mapID) {
+            warpPosition    = teleport.position;
+            warpYaw         = teleport.facingYaw;
+            warpSectorID    = teleport.sectorNum;
+            bWarping        = true;
+            
+            Game.ClientRequestMapChange(teleport.mapID);
+            return;
+        }
+        
+        LocalWorld.TeleportActor(puppet, teleport.position, kAngle(teleport.facingYaw, 0, 0));
+        puppet.StartSound("sounds/shaders/warp_inout.ksnd");
     }
     
     //
@@ -1016,6 +998,7 @@ final class TurokPlayer : Component {
     //
     
     void OnSpawn(void) {
+        kActor @puppet = self.Puppet();
         @localPlayer = cast<TurokPlayer@>(localClient.obj);
         
         ResetVars();
@@ -1025,16 +1008,16 @@ final class TurokPlayer : Component {
         
         playerHud.container.bVisible = true;
         
-        self.Puppet().bHidden = true;
-        self.Puppet().bAllowDamage = true;
-        self.Puppet().bCanPickup = true;
-        self.Puppet().SetScale(kVec3(0.15f, 0.15f, 0.15f));
+        puppet.bHidden = true;
+        puppet.bAllowDamage = true;
+        puppet.bCanPickup = true;
+        puppet.SetScale(kVec3(0.15f, 0.15f, 0.15f));
         self.Unlock();
         
-        waterLevel = self.Puppet().Physics().waterLevel;
+        waterLevel = puppet.Physics().waterLevel;
         
-        self.Puppet().health = 100;
-        playerHud.healthNum.Update(self.Puppet().health);
+        puppet.health = 100;
+        playerHud.healthNum.Update(puppet.health);
         playerHud.livesNum.Update(lives);
         
         // TODO
@@ -1055,6 +1038,14 @@ final class TurokPlayer : Component {
                 break;
             default:
                 break;
+        }
+        
+        turokGame.FadeFromBlack();
+        
+        if(bWarping) {
+            bWarping = false;
+            LocalWorld.TeleportActor(puppet, warpPosition, kAngle(warpYaw, 0, 0), warpSectorID);
+            puppet.StartSound("sounds/shaders/warp_inout.ksnd");
         }
     }
     

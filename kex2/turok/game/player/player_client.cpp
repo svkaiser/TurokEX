@@ -61,8 +61,9 @@ kexLocalPlayer::~kexLocalPlayer(void) {
 //
 
 bool kexLocalPlayer::ProcessInput(event_t *ev) {
-    if(console.ProcessInput(ev))
+    if(console.ProcessInput(ev)) {
         return true;
+    }
 
     switch(ev->type) {
     case ev_mouse:
@@ -98,12 +99,17 @@ void kexLocalPlayer::BuildCommands(void) {
         return;
     }
 
-    if(bLocked == true) {
-        return;
-    }
-
     buildCmd = &cmd;
     ctrl = inputKey.Controls();
+
+    // while locked, let the client send out blank tic commands
+    if(bLocked == true) {
+        ResetTicCommand();
+        memset(ctrl->actions, 0, sizeof(int) * MAXACTIONS);
+
+        ctrl->mousex = 0;
+        ctrl->mousey = 0;
+    }
 
     for(i = 0; i < MAXACTIONS; i++) {
         buildCmd->buttons[i] = false;

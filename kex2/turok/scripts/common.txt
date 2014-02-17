@@ -37,3 +37,4 @@
 
 #include "scripts/turokgame/classes/turokHud.txt"
 #include "scripts/turokgame/classes/menu.txt"
+#include "scripts/turokgame/classes/cameraEvent.txt"

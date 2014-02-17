@@ -1,6 +1,7 @@
 #include "scripts/common.txt"
 
 TurokHud playerHud;
+TurokGame @turokGame;
 
 void main(void) {
 }
@@ -25,9 +26,12 @@ enum turokDifficulty_e {
 ////////////////////////////////////////////////////
 
 final class TurokGame : KexGame {
-    bool        bNewGame;
-    int         difficulty;
-    MenuManager menu;
+    bool            bNewGame;
+    int             difficulty;
+    kCanvasImage    @overlay;
+    MenuManager     menu;
+    CameraEvent     @camEvent;
+    array<int>      keys(7);
 
     //
     // TurokGame::TurokGame
@@ -36,6 +40,11 @@ final class TurokGame : KexGame {
     TurokGame(void) {
         bNewGame = true;
         difficulty = td_medium;
+        @turokGame = this;
+        
+        for(uint i = 0; i < keys.length(); i++) {
+            keys[i] = 0;
+        }
     }
     
     //
@@ -46,10 +55,71 @@ final class TurokGame : KexGame {
     }
     
     //
+    // TurokGame::SetOverlayRGB
+    //
+    
+    void SetOverlayRGB(const uint8 r, const uint8 g, const uint8 b) {
+        overlay.SetRGB(0, r, g, b);
+        overlay.SetRGB(1, r, g, b);
+        overlay.SetRGB(2, r, g, b);
+        overlay.SetRGB(3, r, g, b);
+    }
+    
+    //
+    // TurokGame::SetOverlayAlpha
+    //
+    
+    void SetOverlayAlpha(const float a) {
+        overlay.alpha = a / 255.0f;
+        
+        if(overlay.alpha >= 0.05f) {
+            overlay.bVisible = true;
+        }
+        else {
+            overlay.alpha = 0;
+            overlay.bVisible = false;
+        }
+    }
+    
+    //
+    // TurokGame::FadeFromBlack
+    //
+    
+    void FadeFromBlack(void) {
+        CameraEvent event;
+        
+        turokGame.SetOverlayRGB(0, 0, 0);
+        turokGame.SetOverlayAlpha(255);
+        event.FadeIn();
+        @camEvent = event;
+    }
+    
+    //
+    // TurokGame::GiveKey
+    //
+    
+    void GiveKey(uint levelID, int bits) {
+        if(levelID >= keys.length()) {
+            return;
+        }
+        
+        keys[levelID] |= (1 << bits);
+    }
+    
+    //
     // TurokGame::OnSpawn
     //
     
     void OnSpawn(void) {
+        @overlay = Game.MenuCanvas().CreateImage("textures/white.tga");
+        overlay.scaleX = 100;
+        overlay.scaleY = 75;
+        overlay.alpha = 0;
+        overlay.bVisible = false;
+        
+        Game.MenuCanvas().AddChild(overlay);
+        FadeFromBlack();
+        
         playerHud.Init();
     }
     
@@ -76,6 +146,14 @@ final class TurokGame : KexGame {
     //
     
     void OnLocalTick(void) {
+        if(!(camEvent is null)) {
+            if(!camEvent.Update(false)) {
+                @camEvent = null;
+            }
+            else {
+                camEvent.RunEvent();
+            }
+        }
     }
     
     //

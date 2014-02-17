@@ -32,23 +32,30 @@ final class TurokWeaponKnife : TurokWeapon {
     //
     
     bool OnAttack(void) {
-        int rnd = Math::RandMax(100);
         kActor @src = localClient.Puppet();
         
-        if(rnd <= 32) {
-            swishType = 0;
-            self.AnimState().Blend(anim_weaponAttack1, playSpeed, 4.0f, 0);
-            src.StartSound("sounds/shaders/knife_swish_2.ksnd");
-        }
-        else if(rnd <= 64) {
-            swishType = 1;
-            self.AnimState().Blend(anim_weaponAttack2, playSpeed, 4.0f, 0);
-            src.StartSound("sounds/shaders/knife_swish_1.ksnd");
+        if(bUnderWater) {
+            self.AnimState().Blend(anim_weaponAttackUnderwater, playSpeed, 8.0f, 0);
+            src.StartSound("sounds/shaders/underwater_swim_2.ksnd");
         }
         else {
-            swishType = 2;
-            self.AnimState().Blend(anim_weaponAttack3, playSpeed, 4.0f, 0);
-            src.StartSound("sounds/shaders/knife_swish_3.ksnd");
+            int rnd = Math::RandMax(100);
+            
+            if(rnd <= 32) {
+                swishType = 0;
+                self.AnimState().Blend(anim_weaponAttack1, playSpeed, 4.0f, 0);
+                src.StartSound("sounds/shaders/knife_swish_2.ksnd");
+            }
+            else if(rnd <= 64) {
+                swishType = 1;
+                self.AnimState().Blend(anim_weaponAttack2, playSpeed, 4.0f, 0);
+                src.StartSound("sounds/shaders/knife_swish_1.ksnd");
+            }
+            else {
+                swishType = 2;
+                self.AnimState().Blend(anim_weaponAttack3, playSpeed, 4.0f, 0);
+                src.StartSound("sounds/shaders/knife_swish_3.ksnd");
+            }
         }
         
         bCanAttack = true;
@@ -89,6 +96,7 @@ final class TurokWeaponKnife : TurokWeapon {
         xOffset = 170.667f;
         yOffset = -9.21548f;
         zOffset = -153.6f;
+        waterIdleAnim = anim_weaponIdleUnderwater;
         self.SetModel("models/mdl653/mdl653.kmesh");
         
         TurokWeapon::OnSpawn();

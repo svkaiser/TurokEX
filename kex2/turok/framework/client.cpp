@@ -101,7 +101,17 @@ void kexClient::ProcessPackets(const ENetPacket *packet) {
     unsigned int type = 0;
 
     packetManager.Read8((ENetPacket*)packet, &type);
-    gameManager.ClientEvent(type, packet);
+    
+    switch(type) {
+        case sp_ping:
+            common.Printf("Recieved acknowledgement from server\n");
+            break;
+            
+        default:
+            gameManager.ClientEvent(type, packet);
+            break;
+    }
+    
     DestroyPacket();
 }
 

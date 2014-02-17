@@ -40,6 +40,8 @@ class TurokWeapon : Component {
     float           bob_xz;
     float           bob_y;
     kStr            readySound;
+    int             waterIdleAnim;
+    bool            bUnderWater;    
     
     //
     // TurokWeapon::TurokWeapon
@@ -60,6 +62,8 @@ class TurokWeapon : Component {
         bAltAmmoSet = false;
         state = PWPN_STATE_READY;
         readySound = "";
+        waterIdleAnim = anim_weaponIdle;
+        bUnderWater = false;
         
         self.bStatic = false;
         self.bClientOnly = true;
@@ -92,13 +96,21 @@ class TurokWeapon : Component {
     
     void ReadyAnimation(void) final {
         kAnimState @aState = self.AnimState();
+        int idleAnim;
         
         if((aState.flags & ANF_BLEND) != 0) {
             return;
         }
         
+        if(bUnderWater) {
+            idleAnim = waterIdleAnim;
+        }
+        else {
+            idleAnim = anim_weaponIdle;
+        }
+        
         if(Com.GetCvarBool("g_weaponbobbing") == true) {
-            aState.Blend(anim_weaponIdle, playSpeed, 8.0f, ANF_LOOP);
+            aState.Blend(idleAnim, playSpeed, 8.0f, ANF_LOOP);
         }
         else {
             kVec3 accel = owner.self.GetAcceleration();
@@ -111,7 +123,7 @@ class TurokWeapon : Component {
                 aState.Blend(anim_weaponWalk, playSpeed, 8.0f, ANF_LOOP);
             }
             else {
-                aState.Blend(anim_weaponIdle, playSpeed, 8.0f, ANF_LOOP);
+                aState.Blend(idleAnim, playSpeed, 8.0f, ANF_LOOP);
             }
         }
     }
@@ -208,19 +220,21 @@ class TurokWeapon : Component {
         kAngle angles       = self.GetAngles();
         float turnMax       = WEAPONTURN_MAX;
         
-        if(owner.activeWeaponID == wp_fusioncannon) {
-            angles.yaw -= (owner.self.cmdMouseX * 0.000875f);
-            turnMax *= 0.35f;
+        if(localPlayer.waterLevel < WLT_BETWEEN) {
+            if(owner.activeWeaponID == wp_fusioncannon) {
+                angles.yaw -= (owner.self.cmdMouseX * 0.000875f);
+                turnMax *= 0.35f;
+            }
+            else {
+                angles.yaw -= (owner.self.cmdMouseX * 0.00175f);
+            }
+            
+            kAngle tmpAngles = angles;
+            tmpAngles.Clamp180InvertSum(kAngle(M_PI, 0, 0));
+            
+            if(tmpAngles.yaw >  turnMax) angles.yaw =  (M_PI - turnMax);
+            if(tmpAngles.yaw < -turnMax) angles.yaw = -(M_PI - turnMax);
         }
-        else {
-            angles.yaw -= (owner.self.cmdMouseX * 0.00175f);
-        }
-        
-        kAngle tmpAngles = angles;
-        tmpAngles.Clamp180InvertSum(kAngle(M_PI, 0, 0));
-        
-        if(tmpAngles.yaw >  turnMax) angles.yaw =  (M_PI - turnMax);
-        if(tmpAngles.yaw < -turnMax) angles.yaw = -(M_PI - turnMax);
         
         if(angles.yaw < 0) {
             angles.yaw = LocalLerp(angles.yaw, -M_PI, 0.1f);
@@ -233,29 +247,31 @@ class TurokWeapon : Component {
             angles.yaw = M_PI;
         }
         
-        if(owner.activeWeaponID == wp_fusioncannon) {
-            angles.pitch = (angles.pitch -
-                (owner.self.cmdMouseY * 0.000875f)) * 0.9f;
-        }
-        else {
-            angles.pitch = (angles.pitch -
-                (owner.self.cmdMouseY * 0.00175f)) * 0.9f;
-        }
+        if(localPlayer.waterLevel < WLT_BETWEEN) {
+            if(owner.activeWeaponID == wp_fusioncannon) {
+                angles.pitch = (angles.pitch -
+                    (owner.self.cmdMouseY * 0.000875f)) * 0.9f;
+            }
+            else {
+                angles.pitch = (angles.pitch -
+                    (owner.self.cmdMouseY * 0.00175f)) * 0.9f;
+            }
+                
+            if(angles.pitch >  turnMax) angles.pitch =  turnMax;
+            if(angles.pitch < -turnMax) angles.pitch = -turnMax;
             
-        if(angles.pitch >  turnMax) angles.pitch =  turnMax;
-        if(angles.pitch < -turnMax) angles.pitch = -turnMax;
-        
-        if(angles.pitch <  WEAPONTURN_EPSILON && angles.pitch > -WEAPONTURN_EPSILON) {
-            angles.pitch = 0;
-        }
-        
-        angles.roll = LocalWorld.Camera().GetOffsetAngle().roll * 0.75f;
-        
-        if(!(velocity.y <= 0.01f && velocity.y >= -0.01f)) {
-            offset = velocity.y * 0.025f;
+            if(angles.pitch <  WEAPONTURN_EPSILON && angles.pitch > -WEAPONTURN_EPSILON) {
+                angles.pitch = 0;
+            }
             
-            if(velocity.y > 0) {
-                offset *= 0.5f;
+            angles.roll = LocalWorld.Camera().GetOffsetAngle().roll * 0.75f;
+            
+            if(!(velocity.y <= 0.01f && velocity.y >= -0.01f)) {
+                offset = velocity.y * 0.025f;
+                
+                if(velocity.y > 0) {
+                    offset *= 0.5f;
+                }
             }
         }
         
@@ -291,6 +307,8 @@ class TurokWeapon : Component {
         
         if(bActive == true) {
             TurokPlayer @player = cast<TurokPlayer@>(owner.self.obj);
+            bUnderWater = (player.waterLevel == WLT_UNDER);
+            
             switch(state) {
             case PWPN_STATE_READY:
                 if(owner.self.ActionDown("+attack")) {

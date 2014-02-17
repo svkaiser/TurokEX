@@ -146,7 +146,7 @@ typedef enum
     cp_say,
     cp_cmd,
     cp_msgserver,
-    cp_changeweapon,
+    cp_mapchange,
     NUMCLIENTPACKETS
 } cl_packets_t;
 

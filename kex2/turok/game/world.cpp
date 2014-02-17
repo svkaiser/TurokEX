@@ -284,6 +284,12 @@ void kexWorld::TeleportActor(kexActor *actor, const kexVec3 &position,
     actor->SetAngles(angle);
 
     actor->LinkArea();
+
+    if(actor->Physics()->sector) {
+        if(actor->Physics()->sector->area) {
+            actor->Physics()->sector->area->Enter();
+        }
+    }
 }
 
 //
@@ -623,6 +629,7 @@ bool kexWorld::Load(const char *mapFile) {
     kexRand::SetSeed(-470403613);
     bLoaded = false;
     bReadyUnload = false;
+    ticks = 0;
     
     worldLightOrigin.Set(0, 0, 0, 0);
     worldLightColor.Set(1, 1, 1, 1);
@@ -755,6 +762,10 @@ void kexWorld::Unload(void) {
     localPlayer = &gameManager.localPlayer;
     localPlayer->UnpossessPuppet();
 
+    camera.Attachment().DettachObject();
+    camera.SetTarget(NULL);
+    camera.SetOwner(NULL);
+
     if(collisionMap.IsLoaded()) {
         collisionMap.Unload();
     }
@@ -875,6 +886,12 @@ void kexWorld::InitObject(void) {
         "kWorld",
         "const int MapID(void) const",
         asMETHODPR(kexWorld, MapID, (void) const, const int),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "bool IsLoaded(void) const",
+        asMETHODPR(kexWorld, IsLoaded, (void) const, bool),
         asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectMethod(

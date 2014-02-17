@@ -57,6 +57,7 @@ public:
     int                     GetPlayerID(ENetPeer *peer) const;
     bool                    ConnectPlayer(ENetEvent *sev);
     void                    NotifyMapChange(ENetEvent *sev, const int mapID);
+    void                    ClientRequestMapChange(const int mapID);
 
     kexKeyMap               *GameDef(void) { return gameDef; }
     kexCanvas               &MenuCanvas(void) { return menuCanvas; }
@@ -68,6 +69,7 @@ public:
     kexLocalPlayer          localPlayer;
 
 private:
+    void                    HandleMapChangeRequest(const ENetPacket *packet);
     void                    PrepareMapChange(const ENetPacket *packet);
     void                    SetupClientInfo(const ENetPacket *packet);
     
