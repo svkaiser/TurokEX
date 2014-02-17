@@ -34,7 +34,7 @@
 #include "renderSystem.h"
 #include "textureObject.h"
 
-kexCvar cvarGamma("gl_gamma", CVF_FLOAT|CVF_CONFIG, "0", "TODO");
+kexCvar cvarGamma("gl_gamma", CVF_FLOAT|CVF_CONFIG, "1", "TODO");
 kexCvar cvarGLFilter("gl_filter", CVF_INT|CVF_CONFIG, "0", "Texture filter mode");
 kexCvar cvarGLAnisotropic("gl_anisotropic", CVF_INT|CVF_CONFIG, "0", "TODO");
 
