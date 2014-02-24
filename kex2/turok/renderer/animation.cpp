@@ -315,23 +315,73 @@ void kexAnimState::Blend(const int id, float animTime, float animBlendTime, int 
 //
 // kexAnimState::Update
 //
+// Advances frames as well as handling
+// root motion and turning
+//
 
 void kexAnimState::Update(void) {
+    float blend;
+    
     if(flags & ANF_LOOP && flags & ANF_STOPPED) {
+        // looping animations never stop
         flags &= ~ANF_STOPPED;
     }
 
     if(flags & (ANF_STOPPED|ANF_PAUSED)) {
+        // don't advance
         return;
     }
     if(track.anim == NULL) {
         return;
     }
+    
+    // animations flagged as root motion will update the owner's
+    // origin as well as angle offsets based on the initial
+    // node's position and yaw offsets
+    if(flags & ANF_ROOTMOTION && !(flags & ANF_STOPPED)) {
+        float blendFrac = 1.0f;
+        kexVec3 dir;
+        kexVec3 dest;
+        
+        if(flags & ANF_BLEND && blendTime != 0) {
+            blendFrac = (frameTime / blendTime);
+        }
+        
+        dir = (rootMotion | owner->GetRotation()) * blendFrac;
+        dest = (owner->GetOrigin() + (dir * client.GetRunTime()));
+        
+        // update position
+        if(owner->TryMove(owner->GetOrigin(), dest, &owner->Physics()->sector)) {
+            owner->SetOrigin(dest);
+        }
+        
+        // don't update yaw offsets while blending
+        if(!(flags & ANF_BLEND) && frameTime > 0) {
+            kexAnim_t *anim;
+            int frame;
+            float angle;
+            float time;
+            
+            anim = track.anim;
+            
+            frame = track.frame;
+            angle = M_PI * anim->yawOffsets[frame];
+            
+            if(frame > 0) {
+                angle -= (M_PI * anim->yawOffsets[frame-1]);
+            }
+            
+            kexAngle::Clamp(&angle);
+            time = 4.0f * frameTime;
+            
+            owner->GetAngles().yaw -= angle * (client.GetRunTime() * time);
+        }
+    }
 
-    float blend = (flags & ANF_BLEND) ? blendTime : frameTime;
-
+    blend = (flags & ANF_BLEND) ? blendTime : frameTime;
     deltaTime += ((client.GetRunTime()*ANIM_CLOCK_SPEED)/blend);
 
+    // update frames
     if(deltaTime > 1) {
         time = (float)client.GetTicks() + frameTime;
 
@@ -342,6 +392,7 @@ void kexAnimState::Update(void) {
                 flags &= ~ANF_BLEND;
             }
 
+            // loop
             if(++track.frame >= (int)track.anim->numFrames) {
                 track.frame = restartFrame;
             }
@@ -350,6 +401,7 @@ void kexAnimState::Update(void) {
                 track.nextFrame = restartFrame;
                 deltaTime = 0;
 
+                // animation has finished
                 if(!(flags & ANF_LOOP)) {
                     playTime = 0;
                     flags |= ANF_STOPPED;
