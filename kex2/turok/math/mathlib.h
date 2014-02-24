@@ -387,6 +387,7 @@ public:
     kexVec3                 &ToVec3(void);
     kexQuat                 ToQuat(void);
 
+    static float            Round(float angle);
     static void             Clamp(float *angle);
     static float            ClampInvert(float angle);
     static float            ClampInvertSums(float angle1, float angle2);

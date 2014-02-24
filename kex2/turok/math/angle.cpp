@@ -75,7 +75,16 @@ kexAngle::kexAngle(const kexAngle &an) {
 }
 
 //
-// Ang_Clamp
+// kexAngle::Round
+//
+
+float kexAngle::Round(float angle) {
+    return DEG2RAD((360.0f / 65536.0f) *
+        ((int)(RAD2DEG(angle) * (65536.0f / 360.0f)) & 65535));
+}
+
+//
+// kexAngle::Clamp
 //
 
 void kexAngle::Clamp(float *angle) {
@@ -183,14 +192,9 @@ kexAngle &kexAngle::Clamp180InvertSum(const kexAngle &angle) {
 //
 
 kexAngle &kexAngle::Round(void) {
-#define ROUND(x)                                        \
-    x = DEG2RAD((360.0f / 65536.0f) *                   \
-    ((int)(RAD2DEG(x) * (65536.0f / 360.0f)) & 65535))
-    yaw     = ROUND(yaw);
-    pitch   = ROUND(pitch);
-    roll    = ROUND(roll);
-#undef ROUND
-
+    yaw     = Round(yaw);
+    pitch   = Round(pitch);
+    roll    = Round(roll);
     return Clamp180();
 }
 
