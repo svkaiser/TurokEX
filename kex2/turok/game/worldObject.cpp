@@ -227,7 +227,9 @@ bool kexWorldObject::TryMove(const kexVec3 &position, kexVec3 &dest, kexSector *
     dest = trace.hitVector;
 
     if(sector) {
-        return (*sector)->InRange(dest);
+        if(*sector) {
+            return (*sector)->InRange(dest);
+        }
     }
 
     return (trace.fraction != 1);

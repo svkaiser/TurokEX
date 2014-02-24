@@ -38,6 +38,7 @@ DECLARE_ABSTRACT_CLASS(kexDisplayObject, kexGameObject)
 kexDisplayObject::kexDisplayObject(void) {
     this->bHidden       = false;
     this->bClientView   = false;
+    this->bCulled       = false;
     
     this->attachment.SetOwner(this);
     this->scale.Set(1, 1, 1);

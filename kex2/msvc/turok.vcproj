@@ -432,6 +432,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\ai.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\areas.cpp"
 					>
 				</File>
@@ -730,6 +734,10 @@
 				>
 				<File
 					RelativePath="..\turok\game\actor.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\ai.h"
 					>
 				</File>
 				<File
