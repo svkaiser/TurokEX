@@ -226,13 +226,7 @@ bool kexWorldObject::TryMove(const kexVec3 &position, kexVec3 &dest, kexSector *
     localWorld.Trace(&trace);
     dest = trace.hitVector;
 
-    if(sector) {
-        if(*sector) {
-            return (*sector)->InRange(dest);
-        }
-    }
-
-    return (trace.fraction != 1);
+    return (trace.fraction == 1);
 }
 
 //

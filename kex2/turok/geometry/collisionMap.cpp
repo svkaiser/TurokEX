@@ -59,6 +59,14 @@ kexSector::kexSector(void) {
 }
 
 //
+// kexSector::GetID
+//
+
+const int kexSector::GetID(void) const {
+    return this - localWorld.CollisionMap().sectors;
+}
+
+//
 // kexSector::Wall
 //
 

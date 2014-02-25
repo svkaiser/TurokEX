@@ -30,8 +30,7 @@
 #include "world.h"
 #include "gameManager.h"
 
-#define AI_THRESHOLD_MAX        100
-#define AI_THRESHOLD_AMOUNT     15
+#define AI_THRESHOLD_MAX    100
 
 DECLARE_CLASS(kexAI, kexActor)
 
@@ -40,25 +39,33 @@ DECLARE_CLASS(kexAI, kexActor)
 //
 
 kexAI::kexAI(void) {
-    this->activeDistance    = 1024.0f;
-    this->turnSpeed         = 4.096f;
-    this->thinkTime         = 16;
-    this->headTurnSpeed     = 4.096f;
-    this->maxHeadAngle      = DEG2RAD(70);
-    this->aiFlags           = AIF_FINDTARGET|AIF_AVOIDWALLS|AIF_AVOIDACTORS;
-    this->aiState           = AIS_NONE;
-    this->bCanMelee         = false;
-    this->bCanRangeAttack   = false;
-    this->bCanTeleport      = false;
-    this->bAttacking        = false;
-    this->bTurning          = false;
-    this->attackThreshold   = 0;
-    this->sightThreshold    = 0;
-    this->checkRadius       = 1.5f;
-    this->meleeRange        = 0;
-    this->alertRange        = 184.25f;
-    this->rangeDistance     = 1024.0f;
-    this->sightRange        = 0.78f;
+    this->activeDistance        = 1024.0f;
+    this->idealYaw              = 0;
+    this->turningYaw            = 0;
+    this->turnSpeed             = 4.096f;
+    this->thinkTime             = 16;
+    this->headTurnSpeed         = 4.096f;
+    this->maxHeadAngle          = DEG2RAD(70);
+    this->aiFlags               = AIF_FINDTARGET|AIF_AVOIDWALLS|AIF_AVOIDACTORS;
+    this->aiState               = AIS_NONE;
+    this->bCanMelee             = false;
+    this->bCanRangeAttack       = false;
+    this->bCanTeleport          = false;
+    this->bAttacking            = false;
+    this->bTurning              = false;
+    this->attackThreshold       = 0;
+    this->sightThreshold        = 0;
+    this->attackThresholdTime   = 15.0f;
+    this->checkRadius           = 1.5f;
+    this->meleeRange            = 0;
+    this->alertRange            = 184.25f;
+    this->rangeDistance         = 1024.0f;
+    this->sightRange            = DEG2RAD(45);
+    this->rangeSightDamp        = 0.675f;
+    this->giveUpChance          = 995;
+    this->teleportChance        = 985;
+    this->rangeChance           = 100;
+    this->rangeAdjustAngle      = DEG2RAD(50);
     
     headYawAxis.Set(0, 1, 0);
     headPitchAxis.Set(1, 0, 0);
@@ -72,10 +79,17 @@ kexAI::~kexAI(void) {
 }
 
 //
-// kexAI::Tick
+// kexAI::LocalTick
 //
 
-void kexAI::Tick(void) {
+void kexAI::LocalTick(void) {
+    if(IsStale()) {
+        return;
+    }
+
+    UpdateTransform();
+    animState.Update();
+
     if(aiFlags & AIF_DISABLED) {
         return;
     }
@@ -90,11 +104,11 @@ void kexAI::Tick(void) {
 
     if(aiState == AIS_SPAWNING) {
         // don't do nothing until the animation has finished
-        if(!(animState.flags & ANF_STOPPED)) {
+        if(animState.flags & ANF_STOPPED) {
             sightThreshold = AI_THRESHOLD_MAX;
-            aiFlags |= AIF_FINDTARGET;
-
-            ChangeState(AIS_ALERT);
+            if(aiFlags & AIF_FINDTARGET) {
+                ChangeState(AIS_ALERT);
+            }
         }
     }
 
@@ -112,8 +126,8 @@ void kexAI::Tick(void) {
     }
     
     // handle any additional custom tick routines
-    if(scriptComponent.onThink) {
-        scriptComponent.CallFunction(scriptComponent.onThink);
+    if(scriptComponent.onLocalThink) {
+        scriptComponent.CallFunction(scriptComponent.onLocalThink);
     }
 }
 
@@ -167,10 +181,23 @@ void kexAI::ChangeState(const aiState_t aiState) {
 
 void kexAI::SeekTarget(void) {
     if(attackThreshold > 0) {
-        attackThreshold -= AI_THRESHOLD_AMOUNT;
+        attackThreshold -= attackThresholdTime;
+    }
+    
+    if(aiState != AIS_TELEPORT_OUT && aiState != AIS_TELEPORT_IN &&
+       aiState != AIS_SPAWNING && !bTurning && !bAttacking) {
+        if(!TryMelee()) {
+            if(bCanRangeAttack && attackThreshold <= 0) {
+                TryRange();
+            }
+        }
     }
 
     switch(aiState) {
+        ////////////////////////////////////////////////////
+        // IDLE STATE
+        // Stands still, does nothing until it sees a target
+        ////////////////////////////////////////////////////
         case AIS_IDLE:
             if(!bTurning && !bAttacking && bCanMelee) {
                 float dist = GetTargetDistance();
@@ -190,6 +217,10 @@ void kexAI::SeekTarget(void) {
             }
             break;
 
+        ////////////////////////////////////////////////////
+        // CALM STATE
+        // Expects to see its target. Not too aggressive
+        ////////////////////////////////////////////////////
         case AIS_CALM:
             if(!bTurning && !bAttacking && sightThreshold > 0) {
                 float dist = GetTargetDistance();
@@ -202,7 +233,7 @@ void kexAI::SeekTarget(void) {
                 }
 
                 if(!(aiFlags & AIF_SEETARGET) && sightThreshold <= 0) {
-                    if(kexRand::Max(1000) >= 995) {
+                    if(kexRand::Max(1000) >= giveUpChance) {
                         // AI has forgotten about it's target. go back to idling
                         ClearTargets();
                         bTurning = false;
@@ -215,6 +246,10 @@ void kexAI::SeekTarget(void) {
             }
             break;
 
+        ////////////////////////////////////////////////////
+        // ALERT STATE
+        // Sees target; aggressive
+        ////////////////////////////////////////////////////
         case AIS_ALERT:
             if(!(aiFlags & AIF_SEETARGET) && (--sightThreshold <= 0)) {
                 // start calming down after giving up target
@@ -222,9 +257,11 @@ void kexAI::SeekTarget(void) {
                 ChangeState(AIS_CALM);
             }
             if(!bTurning && !bAttacking) {
-                float an = GetYawToTarget();
+                if(TryTeleport()) {
+                    return;
+                }
 
-                if(!(an <= sightRange && an >= -sightRange)) {
+                if(!(kexMath::Fabs(GetYawToTarget()) <= sightRange)) {
                     float dist = GetTargetDistance();
 
                     if(dist <= meleeRange) {
@@ -237,6 +274,65 @@ void kexAI::SeekTarget(void) {
             }
             TurnYaw(GetBestYawToTarget(checkRadius));
             break;
+            
+        ////////////////////////////////////////////////////
+        // MELEE STATE
+        // Will try to attack again before changing states
+        ////////////////////////////////////////////////////
+        case AIS_ATTACK_MELEE:
+            if(animState.flags & ANF_STOPPED) {
+                if(!TryMelee()) {
+                    float dist = GetTargetDistance();
+                    
+                    if(dist > alertRange) {
+                        ChangeState(AIS_ALERT);
+                    }
+                    else if(dist > meleeRange) {
+                        ChangeState(AIS_IDLE);
+                    }
+                    
+                    TurnYaw(GetBestYawToTarget(checkRadius));
+                }
+                else {
+                    ChangeState(AIS_IDLE);
+                    bAttacking = false;
+                    bTurning = false;
+                }
+                return;
+            }
+            break;
+            
+        ////////////////////////////////////////////////////
+        // TELEPORT OUT STATE
+        // Will try to teleport close to target if available
+        ////////////////////////////////////////////////////
+        case AIS_TELEPORT_OUT:
+            if(animState.flags & ANF_STOPPED) {
+                TeleportToTarget();
+                SetIdealYaw(GetBestYawToTarget(checkRadius), 2.0f);
+                ChangeState(AIS_TELEPORT_IN);
+            }
+            break;
+            
+        ////////////////////////////////////////////////////
+        // TELEPORT IN STATE
+        // Handles a successful teleport move
+        ////////////////////////////////////////////////////
+        case AIS_TELEPORT_IN:
+            if(animState.flags & ANF_STOPPED) {
+                ChangeState(AIS_IDLE);
+                bAttacking = false;
+                bTurning = false;
+                
+                if(bCanMelee) {
+                    TurnYaw(GetYawToTarget());
+                }
+                else {
+                    TryRange();
+                }
+            }
+            break;
+            
         default:
             break;
     }
@@ -252,7 +348,7 @@ void kexAI::TurnYaw(const float yaw) {
     bool ok = false;
     
     this->aiState = aiState;
-    state = scriptComponent.PrepareFunction("void OnTurn(const float)");
+    state = scriptComponent.PrepareFunction("bool OnTurn(const float)");
 
     if(state == -1) {
         return;
@@ -272,6 +368,139 @@ void kexAI::TurnYaw(const float yaw) {
 
     an = kexMath::Fabs(yaw);
     SetIdealYaw(angles.yaw + an, 45 * an);
+}
+
+//
+// kexAI::TryMelee
+//
+
+bool kexAI::TryMelee(void) {
+    if(!target) {
+        return false;
+    }
+    
+    if(bCanMelee && GetTargetDistance() <= meleeRange) {
+        if(!bAttacking) {
+            float yaw = GetYawToTarget();
+            
+            if(!(kexMath::Fabs(yaw) <= sightRange)) {
+                TurnYaw(yaw);
+            }
+            else {
+                ChangeState(AIS_ATTACK_MELEE);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+//
+// kexAI::TryRange
+//
+
+bool kexAI::TryRange(void) {
+    float dist;
+    float an;
+    int cr;
+    bool bInView;
+    
+    if(!target) {
+        return false;
+    }
+    
+    if(!bCanMelee) {
+        cr = rangeChance * 2;
+    }
+    else {
+        cr = rangeChance;
+    }
+    
+    dist = GetTargetDistance();
+    
+    // attack more aggressively when close to target
+    if(kexRand::Max(cr) <= kexMath::Floor(dist * 100.0f / rangeDistance)) {
+        attackThreshold = AI_THRESHOLD_MAX;
+        ChangeState(AIS_IDLE);
+        bAttacking = false;
+        return false;
+    }
+    
+    an = GetYawToTarget();
+    bInView = (kexMath::Fabs(an) <= (sightRange * rangeSightDamp));
+    
+    if(bInView && aiFlags & AIF_SEETARGET) {
+        if(dist <= rangeDistance && !bAttacking) {
+            ChangeState(AIS_ATTACK_RANGE);
+        }
+    }
+    else if(bAttacking) {
+        ChangeState(AIS_IDLE);
+        bAttacking = false;
+    }
+    
+    if(!bInView && rangeAdjustAngle != 0) {
+        if(an > 0) {
+            if(an < rangeAdjustAngle) {
+                an = rangeAdjustAngle;
+            }
+        }
+        else {
+            if(an > -rangeAdjustAngle) {
+                an = -rangeAdjustAngle;
+            }
+        }
+        
+        TurnYaw(an);
+    }
+    
+    return true;
+}
+
+//
+// kexAI::TryTeleport
+//
+
+bool kexAI::TryTeleport(void) {
+    if(!target) {
+        return false;
+    }
+    
+    if(!bAttacking && !bTurning && bCanTeleport) {
+        if(kexRand::Max(1000) >= teleportChance) {
+            ChangeState(AIS_TELEPORT_OUT);
+            return true;
+        }
+    }
+    return false;
+}
+
+//
+// kexAI::TeleportToTarget
+//
+// Will try to teleport around the target's
+// position. The distance will be based on
+// either melee or range values.
+//
+
+void kexAI::TeleportToTarget(void) {
+    kexVec3 pos;
+    float range;
+    float an;
+    
+    if(!target) {
+        return;
+    }
+    
+    pos = target->GetOrigin();
+    range = (kexRand::Max(100) >= 50) ? meleeRange : rangeDistance;
+    an = DEG2RAD((kexRand::Max(10) * 36.0f));
+    
+    pos[0] += range * kexMath::Sin(an);
+    pos[2] += range * kexMath::Cos(an);
+    
+    TryMove(origin, pos, &physics.sector);
+    localWorld.TeleportActor(this, pos, angles, physics.sector->GetID());
 }
 
 //
@@ -310,9 +539,10 @@ float kexAI::GetYawToTarget(void) {
     }
     
     vec = target->GetOrigin().PointAt(origin);
-    angle = kexAngle::ClampInvertSums(angles.yaw, vec.ToYaw());
+    angle = kexAngle::Round(kexAngle::ClampInvertSums(angles.yaw, vec.ToYaw()));
+    kexAngle::Clamp(&angle);
     
-    return kexAngle::Round(angle);
+    return angle;
 }
 
 //
@@ -353,8 +583,10 @@ bool kexAI::CheckPosition(const kexVec3 &position,
     traceInfo_t trace;
     bool bHitWall = false;
     bool bHitObject = false;
+    float an = yaw;
     
-    TracePosition(&trace, position, radius, yaw);
+    kexAngle::Clamp(&an);
+    TracePosition(&trace, position, radius, an);
     
     if(trace.fraction == 1) {
         return true;
@@ -379,16 +611,11 @@ float kexAI::GetBestYawToTarget(const float extendedRadius) {
     float yaw;
     kexVec3 position;
     
-    yaw = GetYawToTarget();
-    
-    if(!target) {
-        return yaw;
-    }
+    yaw = angles.yaw + (target ? GetYawToTarget() : 0);
     
     position = origin;
     position[1] += (height * 0.8f);
-    
-    if(!CheckPosition(position, extendedRadius, angles.yaw + yaw)) {
+    if(!CheckPosition(position, extendedRadius, yaw)) {
         float an;
         float pAn;
         
@@ -401,21 +628,20 @@ float kexAI::GetBestYawToTarget(const float extendedRadius) {
             dir = an + yaw;
             
             if(CheckPosition(position, extendedRadius, angles.yaw + dir)) {
-                yaw = DEG2RAD(15) + dir;
-                kexAngle::Clamp(&yaw);
+                yaw = DEG2RAD(15) + (angles.yaw + dir);
                 break;
             }
             
             dir = yaw - an;
             
             if(CheckPosition(position, extendedRadius, angles.yaw + dir)) {
-                yaw = dir - DEG2RAD(15);
-                kexAngle::Clamp(&yaw);
+                yaw = -DEG2RAD(15) + (angles.yaw + dir);
                 break;
             }
         }
     }
     
+    kexAngle::Clamp(&yaw);
     return yaw;
 }
 
@@ -461,7 +687,21 @@ void kexAI::FireProjectile(const kexStr &fxName, const kexVec3 &org,
 //
 
 void kexAI::SetIdealYaw(const float yaw, const float speed) {
-    idealYaw = kexAngle::Round(yaw);
+    float an = yaw;
+
+    if(an < 0) {
+        an += (M_PI * 2);
+    }
+
+    turningYaw = angles.yaw;
+    kexAngle::Clamp(&turningYaw);
+
+    if(turningYaw < 0) {
+        turningYaw += (M_PI * 2);
+    }
+    
+    idealYaw = kexAngle::Round(an);
+
     turnSpeed = speed;
     aiFlags |= AIF_TURNING;
 }
@@ -475,8 +715,7 @@ void kexAI::Turn(void) {
     float current;
     float diff;
     
-    speed = turnSpeed * client.GetRunTime();
-    current = kexAngle::Round(angles.yaw);
+    current = kexAngle::Round(turningYaw);
     
     if(kexMath::Fabs(current - idealYaw) <= 0.001f) {
         aiFlags &= ~AIF_TURNING;
@@ -484,7 +723,8 @@ void kexAI::Turn(void) {
     }
     
     diff = idealYaw - current;
-    kexAngle::Clamp(&diff);
+
+    speed = turnSpeed * client.GetRunTime();
     
     if(diff > 0) {
         if(diff > speed) {
@@ -495,7 +735,10 @@ void kexAI::Turn(void) {
         diff = -speed;
     }
     
-    angles.yaw = kexAngle::Round(current + diff);
+    turningYaw = kexAngle::Round(current + diff);
+
+    angles.yaw = turningYaw;
+    kexAngle::Clamp(&angles.yaw);
 }
 
 //
@@ -576,4 +819,35 @@ void kexAI::FindTargets(void) {
 //
 
 void kexAI::InitObject(void) {
+    kexScriptManager::RegisterRefObjectNoCount<kexAI>("kAI");
+    kexAI::RegisterBaseProperties<kexAI>("kAI");
+
+     scriptManager.Engine()->RegisterObjectMethod(
+        "kActor",
+        "kAI @ToAI(void)",
+        asMETHODPR(kexActor, ToAI, (void), kexAI*),
+        asCALL_THISCALL);
+    
+    scriptManager.Engine()->RegisterEnum("EnumAIFlags");
+    scriptManager.Engine()->RegisterEnumValue("EnumAIFlags", "AIF_TURNING", AIF_TURNING);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIFlags", "AIF_DORMANT", AIF_DORMANT);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIFlags", "AIF_SEETARGET", AIF_SEETARGET);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIFlags", "AIF_HASTARGET", AIF_HASTARGET);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIFlags", "AIF_FINDTARGET", AIF_FINDTARGET);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIFlags", "AIF_AVOIDWALLS", AIF_AVOIDWALLS);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIFlags", "AIF_AVOIDACTORS", AIF_AVOIDACTORS);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIFlags", "AIF_DISABLED", AIF_DISABLED);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIFlags", "AIF_LOOKATTARGET", AIF_LOOKATTARGET);
+    
+    scriptManager.Engine()->RegisterEnum("EnumAIState");
+    scriptManager.Engine()->RegisterEnumValue("EnumAIState", "AIS_NONE", AIS_NONE);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIState", "AIS_IDLE", AIS_IDLE);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIState", "AIS_CALM", AIS_CALM);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIState", "AIS_ALERT", AIS_ALERT);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIState", "AIS_ATTACK_MELEE", AIS_ATTACK_MELEE);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIState", "AIS_ATTACK_RANGE", AIS_ATTACK_RANGE);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIState", "AIS_DEATH", AIS_DEATH);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIState", "AIS_SPAWNING", AIS_SPAWNING);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIState", "AIS_TELEPORT_OUT", AIS_TELEPORT_OUT);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIState", "AIS_TELEPORT_IN", AIS_TELEPORT_IN);
 }

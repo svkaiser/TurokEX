@@ -88,6 +88,7 @@ public:
     bool                            IntersectEdge(cMapTrace_t *trace, const int edgeNum);
     bool                            Trace(cMapTrace_t *trace, const bool bTestCeiling);
     kexSector                       *CrossEdge(cMapTrace_t *trace, const int edge);
+    const int                       GetID(void) const;
 
     kexArea                         *area;
     unsigned int                    flags;

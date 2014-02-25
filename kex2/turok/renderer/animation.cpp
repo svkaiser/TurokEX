@@ -30,6 +30,7 @@
 #include "renderModel.h"
 #include "animation.h"
 #include "world.h"
+#include "ai.h"
 
 kexHeapBlock hb_animation("animation", false, NULL, NULL);
 
@@ -832,6 +833,11 @@ void kexAnimState::InitObject(void) {
         "kActor",
         "kAnimState @AnimState(void)",
         asMETHODPR(kexActor, AnimState, (void), kexAnimState*),
+        asCALL_THISCALL);
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kAI",
+        "kAnimState @AnimState(void)",
+        asMETHODPR(kexAI, AnimState, (void), kexAnimState*),
         asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterEnum("AnimStateFlags");

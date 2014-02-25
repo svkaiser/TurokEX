@@ -33,6 +33,7 @@
 #include "scriptAPI/scriptSystem.h"
 #include "scriptAPI/component.h"
 #include "gameManager.h"
+#include "ai.h"
 
 kexScriptManager scriptManager;
 
@@ -173,6 +174,7 @@ void kexScriptManager::Init(void) {
     kexClient           ::InitObject();
     kexInputKey         ::InitObject();
     kexActor            ::InitObject();
+    kexAI               ::InitObject();
     kexArea             ::InitObject();
     kexCamera           ::InitObject();
     kexLocalPlayer      ::InitObject();

@@ -56,7 +56,7 @@ public:
                                 kexAI(void);
                                 ~kexAI(void);
 
-    virtual void                Tick(void);
+    virtual void                LocalTick(void);
 
     void                        Spawn(void);
     void                        Save(kexBinFile *saveFile);
@@ -81,12 +81,60 @@ public:
     void                        ChangeState(const aiState_t aiState);
     void                        SeekTarget(void);
     void                        TurnYaw(const float yaw);
+    bool                        TryMelee(void);
+    bool                        TryRange(void);
+    bool                        TryTeleport(void);
+    void                        TeleportToTarget(void);
 
     static void                 InitObject(void);
 
+    //
+    // template for registering default script actor methods and properties
+    //
+    template<class type>
+    static void                 RegisterBaseProperties(const char *scriptClass) {
+        #define OBJMETHOD(str, a, b, c)                     \
+            scriptManager.Engine()->RegisterObjectMethod(   \
+                scriptClass,                                \
+                str,                                        \
+                asMETHODPR(type, a, b, c),                  \
+                asCALL_THISCALL)
+    
+        kexActor::RegisterBaseProperties<type>(scriptClass);
+    
+        OBJMETHOD("void SetIdealYaw(const float, const float)", SetIdealYaw,
+                  (const float yaw, const float speed), void);
+        OBJMETHOD("void FireProjectile(const kStr &in, const kVec3 &in, const float, bool)",
+                  FireProjectile, (const kexStr &fxName, const kexVec3 &org, const float maxAngle,
+                                   bool bLocalToActor), void);
+        OBJMETHOD("float GetTargetDistance(void)", GetTargetDistance, (void), float);
+        OBJMETHOD("float GetYawToTarget(void)", GetYawToTarget, (void), float);
+        OBJMETHOD("bool CheckPosition(const kVec3 &in, const float, const float)",
+                  CheckPosition, (const kexVec3 &position, const float radius, const float yaw), bool);
+        OBJMETHOD("float GetBestYawToTarget(const float)",
+                  GetBestYawToTarget, (const float extendedRadius), float);
+    
+        #define OBJPROPERTY(str, p)                         \
+            scriptManager.Engine()->RegisterObjectProperty( \
+                scriptClass,                                \
+                str,                                        \
+                asOFFSET(type, p))
+    
+        OBJPROPERTY("uint aiFlags", aiFlags);
+        OBJPROPERTY("float attackThreshold", attackThreshold);
+        OBJPROPERTY("float sightThreshold", sightThreshold);
+        OBJPROPERTY("float attackThresholdTime", attackThresholdTime);
+        OBJPROPERTY("bool bCanMelee", bCanMelee);
+        OBJPROPERTY("bool bCanRangeAttack", bCanRangeAttack);
+        OBJPROPERTY("bool bCanTeleport", bCanTeleport);
+        OBJPROPERTY("bool bAttacking", bAttacking);
+        OBJPROPERTY("bool bTurning", bTurning);
+    
+    #undef OBJMETHOD
+    #undef OBJPROPERTY
+    }
+
 protected:
-    float                       idealYaw;
-    float                       turnSpeed;
     float                       activeDistance;
     unsigned int                aiFlags;
     aiState_t                   aiState;
@@ -107,11 +155,22 @@ protected:
     bool                        bTurning;
     float                       attackThreshold;
     float                       sightThreshold;
+    float                       attackThresholdTime;
     float                       sightRange;
+    float                       rangeSightDamp;
     float                       checkRadius;
     float                       meleeRange;
     float                       alertRange;
     float                       rangeDistance;
+    int                         teleportChance;
+    int                         giveUpChance;
+    int                         rangeChance;
+    float                       rangeAdjustAngle;
+
+private:
+    float                       idealYaw;
+    float                       turningYaw;
+    float                       turnSpeed;
 
 END_CLASS();
 
