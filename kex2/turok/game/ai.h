@@ -128,7 +128,7 @@ public:
         OBJPROPERTY("bool bCanRangeAttack", bCanRangeAttack);
         OBJPROPERTY("bool bCanTeleport", bCanTeleport);
         OBJPROPERTY("bool bAttacking", bAttacking);
-        OBJPROPERTY("bool bTurning", bTurning);
+        OBJPROPERTY("bool bAnimTurning", bAnimTurning);
     
     #undef OBJMETHOD
     #undef OBJPROPERTY
@@ -152,7 +152,7 @@ protected:
     bool                        bCanRangeAttack;
     bool                        bCanTeleport;
     bool                        bAttacking;
-    bool                        bTurning;
+    bool                        bAnimTurning;
     float                       attackThreshold;
     float                       sightThreshold;
     float                       attackThresholdTime;
