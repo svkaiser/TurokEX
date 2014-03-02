@@ -43,7 +43,7 @@ kexAI::kexAI(void) {
     this->idealYaw              = 0;
     this->turningYaw            = 0;
     this->turnSpeed             = 4.096f;
-    this->thinkTime             = 16;
+    this->thinkTime             = 8;
     this->nextThinkTime         = this->timeStamp + this->thinkTime;
     this->headTurnSpeed         = 4.096f;
     this->maxHeadAngle          = DEG2RAD(70);
@@ -67,6 +67,7 @@ kexAI::kexAI(void) {
     this->teleportChance        = 985;
     this->rangeChance           = 100;
     this->rangeAdjustAngle      = DEG2RAD(50);
+    this->yawSpeed              = 45.0f;
     
     headYawAxis.Set(0, 1, 0);
     headPitchAxis.Set(1, 0, 0);
@@ -148,6 +149,14 @@ void kexAI::LocalTick(void) {
 //
 
 void kexAI::Spawn(void) {
+    physics.sector = localWorld.CollisionMap().PointInSector(origin);
+    if(physics.sector) {
+        origin[1] -= (origin[1] - physics.sector->lowerTri.GetDistance(origin));
+    }
+
+    UpdateTransform();
+
+    ChangeState(AIS_IDLE);
 }
 
 //
@@ -363,15 +372,19 @@ void kexAI::SeekTarget(void) {
 
 void kexAI::TurnYaw(const float yaw) {
     int state;
+    float ys;
     float an;
     bool ok = false;
     
     this->aiState = aiState;
     state = scriptComponent.PrepareFunction("bool OnTurn(const float)");
 
+    an = yaw;
+    kexAngle::Clamp(&an);
+
     // at least let it still turn if it can't find the script function
     if(state != -1) {
-        scriptComponent.SetCallArgument(0, yaw);
+        scriptComponent.SetCallArgument(0, an);
 
         if(!scriptComponent.ExecuteFunction(state)) {
             return;
@@ -384,8 +397,12 @@ void kexAI::TurnYaw(const float yaw) {
         }
     }
 
-    an = kexMath::Fabs(yaw);
-    SetIdealYaw(angles.yaw + an, 45 * an);
+    ys = yaw;
+    if(ys >= M_PI) {
+        ys = -(ys - (M_PI * 2));
+    }
+
+    SetIdealYaw(angles.yaw + an, yawSpeed * ys);
 }
 
 //
@@ -559,9 +576,8 @@ float kexAI::GetTargetDistance(void) {
 float kexAI::GetYawToTarget(void) {
     kexVec2 vec1, vec2;
     kexVec2 diff;
-    kexVec2 sincos;
-    float d;
-    float an;
+    kexVec3 sincos;
+    float tan2;
     
     if(!target) {
         return 0;
@@ -570,28 +586,14 @@ float kexAI::GetYawToTarget(void) {
     vec1 = origin;
     vec2 = target->GetOrigin();
     diff = (vec1 - vec2);
+    tan2 = kexMath::ATan2(diff[0], diff[1]);
     
-    d = diff.Unit();
-    
-    if(d == 0) {
-        return 0;
-    }
-    
-    sincos.Set(-kexMath::Sin(angles.yaw), -kexMath::Cos(angles.yaw));
-    an = sincos.Dot(diff) / d;
-    
-    if(an > 1.0f) {
-        an = 1.0f;
-    }
-    if(an < -1.0f) {
-        an = -1.0f;
-    }
-    
-    if(diff[0] >= 0 || diff[1] >= 0) {
-        return -kexMath::ACos(an);
-    }
-    
-    return kexMath::ACos(an);
+    sincos.Set(
+        kexMath::Sin(tan2),
+        0,
+        kexMath::Cos(tan2));
+
+    return kexAngle::Round(kexAngle::ClampInvertSums(angles.yaw, sincos.ToYaw()));
 }
 
 //

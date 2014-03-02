@@ -124,6 +124,8 @@ public:
         OBJPROPERTY("float attackThreshold", attackThreshold);
         OBJPROPERTY("float sightThreshold", sightThreshold);
         OBJPROPERTY("float attackThresholdTime", attackThresholdTime);
+        OBJPROPERTY("float yawSpeed", yawSpeed);
+        OBJPROPERTY("float thinkTime", thinkTime);
         OBJPROPERTY("bool bCanMelee", bCanMelee);
         OBJPROPERTY("bool bCanRangeAttack", bCanRangeAttack);
         OBJPROPERTY("bool bCanTeleport", bCanTeleport);
@@ -166,6 +168,7 @@ protected:
     int                         giveUpChance;
     int                         rangeChance;
     float                       rangeAdjustAngle;
+    float                       yawSpeed;
 
 private:
     float                       idealYaw;
