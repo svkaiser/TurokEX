@@ -266,7 +266,7 @@ byte *kexTexture::LoadFromScreenBuffer(void) {
     x           = renderSystem.WindowX();
     y           = renderSystem.WindowY();
     col         = (width * 3);
-    data        = (byte*)Mem_Calloc(height * width * 3, hb_static);
+    data        = (byte*)Mem_Malloc(height * width * 3, hb_static);
     
     colorMode   = TCR_RGB;
     bMasked     = false;
@@ -330,8 +330,10 @@ byte *kexTexture::LoadFromTGA(byte *input) {
         rover += tga.infolen;
     }
 
-    width = tga.width;
-    height = tga.height;
+    origwidth = tga.width;
+    origheight = tga.height;
+    width = kexMath::RoundPowerOfTwo(origwidth);
+    height = kexMath::RoundPowerOfTwo(origheight);
 
     switch(tga.type) {
     case TGA_TYPE_INDEXED:
@@ -341,12 +343,12 @@ byte *kexTexture::LoadFromTGA(byte *input) {
 
             switch(tga.cmap_bits) {
             case 24:
-                data = (byte*)Mem_Calloc(tga.width * tga.height * 3, hb_static);
+                data = (byte*)Mem_Calloc(width * height * 3, hb_static);
                 rover += (3 * tga.cmap_len);
                 colorMode = TCR_RGB;
 
                 for(r = tga.height - 1; r >= 0; r--) {
-                    data_r = data + r * tga.width * 3;
+                    data_r = data + r * width * 3;
                     for(c = 0; c < tga.width; c++) {
                         *data_r++ = GetRGBGamma(p[*rover].b);
                         *data_r++ = GetRGBGamma(p[*rover].g);
@@ -356,12 +358,12 @@ byte *kexTexture::LoadFromTGA(byte *input) {
                 }
                 break;
             case 32:
-                data = (byte*)Mem_Calloc(tga.width * tga.height * 4, hb_static);
+                data = (byte*)Mem_Calloc(width * height * 4, hb_static);
                 rover += (4 * tga.cmap_len);
                 colorMode = TCR_RGBA;
 
                 for(r = tga.height - 1; r >= 0; r--) {
-                    data_r = data + r * tga.width * 4;
+                    data_r = data + r * width * 4;
                     for(c = 0; c < tga.width; c++) {
                         *data_r++ = GetRGBGamma(p[*rover].b);
                         *data_r++ = GetRGBGamma(p[*rover].g);
@@ -396,10 +398,10 @@ byte *kexTexture::LoadFromTGA(byte *input) {
             bitStride = 3;
         }
         
-        data = (byte*)Mem_Calloc(tga.width * tga.height * bitStride, hb_static);
+        data = (byte*)Mem_Calloc(width * height * bitStride, hb_static);
 
         for(r = tga.height - 1; r >= 0; r--) {
-            data_r = data + r * tga.width * bitStride;
+            data_r = data + r * width * bitStride;
             for(c = 0; c < tga.width; c++) {
                 switch(tga.pixel_bits) {
                 case 24:
@@ -490,8 +492,10 @@ byte *kexTexture::LoadFromBMP(byte *input) {
 
     int numPixels = cols * rows;
 
-    width = cols;
-    height = rows;
+    origwidth = cols;
+    origheight = rows;
+    width = kexMath::RoundPowerOfTwo(origwidth);
+    height = kexMath::RoundPowerOfTwo(origheight);
 
     if(bmp.bits != 32) {
         bitStride = 3;
@@ -502,10 +506,10 @@ byte *kexTexture::LoadFromBMP(byte *input) {
         colorMode = TCR_RGBA;
     }
 
-    data = (byte*)Mem_Calloc(cols * rows * bitStride, hb_static);
+    data = (byte*)Mem_Calloc(width * height * bitStride, hb_static);
 
     for(int y = rows-1; y >= 0; y--) {
-        byte *buf = data + (y * cols * bitStride);
+        byte *buf = data + (y * width * bitStride);
 
         for(int x = 0; x < cols; x++) {
             byte rgba[4];
@@ -579,15 +583,22 @@ byte *kexTexture::PadImage(byte **data) {
 //
 
 void kexTexture::VerticalFlipImage(byte **data) {
-    int bitStride = (colorMode == TCR_RGBA) ? 4 : 3;
-    byte *buffer = (byte*)Mem_Calloc((width * height) * bitStride, hb_static);
-    byte *tmp = *data;
-    int col = (width * bitStride);
+    int bitStride   = (colorMode == TCR_RGBA) ? 4 : 3;
+    byte *buffer    = (byte*)Mem_Malloc((width * height) * bitStride, hb_static);
+    byte *tmp       = *data;
+    int col         = (width * bitStride);
+    int offset1;
+    int offset2;
 
     for(int i = 0; i < height / 2; i++) {
-        memcpy(buffer, &tmp[i * col], col);
-        memcpy(&tmp[i * col], &tmp[(height - (i + 1)) * col], col);
-        memcpy(&tmp[(height - (i + 1)) * col], buffer, col);
+        for(int j = 0; j < col; j++) {
+            offset1 = (i * col) + j;
+            offset2 = ((height - (i + 1)) * col) + j;
+
+            buffer[j] = tmp[offset1];
+            tmp[offset1] = tmp[offset2];
+            tmp[offset2] = buffer[j];
+        }
     }
 
     Mem_Free(buffer);
@@ -601,11 +612,6 @@ void kexTexture::Upload(byte **data, texClampMode_t clamp, texFilterMode_t filte
     if(*data == NULL) {
         return;
     }
-    origwidth = width;
-    origheight = height;
-
-    width = kexMath::RoundPowerOfTwo(width);
-    height = kexMath::RoundPowerOfTwo(height);
 
     clampMode = clamp;
     filterMode = filter;
@@ -618,8 +624,6 @@ void kexTexture::Upload(byte **data, texClampMode_t clamp, texFilterMode_t filte
     }
 
     dglBindTexture(GL_TEXTURE_2D, texid);
-
-    *data = PadImage(data);
 
     dglTexImage2D(
         GL_TEXTURE_2D,
