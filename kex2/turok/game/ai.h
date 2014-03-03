@@ -27,15 +27,16 @@
 #include "actor.h"
 
 typedef enum {
-    AIF_TURNING         = 1,
-    AIF_DORMANT         = 2,
-    AIF_SEETARGET       = 4,
-    AIF_HASTARGET       = 8,
-    AIF_FINDTARGET      = 16,
-    AIF_AVOIDWALLS      = 32,
-    AIF_AVOIDACTORS     = 64,
-    AIF_DISABLED        = 128,
-    AIF_LOOKATTARGET    = 256
+    AIF_TURNING         = BIT(0),
+    AIF_DORMANT         = BIT(1),
+    AIF_SEETARGET       = BIT(2),
+    AIF_HASTARGET       = BIT(3),
+    AIF_FINDTARGET      = BIT(4),
+    AIF_AVOIDWALLS      = BIT(5),
+    AIF_AVOIDACTORS     = BIT(6),
+    AIF_DISABLED        = BIT(7),
+    AIF_LOOKATTARGET    = BIT(8),
+    AIF_FACETARGET      = BIT(9)
 } aiFlags_t;
 
 typedef enum {

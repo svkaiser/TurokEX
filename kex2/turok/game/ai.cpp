@@ -47,7 +47,7 @@ kexAI::kexAI(void) {
     this->nextThinkTime         = this->timeStamp + this->thinkTime;
     this->headTurnSpeed         = 4.096f;
     this->maxHeadAngle          = DEG2RAD(70);
-    this->aiFlags               = AIF_FINDTARGET|AIF_AVOIDWALLS|AIF_AVOIDACTORS;
+    this->aiFlags               = AIF_FINDTARGET|AIF_AVOIDWALLS|AIF_AVOIDACTORS|AIF_FACETARGET;
     this->aiState               = AIS_NONE;
     this->bCanMelee             = false;
     this->bCanRangeAttack       = false;
@@ -149,6 +149,26 @@ void kexAI::LocalTick(void) {
 //
 
 void kexAI::Spawn(void) {
+    if(definition != NULL) {
+        definition->GetBool("bCanMelee", bCanMelee);
+        definition->GetBool("bCanRangeAttack", bCanRangeAttack);
+        definition->GetBool("bCanTeleport", bCanTeleport);
+        definition->GetFloat("meleeRange", meleeRange);
+        definition->GetFloat("alertRange", alertRange);
+        definition->GetFloat("rangeDistance", rangeDistance);
+        definition->GetFloat("checkRadius", checkRadius);
+        definition->GetFloat("sightRange", sightRange);
+        definition->GetFloat("rangeSightDamp", rangeSightDamp);
+        definition->GetFloat("rangeAdjustAngle", rangeAdjustAngle);
+        definition->GetFloat("yawSpeed", yawSpeed);
+        definition->GetFloat("thinkTime", thinkTime);
+        definition->GetFloat("maxHeadAngle", maxHeadAngle);
+        definition->GetInt("giveUpChance", giveUpChance);
+        definition->GetInt("teleportChance", teleportChance);
+        definition->GetInt("rangeChance", rangeChance);
+        definition->GetInt("aiFlags", (int&)aiFlags);
+    }
+
     physics.sector = localWorld.CollisionMap().PointInSector(origin);
     if(physics.sector) {
         origin[1] -= (origin[1] - physics.sector->lowerTri.GetDistance(origin));
@@ -234,11 +254,14 @@ void kexAI::SeekTarget(void) {
                     ChangeState(AIS_CALM);
                 }
             }
-            if(aiFlags & AIF_SEETARGET) {
-                TurnYaw(GetYawToTarget());
-            }
-            else {
-                TurnYaw(GetBestYawToTarget(checkRadius));
+
+            if(aiFlags & AIF_FACETARGET) {
+                if(aiFlags & AIF_SEETARGET) {
+                    TurnYaw(GetYawToTarget());
+                }
+                else {
+                    TurnYaw(GetBestYawToTarget(checkRadius));
+                }
             }
             break;
 
@@ -267,7 +290,10 @@ void kexAI::SeekTarget(void) {
                         return;
                     }
                 }
-                TurnYaw(GetBestYawToTarget(checkRadius));
+
+                if(aiFlags & AIF_FACETARGET) {
+                    TurnYaw(GetBestYawToTarget(checkRadius));
+                }
             }
             break;
 
@@ -297,7 +323,10 @@ void kexAI::SeekTarget(void) {
                     }
                 }
             }
-            TurnYaw(GetBestYawToTarget(checkRadius));
+
+            if(aiFlags & AIF_FACETARGET) {
+                TurnYaw(GetBestYawToTarget(checkRadius));
+            }
             break;
             
         ////////////////////////////////////////////////////
@@ -316,7 +345,9 @@ void kexAI::SeekTarget(void) {
                         ChangeState(AIS_IDLE);
                     }
                     
-                    TurnYaw(GetBestYawToTarget(checkRadius));
+                    if(aiFlags & AIF_FACETARGET) {
+                        TurnYaw(GetBestYawToTarget(checkRadius));
+                    }
                 }
                 else {
                     ChangeState(AIS_IDLE);
@@ -605,10 +636,13 @@ void kexAI::TracePosition(traceInfo_t *trace, const kexVec3 &position,
     float s = kexMath::Sin(yaw);
     float c = kexMath::Cos(yaw);
     kexVec3 dest;
+    kexSector *sector;
     
     dest[0] = position[0] + (this->radius * radius * s);
     dest[1] = position[1];
     dest[2] = position[2] + (this->radius * radius * c);
+
+    sector = physics.sector;
     
     trace->start     = position;
     trace->end       = dest;
@@ -623,6 +657,7 @@ void kexAI::TracePosition(traceInfo_t *trace, const kexVec3 &position,
     trace->bUseBBox  = false;
     
     localWorld.Trace(trace);
+    physics.sector = sector;
 }
 
 //
@@ -796,11 +831,13 @@ bool kexAI::CanSeeTarget(kexWorldObject *object) {
     kexVec3 aOrg;
     kexVec3 tOrg;
     traceInfo_t trace;
+    kexSector *sector;
     
     if(!object) {
         return false;
     }
     
+    sector = physics.sector;
     aOrg = origin;
     tOrg = object->GetOrigin();
     
@@ -820,6 +857,7 @@ bool kexAI::CanSeeTarget(kexWorldObject *object) {
     trace.bUseBBox  = false;
     
     localWorld.Trace(&trace);
+    physics.sector = sector;
     
     if(trace.fraction == 1 || trace.hitActor == object) {
         aiFlags |= AIF_SEETARGET;
@@ -885,6 +923,7 @@ void kexAI::InitObject(void) {
     scriptManager.Engine()->RegisterEnumValue("EnumAIFlags", "AIF_AVOIDACTORS", AIF_AVOIDACTORS);
     scriptManager.Engine()->RegisterEnumValue("EnumAIFlags", "AIF_DISABLED", AIF_DISABLED);
     scriptManager.Engine()->RegisterEnumValue("EnumAIFlags", "AIF_LOOKATTARGET", AIF_LOOKATTARGET);
+    scriptManager.Engine()->RegisterEnumValue("EnumAIFlags", "AIF_FACETARGET", AIF_FACETARGET);
     
     scriptManager.Engine()->RegisterEnum("EnumAIState");
     scriptManager.Engine()->RegisterEnumValue("EnumAIState", "AIS_NONE", AIS_NONE);

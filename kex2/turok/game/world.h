@@ -79,6 +79,9 @@ public:
                                             const kexVec3 &origin, const kexAngle &angles);
     kexActor                            *SpawnActor(kexStr &className, kexStr &component,
                                             kexVec3 &origin, kexAngle &angles);
+    kexActor                            *SpawnActor(const char *definition, const kexVec3 &origin,
+                                                    const kexAngle &angles);
+    kexActor                            *SpawnActor(kexStr &definition, kexVec3 &origin, kexAngle &angles);
     kexFx                               *SpawnFX(const char *name, kexGameObject *source, kexVec3 &velocity,
                                             kexVec3 &origin, kexQuat &rotation, kexFx *parentFx = NULL);
     void                                SpawnFX(const kexStr &str, kexGameObject *source, kexVec3 &velocity,

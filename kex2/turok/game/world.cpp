@@ -34,6 +34,7 @@
 #include "sound.h"
 #include "renderSystem.h"
 #include "gameManager.h"
+#include "defs.h"
 
 #define FOG_LERP_SPEED      0.025f
 
@@ -185,6 +186,11 @@ void kexWorld::LocalTick(void) {
         next = actorRover->worldLink.Next();
         actorRover->LocalTick();
 
+        if(actorRover == NULL) {
+            common.Warning("kexWorld::LocalTick: actorRover went null for some odd reason\n");
+            continue;
+        }
+
         cfrac = -(actorRover->TimeStamp() -
             client.GetTime()) * (SERVER_RUNTIME / 10000.0f);
 
@@ -297,7 +303,7 @@ void kexWorld::TeleportActor(kexActor *actor, const kexVec3 &position,
 // 
 
 kexActor *kexWorld::SpawnActor(const char *className, const char *component,
-                                    const kexVec3 &origin, const kexAngle &angles) {
+                               const kexVec3 &origin, const kexAngle &angles) {
     
     kexActor *actor = ConstructActor(className);
     
@@ -322,7 +328,7 @@ kexActor *kexWorld::SpawnActor(const char *className, const char *component,
 //
 
 kexActor *kexWorld::SpawnActor(kexStr &className, kexStr &component,
-                                    kexVec3 &origin, kexAngle &angles) {
+                               kexVec3 &origin, kexAngle &angles) {
     const char *componentName;
 
     if(component.Length() <= 0) {
@@ -332,6 +338,55 @@ kexActor *kexWorld::SpawnActor(kexStr &className, kexStr &component,
         componentName = component.c_str();
     }
     return SpawnActor(className.c_str(), componentName, origin, angles);
+}
+
+//
+// kexWorld::SpawnActor
+//
+
+kexActor *kexWorld::SpawnActor(const char *definition,
+                               const kexVec3 &origin, const kexAngle &angles) {
+    kexKeyMap *def;
+    kexStr className;
+    kexStr componentName;
+    kexActor *actor;
+    
+    if(!(def = defManager.FindDefEntry(definition))) {
+        return NULL;
+    }
+
+    def->GetString("classname", className);
+    def->GetString("component", componentName);
+
+    if(className.Length() <= 0) {
+        return NULL;
+    }
+
+    actor = ConstructActor(className);
+    
+    if(actor == NULL) {
+        return NULL;
+    }
+
+    if(componentName.Length() > 0) {
+        actor->CreateComponent(componentName.c_str());
+    }
+
+    actor->definition = def;
+    actor->SetOrigin(origin);
+    actor->SetAngles(angles);
+    actor->LinkArea();
+    
+    AddActor(actor);
+    return actor;
+}
+
+//
+// kexWorld::SpawnActor
+//
+
+kexActor *kexWorld::SpawnActor(kexStr &definition, kexVec3 &origin, kexAngle &angles) {
+    return SpawnActor(definition.c_str(), origin, angles);
 }
 
 //
@@ -900,6 +955,13 @@ void kexWorld::InitObject(void) {
         asMETHODPR(kexWorld, SpawnActor,
         (kexStr &className, kexStr &component,
         kexVec3 &origin, kexAngle &angles), kexActor*),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "kActor @SpawnActor(kStr &in, kVec3 &in, kAngle &in)",
+        asMETHODPR(kexWorld, SpawnActor,
+        (kexStr &definition, kexVec3 &origin, kexAngle &angles), kexActor*),
         asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectMethod(
