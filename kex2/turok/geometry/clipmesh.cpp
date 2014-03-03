@@ -120,7 +120,7 @@ void kexClipMesh::CreateBox(const kexBBox &bbox) {
 
     origin                  = bbox.Center() - owner->GetOrigin();
     numGroups               = 1;
-    cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
+    cmGroups                = (cmGroup_t*)Mem_Malloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
     cmGroup                 = &cmGroups[0];
 
     AllocateCmGroup(cmGroup, 8, 36);
@@ -177,7 +177,7 @@ void kexClipMesh::CreateTetrahedron(const kexBBox &bbox) {
     origin                  = bbox.Center() - owner->GetOrigin();
     s                       = bbox.max - origin;
     numGroups               = 1;
-    cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
+    cmGroups                = (cmGroup_t*)Mem_Malloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
     cmGroup                 = &cmGroups[0];
 
     AllocateCmGroup(cmGroup, 4, 12);
@@ -207,14 +207,14 @@ void kexClipMesh::CreateOctahedron(const kexBBox &bbox) {
     origin                  = bbox.Center() - owner->GetOrigin();
     s                       = bbox.max - origin;
     numGroups               = 1;
-    cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
+    cmGroups                = (cmGroup_t*)Mem_Malloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
     cmGroup                 = &cmGroups[0];
     cmGroup->numPoints      = 6;
     cmGroup->numIndices     = 24;
     cmGroup->numTriangles   = 8;
-    cmGroup->points         = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * cmGroup->numPoints, kexClipMesh::hb_clipMesh);
-    cmGroup->indices        = (word*)Mem_Calloc(sizeof(word) * cmGroup->numIndices, kexClipMesh::hb_clipMesh);
-    cmGroup->triangles      = (kexTri*)Mem_Calloc(sizeof(kexTri) * cmGroup->numTriangles, kexClipMesh::hb_clipMesh);
+    cmGroup->points         = (kexVec3*)Mem_Malloc(sizeof(kexVec3) * cmGroup->numPoints, kexClipMesh::hb_clipMesh);
+    cmGroup->indices        = (word*)Mem_Malloc(sizeof(word) * cmGroup->numIndices, kexClipMesh::hb_clipMesh);
+    cmGroup->triangles      = (kexTri*)Mem_Malloc(sizeof(kexTri) * cmGroup->numTriangles, kexClipMesh::hb_clipMesh);
     word *indices           = cmGroup->indices;
     kexVec3 *points         = cmGroup->points;
 
@@ -244,7 +244,7 @@ void kexClipMesh::CreateDodecahedron(const kexBBox &bbox) {
 
     origin                  = bbox.Center() - owner->GetOrigin();
     numGroups               = 1;
-    cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
+    cmGroups                = (cmGroup_t*)Mem_Malloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
     cmGroup                 = &cmGroups[0];
 
     AllocateCmGroup(cmGroup, 20, 108);
@@ -344,7 +344,7 @@ void kexClipMesh::CreateCylinder(const kexBBox &bbox) {
 
     origin                  = bbox.Center() - owner->GetOrigin();
     numGroups               = 1;
-    cmGroups                = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
+    cmGroups                = (cmGroup_t*)Mem_Malloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
     cmGroup                 = &cmGroups[0];
 
     AllocateCmGroup(cmGroup, 16, 84);
@@ -432,7 +432,7 @@ void kexClipMesh::CreateMeshFromModel(void) {
         return;
     }
 
-    cmGroups = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
+    cmGroups = (cmGroup_t*)Mem_Malloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
 
     for(unsigned int i = 0; i < numGroups; i++) {
         surface = &group->surfaces[i];
@@ -480,7 +480,7 @@ void kexClipMesh::CreateConvexHull(void) {
     origin = owner->Bounds().Center();
     numGroups = 1;
 
-    cmGroups = (cmGroup_t*)Mem_Calloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
+    cmGroups = (cmGroup_t*)Mem_Malloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
 
     if(group->numSurfaces > 1) {
         unsigned int i;
@@ -543,9 +543,9 @@ void kexClipMesh::AllocateCmGroup(cmGroup_t *group, const int numPoints, const i
     group->numPoints    = numPoints;
     group->numIndices   = numIndices;
     group->numTriangles = numIndices / 3;
-    group->points       = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * group->numPoints, kexClipMesh::hb_clipMesh);
-    group->indices      = (word*)Mem_Calloc(sizeof(word) * group->numIndices, kexClipMesh::hb_clipMesh);
-    group->triangles    = (kexTri*)Mem_Calloc(sizeof(kexTri) * group->numTriangles, kexClipMesh::hb_clipMesh);
+    group->points       = (kexVec3*)Mem_Malloc(sizeof(kexVec3) * group->numPoints, kexClipMesh::hb_clipMesh);
+    group->indices      = (word*)Mem_Malloc(sizeof(word) * group->numIndices, kexClipMesh::hb_clipMesh);
+    group->triangles    = (kexTri*)Mem_Malloc(sizeof(kexTri) * group->numTriangles, kexClipMesh::hb_clipMesh);
 }
 
 //

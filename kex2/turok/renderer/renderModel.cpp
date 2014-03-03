@@ -183,7 +183,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                 // begin reading into the node block
                 lexer->ExpectTokenListID(mdltokens, scmdl_nodes);
                 lexer->ExpectNextToken(TK_LBRACK);
-                model->nodes = (modelNode_t*)Mem_Calloc(sizeof(modelNode_t) *
+                model->nodes = (modelNode_t*)Mem_Malloc(sizeof(modelNode_t) *
                     model->numNodes, hb_model);
 
                 for(i = 0; i < model->numNodes; i++) {
@@ -222,7 +222,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                     }
 
                     // read into the group block
-                    node->surfaceGroups = (surfaceGroup_t*)Mem_Calloc(sizeof(surfaceGroup_t) *
+                    node->surfaceGroups = (surfaceGroup_t*)Mem_Malloc(sizeof(surfaceGroup_t) *
                         node->numSurfaceGroups, hb_model);
 
                     lexer->ExpectTokenListID(mdltokens, scmdl_groups);
@@ -245,7 +245,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                             lexer->ExpectNextToken(TK_RBRACK);
                         }
                         else {
-                            group->surfaces = (surface_t*)Mem_Calloc(sizeof(surface_t) *
+                            group->surfaces = (surface_t*)Mem_Malloc(sizeof(surface_t) *
                                 group->numSurfaces, hb_model);
 
                             lexer->ExpectTokenListID(mdltokens, scmdl_sections);
@@ -253,6 +253,17 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
 
                             for(k = 0; k < group->numSurfaces; k++) {
                                 surface_t *surface = &group->surfaces[k];
+
+                                surface->color1 = 0;
+                                surface->color2 = 0;
+                                surface->flags = 0;
+                                surface->numIndices = 0;
+                                surface->numVerts = 0;
+                                surface->texturePath[0] = 0;
+                                surface->indices = NULL;
+                                surface->normals = NULL;
+                                surface->vertices = NULL;
+                                surface->rgb = NULL;
 
                                 // read into the nested surface block
                                 lexer->ExpectNextToken(TK_LBRACK);
@@ -360,7 +371,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                 lexer->ExpectNextToken(TK_LBRACK);
 #ifndef EDITOR
                 if(model->numAnimations > 0) {
-                    model->anims = (kexAnim_t*)Mem_Calloc(sizeof(kexAnim_t) *
+                    model->anims = (kexAnim_t*)Mem_Malloc(sizeof(kexAnim_t) *
                         model->numAnimations, hb_model);
 
                     for(i = 0; i < model->numAnimations; i++) {

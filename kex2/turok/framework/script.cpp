@@ -714,7 +714,7 @@ void kexLexer::AssignFromTokenList(const sctokens_t *tokenlist, arraytype_t type
             break;
         }
 
-        buf = (void*)Mem_Calloc(len * count, hb);
+        buf = (void*)Mem_Malloc(len * count, hb);
 
         switch(type) {
         case AT_SHORT: {

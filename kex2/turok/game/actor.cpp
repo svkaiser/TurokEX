@@ -28,6 +28,7 @@
 #include "actor.h"
 #include "server.h"
 #include "world.h"
+#include "defs.h"
 
 enum {
     scactor_name = 0,
@@ -112,6 +113,8 @@ kexActor::kexActor(void) {
     this->bTraced           = false;
     this->validcount        = 0;
     this->bNoFixedTransform = false;
+    this->textureSwaps      = NULL;
+    this->definition        = NULL;
 }
 
 //
@@ -131,7 +134,7 @@ kexActor::~kexActor(void) {
         Mem_Free(nodeOffsets_r);
     }
 
-    if(model) {
+    if(model && textureSwaps) {
         for(unsigned int j = 0; j < (int)model->numNodes; j++) {
             modelNode_t *node = &model->nodes[j];
 
@@ -201,6 +204,33 @@ void kexActor::Tick(void) {
 //
 
 void kexActor::Spawn(void) {
+    if(definition != NULL) {
+        kexStr str;
+
+        definition->GetBool("bStatic", bStatic);
+        definition->GetBool("bOrientOnSlope", bOrientOnSlope);
+        definition->GetBool("bCollision", bCollision);
+        definition->GetBool("bHidden", bHidden);
+        definition->GetBool("bTouch", bTouch);
+        definition->GetBool("bNoFixedTransform", bNoFixedTransform);
+        definition->GetBool("bAllowDamage", bAllowDamage);
+        definition->GetFloat("radius", radius);
+        definition->GetFloat("height", baseHeight);
+        definition->GetFloat("centerHeight", centerHeight);
+        definition->GetFloat("viewHeight", viewHeight);
+        definition->GetFloat("cullDistance", cullDistance);
+        definition->GetFloat("tickDistance", tickDistance);
+        definition->GetVector("bounds_min", baseBBox.min);
+        definition->GetVector("bounds_max", baseBBox.max);
+        definition->GetVector("scale", scale);
+        definition->GetInt("health", health);
+        definition->GetInt("impactType", (int&)impactType);
+
+        if(definition->GetString("mesh", str)) {
+            SetModel(str.c_str());
+        }
+    }
+
     UpdateTransform();
 
     height = baseHeight;
@@ -254,8 +284,11 @@ void kexActor::ParseDefault(kexLexer *lexer) {
         bbox = baseBBox;
         break;
     case scactor_textureSwaps:
-        if(model == NULL)
+        if(model == NULL) {
             parser.Error("kexActor::ParseDefault: attempted to parse \"textureSwaps\" token while model is null\n");
+        }
+
+        AllocateTextures();
 
         // texture swap block
         lexer->ExpectNextToken(TK_LBRACK);
@@ -406,6 +439,38 @@ void kexActor::UpdateTransform(void) {
 }
 
 //
+// kexActor::AllocateTextures
+//
+
+void kexActor::AllocateTextures(void) {
+    modelNode_t *node;
+    surfaceGroup_t *group;
+    unsigned int j;
+    unsigned int k;
+
+    // allocate data for texture swap array
+    textureSwaps = (char****)Mem_Calloc(sizeof(char***) *
+        model->numNodes, hb_static);
+
+    for(j = 0; j < model->numNodes; j++) {
+        node = &model->nodes[j];
+
+        textureSwaps[j] = (char***)Mem_Calloc(sizeof(char**) *
+            node->numSurfaceGroups, hb_static);
+
+        for(k = 0; k < node->numSurfaceGroups; k++) {
+            group = &node->surfaceGroups[k];
+
+            if(group->numSurfaces == 0)
+                continue;
+
+            textureSwaps[j][k] = (char**)Mem_Calloc(sizeof(char*) *
+                group->numSurfaces, hb_static);
+        }
+    }
+}
+
+//
 // kexActor::SetModel
 //
 
@@ -416,7 +481,6 @@ void kexActor::SetModel(const char* modelFile) {
 
     if(model) {
         unsigned int i;
-        unsigned int j;
         kexAnim_t *anim;
         kexModel_t *m;
 
@@ -437,32 +501,6 @@ void kexActor::SetModel(const char* modelFile) {
         // set default rotation offsets
         for(i = 0; i < m->numNodes; i++)
             nodeOffsets_r[i].Set(0, 0, 0, 1);
-
-        // allocate data for texture swap array
-        textureSwaps = (char****)Mem_Calloc(sizeof(char***) *
-            m->numNodes, hb_static);
-
-        for(j = 0; j < m->numNodes; j++) {
-            unsigned int k;
-            modelNode_t *node;
-
-            node = &m->nodes[j];
-
-            textureSwaps[j] = (char***)Mem_Calloc(sizeof(char**) *
-                node->numSurfaceGroups, hb_static);
-
-            for(k = 0; k < node->numSurfaceGroups; k++) {
-                surfaceGroup_t *group;
-
-                group = &node->surfaceGroups[k];
-
-                if(group->numSurfaces == 0)
-                    continue;
-
-                textureSwaps[j][k] = (char**)Mem_Calloc(sizeof(char*) *
-                    group->numSurfaces, hb_static);
-            }
-        }
     }
 }
 

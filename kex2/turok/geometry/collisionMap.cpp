@@ -377,11 +377,11 @@ void kexCollisionMap::Load(const char *name) {
         return;
     }
 
-    points[0] = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * numPoints,
+    points[0] = (kexVec3*)Mem_Malloc(sizeof(kexVec3) * numPoints,
         kexCollisionMap::hb_collisionMap);
-    points[1] = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * numPoints,
+    points[1] = (kexVec3*)Mem_Malloc(sizeof(kexVec3) * numPoints,
         kexCollisionMap::hb_collisionMap);
-    indices = (word*)Mem_Calloc((sizeof(word) * numSectors) * 3,
+    indices = (word*)Mem_Malloc((sizeof(word) * numSectors) * 3,
         kexCollisionMap::hb_collisionMap);
 
     renderSystem.DrawLoadingScreen("Loading Points...");

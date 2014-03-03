@@ -207,7 +207,7 @@ void *kexHeap::Malloc(int size, kexHeapBlock &heapBlock, const char *file, int l
     newblock->heapTag = kexHeap::HeapTag;
     newblock->size = size;
     newblock->ptrRef = NULL;
-#ifndef EDITOR
+#if 0
     newblock->ms = sysMain.GetMS();
 #endif
 
@@ -263,7 +263,7 @@ void *kexHeap::Realloc(void *ptr, int size, kexHeapBlock &heapBlock, const char 
     newblock->heapTag = kexHeap::HeapTag;
     newblock->size = size;
     newblock->ptrRef = NULL;
-#ifndef EDITOR
+#if 0
     newblock->ms = sysMain.GetMS();
 #endif
 
@@ -344,7 +344,7 @@ void kexHeap::SetCacheRef(void **ptr, const char *file, int line) {
 void kexHeap::GarbageCollect(const char *file, int line) {
     kexHeap::Purge(hb_auto, file, line);
 
-#ifndef EDITOR
+#if 0
     memBlock_t *block;
     kexHeapBlock *heapBlock;
 
@@ -408,7 +408,7 @@ void kexHeap::CheckBlocks(const char *file, int line) {
 //
 
 void kexHeap::Touch(void *ptr, const char *file, int line) {
-#ifndef EDITOR
+#if 0
     memBlock_t *block;
 
     block = kexHeap::GetBlock(ptr, file, line);

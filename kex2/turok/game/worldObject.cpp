@@ -224,7 +224,7 @@ bool kexWorldObject::TryMove(const kexVec3 &position, kexVec3 &dest, kexSector *
     trace.bUseBBox  = false;
 
     localWorld.Trace(&trace);
-    dest = trace.hitVector;
+    dest = trace.hitVector - (trace.dir * 0.05f);
 
     return (trace.fraction == 1);
 }

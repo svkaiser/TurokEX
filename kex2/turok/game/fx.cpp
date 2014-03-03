@@ -563,7 +563,7 @@ void kexFx::Spawn(void) {
     bAnimate = fxInfo->numTextures > 1 ? true : false;
     bForcedRestart = false;
     frameTime = client.GetTime() + fxInfo->animspeed;
-    textures = (kexTexture**)Mem_Calloc(sizeof(kexTexture*) *
+    textures = (kexTexture**)Mem_Malloc(sizeof(kexTexture*) *
         fxInfo->numTextures, hb_static);
 
     // setup texture lookup array

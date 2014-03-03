@@ -104,7 +104,7 @@ kexScriptManager::~kexScriptManager(void) {
 //
 
 void *kexScriptManager::MemAlloc(size_t size) {
-    return Mem_Calloc(size, hb_script);
+    return Mem_Malloc(size, hb_script);
 }
 
 //

@@ -232,7 +232,7 @@ void kexInputKey::BindCommand(char key, const char *string) {
     cmdlist_t *newcmd;
 
     keycmd = &keycmds[keycode[bShiftdown][key]];
-    newcmd = (cmdlist_t*)Mem_Calloc(sizeof(cmdlist_t), hb_static);
+    newcmd = (cmdlist_t*)Mem_Malloc(sizeof(cmdlist_t), hb_static);
     newcmd->command = Mem_Strdup(string, hb_static);
     newcmd->next = keycmd->cmds;
     keycmd->cmds = newcmd;
@@ -351,7 +351,7 @@ void kexInputKey::AddAction(byte id, const char *name) {
     if(!command.Verify(name))
         return;
 
-    keyaction = (keyaction_t*)Mem_Calloc(sizeof(keyaction_t), hb_static);
+    keyaction = (keyaction_t*)Mem_Malloc(sizeof(keyaction_t), hb_static);
     keyaction->keyid = id;
     strcpy(keyaction->name, name);
 

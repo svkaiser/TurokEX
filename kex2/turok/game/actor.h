@@ -81,6 +81,7 @@ public:
     kexLinklist<kexActor>       worldLink;
     kexActorComponent           scriptComponent;
     kexKeyMap                   args;
+    kexKeyMap                   *definition;
 
     // TODO - need some sort of skin system
     char                        ****textureSwaps;
@@ -117,6 +118,7 @@ public:
     OBJPROPERTY("ref @obj", scriptComponent.Handle());
     OBJPROPERTY("kQuat lerpRotation", lerpRotation);
     OBJPROPERTY("kKeyMap args", args);
+    OBJPROPERTY("kKeyMapMem @def", definition);
     OBJPROPERTY("bool bCanPickup", bCanPickup);
 
     #undef OBJMETHOD
@@ -125,6 +127,7 @@ public:
 
 protected:
     void                        ParseDefault(kexLexer *lexer);
+    void                        AllocateTextures(void);
 
     kexClipMesh                 clipMesh;
     kexStr                      name;

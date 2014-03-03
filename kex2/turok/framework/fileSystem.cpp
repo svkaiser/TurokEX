@@ -228,7 +228,7 @@ int kexFileSystem::OpenFile(const char *filename, byte **data, kexHeapBlock &hb)
 
                 if(!strcmp(file->name, filename)) {
                     if(!file->cache) {
-                        file->cache = Mem_Calloc(file->info.uncompressed_size+1, hb);
+                        file->cache = Mem_Malloc(file->info.uncompressed_size+1, hb);
                         // automatically set cache to NULL when freed so we can
                         // recache it later
                         Mem_CacheRef(&file->cache);
