@@ -89,6 +89,7 @@ public:
     void                    Blend(const kexStr &animName, float animTime, float animBlendTime, int animFlags);
     void                    Blend(const int id, float animTime, float animBlendTime, int animFlags);
     void                    ExecuteFrameActions(void);
+    bool                    IsPlaying(const int animID);
 
     static kexQuat          GetRotation(kexAnim_t *anim, int nodeNum, int frame);
     static kexVec3          GetTranslation(kexAnim_t *anim, int nodeNum, int frame);

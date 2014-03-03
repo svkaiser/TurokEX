@@ -161,8 +161,9 @@ kexAnim_t *kexAnimState::GetAnim(const kexModel_t *model, const char *name) {
 kexAnim_t *kexAnimState::GetAnim(const kexModel_t *model, const int id) {
     unsigned int i;
 
-    if(model->anims == NULL || model->numAnimations <= 0)
+    if(model == NULL || model->anims == NULL || model->numAnimations <= 0) {
         return NULL;
+    }
 
     for(i = 0; i < model->numAnimations; i++) {
         if(model->anims[i].animID == id)
@@ -242,6 +243,24 @@ void kexAnimState::Set(const int id, float animTime, int animFlags) {
     if(anim = kexAnimState::GetAnim(owner->Model(), id)) {
         Set(anim, animTime, animFlags);
     }
+}
+
+//
+// kexAnimState::IsPlaying
+//
+
+bool kexAnimState::IsPlaying(const int animID) {
+    if(track.anim == NULL) {
+        return false;
+    }
+
+    if(track.anim->animID == animID) {
+        if(!(flags & ANF_STOPPED)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 //
@@ -343,17 +362,21 @@ void kexAnimState::Update(void) {
         float blendFrac = 1.0f;
         kexVec3 dir;
         kexVec3 dest;
+        kexVec3 *org;
         
         if(flags & ANF_BLEND && blendTime != 0) {
             blendFrac = (frameTime / blendTime);
         }
         
         dir = (rootMotion | owner->GetRotation()) * blendFrac;
-        dest = (owner->GetOrigin() + (dir * client.GetRunTime()));
+        org = &owner->GetOrigin();
+        dest = (*org + (dir * client.GetRunTime()));
         
         // update position
-        if(owner->TryMove(owner->GetOrigin(), dest, &owner->Physics()->sector)) {
+        if(owner->TryMove(*org, dest, &owner->Physics()->sector)) {
+            dest[1] = org->y;
             owner->SetOrigin(dest);
+            owner->LinkArea();
         }
         
         // don't update yaw offsets while blending
@@ -518,7 +541,7 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
             model->filePath);
     }
 
-    anim->frameSet = (frameSet_t*)Mem_Calloc(sizeof(frameSet_t)
+    anim->frameSet = (frameSet_t*)Mem_Malloc(sizeof(frameSet_t)
         * model->numNodes, hb_animation);
 
     lexer->ExpectTokenListID(animtokens, scanim_anim);
@@ -582,12 +605,12 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                     parser.Error("numframes is 0 or has not been set yet for %s",
                         anim->alias);
                 }
-                anim->translations = (kexVec3**)Mem_Calloc(sizeof(kexVec3*)
+                anim->translations = (kexVec3**)Mem_Malloc(sizeof(kexVec3*)
                     * anim->numTranslations, hb_animation);
 
                 lexer->ExpectNextToken(TK_LBRACK);
                 for(i = 0; i < anim->numTranslations; i++) {
-                    anim->translations[i] = (kexVec3*)Mem_Calloc(
+                    anim->translations[i] = (kexVec3*)Mem_Malloc(
                         sizeof(kexVec3) * anim->numFrames, hb_animation);
 
                     lexer->ExpectNextToken(TK_LBRACK);
@@ -613,12 +636,12 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                     parser.Error("numframes is 0 or has not been set yet for %s",
                         anim->alias);
                 }
-                anim->rotations = (kexQuat**)Mem_Calloc(sizeof(kexQuat*)
+                anim->rotations = (kexQuat**)Mem_Malloc(sizeof(kexQuat*)
                     * anim->numRotations, hb_animation);
 
                 lexer->ExpectNextToken(TK_LBRACK);
                 for(i = 0; i < anim->numRotations; i++) {
-                    anim->rotations[i] = (kexQuat*)Mem_Calloc(
+                    anim->rotations[i] = (kexQuat*)Mem_Malloc(
                         sizeof(kexQuat) * anim->numFrames, hb_animation);
 
                     lexer->ExpectNextToken(TK_LBRACK);
@@ -661,7 +684,7 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                     parser.Error("numactions is 0 or has not been set yet for %s",
                         anim->alias);
                 }
-                anim->actions = (frameAction_t*)Mem_Calloc(sizeof(frameAction_t) *
+                anim->actions = (frameAction_t*)Mem_Malloc(sizeof(frameAction_t) *
                     anim->numActions, hb_animation);
                 lexer->ExpectNextToken(TK_EQUAL);
                 lexer->ExpectNextToken(TK_LBRACK);
@@ -707,7 +730,7 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                 lexer->ExpectNextToken(TK_EQUAL);
                 lexer->ExpectNextToken(TK_LBRACK);
 
-                anim->initialFrame.translations = (kexVec3*)Mem_Calloc(sizeof(kexVec3)
+                anim->initialFrame.translations = (kexVec3*)Mem_Malloc(sizeof(kexVec3)
                     * model->numNodes, hb_animation);
 
                 for(i = 0; i < model->numNodes; i++) {
@@ -725,7 +748,7 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                 lexer->ExpectNextToken(TK_EQUAL);
                 lexer->ExpectNextToken(TK_LBRACK);
 
-                anim->initialFrame.rotations = (kexQuat*)Mem_Calloc(sizeof(kexQuat)
+                anim->initialFrame.rotations = (kexQuat*)Mem_Malloc(sizeof(kexQuat)
                     * model->numNodes, hb_animation);
 
                 for(i = 0; i < model->numNodes; i++) {
@@ -740,7 +763,7 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                 lexer->ExpectNextToken(TK_RBRACK);
                 break;
             case scanim_turninfo:
-                anim->yawOffsets = (float*)Mem_Calloc(sizeof(float) *
+                anim->yawOffsets = (float*)Mem_Malloc(sizeof(float) *
                     anim->numFrames, hb_animation);
                 lexer->ExpectNextToken(TK_EQUAL);
                 lexer->ExpectNextToken(TK_LBRACK);
@@ -817,6 +840,7 @@ void kexAnimState::InitObject(void) {
         (const int id, float animTime, float animBlendTime, int animFlags), void);
     OBJMETHOD("const int CurrentFrame(void)", CurrentFrame, (void)const, const int);
     OBJMETHOD("const float PlayTime(void)", PlayTime, (void)const, const float);
+    OBJMETHOD("bool IsPlaying(const int)", IsPlaying, (const int animID), bool);
 
 #define OBJPROPERTY(str, p)                         \
     scriptManager.Engine()->RegisterObjectProperty( \
