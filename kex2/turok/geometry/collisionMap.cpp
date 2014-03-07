@@ -699,7 +699,9 @@ void kexCollisionMap::Trace(cMapTraceResult_t *result,
 
     trace.result->normal = trace.direction;
 
-    TraverseSectors(&trace, sector);
+    if(!sector->Trace(&trace, false)) {
+        TraverseSectors(&trace, sector);
+    }
 
     for(unsigned int i = 0; i < trace.result->sector->stacks.Length(); i++) {
         s = trace.result->sector->stacks[i];
