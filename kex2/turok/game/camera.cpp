@@ -89,6 +89,19 @@ void kexCamera::SetupMatrices(void) {
 }
 
 //
+// kexCamera::ProjectPoint
+//
+
+kexVec3 kexCamera::ProjectPoint(kexVec3 &point, const int offsetX, const int offsetY) {
+    return point.ScreenProject(projMatrix,
+                               modelMatrix,
+                               sysMain.VideoWidth(),
+                               sysMain.VideoHeight(),
+                               offsetX,
+                               offsetY);
+}
+
+//
 // kexCamera::LocalTick
 //
 
@@ -130,6 +143,8 @@ void kexCamera::InitObject(void) {
 
     OBJMETHOD("kAngle &GetOffsetAngle(void)", GetOffsetAngle, (void), kexAngle&);
     OBJMETHOD("void SetOffsetAngle(const kAngle &in)", SetOffsetAngle, (const kexAngle &an), void);
+    OBJMETHOD("kVec3 ProjectPoint(kVec3 &in, const int, const int)", ProjectPoint,
+              (kexVec3 &point, const int offsetX, const int offsetY), kexVec3);
 
 #define OBJPROPERTY(str, p)                             \
     scriptManager.Engine()->RegisterObjectProperty(     \

@@ -38,6 +38,8 @@ public:
 
     void                SetupMatrices(void);
     void                UpdateAspect(void);
+    kexVec3             ProjectPoint(kexVec3 &point,
+                                     const int offsetX, const int offsetY);
 
     const float         Aspect(void) const { return aspect; }
     kexMatrix           &Projection(void) { return projMatrix; }
