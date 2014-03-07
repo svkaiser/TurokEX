@@ -93,8 +93,6 @@ void kexWorldObject::LinkArea(void) {
     node = localWorld.areaNodes;
     box.min.Set(-radius, 0, -radius);
     box.max.Set(radius, 0, radius);
-    box.min *= 0.5f;
-    box.max *= 0.5f;
     box.min += origin;
     box.max += origin;
     box += 8.0f;
@@ -221,7 +219,18 @@ bool kexWorldObject::TryMove(const kexVec3 &position, kexVec3 &dest, kexSector *
     trace.hitVector = trace.start;
     trace.owner     = this;
     trace.sector    = sector;
-    trace.bUseBBox  = false;
+
+    if(InstanceOf(&kexFx::info)) {
+        trace.bUseBBox  = false;
+    }
+    else {
+        trace.bUseBBox = true;
+        trace.localBBox.min.Set(-(radius * 0.5f), 0, -(radius * 0.5f));
+        trace.localBBox.max.Set(radius * 0.5f, baseHeight, radius * 0.5f);
+        trace.bbox = trace.localBBox;
+        trace.bbox.min += position;
+        trace.bbox.max += position;
+    }
 
     localWorld.Trace(&trace);
     dest = trace.hitVector - (trace.dir * 0.05f);
