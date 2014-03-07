@@ -553,7 +553,7 @@ void kexClipMesh::AllocateCmGroup(cmGroup_t *group, const int numPoints, const i
 //
 
 void kexClipMesh::Transform(void) {
-    if(owner == NULL) {
+    if(owner == NULL || type == CMT_NONE) {
         return;
     }
 
