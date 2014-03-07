@@ -171,7 +171,7 @@ void kexAI::Spawn(void) {
     }
 
     physicsRef = &this->physics;
-    physicsRef->SetOwner(this);;
+    physicsRef->SetOwner(this);
 
     physicsRef->sector = localWorld.CollisionMap().PointInSector(origin);
     if(physicsRef->sector) {
