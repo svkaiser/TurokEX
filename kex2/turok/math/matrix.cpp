@@ -416,6 +416,64 @@ void kexMatrix::SetOrtho(float left, float right,
 }
 
 //
+// kexMatrix::ToQuat
+//
+
+kexQuat kexMatrix::ToQuat(void) {
+    float t;
+    float d;
+    float mx;
+    float my;
+    float mz;
+    float m21;
+    float m20;
+    float m10;
+    kexQuat q;
+    
+    mx = vectors[0][0];
+    my = vectors[1][1];
+    mz = vectors[2][2];
+    
+    m21 = (vectors[2][1] - vectors[1][2]);
+    m20 = (vectors[2][0] - vectors[0][2]);
+    m10 = (vectors[1][0] - vectors[0][1]);
+    
+    t = 1.0f + mx + my + mz;
+    
+    if(t > 0) {
+        d = 0.5f / kexMath::Sqrt(t);
+        q.x = m21 * d;
+        q.y = m20 * d;
+        q.z = m10 * d;
+        q.w = 0.25f / d;
+    }
+    else if(mx > my && mx > mz) {
+        d = kexMath::Sqrt(1.0f + mx - my - mz) * 2;
+        q.x = 0.5f / d;
+        q.y = m10 / d;
+        q.z = m20 / d;
+        q.w = m21 / d;
+    }
+    else if(my > mz) {
+        d = kexMath::Sqrt(1.0f + my - mx - mz) * 2;
+        q.x = m10 / d;
+        q.y = 0.5f / d;
+        q.z = m21 / d;
+        q.w = m20 / d;
+    }
+    else {
+        d = kexMath::Sqrt(1.0f + mz - mx - my) * 2;
+        q.x = m20 / d;
+        q.y = m21 / d;
+        q.z = 0.5f / d;
+        q.w = m10 / d;
+    }
+    
+    q.Normalize();
+    return q;
+}
+
+//
 // kexMatrix::operator*
 //
 

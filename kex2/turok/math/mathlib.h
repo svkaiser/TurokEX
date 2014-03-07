@@ -299,6 +299,7 @@ public:
     kexMatrix               &Transpose(void);
     static kexMatrix        Transpose(const kexMatrix &mtx);
     static kexMatrix        Invert(kexMatrix &mtx);
+    kexQuat                 ToQuat(void);
     float                   *ToFloatPtr(void);
     void                    SetViewProjection(float aspect, float fov, float zNear, float zFar);
     void                    SetOrtho(float left, float right,
