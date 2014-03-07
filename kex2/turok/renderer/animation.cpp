@@ -371,10 +371,10 @@ void kexAnimState::Update(void) {
         dir = (rootMotion | owner->GetRotation()) * blendFrac;
         org = &owner->GetOrigin();
         dest = (*org + (dir * client.GetRunTime()));
+        dest[1] = org->y;
         
         // update position
         if(owner->TryMove(*org, dest, &owner->Physics()->sector)) {
-            dest[1] = org->y;
             owner->SetOrigin(dest);
             owner->LinkArea();
         }
