@@ -28,33 +28,31 @@
 #include "areas.h"
 
 typedef enum {
-    CLF_WATER           = 0x1,
-    CLF_BLOCK           = 0x2,
-    CLF_TOGGLE          = 0x4,
-    CLF_FRONTNOCLIP     = 0x8,
-    CLF_CLIMB           = 0x10,
-    CLF_ONESIDED        = 0x20,
-    CLF_CHECKHEIGHT     = 0x40,
-    CLF_CRAWL           = 0x80,
-    CLF_ENTERCRAWL      = 0x100,
-    CLF_HIDDEN          = 0x200,
-    CLF_UNKNOWN1024     = 0x400,
-    CLF_UNKNOWN2048     = 0x800,
-    CLF_UNKNOWN4096     = 0x1000,
-    CLF_SLOPETEST       = 0x2000,
-    CLF_ENDLESSPIT      = 0x4000,
-    CLF_MAPPED          = 0x8000,
-    CLF_SOLID           = 0x10000
+    CLF_WATER           = BIT(0),
+    CLF_BLOCK           = BIT(1),
+    CLF_TOGGLE          = BIT(2),
+    CLF_FRONTNOCLIP     = BIT(3),
+    CLF_CLIMB           = BIT(4),
+    CLF_ONESIDED        = BIT(5),
+    CLF_CHECKHEIGHT     = BIT(6),
+    CLF_CRAWL           = BIT(7),
+    CLF_ENTERCRAWL      = BIT(8),
+    CLF_HIDDEN          = BIT(9),
+    CLF_UNKNOWN1024     = BIT(10),
+    CLF_UNKNOWN2048     = BIT(11),
+    CLF_UNKNOWN4096     = BIT(12),
+    CLF_SLOPETEST       = BIT(13),
+    CLF_ENDLESSPIT      = BIT(14),
+    CLF_MAPPED          = BIT(15),
+    CLF_SOLID           = BIT(16)
 } cMapFlags_t;
 
 typedef enum {
-    PF_CLIPEDGES        = 0x1,
-    PF_IGNOREBLOCKERS   = 0x2,
-    PF_CLIMBSURFACES    = 0x4,
-    PF_NOSTEPUP         = 0x8,
-    PF_DROPOFF          = 0x10,
-    PF_NOENTERWATER     = 0x20,
-    PF_NOEXITWATER      = 0x40
+    PF_CLIPEDGES        = BIT(0),
+    PF_IGNOREBLOCKERS   = BIT(1),
+    PF_DROPOFF          = BIT(2),
+    PF_NOENTERWATER     = BIT(3),
+    PF_NOEXITWATER      = BIT(4)
 } cMapClipFlags_t;
 
 class kexSector;

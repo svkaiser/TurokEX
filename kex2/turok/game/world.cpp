@@ -566,7 +566,7 @@ void kexWorld::TraverseWorldNodes(worldNode_t *node, traceInfo_t *trace) {
 // kexWorld::Trace
 //
 
-void kexWorld::Trace(traceInfo_t *trace) {
+void kexWorld::Trace(traceInfo_t *trace, const int clipFlags) {
     trace->fraction = 1.0f;
     trace->hitActor = NULL;
     trace->hitTri = NULL;
@@ -596,7 +596,7 @@ void kexWorld::Trace(traceInfo_t *trace) {
 
         collisionMap.Trace(&cmResult, trace->start, trace->end,
             *trace->sector,
-            PF_CLIPEDGES|PF_DROPOFF,
+            clipFlags,
             (trace->owner && trace->bUseBBox) ? trace->owner->BaseHeight() : 0);
 
         if(cmResult.sector) {

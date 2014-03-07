@@ -28,7 +28,7 @@
 #include "client.h"
 #include "fileSystem.h"
 #include "world.h"
-#include "physics.h"
+#include "physics/physics.h"
 #include "renderSystem.h"
 #include "scriptAPI/scriptSystem.h"
 #include "scriptAPI/component.h"

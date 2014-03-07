@@ -204,6 +204,9 @@ void kexActor::Tick(void) {
 //
 
 void kexActor::Spawn(void) {
+    physicsRef = &this->physics;
+    physicsRef->SetOwner(this);
+
     if(definition != NULL) {
         kexStr str;
 
@@ -243,7 +246,7 @@ void kexActor::Spawn(void) {
     clipMesh.Transform();
 
     if(bStatic == false) {
-        physics.sector = localWorld.CollisionMap().PointInSector(origin);
+        physicsRef->sector = localWorld.CollisionMap().PointInSector(origin);
     }
 
     scriptComponent.CallFunction(scriptComponent.onSpawn);

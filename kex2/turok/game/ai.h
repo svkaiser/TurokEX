@@ -25,6 +25,7 @@
 
 #include "common.h"
 #include "actor.h"
+#include "physics/physics_ai.h"
 
 typedef enum {
     AIF_TURNING         = BIT(0),
@@ -38,6 +39,8 @@ typedef enum {
     AIF_LOOKATTARGET    = BIT(8),
     AIF_FACETARGET      = BIT(9)
 } aiFlags_t;
+
+#define AIF_DEFAULT     (AIF_FINDTARGET|AIF_AVOIDWALLS|AIF_AVOIDACTORS|AIF_FACETARGET)
 
 typedef enum {
     AIS_NONE            = 0,
@@ -172,6 +175,7 @@ protected:
     float                       yawSpeed;
 
 private:
+    kexAIPhysics                physics;
     float                       idealYaw;
     float                       turningYaw;
     float                       turnSpeed;

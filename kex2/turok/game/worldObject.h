@@ -27,7 +27,7 @@
 #include "displayObject.h"
 #include "script.h"
 #include "linkedlist.h"
-#include "physics.h"
+#include "physics/physics.h"
 #include "keymap.h"
 
 typedef struct areaNode_s areaNode_t;
@@ -71,7 +71,7 @@ public:
     void                        SetCenterHeight(float f) { centerHeight = f; }
     float                       GetViewHeight(void) { return viewHeight; }
     void                        SetViewHeight(float f) { viewHeight = f; }
-    kexPhysics                  *Physics(void) { return &physics; }
+    kexPhysics                  *Physics(void) { return physicsRef; }
     kexBBox                     &Bounds(void) { return bbox; }
     const impactType_t          GetImpactType(void) const { return impactType; }
     void                        SetImpactType(const impactType_t iType) { impactType = iType; }
@@ -143,6 +143,7 @@ protected:
     float                       centerHeight;
     float                       viewHeight;
     kexPhysics                  physics;        // physics object
+    kexPhysics                  *physicsRef;
     impactType_t                impactType;
 END_CLASS();
 

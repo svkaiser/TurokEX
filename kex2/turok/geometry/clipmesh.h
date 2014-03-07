@@ -26,7 +26,7 @@
 #include "mathlib.h"
 #include "script.h"
 #include "triangle.h"
-#include "physics.h"
+#include "physics/physics.h"
 
 typedef enum {
     CMT_NONE            = 0,

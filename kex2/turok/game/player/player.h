@@ -26,6 +26,7 @@
 #include "enet/enet.h"
 #include "common.h"
 #include "actor.h"
+#include "physics/physics_player.h"
 
 typedef enum {
     PS_STATE_INACTIVE,
@@ -63,11 +64,13 @@ public:
 
     virtual void            Parse(kexLexer *lexer);
     virtual void            LocalTick(void);
+    void                    Spawn(void);
 
     const int               GetID(void) const { return id; }
     kexStr                  playerComponent;
 
 private:
+    kexPlayerPhysics        physics;
     int                     id;
 END_CLASS();
 

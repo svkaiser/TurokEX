@@ -90,7 +90,8 @@ public:
     void                                TeleportActor(kexActor *actor, const kexVec3 &position,
                                                       const kexAngle &angle, int sectorID = -1);
     void                                SpawnLocalPlayer(void);
-    void                                Trace(traceInfo_t *trace);
+    void                                Trace(traceInfo_t *trace,
+                                              const int clipFlags = (PF_CLIPEDGES|PF_DROPOFF));
     void                                StartSound(const char *name);
     void                                StartSound(const kexStr &name);
     void                                SetFogRGB(float r, float g, float b);

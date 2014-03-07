@@ -155,6 +155,16 @@ void kexPlayerPuppet::Parse(kexLexer *lexer) {
 }
 
 //
+// kexPlayerPuppet::Spawn
+//
+
+void kexPlayerPuppet::Spawn(void) {
+    physicsRef = &this->physics;
+    physicsRef->SetOwner(this);
+    physicsRef->sector = localWorld.CollisionMap().PointInSector(origin);
+}
+
+//
 // kexPlayerPuppet::LocalTick
 //
 

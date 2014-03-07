@@ -26,6 +26,7 @@
 #include "actor.h"
 #include "textureObject.h"
 #include "keymap.h"
+#include "physics/physics_fx.h"
 
 typedef struct {
     float value[3];
@@ -157,14 +158,6 @@ extern kexFxManager fxManager;
 #define FX_RAND_VALUE(x)                        \
     ((x > 0) ? (kexRand::SysRand() % (x + 1)) : \
     -(kexRand::SysRand() % (1 - x)))
-
-BEGIN_EXTENDED_CLASS(kexFxPhysics, kexPhysics);
-public:
-                                kexFxPhysics(void);
-                                ~kexFxPhysics(void);
-
-    virtual void                Think(const float timeDelta);
-END_CLASS();
 
 BEGIN_EXTENDED_CLASS(kexFx, kexWorldObject);
 public:

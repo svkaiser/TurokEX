@@ -47,7 +47,7 @@ kexAI::kexAI(void) {
     this->nextThinkTime         = this->timeStamp + this->thinkTime;
     this->headTurnSpeed         = 4.096f;
     this->maxHeadAngle          = DEG2RAD(70);
-    this->aiFlags               = AIF_FINDTARGET|AIF_AVOIDWALLS|AIF_AVOIDACTORS|AIF_FACETARGET;
+    this->aiFlags               = AIF_DEFAULT;
     this->aiState               = AIS_NONE;
     this->bCanMelee             = false;
     this->bCanRangeAttack       = false;
@@ -91,6 +91,7 @@ void kexAI::LocalTick(void) {
 
     UpdateTransform();
     animState.Update();
+    physicsRef->Think(client.GetRunTime());
     
     // TODO - majority of the code below should be
     // handled by the server...
@@ -155,23 +156,26 @@ void kexAI::Spawn(void) {
         definition->GetBool("bCanTeleport", bCanTeleport);
         definition->GetFloat("meleeRange", meleeRange);
         definition->GetFloat("alertRange", alertRange);
-        definition->GetFloat("rangeDistance", rangeDistance);
-        definition->GetFloat("checkRadius", checkRadius);
-        definition->GetFloat("sightRange", sightRange);
-        definition->GetFloat("rangeSightDamp", rangeSightDamp);
-        definition->GetFloat("rangeAdjustAngle", rangeAdjustAngle);
-        definition->GetFloat("yawSpeed", yawSpeed);
-        definition->GetFloat("thinkTime", thinkTime);
-        definition->GetFloat("maxHeadAngle", maxHeadAngle);
-        definition->GetInt("giveUpChance", giveUpChance);
-        definition->GetInt("teleportChance", teleportChance);
-        definition->GetInt("rangeChance", rangeChance);
-        definition->GetInt("aiFlags", (int&)aiFlags);
+        definition->GetFloat("rangeDistance", rangeDistance, 1024.0f);
+        definition->GetFloat("checkRadius", checkRadius, 1.5f);
+        definition->GetFloat("sightRange", sightRange, DEG2RAD(45));
+        definition->GetFloat("rangeSightDamp", rangeSightDamp, 0.675f);
+        definition->GetFloat("rangeAdjustAngle", rangeAdjustAngle, DEG2RAD(50));
+        definition->GetFloat("yawSpeed", yawSpeed, 45.0f);
+        definition->GetFloat("thinkTime", thinkTime, 8);
+        definition->GetFloat("maxHeadAngle", maxHeadAngle, DEG2RAD(70));
+        definition->GetInt("giveUpChance", giveUpChance, 995);
+        definition->GetInt("teleportChance", teleportChance, 985);
+        definition->GetInt("rangeChance", rangeChance, 100);
+        definition->GetInt("aiFlags", (int&)aiFlags, AIF_DEFAULT);
     }
 
-    physics.sector = localWorld.CollisionMap().PointInSector(origin);
-    if(physics.sector) {
-        origin[1] -= (origin[1] - physics.sector->lowerTri.GetDistance(origin));
+    physicsRef = &this->physics;
+    physicsRef->SetOwner(this);;
+
+    physicsRef->sector = localWorld.CollisionMap().PointInSector(origin);
+    if(physicsRef->sector) {
+        origin[1] -= (origin[1] - physicsRef->sector->lowerTri.GetDistance(origin));
     }
 
     UpdateTransform();
@@ -570,8 +574,8 @@ void kexAI::TeleportToTarget(void) {
     pos[0] += range * kexMath::Sin(an);
     pos[2] += range * kexMath::Cos(an);
     
-    TryMove(origin, pos, &physics.sector);
-    localWorld.TeleportActor(this, pos, angles, physics.sector->GetID());
+    TryMove(origin, pos, &physicsRef->sector);
+    localWorld.TeleportActor(this, pos, angles, physicsRef->sector->GetID());
 }
 
 //
@@ -642,7 +646,7 @@ void kexAI::TracePosition(traceInfo_t *trace, const kexVec3 &position,
     dest[1] = position[1];
     dest[2] = position[2] + (this->radius * radius * c);
 
-    sector = physics.sector;
+    sector = physicsRef->sector;
     
     trace->start     = position;
     trace->end       = dest;
@@ -653,11 +657,11 @@ void kexAI::TracePosition(traceInfo_t *trace, const kexVec3 &position,
     trace->hitMesh   = NULL;
     trace->hitVector = trace->start;
     trace->owner     = this;
-    trace->sector    = &physics.sector;
+    trace->sector    = &physicsRef->sector;
     trace->bUseBBox  = false;
     
     localWorld.Trace(trace);
-    physics.sector = sector;
+    physicsRef->sector = sector;
 }
 
 //
@@ -837,7 +841,7 @@ bool kexAI::CanSeeTarget(kexWorldObject *object) {
         return false;
     }
     
-    sector = physics.sector;
+    sector = physicsRef->sector;
     aOrg = origin;
     tOrg = object->GetOrigin();
     
@@ -853,11 +857,11 @@ bool kexAI::CanSeeTarget(kexWorldObject *object) {
     trace.hitMesh   = NULL;
     trace.hitVector = trace.start;
     trace.owner     = this;
-    trace.sector    = &physics.sector;
+    trace.sector    = &physicsRef->sector;
     trace.bUseBBox  = false;
     
     localWorld.Trace(&trace);
-    physics.sector = sector;
+    physicsRef->sector = sector;
     
     if(trace.fraction == 1 || trace.hitActor == object) {
         aiFlags |= AIF_SEETARGET;

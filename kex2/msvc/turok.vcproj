@@ -472,10 +472,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\turok\game\physics.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\turok\game\pickup.cpp"
 					>
 				</File>
@@ -516,6 +512,26 @@
 					</File>
 					<File
 						RelativePath="..\turok\game\player\player_client.cpp"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="physics"
+					>
+					<File
+						RelativePath="..\turok\game\physics\physics.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\game\physics\physics_ai.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\game\physics\physics_fx.cpp"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\game\physics\physics_player.cpp"
 						>
 					</File>
 				</Filter>
@@ -777,10 +793,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\turok\game\physics.h"
-					>
-				</File>
-				<File
 					RelativePath="..\turok\game\pickup.h"
 					>
 				</File>
@@ -813,6 +825,26 @@
 					</File>
 					<File
 						RelativePath="..\turok\game\player\player_client.h"
+						>
+					</File>
+				</Filter>
+				<Filter
+					Name="physics"
+					>
+					<File
+						RelativePath="..\turok\game\physics\physics.h"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\game\physics\physics_ai.h"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\game\physics\physics_fx.h"
+						>
+					</File>
+					<File
+						RelativePath="..\turok\game\physics\physics_player.h"
 						>
 					</File>
 				</Filter>

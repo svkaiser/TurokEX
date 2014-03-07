@@ -48,8 +48,8 @@ kexWorldObject::kexWorldObject(void) {
     this->centerHeight  = 5.12f;
     this->areaNode      = NULL;
     this->impactType    = IT_DEFAULT;
-    
-    this->physics.SetOwner(this);
+    this->physicsRef    = NULL;
+
     this->areaLink.SetData(this);
 }
 
@@ -95,7 +95,7 @@ void kexWorldObject::LinkArea(void) {
     box.max.Set(radius, 0, radius);
     box.min += origin;
     box.max += origin;
-    box += 8.0f;
+    box += 32.0f;
 
     while(1) {
         if(node->axis == -1) {

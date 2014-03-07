@@ -87,7 +87,7 @@ public:
 
     kexVec3                 &GetVelocity(void) { return velocity; }
     void                    SetVelocity(const kexVec3 &vel) { velocity = vel; }
-    kexWorldObject                *GetOwner(void) { return owner; }
+    kexWorldObject          *GetOwner(void) { return owner; }
     void                    SetOwner(kexWorldObject *actor) { owner = actor; }
 
     static void             InitObject(void);
@@ -102,6 +102,7 @@ public:
     float                   stepHeight;
     float                   rotorSpeed;
     float                   rotorFriction;
+    float                   sinkVelocity;
     kexVec3                 rotorVector;
     waterLevelType_t        waterLevel;
     float                   waterHeight;
