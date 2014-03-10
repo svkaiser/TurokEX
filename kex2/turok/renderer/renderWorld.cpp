@@ -583,6 +583,10 @@ void kexRenderWorld::DrawActors(void) {
                 dglPushMatrix();
                 dglMultMatrixf(actor->Matrix().ToFloatPtr());
 
+                if(bShowOrigin) {
+                    DrawOrigin(0, 0, 0, 32);
+                }
+
                 if(actor->bNoFixedTransform == false) {
                     dglPushMatrix();
                     dglMultMatrixf(mtx.ToFloatPtr());
@@ -598,13 +602,6 @@ void kexRenderWorld::DrawActors(void) {
 
                 if(actor->bNoFixedTransform == false) {
                     dglPopMatrix();
-                }
-
-                if(bShowOrigin) {
-                    DrawOrigin(
-                        actor->GetOrigin().x,
-                        actor->GetOrigin().y,
-                        actor->GetOrigin().z, 32);
                 }
             }
 
@@ -623,7 +620,11 @@ void kexRenderWorld::DrawActors(void) {
             if(bShowRadius && actor->bCollision) {
                 kexVec3 org = actor->GetOrigin();
                 DrawRadius(org[0], org[1], org[2],
-                    actor->Radius(), actor->Height(), 255, 128, 128);
+                    actor->Radius(), actor->BaseHeight(), 255, 128, 128);
+                DrawRadius(org[0], org[1], org[2],
+                    actor->Radius() * 0.5f, actor->Height(), 128, 128, 255);
+                DrawRadius(org[0], org[1], org[2],
+                    actor->Radius() * 0.5f, actor->GetViewHeight(), 128, 255, 128);
             }
     }
 }
@@ -795,6 +796,10 @@ void kexRenderWorld::DrawFX(void) {
             mtx = kexMatrix(kexQuat(world->Camera()->GetAngles().yaw, 0, 1, 0));
             renderSystem.SetState(GLSTATE_CULL, true);
             break;
+        case VFX_DRAWSURFACE:
+            mtx = kexMatrix(fx->GetRotation());
+            renderSystem.SetState(GLSTATE_CULL, false);
+            break;
         default:
             mtx = kexMatrix(world->Camera()->GetRotation());
             renderSystem.SetState(GLSTATE_CULL, true);
@@ -871,6 +876,11 @@ void kexRenderWorld::DrawFX(void) {
         }
 
         dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, spriteIndices);
+
+        if(bShowOrigin) {
+            DrawOrigin(0, 0, 0, 32);
+        }
+
         dglPopMatrix();
 
         if(fxinfo->lifetime.value == 1 && fx->bClientOnly) {
