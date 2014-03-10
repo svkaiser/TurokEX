@@ -247,6 +247,7 @@ public:
     static const kexVec3    vecForward;
     static const kexVec3    vecUp;
     static const kexVec3    vecRight;
+    static kexVec3          vecZero;
 
     float                   x;
     float                   y;
@@ -425,6 +426,7 @@ public:
     float                   Radius(void) const;
     bool                    PointInside(const kexVec3 &vec) const;
     bool                    IntersectingBox(const kexBBox &box) const;
+    bool                    IntersectingBox2D(const kexBBox &box) const;
     float                   DistanceToPlane(kexPlane &plane);
     bool                    LineIntersect(const kexVec3 &start, const kexVec3 &end);
     

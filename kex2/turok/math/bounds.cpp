@@ -108,6 +108,15 @@ bool kexBBox::IntersectingBox(const kexBBox &box) const {
 }
 
 //
+// kexBBox::IntersectingBox2D
+//
+
+bool kexBBox::IntersectingBox2D(const kexBBox &box) const {
+    return !(box.max[0] < min[0] || box.max[2] < min[2] ||
+             box.min[0] > max[0] || box.min[2] > max[2]);
+}
+
+//
 // kexBBox::DistanceToPlane
 //
 

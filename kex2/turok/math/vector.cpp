@@ -33,6 +33,7 @@
 const kexVec3 kexVec3::vecRight(1, 0, 0);
 const kexVec3 kexVec3::vecUp(0, 1, 0);
 const kexVec3 kexVec3::vecForward(0, 0, 1);
+      kexVec3 kexVec3::vecZero(0, 0, 0);
 
 //
 // kexVec2::kexVec2
