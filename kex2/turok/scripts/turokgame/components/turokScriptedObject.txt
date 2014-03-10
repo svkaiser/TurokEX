@@ -83,14 +83,12 @@ class TurokScriptedObject : Component {
     void OnTrigger(void) {
         kAnimState @aState = self.AnimState();
         
-        self.SetBoundingBox(kVec3(-1024, -1024, -1024), kVec3(1024, 1024, 1024));
-        
         if(self.bHidden == true) {
-            aState.Set(anim_activate, 4.0f, 0);
+            aState.Set(anim_activate, 4.0f, ANF_ROOTMOTION);
             self.bHidden = false;
         }
         else {
-            aState.Blend(anim_activate, 4.0f, 8.0f, 0);
+            aState.Blend(anim_activate, 4.0f, 8.0f, ANF_ROOTMOTION);
         }
     }
 };

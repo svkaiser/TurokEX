@@ -5,7 +5,7 @@ enum turokAnimations {
     anim_aiRunning,
     anim_aiTurn_L_Stand,
     anim_aiTurn_R_Stand,
-    anim_aiTurn_B_Stand,
+    anim_aiTurn_B_Stand             = 6,
     anim_aiTurn_L_Walk,
     anim_aiTurn_R_Walk,
     anim_aiTurn_B_Walk,
