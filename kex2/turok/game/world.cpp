@@ -563,6 +563,57 @@ void kexWorld::TraverseWorldNodes(worldNode_t *node, traceInfo_t *trace) {
 }
 
 //
+// kexWorld::TraverseAreaNodes
+//
+
+void kexWorld::TraverseAreaNodes(traceInfo_t *trace, areaNode_t *areaNode) {
+    float min, max;
+
+    for(kexWorldObject *obj = areaNode->objects.Next();
+        obj != NULL;
+        obj = obj->areaLink.Next()) {
+            if(obj == trace->owner || !obj->bCollision) {
+                continue;
+            }
+            if(trace->bUseBBox) {
+                if(!obj->Bounds().IntersectingBox(trace->bbox)) {
+                    continue;
+                }
+            }
+            else if(!obj->Bounds().LineIntersect(trace->start, trace->end)) {
+                continue;
+            }
+
+            obj->Trace(trace);
+    }
+
+    if(areaNode->axis == -1) {
+        return;
+    }
+
+    if(trace->bUseBBox) {
+        max = trace->bbox.max[areaNode->axis];
+        min = trace->bbox.min[areaNode->axis];
+    }
+    else if(trace->owner) {
+        max = trace->owner->Bounds().max[areaNode->axis]+1;
+        min = trace->owner->Bounds().min[areaNode->axis]-1;
+    }
+    else {
+        max = trace->start[areaNode->axis];
+        min = trace->start[areaNode->axis];
+    }
+
+    if(max > areaNode->dist) {
+        TraverseAreaNodes(trace, areaNode->children[0]);
+    }
+
+    if(min < areaNode->dist) {
+        TraverseAreaNodes(trace, areaNode->children[1]);
+    }
+}
+
+//
 // kexWorld::Trace
 //
 
@@ -574,17 +625,7 @@ void kexWorld::Trace(traceInfo_t *trace, const int clipFlags) {
     trace->hitVector = trace->end;
     trace->hitNormal.Clear();
 
-    if(trace->owner && trace->owner->areaNode) {
-        for(kexWorldObject *obj = trace->owner->areaNode->objects.Next();
-            obj != NULL;
-            obj = obj->areaLink.Next()) {
-                if(obj == trace->owner || !obj->bCollision) {
-                    continue;
-                }
-                obj->Trace(trace);
-        }
-    }
-
+    TraverseAreaNodes(trace, areaNodes);
     TraverseWorldNodes(&worldNode, trace);
 
     if(trace->hitTri) {

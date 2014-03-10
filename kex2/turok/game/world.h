@@ -145,6 +145,7 @@ private:
                                             float *splitX, float *splitZ,
                                             nodeSide_t side, int split);
     void                                TraverseWorldNodes(worldNode_t *node, traceInfo_t *trace);
+    void                                TraverseAreaNodes(traceInfo_t *trace, areaNode_t *areaNode);
 
     bool                                bLoaded;
     bool                                bReadyUnload;
