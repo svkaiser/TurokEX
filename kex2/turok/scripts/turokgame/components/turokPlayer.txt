@@ -27,6 +27,9 @@ const float SWIM_STRAFEROLL_SPEED       = 0.05f;
 const float WALK_STRAFEROLL_ANGLE       = 0.0835f;
 const float WALK_STRAFEROLL_SPEED       = 0.1f;
 
+const float CLIMB_STRAFEROLL_ANGLE      = 0.33f;
+const float CLIMB_STRAFEROLL_SPEED      = 0.0256f;
+
 const float PHYSICS_PLAYER_MASS         = 1843.2f;
 const float PHYSICS_PLAYER_STEPHEIGHT   = 36;
 const float PHYSICS_PLAYER_AIR_FRICTION = 0;
@@ -34,6 +37,10 @@ const float PHYSICS_PLAYER_AIR_FRICTION = 0;
 const float SWIM_THRUST_SPEED           = 480;
 const float SWIM_THRUST_TIME            = 0.63f;
 const float SWIM_THRUST_THRESHOLD       = (SWIM_THRUST_TIME - 0.05f);
+
+const float CLIMB_LERP_SPEED            = 176;
+const float CLIMB_THRUST_TIME           = 0.75f;
+const float CLIMB_THRUST_THRESHOLD      = (CLIMB_THRUST_TIME - 0.62f);
 
 const int   TUROK_MAX_LIFEFORCES        = 100;
 const int   TUROK_MAX_LIVES             = 9;
@@ -178,6 +185,9 @@ final class TurokPlayer : Component {
     int                 bubbleTime;
     bool                bThrusting;
     float               thrustTime;
+    bool                bClimbing;
+    bool                bClimbRoll;
+    bool                bClimbDone;
     
     //
     // game variables
@@ -231,6 +241,8 @@ final class TurokPlayer : Component {
         thrustTime          = 0;
         bWarping            = false;
         bDidWarped          = false;
+        bClimbRoll          = false;
+        bClimbDone          = false;
     }
     
     //
@@ -543,8 +555,51 @@ final class TurokPlayer : Component {
         bool bRight             = self.ActionDown("+straferight");
         int wt                  = puppet.Physics().waterLevel;
         
+        bClimbing = puppet.Physics().bClimbing;
+        
+        // climb thrusts
+        if(bClimbing) {
+            bBack = false;
+            bLeft = false;
+            bRight = false;
+                
+            if(bThrusting == false) {
+                self.GetAcceleration().Clear();
+            }
+            
+            if(thrustTime <= 0) {
+                bClimbDone = false;
+                if(bForward) {
+                    bThrusting = true;
+                    thrustTime = CLIMB_THRUST_TIME;
+                    self.GetAcceleration().z = 0;
+                    
+                    if(bClimbRoll == false) {
+                        puppet.StartSound("sounds/shaders/generic_23_turok_climb_1.ksnd");
+                        bClimbRoll = true;
+                    }
+                    else {
+                        puppet.StartSound("sounds/shaders/generic_24_turok_climb_2.ksnd");
+                        bClimbRoll = false;
+                    }
+                }
+            }
+            else {
+                float move_z = self.GetAcceleration().z;
+                float timeRemain = thrustTime / CLIMB_THRUST_TIME;
+                
+                bForward = false;
+                self.GetAcceleration().z = (Math::Cos((1.0f - timeRemain) * M_PI) - 1.0f) * 0.5f *
+                    (move_z - CLIMB_LERP_SPEED) + move_z;
+            }
+            
+            if(thrustTime <= CLIMB_THRUST_THRESHOLD) {
+                bThrusting = false;
+                bClimbDone = true;
+            }
+        }
         // swim thrusts
-        if(waterLevel >= WLT_BETWEEN) {
+        else if(waterLevel >= WLT_BETWEEN) {
             if(bForward && self.ActionHeldTime("+forward") == 0 && thrustTime <= 0) {
                 bThrusting = true;
                 thrustTime = SWIM_THRUST_TIME;
@@ -586,7 +641,7 @@ final class TurokPlayer : Component {
             }
         }
         // swim movement
-        else {
+        else if(!bClimbing) {
             float az = self.GetAcceleration().z;
             
             self.GetAcceleration().z = (SWIM_THRUST_SPEED - az) * (thrustTime / 4) + az;
@@ -776,20 +831,22 @@ final class TurokPlayer : Component {
             return;
         }
         
-        if(waterLevel >= WLT_BETWEEN) {
-            bob_x = Math::Sin(Client.GetTime() * VIEWBOB_SWIMFREQX) * VIEWBOB_SWIMANGLE;
-            bob_y = Math::Sin(Client.GetTime() * VIEWBOB_SWIMFREQY) * VIEWBOB_SWIMANGLE;
-        }
-        else if(puppet.Physics().GroundDistance() <= VIEWBOB_GROUNDHEIGHT) {
-            float d = Math::Fabs(self.GetAcceleration().z * self.deltaTime) * 0.06f;
-            
-            if(d > VIEWBOB_EPISILON) {
-                if(d > VIEWBOB_MAXSWAY) {
-                    d = VIEWBOB_MAXSWAY;
-                }
+        if(!bClimbing) {
+            if(waterLevel >= WLT_BETWEEN) {
+                bob_x = Math::Sin(Client.GetTime() * VIEWBOB_SWIMFREQX) * VIEWBOB_SWIMANGLE;
+                bob_y = Math::Sin(Client.GetTime() * VIEWBOB_SWIMFREQY) * VIEWBOB_SWIMANGLE;
+            }
+            else if(puppet.Physics().GroundDistance() <= VIEWBOB_GROUNDHEIGHT) {
+                float d = Math::Fabs(self.GetAcceleration().z * self.deltaTime) * 0.06f;
                 
-                bob_x = Math::Sin(Client.GetTime() * VIEWBOB_FREQX) * VIEWBOB_ANGLE * d;
-                bob_y = Math::Sin(Client.GetTime() * VIEWBOB_FREQY) * VIEWBOB_ANGLE * d;
+                if(d > VIEWBOB_EPISILON) {
+                    if(d > VIEWBOB_MAXSWAY) {
+                        d = VIEWBOB_MAXSWAY;
+                    }
+                    
+                    bob_x = Math::Sin(Client.GetTime() * VIEWBOB_FREQX) * VIEWBOB_ANGLE * d;
+                    bob_y = Math::Sin(Client.GetTime() * VIEWBOB_FREQY) * VIEWBOB_ANGLE * d;
+                }
             }
         }
         
@@ -823,6 +880,17 @@ final class TurokPlayer : Component {
         }
         else if(self.ActionDown("+straferight")) {
             roll -= rollAngle;
+        }
+        
+        // climb rolls
+        if(bClimbing && bThrusting && !bClimbDone) {
+            rollSpeed = CLIMB_STRAFEROLL_SPEED;
+            if(!bClimbRoll) {
+                roll = CLIMB_STRAFEROLL_ANGLE;
+            }
+            else {
+                roll = -CLIMB_STRAFEROLL_ANGLE;
+            }
         }
         
         angle.roll = LocalLerp(angle.roll, roll, rollSpeed);
@@ -1015,6 +1083,7 @@ final class TurokPlayer : Component {
         self.Unlock();
         
         waterLevel = puppet.Physics().waterLevel;
+        bClimbing = false;
         
         puppet.health = 100;
         playerHud.healthNum.Update(puppet.health);
