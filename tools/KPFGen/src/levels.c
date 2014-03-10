@@ -1393,12 +1393,12 @@ static void WriteGenericActorProps(mapactor_t *actor, attribute_t *attr)
     Com_Strcat("mesh \"models/mdl%03d/mdl%03d.kmesh\"\n",
         actor->model, actor->model);
     Com_Strcat("bounds { %f %f %f } { %f %f %f }\n",
-        -mdlboxes[actor->model][0],
+        mdlboxes[actor->model][0],
         mdlboxes[actor->model][1],
-        -mdlboxes[actor->model][2],
-        -mdlboxes[actor->model][3],
+        mdlboxes[actor->model][2],
+        mdlboxes[actor->model][3],
         mdlboxes[actor->model][4],
-        -mdlboxes[actor->model][5]);
+        mdlboxes[actor->model][5]);
     Com_Strcat("radius %f\n", attr->width);
     Com_Strcat("height %f\n", attr->height);
     Com_Strcat("centerheight %f\n", attr->centerHeight);
