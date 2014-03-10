@@ -760,6 +760,12 @@ void SND_StoreSoundShaders(void)
             int count = Com_GetCartOffset(sndChunk, CHUNK_SOUNDFX_DATA_COUNT, 0);
             int j;
 
+            // skip bad/corrupted files
+            if(!strcmp(sndfxnames[i], "generic_117_raptor_thrash_1"))
+                continue;
+            if(!strcmp(sndfxnames[i], "generic_118_raptor_thrash_2"))
+                continue;
+
             Com_StrcatClear();
             Com_SetDataProgress(count);
 
@@ -781,8 +787,8 @@ void SND_StoreSoundShaders(void)
                 Com_Strcat("        gainFactorEnd = %f\n", CoerceFloat(sfx->volEnd));
                 Com_Strcat("        gainInterpTime = %i\n", sfx->volRamp);
                 Com_Strcat("        gainInterpDelay = %i\n", sfx->volRampDelay);
-                Com_Strcat("        freqFactorStart = %f\n", ConvertTurokPitchToOAL(sfx->freqStart));
-                Com_Strcat("        freqFactorEnd = %f\n", ConvertTurokPitchToOAL(sfx->freqEnd));
+                Com_Strcat("        freqFactorEnd = %f\n", ConvertTurokPitchToOAL(sfx->freqStart));
+                Com_Strcat("        freqFactorStart = %f\n", ConvertTurokPitchToOAL(sfx->freqEnd));
                 Com_Strcat("        freqInterpTime = %i\n", sfx->freqRamp);
                 Com_Strcat("        freqInterpDelay = %i\n", sfx->freqRampDelay);
                 Com_Strcat("    }\n");
