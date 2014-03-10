@@ -217,17 +217,18 @@ void kexActor::Spawn(void) {
         definition->GetBool("bTouch", bTouch);
         definition->GetBool("bNoFixedTransform", bNoFixedTransform);
         definition->GetBool("bAllowDamage", bAllowDamage);
-        definition->GetFloat("radius", radius);
-        definition->GetFloat("height", baseHeight);
-        definition->GetFloat("centerHeight", centerHeight);
-        definition->GetFloat("viewHeight", viewHeight);
+        definition->GetFloat("radius", radius, 10.24f);
+        definition->GetFloat("height", baseHeight, 10.24f);
+        definition->GetFloat("centerHeight", centerHeight, 5.12f);
+        definition->GetFloat("viewHeight", viewHeight, 8.192f);
         definition->GetFloat("cullDistance", cullDistance);
         definition->GetFloat("tickDistance", tickDistance);
         definition->GetVector("bounds_min", baseBBox.min);
         definition->GetVector("bounds_max", baseBBox.max);
         definition->GetVector("scale", scale);
-        definition->GetInt("health", health);
+        definition->GetInt("health", health, 100);
         definition->GetInt("impactType", (int&)impactType);
+        definition->GetString("footstepSound", footstepSound);
 
         if(definition->GetString("mesh", str)) {
             SetModel(str.c_str());
@@ -534,6 +535,18 @@ void kexActor::SetModel(const kexStr &modelFile) {
 }
 
 //
+// kexActor::PlayFootStepSound
+//
+
+void kexActor::PlayFootStepSound(void) {
+    if(footstepSound.Length() <= 0) {
+        return;
+    }
+
+    StartSound(footstepSound);
+}
+
+//
 // kexActor::ToLocalOrigin
 //
 
@@ -564,7 +577,7 @@ void kexActor::SpawnFX(const char *fxName, const float x, const float y, const f
     org.y += viewHeight;
 
 
-    localWorld.SpawnFX(fxName, this, kexVec3(0, 0, 0), org, rotation);
+    localWorld.SpawnFX(fxName, this, kexVec3::vecZero, org, rotation);
 }
 
 //

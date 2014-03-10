@@ -61,6 +61,7 @@ public:
     void                        SetModel(const char *modelFile);
     void                        SetModel(const kexStr &modelFile);
     void                        CreateComponent(const char *name);
+    void                        PlayFootStepSound(void);
     void                        SetRotationOffset(const int node, const float angle,
                                                   const float x, const float y, const float z);
 
@@ -131,6 +132,7 @@ protected:
 
     kexClipMesh                 clipMesh;
     kexStr                      name;
+    kexStr                      footstepSound;
     kexModel_t                  *model;
     kexQuat                     lerpRotation;
     kexVec3                     *nodeOffsets_t;
