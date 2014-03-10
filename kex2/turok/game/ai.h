@@ -90,6 +90,8 @@ public:
     bool                        TryTeleport(void);
     void                        TeleportToTarget(void);
 
+    const aiState_t             GetAIState(void) const { return aiState; }
+
     static void                 InitObject(void);
 
     //
@@ -117,6 +119,7 @@ public:
                   CheckPosition, (const kexVec3 &position, const float radius, const float yaw), bool);
         OBJMETHOD("float GetBestYawToTarget(const float)",
                   GetBestYawToTarget, (const float extendedRadius), float);
+        OBJMETHOD("const int GetAIState(void) const", GetAIState, (void) const, const aiState_t);
     
         #define OBJPROPERTY(str, p)                         \
             scriptManager.Engine()->RegisterObjectProperty( \
@@ -161,6 +164,7 @@ protected:
     bool                        bAnimTurning;
     float                       attackThreshold;
     float                       sightThreshold;
+    float                       maxThreshold;
     float                       attackThresholdTime;
     float                       sightRange;
     float                       rangeSightDamp;

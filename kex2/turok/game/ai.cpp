@@ -30,8 +30,6 @@
 #include "world.h"
 #include "gameManager.h"
 
-#define AI_THRESHOLD_MAX    100
-
 DECLARE_CLASS(kexAI, kexActor)
 
 //
@@ -56,6 +54,7 @@ kexAI::kexAI(void) {
     this->bAnimTurning          = false;
     this->attackThreshold       = 0;
     this->sightThreshold        = 0;
+    this->maxThreshold          = 100.0f;
     this->attackThresholdTime   = 15.0f;
     this->checkRadius           = 1.5f;
     this->meleeRange            = 0;
@@ -91,6 +90,11 @@ void kexAI::LocalTick(void) {
 
     UpdateTransform();
     animState.Update();
+
+    if(animState.frameTime != 0) {
+        height = ((baseHeight * 0.72f) - animState.baseOffset) * 0.5f;
+    }
+
     physicsRef->Think(client.GetRunTime());
     
     // TODO - majority of the code below should be
@@ -106,6 +110,11 @@ void kexAI::LocalTick(void) {
         return;
     }
 
+    if(bAnimTurning && animState.flags & ANF_STOPPED) {
+        bAnimTurning = false;
+        ChangeState(aiState);
+    }
+
     if(timeStamp < nextThinkTime) {
         // not ready to think yet
         return;
@@ -116,7 +125,7 @@ void kexAI::LocalTick(void) {
     if(aiState == AIS_SPAWNING) {
         // don't do nothing until the animation has finished
         if(animState.flags & ANF_STOPPED) {
-            sightThreshold = AI_THRESHOLD_MAX;
+            sightThreshold = maxThreshold;
             if(aiFlags & AIF_FINDTARGET) {
                 ChangeState(AIS_ALERT);
             }
@@ -124,11 +133,11 @@ void kexAI::LocalTick(void) {
     }
     else {
         if(aiFlags & AIF_SEETARGET) {
-            if(++sightThreshold > AI_THRESHOLD_MAX) {
-                sightThreshold = AI_THRESHOLD_MAX;
+            if(++sightThreshold > maxThreshold) {
+                sightThreshold = maxThreshold;
             }
         }
-        else if(sightThreshold <= (AI_THRESHOLD_MAX / 2) && bAttacking) {
+        else if(sightThreshold <= (maxThreshold / 2) && bAttacking) {
             bAttacking = false;
         }
 
@@ -158,6 +167,7 @@ void kexAI::Spawn(void) {
         definition->GetFloat("alertRange", alertRange);
         definition->GetFloat("rangeDistance", rangeDistance, 1024.0f);
         definition->GetFloat("checkRadius", checkRadius, 1.5f);
+        definition->GetFloat("maxThreshold", maxThreshold, 100.0f);
         definition->GetFloat("sightRange", sightRange, DEG2RAD(45));
         definition->GetFloat("rangeSightDamp", rangeSightDamp, 0.675f);
         definition->GetFloat("rangeAdjustAngle", rangeAdjustAngle, DEG2RAD(50));
@@ -339,6 +349,10 @@ void kexAI::SeekTarget(void) {
         ////////////////////////////////////////////////////
         case AIS_ATTACK_MELEE:
             if(animState.flags & ANF_STOPPED) {
+                aiState = AIS_IDLE;
+                bAttacking = false;
+                bAnimTurning = false;
+
                 if(!TryMelee()) {
                     float dist = GetTargetDistance();
                     
@@ -352,11 +366,6 @@ void kexAI::SeekTarget(void) {
                     if(aiFlags & AIF_FACETARGET) {
                         TurnYaw(GetBestYawToTarget(checkRadius));
                     }
-                }
-                else {
-                    ChangeState(AIS_IDLE);
-                    bAttacking = false;
-                    bAnimTurning = false;
                 }
                 return;
             }
@@ -407,7 +416,6 @@ void kexAI::SeekTarget(void) {
 
 void kexAI::TurnYaw(const float yaw) {
     int state;
-    float ys;
     float an;
     bool ok = false;
     
@@ -432,12 +440,7 @@ void kexAI::TurnYaw(const float yaw) {
         }
     }
 
-    ys = yaw;
-    if(ys >= M_PI) {
-        ys = -(ys - (M_PI * 2));
-    }
-
-    SetIdealYaw(angles.yaw + an, yawSpeed * ys);
+    SetIdealYaw(angles.yaw + an, yawSpeed);
 }
 
 //
@@ -462,6 +465,8 @@ bool kexAI::TryMelee(void) {
             TurnYaw(yaw);
         }
         else {
+            SetIdealYaw(angles.yaw + yaw, 4.096f);
+            bAttacking = true;
             ChangeState(AIS_ATTACK_MELEE);
             return true;
         }
@@ -495,7 +500,7 @@ bool kexAI::TryRange(void) {
     
     // attack more aggressively when close to target
     if(kexRand::Max(cr) <= kexMath::Floor(dist * 100.0f / rangeDistance)) {
-        attackThreshold = AI_THRESHOLD_MAX;
+        attackThreshold = maxThreshold;
         ChangeState(AIS_IDLE);
         bAttacking = false;
         return false;
@@ -613,6 +618,7 @@ float kexAI::GetYawToTarget(void) {
     kexVec2 diff;
     kexVec3 sincos;
     float tan2;
+    float an;
     
     if(!target) {
         return 0;
@@ -628,7 +634,10 @@ float kexAI::GetYawToTarget(void) {
         0,
         kexMath::Cos(tan2));
 
-    return kexAngle::Round(kexAngle::ClampInvertSums(angles.yaw, sincos.ToYaw()));
+    an = kexAngle::ClampInvertSums(angles.yaw, sincos.ToYaw());
+    kexAngle::Clamp(&an);
+
+    return an;
 }
 
 //
@@ -648,17 +657,25 @@ void kexAI::TracePosition(traceInfo_t *trace, const kexVec3 &position,
 
     sector = physicsRef->sector;
     
-    trace->start     = position;
-    trace->end       = dest;
-    trace->dir       = (trace->end - trace->start).Normalize();
-    trace->fraction  = 1.0f;
-    trace->hitActor  = NULL;
-    trace->hitTri    = NULL;
-    trace->hitMesh   = NULL;
-    trace->hitVector = trace->start;
-    trace->owner     = this;
-    trace->sector    = &physicsRef->sector;
-    trace->bUseBBox  = false;
+    trace->start        = position;
+    trace->end          = dest;
+    trace->dir          = (trace->end - trace->start).Normalize();
+    trace->fraction     = 1.0f;
+    trace->hitActor     = NULL;
+    trace->hitTri       = NULL;
+    trace->hitMesh      = NULL;
+    trace->hitVector    = trace->start;
+    trace->owner        = this;
+    trace->sector       = &physicsRef->sector;
+    trace->bUseBBox      = true;
+
+    trace->localBBox.min.Set(-2, -2, -2);
+    trace->localBBox.max.Set(2, 2, 2);
+
+    trace->bbox = trace->localBBox;
+
+    trace->bbox.min += trace->start;
+    trace->bbox.max += trace->start;
     
     localWorld.Trace(trace);
     physicsRef->sector = sector;
@@ -719,23 +736,19 @@ float kexAI::GetBestYawToTarget(const float extendedRadius) {
             dir = an + yaw;
             
             if(CheckPosition(position, extendedRadius, angles.yaw + dir)) {
-                yaw = (angles.yaw + dir) + DEG2RAD(15);
+                yaw = dir + DEG2RAD(15);
                 break;
             }
             
             dir = yaw - an;
             
             if(CheckPosition(position, extendedRadius, angles.yaw + dir)) {
-                yaw = (angles.yaw + dir) - DEG2RAD(15);
+                yaw = dir - DEG2RAD(15);
                 break;
             }
         }
     }
-    else {
-        yaw = angles.yaw + yaw;
-    }
-    
-    kexAngle::Clamp(&yaw);
+
     return yaw;
 }
 
@@ -764,7 +777,7 @@ void kexAI::FireProjectile(const char *fxName, const kexVec3 &org,
     tOrg[1] += static_cast<kexWorldObject*>(target)->GetViewHeight();
     
     frot = rotation.RotateFrom(aOrg, tOrg, maxAngle);
-    localWorld.SpawnFX(fxName, this, kexVec3(0, 0, 0), aOrg, frot);
+    localWorld.SpawnFX(fxName, this, kexVec3::vecZero, aOrg, frot);
 }
 
 //
@@ -858,7 +871,15 @@ bool kexAI::CanSeeTarget(kexWorldObject *object) {
     trace.hitVector = trace.start;
     trace.owner     = this;
     trace.sector    = &physicsRef->sector;
-    trace.bUseBBox  = false;
+    trace.bUseBBox  = true;
+
+    trace.localBBox.min.Set(-2, -2, -2);
+    trace.localBBox.max.Set(2, 2, 2);
+
+    trace.bbox = trace.localBBox;
+
+    trace.bbox.min += trace.start;
+    trace.bbox.max += trace.start;
     
     localWorld.Trace(&trace);
     physicsRef->sector = sector;
