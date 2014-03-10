@@ -492,6 +492,9 @@ void kexAnimState::ExecuteFrameActions(void) {
                     action->args[2],
                     action->args[3]);
             }
+            else if(!kexStr::Compare(action->function, "footstepSound")) {
+                owner->PlayFootStepSound();
+            }
             else if(!kexStr::Compare(action->function, "rangedamage")) {
                 owner->RangeDamage(action->argStrings[0], action->args[1],
                     owner->ToLocalOrigin(
