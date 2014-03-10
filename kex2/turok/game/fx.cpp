@@ -43,7 +43,7 @@ static void FCmd_SpawnFX(void) {
     kexCamera *camera = localWorld.Camera();
     kexVec3 forward = camera->GetAngles().ToForwardAxis();
     
-    localWorld.SpawnFX("fx/default.kfx", NULL, kexVec3(0, 0, 0),
+    localWorld.SpawnFX("fx/default.kfx", NULL, kexVec3::vecZero,
         camera->GetOrigin() + (forward * 16.384f), camera->GetRotation());
 }
 
@@ -63,6 +63,7 @@ kexFx::kexFx(void) {
     this->parent        = NULL;
     this->radius        = 4.0f;
     this->height        = 4.0f;
+    this->baseHeight    = 4.0f;
     
     this->attachment.SetOwner(this);
     this->physics.SetOwner(this);
@@ -298,7 +299,7 @@ kexFx *kexFx::SpawnChild(const char *name) {
 // kexFx::Event
 //
 
-void kexFx::Event(fxEvent_t *fxEvent, kexWorldObject *target) {
+kexFx *kexFx::Event(fxEvent_t *fxEvent, kexWorldObject *target) {
     kexFx *nfx = NULL;
 
     if(fxEvent->fx != NULL) {
@@ -316,6 +317,8 @@ void kexFx::Event(fxEvent_t *fxEvent, kexWorldObject *target) {
     if(fxEvent->damageDef != NULL && owner && target) {
         nfx->InflictDamage(target, fxEvent->damageDef);
     }
+
+    return nfx;
 }
 
 //
@@ -787,12 +790,12 @@ void kexFxManager::ParseEvent(fxEvent_t *fxEvent, kexLexer *lexer) {
 #define CHECK_BOOL(name)                                                        \
     case scvfx_ ##name:                                                         \
     lexer->AssignFromTokenList(vfxtokens, &tmp, scvfx_ ##name, false);          \
-    info-> ##name = (tmp != 0);                                                 \
+    info->name = (tmp != 0);                                                    \
     break
 
 #define CHECK_INT(name)                                                         \
     case scvfx_ ##name:                                                         \
-    lexer->AssignFromTokenList(vfxtokens, (unsigned int*)&info-> ##name,        \
+    lexer->AssignFromTokenList(vfxtokens, (unsigned int*)&info->name,           \
         scvfx_ ##name, false);                                                  \
     break
 
@@ -804,31 +807,31 @@ void kexFxManager::ParseEvent(fxEvent_t *fxEvent, kexLexer *lexer) {
 
 #define CHECK_VFXINT(name)                                                      \
     case scvfx_ ##name:                                                         \
-    lexer->AssignFromTokenList(vfxtokens, (unsigned int*)&info-> ##name .value, \
+    lexer->AssignFromTokenList(vfxtokens, (unsigned int*)&info->name .value,    \
         scvfx_ ##name, false);                                                  \
     break;                                                                      \
     case scvfx_ ##name## _randomscale:                                          \
-    lexer->AssignFromTokenList(vfxtokens, &info-> ##name .rand,                 \
+    lexer->AssignFromTokenList(vfxtokens, &info->name .rand,                    \
         scvfx_ ##name## _randomscale, false);                                   \
     break
 
 #define CHECK_VFXFLOAT(name)                                                    \
     case scvfx_ ##name:                                                         \
-    lexer->AssignFromTokenList(vfxtokens, &info-> ##name .value,                \
+    lexer->AssignFromTokenList(vfxtokens, &info->name .value,                   \
         scvfx_ ##name, false);                                                  \
     break;                                                                      \
     case scvfx_ ##name## _randomscale:                                          \
-    lexer->AssignFromTokenList(vfxtokens, &info-> ##name .rand,                 \
+    lexer->AssignFromTokenList(vfxtokens, &info->name .rand,                    \
         scvfx_ ##name## _randomscale, false);                                   \
     break
 
 #define CHECK_VFXVECTOR(name)                                                   \
     case scvfx_ ##name:                                                         \
-    lexer->AssignVectorFromTokenList(vfxtokens, info-> ##name .value,           \
+    lexer->AssignVectorFromTokenList(vfxtokens, info->name .value,              \
         scvfx_ ##name, false);                                                  \
     break;                                                                      \
     case scvfx_ ##name## _randomscale:                                          \
-    lexer->AssignVectorFromTokenList(vfxtokens, info-> ##name .rand,            \
+    lexer->AssignVectorFromTokenList(vfxtokens, info->name .rand,               \
         scvfx_ ##name## _randomscale, false);                                   \
     break
 

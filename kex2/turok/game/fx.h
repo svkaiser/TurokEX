@@ -170,7 +170,7 @@ public:
     void                        Spawn(void);
     void                        SetViewDistance(void);
     kexFx                       *SpawnChild(const char *name);
-    void                        Event(fxEvent_t *fxEvent, kexWorldObject *target);
+    kexFx                       *Event(fxEvent_t *fxEvent, kexWorldObject *target);
     void                        SetParent(kexFx *targ);
 
     kexVec3                     &GetVelocityOffset(void) { return velOffset; }
