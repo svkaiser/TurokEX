@@ -333,7 +333,6 @@ void kexRenderSystem::SetOrtho(void) {
 //
 
 void kexRenderSystem::SwapBuffers(void) {
-    dglFinish();
     sysMain.SwapBuffers();
 }
 
