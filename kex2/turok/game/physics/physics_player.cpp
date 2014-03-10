@@ -85,6 +85,12 @@ void kexPlayerPhysics::Think(const float timeDelta) {
         return;
     }
 
+    if(velocity.UnitSq() <= 1 && OnGround()) {
+        velocity.Clear();
+        CorrectSectorPosition();
+        return;
+    }
+
     currentMass = (bInWater && waterLevel >= WLT_BETWEEN) ? 0 : mass;
     start       = owner->GetOrigin();
     moves       = 0;
@@ -176,6 +182,8 @@ void kexPlayerPhysics::Think(const float timeDelta) {
         }
     }
 
+    bClimbing = false;
+
     if(sector && sector->flags & CLF_CLIMB) {
         bCanStep = false;
     }
@@ -221,9 +229,10 @@ void kexPlayerPhysics::Think(const float timeDelta) {
         if(sector && sector->flags & CLF_CLIMB) {
             owner->SetOrigin(trace.hitVector);
             ClimbOnSurface(owner->GetOrigin(), end, &sector->lowerTri);
+            bClimbing = true;
 
             // nudge origin away from plane
-            owner->GetOrigin() -= (direction * 0.1f);
+            owner->GetOrigin() -= (direction * 0.0035f);
             owner->LinkArea();
 
             velocity.Clear();
@@ -371,29 +380,5 @@ void kexPlayerPhysics::Think(const float timeDelta) {
     }
 
     ApplyFriction();
-
-    // correct position
-    if(sector) {
-        kexVec3 org = owner->GetOrigin();
-        float dist = (org[1] - sector->lowerTri.GetDistance(org));
-
-        if(dist < 0) {
-            owner->GetOrigin()[1] = org[1] - dist;
-            groundGeom = &sector->lowerTri;
-            velocity.Clear();
-        }
-
-        if(sector->flags & CLF_CHECKHEIGHT) {
-            dist = (sector->upperTri.GetDistance(org) - owner->GetViewHeight());
-
-            if(dist < org[1]) {
-                owner->GetOrigin()[1] = dist;
-                groundGeom = &sector->lowerTri;
-                velocity.Clear();
-            }
-        }
-
-        // check if in water sector
-        CheckWater((owner->GetViewHeight() + owner->GetCenterHeight()) * 0.5f);
-    }
+    CorrectSectorPosition();
 }

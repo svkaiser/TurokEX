@@ -79,6 +79,7 @@ kexPhysics::kexPhysics(void) {
     this->bOrientOnSlope        = false;
     this->bOnGround             = false;
     this->bInWater              = false;
+    this->bClimbing             = false;
     this->waterLevel            = WLT_INVALID;
     this->groundGeom            = NULL;
     this->groundMesh            = NULL;
@@ -197,6 +198,40 @@ kexVec3 kexPhysics::GroundNormal(void) {
     }
 
     return groundGeom->plane.Normal();
+}
+
+//
+// kexPhysics::CorrectSectorPosition
+//
+
+void kexPhysics::CorrectSectorPosition(void) {
+    if(sector == NULL) {
+        return;
+    }
+
+    kexVec3 org = owner->GetOrigin();
+    float dist = (org[1] - sector->lowerTri.GetDistance(org));
+
+    if(dist < 0) {
+        // correct position
+        owner->GetOrigin()[1] = org[1] - dist;
+        groundGeom = &sector->lowerTri;
+        velocity.Clear();
+    }
+
+    if(sector->flags & CLF_CHECKHEIGHT) {
+        dist = (sector->upperTri.GetDistance(org) - owner->GetViewHeight());
+
+        if(dist < org[1]) {
+            // correct position
+            owner->GetOrigin()[1] = dist;
+            groundGeom = &sector->lowerTri;
+            velocity.Clear();
+        }
+    }
+
+    // check if in water sector
+    CheckWater((owner->GetViewHeight() + owner->GetCenterHeight()) * 0.5f);
 }
 
 //
@@ -442,6 +477,7 @@ void kexPhysics::InitObject(void) {
     OBJPROPERTY("float rotorFriction", rotorFriction);
     OBJPROPERTY("kVec3 rotorVector", rotorVector);
     OBJPROPERTY("bool bInWater", bInWater);
+    OBJPROPERTY("bool bClimbing", bClimbing);
     OBJPROPERTY("int waterLevel", waterLevel);
     OBJPROPERTY("float waterHeight", waterHeight);
     OBJPROPERTY("float sinkVelocity", sinkVelocity);

@@ -53,6 +53,7 @@ kexFxPhysics::~kexFxPhysics(void) {
 void kexFxPhysics::Think(const float timeDelta) {
     kexVec3 move;
     kexFx *fx;
+    kexFx *nfx;
     float moveAmount;
     fxinfo_t *fxinfo;
     traceInfo_t trace;
@@ -115,6 +116,17 @@ void kexFxPhysics::Think(const float timeDelta) {
         trace.end = start + move;
         trace.dir = (trace.end - start).Normalize();
 
+        if(fxinfo->bLinkArea) {
+            trace.bUseBBox = true;
+            trace.localBBox.min.Set(-2, -2, -2);
+            trace.localBBox.max.Set(2, 2, 2);
+            trace.bbox = trace.localBBox;
+            trace.bbox.min += start;
+            trace.bbox.max += start;
+            // resize box to account for movement
+            trace.bbox |= (velocity * timeDelta);
+        }
+
         localWorld.Trace(&trace);
 
         if(trace.fraction >= 1) {
@@ -146,7 +158,10 @@ void kexFxPhysics::Think(const float timeDelta) {
                         iType = trace.hitActor->GetImpactType();
 
                         if(iType != -1) {
-                            fx->Event(&fxinfo->onImpact[iType], trace.hitActor);
+                            nfx = fx->Event(&fxinfo->onImpact[iType], trace.hitActor);
+                            if(nfx != fx && nfx->fxInfo->drawtype == VFX_DRAWSURFACE) {
+                                nfx->SetRotation(trace.hitNormal.ToQuat());
+                            }
                         }
 
                         fx->Remove();
@@ -182,7 +197,10 @@ void kexFxPhysics::Think(const float timeDelta) {
                     }
 
                     if(iType != -1) {
-                        fx->Event(&fxinfo->onImpact[iType], NULL);
+                        nfx = fx->Event(&fxinfo->onImpact[iType], NULL);
+                        if(nfx != fx && nfx->fxInfo->drawtype == VFX_DRAWSURFACE) {
+                            nfx->SetRotation(trace.hitNormal.ToQuat());
+                        }
                     }
 
                     fx->Remove();

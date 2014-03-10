@@ -82,6 +82,7 @@ public:
     float                   GetWaterDepth(void);
     void                    CheckWater(float height);
     kexVec3                 GroundNormal(void);
+    void                    CorrectSectorPosition(void);
 
     virtual void            Think(const float timeDelta);
 
@@ -111,6 +112,7 @@ public:
     kexSector               *sector;
     bool                    bOnGround;
     bool                    bInWater;
+    bool                    bClimbing;
 
 protected:
     kexWorldObject          *owner;

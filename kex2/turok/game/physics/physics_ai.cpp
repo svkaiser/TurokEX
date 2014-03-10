@@ -73,117 +73,94 @@ void kexAIPhysics::Think(const float timeDelta) {
 
     if(velocity.UnitSq() <= 1 && OnGround()) {
         velocity.Clear();
+        CorrectSectorPosition();
+        return;
+    }
+
+    currentMass = (bInWater && waterLevel >= WLT_BETWEEN) ? 0 : mass;
+    start       = owner->GetOrigin();
+    time        = timeDelta;
+    massAmount  = (currentMass * timeDelta);
+    radius      = owner->Radius();
+    height      = owner->Height();
+    gravity     = localWorld.GetGravity();
+
+    trace.owner = owner;
+    trace.bUseBBox = true;
+    trace.localBBox.min.Set(-(radius * 0.5f), 0, -(radius * 0.5f));
+    trace.localBBox.max.Set(radius * 0.5f, height, radius * 0.5f);
+    trace.bbox = trace.localBBox;
+    trace.bbox.min += start;
+    trace.bbox.max += start;
+    trace.sector = &sector;
+    // resize box to account for movement
+    trace.bbox |= (velocity * time);
+
+    trace.start = start;
+    trace.end = start + (gravity * mass) * mass;
+    trace.dir = gravity;
+
+    // need to determine if we're standing on the ground or not
+    localWorld.Trace(&trace);
+    if(trace.hitTri) {
+        groundGeom = trace.hitTri;
+        groundMesh = trace.hitMesh;
+    }
+
+    if(bInWater && waterLevel >= WLT_BETWEEN) {
+        bOnGround = false;
+
+        // slowly drift to the bottom
+        if(waterLevel == WLT_UNDER && sinkVelocity != 0) {
+            kexVec3 sinkVel = (-gravity * (GetWaterDepth() / timeDelta)) + velocity;
+            velocity = velocity.Lerp(sinkVel, -sinkVelocity * timeDelta);
+        }
     }
     else {
-        currentMass = (bInWater && waterLevel >= WLT_BETWEEN) ? 0 : mass;
-        start       = owner->GetOrigin();
-        time        = timeDelta;
-        massAmount  = (currentMass * timeDelta);
-        radius      = owner->Radius();
-        height      = owner->BaseHeight();
-        gravity     = localWorld.GetGravity();
+        bOnGround = OnGround();
 
-        trace.owner = owner;
-        trace.bUseBBox = true;
-        trace.localBBox.min.Set(-(radius * 0.5f), 0, -(radius * 0.5f));
-        trace.localBBox.max.Set(radius * 0.5f, height, radius * 0.5f);
-        trace.bbox = trace.localBBox;
-        trace.bbox.min += start;
-        trace.bbox.max += start;
-        trace.sector = &sector;
-        // resize box to account for movement
-        trace.bbox |= (velocity * time);
-
-        trace.start = start;
-        trace.end = start + (gravity * mass) * mass;
-        trace.dir = gravity;
-
-        // need to determine if we're standing on the ground or not
-        localWorld.Trace(&trace);
-        if(trace.hitTri) {
-            groundGeom = trace.hitTri;
-            groundMesh = trace.hitMesh;
-        }
-
-        if(bInWater && waterLevel >= WLT_BETWEEN) {
-            bOnGround = false;
-
-            // slowly drift to the bottom
-            if(waterLevel == WLT_UNDER && sinkVelocity != 0) {
-                kexVec3 sinkVel = (-gravity * (GetWaterDepth() / timeDelta)) + velocity;
-                velocity = velocity.Lerp(sinkVel, -sinkVelocity * timeDelta);
-            }
+        // handle freefall if not touching the ground
+        if(!bOnGround) {
+            velocity += (gravity * massAmount);
         }
         else {
-            bOnGround = OnGround();
-
-            // handle freefall if not touching the ground
-            if(!bOnGround) {
-                velocity += (gravity * massAmount);
-            }
-            else {
-                ImpactVelocity(velocity, groundGeom->plane.Normal(), 1.024f);
-            }
+            ImpactVelocity(velocity, groundGeom->plane.Normal(), 1.024f);
         }
-
-        trace.start = start;
-        trace.end = start + (velocity * time);
-        trace.dir = (trace.end - trace.start).Normalize();
-
-        // trace through world
-        localWorld.Trace(&trace);
-
-        // project velocity
-        if(trace.fraction != 1) {
-            ImpactVelocity(velocity, trace.hitNormal, 1.024f);
-        }
-
-        if(sector) {
-            groundGeom = &sector->lowerTri;
-        }
-
-        // update origin
-        owner->SetOrigin(trace.hitVector - (trace.dir * 0.125f));
-        owner->LinkArea();
-
-        if(groundMesh) {
-            // fudge the origin if we're slightly clipping below the floor
-            trace.start = start - (gravity * (stepHeight * 0.5f));
-            trace.end = start;
-            localWorld.Trace(&trace);
-        
-            if(trace.fraction != 1 && !trace.hitActor) {
-                start = trace.hitVector - (gravity * 1.024f);
-                owner->SetOrigin(start);
-                owner->LinkArea();
-            }
-        }
-
-        ApplyFriction();
     }
 
-    // correct position
+    trace.start = start;
+    trace.end = start + (velocity * time);
+    trace.dir = (trace.end - trace.start).Normalize();
+
+    // trace through world
+    localWorld.Trace(&trace);
+
+    // project velocity
+    if(trace.fraction != 1) {
+        ImpactVelocity(velocity, trace.hitNormal, 1.024f);
+    }
+
     if(sector) {
-        kexVec3 org = owner->GetOrigin();
-        float dist = (org[1] - sector->lowerTri.GetDistance(org));
-
-        if(dist < 0) {
-            owner->GetOrigin()[1] = org[1] - dist;
-            groundGeom = &sector->lowerTri;
-            velocity.Clear();
-        }
-
-        if(sector->flags & CLF_CHECKHEIGHT) {
-            dist = (sector->upperTri.GetDistance(org) - owner->GetViewHeight());
-
-            if(dist < org[1]) {
-                owner->GetOrigin()[1] = dist;
-                groundGeom = &sector->lowerTri;
-                velocity.Clear();
-            }
-        }
-
-        // check if in water sector
-        CheckWater((owner->GetViewHeight() + owner->GetCenterHeight()) * 0.5f);
+        groundGeom = &sector->lowerTri;
     }
+
+    // update origin
+    owner->SetOrigin(trace.hitVector - (trace.dir * 0.125f));
+    owner->LinkArea();
+
+    if(groundMesh) {
+        // fudge the origin if we're slightly clipping below the floor
+        trace.start = start - (gravity * (stepHeight * 0.5f));
+        trace.end = start;
+        localWorld.Trace(&trace);
+    
+        if(trace.fraction != 1 && !trace.hitActor) {
+            start = trace.hitVector - (gravity * 1.024f);
+            owner->SetOrigin(start);
+            owner->LinkArea();
+        }
+    }
+
+    ApplyFriction();
+    CorrectSectorPosition();
 }
