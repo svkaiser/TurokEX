@@ -24,6 +24,10 @@
 //
 //-----------------------------------------------------------------------------
 
+#ifdef _WIN32
+#include <crtdbg.h>
+#endif
+
 #include "SDL.h"
 #include "system.h"
 #include "common.h"
@@ -42,14 +46,11 @@
 extern int __cdecl I_W32ExceptionHandler(PEXCEPTION_POINTERS ep);
 int Kex_Main(int argc, char *argv[]);
 
-int main(int argc, char **argv)
-{
-    __try
-    {
+int main(int argc, char **argv) {
+    __try {
         Kex_Main(argc, argv);
     }
-    __except(I_W32ExceptionHandler(GetExceptionInformation()))
-    {
+    __except(I_W32ExceptionHandler(GetExceptionInformation())) {
         common.Error("Exception caught in main: see CRASHLOG.TXT for info\n");
     }
     
@@ -61,9 +62,10 @@ int main(int argc, char **argv)
 
 #endif  /*_WIN32*/
 
-int Kex_Main(int argc, char *argv[])
-{
+int Kex_Main(int argc, char *argv[]) {
+#ifdef _WIN32
+    _CrtSetDbgFlag(0);
+#endif
     sysMain.Main(argc, argv);
     return 0;
 }
-
