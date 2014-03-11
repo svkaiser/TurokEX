@@ -122,6 +122,7 @@ public:
     const bool                      IsWideScreen(void) const { return bWideScreen; }
     const bool                      IsFullScreen(void) const { return bFullScreen; }
     kexCanvas                       &Canvas(void) { return canvas; }
+    const bool                      IsInitialized(void) { return bIsInit; }
 
     static const int                SCREEN_WIDTH        = 320;
     static const int                SCREEN_HEIGHT       = 240;
@@ -167,6 +168,7 @@ private:
     float                           maxAnisotropic;
     bool                            bWideScreen;
     bool                            bFullScreen;
+    bool                            bIsInit;
 
     kexHashList<kexTexture>         textureList;
     kexHashList<kexFont>            fontList;

@@ -119,6 +119,7 @@ kexRenderSystem::kexRenderSystem(void) {
     this->maxAnisotropic        = 0;
     this->bWideScreen           = false;
     this->bFullScreen           = false;
+    this->bIsInit               = false;
     this->glState.glStateBits   = 0;
     this->glState.alphaFunction = -1;
     this->glState.blendDest     = -1;
@@ -251,17 +252,17 @@ void kexRenderSystem::Init(void) {
 
     byte *data;
 
-    if(data = defaultTexture.LoadFromFile("textures/default.tga")) {
+    if((data = defaultTexture.LoadFromFile("textures/default.tga"))) {
         defaultTexture.Upload(&data, TC_CLAMP, TF_LINEAR);
         Mem_Free(data);
     }
 
-    if(data = whiteTexture.LoadFromFile("textures/white.tga")) {
+    if((data = whiteTexture.LoadFromFile("textures/white.tga"))) {
         whiteTexture.Upload(&data, TC_CLAMP, TF_LINEAR);
         Mem_Free(data);
     }
 
-    if(data = blackTexture.LoadFromFile("textures/black.tga")) {
+    if((data = blackTexture.LoadFromFile("textures/black.tga"))) {
         blackTexture.Upload(&data, TC_CLAMP, TF_LINEAR);
         Mem_Free(data);
     }
@@ -284,6 +285,7 @@ void kexRenderSystem::Init(void) {
     dglEnableClientState(GL_COLOR_ARRAY);
     dglDisableClientState(GL_NORMAL_ARRAY);
 
+    bIsInit = true;
     common.Printf("Renderer Initialized\n");
 }
 
@@ -333,6 +335,7 @@ void kexRenderSystem::SetOrtho(void) {
 //
 
 void kexRenderSystem::SwapBuffers(void) {
+    dglFinish();
     sysMain.SwapBuffers();
 }
 

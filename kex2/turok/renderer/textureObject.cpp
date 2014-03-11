@@ -241,6 +241,7 @@ byte *kexTexture::LoadFromFile(const char *file) {
         out = LoadFromBMP(data);
     }
     else {
+        out = NULL;
         common.Warning("kexTexture::LoadFromFile(%s) - Unknown file format\n", file);
     }
 
@@ -490,8 +491,6 @@ byte *kexTexture::LoadFromBMP(byte *input) {
     int cols = kexMath::Abs(bmp.width);
     int rows = kexMath::Abs(bmp.height);
 
-    int numPixels = cols * rows;
-
     origwidth = cols;
     origheight = rows;
     width = kexMath::RoundPowerOfTwo(origwidth);
@@ -615,6 +614,10 @@ void kexTexture::Upload(byte **data, texClampMode_t clamp, texFilterMode_t filte
 
     clampMode = clamp;
     filterMode = filter;
+
+    if(!renderSystem.IsInitialized()) {
+        return;
+    }
 
     dglGenTextures(1, &texid);
 

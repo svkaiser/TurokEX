@@ -81,7 +81,12 @@ kexCvar::kexCvar(const char *name, int flags, char *value,
 //
 
 void kexCvar::FreeStringValue(void) {
-    bModified ? Mem_Free((char*)value) : value = NULL;
+    if(bModified) {
+        Mem_Free((char*)value);
+    }
+    else {
+        value = NULL;
+    }
 }
 
 //
@@ -178,9 +183,11 @@ void kexCvarManager::AutoComplete(const char *partial) {
     kexCvar     *cvar;
     int         len;
     bool        match = false;
+    kexStr      tmp;
     
-    strlwr((char*)partial);
-    len = strlen(partial);
+    tmp = (char*)partial;
+    tmp.ToLower();
+    len = tmp.Length();
     
     if(!len) {
         return;
@@ -188,7 +195,7 @@ void kexCvarManager::AutoComplete(const char *partial) {
     
     // check functions
     for(cvar = first; cvar; cvar = cvar->GetNext()) {
-        if(!strncmp(partial, cvar->GetName(), len)) {
+        if(!strncmp(tmp.c_str(), cvar->GetName(), len)) {
             if(!match) {
                 match = true;
                 common.Printf("\n");
@@ -240,7 +247,7 @@ void kexCvarManager::WriteToFile(FILE *file) {
 void kexCvarManager::InitCustomCvars(void) {
     kexDefinition *def;
 
-    if(def = defManager.LoadDefinition("defs/cvars.def")) {
+    if((def = defManager.LoadDefinition("defs/cvars.def"))) {
         kexKeyMap *key;
         kexStr name;
         kexStr desc;
@@ -276,7 +283,7 @@ void kexCvarManager::Init(void) {
 #ifndef EDITOR
     int p;
 
-    if(p = common.CheckParam("-setvar")) {
+    if((p = common.CheckParam("-setvar"))) {
         p++;
 
         while(p != myargc && myargv[p][0] != '-') {

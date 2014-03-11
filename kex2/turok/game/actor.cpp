@@ -492,7 +492,7 @@ void kexActor::SetModel(const char* modelFile) {
 
         // set initial animation
         // TODO - rename anim00 to something better
-        if(anim = kexAnimState::GetAnim(m, "anim00")) {
+        if((anim = kexAnimState::GetAnim(m, "anim00"))) {
             animState.Set(anim, 4, ANF_LOOP);
         }
 

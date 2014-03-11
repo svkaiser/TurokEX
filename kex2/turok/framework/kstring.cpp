@@ -142,6 +142,17 @@ kexStr &kexStr::Concat(const char *string) {
 // kexStr::Concat
 //
 
+kexStr &kexStr::Concat(const char c) {
+    CheckSize((length + 1)+1, true);
+    charPtr[length++] = c;
+    charPtr[length] = '\0';
+    return *this;
+}
+
+//
+// kexStr::Concat
+//
+
 kexStr &kexStr::Concat(const char *string, int len) {
     CheckSize((length + len)+1, true);
 
@@ -303,7 +314,7 @@ kexStr &kexStr::operator+=(const char *str) {
 //
 
 kexStr &kexStr::operator+=(const char c) {
-    return Concat(&c);
+    return Concat(c);
 }
 
 //
@@ -355,7 +366,6 @@ int kexStr::IndexOf(const char *pattern) const {
     int patlen = strlen(pattern);
     int i = 0;
     int j = 0;
-    int index = -1;
 
     while(i + j < Length()) {
         if(charPtr[i + j] == pattern[j]) {
@@ -380,7 +390,6 @@ int kexStr::IndexOf(const char *string, const char *pattern) {
     int patlen = strlen(pattern);
     int i = 0;
     int j = 0;
-    int index = -1;
 
     while(i + j < (int)strlen(string)) {
         if(string[i + j] == pattern[j]) {

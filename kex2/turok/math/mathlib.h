@@ -39,7 +39,7 @@
 #define DEG2RAD(x) ((x) * M_RAD)
 #define RAD2DEG(x) ((x) * M_DEG)
 
-#define FLOATSIGNBIT(f)  ((*(const unsigned long*)&(f)) >> 31)
+#define FLOATSIGNBIT(f)  (reinterpret_cast<const unsigned int&>(f) >> 31)
 
 class kexVec3;
 class kexVec4;

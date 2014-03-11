@@ -288,6 +288,7 @@ void kexLexer::MustMatchToken(int type) {
             string = "a comma";
             break;
         default:
+            string = NULL;
             parser.Error("Invalid token: %s", token);
             break;
         }

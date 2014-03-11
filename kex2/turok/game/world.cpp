@@ -248,8 +248,8 @@ void kexWorld::AddActor(kexActor *actor) {
     actor->worldLink.Add(actors);
 
     if(actor->GetName().Length() <= 0) {
-        actor->SetName(kexStr(kva("%s_%i",
-            actor->ClassName(), kexActor::id)));
+        kexStr tmp(kva("%s_%i", actor->ClassName(), kexActor::id));
+        actor->SetName(tmp);
     }
 
     actor->CallSpawn();
@@ -849,7 +849,7 @@ void kexWorld::Unload(void) {
         return;
     }
 
-    common.Printf("Unloading %s\n", title);
+    common.Printf("Unloading %s\n", title.c_str());
     
     bLoaded = false;
     
@@ -1059,6 +1059,8 @@ bool kexWorld::SetupChildWorldNode(worldNode_t *parent, worldNode_t *child,
                 box->min.Set(splitX[0], 0, parent->bounds.min.z);
                 box->max.Set(parent->bounds.max.x, 0, parent->bounds.max.z);
             }
+            break;
+        default:
             break;
     }
 

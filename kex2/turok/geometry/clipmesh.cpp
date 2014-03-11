@@ -463,7 +463,6 @@ void kexClipMesh::CreateConvexHull(void) {
         return;
     }
 
-    float totalVerts = 0;
     surfaceGroup_t *group;
     cmGroup_t *cmGroup;
     HullLibrary hl;

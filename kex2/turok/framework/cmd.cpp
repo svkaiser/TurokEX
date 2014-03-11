@@ -136,7 +136,7 @@ void kexCommand::Execute(const char *buffer) {
             }
 
             // execute commands after a newline or semicolon
-            if(*b_rover == '\n' || (*b_rover == ';' && !inquotes) || *b_rover == 0 && havetoken) {
+            if(*b_rover == '\n' || (*b_rover == ';' && !inquotes) || (*b_rover == 0 && havetoken)) {
                 if(inquotes) {
                     common.Warning("Command contains incomplete quote\n");
                     return;
@@ -146,7 +146,7 @@ void kexCommand::Execute(const char *buffer) {
                     kexCvar *cvar;
 
                     // check to see if command maches a cvar
-                    if(cvar = cvarManager.Get(cmd_argv[0])) {
+                    if((cvar = cvarManager.Get(cmd_argv[0]))) {
                         if(cmd_argc == 1) {
                             common.Printf("%s: %s (%s)\n", cvar->GetName(),
                                 cvar->GetValue(), cvar->GetDefaultValue());

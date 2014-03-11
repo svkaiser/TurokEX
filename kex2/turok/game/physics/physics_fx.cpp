@@ -206,6 +206,8 @@ void kexFxPhysics::Think(const float timeDelta) {
                     fx->Remove();
                     fx->SetParent(NULL);
                     break;
+                default:
+                    break;
             }
         }
     }

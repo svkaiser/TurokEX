@@ -43,6 +43,7 @@ public:
     int                 IndexOf(const kexStr &pattern) const;
     kexStr              &Concat(const char *string);
     kexStr              &Concat(const char *string, int len);
+    kexStr              &Concat(const char c);
     kexStr              &NormalizeSlashes(void);
     kexStr              &StripPath(void);
     kexStr              &StripExtension(void);

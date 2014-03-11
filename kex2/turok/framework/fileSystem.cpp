@@ -32,6 +32,10 @@
 #include "filesystem.h"
 #include "unzip.h"
 
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+
 #define FILE_MAX_HASH_SIZE  32768
 
 kexCvar cvarBasePath("kf_basepath", CVF_STRING|CVF_CONFIG, "", "Base file path to look for files");
@@ -91,7 +95,7 @@ char *kexFileSystem::GetBaseDirectory(void) {
     exe_path = exe_path.BeforeLast(path_separator[0]);
     return Mem_Strdup(exe_path.c_str(), hb_static);
 }
-#endif;
+#endif
 
 //
 // kexFileSystem::Shutdown
@@ -139,6 +143,7 @@ void kexFileSystem::LoadZipFile(const char *file) {
     unsigned int entries;
     long hash;
     char *filepath;
+    kexStr fPath;
 
 #ifndef EDITOR
     filepath = kva("%s\\%s", cvarBasePath.GetValue(), file);
@@ -147,11 +152,15 @@ void kexFileSystem::LoadZipFile(const char *file) {
     filepath = kva("%s\\%s", path, file);
     Mem_Free(path);
 #endif
-    common.Printf("KF_LoadZipFile: Loading %s\n", filepath);
+    
+    fPath = filepath;
+    fPath.NormalizeSlashes();
+    
+    common.Printf("KF_LoadZipFile: Loading %s\n", fPath.c_str());
 
     // open zip file
-    if(!(uf = unzOpen(filepath))) {
-        common.Error("KF_LoadZipFile: Unable to find %s", filepath);
+    if(!(uf = unzOpen(fPath.c_str()))) {
+        common.Error("KF_LoadZipFile: Unable to find %s", fPath.c_str());
     }
 
     // get info on zip file
@@ -161,7 +170,7 @@ void kexFileSystem::LoadZipFile(const char *file) {
     // allocate new pack file
     pack = (kpf_t*)Mem_Calloc(sizeof(kpf_t), hb_file);
     pack->filehandle = (unzFile*)uf;
-    strcpy(pack->filename, filepath);
+    strcpy(pack->filename, fPath.c_str());
     pack->numfiles = gi.number_entry;
     pack->next = root;
     root = pack;
@@ -275,9 +284,10 @@ void kexFileSystem::GetMatchingFiles(kexStrList &list, const char *search) {
 
 int kexFileSystem::ReadExternalTextFile(const char *name, byte **buffer) const {
     static char filepath[1024];
+    kexStr fPath;
     FILE *fp;
 
-    errno = 0;
+    //errno = 0;
 
 #ifndef EDITOR
     sprintf(filepath, "%s\\%s", cvarBasePath.GetValue(), name);
@@ -286,7 +296,11 @@ int kexFileSystem::ReadExternalTextFile(const char *name, byte **buffer) const {
     sprintf(filepath, "%s\\%s", path, name);
     Mem_Free(path);
 #endif
-    if((fp = fopen(filepath, "rb"))) {
+    
+    fPath = filepath;
+    fPath.NormalizeSlashes();
+    
+    if((fp = fopen(fPath.c_str(), "rb"))) {
         size_t length;
 
         fseek(fp, 0, SEEK_END);

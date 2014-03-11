@@ -64,6 +64,9 @@ void kexNetwork::CheckMessages(void) {
             case ENET_EVENT_TYPE_RECEIVE:
                 OnRecieve();
                 break;
+                
+            default:
+                break;
         }
     }
 }

@@ -144,7 +144,7 @@ void kexCommon::Error(const char* string, ...) {
 
 int kexCommon::CheckParam(const char *check) {
     for(int i = 1; i < myargc; i++) {
-        if(!stricmp(check, myargv[i]))
+        if(!strcmp(check, myargv[i]))
             return i;
     }
     return 0;
@@ -184,7 +184,10 @@ void kexCommon::ReadConfigFile(const char *file) {
 extern kexCvar cvarBasePath;
 
 void kexCommon::WriteConfigFile(void) {
-    FILE * f = fopen(kva("%s\\config.cfg", cvarBasePath.GetValue()), "w");
+    kexStr str(kva("%s\\config.cfg", cvarBasePath.GetValue()));
+    str.NormalizeSlashes();
+    
+    FILE * f = fopen(str.c_str(), "w");
     if(f) {
         inputKey.WriteBindings(f);
         cvarManager.WriteToFile(f);

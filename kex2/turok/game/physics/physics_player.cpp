@@ -321,7 +321,7 @@ void kexPlayerPhysics::Think(const float timeDelta) {
                 localWorld.Trace(&trace);
                 slope = trace.hitNormal.Dot(-gravity);
 
-                if(trace.hitTri != groundGeom && slope > 0.5f || trace.fraction >= 1) {
+                if((trace.hitTri != groundGeom && slope > 0.5f || trace.fraction >= 1)) {
                     // don't try to step up against a wall
                     if(!(stepFraction < 0.99f && slope <= 0.5f)) {
                         owner->SetOrigin(trace.hitVector - (gravity * 0.125f));

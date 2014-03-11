@@ -160,11 +160,11 @@ kexKeyMap *kexDefManager::FindDefEntry(const char *name) {
     strncpy(tStr, name, pos);
     tStr[pos] = 0;
 
-    if(def = LoadDefinition(tStr)) {
+    if((def = LoadDefinition(tStr))) {
         strncpy(tStr, name + pos + 1, len - pos);
         tStr[len - pos] = 0;
 
-        if(defEntry = def->entries.Find(tStr)) {
+        if((defEntry = def->entries.Find(tStr))) {
             return defEntry;
         }
 

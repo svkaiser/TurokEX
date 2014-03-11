@@ -147,8 +147,9 @@ kexAnim_t *kexAnimState::GetAnim(const kexModel_t *model, const char *name) {
         return NULL;
 
     for(i = 0; i < model->numAnimations; i++) {
-        if(!strcmp(model->anims[i].alias, name))
+        if(!strcmp(model->anims[i].alias, name)) {
             return &model->anims[i];
+        }
     }
 
     return NULL;
@@ -166,8 +167,9 @@ kexAnim_t *kexAnimState::GetAnim(const kexModel_t *model, const int id) {
     }
 
     for(i = 0; i < model->numAnimations; i++) {
-        if(model->anims[i].animID == id)
+        if(model->anims[i].animID == id) {
             return &model->anims[i];
+        }
     }
 
     return NULL;
@@ -184,8 +186,9 @@ bool kexAnimState::CheckAnimID(const kexModel_t *model, const int id) {
         return false;
 
     for(i = 0; i < model->numAnimations; i++) {
-        if(model->anims[i].animID == id)
+        if(model->anims[i].animID == id) {
             return true;
+        }
     }
 
     return false;
@@ -224,7 +227,7 @@ void kexAnimState::Set(const kexStr &animName, float animTime, int animFlags) {
         return;
     }
 
-    if(anim = kexAnimState::GetAnim(owner->Model(), animName.c_str())) {
+    if((anim = kexAnimState::GetAnim(owner->Model(), animName.c_str()))) {
         Set(anim, animTime, animFlags);
     }
 }
@@ -240,7 +243,7 @@ void kexAnimState::Set(const int id, float animTime, int animFlags) {
         return;
     }
 
-    if(anim = kexAnimState::GetAnim(owner->Model(), id)) {
+    if((anim = kexAnimState::GetAnim(owner->Model(), id))) {
         Set(anim, animTime, animFlags);
     }
 }
@@ -311,7 +314,7 @@ void kexAnimState::Blend(const kexStr &animName, float animTime, float animBlend
         return;
     }
 
-    if(anim = kexAnimState::GetAnim(owner->Model(), animName.c_str())) {
+    if((anim = kexAnimState::GetAnim(owner->Model(), animName.c_str()))) {
         Blend(anim, animTime, animBlendTime, animFlags);
     }
 }
@@ -327,7 +330,7 @@ void kexAnimState::Blend(const int id, float animTime, float animBlendTime, int 
         return;
     }
 
-    if(anim = kexAnimState::GetAnim(owner->Model(), id)) {
+    if((anim = kexAnimState::GetAnim(owner->Model(), id))) {
         Blend(anim, animTime, animBlendTime, animFlags);
     }
 }

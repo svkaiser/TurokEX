@@ -2551,7 +2551,6 @@ PxI32 calchullgen(float3 *verts,PxI32 verts_count, PxI32 vlimit)
 	vlimit-=4;
 	while(vlimit >0 && (te=extrudable(epsilon)))
 	{
-		int3 ti=*te;
 		PxI32 v=te->vmax;
 		PX_ASSERT(!isextreme[v]);  // wtf we've already done this vertex
 		isextreme[v]=1;
