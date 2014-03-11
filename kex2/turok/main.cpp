@@ -64,7 +64,9 @@ int main(int argc, char **argv) {
 
 int Kex_Main(int argc, char *argv[]) {
 #ifdef _WIN32
+#ifdef _DEBUG
     _CrtSetDbgFlag(0);
+#endif
 #endif
     sysMain.Main(argc, argv);
     return 0;
