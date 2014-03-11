@@ -82,7 +82,7 @@ public:
     float                   GetWaterDepth(void);
     void                    CheckWater(float height);
     kexVec3                 GroundNormal(void);
-    void                    CorrectSectorPosition(void);
+    bool                    CorrectSectorPosition(void);
 
     virtual void            Think(const float timeDelta);
 

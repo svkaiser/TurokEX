@@ -26,12 +26,17 @@
 #include "common.h"
 #include "physics/physics.h"
 
+class kexFx;
+
 BEGIN_EXTENDED_CLASS(kexFxPhysics, kexPhysics);
 public:
                             kexFxPhysics(void);
                             ~kexFxPhysics(void);
 
-virtual void                Think(const float timeDelta);
+    virtual void            Think(const float timeDelta);
+    void                    ImpactObject(kexFx *fx, kexWorldObject *obj, kexVec3 &normal);
+    void                    ImpactSurface(kexFx *fx, kexTri *geom, kexVec3 &normal);
+
 END_CLASS();
 
 #endif

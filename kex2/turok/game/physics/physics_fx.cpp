@@ -47,20 +47,94 @@ kexFxPhysics::~kexFxPhysics(void) {
 }
 
 //
+// kexFxPhysics::ImpactObject
+//
+
+void kexFxPhysics::ImpactObject(kexFx *fx, kexWorldObject *obj, kexVec3 &normal) {
+    fxinfo_t *fxinfo = fx->fxInfo;
+    kexFx *nfx;
+    short iType;
+
+    switch(fxinfo->ontouch) {
+        case VFX_BOUNCE:
+            if(fxinfo->bStopAnimOnImpact) {
+                fx->bAnimate = false;
+            }
+            ImpactVelocity(velocity, normal, 1.05f);
+            break;
+        case VFX_DESTROY:
+            owner->GetOrigin() += (normal * 1.024f);
+            iType = obj->GetImpactType();
+
+            if(iType != -1) {
+                nfx = fx->Event(&fxinfo->onImpact[iType], obj);
+                if(nfx != fx && nfx->fxInfo->drawtype == VFX_DRAWSURFACE) {
+                    nfx->SetRotation(normal.ToQuat());
+                }
+            }
+
+            fx->Remove();
+            fx->SetParent(NULL);
+            break;
+        default:
+            break;
+    }
+}
+
+//
+// kexFxPhysics::ImpactSurface
+//
+
+void kexFxPhysics::ImpactSurface(kexFx *fx, kexTri *geom, kexVec3 &normal) {
+    fxinfo_t *fxinfo = fx->fxInfo;
+    kexArea *area = sector->area;
+    kexFx *nfx;
+    short iType;
+
+    switch(fxinfo->onplane) {
+        case VFX_BOUNCE:
+            if(fxinfo->bStopAnimOnImpact) {
+                fx->bAnimate = false;
+            }
+            ImpactVelocity(velocity, normal, 1.05f);
+            ApplyFriction();
+            break;
+        case VFX_DESTROY:
+            fx->GetOrigin() += (normal * 1.024f);
+
+            if(geom == NULL) {
+                iType = area->WallSurfaceType();
+            }
+            else {
+                iType = area->FloorSurfaceType();
+            }
+
+            if(iType != -1) {
+                nfx = fx->Event(&fxinfo->onImpact[iType], NULL);
+                if(nfx != fx && nfx->fxInfo->drawtype == VFX_DRAWSURFACE) {
+                    nfx->SetRotation(normal.ToQuat());
+                }
+            }
+            fx->Remove();
+            fx->SetParent(NULL);
+            break;
+        default:
+            break;
+    }
+}
+
+//
 // kexFxPhysics::Think
 //
 
 void kexFxPhysics::Think(const float timeDelta) {
     kexVec3 move;
     kexFx *fx;
-    kexFx *nfx;
     float moveAmount;
     fxinfo_t *fxinfo;
     traceInfo_t trace;
     kexVec3 start;
-    kexArea *area;
     int oldWL;
-    short iType;
 
     if(owner == NULL) {
         return;
@@ -109,6 +183,10 @@ void kexFxPhysics::Think(const float timeDelta) {
         owner->SetOrigin(start + move);
     }
     else {
+        if(fxinfo->bLinkArea && CorrectSectorPosition()) {
+            ImpactSurface(fx, &sector->lowerTri, sector->lowerTri.plane.Normal());
+            return;
+        }
         trace.owner = owner;
         trace.sector = &sector;
         trace.bUseBBox = false;
@@ -143,34 +221,8 @@ void kexFxPhysics::Think(const float timeDelta) {
                 owner->LinkArea();
             }
 
-            area = sector->area;
-
             if(trace.hitActor != NULL) {
-                switch(fxinfo->ontouch) {
-                    case VFX_BOUNCE:
-                        if(fxinfo->bStopAnimOnImpact) {
-                            fx->bAnimate = false;
-                        }
-                        ImpactVelocity(velocity, trace.hitNormal, 1.05f);
-                        break;
-                    case VFX_DESTROY:
-                        owner->GetOrigin() += (trace.hitNormal * 1.024f);
-                        iType = trace.hitActor->GetImpactType();
-
-                        if(iType != -1) {
-                            nfx = fx->Event(&fxinfo->onImpact[iType], trace.hitActor);
-                            if(nfx != fx && nfx->fxInfo->drawtype == VFX_DRAWSURFACE) {
-                                nfx->SetRotation(trace.hitNormal.ToQuat());
-                            }
-                        }
-
-                        fx->Remove();
-                        fx->SetParent(NULL);
-                        break;
-                    default:
-                        break;
-                }
-
+                ImpactObject(fx, trace.hitActor, trace.hitNormal);
                 return;
             }
 
@@ -178,37 +230,7 @@ void kexFxPhysics::Think(const float timeDelta) {
                 groundGeom = trace.hitTri;
             }
 
-            switch(fxinfo->onplane) {
-                case VFX_BOUNCE:
-                    if(fxinfo->bStopAnimOnImpact) {
-                        fx->bAnimate = false;
-                    }
-                    ImpactVelocity(velocity, trace.hitNormal, 1.05f);
-                    ApplyFriction();
-                    break;
-                case VFX_DESTROY:
-                    owner->GetOrigin() += (trace.hitNormal * 1.024f);
-
-                    if(trace.hitTri == NULL) {
-                        iType = area->WallSurfaceType();
-                    }
-                    else {
-                        iType = area->FloorSurfaceType();
-                    }
-
-                    if(iType != -1) {
-                        nfx = fx->Event(&fxinfo->onImpact[iType], NULL);
-                        if(nfx != fx && nfx->fxInfo->drawtype == VFX_DRAWSURFACE) {
-                            nfx->SetRotation(trace.hitNormal.ToQuat());
-                        }
-                    }
-
-                    fx->Remove();
-                    fx->SetParent(NULL);
-                    break;
-                default:
-                    break;
-            }
+            ImpactSurface(fx, trace.hitTri, trace.hitNormal);
         }
     }
 

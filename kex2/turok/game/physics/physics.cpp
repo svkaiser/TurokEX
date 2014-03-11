@@ -204,9 +204,11 @@ kexVec3 kexPhysics::GroundNormal(void) {
 // kexPhysics::CorrectSectorPosition
 //
 
-void kexPhysics::CorrectSectorPosition(void) {
+bool kexPhysics::CorrectSectorPosition(void) {
+    bool ok = false;
+
     if(sector == NULL) {
-        return;
+        return false;
     }
 
     kexVec3 org = owner->GetOrigin();
@@ -217,6 +219,7 @@ void kexPhysics::CorrectSectorPosition(void) {
         owner->GetOrigin()[1] = org[1] - dist;
         groundGeom = &sector->lowerTri;
         velocity.Clear();
+        ok = true;
     }
 
     if(sector->flags & CLF_CHECKHEIGHT) {
@@ -227,11 +230,13 @@ void kexPhysics::CorrectSectorPosition(void) {
             owner->GetOrigin()[1] = dist;
             groundGeom = &sector->lowerTri;
             velocity.Clear();
+            ok = true;
         }
     }
 
     // check if in water sector
     CheckWater((owner->GetViewHeight() + owner->GetCenterHeight()) * 0.5f);
+    return ok;
 }
 
 //
