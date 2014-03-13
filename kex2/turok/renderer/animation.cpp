@@ -698,7 +698,7 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                     anim->actions[i].frame = lexer->GetNumber();
                     if(anim->actions[i].frame == 0) {
                         common.Warning("Kanim_ParseAnimScript: Frame 0 set on %i (%s)\n",
-                            anim->animFile);
+                            i, anim->animFile);
                     }
                     lexer->GetString();
                     anim->actions[i].function = Mem_Strdup(lexer->StringToken(),

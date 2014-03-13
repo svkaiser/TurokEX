@@ -40,8 +40,8 @@ typedef enum
 
 class kexCvar {
 public:
-                    kexCvar(const char *name, int flags, char *value, const char *description);
-                    kexCvar(const char *name, int flags, char *value,
+                    kexCvar(const char *name, int flags, const char *value, const char *description);
+                    kexCvar(const char *name, int flags, const char *value,
                         float min, float max, const char *description);
 
     const char      *GetName(void) const { return name; }
@@ -64,7 +64,7 @@ public:
     void            Set(float value);
 
 private:
-    void            Setup(const char *name, char *value, const char *description,
+    void            Setup(const char *name, const char *value, const char *description,
                         int flags, float min, float max);
 protected:
     const char      *name;

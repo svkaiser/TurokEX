@@ -63,7 +63,7 @@ static void FCmd_Seta(void) {
 // kexCvar::kexCvar
 //
 
-kexCvar::kexCvar(const char *name, int flags, char *value, const char *description) {
+kexCvar::kexCvar(const char *name, int flags, const char *value, const char *description) {
     Setup(name, value, description, flags, 0, 1);
 }
 
@@ -71,7 +71,7 @@ kexCvar::kexCvar(const char *name, int flags, char *value, const char *descripti
 // kexCvar::kexCvar
 //
 
-kexCvar::kexCvar(const char *name, int flags, char *value,
+kexCvar::kexCvar(const char *name, int flags, const char *value,
                  float min, float max, const char *description) {
     Setup(name, value, description, flags, min, max);
 }
@@ -329,10 +329,10 @@ void kexCvarManager::Shutdown(void) {
 // kexCvar::Setup
 //
 
-void kexCvar::Setup(const char *name, char *value,
+void kexCvar::Setup(const char *name, const char *value,
                     const char *description, int flags, float min, float max) {
     this->name          = name;
-    this->value         = value;
+    this->value         = (char*)value;
     this->flags         = flags;
     this->description   = description;
     this->defaultValue  = value;

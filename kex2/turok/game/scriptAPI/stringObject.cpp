@@ -36,7 +36,7 @@ void kexScriptObjString::Init(void) {
     scriptManager.Engine()->RegisterObjectType(
         "kStr",
         sizeof(kexStr),
-        asOBJ_VALUE | asOBJ_APP_CLASS_CDAK);
+        asOBJ_VALUE | asOBJ_APP_CLASS_CA);
 
     scriptManager.Engine()->RegisterStringFactory(
         "kStr",

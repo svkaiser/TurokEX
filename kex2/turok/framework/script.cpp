@@ -248,7 +248,7 @@ void kexLexer::MustMatchToken(int type) {
 #endif
 
     if(tokentype != type) {
-        char *string;
+        const char *string;
 
         switch(type) {
         case TK_NUMBER:

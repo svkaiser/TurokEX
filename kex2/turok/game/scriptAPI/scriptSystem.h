@@ -25,6 +25,9 @@
 
 #include "angelscript.h"
 
+class kexScriptManager;
+extern kexScriptManager scriptManager;
+
 class kexScriptManager {
 public:
                             kexScriptManager(void);
@@ -94,8 +97,6 @@ private:
     asIScriptContext        *ctx;
     asIScriptModule         *module;
 };
-
-extern kexScriptManager scriptManager;
 
 class kexScriptObjString    { public: static void Init(void); };
 

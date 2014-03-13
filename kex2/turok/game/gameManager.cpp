@@ -181,7 +181,7 @@ void kexGameManager::InitGame(void) {
     kexStr gameClass("DefaultGame");
 
     // load default game info
-    if(gameDef = defManager.FindDefEntry("defs/game.def@default")) {
+    if((gameDef = defManager.FindDefEntry("defs/game.def@default"))) {
         gameDef->GetString("gameClass", gameClass);
     }
 

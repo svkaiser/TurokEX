@@ -25,6 +25,7 @@
 //-----------------------------------------------------------------------------
 
 #include <ctype.h>
+#include <string.h>
 #include "SDL.h"
 
 #include "common.h"
@@ -36,8 +37,8 @@
 kexInputKey inputKey;
 
 typedef struct {
-    int		code;
-    char	*name;
+    int         code;
+    const char  *name;
 } keyinfo_t;
 
 static keyinfo_t Keys[] = {
@@ -173,9 +174,10 @@ static void FCmd_ListBinds(void) {
 int kexInputKey::GetKeyCode(char *key) {
     keyinfo_t *pkey;
     int len;
+    kexStr tmp(key);
 
-    strlwr(key);
-    len = strlen(key);
+    tmp.ToLower();
+    len = tmp.Length();
 
     if(len == 1) {
         if(((*key >= 'a') && (*key <= 'z')) || ((*key >= '0') && (*key <= '9'))) {
@@ -271,6 +273,7 @@ void kexInputKey::HandleControl(int ctrl) {
 void kexInputKey::ListBindings(void) {
     keycmd_t *keycmd;
     cmdlist_t *cmd;
+    kexStr tmp;
 
     common.Printf("\n");
 
@@ -281,9 +284,10 @@ void kexInputKey::ListBindings(void) {
             char buff[32];
 
             GetName(buff, i);
-            strlwr(buff);
+            tmp = buff;
+            tmp.ToLower();
 
-            common.CPrintf(COLOR_GREEN, "%s : \"%s\"\n", buff, cmd->command);
+            common.CPrintf(COLOR_GREEN, "%s : \"%s\"\n", tmp.c_str(), cmd->command);
         }
     }
 }
@@ -377,6 +381,7 @@ void kexInputKey::AddAction(byte id, const kexStr &str) {
 void kexInputKey::WriteBindings(FILE *file) {
     keycmd_t *keycmd;
     cmdlist_t *cmd;
+    kexStr tmp;
 
     for(int i = 0; i < MAX_KEYS; i++) {
         keycmd = &keycmds[i];
@@ -385,9 +390,10 @@ void kexInputKey::WriteBindings(FILE *file) {
             char buff[32];
 
             GetName(buff, i);
-            strlwr(buff);
+            tmp = buff;
+            tmp.ToLower();
 
-            fprintf(file, "bind %s \"%s\"\n", buff, cmd->command);
+            fprintf(file, "bind %s \"%s\"\n", tmp.c_str(), cmd->command);
         }
     }
 }
@@ -417,7 +423,7 @@ void kexInputKey::InitActions(void) {
             name = list[i][j].GetName();
             if(!keys->GetInt(name, value)) {
                 common.Warning("kexInputKey::InitActions: entry %s contains non-integer value (%s)\n",
-                    name, list[i][j].GetString());
+                    name.c_str(), list[i][j].GetString());
                 continue;
             }
 

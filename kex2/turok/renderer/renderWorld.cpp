@@ -762,9 +762,6 @@ void kexRenderWorld::DrawFX(void) {
 
     if(!bWireframe) {
         dglEnableClientState(GL_COLOR_ARRAY);
-    }
-
-    if(!bWireframe) {
         dglEnable(GL_POLYGON_OFFSET_FILL);
     }
 
@@ -891,14 +888,11 @@ void kexRenderWorld::DrawFX(void) {
     if(!bWireframe) {
         dglPolygonOffset(0, 0);
         dglDisable(GL_POLYGON_OFFSET_FILL);
+        dglDisableClientState(GL_COLOR_ARRAY);
     }
 
     renderSystem.SetState(GLSTATE_DEPTHTEST, true);
     dglEnableClientState(GL_NORMAL_ARRAY);
-
-    if(!bWireframe) {
-        dglDisableClientState(GL_COLOR_ARRAY);
-    }
 }
 
 //

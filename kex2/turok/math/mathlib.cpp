@@ -179,7 +179,7 @@ void kexMath::InitObject(void) {
     // vectors
     //
     scriptManager.Engine()->RegisterObjectType("kVec3", sizeof(kexVec3),
-        asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS_CAK);
+        asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS_CA | asOBJ_APP_CLASS_ALLFLOATS);
     scriptManager.Engine()->RegisterObjectBehaviour("kVec3", asBEHAVE_CONSTRUCT, "void f()",
         asFUNCTION(kexVec3::ObjectConstruct1), asCALL_CDECL_OBJLAST);
     scriptManager.Engine()->RegisterObjectBehaviour("kVec3", asBEHAVE_CONSTRUCT,
@@ -231,7 +231,7 @@ void kexMath::InitObject(void) {
     // quaternions
     //
     scriptManager.Engine()->RegisterObjectType("kQuat", sizeof(kexQuat),
-        asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS_CAK);
+        asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS_CA | asOBJ_APP_CLASS_ALLFLOATS);
     scriptManager.Engine()->RegisterObjectBehaviour("kQuat", asBEHAVE_CONSTRUCT, "void f()",
         asFUNCTION(kexQuat::ObjectConstruct1), asCALL_CDECL_OBJLAST);
     scriptManager.Engine()->RegisterObjectBehaviour("kQuat", asBEHAVE_CONSTRUCT,
@@ -264,7 +264,7 @@ void kexMath::InitObject(void) {
     // angles
     //
     scriptManager.Engine()->RegisterObjectType("kAngle", sizeof(kexAngle),
-        asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS_CAK);
+        asOBJ_VALUE | asOBJ_POD | asOBJ_APP_CLASS_CA | asOBJ_APP_CLASS_ALLFLOATS);
     scriptManager.Engine()->RegisterObjectBehaviour("kAngle", asBEHAVE_CONSTRUCT, "void f()",
         asFUNCTION(kexAngle::ObjectConstruct1), asCALL_CDECL_OBJLAST);
     scriptManager.Engine()->RegisterObjectBehaviour("kAngle", asBEHAVE_CONSTRUCT,

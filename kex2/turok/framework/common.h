@@ -82,7 +82,7 @@ void Sys_Error(const char *string);
 extern  int	myargc;
 extern  char** myargv;
 
-char *kva(char *str, ...);
+char *kva(const char *str, ...);
 kbool fcmp(float f1, float f2);
 
 class kexCommon {

@@ -23,8 +23,14 @@
 #ifndef _SND_H_
 #define _SND_H_
 
+#if defined(_WIN32) && defined(_MSC_VER)
 #include "al.h"
 #include "alc.h"
+#else
+#include "OpenAL/al.h"
+#include "OpenAL/alc.h"
+#endif
+
 #include "gameObject.h"
 #include "script.h"
 #include "cachefilelist.h"

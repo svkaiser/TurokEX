@@ -24,8 +24,6 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "al.h"
-#include "alc.h"
 #include "common.h"
 #include "sound.h"
 #include "script.h"

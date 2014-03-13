@@ -116,6 +116,7 @@ bool kexBinFile::Exists(const char *file) {
         fclose(fstream);
         return true;
     }
+#ifdef _WIN32
     else {
         // If we can't open because the file is a directory, the 
         // "file" exists at least!
@@ -123,7 +124,7 @@ bool kexBinFile::Exists(const char *file) {
             return true;
         }
     }
-
+#endif
     return false;
 }
 

@@ -790,7 +790,7 @@ void kexFxManager::ParseEvent(fxEvent_t *fxEvent, kexLexer *lexer) {
 #define CHECK_BOOL(name)                                                        \
     case scvfx_ ##name:                                                         \
     lexer->AssignFromTokenList(vfxtokens, &tmp, scvfx_ ##name, false);          \
-    info->name = (tmp != 0);                                                    \
+       info->name = (tmp != 0);                                                 \
     break
 
 #define CHECK_INT(name)                                                         \
@@ -801,7 +801,7 @@ void kexFxManager::ParseEvent(fxEvent_t *fxEvent, kexLexer *lexer) {
 
 #define CHECK_FLOAT(name, prop)                                                 \
     case scvfx_ ##name:                                                         \
-    lexer->AssignFromTokenList(vfxtokens, &info-> ##prop,                       \
+       lexer->AssignFromTokenList(vfxtokens, &info->prop,                       \
         scvfx_ ##name, false);                                                  \
     break
 
@@ -811,7 +811,7 @@ void kexFxManager::ParseEvent(fxEvent_t *fxEvent, kexLexer *lexer) {
         scvfx_ ##name, false);                                                  \
     break;                                                                      \
     case scvfx_ ##name## _randomscale:                                          \
-    lexer->AssignFromTokenList(vfxtokens, &info->name .rand,                    \
+       lexer->AssignFromTokenList(vfxtokens, &info->name .rand,                 \
         scvfx_ ##name## _randomscale, false);                                   \
     break
 
@@ -821,7 +821,7 @@ void kexFxManager::ParseEvent(fxEvent_t *fxEvent, kexLexer *lexer) {
         scvfx_ ##name, false);                                                  \
     break;                                                                      \
     case scvfx_ ##name## _randomscale:                                          \
-    lexer->AssignFromTokenList(vfxtokens, &info->name .rand,                    \
+       lexer->AssignFromTokenList(vfxtokens, &info->name .rand,                 \
         scvfx_ ##name## _randomscale, false);                                   \
     break
 
