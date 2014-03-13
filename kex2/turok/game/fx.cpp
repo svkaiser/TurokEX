@@ -498,7 +498,7 @@ void kexFx::Spawn(void) {
         kexVec3 newDest = origin + (offset | matrix);
 
         // clip position if outside of collision map. non-moving particles are ignored
-        if(localWorld.CollisionMap().IsLoaded() && owner && fxInfo->translation_randomscale != 0) {
+        if(localWorld.CollisionMap().IsLoaded() && owner && fxInfo->bLinkArea) {
             physics.sector = static_cast<kexWorldObject*>(owner)->Physics()->sector;
             TryMove(owner->GetOrigin(), newDest, &physics.sector);
         }
