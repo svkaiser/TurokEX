@@ -42,9 +42,13 @@
 static void FCmd_SpawnFX(void) {
     kexCamera *camera = localWorld.Camera();
     kexVec3 forward = camera->GetAngles().ToForwardAxis();
+    kexVec3 org = camera->GetOrigin() + (forward * 16.384f);
     
-    localWorld.SpawnFX("fx/default.kfx", NULL, kexVec3::vecZero,
-        camera->GetOrigin() + (forward * 16.384f), camera->GetRotation());
+    localWorld.SpawnFX("fx/default.kfx",
+                       NULL,
+                       kexVec3::vecZero,
+                       org,
+                       camera->GetRotation());
 }
 
 kexFxManager fxManager;
@@ -357,7 +361,7 @@ void kexFx::Spawn(void) {
         if(fxInfo->bProjectile && owner) {
             kexWorldObject *targ;
 
-            if(targ = static_cast<kexWorldObject*>(owner->GetTarget())) {
+            if((targ = static_cast<kexWorldObject*>(owner->GetTarget()))) {
                 kexVec3 torg(targ->GetOrigin());
                 torg.y += targ->GetCenterHeight();
 

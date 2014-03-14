@@ -133,6 +133,26 @@ void kexCommon::Error(const char* string, ...) {
 
 #ifdef _WIN32
     Sys_Error(buffer);
+#else
+    const SDL_MessageBoxButtonData buttons[1] = {
+        {
+            SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT,
+            0,
+            "OK"
+        }
+    };
+    SDL_MessageBoxData data = {
+        SDL_MESSAGEBOX_ERROR,
+        NULL,
+        "Error",
+        buffer,
+        2,
+        buttons,
+        NULL
+    };
+    
+    int button = -1;
+    SDL_ShowMessageBox(&data, &button);
 #endif
 
     exit(0);    // just in case...

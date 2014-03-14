@@ -1077,7 +1077,6 @@ kexVec4 &kexVec4::operator|=(const kexMatrix &mtx) {
     float _x = x;
     float _y = y;
     float _z = z;
-    float _w = w;
     
     x = mtx.vectors[1].x * _y + mtx.vectors[2].x * _z + mtx.vectors[0].x * _x + mtx.vectors[3].x;
     y = mtx.vectors[1].y * _y + mtx.vectors[2].y * _z + mtx.vectors[0].y * _x + mtx.vectors[3].y;
