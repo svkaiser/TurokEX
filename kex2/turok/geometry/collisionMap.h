@@ -52,7 +52,8 @@ typedef enum {
     PF_IGNOREBLOCKERS   = BIT(1),
     PF_DROPOFF          = BIT(2),
     PF_NOENTERWATER     = BIT(3),
-    PF_NOEXITWATER      = BIT(4)
+    PF_NOEXITWATER      = BIT(4),
+    PF_NOCLIPSTATICS    = BIT(5)
 } cMapClipFlags_t;
 
 class kexSector;
