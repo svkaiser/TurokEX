@@ -83,7 +83,8 @@ public:
     void                        FindTargets(void);
     void                        ClearTargets(void);
     void                        ChangeState(const aiState_t aiState);
-    void                        SeekTarget(void);
+    void                        GoDormant(void);
+    void                        WakeUp(void);
     void                        TurnYaw(const float yaw);
     bool                        TryMelee(void);
     bool                        TryRange(void);
@@ -144,6 +145,9 @@ public:
     }
 
 protected:
+    void                        SeekTarget(void);
+    void                        AnimStopped(void);
+
     float                       activeDistance;
     unsigned int                aiFlags;
     aiState_t                   aiState;
