@@ -198,11 +198,11 @@ void kexCvarManager::AutoComplete(const char *partial) {
         if(!strncmp(tmp.c_str(), cvar->GetName(), len)) {
             if(!match) {
                 match = true;
-                common.Printf("\n");
+                common.CPrintf(COLOR_CYAN, "\nCvars:");
             }
 
             // print all matching cvars
-            common.Printf("%s\n", cvar->GetName());
+            common.CPrintf(COLOR_GREEN, "%s\n", cvar->GetName());
         }
     }
 #endif

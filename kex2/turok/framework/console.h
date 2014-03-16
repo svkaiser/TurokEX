@@ -27,7 +27,6 @@
 #define CON_BUFFER_SIZE     64
 #define CON_STATE_DOWN      0
 #define CON_STATE_UP        1
-#define CON_STICKY_TIME     500
 #define CON_BLINK_TIME      350
 #define CON_INPUT_LENGTH    512
 #define CON_LINE_LENGTH     512
@@ -36,11 +35,14 @@ class kexConsole {
 public:
                         kexConsole(void);
                         ~kexConsole(void);
+    
     void                SetInputText(const char *string) { strcpy(typeStr, string); }
     void                ResetInputText(void) { typeStr[0] = '\0'; typeStrPos = 0; }
     void                ClearOutput(void);
     void                Clear(void);
     void                OutputTextLine(rcolor color, const char *text);
+    void                AddToHistory(void);
+    void                GetHistory(bool bPrev);
     void                Print(rcolor color, const char *text);
     void                LineScroll(bool dir);
     void                MoveTypePos(bool dir);
@@ -54,7 +56,6 @@ public:
     void                ParseKey(int c);
     void                ParseInput(void);
     bool                ProcessInput(const event_t *ev);
-    const char          *GetLastOutputBuffer(void) { return lastOutputBuffer; }
     void                Tick(void);
     void                Draw(void);
     void                Init(void);
@@ -68,13 +69,13 @@ private:
     int                 historyCur;
     char                history[CON_MAX_HISTORY][CON_INPUT_LENGTH];
     char                typeStr[CON_INPUT_LENGTH];
-    char                lastOutputBuffer[CON_LINE_LENGTH];
     int                 typeStrPos;
     bool                bShiftDown;
     bool                bCtrlDown;
     int                 state;
     int                 blinkTime;
     bool                bKeyHeld;
+    bool                bStickyActive;
     int                 lastKeyPressed;
     int                 timePressed;
     bool                bShowPrompt;

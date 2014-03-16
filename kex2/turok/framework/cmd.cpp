@@ -211,16 +211,16 @@ bool kexCommand::AutoComplete(const char *partial) {
     }
 
     bool ok = false;
-		
+    
     // check for exact match
     for(cmd_function_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
         if(!strcmp(partial, cmd->name)) {
             if(!ok) {
-                common.Printf("\n");
+                common.CPrintf(COLOR_CYAN, "\nCommands:\n");
+                ok = true;
             }
 
-            common.Printf("%s\n", cmd->name);
-            ok = true;
+            common.CPrintf(COLOR_GREEN, "%s\n", cmd->name);
         }
     }
 
@@ -228,11 +228,11 @@ bool kexCommand::AutoComplete(const char *partial) {
     for(cmd_function_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
         if(!strncmp(partial,cmd->name, len)) {
             if(!ok) {
-                common.Printf("\n");
+                common.CPrintf(COLOR_CYAN, "\nCommands:\n");
+                ok = true;
             }
 
-            common.Printf("%s\n", cmd->name);
-            ok = true;
+            common.CPrintf(COLOR_GREEN, "%s\n", cmd->name);
         }
     }
     

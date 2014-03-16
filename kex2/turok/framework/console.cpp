@@ -35,6 +35,7 @@
 
 kexCvar cvarDisplayConsole("con_alwaysShowConsole", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 kexCvar cvarShowFPS("con_showfps", CVF_BOOL|CVF_CONFIG, "0", "Displays current FPS");
+kexCvar cvarStickyKeySpeed("con_stickySpeed", CVF_BOOL|CVF_CONFIG, "500", "TODO");
 
 kexConsole console;
 
@@ -61,6 +62,7 @@ kexConsole::kexConsole(void) {
     this->state             = CON_STATE_UP;
     this->blinkTime         = 0;
     this->bKeyHeld          = false;
+    this->bStickyActive     = false;
     this->lastKeyPressed    = 0;
     this->timePressed       = 0;
     this->bShowPrompt       = true;
@@ -115,14 +117,51 @@ void kexConsole::OutputTextLine(rcolor color, const char *text) {
     }
 
     unsigned int len = strlen(text);
-    if(len >= CON_LINE_LENGTH)
+    if(len >= CON_LINE_LENGTH) {
         len = CON_LINE_LENGTH-1;
+    }
 
     strncpy(scrollBackStr[scrollBackLines], text, len);
     scrollBackStr[scrollBackLines][len] = '\0';
     lineColor[scrollBackLines] = color;
 
     scrollBackLines++;
+}
+
+//
+// kexConsole::AddToHistory
+//
+
+void kexConsole::AddToHistory(void) {
+    strcpy(history[historyTop], typeStr);
+    historyTop = (historyTop+1) % CON_MAX_HISTORY;
+}
+
+//
+// kexConsole::GetHistory
+//
+
+void kexConsole::GetHistory(bool bPrev) {
+    const char *hist;
+    
+    if(bPrev) {
+        historyCur--;
+        if(historyCur < 0) {
+            historyCur = historyTop-1;
+        }
+    }
+    else {
+        historyCur++;
+        if(historyCur >= historyTop) {
+            historyCur = 0;
+        }
+    }
+    
+    ResetInputText();
+    hist = history[historyCur];
+    
+    strcpy(typeStr, hist);
+    typeStrPos = strlen(hist);
 }
 
 //
@@ -134,17 +173,12 @@ void kexConsole::Print(rcolor color, const char *text) {
     char *curText = (char*)text;
     char tmpChar[CON_LINE_LENGTH];
 
-    if(cvarDeveloper.GetBool()) {
-        /*memset(con_lastOutputBuffer, 0, 512);
-        strcpy(con_lastOutputBuffer, kva("%f : %s",
-            (sysMain.GetMS() / 1000.0f), s));*/
-    }
-
     while(strLength > 0) {
         int lineLength = kexStr::IndexOf(curText, "\n");
 
-        if(lineLength == -1)
+        if(lineLength == -1) {
             lineLength = strLength;
+        }
 
         strncpy(tmpChar, curText, lineLength);
         tmpChar[lineLength] = '\0';
@@ -161,12 +195,14 @@ void kexConsole::Print(rcolor color, const char *text) {
 
 void kexConsole::LineScroll(bool dir) {
     if(dir) {
-        if(scrollBackPos < scrollBackLines)
+        if(scrollBackPos < scrollBackLines) {
             scrollBackPos++;
+        }
     }
     else {
-        if(scrollBackPos > 0)
+        if(scrollBackPos > 0) {
             scrollBackPos--;
+        }
     }
 }
 
@@ -175,8 +211,9 @@ void kexConsole::LineScroll(bool dir) {
 //
 
 void kexConsole::BackSpace(void) {
-    if(strlen(typeStr) <= 0)
+    if(strlen(typeStr) <= 0) {
         return;
+    }
 
     char *trim = typeStr;
     int len = strlen(trim);
@@ -188,8 +225,9 @@ void kexConsole::BackSpace(void) {
 
     typeStrPos--;
 
-    if(typeStrPos < 0)
+    if(typeStrPos < 0) {
         typeStrPos = 0;
+    }
 }
 
 //
@@ -224,13 +262,15 @@ void kexConsole::MoveTypePos(bool dir) {
     if(dir) {
         int len = strlen(typeStr);
         typeStrPos++;
-        if(typeStrPos > len)
+        if(typeStrPos > len) {
             typeStrPos = len;
+        }
     }
     else {
         typeStrPos--;
-        if(typeStrPos < 0)
+        if(typeStrPos < 0) {
             typeStrPos = 0;
+        }
     }
 }
 
@@ -244,14 +284,14 @@ void kexConsole::CheckShift(const event_t *ev) {
         return;
 
     switch(ev->type) {
-    case ev_keydown:
-        bShiftDown = true;
-        break;
-    case ev_keyup:
-        bShiftDown = false;
-        break;
-    default:
-        break;
+        case ev_keydown:
+            bShiftDown = true;
+            break;
+        case ev_keyup:
+            bShiftDown = false;
+            break;
+        default:
+            break;
     }
 }
 
@@ -268,16 +308,19 @@ void kexConsole::CheckStickyKeys(const event_t *ev) {
     lastKeyPressed = ev->data1;
 
     switch(ev->type) {
-    case ev_keydown:
-        bKeyHeld = true;
-        timePressed = sysMain.GetMS();
-        break;
-    case ev_keyup:
-        bKeyHeld = false;
-        timePressed = 0;
-        break;
-    default:
-        break;
+        case ev_keydown:
+            if(!bKeyHeld) {
+                bKeyHeld = true;
+                timePressed = sysMain.GetMS();
+            }
+            break;
+        case ev_keyup:
+            bKeyHeld = false;
+            timePressed = 0;
+            bStickyActive = false;
+            break;
+        default:
+            break;
     }
 }
 
@@ -287,29 +330,30 @@ void kexConsole::CheckStickyKeys(const event_t *ev) {
 
 void kexConsole::ParseKey(int c) {
     switch(c) {
-    case SDLK_BACKSPACE:
-        BackSpace();
-        return;
-    case SDLK_DELETE:
-        DeleteChar();
-        return;
-    case SDLK_LEFT:
-        MoveTypePos(0);
-        return;
-    case SDLK_RIGHT:
-        MoveTypePos(1);
-        return;
-    case SDLK_PAGEUP:
-        LineScroll(1);
-        return;
-    case SDLK_PAGEDOWN:
-        LineScroll(0);
-        return;
+        case SDLK_BACKSPACE:
+            BackSpace();
+            return;
+        case SDLK_DELETE:
+            DeleteChar();
+            return;
+        case SDLK_LEFT:
+            MoveTypePos(0);
+            return;
+        case SDLK_RIGHT:
+            MoveTypePos(1);
+            return;
+        case SDLK_PAGEUP:
+            LineScroll(1);
+            return;
+        case SDLK_PAGEDOWN:
+            LineScroll(0);
+            return;
     }
 
     if(c >= 8 && c < 256) {
-        if(typeStrPos >= CON_INPUT_LENGTH)
+        if(typeStrPos >= CON_INPUT_LENGTH) {
             return;
+        }
 
         typeStr[typeStrPos++] = inputKey.GetAsciiKey((char)c, bShiftDown);
         typeStr[typeStrPos] = '\0';
@@ -321,8 +365,19 @@ void kexConsole::ParseKey(int c) {
 //
 
 void kexConsole::StickyKeyTick(void) {
-    if(bKeyHeld && ((sysMain.GetMS() - timePressed) >= CON_STICKY_TIME))
+    if(!bStickyActive) {
+        int stickyTime = cvarStickyKeySpeed.GetInt();
+        if(stickyTime < 0) {
+            stickyTime = 0;
+        }
+        
+        if(bKeyHeld && ((sysMain.GetMS() - timePressed) >= stickyTime)) {
+            bStickyActive = true;
+        }
+    }
+    else {
         ParseKey(lastKeyPressed);
+    }
 }
 
 //
@@ -330,8 +385,9 @@ void kexConsole::StickyKeyTick(void) {
 //
 
 void kexConsole::UpdateBlink(void) {
-    if(blinkTime >= client.GetTime())
+    if(blinkTime >= client.GetTime()) {
         return;
+    }
 
     bShowPrompt = !bShowPrompt;
     blinkTime = client.GetTime() + CON_BLINK_TIME;
@@ -347,6 +403,7 @@ void kexConsole::ParseInput(void) {
 
     OutputTextLine(RGBA(192, 192, 192, 255), typeStr);
     command.Execute(typeStr);
+    AddToHistory();
     ResetInputText();
 
     historyCur = (historyTop - 1);
@@ -364,12 +421,12 @@ bool kexConsole::ProcessInput(const event_t *ev) {
 
     if(ev->type == ev_mousewheel && state == CON_STATE_DOWN) {
         switch(ev->data1) {
-        case SDL_BUTTON_WHEELUP:
-            LineScroll(1);
-            break;
-        case SDL_BUTTON_WHEELDOWN:
-            LineScroll(0);
-            break;
+            case SDL_BUTTON_WHEELUP:
+                LineScroll(1);
+                break;
+            case SDL_BUTTON_WHEELDOWN:
+                LineScroll(0);
+                break;
         }
 
         return true;
@@ -381,48 +438,48 @@ bool kexConsole::ProcessInput(const event_t *ev) {
     int c = ev->data1;
 
     switch(state) {
-    case CON_STATE_DOWN:
-        if(ev->type == ev_keydown) {
-            switch(c) {
-            case SDLK_BACKQUOTE:
-                state = CON_STATE_UP;
-                return true;
-            case SDLK_RETURN:
-                ParseInput();
-                return true;
-            case SDLK_UP:
-                return true;
-            case SDLK_DOWN:
-                return true;
-            case SDLK_TAB:
-                ParseKey(SDLK_SPACE);
-                ParseKey(SDLK_SPACE);
-                ParseKey(SDLK_SPACE);
-                ParseKey(SDLK_SPACE);
-                return true;
-            default:
-                ParseKey(c);
-                return true;
-            }
+        case CON_STATE_DOWN:
+            if(ev->type == ev_keydown) {
+                switch(c) {
+                    case SDLK_BACKQUOTE:
+                        state = CON_STATE_UP;
+                        return true;
+                    case SDLK_RETURN:
+                        ParseInput();
+                        return true;
+                    case SDLK_UP:
+                        GetHistory(false);
+                        return true;
+                    case SDLK_DOWN:
+                        GetHistory(true);
+                        return true;
+                    case SDLK_TAB:
+                        cvarManager.AutoComplete(typeStr);
+                        command.AutoComplete(typeStr);
+                        return true;
+                    default:
+                        ParseKey(c);
+                        return true;
+                }
 
-            return false;
-        }
-        break;
-    case CON_STATE_UP:
-        if(ev->type == ev_keydown) {
-            switch(c) {
-            case SDLK_BACKQUOTE:
-                state = CON_STATE_DOWN;
-                return true;
-            default:
-                break;
+                return false;
             }
+            break;
+        case CON_STATE_UP:
+            if(ev->type == ev_keydown) {
+                switch(c) {
+                    case SDLK_BACKQUOTE:
+                        state = CON_STATE_DOWN;
+                        return true;
+                    default:
+                        break;
+                }
 
+                return false;
+            }
+            break;
+        default:
             return false;
-        }
-        break;
-    default:
-        return false;
     }
 
     return false;
@@ -433,8 +490,9 @@ bool kexConsole::ProcessInput(const event_t *ev) {
 //
 
 void kexConsole::Tick(void) {
-    if(state == CON_STATE_UP)
+    if(state == CON_STATE_UP) {
         return;
+    }
 
     StickyKeyTick();
     UpdateBlink();
