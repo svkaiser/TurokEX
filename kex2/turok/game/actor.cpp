@@ -183,6 +183,7 @@ void kexActor::LocalTick(void) {
     }
 
     animState.Update();
+    physicsRef->Think(client.GetRunTime());
 }
 
 //
@@ -206,6 +207,7 @@ void kexActor::Tick(void) {
 void kexActor::Spawn(void) {
     physicsRef = &this->physics;
     physicsRef->SetOwner(this);
+    physicsRef->bEnabled = false;
 
     if(definition != NULL) {
         kexStr str;
@@ -229,6 +231,17 @@ void kexActor::Spawn(void) {
         definition->GetInt("health", health, 100);
         definition->GetInt("impactType", (int&)impactType);
         definition->GetString("footstepSound", footstepSound);
+
+        definition->GetFloat("mass", physicsRef->mass, 1800);
+        definition->GetFloat("friction", physicsRef->friction, 1);
+        definition->GetFloat("airFriction", physicsRef->airFriction, 0);
+        definition->GetFloat("bounceDamp", physicsRef->bounceDamp, 0);
+        definition->GetFloat("stepHeight", physicsRef->stepHeight, 48);
+        definition->GetFloat("rotorSpeed", physicsRef->rotorSpeed, 0);
+        definition->GetFloat("rotorFriction", physicsRef->rotorFriction, 1);
+        definition->GetFloat("sinkVelocity", physicsRef->sinkVelocity, 0.2f);
+        definition->GetBool("bRotor", physicsRef->bRotor, false);
+        definition->GetInt("clipFlags", (int&)physicsRef->clipFlags, (PF_CLIPEDGES|PF_DROPOFF));
 
         if(definition->GetString("mesh", str)) {
             SetModel(str.c_str());

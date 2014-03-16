@@ -36,6 +36,7 @@ DECLARE_CLASS(kexAIPhysics, kexPhysics)
 //
 
 kexAIPhysics::kexAIPhysics(void) {
+    this->clipFlags = (PF_CLIPEDGES|PF_NOENTERWATER);
 }
 
 //
@@ -58,6 +59,10 @@ void kexAIPhysics::Think(const float timeDelta) {
     float       height;
     kexVec3     start;
     kexVec3     gravity;
+
+    if(!bEnabled) {
+        return;
+    }
 
     if(owner == NULL || timeDelta == 0) {
         return;
@@ -101,7 +106,7 @@ void kexAIPhysics::Think(const float timeDelta) {
     trace.dir = gravity;
 
     // need to determine if we're standing on the ground or not
-    localWorld.Trace(&trace);
+    localWorld.Trace(&trace, clipFlags);
     if(trace.hitTri) {
         groundGeom = trace.hitTri;
         groundMesh = trace.hitMesh;
@@ -133,7 +138,7 @@ void kexAIPhysics::Think(const float timeDelta) {
     trace.dir = (trace.end - trace.start).Normalize();
 
     // trace through world
-    localWorld.Trace(&trace);
+    localWorld.Trace(&trace, clipFlags);
 
     // project velocity
     if(trace.fraction != 1) {
@@ -152,7 +157,7 @@ void kexAIPhysics::Think(const float timeDelta) {
         // fudge the origin if we're slightly clipping below the floor
         trace.start = start - (gravity * (stepHeight * 0.5f));
         trace.end = start;
-        localWorld.Trace(&trace);
+        localWorld.Trace(&trace, clipFlags);
     
         if(trace.fraction != 1 && !trace.hitActor) {
             start = trace.hitVector - (gravity * 1.024f);

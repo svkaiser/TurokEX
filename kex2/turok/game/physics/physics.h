@@ -113,6 +113,8 @@ public:
     bool                    bOnGround;
     bool                    bInWater;
     bool                    bClimbing;
+    bool                    bEnabled;
+    unsigned int            clipFlags;
 
 protected:
     kexWorldObject          *owner;

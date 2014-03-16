@@ -80,10 +80,12 @@ kexPhysics::kexPhysics(void) {
     this->bOnGround             = false;
     this->bInWater              = false;
     this->bClimbing             = false;
+    this->bEnabled              = true;
     this->waterLevel            = WLT_INVALID;
     this->groundGeom            = NULL;
     this->groundMesh            = NULL;
     this->sector                = NULL;
+    this->clipFlags             = (PF_CLIPEDGES|PF_DROPOFF);
 
     this->rotorVector.Clear();
     this->velocity.Clear();
@@ -425,6 +427,9 @@ float kexPhysics::GetWaterDepth(void) {
 //
 
 void kexPhysics::Think(const float timeDelta) {
+    if(!bEnabled) {
+        return;
+    }
     // correct position
     if(sector) {
         kexVec3 org = owner->GetOrigin();
@@ -486,6 +491,7 @@ void kexPhysics::InitObject(void) {
     OBJPROPERTY("int waterLevel", waterLevel);
     OBJPROPERTY("float waterHeight", waterHeight);
     OBJPROPERTY("float sinkVelocity", sinkVelocity);
+    OBJPROPERTY("uint clipFlags", clipFlags);
 
 #undef OBJMETHOD
 #undef OBJPROPERTY

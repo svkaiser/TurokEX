@@ -136,6 +136,10 @@ void kexFxPhysics::Think(const float timeDelta) {
     kexVec3 start;
     int oldWL;
 
+    if(!bEnabled) {
+        return;
+    }
+
     if(owner == NULL) {
         return;
     }

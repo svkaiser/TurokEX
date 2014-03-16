@@ -73,6 +73,10 @@ void kexPlayerPhysics::Think(const float timeDelta) {
     kexVec3     gravity;
     kexVec3     cDir;
 
+    if(!bEnabled) {
+        return;
+    }
+
     if(owner == NULL || timeDelta == 0) {
         return;
     }
@@ -131,7 +135,7 @@ void kexPlayerPhysics::Think(const float timeDelta) {
     trace.dir = gravity;
 
     // need to determine if we're standing on the ground or not
-    localWorld.Trace(&trace);
+    localWorld.Trace(&trace, clipFlags);
     if(trace.hitTri) {
         groundGeom = trace.hitTri;
         groundMesh = trace.hitMesh;
@@ -191,7 +195,7 @@ void kexPlayerPhysics::Think(const float timeDelta) {
     // fudge the origin if we're slightly clipping below the floor
     trace.start = start - (gravity * (stepHeight * 0.5f));
     trace.end = start;
-    localWorld.Trace(&trace);
+    localWorld.Trace(&trace, clipFlags);
 
     if(trace.fraction != 1 && !trace.hitActor) {
         start = trace.hitVector - (gravity * 1.024f);
@@ -211,7 +215,7 @@ void kexPlayerPhysics::Think(const float timeDelta) {
         trace.dir = direction;
 
         // trace through world
-        localWorld.Trace(&trace);
+        localWorld.Trace(&trace, clipFlags);
         time -= (time * trace.fraction);
 
         if(sector) {
@@ -303,14 +307,14 @@ void kexPlayerPhysics::Think(const float timeDelta) {
                 trace.dir = -gravity;
 
                 // trace up
-                localWorld.Trace(&trace);
+                localWorld.Trace(&trace, clipFlags);
 
                 trace.start = trace.hitVector;
                 trace.end = trace.start + (velocity * time);
                 trace.dir = direction;
 
                 // see if we can trace over the step
-                localWorld.Trace(&trace);
+                localWorld.Trace(&trace, clipFlags);
                 stepFraction = trace.fraction;
 
                 trace.start = trace.hitVector;
@@ -318,7 +322,7 @@ void kexPlayerPhysics::Think(const float timeDelta) {
                 trace.dir = gravity;
 
                 // test the ground
-                localWorld.Trace(&trace);
+                localWorld.Trace(&trace, clipFlags);
                 slope = trace.hitNormal.Dot(-gravity);
 
                 if(((trace.hitTri != groundGeom && slope > 0.5f) || trace.fraction >= 1)) {
