@@ -26,13 +26,13 @@
 extern kexHeapBlock hb_animation;
 
 typedef enum {
-    ANF_BLEND       = 1,
-    ANF_LOOP        = 2,
-    ANF_STOPPED     = 4,
-    ANF_NOINTERRUPT = 8,
-    ANF_ROOTMOTION  = 16,
-    ANF_PAUSED      = 32,
-    ANF_CROSSFADE   = 64
+    ANF_BLEND       = BIT(0),
+    ANF_LOOP        = BIT(1),
+    ANF_STOPPED     = BIT(2),
+    ANF_NOINTERRUPT = BIT(3),
+    ANF_ROOTMOTION  = BIT(4),
+    ANF_PAUSED      = BIT(5),
+    ANF_CROSSFADE   = BIT(6)
 } animflags_t;
 
 typedef struct {

@@ -372,14 +372,20 @@ void kexAnimState::Update(void) {
         }
         
         dir = (rootMotion | owner->GetRotation()) * blendFrac;
-        org = &owner->GetOrigin();
-        dest = (*org + (dir * client.GetRunTime()));
-        dest[1] = org->y;
-        
-        // update position
-        if(owner->TryMove(*org, dest, &owner->Physics()->sector)) {
-            owner->SetOrigin(dest);
-            owner->LinkArea();
+
+        if(owner->InstanceOf(&kexAI::info)) {
+            owner->Physics()->velocity = dir;
+        }
+        else {
+            org = &owner->GetOrigin();
+            dest = (*org + (dir * client.GetRunTime()));
+            dest[1] = org->y;
+            
+            // update position
+            if(owner->TryMove(*org, dest, &owner->Physics()->sector)) {
+                owner->SetOrigin(dest);
+                owner->LinkArea();
+            }
         }
         
         // don't update yaw offsets while blending
@@ -855,6 +861,7 @@ void kexAnimState::InitObject(void) {
         asOFFSET(kexAnimState, p))
 
     OBJPROPERTY("int flags", flags);
+    OBJPROPERTY("float frameTime", frameTime);
 
 #undef OBJMETHOD
 #undef OBJPROPERTY
