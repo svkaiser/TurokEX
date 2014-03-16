@@ -248,10 +248,6 @@
 				Name="renderer"
 				>
 				<File
-					RelativePath="..\turok\renderer\animation.cpp"
-					>
-				</File>
-				<File
 					RelativePath="..\turok\renderer\canvas.cpp"
 					>
 				</File>
@@ -436,6 +432,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\animation.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\areas.cpp"
 					>
 				</File>
@@ -580,10 +580,6 @@
 			<Filter
 				Name="renderer"
 				>
-				<File
-					RelativePath="..\turok\renderer\animation.h"
-					>
-				</File>
 				<File
 					RelativePath="..\turok\renderer\canvas.h"
 					>
@@ -754,6 +750,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\game\ai.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\animation.h"
 					>
 				</File>
 				<File
