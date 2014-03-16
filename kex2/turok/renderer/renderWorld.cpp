@@ -37,6 +37,7 @@
 kexCvar cvarRenderFog("r_fog", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 kexCvar cvarRenderCull("r_cull", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 kexCvar cvarRenderFxTexture("r_fxtexture", CVF_BOOL|CVF_CONFIG, "1", "TODO");
+kexCvar cvarRenderTris("r_tris", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 
 kexRenderWorld renderWorld;
 
@@ -166,6 +167,7 @@ kexRenderWorld::kexRenderWorld(void) {
     this->bWireframe        = false;
     this->bShowClipMesh     = false;
     this->bShowCollisionMap = false;
+    this->bDrawTris         = false;
     this->showWorldNode     = -1;
     this->showAreaNode      = -1;
 }
@@ -197,6 +199,8 @@ void kexRenderWorld::RenderScene(void) {
         return;
     }
 
+    bDrawTris = cvarRenderTris.GetBool();
+
     SetupGlobalFog();
 
     dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -215,7 +219,7 @@ void kexRenderWorld::RenderScene(void) {
     dglLoadMatrixf(world->Camera()->ModelView().ToFloatPtr());
 
     if(bWireframe) {
-        dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        renderSystem.SetPolyMode(GLPOLY_LINE);
     }
 
     SetupGlobalLight();
@@ -244,7 +248,7 @@ void kexRenderWorld::RenderScene(void) {
     dglDisableClientState(GL_NORMAL_ARRAY);
 
     if(bWireframe) {
-        dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        renderSystem.SetPolyMode(GLPOLY_FILL);
     }
 
     renderSystem.SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
@@ -372,6 +376,19 @@ void kexRenderWorld::DrawSurface(const surface_t *surface, const char *texturePa
     }
 
     dglDrawElements(GL_TRIANGLES, surface->numIndices, GL_UNSIGNED_SHORT, surface->indices);
+
+    if(!bWireframe && bDrawTris) {
+        renderSystem.whiteTexture.Bind();
+        dglColor4ub(255, 255, 255, 255);
+
+        renderSystem.SetState(GLSTATE_LIGHTING, false);
+        renderSystem.SetPolyMode(GLPOLY_LINE);
+
+        dglDrawElements(GL_TRIANGLES, surface->numIndices, GL_UNSIGNED_SHORT, surface->indices);
+
+        renderSystem.SetPolyMode(GLPOLY_FILL);
+        renderSystem.SetState(GLSTATE_LIGHTING, true);
+    }
 }
 
 //
@@ -912,8 +929,9 @@ void kexRenderWorld::DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b
 
     dglColor4ub(r, g, b, 255);
 
-    if(!bWireframe)
-        dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    if(!bWireframe) {
+        renderSystem.SetPolyMode(GLPOLY_LINE);
+    }
 
     dglBegin(GL_POLYGON);
     dglVertex3d(bbox.min[0], bbox.min[1], bbox.min[2]);
@@ -943,8 +961,9 @@ void kexRenderWorld::DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b
     dglVertex3d(bbox.max[0], bbox.min[1], bbox.max[2]);
     dglEnd();
     
-    if(!bWireframe)
-        dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    if(!bWireframe) {
+        renderSystem.SetPolyMode(GLPOLY_FILL);
+    }
 
     renderSystem.SetState(GLSTATE_TEXTURE0, true);
     renderSystem.SetState(GLSTATE_CULL, true);

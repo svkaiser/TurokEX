@@ -835,13 +835,13 @@ void kexClipMesh::DebugDraw(void) {
         dglDrawElements(GL_TRIANGLES, cmGroup->numIndices,
             GL_UNSIGNED_SHORT, cmGroup->indices);
 
-        dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        renderSystem.SetPolyMode(GLPOLY_LINE);
         dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
 
         dglDrawElements(GL_TRIANGLES, cmGroup->numIndices,
             GL_UNSIGNED_SHORT, cmGroup->indices);
 
-        dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        renderSystem.SetPolyMode(GLPOLY_FILL);
     }
 
     dglEnableClientState(GL_NORMAL_ARRAY);

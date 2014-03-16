@@ -67,6 +67,7 @@ private:
                         const modelNode_t *node, kexAnimState *animState);
 
     kexWorld        *world;
+    bool            bDrawTris;
 
     typedef struct {
         kexFx       *fx;

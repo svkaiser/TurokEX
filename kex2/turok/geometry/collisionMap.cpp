@@ -460,11 +460,17 @@ void kexCollisionMap::Unload(void) {
     int i;
     kexArea *area;
 
-    for(i = 0; i < numAreas; i++) {
-        area = areas[i];
+    if(!bLoaded) {
+        return;
+    }
 
-        delete area;
-        areas[i] = NULL;
+    if(areas.Length() > 0) {
+        for(i = 0; i < numAreas; i++) {
+            area = areas[i];
+
+            delete area;
+            areas[i] = NULL;
+        }
     }
 
     for(i = 0; i < numSectors; i++) {
@@ -833,14 +839,14 @@ void kexCollisionMap::DebugDraw(void) {
             dglVertex3f((*tri->point[2]).x, (*tri->point[2]).y, (*tri->point[2]).z);
             dglEnd();
 
-            dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            renderSystem.SetPolyMode(GLPOLY_LINE);
             dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
             dglBegin(GL_TRIANGLES);
             dglVertex3f((*tri->point[0]).x, (*tri->point[0]).y, (*tri->point[0]).z);
             dglVertex3f((*tri->point[1]).x, (*tri->point[1]).y, (*tri->point[1]).z);
             dglVertex3f((*tri->point[2]).x, (*tri->point[2]).y, (*tri->point[2]).z);
             dglEnd();
-            dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            renderSystem.SetPolyMode(GLPOLY_FILL);
         }
 
         tri = &sector->lowerTri;
@@ -877,14 +883,13 @@ void kexCollisionMap::DebugDraw(void) {
     dglDrawElements(GL_TRIANGLES, numSectors * 3,
         GL_UNSIGNED_SHORT, indices);
 
-    dglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    renderSystem.SetPolyMode(GLPOLY_LINE);
     dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
 
     dglDrawElements(GL_TRIANGLES, numSectors * 3,
         GL_UNSIGNED_SHORT, indices);
 
-    dglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
+    renderSystem.SetPolyMode(GLPOLY_FILL);
     renderSystem.SetState(GLSTATE_CULL, false);
 
     dglLineWidth(2.0f);

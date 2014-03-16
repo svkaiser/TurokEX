@@ -56,7 +56,12 @@ typedef enum {
 typedef enum {
     GLCULL_FRONT    = 0,
     GLCULL_BACK
-} glCullType_e;
+} glCullType_t;
+
+typedef enum {
+    GLPOLY_FILL     = 0,
+    GLPOLY_LINE
+} glPolyMode_t;
 
 typedef enum {
     GLSRC_ZERO      = 0,
@@ -68,7 +73,7 @@ typedef enum {
     GLSRC_DST_ALPHA,
     GLSRC_ONE_MINUS_DST_ALPHA,
     GLSRC_ALPHA_SATURATE,
-} glSrcBlend_e;
+} glSrcBlend_t;
 
 typedef enum {
     GLDST_ZERO      = 0,
@@ -79,7 +84,7 @@ typedef enum {
     GLDST_ONE_MINUS_SRC_ALPHA,
     GLDST_DST_ALPHA,
     GLDST_ONE_MINUS_DST_ALPHA,
-} glDstBlend_e;
+} glDstBlend_t;
 
 #define GL_MAX_INDICES  0x10000
 #define GL_MAX_VERTICES 0x10000
@@ -91,6 +96,7 @@ public:
 
     void                            Init(void);
     void                            Shutdown(void);
+    void                            SetDefaultState(void);
     void                            SetOrtho(void);
     void                            SwapBuffers(void);
     void                            SetState(int bits, bool bEnable);
@@ -99,6 +105,7 @@ public:
     void                            SetBlend(int src, int dest);
     void                            SetEnv(int env);
     void                            SetCull(int type);
+    void                            SetPolyMode(int type);
     void                            SetTextureUnit(int unit);
     void                            SetViewDimensions(void);
     void                            DisableShaders(void);
@@ -148,6 +155,7 @@ public:
         int                         blendSrc;
         int                         blendDest;
         int                         cullType;
+        int                         polyMode;
         int                         alphaFunction;
         float                       alphaFuncThreshold;
         int                         currentUnit;

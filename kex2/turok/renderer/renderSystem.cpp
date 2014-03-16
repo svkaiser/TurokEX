@@ -28,6 +28,8 @@
 #include "memHeap.h"
 #include "renderSystem.h"
 
+kexCvar cvarRenderFinish("r_finish", CVF_BOOL|CVF_CONFIG, "0", "Force a GL command sync");
+
 kexRenderSystem renderSystem;
 
 GL_ARB_multitexture_Define();
@@ -200,22 +202,18 @@ int kexRenderSystem::GetOGLVersion(const char* version) {
 }
 
 //
-// kexRenderSystem::Init
+// kexRenderSystem::SetDefaultState
 //
 
-void kexRenderSystem::Init(void) {
-    gl_vendor = (const char*)dglGetString(GL_VENDOR);
-    common.Printf("GL_VENDOR: %s\n", gl_vendor);
-    gl_renderer = (const char*)dglGetString(GL_RENDERER);
-    common.Printf("GL_RENDERER: %s\n", gl_renderer);
-    gl_version = (const char*)dglGetString(GL_VERSION);
-    common.Printf("GL_VERSION: %s\n", gl_version);
-    dglGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
-    common.Printf("GL_MAX_TEXTURE_SIZE: %i\n", maxTextureSize);
-    dglGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &maxTextureUnits);
-    common.Printf("GL_MAX_TEXTURE_UNITS_ARB: %i\n", maxTextureUnits);
-    
+void kexRenderSystem::SetDefaultState(void) {
     SetViewDimensions();
+
+    glState.glStateBits   = 0;
+    glState.alphaFunction = -1;
+    glState.blendDest     = -1;
+    glState.blendSrc      = -1;
+    glState.cullType      = -1;
+    glState.currentUnit   = -1;
     
     dglViewport(0, 0, sysMain.VideoWidth(), sysMain.VideoHeight());
     dglClearDepth(1.0f);
@@ -240,6 +238,30 @@ void kexRenderSystem::Init(void) {
     dglTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
     dglColorMaterial(GL_FRONT, GL_DIFFUSE);
     dglColorMaterial(GL_BACK, GL_DIFFUSE);
+
+    dglEnableClientState(GL_VERTEX_ARRAY);
+    dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    dglEnableClientState(GL_COLOR_ARRAY);
+    dglDisableClientState(GL_NORMAL_ARRAY);
+}
+
+//
+// kexRenderSystem::Init
+//
+
+void kexRenderSystem::Init(void) {
+    gl_vendor = (const char*)dglGetString(GL_VENDOR);
+    common.Printf("GL_VENDOR: %s\n", gl_vendor);
+    gl_renderer = (const char*)dglGetString(GL_RENDERER);
+    common.Printf("GL_RENDERER: %s\n", gl_renderer);
+    gl_version = (const char*)dglGetString(GL_VERSION);
+    common.Printf("GL_VERSION: %s\n", gl_version);
+    dglGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+    common.Printf("GL_MAX_TEXTURE_SIZE: %i\n", maxTextureSize);
+    dglGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &maxTextureUnits);
+    common.Printf("GL_MAX_TEXTURE_UNITS_ARB: %i\n", maxTextureUnits);
+    
+    SetDefaultState();
 
     GL_ARB_multitexture_Init();
     GL_EXT_compiled_vertex_array_Init();
@@ -279,11 +301,6 @@ void kexRenderSystem::Init(void) {
     if(has_GL_EXT_texture_filter_anisotropic) {
         dglGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropic);
     }
-
-    dglEnableClientState(GL_VERTEX_ARRAY);
-    dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    dglEnableClientState(GL_COLOR_ARRAY);
-    dglDisableClientState(GL_NORMAL_ARRAY);
 
     bIsInit = true;
     common.Printf("Renderer Initialized\n");
@@ -335,6 +352,10 @@ void kexRenderSystem::SetOrtho(void) {
 //
 
 void kexRenderSystem::SwapBuffers(void) {
+    if(cvarRenderFinish.GetBool()) {
+        dglFinish();
+    }
+
     sysMain.SwapBuffers();
 }
 
@@ -557,8 +578,9 @@ void kexRenderSystem::SetEnv(int env) {
 void kexRenderSystem::SetCull(int type) {
     int pCullType = glState.cullType ^ type;
     
-    if(pCullType == 0)
+    if(pCullType == 0) {
         return;
+    }
         
     int cullType = 0;
     
@@ -576,15 +598,43 @@ void kexRenderSystem::SetCull(int type) {
 }
 
 //
+// kexRenderSystem::SetPolyMode
+//
+
+void kexRenderSystem::SetPolyMode(int type) {
+    int pPolyMode = glState.polyMode ^ type;
+    
+    if(pPolyMode == 0) {
+        return;
+    }
+        
+    int polyMode = 0;
+    
+    switch(type) {
+    case GLPOLY_FILL:
+        polyMode = GL_FILL;
+        break;
+    case GLPOLY_LINE:
+        polyMode = GL_LINE;
+        break;
+    }
+    
+    dglPolygonMode(GL_FRONT_AND_BACK, polyMode);
+    glState.polyMode = type;
+}
+
+//
 // kexRenderSystem::SetTextureUnit
 //
 
 void kexRenderSystem::SetTextureUnit(int unit) {
-    if(unit > MAX_TEXTURE_UNITS || unit < 0)
+    if(unit > MAX_TEXTURE_UNITS || unit < 0) {
         return;
+    }
     
-    if(unit == glState.currentUnit)
+    if(unit == glState.currentUnit) {
         return;
+    }
         
     dglActiveTextureARB(GL_TEXTURE0_ARB + unit);
     glState.currentUnit = unit;
