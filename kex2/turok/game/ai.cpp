@@ -523,7 +523,7 @@ void kexAI::TurnYaw(const float yaw) {
 //
 
 bool kexAI::TryMelee(void) {
-    if(!target || !bCanMelee) {
+    if(!target || !bCanMelee || !(aiFlags & AIF_SEETARGET)) {
         return false;
     }
     
