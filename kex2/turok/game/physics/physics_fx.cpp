@@ -87,9 +87,17 @@ void kexFxPhysics::ImpactObject(kexFx *fx, kexWorldObject *obj, kexVec3 &normal)
 
 void kexFxPhysics::ImpactSurface(kexFx *fx, kexTri *geom, kexVec3 &normal) {
     fxinfo_t *fxinfo = fx->fxInfo;
-    kexArea *area = sector->area;
+    kexArea *area;
     kexFx *nfx;
     short iType;
+
+    if(sector) {
+        area = sector->area;
+    }
+    else {
+        area = NULL;
+        iType = 0;
+    }
 
     switch(fxinfo->onplane) {
         case VFX_BOUNCE:
@@ -102,11 +110,13 @@ void kexFxPhysics::ImpactSurface(kexFx *fx, kexTri *geom, kexVec3 &normal) {
         case VFX_DESTROY:
             fx->GetOrigin() += (normal * 1.024f);
 
-            if(geom == NULL) {
-                iType = area->WallSurfaceType();
-            }
-            else {
-                iType = area->FloorSurfaceType();
+            if(area != NULL) {
+                if(geom == NULL) {
+                    iType = area->WallSurfaceType();
+                }
+                else {
+                    iType = area->FloorSurfaceType();
+                }
             }
 
             if(iType != -1) {
