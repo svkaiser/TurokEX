@@ -625,8 +625,13 @@ void kexWorld::Trace(traceInfo_t *trace, const int clipFlags) {
     trace->hitVector = trace->end;
     trace->hitNormal.Clear();
 
-    TraverseAreaNodes(trace, areaNodes);
-    TraverseWorldNodes(&worldNode, trace);
+    if(!(clipFlags & PF_NOCLIPACTORS)) {
+        TraverseAreaNodes(trace, areaNodes);
+    }
+
+    if(!(clipFlags & PF_NOCLIPSTATICS)) {
+        TraverseWorldNodes(&worldNode, trace);
+    }
 
     if(trace->hitTri) {
         trace->hitTri->bTraced = true;
