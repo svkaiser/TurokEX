@@ -20,6 +20,9 @@ const float VIEWBOB_GROUNDHEIGHT        = 2.048f;
 const float VIEWBOB_SWIMFREQX           = 0.00200f;
 const float VIEWBOB_SWIMFREQY           = 0.00125f;
 const float VIEWBOB_SWIMANGLE           = 0.025f;
+const float VIEWBOB_PITCHJUMP           = DegToRad(14.32f);
+
+const float SQUAT_LAND_TIME             = 0.032f;
 
 const float SWIM_STRAFEROLL_ANGLE       = 0.33f;
 const float SWIM_STRAFEROLL_SPEED       = 0.05f;
@@ -188,6 +191,8 @@ final class TurokPlayer : Component {
     bool                bClimbing;
     bool                bClimbRoll;
     bool                bClimbDone;
+    float               jumpPitch;
+    float               squatTime;
     
     //
     // game variables
@@ -660,7 +665,7 @@ final class TurokPlayer : Component {
         
         if(landImpact <= (FALL_STOPSPEED * deltaTime) && puppet.Physics().OnGround()) {
             self.GetAcceleration().Clear();
-            camOffset.y = (puppet.viewHeight + 20.48f) * 0.5f;
+            squatTime = SQUAT_LAND_TIME;
             
             if(landImpact <= (FALL_THUMPFACTOR * deltaTime)) {
                 puppet.StartSound("sounds/shaders/generic_22_turok_land.ksnd");
@@ -850,11 +855,21 @@ final class TurokPlayer : Component {
             }
         }
         
+        if(bJumped) {
+            jumpPitch = LocalLerp(jumpPitch, VIEWBOB_PITCHJUMP, 0.035f);
+        }
+        else if(jumpPitch > 0.001f) {
+            jumpPitch = LocalLerp(jumpPitch, 0, 0.08f);
+        }
+        else {
+            jumpPitch = 0;
+        }
+        
         kCamera @camera = LocalWorld.Camera();
         kAngle angle = camera.GetOffsetAngle();
         
         angle.yaw = -bob_y;
-        angle.pitch = bob_x;
+        angle.pitch = bob_x + jumpPitch;
         
         if(waterLevel >= WLT_BETWEEN) {
             float t = 60.0f * self.deltaTime;
@@ -897,15 +912,27 @@ final class TurokPlayer : Component {
         
         camera.SetOffsetAngle(angle);
         
-        if(camOffset.y != camHeight) {
-            camOffset.y = LocalLerp(camOffset.y, camHeight, 0.125f);
-            
-            if(camHeight - camOffset.y <= 0.01f) {
-                camOffset.y = camHeight;
-            }
+        if(squatTime > 0.01f) {
+            camOffset.y = LocalLerp(camOffset.y, (puppet.viewHeight + 20.48f) * 0.5f, 0.5f);
             
             camera.Attachment().SetAttachOffset(camOffset);
             camera.Attachment().SetSourceOffset(camOffset);
+            
+            squatTime -= Client.GetRunTime();
+        }
+        else {
+            squatTime = 0;
+            
+            if(camOffset.y != camHeight) {
+                camOffset.y = LocalLerp(camOffset.y, camHeight, 0.125f);
+                
+                if(camHeight - camOffset.y <= 0.01f) {
+                    camOffset.y = camHeight;
+                }
+                
+                camera.Attachment().SetAttachOffset(camOffset);
+                camera.Attachment().SetSourceOffset(camOffset);
+            }
         }
     }
     
@@ -1084,6 +1111,8 @@ final class TurokPlayer : Component {
         
         waterLevel = puppet.Physics().waterLevel;
         bClimbing = false;
+        jumpPitch = 0;
+        squatTime = 0;
         
         puppet.health = 100;
         playerHud.healthNum.Update(puppet.health);
