@@ -31,6 +31,7 @@ extern const char *sndfxnames[];
 void FX_GetName(int index, char *name);
 
 #define CHUNK_DIRECTORY_MODEL       4
+#define CHUNK_DIRECTORY_TYPES       12
 
 /**************************************************
 ***************************************************
@@ -178,6 +179,8 @@ static byte action_buffer[0x4000];
 static short curmodel;
 static short curnode;
 static short curmesh;
+static short curvariant;
+static short *typedata;
 
 short model_nodeCount[800];
 short model_meshCount[800][100];
@@ -316,6 +319,116 @@ static void PrintFlags(int flags)
 }
 
 //
+// GetGruntTextureIndex
+//
+
+static int GetGruntTextureIndex(int cur_node, int var)
+{
+    switch(cur_node)
+    {
+        /*Legs*/
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+        switch(var)
+        {
+        case 9:
+        case 10:
+        case 11:
+        case 12:
+        case 13:
+        case 21:
+        case 22:
+        case 23:
+            return 2;
+        case 17:
+        case 18:
+            return 1;
+        case 24:
+            return 3;
+        }
+        break;
+
+        /*Body*/
+    case 0:
+    case 9:
+    case 10:
+    case 11:
+    case 12:
+    case 13:
+    case 14:
+    case 15:
+    case 16:
+    case 17:
+        switch(var)
+        {
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 8:
+            return 1;
+        case 9:
+        case 10:
+        case 11:
+        case 12:
+        case 13:
+            return 5;
+        case 14:
+        case 15:
+        case 16:
+            return 2;
+        case 17:
+            return 3;
+        case 18:
+            return 4;
+        case 21:
+        case 22:
+        case 23:
+            return 6;
+        case 24:
+            return 7;
+        }
+        break;
+
+        /*Neck*/
+    case 18:
+        switch(var)
+        {
+        case 14:
+        case 15:
+        case 16:
+            return 1;
+        case 17:
+            return 2;
+        case 18:
+            return 3;
+        case 21:
+        case 22:
+        case 23:
+            return 4;
+        case 24:
+            return 5;
+        }
+        break;
+
+        /*Head*/
+    case 19:
+        break;
+
+   default:
+       break;
+    }
+
+    return 0;
+}
+
+//
 // ProcessTriangles
 //
 
@@ -325,7 +438,7 @@ static void ProcessTriangles(byte *data)
     int max;
     int inc;
     int previnc;
-    int count;
+    short count;
 
     count = Com_GetCartOffset(data, CHUNK_INDICES_COUNT, 0);
 
@@ -407,7 +520,7 @@ static void ProcessVertices(byte *data)
     short *tv1;
     short *tv2;
     char *n;
-    int count;
+    short count;
     int i;
 
     count = Com_GetCartOffset(data, CHUNK_VERTEX_COUNT, 0);
@@ -514,7 +627,8 @@ static void ProcessGeometry(byte *data)
     int indicesize;
     byte *vertices;
     int vertexsize;
-    int vertexcount;
+    short vertexcount;
+    short tmp;
 
     header = (geomheader_t*)Com_GetCartData(data, CHUNK_SECTION_HEADER, &headersize);
     indices = Com_GetCartData(data, CHUNK_SECTION_INDICES, &indicesize);
@@ -531,16 +645,22 @@ static void ProcessGeometry(byte *data)
     PrintFlags(header->flags);
     if(header->texture != -1)
     {
-        Com_Strcat("texture = \"textures/tex%04d_00.tga\"\n",
-            header->texture);
+        int textureSwap = 0;
+
+        // texture swaps for grunt model
+        if(curmodel == 391)
+            textureSwap = GetGruntTextureIndex(curnode, curvariant);
+
+        Com_Strcat("texture = \"textures/tex%04d_%02d.tga\"\n",
+            header->texture, textureSwap);
     }
     Com_Strcat("rgba = %i %i %i %i\n",
         header->rgba1[0], header->rgba1[1], header->rgba1[2], header->rgba1[3]);
     Com_Strcat("// rgba = %i %i %i %i\n",
         header->rgba2[0], header->rgba2[1], header->rgba2[2], header->rgba2[3]);
 
-    Com_Strcat("\nnumtriangles = %i\n",
-        Com_GetCartOffset(indices, CHUNK_INDICES_COUNT, 0));
+    tmp = Com_GetCartOffset(indices, CHUNK_INDICES_COUNT, 0);
+    Com_Strcat("\nnumtriangles = %i\n", tmp);
 
     Com_Strcat("\ntriangles =\n");
     Com_Strcat("{\n");
@@ -550,7 +670,7 @@ static void ProcessGeometry(byte *data)
     Com_Strcat("\nnumvertices = %i\n",
         vertexcount);
 
-    Com_Strcat("vertices =\n");
+    Com_Strcat("vertices = \n");
     Com_Strcat("{\n");
     ProcessVertices(vertices);
     Com_Strcat("}\n\n");
@@ -587,14 +707,14 @@ static void ProcessGroup(byte *data)
         ProcessGeometry(Com_GetCartData(data, CHUNK_SECTIONLIST_OFFSET(i), 0));
         Com_Strcat("}\n");
     }
-    Com_Strcat("}\n\n");
+    Com_Strcat("} // sections\n\n");
 }
 
 //
 // ProcessLimbData
 //
 
-static void ProcessLimbData(byte *data)
+static void ProcessLimbData(byte *data, int variantID)
 {
     byte *matrix;
     int matrixsize;
@@ -631,40 +751,16 @@ static void ProcessLimbData(byte *data)
     }
 
     variantcount = Com_GetCartOffset(variants, CHUNK_VARIATIONS_COUNT, 0);
-    Com_Strcat("\nnumvariants = %i\n", variantcount);
-    Com_Strcat("variants = { ");
-    if(variantcount <= 0)
-    {
-        Com_Strcat("0 ");
-    }
-    else
-    {
-        for(i = 0; i < variantcount; i++)
-        {
-            Com_Strcat("%i ",
-                Com_GetCartOffset(variants, CHUNK_VARIATIONS_OFFSET(i), 0));
-        }
-    }
-    Com_Strcat("}\n");
-
-    Com_Strcat("numgroups = %i\n\n", numobjects);
-    Com_Strcat("groups\n");
-    Com_Strcat("{\n");
-    for(i = 0; i < numobjects; i++)
-    {
-        Com_Strcat("{ // group %02d\n", i);
-        curmesh = i;
-        ProcessGroup(Com_GetCartData(objects, CHUNK_OBJECTS_OFFSET(i), 0));
-        Com_Strcat("}\n");
-    }
-    Com_Strcat("}\n\n");
+    i = Com_GetCartOffset(variants, CHUNK_VARIATIONS_OFFSET(variantID), 0);
+    curmesh = i;
+    ProcessGroup(Com_GetCartData(objects, CHUNK_OBJECTS_OFFSET(i), 0));
 }
 
 //
 // ProcessRoot
 //
 
-static void ProcessRoot(byte *data, int index)
+static void ProcessRoot(byte *data, int index, int variants)
 {
     int limbcount;
     int i;
@@ -683,19 +779,41 @@ static void ProcessRoot(byte *data, int index)
     {
         Com_Strcat("{ // node %02d\n", i);
         curnode = i;
-        ProcessLimbData(Com_GetCartData(data, CHUNK_LIMBINDEX_OFFSET(i), 0));
+        ProcessLimbData(Com_GetCartData(data, CHUNK_LIMBINDEX_OFFSET(i), 0), variants);
         Com_Strcat("}\n");
     }
-    Com_Strcat("}\n\n");
 
-    Com_Strcat("}\n\n");
+    Com_Strcat("} // nodes\n");
+    Com_Strcat("} // model\n\n");
+}
+
+//
+// GetVariantCount
+//
+
+static int GetVariantCount(byte *data, int index)
+{
+    int limbcount;
+    int variantcount;
+    byte *limbdata;
+    byte *variants;
+
+    limbcount = Com_GetCartOffset(data, CHUNK_LIMBINDEX_COUNT, 0);
+    limbdata = Com_GetCartData(data, CHUNK_LIMBINDEX_OFFSET(0), 0);
+    variants = Com_GetCartData(limbdata, CHUNK_LIMB_VARIATIONS, 0);
+    variantcount = Com_GetCartOffset(variants, CHUNK_VARIATIONS_COUNT, 0);
+
+    if(variantcount < 0)
+        variantcount = 0;
+
+    return variantcount;
 }
 
 //
 // ProcessMeshes
 //
 
-static void ProcessMeshes(byte *data, int index)
+static void ProcessMeshes(byte *data, int index, int variants)
 {
     byte *rncdata;
     byte *mdldata;
@@ -707,7 +825,7 @@ static void ProcessMeshes(byte *data, int index)
         CHUNK_MDLROOT_DATA, &size);
 
     mdldata = RNC_ParseFile(rncdata, size, &outsize);
-    ProcessRoot(Com_GetCartData(mdldata, CHUNK_MDLDATA_LIMBINDEX, 0), index);
+    ProcessRoot(Com_GetCartData(mdldata, CHUNK_MDLDATA_LIMBINDEX, 0), index, variants);
 
     Com_Free(&mdldata);
 }
@@ -716,7 +834,7 @@ static void ProcessMeshes(byte *data, int index)
 // ProcessProperties
 //
 
-static void ProcessProperties(byte *data, int index)
+static void ProcessProperties(byte *data, int index, int variant)
 {
     byte *bbox;
     int bboxsize;
@@ -759,16 +877,30 @@ static void ProcessProperties(byte *data, int index)
     else
     {
         float *fbbox = (float*)bbox;
+        short type = typedata[index + 4];
 
         Com_Strcat("bbox = { %f %f %f %f %f %f }\n",
             fbbox[0], fbbox[1], fbbox[2], fbbox[3], fbbox[4], fbbox[5]);
 
-        mdlboxes[index][0] = fbbox[0];
-        mdlboxes[index][1] = fbbox[1];
-        mdlboxes[index][2] = fbbox[2];
-        mdlboxes[index][3] = fbbox[3];
-        mdlboxes[index][4] = fbbox[4];
-        mdlboxes[index][5] = fbbox[5];
+        switch(type) {
+            case 300:
+            case 310:
+                mdlboxes[index][0] = -fbbox[3];
+                mdlboxes[index][1] = fbbox[1];
+                mdlboxes[index][2] = -fbbox[5];
+                mdlboxes[index][3] = -fbbox[0];
+                mdlboxes[index][4] = fbbox[4];
+                mdlboxes[index][5] = -fbbox[2];
+                break;
+            default:
+                mdlboxes[index][0] = fbbox[0];
+                mdlboxes[index][1] = fbbox[1];
+                mdlboxes[index][2] = fbbox[2];
+                mdlboxes[index][3] = fbbox[3];
+                mdlboxes[index][4] = fbbox[4];
+                mdlboxes[index][5] = fbbox[5];
+                break;
+        }
     }
 
     Com_Strcat("}\n\n");
@@ -789,7 +921,7 @@ static void ProcessSpawnActions(byte *data, int index)
 
     DC_DecodeData(actions, action_buffer, 0);
 
-    Com_Strcat("behaviors = // [frame## action## arg0 arg1 arg2 arg3]\n");
+    Com_Strcat("behaviors // [frame## action## arg0 arg1 arg2 arg3]\n");
     Com_Strcat("{\n");
     Com_Strcat("numbehaviors = %i\n\n", count);
 
@@ -812,22 +944,54 @@ static void ProcessSpawnActions(byte *data, int index)
 static void AddModel(byte *data, int index)
 {
     char name[256];
+    int variants;
+    int i;
+    byte *rncdata;
+    byte *mdldata;
+    int size;
+    int outsize;
 
-    Com_StrcatClear();
-    Com_SetDataProgress(3);
+    rncdata = Com_GetCartData(
+        Com_GetCartData(modeldata, CHUNK_MODEL_OFFSET(index), 0),
+        CHUNK_MDLROOT_DATA, &size);
 
-    ProcessProperties(modeldata, index);
-    Com_UpdateDataProgress();
+    mdldata = RNC_ParseFile(rncdata, size, &outsize);
 
-    //ProcessSpawnActions(modeldata, index);
-    Com_UpdateDataProgress();
+    variants = GetVariantCount(Com_GetCartData(mdldata, CHUNK_MDLDATA_LIMBINDEX, 0), index);
+    if(variants <= 1)
+        variants = 1;
 
-    ProcessMeshes(modeldata, index);
-    Com_UpdateDataProgress();
+    for(i = 0; i < variants; i++)
+    {
+        curvariant = i;
+        Com_StrcatClear();
+        Com_SetDataProgress(3);
 
-    sprintf(name, "%smdl%03d/mdl%03d.kmesh",
-        GetModelNamespace(0), index, index);
-    Com_StrcatAddToFile(name);
+        if(i >= 1)
+        {
+            sprintf(name, "%smdl%03d/mdl%03d_%02d.kmesh",
+                GetModelNamespace(0), index, index, i);
+        }
+        else
+        {
+            sprintf(name, "%smdl%03d/mdl%03d.kmesh",
+                GetModelNamespace(0), index, index);
+        }
+
+        ProcessProperties(modeldata, index, variants);
+        Com_UpdateDataProgress();
+
+        //ProcessSpawnActions(modeldata, index);
+        Com_UpdateDataProgress();
+
+        //ProcessMeshes(modeldata, index, variants);
+        ProcessRoot(Com_GetCartData(mdldata, CHUNK_MDLDATA_LIMBINDEX, 0), index, i);
+        Com_UpdateDataProgress();
+
+        Com_StrcatAddToFile(name);
+    }
+
+    Com_Free(&mdldata);
 }
 
 //
@@ -1412,7 +1576,7 @@ static void ProcessAnimation(byte *data, int index, int animIndex)
         Com_Strcat("turninfo = {\n");
         for(i = 0; i < numframes; i++)
         {
-            Com_Strcat("%f\n", *turninfo * 0.00003051850944757462f);
+            Com_Strcat("%f\n", *turninfo * (1.0f / 32768.0f));
             turninfo++;
         }
         Com_Strcat("}\n");
@@ -1535,6 +1699,8 @@ static void AddAnimations(byte *data, int index)
 void MDL_StoreModels(void)
 {
     int i;
+
+    typedata = (short*)Com_GetCartData(cartfile, CHUNK_DIRECTORY_TYPES, 0);
 
     modeldata = Com_GetCartData(cartfile, CHUNK_DIRECTORY_MODEL, 0);
     nummodels = Com_GetCartOffset(modeldata, CHUNK_MODEL_COUNT, 0);
