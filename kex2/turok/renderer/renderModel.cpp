@@ -154,7 +154,6 @@ void kexModelManager::Shutdown(void) {
 
 void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
     unsigned int i;
-    unsigned int j;
     unsigned int k;
     unsigned int l;
     byte r, g, b, a;
@@ -201,154 +200,115 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                             scmdl_children, true, hb_model);
                     }
 
-                    lexer->AssignFromTokenList(mdltokens, &node->numVariants,
-                        scmdl_numvariants, true);
+                    lexer->AssignFromTokenList(mdltokens, &node->numSurfaces,
+                        scmdl_numsections, true);
 
-                    // must have a variant
-                    if(node->numVariants <= 0) {
-                        parser.Error("Variant count for node %i should be at least 1 or more", i);
-                    }
-
-                    lexer->AssignFromTokenList(mdltokens, AT_SHORT,
-                        (void**)&node->variants, node->numVariants,
-                        scmdl_variants, true, hb_model);
-
-                    lexer->AssignFromTokenList(mdltokens, &node->numSurfaceGroups,
-                        scmdl_numgroups, true);
-
-                    // must have a mesh
-                    if(node->numSurfaceGroups <= 0) {
-                        parser.Error("Surface group count for node %i should be at least 1 or more", i);
-                    }
-
-                    // read into the group block
-                    node->surfaceGroups = (surfaceGroup_t*)Mem_Malloc(sizeof(surfaceGroup_t) *
-                        node->numSurfaceGroups, hb_model);
-
-                    lexer->ExpectTokenListID(mdltokens, scmdl_groups);
-                    lexer->ExpectNextToken(TK_LBRACK);
-
-                    for(j = 0; j < node->numSurfaceGroups; j++) {
-                        surfaceGroup_t *group = &node->surfaceGroups[j];
-
-                        // read into the nested group block
+                    // read into surface block
+                    bNested = false;
+                    if(node->numSurfaces == 0) {
+                        node->surfaces = NULL;
+                        lexer->ExpectTokenListID(mdltokens, scmdl_sections);
                         lexer->ExpectNextToken(TK_LBRACK);
-                        lexer->AssignFromTokenList(mdltokens, &group->numSurfaces,
-                            scmdl_numsections, true);
-
-                        // read into surface block
-                        bNested = false;
-                        if(group->numSurfaces == 0) {
-                            group->surfaces = NULL;
-                            lexer->ExpectTokenListID(mdltokens, scmdl_sections);
-                            lexer->ExpectNextToken(TK_LBRACK);
-                            lexer->ExpectNextToken(TK_RBRACK);
-                        }
-                        else {
-                            group->surfaces = (surface_t*)Mem_Malloc(sizeof(surface_t) *
-                                group->numSurfaces, hb_model);
-
-                            lexer->ExpectTokenListID(mdltokens, scmdl_sections);
-                            lexer->ExpectNextToken(TK_LBRACK);
-
-                            for(k = 0; k < group->numSurfaces; k++) {
-                                surface_t *surface = &group->surfaces[k];
-
-                                surface->color1 = 0;
-                                surface->color2 = 0;
-                                surface->flags = 0;
-                                surface->numIndices = 0;
-                                surface->numVerts = 0;
-                                surface->texturePath[0] = 0;
-                                surface->indices = NULL;
-                                surface->normals = NULL;
-                                surface->vertices = NULL;
-                                surface->rgb = NULL;
-
-                                // read into the nested surface block
-                                lexer->ExpectNextToken(TK_LBRACK);
-
-                                // this is the only block that doesn't require the fields
-                                // to be in a certain order
-                                while(lexer->TokenType() != TK_RBRACK || bNested != false) {
-                                    // required so the lexer doesn't get confused with the
-                                    // closing bracket of the section block and the nested
-                                    // section blocks
-                                    bNested = false;
-
-                                    lexer->Find();
-
-                                    switch(lexer->GetIDForTokenList(mdltokens, lexer->Token())) {
-                                    case scmdl_texture:
-                                        lexer->AssignFromTokenList(mdltokens, surface->texturePath,
-                                            scmdl_texture, false);
-                                        break;
-                                    case scmdl_rgba1:
-
-                                        lexer->ExpectNextToken(TK_EQUAL);
-
-                                        r = lexer->GetNumber();
-                                        g = lexer->GetNumber();
-                                        b = lexer->GetNumber();
-                                        a = lexer->GetNumber();
-
-                                        surface->color1 = RGBA(r, g, b, a);
-                                        break;
-                                    case scmdl_numtriangles:
-                                        lexer->AssignFromTokenList(mdltokens, &surface->numIndices,
-                                            scmdl_numtriangles, false);
-                                        surface->numIndices *= 3;
-                                        break;
-                                    case scmdl_triangles:
-                                        bNested = true;
-                                        lexer->AssignFromTokenList(mdltokens, AT_SHORT,
-                                            (void**)&surface->indices, surface->numIndices,
-                                            scmdl_triangles, false, hb_model);
-                                        break;
-                                    case scmdl_numvertices:
-                                        lexer->AssignFromTokenList(mdltokens, &surface->numVerts,
-                                            scmdl_numvertices, false);
-                                        break;
-                                    case scmdl_vertices:
-                                        bNested = true;
-                                        lexer->ExpectNextToken(TK_EQUAL);
-                                        lexer->ExpectNextToken(TK_LBRACK);
-                                        lexer->AssignFromTokenList(mdltokens, AT_VECTOR,
-                                            (void**)&surface->vertices, surface->numVerts,
-                                            scmdl_xyz, true, hb_model);
-                                        lexer->AssignFromTokenList(mdltokens, AT_FLOAT,
-                                            (void**)&surface->coords, surface->numVerts * 2,
-                                            scmdl_coords, true, hb_model);
-                                        lexer->AssignFromTokenList(mdltokens, AT_FLOAT,
-                                            (void**)&surface->normals, surface->numVerts * 3,
-                                            scmdl_normals, true, hb_model);
-                                        lexer->ExpectNextToken(TK_RBRACK);
-                                        break;
-                                    default:
-                                        for(l = 0; l < 17; l++) {
-                                            if(!strcmp(lexer->Token(), mdlflagnames[l].name)) {
-                                                lexer->ExpectNextToken(TK_EQUAL);
-                                                if(lexer->GetNumber()) {
-                                                    surface->flags |= mdlflagnames[l].flag;
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        break;
-                                    }
-                                }
-                            }
-
-                            // end of surface block
-                            lexer->ExpectNextToken(TK_RBRACK);
-                        }
-
-                        // end of nested group block
                         lexer->ExpectNextToken(TK_RBRACK);
                     }
+                    else {
+                        node->surfaces = (surface_t*)Mem_Malloc(sizeof(surface_t) *
+                            node->numSurfaces, hb_model);
 
-                    // end of group block
-                    lexer->ExpectNextToken(TK_RBRACK);
+                        lexer->ExpectTokenListID(mdltokens, scmdl_sections);
+                        lexer->ExpectNextToken(TK_LBRACK);
+
+                        for(k = 0; k < node->numSurfaces; k++) {
+                            surface_t *surface = &node->surfaces[k];
+
+                            surface->color1 = 0;
+                            surface->color2 = 0;
+                            surface->flags = 0;
+                            surface->numIndices = 0;
+                            surface->numVerts = 0;
+                            surface->texturePath[0] = 0;
+                            surface->indices = NULL;
+                            surface->normals = NULL;
+                            surface->vertices = NULL;
+                            surface->rgb = NULL;
+
+                            // read into the nested surface block
+                            lexer->ExpectNextToken(TK_LBRACK);
+
+                            // this is the only block that doesn't require the fields
+                            // to be in a certain order
+                            while(lexer->TokenType() != TK_RBRACK || bNested != false) {
+                                // required so the lexer doesn't get confused with the
+                                // closing bracket of the section block and the nested
+                                // section blocks
+                                bNested = false;
+
+                                lexer->Find();
+
+                                switch(lexer->GetIDForTokenList(mdltokens, lexer->Token())) {
+                                case scmdl_texture:
+                                    lexer->AssignFromTokenList(mdltokens, surface->texturePath,
+                                        scmdl_texture, false);
+                                    break;
+                                case scmdl_rgba1:
+
+                                    lexer->ExpectNextToken(TK_EQUAL);
+
+                                    r = lexer->GetNumber();
+                                    g = lexer->GetNumber();
+                                    b = lexer->GetNumber();
+                                    a = lexer->GetNumber();
+
+                                    surface->color1 = RGBA(r, g, b, a);
+                                    break;
+                                case scmdl_numtriangles:
+                                    lexer->AssignFromTokenList(mdltokens, &surface->numIndices,
+                                        scmdl_numtriangles, false);
+                                    surface->numIndices *= 3;
+                                    break;
+                                case scmdl_triangles:
+                                    bNested = true;
+                                    lexer->AssignFromTokenList(mdltokens, AT_SHORT,
+                                        (void**)&surface->indices, surface->numIndices,
+                                        scmdl_triangles, false, hb_model);
+                                    break;
+                                case scmdl_numvertices:
+                                    lexer->AssignFromTokenList(mdltokens, &surface->numVerts,
+                                        scmdl_numvertices, false);
+                                    break;
+                                case scmdl_vertices:
+                                    bNested = true;
+                                    lexer->ExpectNextToken(TK_EQUAL);
+                                    lexer->ExpectNextToken(TK_LBRACK);
+                                    lexer->AssignFromTokenList(mdltokens, AT_VECTOR,
+                                        (void**)&surface->vertices, surface->numVerts,
+                                        scmdl_xyz, true, hb_model);
+                                    lexer->AssignFromTokenList(mdltokens, AT_FLOAT,
+                                        (void**)&surface->coords, surface->numVerts * 2,
+                                        scmdl_coords, true, hb_model);
+                                    lexer->AssignFromTokenList(mdltokens, AT_FLOAT,
+                                        (void**)&surface->normals, surface->numVerts * 3,
+                                        scmdl_normals, true, hb_model);
+                                    lexer->ExpectNextToken(TK_RBRACK);
+                                    break;
+                                default:
+                                    for(l = 0; l < 17; l++) {
+                                        if(!strcmp(lexer->Token(), mdlflagnames[l].name)) {
+                                            lexer->ExpectNextToken(TK_EQUAL);
+                                            if(lexer->GetNumber()) {
+                                                surface->flags |= mdlflagnames[l].flag;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+
+                        // end of surface block
+                        lexer->ExpectNextToken(TK_RBRACK);
+                    }
 
                     // end of nested node block
                     lexer->ExpectNextToken(TK_RBRACK);
@@ -473,56 +433,47 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
     for(unsigned int i = 0; i < model->numNodes; i++) {
         modelNode_t *node = &model->nodes[i];
         node->numChildren = 0;
-        node->numVariants = 1;
+
         // TODO
-        node->numSurfaceGroups = numGroups;
-        node->surfaceGroups = (surfaceGroup_t*)Mem_Calloc(sizeof(surfaceGroup_t) *
-            node->numSurfaceGroups, hb_model);
+        node->numSurfaces = 1;
+        node->surfaces = (surface_t*)Mem_Calloc(sizeof(surface_t) *
+            node->numSurfaces, hb_model);
 
-        // surface groups
-        for(unsigned int j = 0; j < node->numSurfaceGroups; j++) {
-            surfaceGroup_t *group = &node->surfaceGroups[j];
-            // TODO
-            group->numSurfaces = 1;
-            group->surfaces = (surface_t*)Mem_Calloc(sizeof(surface_t) *
-                group->numSurfaces, hb_model);
+        // surfaces
+        for(unsigned int k = 0; k < node->numSurfaces; k++) {
+            surface_t *surface = &node->surfaces[k];
+            surface->color1 = 0xFFFFFFFF;
+            surface->flags |= MDF_SOLID;
 
-            // surfaces
-            for(unsigned int k = 0; k < group->numSurfaces; k++) {
-                surface_t *surface = &group->surfaces[k];
-                surface->color1 = 0xFFFFFFFF;
-                surface->flags |= MDF_SOLID;
+            surface->numIndices = indices.Length();
+            surface->indices = (word*)Mem_Calloc(sizeof(word) *
+                surface->numIndices, hb_model);
 
-                surface->numIndices = indices.Length();
-                surface->indices = (word*)Mem_Calloc(sizeof(word) *
-                    surface->numIndices, hb_model);
-
-                for(unsigned int ind = 0; ind < surface->numIndices; ind++) {
-                    surface->indices[ind] = indices[ind] - 1;
-                }
-
-                surface->numVerts = points.Length() / 3;
-                surface->vertices = (kexVec3*)Mem_Calloc(sizeof(kexVec3) *
-                    surface->numVerts, hb_model);
-                surface->coords = (float*)Mem_Calloc(sizeof(float) *
-                    surface->numVerts * 2, hb_model);
-                surface->normals = (float*)Mem_Calloc(sizeof(float) *
-                    surface->numVerts * 3, hb_model);
-
-                for(unsigned int v = 0; v < surface->numVerts; v++) {
-                    surface->vertices[v].x = points[v * 3 + 0];
-                    surface->vertices[v].y = points[v * 3 + 1];
-                    surface->vertices[v].z = points[v * 3 + 2];
-                    // TODO
-                    /*surface->coords[v * 2 + 0] = coords[v * 2 + 0];
-                    surface->coords[v * 2 + 1] = coords[v * 2 + 1];
-                    surface->normals[v * 2 + 0] = normals[v * 2 + 0];
-                    surface->normals[v * 2 + 1] = normals[v * 2 + 1];
-                    surface->normals[v * 2 + 2] = normals[v * 2 + 2];*/
-                }
-
-                strcpy(surface->texturePath, "textures/default.tga");
+            for(unsigned int ind = 0; ind < surface->numIndices; ind++) {
+                surface->indices[ind] = indices[ind] - 1;
             }
+
+            surface->numVerts = points.Length() / 3;
+            surface->vertices = (kexVec3*)Mem_Calloc(sizeof(kexVec3) *
+                surface->numVerts, hb_model);
+            surface->coords = (float*)Mem_Calloc(sizeof(float) *
+                surface->numVerts * 2, hb_model);
+            surface->normals = (float*)Mem_Calloc(sizeof(float) *
+                surface->numVerts * 3, hb_model);
+
+            for(unsigned int v = 0; v < surface->numVerts; v++) {
+                surface->vertices[v].x = points[v * 3 + 0];
+                surface->vertices[v].y = points[v * 3 + 1];
+                surface->vertices[v].z = points[v * 3 + 2];
+                // TODO
+                /*surface->coords[v * 2 + 0] = coords[v * 2 + 0];
+                surface->coords[v * 2 + 1] = coords[v * 2 + 1];
+                surface->normals[v * 2 + 0] = normals[v * 2 + 0];
+                surface->normals[v * 2 + 1] = normals[v * 2 + 1];
+                surface->normals[v * 2 + 2] = normals[v * 2 + 2];*/
+            }
+
+            strcpy(surface->texturePath, "textures/default.tga");
         }
     }
 }

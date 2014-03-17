@@ -58,15 +58,10 @@ typedef struct {
 } surface_t;
 
 typedef struct {
-    unsigned int                    numSurfaces;
-    surface_t                       *surfaces;
-} surfaceGroup_t;
-
-typedef struct {
     unsigned int                    numVariants;
     word                            *variants;
-    unsigned int                    numSurfaceGroups;
-    surfaceGroup_t                  *surfaceGroups;
+    unsigned int                    numSurfaces;
+    surface_t                       *surfaces;
     unsigned int                    numChildren;
     word                            *children;
 } modelNode_t;
