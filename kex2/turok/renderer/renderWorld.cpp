@@ -475,34 +475,18 @@ void kexRenderWorld::TraverseDrawActorNode(kexActor *actor,
         }
     }
 
-    if(node->numSurfaceGroups > 0) {
-        unsigned int var;
+    for(i = 0; i < node->numSurfaces; i++) {
+        surface_t *surface = &node->surfaces[i];
+        char *texturepath = NULL;
 
-        if(node->variants == NULL) {
-            var = 0;
-        }
-        else {
-            var = (actor->Variant() >= (int)node->numVariants) ?
-                0 : node->variants[actor->Variant()];
-        }
+        if(actor->textureSwaps != NULL) {
+            char *meshTexture = actor->textureSwaps[nodenum][i];
 
-        if(var >= node->numSurfaceGroups) {
-            var = 0;
+            if(meshTexture != NULL && meshTexture[0] != '-')
+                texturepath = meshTexture;
         }
 
-        for(i = 0; i < node->surfaceGroups[var].numSurfaces; i++) {
-            surface_t *surface = &node->surfaceGroups[var].surfaces[i];
-            char *texturepath = NULL;
-
-            if(actor->textureSwaps != NULL) {
-                char *meshTexture = actor->textureSwaps[nodenum][var][i];
-
-                if(meshTexture != NULL && meshTexture[0] != '-')
-                    texturepath = meshTexture;
-            }
-
-            DrawSurface(surface, texturepath);
-        }
+        DrawSurface(surface, texturepath);
     }
 
     for(i = 0; i < node->numChildren; i++) {
