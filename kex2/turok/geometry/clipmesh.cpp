@@ -421,12 +421,11 @@ void kexClipMesh::CreateMeshFromModel(void) {
     }
 
     // TODO - support variants and child nodes
-    surfaceGroup_t *group = &model->nodes[0].surfaceGroups[0];
     surface_t *surface;
     cmGroup_t *cmGroup;
 
     origin = owner->Bounds().Center();
-    numGroups = group->numSurfaces;
+    numGroups = model->nodes[0].numSurfaces;
 
     if(numGroups <= 0) {
         return;
@@ -435,7 +434,7 @@ void kexClipMesh::CreateMeshFromModel(void) {
     cmGroups = (cmGroup_t*)Mem_Malloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
 
     for(unsigned int i = 0; i < numGroups; i++) {
-        surface = &group->surfaces[i];
+        surface = &model->nodes[0].surfaces[i];
         cmGroup = &cmGroups[i];
 
         AllocateCmGroup(cmGroup, surface->numVerts, surface->numIndices);
@@ -463,16 +462,17 @@ void kexClipMesh::CreateConvexHull(void) {
         return;
     }
 
-    surfaceGroup_t *group;
     cmGroup_t *cmGroup;
+    surface_t *surface;
+    unsigned int numSurfaces;
     HullLibrary hl;
     HullResult result;
     HullError err;
 
-    // TODO - support variants and child nodes
-    group = &model->nodes[0].surfaceGroups[0];
+    numSurfaces = model->nodes[0].numSurfaces;
 
-    if(group->numSurfaces <= 0) {
+    // TODO - support variants and child nodes
+    if(numSurfaces <= 0) {
         return;
     }
 
@@ -481,23 +481,25 @@ void kexClipMesh::CreateConvexHull(void) {
 
     cmGroups = (cmGroup_t*)Mem_Malloc(sizeof(cmGroup_t) * numGroups, kexClipMesh::hb_clipMesh);
 
-    if(group->numSurfaces > 1) {
+    if(numSurfaces > 1) {
         unsigned int i;
         PxF32 *verts;
         int totalVerts = 0;
         int totalCopyVerts = 0;
 
-        for(i = 0; i < group->numSurfaces; i++) {
-            totalVerts += group->surfaces[i].numVerts;
+        for(i = 0; i < numSurfaces; i++) {
+            surface = &model->nodes[0].surfaces[i];
+            totalVerts += surface->numVerts;
         }
 
         verts = (PxF32*)Mem_Malloc(totalVerts * (sizeof(PxF32) * 3), hb_static);
 
-        for(i = 0; i < group->numSurfaces; i++) {
-            memcpy(&verts[totalCopyVerts], reinterpret_cast<PxF32*>(group->surfaces[i].vertices),
-                (sizeof(PxF32) * 3) * group->surfaces[i].numVerts);
+        for(i = 0; i < numSurfaces; i++) {
+            surface = &model->nodes[0].surfaces[i];
+            memcpy(&verts[totalCopyVerts], reinterpret_cast<PxF32*>(surface->vertices),
+                (sizeof(PxF32) * 3) * surface->numVerts);
 
-            totalCopyVerts += (group->surfaces[i].numVerts * 3);
+            totalCopyVerts += (surface->numVerts * 3);
         }
 
         HullDesc desc(QF_TRIANGLES, totalVerts, verts ,sizeof(PxF32) * 3);
@@ -506,8 +508,8 @@ void kexClipMesh::CreateConvexHull(void) {
         Mem_Free(verts);
     }
     else {
-        HullDesc desc(QF_TRIANGLES, group->surfaces[0].numVerts,
-            reinterpret_cast<PxF32*>(group->surfaces[0].vertices) ,sizeof(PxF32) * 3);
+        HullDesc desc(QF_TRIANGLES, model->nodes[0].surfaces[0].numVerts,
+            reinterpret_cast<PxF32*>(model->nodes[0].surfaces[0].vertices) ,sizeof(PxF32) * 3);
         err = hl.CreateConvexHull(desc, result);
     }
 
