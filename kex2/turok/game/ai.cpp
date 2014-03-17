@@ -394,6 +394,14 @@ void kexAI::SeekTarget(void) {
             }
             break;
 
+        ////////////////////////////////////////////////////
+        // ATTACK RANGE STATE
+        // Will try to keep aim on its target
+        ////////////////////////////////////////////////////
+        case AIS_ATTACK_RANGE:
+            if(!bCanMelee && aiFlags & AIF_FACETARGET) {
+                TurnYaw(GetYawToTarget());
+            }
         default:
             break;
     }
@@ -448,6 +456,17 @@ void kexAI::AnimStopped(void) {
                     TurnYaw(GetBestYawToTarget(checkRadius));
                 }
             }
+            break;
+
+        ////////////////////////////////////////////////////
+        // ATTACK RANGE STATE
+        // Will try to attack again before changing states
+        ////////////////////////////////////////////////////
+        case AIS_ATTACK_RANGE:
+            aiState = AIS_IDLE;
+            bAttacking = false;
+            bAnimTurning = false;
+            TryRange();
             break;
             
         ////////////////////////////////////////////////////
@@ -576,7 +595,7 @@ bool kexAI::TryRange(void) {
     // attack more aggressively when close to target
     if(kexRand::Max(cr) <= kexMath::Floor(dist * 100.0f / rangeDistance)) {
         attackThreshold = maxThreshold;
-        ChangeState(AIS_IDLE);
+        aiState = AIS_IDLE;
         bAttacking = false;
         return false;
     }
@@ -586,11 +605,12 @@ bool kexAI::TryRange(void) {
     
     if(bInView && aiFlags & AIF_SEETARGET) {
         if(dist <= rangeDistance && !bAttacking) {
+            bAttacking = true;
             ChangeState(AIS_ATTACK_RANGE);
         }
     }
     else if(bAttacking) {
-        ChangeState(AIS_IDLE);
+        aiState = AIS_IDLE;
         bAttacking = false;
     }
     
