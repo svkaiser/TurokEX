@@ -137,20 +137,11 @@ kexActor::~kexActor(void) {
     if(model && textureSwaps) {
         for(unsigned int j = 0; j < (int)model->numNodes; j++) {
             modelNode_t *node = &model->nodes[j];
-
-            for(unsigned int k = 0; k < node->numSurfaceGroups; k++) {
-                surfaceGroup_t *group = &node->surfaceGroups[k];
                 
-                for(unsigned int l = 0; l < group->numSurfaces; l++) {
-                    if(textureSwaps[j][k][l]) {
-                        Mem_Free(textureSwaps[j][k][l]);
-                        textureSwaps[j][k][l] = NULL;
-                    }
-                }
-
-                if(textureSwaps[j][k]) {
-                    Mem_Free(textureSwaps[j][k]);
-                    textureSwaps[j][k] = NULL;
+            for(unsigned int l = 0; l < node->numSurfaces; l++) {
+                if(textureSwaps[j][l]) {
+                    Mem_Free(textureSwaps[j][l]);
+                    textureSwaps[j][l] = NULL;
                 }
             }
 
@@ -314,19 +305,15 @@ void kexActor::ParseDefault(kexLexer *lexer) {
 
             // node block
             lexer->ExpectNextToken(TK_LBRACK);
-            for(unsigned int k = 0; k < node->numSurfaceGroups; k++) {
-                surfaceGroup_t *group = &node->surfaceGroups[k];
-
-                // mesh block
-                lexer->ExpectNextToken(TK_LBRACK);
-                for(unsigned int l = 0; l < group->numSurfaces; l++) {
-                    // parse sections
-                    lexer->GetString();
-                    textureSwaps[j][k][l] = Mem_Strdup(lexer->StringToken(), hb_static);
-                }
-                // end mesh block
-                lexer->ExpectNextToken(TK_RBRACK);
+            // mesh block
+            lexer->ExpectNextToken(TK_LBRACK);
+            for(unsigned int l = 0; l < node->numSurfaces; l++) {
+                // parse sections
+                lexer->GetString();
+                textureSwaps[j][l] = Mem_Strdup(lexer->StringToken(), hb_static);
             }
+            // end mesh block
+            lexer->ExpectNextToken(TK_RBRACK);
             // end node block
             lexer->ExpectNextToken(TK_RBRACK);
         }
@@ -461,29 +448,20 @@ void kexActor::UpdateTransform(void) {
 
 void kexActor::AllocateTextures(void) {
     modelNode_t *node;
-    surfaceGroup_t *group;
     unsigned int j;
-    unsigned int k;
 
     // allocate data for texture swap array
-    textureSwaps = (char****)Mem_Calloc(sizeof(char***) *
+    textureSwaps = (char***)Mem_Calloc(sizeof(char**) *
         model->numNodes, hb_static);
 
     for(j = 0; j < model->numNodes; j++) {
         node = &model->nodes[j];
 
-        textureSwaps[j] = (char***)Mem_Calloc(sizeof(char**) *
-            node->numSurfaceGroups, hb_static);
+        if(node->numSurfaces == 0)
+            continue;
 
-        for(k = 0; k < node->numSurfaceGroups; k++) {
-            group = &node->surfaceGroups[k];
-
-            if(group->numSurfaces == 0)
-                continue;
-
-            textureSwaps[j][k] = (char**)Mem_Calloc(sizeof(char*) *
-                group->numSurfaces, hb_static);
-        }
+        textureSwaps[j] = (char**)Mem_Calloc(sizeof(char*) *
+            node->numSurfaces, hb_static);
     }
 }
 
@@ -509,15 +487,17 @@ void kexActor::SetModel(const char* modelFile) {
             animState.Set(anim, 4, ANF_LOOP);
         }
 
-        // allocate node translation offset data
-        nodeOffsets_t = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * m->numNodes, hb_static);
+        if(m->numNodes > 0) {
+            // allocate node translation offset data
+            nodeOffsets_t = (kexVec3*)Mem_Calloc(sizeof(kexVec3) * m->numNodes, hb_static);
 
-        // allocate node rotation offset data
-        nodeOffsets_r = (kexQuat*)Mem_Calloc(sizeof(kexQuat) * m->numNodes, hb_static);
+            // allocate node rotation offset data
+            nodeOffsets_r = (kexQuat*)Mem_Calloc(sizeof(kexQuat) * m->numNodes, hb_static);
 
-        // set default rotation offsets
-        for(i = 0; i < m->numNodes; i++)
-            nodeOffsets_r[i].Set(0, 0, 0, 1);
+            // set default rotation offsets
+            for(i = 0; i < m->numNodes; i++)
+                nodeOffsets_r[i].Set(0, 0, 0, 1);
+        }
     }
 }
 

@@ -85,7 +85,7 @@ public:
     kexKeyMap                   *definition;
 
     // TODO - need some sort of skin system
-    char                        ****textureSwaps;
+    char                        ***textureSwaps;
     bool                        bTraced;
     int                         validcount;
     bool                        bNoFixedTransform;
