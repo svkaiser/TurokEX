@@ -448,18 +448,6 @@ void kexRenderWorld::TraverseDrawActorNode(kexActor *actor,
             kexVec3 pos = pos_cur.Lerp(pos_next, delta);
 
             if(nodenum == 0) {
-                if(animState->flags & ANF_ROOTMOTION) {
-                    if(nextframe >= frame && animState->frameTime > 0) {
-                        kexMatrix mtx(DEG2RAD(-90), 1);
-                        mtx.Scale(-1, 1, 1);
-
-                        kexVec3 offs = (pos_next - pos_cur) | mtx;
-                        animState->baseOffset = -pos_cur[2] * actor->GetScale()[1];
-                        animState->rootMotion = (offs * actor->GetScale()) *
-                            (60.0f / animState->frameTime);
-                    }
-                }
-
                 if(animState->flags & ANF_ROOTMOTION ||
                     animState->prevFlags & ANF_ROOTMOTION) {
                     pos.x = 0;

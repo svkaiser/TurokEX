@@ -336,6 +336,108 @@ void kexAnimState::Blend(const int id, float animTime, float animBlendTime, int 
 }
 
 //
+// kexAnimState::UpdateRootMotion
+//
+
+void kexAnimState::UpdateRootMotion(void) {
+    int frame;
+    int nextframe;
+    float delta;
+    kexAnim_t *anim;
+    kexAnim_t *prevanim;
+
+    anim        = track.anim;
+    prevanim    = prevTrack.anim;
+    frame       = track.frame;
+    nextframe   = track.nextFrame;
+    delta       = deltaTime;
+
+    if(anim && frame < (int)anim->numFrames) {
+        kexVec3 pos_cur;
+        kexVec3 pos_next;
+        kexVec3 t1 = GetTranslation(anim, 0, frame);
+        kexVec3 t2 = GetTranslation(anim, 0, nextframe);
+
+        if(!(flags & ANF_BLEND)) {
+            pos_cur     = t1;
+            pos_next    = t2;
+        }
+        else {
+            frame       = prevTrack.frame;
+            nextframe   = prevTrack.nextFrame;
+            pos_cur     = GetTranslation(prevanim, 0, frame).Lerp(t1, delta);
+            pos_next    = GetTranslation(prevanim, 0, nextframe).Lerp(t2, delta);
+        }
+
+        if(nextframe >= frame && frameTime > 0) {
+            kexMatrix mtx(DEG2RAD(-90), 1);
+            mtx.Scale(-1, 1, 1);
+
+            kexVec3 offs = (pos_next - pos_cur) | mtx;
+            baseOffset = -pos_cur[2] * owner->GetScale()[1];
+            rootMotion = (offs * owner->GetScale()) * (60.0f / frameTime);
+        }
+    }
+}
+
+//
+// kexAnimState::UpdateMotion
+//
+
+void kexAnimState::UpdateMotion(void) {
+    float blendFrac = 1.0f;
+    kexVec3 dir;
+    kexVec3 dest;
+    kexVec3 *org;
+    
+    if(flags & ANF_BLEND && blendTime != 0) {
+        blendFrac = (frameTime / blendTime);
+    }
+    
+    dir = (rootMotion | owner->GetRotation()) * blendFrac;
+
+    if(owner->InstanceOf(&kexAI::info)) {
+        owner->Physics()->velocity = dir;
+    }
+    else {
+        org = &owner->GetOrigin();
+        dest = (*org + (dir * client.GetRunTime()));
+        dest[1] = org->y;
+        
+        // update position
+        if(owner->TryMove(*org, dest, &owner->Physics()->sector)) {
+            owner->SetOrigin(dest);
+            owner->LinkArea();
+        }
+    }
+}
+
+//
+// kexAnimState::UpdateRotation
+//
+
+void kexAnimState::UpdateRotation(void) {
+    kexAnim_t *anim;
+    int frame;
+    float angle;
+    float time;
+    
+    anim = track.anim;
+    
+    frame = track.frame;
+    angle = M_PI * anim->yawOffsets[frame];
+    
+    if(frame > 0) {
+        angle -= (M_PI * anim->yawOffsets[frame-1]);
+    }
+    
+    kexAngle::Clamp(&angle);
+    time = 4.0f * frameTime;
+    
+    owner->GetAngles().yaw -= angle * (client.GetRunTime() * time);
+}
+
+//
 // kexAnimState::Update
 //
 // Advances frames as well as handling
@@ -362,52 +464,11 @@ void kexAnimState::Update(void) {
     // origin as well as angle offsets based on the initial
     // node's position and yaw offsets
     if(flags & ANF_ROOTMOTION && !(flags & ANF_STOPPED)) {
-        float blendFrac = 1.0f;
-        kexVec3 dir;
-        kexVec3 dest;
-        kexVec3 *org;
-        
-        if(flags & ANF_BLEND && blendTime != 0) {
-            blendFrac = (frameTime / blendTime);
-        }
-        
-        dir = (rootMotion | owner->GetRotation()) * blendFrac;
-
-        if(owner->InstanceOf(&kexAI::info)) {
-            owner->Physics()->velocity = dir;
-        }
-        else {
-            org = &owner->GetOrigin();
-            dest = (*org + (dir * client.GetRunTime()));
-            dest[1] = org->y;
-            
-            // update position
-            if(owner->TryMove(*org, dest, &owner->Physics()->sector)) {
-                owner->SetOrigin(dest);
-                owner->LinkArea();
-            }
-        }
+        UpdateMotion();
         
         // don't update yaw offsets while blending
         if(!(flags & ANF_BLEND) && frameTime > 0) {
-            kexAnim_t *anim;
-            int frame;
-            float angle;
-            float time;
-            
-            anim = track.anim;
-            
-            frame = track.frame;
-            angle = M_PI * anim->yawOffsets[frame];
-            
-            if(frame > 0) {
-                angle -= (M_PI * anim->yawOffsets[frame-1]);
-            }
-            
-            kexAngle::Clamp(&angle);
-            time = 4.0f * frameTime;
-            
-            owner->GetAngles().yaw -= angle * (client.GetRunTime() * time);
+            UpdateRotation();
         }
     }
 
@@ -443,6 +504,10 @@ void kexAnimState::Update(void) {
 
             ExecuteFrameActions();
         }
+    }
+
+    if(flags & ANF_ROOTMOTION) {
+        UpdateRootMotion();
     }
 
     playTime += client.GetRunTime();

@@ -114,6 +114,9 @@ public:
     kexVec3                 rootMotion;
 
 private:
+    void                    UpdateRootMotion(void);
+    void                    UpdateMotion(void);
+    void                    UpdateRotation(void);
     static void             ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer *lexer);
 
     int                     currentFrame;
