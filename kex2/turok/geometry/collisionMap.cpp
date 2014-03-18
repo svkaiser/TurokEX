@@ -42,7 +42,7 @@
 #define CM_ID_AREAS     4
 
 #define STEPHEIGHT      12.0f
-#define CEILING_EXPAND  71.68f
+#define CEILING_EXPAND  10.24f
 
 kexHeapBlock kexCollisionMap::hb_collisionMap("collision map", false, NULL, NULL);
 
@@ -210,9 +210,8 @@ kexSector *kexSector::CrossEdge(cMapTrace_t *trace, const int edge) {
     }
 
     if(next->flags & CLF_CHECKHEIGHT) {
-        if(result->position[1] - ((trace->height * next->upperTri.plane.Normal().y) +
-            next->upperTri.GetDistance(result->position)) >= 0) {
-                return NULL;
+        if((next->upperTri.GetDistance(result->position) - trace->height) < result->position[1]) {
+            return NULL;
         }
     }
 

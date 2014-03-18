@@ -225,7 +225,7 @@ bool kexPhysics::CorrectSectorPosition(void) {
     }
 
     if(sector->flags & CLF_CHECKHEIGHT) {
-        dist = (sector->upperTri.GetDistance(org) - owner->GetViewHeight());
+        dist = (sector->upperTri.GetDistance(org) - owner->Height());
 
         if(dist < org[1]) {
             // correct position

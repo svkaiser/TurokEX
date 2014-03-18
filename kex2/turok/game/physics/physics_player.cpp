@@ -254,6 +254,10 @@ void kexPlayerPhysics::Think(const float timeDelta) {
         // test if walking on steep slopes
         slope = trace.hitNormal.Dot(gravity);
 
+        if(slope >= 0) {
+            bCanStep = false;
+        }
+
         if(trace.hitTri && !trace.hitActor) {
             if(slope < 0 && slope >= -0.5f) {
                 if(trace.hitTri == groundGeom) {
