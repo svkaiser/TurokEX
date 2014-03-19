@@ -31,6 +31,7 @@
 #include "system.h"
 #include "client.h"
 #include "input.h"
+#include "console.h"
 
 kexInput inputSystem;
 
@@ -39,8 +40,6 @@ kexInput inputSystem;
 //
 
 kexInput::kexInput() {
-    cursors[0]      = NULL;
-    cursors[1]      = NULL;
     lastmbtn        = 0;
     bGrabbed        = false;
     bWindowFocused  = false;
@@ -59,12 +58,7 @@ kexInput::~kexInput() {
 //
 
 void kexInput::Init(void) {
-    Uint8 data[1] = { 0x00 };
-    
     SDL_PumpEvents();
-    cursors[0] = SDL_GetCursor();
-    cursors[1] = SDL_CreateCursor(data, data, 8, 1, 0, 0);
-
     CenterMouse();
     
     common.Printf("Input Initialized\n");
@@ -78,6 +72,10 @@ void kexInput::ReadMouse(void) {
     int x, y;
     Uint8 btn;
     event_t ev;
+
+    if(sysMain.IsWindowed() && console.IsActive()) {
+        return;
+    }
     
     SDL_GetRelativeMouseState(&x, &y);
     btn = SDL_GetMouseState(&mouse_x, &mouse_y);
@@ -119,7 +117,7 @@ void kexInput::UpdateFocus(void) {
     
     // We should have input (keyboard) focus and be visible 
     // (not minimised)
-    bWindowFocused = (flags & SDL_WINDOW_INPUT_FOCUS) && (flags & SDL_WINDOW_MOUSE_FOCUS);
+    bWindowFocused = (flags & SDL_WINDOW_INPUT_FOCUS) || (flags & SDL_WINDOW_MOUSE_FOCUS);
 }
 
 //
@@ -154,57 +152,59 @@ void kexInput::GetEvent(const SDL_Event *Event) {
     event_t event;
     
     switch(Event->type) {
-    case SDL_KEYDOWN:
-        event.type = ev_keydown;
-        event.data1 = Event->key.keysym.sym;
-        client.PostEvent(&event);
-        break;
+        case SDL_KEYDOWN:
+            event.type = ev_keydown;
+            event.data1 = Event->key.keysym.sym;
+            client.PostEvent(&event);
+            break;
         
-    case SDL_KEYUP:
-        event.type = ev_keyup;
-        event.data1 = Event->key.keysym.sym;
-        client.PostEvent(&event);
-        break;
+        case SDL_KEYUP:
+            event.type = ev_keyup;
+            event.data1 = Event->key.keysym.sym;
+            client.PostEvent(&event);
+            break;
         
-    case SDL_MOUSEBUTTONDOWN:
-    case SDL_MOUSEBUTTONUP: {
-            if(!bWindowFocused)
+        case SDL_MOUSEBUTTONDOWN:
+        case SDL_MOUSEBUTTONUP:
+            if(!bWindowFocused) {
                 break;
-            
+            }
             event.type = Event->type ==
                 SDL_MOUSEBUTTONUP ? ev_mouseup : ev_mousedown;
             event.data1 = Event->button.button;
             event.data2 = event.data3 = 0;
             client.PostEvent(&event);
-        }
-        break;
+            break;
 
-    case SDL_MOUSEWHEEL: {
-           if(!bWindowFocused)
-               break;
-           
-           event.type = ev_mousewheel;
-           event.data1 = Event->wheel.y > 0 ? SDL_BUTTON_WHEELUP : SDL_BUTTON_WHEELDOWN;
-           event.data2 = event.data3 = 0;
-           client.PostEvent(&event);
-        }
-        break;
+        case SDL_MOUSEWHEEL:
+            if(!bWindowFocused) {
+                break;
+            }
+            event.type = ev_mousewheel;
+            event.data1 = Event->wheel.y > 0 ? SDL_BUTTON_WHEELUP : SDL_BUTTON_WHEELDOWN;
+            event.data2 = event.data3 = 0;
+            client.PostEvent(&event);
+            break;
     
-    case SDL_WINDOWEVENT:
-        if(Event->window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
-            UpdateFocus();
-        else if(Event->window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
-            bWindowFocused = false;
-            bGrabbed = false;
-        }
-        break;
+        case SDL_WINDOWEVENT:
+            switch(Event->window.event) {
+                case SDL_WINDOWEVENT_FOCUS_GAINED:
+                case SDL_WINDOWEVENT_ENTER:
+                    UpdateFocus();
+                    break;
+                case SDL_WINDOWEVENT_FOCUS_LOST:
+                    bWindowFocused = false;
+                    bGrabbed = false;
+                    break;
+            }
+            break;
         
-    case SDL_QUIT:
-        sysMain.Shutdown();
-        break;
+        case SDL_QUIT:
+            sysMain.Shutdown();
+            break;
         
-    default:
-        break;
+        default:
+            break;
     }
 }
 
@@ -232,15 +232,13 @@ bool kexInput::MouseShouldBeGrabbed(void) const {
         return false;
     }
 
-    if(bEnabled) {
-        return true;
+    if(sysMain.IsWindowed()) {
+        if(console.IsActive()) {
+            return false;
+        }
     }
 
-    if(!sysMain.IsWindowed()) {
-        return true;
-    }
-
-    return false;
+    return bEnabled;
 }
 
 //
@@ -248,11 +246,13 @@ bool kexInput::MouseShouldBeGrabbed(void) const {
 //
 
 float kexInput::AccelerateMouse(int val) const {
-    if(!cvarMAcceleration.GetFloat())
+    if(!cvarMAcceleration.GetFloat()) {
         return (float)val;
+    }
     
-    if(val < 0)
+    if(val < 0) {
         return -AccelerateMouse(-val);
+    }
     
     return kexMath::Pow((float)val, (cvarMAcceleration.GetFloat() / 200.0f + 1.0f));
 }
@@ -275,7 +275,7 @@ void kexInput::MoveMouse(int x, int y) {
 //
 
 void kexInput::ActivateMouse(void) {
-    SDL_SetCursor(cursors[1]);
+    SDL_ShowCursor(0);
     SDL_SetRelativeMouseMode(SDL_TRUE);
 }
 
@@ -284,7 +284,7 @@ void kexInput::ActivateMouse(void) {
 //
 
 void kexInput::DeactivateMouse(void) {
-    SDL_SetCursor(cursors[0]);
+    SDL_ShowCursor(1);
     SDL_SetRelativeMouseMode(SDL_FALSE);
 }
 
@@ -296,7 +296,7 @@ void kexInput::UpdateGrab(void) {
     bool grab;
     
     grab = MouseShouldBeGrabbed();
-    if (grab && !bGrabbed) {
+    if(grab && !bGrabbed) {
         ActivateMouse();
     }
     

@@ -73,7 +73,6 @@ private:
     void            UpdateFocus(void);
     int             GetButtonState(Uint8 buttonstate) const;
     
-    SDL_Cursor      *cursors[2];
     bool            bWindowFocused;
     bool            bGrabbed;
     bool            bEnabled;
