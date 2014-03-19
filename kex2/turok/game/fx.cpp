@@ -307,7 +307,9 @@ kexFx *kexFx::Event(fxEvent_t *fxEvent, kexWorldObject *target) {
     kexFx *nfx = NULL;
 
     if(fxEvent->fx != NULL) {
-        nfx = SpawnChild(fxEvent->fx);
+        if((nfx = SpawnChild(fxEvent->fx)) != NULL) {
+            nfx->physicsRef->sector = this->physicsRef->sector;
+        }
     }
 
     if(!nfx) {

@@ -197,7 +197,7 @@ void kexFxPhysics::Think(const float timeDelta) {
         owner->SetOrigin(start + move);
     }
     else {
-        if(fxinfo->bLinkArea && CorrectSectorPosition()) {
+        if(CorrectSectorPosition()) {
             ImpactSurface(fx, &sector->lowerTri, sector->lowerTri.plane.Normal());
             return;
         }
