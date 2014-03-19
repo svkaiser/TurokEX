@@ -738,6 +738,7 @@ void kexRenderWorld::DrawFX(void) {
 
     renderSystem.SetCull(GLCULL_FRONT);
     renderSystem.SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
+    renderSystem.SetDepthMask(GLDEPTHMASK_NO);
 
     bShowTexture = cvarRenderFxTexture.GetBool();
 
@@ -751,7 +752,6 @@ void kexRenderWorld::DrawFX(void) {
 
     if(!bWireframe) {
         dglEnableClientState(GL_COLOR_ARRAY);
-        dglEnable(GL_POLYGON_OFFSET_FILL);
     }
 
     // draw sorted fx list
@@ -773,23 +773,23 @@ void kexRenderWorld::DrawFX(void) {
         scalemtx.Scale(scale, scale, scale);
 
         switch(fxinfo->drawtype) {
-        case VFX_DRAWFLAT:
-        case VFX_DRAWDECAL:
-            mtx = kexMatrix(DEG2RAD(90), 1);
-            renderSystem.SetState(GLSTATE_CULL, false);
-            break;
-        case VFX_DRAWBILLBOARD:
-            mtx = kexMatrix(kexQuat(world->Camera()->GetAngles().yaw, 0, 1, 0));
-            renderSystem.SetState(GLSTATE_CULL, true);
-            break;
-        case VFX_DRAWSURFACE:
-            mtx = kexMatrix(fx->GetRotation());
-            renderSystem.SetState(GLSTATE_CULL, false);
-            break;
-        default:
-            mtx = kexMatrix(world->Camera()->GetRotation());
-            renderSystem.SetState(GLSTATE_CULL, true);
-            break;
+            case VFX_DRAWFLAT:
+            case VFX_DRAWDECAL:
+                mtx = kexMatrix(DEG2RAD(90), 1);
+                renderSystem.SetState(GLSTATE_CULL, false);
+                break;
+            case VFX_DRAWBILLBOARD:
+                mtx = kexMatrix(kexQuat(world->Camera()->GetAngles().yaw, 0, 1, 0));
+                renderSystem.SetState(GLSTATE_CULL, true);
+                break;
+            case VFX_DRAWSURFACE:
+                mtx = kexMatrix(fx->GetRotation());
+                renderSystem.SetState(GLSTATE_CULL, false);
+                break;
+            default:
+                mtx = kexMatrix(world->Camera()->GetRotation());
+                renderSystem.SetState(GLSTATE_CULL, true);
+                break;
         }
 
         texture = fx->Texture();
@@ -857,10 +857,6 @@ void kexRenderWorld::DrawFX(void) {
             }
         }
 
-        if(!bWireframe) {
-            dglPolygonOffset(-i*1.5f, -i*1.5f);
-        }
-
         dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, spriteIndices);
 
         if(bShowOrigin) {
@@ -875,12 +871,11 @@ void kexRenderWorld::DrawFX(void) {
     }
 
     if(!bWireframe) {
-        dglPolygonOffset(0, 0);
-        dglDisable(GL_POLYGON_OFFSET_FILL);
         dglDisableClientState(GL_COLOR_ARRAY);
     }
 
     renderSystem.SetState(GLSTATE_DEPTHTEST, true);
+    renderSystem.SetDepthMask(GLDEPTHMASK_YES);
     dglEnableClientState(GL_NORMAL_ARRAY);
 }
 
@@ -891,51 +886,44 @@ void kexRenderWorld::DrawFX(void) {
 void kexRenderWorld::DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b) {
     kexFrustum frustum = world->Camera()->Frustum();
 
-    if(!frustum.TestBoundingBox(bbox))
+    if(!frustum.TestBoundingBox(bbox)) {
         return;
+    }
 
     renderSystem.SetState(GLSTATE_TEXTURE0, false);
     renderSystem.SetState(GLSTATE_CULL, false);
     renderSystem.SetState(GLSTATE_BLEND, true);
     renderSystem.SetState(GLSTATE_LIGHTING, false);
 
-    dglColor4ub(r, g, b, 255);
+    dglEnableClientState(GL_COLOR_ARRAY);
 
-    if(!bWireframe) {
-        renderSystem.SetPolyMode(GLPOLY_LINE);
-    }
-
-    dglBegin(GL_POLYGON);
-    dglVertex3d(bbox.min[0], bbox.min[1], bbox.min[2]);
-    dglVertex3d(bbox.max[0], bbox.min[1], bbox.min[2]);
-    dglVertex3d(bbox.max[0], bbox.min[1], bbox.max[2]);
-    dglVertex3d(bbox.min[0], bbox.min[1], bbox.max[2]);
-    dglEnd();
-
-    dglBegin(GL_POLYGON);
-    dglVertex3d(bbox.min[0], bbox.min[1], bbox.min[2]);
-    dglVertex3d(bbox.min[0], bbox.max[1], bbox.min[2]);
-    dglVertex3d(bbox.min[0], bbox.max[1], bbox.max[2]);
-    dglVertex3d(bbox.min[0], bbox.min[1], bbox.max[2]);
-    dglEnd();
-
-    dglBegin(GL_POLYGON);
-    dglVertex3d(bbox.min[0], bbox.max[1], bbox.min[2]);
-    dglVertex3d(bbox.max[0], bbox.max[1], bbox.min[2]);
-    dglVertex3d(bbox.max[0], bbox.max[1], bbox.max[2]);
-    dglVertex3d(bbox.min[0], bbox.max[1], bbox.max[2]);
-    dglEnd();
-
-    dglBegin(GL_POLYGON);
-    dglVertex3d(bbox.max[0], bbox.min[1], bbox.min[2]);
-    dglVertex3d(bbox.max[0], bbox.max[1], bbox.min[2]);
-    dglVertex3d(bbox.max[0], bbox.max[1], bbox.max[2]);
-    dglVertex3d(bbox.max[0], bbox.min[1], bbox.max[2]);
-    dglEnd();
+#define ADD_LINE(ba1, ba2, ba3, bb1, bb2, bb3)                      \
+    renderSystem.AddLine(bbox[ba1][0], bbox[ba2][1], bbox[ba3][2],  \
+                         bbox[bb1][0], bbox[bb2][1], bbox[bb3][2],  \
+                         r, g, b, 255)
     
-    if(!bWireframe) {
-        renderSystem.SetPolyMode(GLPOLY_FILL);
-    }
+    renderSystem.BindDrawPointers();
+    ADD_LINE(0, 0, 0, 1, 0, 0);
+    ADD_LINE(1, 0, 0, 1, 0, 1);
+    ADD_LINE(1, 0, 1, 0, 0, 1);
+    ADD_LINE(0, 0, 1, 0, 0, 0);
+    ADD_LINE(0, 0, 0, 0, 1, 0);
+    ADD_LINE(0, 1, 0, 0, 1, 1);
+    ADD_LINE(0, 1, 1, 0, 0, 1);
+    ADD_LINE(0, 0, 1, 0, 0, 0);
+    ADD_LINE(0, 1, 0, 1, 1, 0);
+    ADD_LINE(1, 1, 0, 1, 1, 1);
+    ADD_LINE(1, 1, 1, 0, 1, 1);
+    ADD_LINE(0, 1, 1, 0, 1, 0);
+    ADD_LINE(1, 0, 0, 1, 1, 0);
+    ADD_LINE(1, 1, 0, 1, 1, 1);
+    ADD_LINE(1, 1, 1, 1, 0, 1);
+    ADD_LINE(1, 0, 1, 1, 0, 0);
+    renderSystem.DrawLineElements();
+    
+    dglDisableClientState(GL_COLOR_ARRAY);
+    
+#undef ADD_LINE
 
     renderSystem.SetState(GLSTATE_TEXTURE0, true);
     renderSystem.SetState(GLSTATE_CULL, true);
@@ -948,7 +936,7 @@ void kexRenderWorld::DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b
 //
 
 void kexRenderWorld::DrawRadius(float x, float y, float z, float radius, float height,
-                  byte r, byte g, byte b) {
+                                byte r, byte g, byte b) {
     float an;
     int i;
 
@@ -956,28 +944,32 @@ void kexRenderWorld::DrawRadius(float x, float y, float z, float radius, float h
     renderSystem.SetState(GLSTATE_CULL, false);
     renderSystem.SetState(GLSTATE_BLEND, true);
     renderSystem.SetState(GLSTATE_LIGHTING, false);
+    
+    dglEnableClientState(GL_COLOR_ARRAY);
+    renderSystem.BindDrawPointers();
 
     an = DEG2RAD(360 / 32);
 
-    dglBegin(GL_LINES);
-    dglColor4ub(r, g, b, 255);
-
-    for(i = 0; i < 32; i++)
-    {
+    for(i = 0; i < 32; i++) {
         float s1 = kexMath::Sin(an * i);
         float c1 = kexMath::Cos(an * i);
         float s2 = kexMath::Sin(an * ((i+1)%31));
         float c2 = kexMath::Cos(an * ((i+1)%31));
-
-        dglVertex3f(x + (radius * s1), y, z + (radius * c1));
-        dglVertex3f(x + (radius * s1), y + height, z + (radius * c1));
-        dglVertex3f(x + (radius * s1), y, z + (radius * c1));
-        dglVertex3f(x + (radius * s2), y, z + (radius * c2));
-        dglVertex3f(x + (radius * s1), y + height, z + (radius * c1));
-        dglVertex3f(x + (radius * s2), y + height, z + (radius * c2));
+        float x1 = x + (radius * s1);
+        float x2 = x + (radius * s2);
+        float y1 = y;
+        float y2 = y + height;
+        float z1 = z + (radius * c1);
+        float z2 = z + (radius * c2);
+        
+        renderSystem.AddLine(x1, y1, z1, x1, y2, z1, r, g, b, 255);
+        renderSystem.AddLine(x1, y1, z1, x2, y1, z2, r, g, b, 255);
+        renderSystem.AddLine(x1, y2, z1, x2, y2, z2, r, g, b, 255);
     }
 
-    dglEnd();
+    renderSystem.DrawLineElements();
+    
+    dglDisableClientState(GL_COLOR_ARRAY);
 
     renderSystem.SetState(GLSTATE_TEXTURE0, true);
     renderSystem.SetState(GLSTATE_CULL, true);
@@ -996,26 +988,19 @@ void kexRenderWorld::DrawOrigin(float x, float y, float z, float size) {
 
     dglDepthRange(0.0f, 0.0f);
     dglLineWidth(2.0f);
-    dglBegin(GL_LINES);
-
-    // x
-    dglColor4ub(255, 0, 0, 255);
-    dglVertex3f(x, y, z);
-    dglVertex3f(x + size, y, z);
-    // y
-    dglColor4ub(0, 255, 0, 255);
-    dglVertex3f(x, y, z);
-    dglVertex3f(x, y + size, z);
-    // z
-    dglColor4ub(0, 0, 255, 255);
-    dglVertex3f(x, y, z);
-    dglVertex3f(x, y, z + size);
-
-    dglEnd();
+    
+    dglEnableClientState(GL_COLOR_ARRAY);
+    renderSystem.BindDrawPointers();
+    renderSystem.AddLine(x, y, z, x + size, y, z, 255, 0, 0, 255); // x
+    renderSystem.AddLine(x, y, z, x, y + size, z, 0, 255, 0, 255); // y
+    renderSystem.AddLine(x, y, z, x, y, z + size, 0, 0, 255, 255); // z
+    renderSystem.DrawLineElements();
+    dglDisableClientState(GL_COLOR_ARRAY);
+    
+    renderSystem.SetState(GLSTATE_TEXTURE0, true);
+    
     dglLineWidth(1.0f);
     dglDepthRange(0.0f, 1.0f);
-
-    renderSystem.SetState(GLSTATE_TEXTURE0, true);
 }
 
 //

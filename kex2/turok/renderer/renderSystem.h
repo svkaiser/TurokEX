@@ -64,6 +64,11 @@ typedef enum {
 } glPolyMode_t;
 
 typedef enum {
+    GLDEPTHMASK_YES = 0,
+    GLDEPTHMASK_NO
+} glDepthMask_t;
+
+typedef enum {
     GLSRC_ZERO      = 0,
     GLSRC_ONE,
     GLSRC_DST_COLOR,
@@ -106,18 +111,23 @@ public:
     void                            SetEnv(int env);
     void                            SetCull(int type);
     void                            SetPolyMode(int type);
+    void                            SetDepthMask(int enable);
     void                            SetTextureUnit(int unit);
     void                            SetViewDimensions(void);
     void                            DisableShaders(void);
     void                            DrawLoadingScreen(const char *text);
     kexFont                         *CacheFont(const char *name);
     kexTexture                      *CacheTexture(const char *name, texClampMode_t clampMode,
-                                        texFilterMode_t filterMode = TF_LINEAR);
+                                                  texFilterMode_t filterMode = TF_LINEAR);
     void                            BindDrawPointers(void);
     void                            AddTriangle(int v0, int v1, int v2);
     void                            AddVertex(float x, float y, float z, float s, float t,
-                                        byte r, byte g, byte b, byte a);
+                                              byte r, byte g, byte b, byte a);
+    void                            AddLine(float x1, float y1, float z1,
+                                            float x2, float y2, float z2,
+                                            byte r, byte g, byte b, byte a);
     void                            DrawElements(void);
+    void                            DrawLineElements(void);
 
     const int                       ViewWidth(void) const { return viewWidth; }
     const int                       ViewHeight(void) const { return viewHeight; }
@@ -156,6 +166,7 @@ public:
         int                         blendDest;
         int                         cullType;
         int                         polyMode;
+        int                         depthMask;
         int                         alphaFunction;
         float                       alphaFuncThreshold;
         int                         currentUnit;

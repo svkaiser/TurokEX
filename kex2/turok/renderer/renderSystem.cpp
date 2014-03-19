@@ -127,6 +127,7 @@ kexRenderSystem::kexRenderSystem(void) {
     this->glState.blendDest     = -1;
     this->glState.blendSrc      = -1;
     this->glState.cullType      = -1;
+    this->glState.depthMask     = -1;
     this->glState.currentUnit   = -1;
 }
 
@@ -208,12 +209,13 @@ int kexRenderSystem::GetOGLVersion(const char* version) {
 void kexRenderSystem::SetDefaultState(void) {
     SetViewDimensions();
 
-    glState.glStateBits   = 0;
-    glState.alphaFunction = -1;
-    glState.blendDest     = -1;
-    glState.blendSrc      = -1;
-    glState.cullType      = -1;
-    glState.currentUnit   = -1;
+    glState.glStateBits     = 0;
+    glState.alphaFunction   = -1;
+    glState.blendDest       = -1;
+    glState.blendSrc        = -1;
+    glState.cullType        = -1;
+    glState.depthMask       = -1;
+    glState.currentUnit     = -1;
     
     dglViewport(0, 0, sysMain.VideoWidth(), sysMain.VideoHeight());
     dglClearDepth(1.0f);
@@ -226,6 +228,7 @@ void kexRenderSystem::SetDefaultState(void) {
     SetDepth(GLFUNC_LEQUAL);
     SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
     SetBlend(GLSRC_SRC_ALPHA, GLDST_ONE_MINUS_SRC_ALPHA);
+    SetDepthMask(GLDEPTHMASK_YES);
 
     dglEnable(GL_NORMALIZE);
     dglShadeModel(GL_SMOOTH);
@@ -251,14 +254,16 @@ void kexRenderSystem::SetDefaultState(void) {
 
 void kexRenderSystem::Init(void) {
     gl_vendor = (const char*)dglGetString(GL_VENDOR);
-    common.Printf("GL_VENDOR: %s\n", gl_vendor);
     gl_renderer = (const char*)dglGetString(GL_RENDERER);
-    common.Printf("GL_RENDERER: %s\n", gl_renderer);
     gl_version = (const char*)dglGetString(GL_VERSION);
-    common.Printf("GL_VERSION: %s\n", gl_version);
+    
     dglGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
-    common.Printf("GL_MAX_TEXTURE_SIZE: %i\n", maxTextureSize);
     dglGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &maxTextureUnits);
+    
+    common.Printf("GL_VENDOR: %s\n", gl_vendor);
+    common.Printf("GL_RENDERER: %s\n", gl_renderer);
+    common.Printf("GL_VERSION: %s\n", gl_version);
+    common.Printf("GL_MAX_TEXTURE_SIZE: %i\n", maxTextureSize);
     common.Printf("GL_MAX_TEXTURE_UNITS_ARB: %i\n", maxTextureUnits);
     
     SetDefaultState();
@@ -292,10 +297,8 @@ void kexRenderSystem::Init(void) {
     consoleFont.LoadKFont("fonts/confont.kfont");
 
     defaultProg.InitProgram();
-
     defaultProg.Compile("progs/default.vert", RST_VERTEX);
     defaultProg.Compile("progs/default.frag", RST_FRAGMENT);
-
     defaultProg.Link();
 
     if(has_GL_EXT_texture_filter_anisotropic) {
@@ -375,45 +378,45 @@ void kexRenderSystem::SetState(int bits, bool bEnable) {
     }
     
     switch(bits) {
-    case GLSTATE_BLEND:
-        TOGGLEGLBIT(GLSTATE_BLEND, GL_BLEND);
-        break;
-    case GLSTATE_CULL:
-        TOGGLEGLBIT(GLSTATE_CULL, GL_CULL_FACE);
-        break;
-    case GLSTATE_TEXTURE0:
-        TOGGLEGLBIT(GLSTATE_TEXTURE0, GL_TEXTURE_2D);
-        break;
-    case GLSTATE_TEXTURE1:
-        TOGGLEGLBIT(GLSTATE_TEXTURE1, GL_TEXTURE_2D);
-        break;
-    case GLSTATE_TEXTURE2:
-        TOGGLEGLBIT(GLSTATE_TEXTURE2, GL_TEXTURE_2D);
-        break;
-    case GLSTATE_TEXTURE3:
-        TOGGLEGLBIT(GLSTATE_TEXTURE3, GL_TEXTURE_2D);
-        break;
-    case GLSTATE_ALPHATEST:
-        TOGGLEGLBIT(GLSTATE_ALPHATEST, GL_ALPHA_TEST);
-        break;
-    case GLSTATE_TEXGEN_S:
-        TOGGLEGLBIT(GLSTATE_TEXGEN_S, GL_TEXTURE_GEN_S);
-        break;
-    case GLSTATE_TEXGEN_T:
-        TOGGLEGLBIT(GLSTATE_TEXGEN_T, GL_TEXTURE_GEN_T);
-        break;
-    case GLSTATE_DEPTHTEST:
-        TOGGLEGLBIT(GLSTATE_DEPTHTEST, GL_DEPTH_TEST);
-        break;
-    case GLSTATE_LIGHTING:
-        TOGGLEGLBIT(GLSTATE_LIGHTING, GL_LIGHTING);
-        break;
-    case GLSTATE_FOG:
-        TOGGLEGLBIT(GLSTATE_FOG, GL_FOG);
-        break;
-    default:
-        common.Warning("kexRenderSystem::SetState: unknown bit flag: %i\n", bits);
-        break;
+        case GLSTATE_BLEND:
+            TOGGLEGLBIT(GLSTATE_BLEND, GL_BLEND);
+            break;
+        case GLSTATE_CULL:
+            TOGGLEGLBIT(GLSTATE_CULL, GL_CULL_FACE);
+            break;
+        case GLSTATE_TEXTURE0:
+            TOGGLEGLBIT(GLSTATE_TEXTURE0, GL_TEXTURE_2D);
+            break;
+        case GLSTATE_TEXTURE1:
+            TOGGLEGLBIT(GLSTATE_TEXTURE1, GL_TEXTURE_2D);
+            break;
+        case GLSTATE_TEXTURE2:
+            TOGGLEGLBIT(GLSTATE_TEXTURE2, GL_TEXTURE_2D);
+            break;
+        case GLSTATE_TEXTURE3:
+            TOGGLEGLBIT(GLSTATE_TEXTURE3, GL_TEXTURE_2D);
+            break;
+        case GLSTATE_ALPHATEST:
+            TOGGLEGLBIT(GLSTATE_ALPHATEST, GL_ALPHA_TEST);
+            break;
+        case GLSTATE_TEXGEN_S:
+            TOGGLEGLBIT(GLSTATE_TEXGEN_S, GL_TEXTURE_GEN_S);
+            break;
+        case GLSTATE_TEXGEN_T:
+            TOGGLEGLBIT(GLSTATE_TEXGEN_T, GL_TEXTURE_GEN_T);
+            break;
+        case GLSTATE_DEPTHTEST:
+            TOGGLEGLBIT(GLSTATE_DEPTHTEST, GL_DEPTH_TEST);
+            break;
+        case GLSTATE_LIGHTING:
+            TOGGLEGLBIT(GLSTATE_LIGHTING, GL_LIGHTING);
+            break;
+        case GLSTATE_FOG:
+            TOGGLEGLBIT(GLSTATE_FOG, GL_FOG);
+            break;
+        default:
+            common.Warning("kexRenderSystem::SetState: unknown bit flag: %i\n", bits);
+            break;
     }
     
 #undef TOGGLEGLBIT
@@ -427,27 +430,28 @@ void kexRenderSystem::SetAlphaFunc(int func, float val) {
     int pFunc = (glState.alphaFunction ^ func) |
         (glState.alphaFuncThreshold != val);
         
-    if(pFunc == 0)
+    if(pFunc == 0) {
         return;
-        
+    }
+    
     int glFunc = 0;
-        
+
     switch(func) {
-    case GLFUNC_EQUAL:
-        glFunc = GL_EQUAL;
-        break;
-    case GLFUNC_ALWAYS:
-        glFunc = GL_ALWAYS;
-        break;
-    case GLFUNC_LEQUAL:
-        glFunc = GL_LEQUAL;
-        break;
-    case GLFUNC_GEQUAL:
-        glFunc = GL_GEQUAL;
-        break;
-    case GLFUNC_NEVER:
-        glFunc = GL_NEVER;
-        break;
+        case GLFUNC_EQUAL:
+            glFunc = GL_EQUAL;
+            break;
+        case GLFUNC_ALWAYS:
+            glFunc = GL_ALWAYS;
+            break;
+        case GLFUNC_LEQUAL:
+            glFunc = GL_LEQUAL;
+            break;
+        case GLFUNC_GEQUAL:
+            glFunc = GL_GEQUAL;
+            break;
+        case GLFUNC_NEVER:
+            glFunc = GL_NEVER;
+            break;
     }
     
     dglAlphaFunc(glFunc, val);   
@@ -462,27 +466,28 @@ void kexRenderSystem::SetAlphaFunc(int func, float val) {
 void kexRenderSystem::SetDepth(int func) {
     int pFunc = glState.depthFunction ^ func;
     
-    if(pFunc == 0)
+    if(pFunc == 0) {
         return;
-        
+    }
+    
     int glFunc = 0;
         
     switch(func) {
-    case GLFUNC_EQUAL:
-        glFunc = GL_EQUAL;
-        break;
-    case GLFUNC_ALWAYS:
-        glFunc = GL_ALWAYS;
-        break;
-    case GLFUNC_LEQUAL:
-        glFunc = GL_LEQUAL;
-        break;
-    case GLFUNC_GEQUAL:
-        glFunc = GL_GEQUAL;
-        break;
-    case GLFUNC_NEVER:
-        glFunc = GL_NEVER;
-        break;
+        case GLFUNC_EQUAL:
+            glFunc = GL_EQUAL;
+            break;
+        case GLFUNC_ALWAYS:
+            glFunc = GL_ALWAYS;
+            break;
+        case GLFUNC_LEQUAL:
+            glFunc = GL_LEQUAL;
+            break;
+        case GLFUNC_GEQUAL:
+            glFunc = GL_GEQUAL;
+            break;
+        case GLFUNC_NEVER:
+            glFunc = GL_NEVER;
+            break;
     }
     
     dglDepthFunc(glFunc);
@@ -496,67 +501,68 @@ void kexRenderSystem::SetDepth(int func) {
 void kexRenderSystem::SetBlend(int src, int dest) {
     int pBlend = (glState.blendSrc ^ src) | (glState.blendDest ^ dest);
     
-    if(pBlend == 0)
+    if(pBlend == 0) {
         return;
-        
+    }
+    
     int glSrc = GL_ONE;
     int glDst = GL_ONE;
     
     switch(src) {
-    case GLSRC_ZERO:
-        glSrc = GL_ZERO;
-        break;
-    case GLSRC_ONE:
-        glSrc = GL_ONE;
-        break;
-    case GLSRC_DST_COLOR:
-        glSrc = GL_DST_COLOR;
-        break;
-    case GLSRC_ONE_MINUS_DST_COLOR:
-        glSrc = GL_ONE_MINUS_DST_COLOR;
-        break;
-    case GLSRC_SRC_ALPHA:
-        glSrc = GL_SRC_ALPHA;
-        break;
-    case GLSRC_ONE_MINUS_SRC_ALPHA:
-        glSrc = GL_ONE_MINUS_SRC_ALPHA;
-        break;
-    case GLSRC_DST_ALPHA:
-        glSrc = GL_DST_ALPHA;
-        break;
-    case GLSRC_ONE_MINUS_DST_ALPHA:
-        glSrc = GL_ONE_MINUS_DST_ALPHA;
-        break;
-    case GLSRC_ALPHA_SATURATE:
-        glSrc = GL_SRC_ALPHA_SATURATE;
-        break;
+        case GLSRC_ZERO:
+            glSrc = GL_ZERO;
+            break;
+        case GLSRC_ONE:
+            glSrc = GL_ONE;
+            break;
+        case GLSRC_DST_COLOR:
+            glSrc = GL_DST_COLOR;
+            break;
+        case GLSRC_ONE_MINUS_DST_COLOR:
+            glSrc = GL_ONE_MINUS_DST_COLOR;
+            break;
+        case GLSRC_SRC_ALPHA:
+            glSrc = GL_SRC_ALPHA;
+            break;
+        case GLSRC_ONE_MINUS_SRC_ALPHA:
+            glSrc = GL_ONE_MINUS_SRC_ALPHA;
+            break;
+        case GLSRC_DST_ALPHA:
+            glSrc = GL_DST_ALPHA;
+            break;
+        case GLSRC_ONE_MINUS_DST_ALPHA:
+            glSrc = GL_ONE_MINUS_DST_ALPHA;
+            break;
+        case GLSRC_ALPHA_SATURATE:
+            glSrc = GL_SRC_ALPHA_SATURATE;
+            break;
     }
     
     switch(dest) {
-    case GLDST_ZERO:
-        glDst = GL_ZERO;
-        break;
-    case GLDST_ONE:
-        glDst = GL_ONE;
-        break;
-    case GLDST_SRC_COLOR:
-        glDst = GL_SRC_COLOR;
-        break;
-    case GLDST_ONE_MINUS_SRC_COLOR:
-        glDst = GL_ONE_MINUS_SRC_COLOR;
-        break;
-    case GLDST_SRC_ALPHA:
-        glDst = GL_SRC_ALPHA;
-        break;
-    case GLDST_ONE_MINUS_SRC_ALPHA:
-        glDst = GL_ONE_MINUS_SRC_ALPHA;
-        break;
-    case GLDST_DST_ALPHA:
-        glDst = GL_DST_ALPHA;
-        break;
-    case GLDST_ONE_MINUS_DST_ALPHA:
-        glDst = GL_ONE_MINUS_DST_ALPHA;
-        break;
+        case GLDST_ZERO:
+            glDst = GL_ZERO;
+            break;
+        case GLDST_ONE:
+            glDst = GL_ONE;
+            break;
+        case GLDST_SRC_COLOR:
+            glDst = GL_SRC_COLOR;
+            break;
+        case GLDST_ONE_MINUS_SRC_COLOR:
+            glDst = GL_ONE_MINUS_SRC_COLOR;
+            break;
+        case GLDST_SRC_ALPHA:
+            glDst = GL_SRC_ALPHA;
+            break;
+        case GLDST_ONE_MINUS_SRC_ALPHA:
+            glDst = GL_ONE_MINUS_SRC_ALPHA;
+            break;
+        case GLDST_DST_ALPHA:
+            glDst = GL_DST_ALPHA;
+            break;
+        case GLDST_ONE_MINUS_DST_ALPHA:
+            glDst = GL_ONE_MINUS_DST_ALPHA;
+            break;
     }
     
     dglBlendFunc(glSrc, glDst);
@@ -585,12 +591,14 @@ void kexRenderSystem::SetCull(int type) {
     int cullType = 0;
     
     switch(type) {
-    case GLCULL_FRONT:
-        cullType = GL_FRONT;
-        break;
-    case GLCULL_BACK:
-        cullType = GL_BACK;
-        break;
+        case GLCULL_FRONT:
+            cullType = GL_FRONT;
+            break;
+        case GLCULL_BACK:
+            cullType = GL_BACK;
+            break;
+        default:
+            return;
     }
     
     dglCullFace(cullType);
@@ -611,16 +619,46 @@ void kexRenderSystem::SetPolyMode(int type) {
     int polyMode = 0;
     
     switch(type) {
-    case GLPOLY_FILL:
-        polyMode = GL_FILL;
-        break;
-    case GLPOLY_LINE:
-        polyMode = GL_LINE;
-        break;
+        case GLPOLY_FILL:
+            polyMode = GL_FILL;
+            break;
+        case GLPOLY_LINE:
+            polyMode = GL_LINE;
+            break;
+        default:
+            return;
     }
     
     dglPolygonMode(GL_FRONT_AND_BACK, polyMode);
     glState.polyMode = type;
+}
+
+//
+// kexRenderSystem::SetDepthMask
+//
+
+void kexRenderSystem::SetDepthMask(int enable) {
+    int pEnable = glState.depthMask ^ enable;
+    
+    if(pEnable == 0) {
+        return;
+    }
+    
+    int flag = 0;
+    
+    switch(enable) {
+        case GLDEPTHMASK_YES:
+            flag = GL_TRUE;
+            break;
+        case GLDEPTHMASK_NO:
+            flag = GL_FALSE;
+            break;
+        default:
+            return;
+    }
+    
+    dglDepthMask(flag);
+    glState.depthMask = enable;
 }
 
 //
@@ -766,12 +804,37 @@ void kexRenderSystem::AddVertex(float x, float y, float z, float s, float t,
 }
 
 //
+// kexRenderSystem::AddLine
+//
+
+void kexRenderSystem::AddLine(float x1, float y1, float z1,
+                              float x2, float y2, float z2,
+                              byte r, byte g, byte b, byte a) {
+    
+    drawIndices[indiceCount++] = vertexCount;
+    AddVertex(x1, y1, z1, 0, 0, r, g, b, a);
+    drawIndices[indiceCount++] = vertexCount;
+    AddVertex(x2, y2, z2, 0, 0, r, g, b, a);
+}
+
+//
 // kexRenderSystem::DrawElements
 //
 
 void kexRenderSystem::DrawElements(void) {
     dglDrawElements(GL_TRIANGLES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
 
+    indiceCount = 0;
+    vertexCount = 0;
+}
+
+//
+// kexRenderSystem::DrawLineElements
+//
+
+void kexRenderSystem::DrawLineElements(void) {
+    dglDrawElements(GL_LINES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
+    
     indiceCount = 0;
     vertexCount = 0;
 }
