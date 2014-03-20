@@ -476,6 +476,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\trigger.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\world.cpp"
 					>
 				</File>
@@ -794,6 +798,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\game\pickup.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\trigger.h"
 					>
 				</File>
 				<File
