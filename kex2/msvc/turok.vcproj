@@ -256,6 +256,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\renderer\material.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\renderFont.cpp"
 					>
 				</File>
@@ -590,6 +594,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\frustum.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\material.h"
 					>
 				</File>
 				<File
