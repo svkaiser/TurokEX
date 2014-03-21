@@ -99,11 +99,6 @@ void kexShaderObj::Compile(const char *name, rShaderType_t type) {
     dglShaderSourceARB(*handle, 1, (const GLcharARB**)&data, NULL);
     dglCompileShaderARB(*handle);
     dglAttachObjectARB(programObj, *handle);
-
-    if(type == RST_FRAGMENT) {
-        SetUniform("diffuse1", 0);
-        SetUniform("diffuse2", 1);
-    }
     
     Mem_Free(data);
 }
@@ -184,7 +179,7 @@ void kexShaderObj::SetUniform(const char *name, kexMatrix &val, bool bTranspose)
 // kexShaderObj::Link
 //
 
-void kexShaderObj::Link(void) {
+bool kexShaderObj::Link(void) {
     int linked;
     
     dglLinkProgramARB(programObj);
@@ -207,4 +202,5 @@ void kexShaderObj::Link(void) {
     }
     
     dglUseProgramObjectARB(0);
+    return (linked > 0);
 }

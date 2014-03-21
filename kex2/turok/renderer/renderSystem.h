@@ -26,6 +26,7 @@
 #include "dgl.h"
 #include "textureObject.h"
 #include "shaderProg.h"
+#include "material.h"
 #include "renderFont.h"
 #include "cachefilelist.h"
 #include "canvas.h"

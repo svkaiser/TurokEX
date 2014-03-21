@@ -38,7 +38,7 @@ public:
                                 
     void                        InitProgram(void);
     void                        Compile(const char *name, rShaderType_t type);
-    void                        Link(void);
+    bool                        Link(void);
     void                        Enable(void);
     void                        SetUniform(const char *name, const int val);
     void                        SetUniform(const char *name, const float val);
