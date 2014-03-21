@@ -554,6 +554,14 @@ char kexLexer::GetChar(void) {
 }
 
 //
+// kexLexer::Matches
+//
+
+bool kexLexer::Matches(const char *string) {
+    return !strcmp(token, string);
+}
+
+//
 // kexLexer::Rewind
 //
 

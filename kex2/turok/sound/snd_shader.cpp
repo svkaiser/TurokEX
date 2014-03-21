@@ -90,7 +90,7 @@ void kexSoundShader::Load(kexLexer *lexer) {
 
     lexer->Find();
 
-    if(strcmp(lexer->Token(), "sounds")) {
+    if(!lexer->Matches("sounds")) {
         common.Error("Snd_ParseShaderScript: Expected 'sound', found %s", lexer->Token());
     }
 

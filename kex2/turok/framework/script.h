@@ -26,8 +26,7 @@
 #define MAX_NESTED_PARSERS      128
 #define MAX_NESTED_FILENAMES    128
 
-typedef enum
-{
+typedef enum {
     TK_NONE,
     TK_NUMBER,
     TK_STRING,
@@ -51,8 +50,7 @@ typedef enum
     TK_EOF
 } tokentype_t;
 
-typedef enum
-{
+typedef enum {
     AT_SHORT,
     AT_INTEGER,
     AT_FLOAT,
@@ -62,8 +60,7 @@ typedef enum
 
 #define SC_TOKEN_LEN    512
 
-typedef struct
-{
+typedef struct {
     int         id;
     const char  *token;
 } sctokens_t;
@@ -80,6 +77,7 @@ public:
     bool                Find(void);
     char                GetChar(void);
     void                Rewind(void);
+    bool                Matches(const char *string);
     int                 GetNumber(void);
     double              GetFloat(void);
     kexVec3             GetVector3(void);
@@ -100,6 +98,7 @@ public:
     void                AssignFromTokenList(const sctokens_t *tokenlist,
                                             arraytype_t type, void **data, int count,
                                             int id, bool expect, kexHeapBlock &hb);
+    
     int                 LinePos(void) { return linepos; }
     int                 RowPos(void) { return rowpos; }
     int                 BufferPos(void) { return buffpos; }

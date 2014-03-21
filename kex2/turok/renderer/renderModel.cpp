@@ -293,7 +293,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                                     break;
                                 default:
                                     for(l = 0; l < 17; l++) {
-                                        if(!strcmp(lexer->Token(), mdlflagnames[l].name)) {
+                                        if(lexer->Matches(mdlflagnames[l].name)) {
                                             lexer->ExpectNextToken(TK_EQUAL);
                                             if(lexer->GetNumber()) {
                                                 surface->flags |= mdlflagnames[l].flag;
@@ -384,32 +384,32 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
             continue;
         }
 
-        if(!strcmp(lexer->Token(), "o")) {
+        if(lexer->Matches("o")) {
             // TODO
             lexer->Find();
             numObjects++;
         }
-        else if(!strcmp(lexer->Token(), "g")) {
+        else if(lexer->Matches("g")) {
             // TODO
             lexer->Find();
             numGroups++;
         }
-        else if(!strcmp(lexer->Token(), "v")) {
+        else if(lexer->Matches("v")) {
             points.Push((float)lexer->GetFloat() * 256.0f);
             points.Push((float)lexer->GetFloat() * 256.0f);
             points.Push((float)lexer->GetFloat() * 256.0f);
         }
         // TODO
-        /*else if(!strcmp(lexer->Token(), "vt")) {
+        /*else if(lexer->Matches("vt")) {
             coords.Push((float)lexer->GetFloat());
             coords.Push((float)lexer->GetFloat());
         }
-        else if(!strcmp(lexer->Token(), "vn")) {
+        else if(lexer->Matches("vn")) {
             normals.Push((float)lexer->GetFloat());
             normals.Push((float)lexer->GetFloat());
             normals.Push((float)lexer->GetFloat());
         }*/
-        else if(!strcmp(lexer->Token(), "f")) {
+        else if(lexer->Matches("f")) {
             indices.Push(lexer->GetNumber());
             indices.Push(lexer->GetNumber());
             indices.Push(lexer->GetNumber());

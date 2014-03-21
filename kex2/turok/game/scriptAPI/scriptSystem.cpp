@@ -261,7 +261,7 @@ void kexScriptManager::ProcessScript(const char *file) {
         
         if(ch == '#') {
             lexer->Find();
-            if(!strcmp(lexer->Token(), "include")) {
+            if(lexer->Matches("include")) {
                 lexer->GetString();
                 char *nfile = lexer->StringToken();
                 

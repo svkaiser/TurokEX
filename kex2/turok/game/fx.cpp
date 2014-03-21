@@ -754,17 +754,17 @@ void kexFxManager::ParseEvent(fxEvent_t *fxEvent, kexLexer *lexer) {
     lexer->ExpectNextToken(TK_LBRACK);
     while(1) {
         lexer->Find();
-        if(!strcmp(lexer->Token(), "fx")) {
+        if(lexer->Matches("fx")) {
             lexer->ExpectNextToken(TK_EQUAL);
             lexer->GetString();
             currentEvent->fx = Mem_Strdup(lexer->StringToken(), hb_static);
         }
-        else if(!strcmp(lexer->Token(), "sound")) {
+        else if(lexer->Matches("sound")) {
             lexer->ExpectNextToken(TK_EQUAL);
             lexer->GetString();
             currentEvent->snd = Mem_Strdup(lexer->StringToken(), hb_static);
         }
-        else if(!strcmp(lexer->Token(), "damageDef")) {
+        else if(lexer->Matches("damageDef")) {
             lexer->ExpectNextToken(TK_EQUAL);
             lexer->GetString();
             currentEvent->damageDef = defManager.FindDefEntry(lexer->StringToken());
@@ -968,10 +968,10 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                 case scvfx_ontouch:
                     lexer->ExpectNextToken(TK_EQUAL);
                     lexer->Find();
-                    if(!strcmp(lexer->Token(), "destroy")) {
+                    if(lexer->Matches("destroy")) {
                         info->ontouch = VFX_DESTROY;
                     }
-                    else if(!strcmp(lexer->Token(), "reflect")) {
+                    else if(lexer->Matches("reflect")) {
                         info->ontouch = VFX_REFLECT;
                     }
                     else {
@@ -981,13 +981,13 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                 case scvfx_onplane:
                     lexer->ExpectNextToken(TK_EQUAL);
                     lexer->Find();
-                    if(!strcmp(lexer->Token(), "destroy")) {
+                    if(lexer->Matches("destroy")) {
                         info->onplane = VFX_DESTROY;
                     }
-                    else if(!strcmp(lexer->Token(), "reflect")) {
+                    else if(lexer->Matches("reflect")) {
                         info->onplane = VFX_REFLECT;
                     }
-                    else if(!strcmp(lexer->Token(), "bounce")) {
+                    else if(lexer->Matches("bounce")) {
                         info->onplane = VFX_BOUNCE;
                     }
                     else {
@@ -997,16 +997,16 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                 case scvfx_drawtype:
                     lexer->ExpectNextToken(TK_EQUAL);
                     lexer->Find();
-                    if(!strcmp(lexer->Token(), "flat")) {
+                    if(lexer->Matches("flat")) {
                         info->drawtype = VFX_DRAWFLAT;
                     }
-                    else if(!strcmp(lexer->Token(), "decal")) {
+                    else if(lexer->Matches("decal")) {
                         info->drawtype = VFX_DRAWDECAL;
                     }
-                    else if(!strcmp(lexer->Token(), "billboard")) {
+                    else if(lexer->Matches("billboard")) {
                         info->drawtype = VFX_DRAWBILLBOARD;
                     }
-                    else if(!strcmp(lexer->Token(), "surface")) {
+                    else if(lexer->Matches("surface")) {
                         info->drawtype = VFX_DRAWSURFACE;
                     }
                     else {
@@ -1016,13 +1016,13 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                 case scvfx_animtype:
                     lexer->ExpectNextToken(TK_EQUAL);
                     lexer->Find();
-                    if(!strcmp(lexer->Token(), "onetime")) {
+                    if(lexer->Matches("onetime")) {
                         info->animtype = VFX_ANIMONETIME;
                     }
-                    else if(!strcmp(lexer->Token(), "loop")) {
+                    else if(lexer->Matches("loop")) {
                         info->animtype = VFX_ANIMLOOP;
                     }
-                    else if(!strcmp(lexer->Token(), "sinwave")) {
+                    else if(lexer->Matches("sinwave")) {
                         info->animtype = VFX_ANIMSINWAVE;
                     }
                     else {

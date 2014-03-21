@@ -70,36 +70,36 @@ void kexFont::LoadKFont(const char *file) {
             continue;
         }
 
-        if(!strcmp(lexer->Token(), "texture")) {
+        if(lexer->Matches("texture")) {
             lexer->ExpectNextToken(TK_LBRACK);
             lexer->Find();
 
             while(lexer->TokenType() != TK_RBRACK) {
-                if(!strcmp(lexer->Token(), "kfont")) {
+                if(lexer->Matches("kfont")) {
                     lexer->GetString();
                     strcpy(fileName, lexer->StringToken());
                 }
 
-                if(!strcmp(lexer->Token(), "filter")) {
+                if(lexer->Matches("filter")) {
                     lexer->Find();
 
-                    if(!strcmp(lexer->Token(), "nearest")) {
+                    if(lexer->Matches("nearest")) {
                         filter = TF_NEAREST;
                     }
 
-                    if(!strcmp(lexer->Token(), "linear")) {
+                    if(lexer->Matches("linear")) {
                         filter = TF_LINEAR;
                     }
                 }
 
-                if(!strcmp(lexer->Token(), "wrap")) {
+                if(lexer->Matches("wrap")) {
                     lexer->Find();
 
-                    if(!strcmp(lexer->Token(), "clamp")) {
+                    if(lexer->Matches("clamp")) {
                         clamp = TC_CLAMP;
                     }
 
-                    if(!strcmp(lexer->Token(), "repeat")) {
+                    if(lexer->Matches("repeat")) {
                         clamp = TC_REPEAT;
                     }
                 }
@@ -112,7 +112,7 @@ void kexFont::LoadKFont(const char *file) {
             }
         }
 
-        if(!strcmp(lexer->Token(), "mapchar")) {
+        if(lexer->Matches("mapchar")) {
             lexer->ExpectNextToken(TK_LBRACK);
             lexer->Find();
 
