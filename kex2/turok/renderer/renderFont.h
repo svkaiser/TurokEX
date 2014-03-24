@@ -34,13 +34,13 @@ public:
     float           StringWidth(const char* string, float scale, int fixedLen);
 
     const bool      IsLoaded(void) const { return bLoaded; }
-    kexTexture      *Texture(void) { return texture; }
+    kexMaterial     *Material(void) { return material; }
 
     filepath_t      filePath;
     kexFont         *next;
 
 private:
-    kexTexture      *texture;
+    kexMaterial     *material;
     atlas_t         atlas[256];
     bool            bLoaded;
 };

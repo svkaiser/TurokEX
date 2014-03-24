@@ -35,7 +35,7 @@
 
 kexFont::kexFont(void) {
     this->bLoaded = false;
-    this->texture = NULL;
+    this->material = NULL;
 }
 
 //
@@ -52,11 +52,8 @@ kexFont::~kexFont(void) {
 void kexFont::LoadKFont(const char *file) {
     kexLexer *lexer;
     filepath_t fileName;
-    texClampMode_t clamp = TC_CLAMP;
-    texFilterMode_t filter = TF_LINEAR;
 
     if(!(lexer = parser.Open(file))) {
-        texture = renderSystem.CacheTexture("textures/default.tga", clamp, filter);
         common.Warning("kexFont::LoadKFont: %s not found\n", file);
         return;
     }
@@ -70,46 +67,9 @@ void kexFont::LoadKFont(const char *file) {
             continue;
         }
 
-        if(lexer->Matches("texture")) {
-            lexer->ExpectNextToken(TK_LBRACK);
-            lexer->Find();
-
-            while(lexer->TokenType() != TK_RBRACK) {
-                if(lexer->Matches("kfont")) {
-                    lexer->GetString();
-                    strcpy(fileName, lexer->StringToken());
-                }
-
-                if(lexer->Matches("filter")) {
-                    lexer->Find();
-
-                    if(lexer->Matches("nearest")) {
-                        filter = TF_NEAREST;
-                    }
-
-                    if(lexer->Matches("linear")) {
-                        filter = TF_LINEAR;
-                    }
-                }
-
-                if(lexer->Matches("wrap")) {
-                    lexer->Find();
-
-                    if(lexer->Matches("clamp")) {
-                        clamp = TC_CLAMP;
-                    }
-
-                    if(lexer->Matches("repeat")) {
-                        clamp = TC_REPEAT;
-                    }
-                }
-
-                lexer->Find();
-            }
-
-            if(fileName[0] != 0) {
-                texture = renderSystem.CacheTexture(fileName, clamp, filter);
-            }
+        if(lexer->Matches("material")) {
+            lexer->GetString();
+            material = renderSystem.CacheMaterial(lexer->StringToken());
         }
 
         if(lexer->Matches("mapchar")) {
@@ -165,6 +125,7 @@ void kexFont::DrawString(const char *string, float x, float y, float scale,
     float ty1;
     float ty2;
     char *check;
+    kexTexture *texture;
 
     if(scale <= 0.01f) {
         scale = 1;
@@ -172,6 +133,10 @@ void kexFont::DrawString(const char *string, float x, float y, float scale,
 
     if(center) {
         x -= StringWidth(string, scale, 0) * 0.5f;
+    }
+
+    if(!(texture = material->Sampler(0)->texture)) {
+        texture = &renderSystem.defaultTexture;
     }
 
     w = (float)texture->OriginalWidth();
@@ -208,6 +173,9 @@ void kexFont::DrawString(const char *string, float x, float y, float scale,
         tri += 4;
     }
 
+    renderSystem.SetState(GLSTATE_BLEND, material->StateBits() & GLSTATE_BLEND);
+    renderSystem.SetState(GLSTATE_ALPHATEST, material->StateBits() & GLSTATE_ALPHATEST);
+    renderSystem.SetState(GLSTATE_CULL, material->StateBits() & GLSTATE_CULL);
     renderSystem.DrawElements();
 }
 

@@ -24,12 +24,6 @@
 #define __RENDERSYS_H__
 
 #include "dgl.h"
-#include "textureObject.h"
-#include "shaderProg.h"
-#include "material.h"
-#include "renderFont.h"
-#include "cachefilelist.h"
-#include "canvas.h"
 
 typedef enum {
     GLSTATE_BLEND   = 0,
@@ -95,6 +89,13 @@ typedef enum {
 #define GL_MAX_INDICES  0x10000
 #define GL_MAX_VERTICES 0x10000
 
+#include "textureObject.h"
+#include "shaderProg.h"
+#include "material.h"
+#include "renderFont.h"
+#include "cachefilelist.h"
+#include "canvas.h"
+
 class kexRenderSystem {
 public:
                                     kexRenderSystem(void);
@@ -120,6 +121,7 @@ public:
     kexFont                         *CacheFont(const char *name);
     kexTexture                      *CacheTexture(const char *name, texClampMode_t clampMode,
                                                   texFilterMode_t filterMode = TF_LINEAR);
+    kexMaterial                     *CacheMaterial(const char *file);
     void                            BindDrawPointers(void);
     void                            AddTriangle(int v0, int v1, int v2);
     void                            AddVertex(float x, float y, float z, float s, float t,
@@ -171,6 +173,7 @@ public:
         int                         alphaFunction;
         float                       alphaFuncThreshold;
         int                         currentUnit;
+        rhandle                     currentProgram;
         texUnit_t                   textureUnits[MAX_TEXTURE_UNITS];
     } glState_t;
 
@@ -192,6 +195,7 @@ private:
 
     kexHashList<kexTexture>         textureList;
     kexHashList<kexFont>            fontList;
+    kexHashList<kexMaterial>        materials;
 
     const char                      *gl_vendor;
     const char                      *gl_renderer;

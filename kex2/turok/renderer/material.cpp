@@ -30,9 +30,6 @@
 #include "renderSystem.h"
 #include "material.h"
 
-unsigned int kexMaterial::matID = 0;
-unsigned int kexMaterial::bindID = 0;
-
 //
 // kexMaterial::kexMaterial
 //
@@ -52,10 +49,10 @@ kexMaterial::~kexMaterial(void) {
 //
 
 void kexMaterial::Init(void) {
-    this->genID         = ++kexMaterial::matID;
     this->next          = NULL;
     this->flags         = 0;
-    this->cullType      = MCT_NONE;
+    this->stateBits     = 0;
+    this->cullType      = GLCULL_BACK;
     this->units         = 0;
     this->genID         = 0;
     this->bShaderErrors = false;
@@ -64,8 +61,8 @@ void kexMaterial::Init(void) {
         this->samplers[i].param     = "";
         this->samplers[i].unit      = 0;
         this->samplers[i].texture   = NULL;
-        this->samplers[i].clamp     = MC_CLAMP;
-        this->samplers[i].filter    = MF_LINEAR;
+        this->samplers[i].clamp     = TC_CLAMP;
+        this->samplers[i].filter    = TF_LINEAR;
         this->samplers[i].scroll[0] = 0;
         this->samplers[i].scroll[1] = 0;
         this->samplers[i].scale[0]  = 0;
@@ -84,74 +81,44 @@ matSampler_t *kexMaterial::Sampler(const int which) {
     return &samplers[which];
 }
 
+
 //
 // kexMaterial::ParseParam
 //
 
 void kexMaterial::ParseParam(kexLexer *lexer) {
-    matParamType_t paramType;
-    char *name;
-    
-    paramType = (matParamType_t)lexer->GetNumber();
+    kexStr paramName;
+
     lexer->GetString();
-    name = lexer->StringToken();
-    
-    switch(paramType) {
-        case MPT_FLOAT:
-        {
-            matParam_t<float> param;
-            param.param = name;
-            param.value = (float)lexer->GetFloat();
-            params.floatParams.Push(param);
-        }
-            break;
-        case MPT_INT:
-        {
-            matParam_t<int> param;
-            param.param = name;
-            param.value = lexer->GetNumber();
-            params.intParams.Push(param);
-        }
-            break;
-        case MPT_VEC2:
-        {
-            matParam_t<kexVec2> param;
-            param.param = name;
-            param.value.x = (float)lexer->GetFloat();
-            param.value.z = (float)lexer->GetFloat();
-            
-            params.vec2Params.Push(param);
-        }
-            break;
-        case MPT_VEC3:
-        {
-            matParam_t<kexVec3> param;
-            param.param = name;
-            param.value.x = (float)lexer->GetFloat();
-            param.value.y = (float)lexer->GetFloat();
-            param.value.z = (float)lexer->GetFloat();
-            
-            params.vec3Params.Push(param);
-        }
-            break;
-        case MPT_VEC4:
-        {
-            matParam_t<kexVec4> param;
-            param.param = name;
-            param.value.x = (float)lexer->GetFloat();
-            param.value.y = (float)lexer->GetFloat();
-            param.value.z = (float)lexer->GetFloat();
-            param.value.w = (float)lexer->GetFloat();
-            
-            params.vec4Params.Push(param);
-        }
-            break;
-        case MPT_MAT4:
-            // TODO
-            break;
-        default:
-            parser.Error("kexMaterial::ParseParam - Unknown param type: %i\n", paramType);
-            break;
+    paramName = lexer->StringToken();
+
+    lexer->Find();
+    if(lexer->Matches("int")) {
+        int param;
+
+        param = lexer->GetNumber();
+        shaderObj.SetUniform(paramName.c_str(), param);
+    }
+    else if(lexer->Matches("vec2")) {
+        kexVec2 param;
+
+        lexer->GetString();
+        sscanf(lexer->StringToken(), "%f %f", &param.x, &param.z);
+        shaderObj.SetUniform(paramName.c_str(), param);
+    }
+    else if(lexer->Matches("vec3")) {
+        kexVec3 param;
+
+        lexer->GetString();
+        sscanf(lexer->StringToken(), "%f %f %f", &param.x, &param.y, &param.z);
+        shaderObj.SetUniform(paramName.c_str(), param);
+    }
+    else if(lexer->Matches("vec4")) {
+        kexVec4 param;
+
+        lexer->GetString();
+        sscanf(lexer->StringToken(), "%f %f %f %f", &param.x, &param.y, &param.z, &param.w);
+        shaderObj.SetUniform(paramName.c_str(), param);
     }
 }
 
@@ -175,9 +142,8 @@ void kexMaterial::ParseSampler(kexLexer *lexer) {
     
     sampler = Sampler(unit);
     sampler->param = paramName;
-    sampler->filter = MF_LINEAR;
-    sampler->clamp = MC_CLAMP;
-    sampler->texture = renderSystem.CacheTexture(texFile.c_str(), TC_CLAMP);
+    sampler->filter = TF_LINEAR;
+    sampler->clamp = TC_CLAMP;
     
     shaderObj.SetUniform(sampler->param, sampler->unit);
     
@@ -192,22 +158,22 @@ void kexMaterial::ParseSampler(kexLexer *lexer) {
         if(lexer->Matches("filter")) {
             lexer->Find();
             if(lexer->Matches("linear")) {
-                sampler->filter = MF_LINEAR;
+                sampler->filter = TF_LINEAR;
             }
             else if(lexer->Matches("nearest")) {
-                sampler->filter = MF_NEAREST;
+                sampler->filter = TF_NEAREST;
             }
         }
         else if(lexer->Matches("wrap")) {
             lexer->Find();
             if(lexer->Matches("clamp")) {
-                sampler->clamp = MC_CLAMP;
+                sampler->clamp = TC_CLAMP;
             }
             else if(lexer->Matches("repeat")) {
-                sampler->clamp = MC_REPEAT;
+                sampler->clamp = TC_REPEAT;
             }
             else if(lexer->Matches("mirrored")) {
-                sampler->clamp = MC_MIRRORED;
+                sampler->clamp = TC_MIRRORED;
             }
         }
         else if(lexer->Matches("scroll")) {
@@ -225,6 +191,10 @@ void kexMaterial::ParseSampler(kexLexer *lexer) {
         
         lexer->Find();
     }
+
+    sampler->texture = renderSystem.CacheTexture(texFile.c_str(),
+                                                 sampler->clamp,
+                                                 sampler->filter);
 }
 
 //
@@ -232,22 +202,23 @@ void kexMaterial::ParseSampler(kexLexer *lexer) {
 //
 
 void kexMaterial::Parse(kexLexer *lexer) {
+    lexer->ExpectNextToken(TK_LBRACK);
+    lexer->Find();
+
     shaderObj.InitProgram();
     
-    while(lexer->CheckState()) {
-        lexer->Find();
-        
+    while(lexer->TokenType() != TK_RBRACK) {
         switch(lexer->TokenType()) {
             case TK_EOF:
                 return;
             case TK_IDENIFIER:
-                if(lexer->Matches("fragmentProgram")) {
-                    lexer->GetString();
-                    shaderObj.Compile(lexer->StringToken(), RST_FRAGMENT);
-                }
-                else if(lexer->Matches("vertexProgram")) {
+                if(lexer->Matches("vertexProgram")) {
                     lexer->GetString();
                     shaderObj.Compile(lexer->StringToken(), RST_VERTEX);
+                }
+                else if(lexer->Matches("fragmentProgram")) {
+                    lexer->GetString();
+                    shaderObj.Compile(lexer->StringToken(), RST_FRAGMENT);
                 }
                 else if(lexer->Matches("fullbright")) {
                     flags |= MTF_FULLBRIGHT;
@@ -264,23 +235,31 @@ void kexMaterial::Parse(kexLexer *lexer) {
                 else if(lexer->Matches("transparent")) {
                     flags |= MTF_TRANSPARENT;
                 }
-                else if(lexer->Matches("nofog")) {
-                    flags |= MTF_NOFOG;
+                else if(lexer->Matches("blend")) {
+                    stateBits |= GLSTATE_BLEND;
                 }
-                else if(lexer->Matches("cullType")) {
+                else if(lexer->Matches("alphatest")) {
+                    stateBits |= GLSTATE_ALPHATEST;
+                }
+                else if(lexer->Matches("depthtest")) {
+                    stateBits |= GLSTATE_DEPTHTEST;
+                }
+                else if(lexer->Matches("allowfog")) {
+                    stateBits |= GLSTATE_FOG;
+                }
+                else if(lexer->Matches("cull")) {
                     lexer->Find();
                     
                     if(lexer->Matches("back")) {
-                        cullType = MCT_BACK;
+                        stateBits |= GLSTATE_CULL;
+                        cullType = GLCULL_BACK;
                     }
                     else if(lexer->Matches("front")) {
-                        cullType = MCT_FRONT;
-                    }
-                    else if(lexer->Matches("none")) {
-                        cullType = MCT_NONE;
+                        stateBits |= GLSTATE_CULL;
+                        cullType = GLCULL_FRONT;
                     }
                 }
-                else if(lexer->Matches("shaderParam")) {
+                else if(lexer->Matches("param")) {
                     ParseParam(lexer);
                 }
                 else if(lexer->Matches("sampler")) {
@@ -288,101 +267,16 @@ void kexMaterial::Parse(kexLexer *lexer) {
                 }
                 break;
             default:
+                parser.Error("kexMaterial::Parse - Unknown token: %s\n", lexer->Token());
                 break;
         }
+        
+        lexer->Find();
     }
+
+    shaderObj.Link();
     
-    if(!shaderObj.Link()) {
+    if(shaderObj.HasErrors()) {
         bShaderErrors = true;
     }
-}
-
-//
-// kexMaterial::Bind
-//
-
-void kexMaterial::Bind(void) {
-    bool bBlend;
-    
-    if(genID == kexMaterial::bindID) {
-        return;
-    }
-    
-    kexMaterial::bindID = genID;
-    shaderObj.Enable();
-    
-    if(cullType != MCT_NONE) {
-        renderSystem.SetState(GLSTATE_CULL, true);
-        renderSystem.SetCull(cullType == MCT_FRONT ? GLCULL_FRONT : GLCULL_BACK);
-    }
-    else {
-        renderSystem.SetState(GLSTATE_CULL, false);
-    }
-    
-    bBlend = ((flags & (MTF_MASKED|MTF_TRANSPARENT)) != 0);
-    
-    renderSystem.SetState(GLSTATE_BLEND, bBlend);
-    renderSystem.SetState(GLSTATE_ALPHATEST, bBlend);
-
-    // TODO
-}
-
-//
-// kexMaterialManager::kexMaterialManager
-//
-
-kexMaterialManager::kexMaterialManager(void) {
-}
-
-//
-// kexMaterialManager::~kexMaterialManager
-//
-
-kexMaterialManager::~kexMaterialManager(void) {
-}
-
-//
-// kexMaterialManager::LoadMaterial
-//
-
-kexMaterial *kexMaterialManager::LoadMaterial(const char *file) {
-    kexMaterial *material;
-    
-    if(file == NULL) {
-        return NULL;
-    }
-    else if(file[0] == 0) {
-        return NULL;
-    }
-    
-    if(!(material = materials.Find(file))) {
-        kexLexer *lexer;
-        
-        if(!(lexer = parser.Open(file))) {
-            if(!(lexer = parser.Open("materials/default.kmat"))) {
-                return NULL;
-            }
-            
-            common.Warning("kexMaterialManager::LoadMaterial: %s not found\n", file);
-        }
-        
-        material = materials.Add(file);
-        material->Init();
-        
-        strncpy(material->fileName, file, MAX_FILEPATH);
-        
-        material->Parse(lexer);
-        
-        // we're done with the file
-        parser.Close();
-    }
-    
-    return material;
-}
-
-//
-// kexMaterialManager::Shutdown
-//
-
-void kexMaterialManager::Shutdown(void) {
 }

@@ -29,6 +29,7 @@
 #include "memHeap.h"
 #include "renderSystem.h"
 #include "shaderProg.h"
+#include "defs.h"
 
 //
 // kexShaderObj::kexShaderObj
@@ -38,6 +39,7 @@ kexShaderObj::kexShaderObj(void) {
     this->programObj        = 0;
     this->vertexProgram     = 0;
     this->fragmentProgram   = 0;
+    this->bHasErrors        = false;
 }
 
 //
@@ -60,7 +62,12 @@ void kexShaderObj::InitProgram(void) {
 //
 
 void kexShaderObj::Enable(void) {
+    if(programObj == renderSystem.glState.currentProgram) {
+        return;
+    }
+    
     dglUseProgramObjectARB(programObj);
+    renderSystem.glState.currentProgram = programObj;
 }
 
 //
@@ -182,6 +189,7 @@ void kexShaderObj::SetUniform(const char *name, kexMatrix &val, bool bTranspose)
 bool kexShaderObj::Link(void) {
     int linked;
     
+    bHasErrors = false;
     dglLinkProgramARB(programObj);
     dglGetObjectParameterivARB(programObj, GL_OBJECT_LINK_STATUS_ARB, &linked);
     
@@ -189,6 +197,7 @@ bool kexShaderObj::Link(void) {
         int logLength;
         
         dglGetObjectParameterivARB(programObj, GL_OBJECT_INFO_LOG_LENGTH_ARB, &logLength);
+        bHasErrors = true;
         
         if(logLength > 0) {
             int cw;

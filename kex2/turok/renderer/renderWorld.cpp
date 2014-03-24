@@ -378,15 +378,16 @@ void kexRenderWorld::DrawSurface(const surface_t *surface, const char *texturePa
     dglDrawElements(GL_TRIANGLES, surface->numIndices, GL_UNSIGNED_SHORT, surface->indices);
 
     if(!bWireframe && bDrawTris) {
-        renderSystem.whiteTexture.Bind();
         dglColor4ub(255, 255, 255, 255);
 
+        renderSystem.SetState(GLSTATE_TEXTURE0, false);
         renderSystem.SetState(GLSTATE_LIGHTING, false);
         renderSystem.SetPolyMode(GLPOLY_LINE);
 
         dglDrawElements(GL_TRIANGLES, surface->numIndices, GL_UNSIGNED_SHORT, surface->indices);
 
         renderSystem.SetPolyMode(GLPOLY_FILL);
+        renderSystem.SetState(GLSTATE_TEXTURE0, true);
         renderSystem.SetState(GLSTATE_LIGHTING, true);
     }
 }

@@ -50,11 +50,15 @@ public:
     rhandle                     &Program(void) { return programObj; }
     rhandle                     &VertexProgram(void) { return vertexProgram; }
     rhandle                     &FragmentProgram(void) { return fragmentProgram; }
+    const bool                  HasErrors(void) const { return bHasErrors; }
+    
+    filepath_t                  fileName;
 
 private:
     rhandle                     programObj;
     rhandle                     vertexProgram;
     rhandle                     fragmentProgram;
+    bool                        bHasErrors;
 };
 
 #endif

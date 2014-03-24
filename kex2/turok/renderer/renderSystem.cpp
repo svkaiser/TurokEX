@@ -27,6 +27,7 @@
 #include "common.h"
 #include "memHeap.h"
 #include "renderSystem.h"
+#include "defs.h"
 
 kexCvar cvarRenderFinish("r_finish", CVF_BOOL|CVF_CONFIG, "0", "Force a GL command sync");
 
@@ -112,23 +113,24 @@ void* GL_RegisterProc(const char *address) {
 //
 
 kexRenderSystem::kexRenderSystem(void) {
-    this->viewWidth             = this->SCREEN_WIDTH;
-    this->viewHeight            = this->SCREEN_HEIGHT;
-    this->viewWindowX           = 0;
-    this->viewWindowY           = 0;
-    this->maxTextureUnits       = 1;
-    this->maxTextureSize        = 64;
-    this->maxAnisotropic        = 0;
-    this->bWideScreen           = false;
-    this->bFullScreen           = false;
-    this->bIsInit               = false;
-    this->glState.glStateBits   = 0;
-    this->glState.alphaFunction = -1;
-    this->glState.blendDest     = -1;
-    this->glState.blendSrc      = -1;
-    this->glState.cullType      = -1;
-    this->glState.depthMask     = -1;
-    this->glState.currentUnit   = -1;
+    this->viewWidth                 = this->SCREEN_WIDTH;
+    this->viewHeight                = this->SCREEN_HEIGHT;
+    this->viewWindowX               = 0;
+    this->viewWindowY               = 0;
+    this->maxTextureUnits           = 1;
+    this->maxTextureSize            = 64;
+    this->maxAnisotropic            = 0;
+    this->bWideScreen               = false;
+    this->bFullScreen               = false;
+    this->bIsInit                   = false;
+    this->glState.glStateBits       = 0;
+    this->glState.alphaFunction     = -1;
+    this->glState.blendDest         = -1;
+    this->glState.blendSrc          = -1;
+    this->glState.cullType          = -1;
+    this->glState.depthMask         = -1;
+    this->glState.currentUnit       = -1;
+    this->glState.currentProgram    = 0;
 }
 
 //
@@ -216,6 +218,7 @@ void kexRenderSystem::SetDefaultState(void) {
     glState.cullType        = -1;
     glState.depthMask       = -1;
     glState.currentUnit     = -1;
+    glState.currentProgram  = 0;
     
     dglViewport(0, 0, sysMain.VideoWidth(), sysMain.VideoHeight());
     dglClearDepth(1.0f);
@@ -321,8 +324,6 @@ void kexRenderSystem::Shutdown(void) {
     defaultTexture.Delete();
     whiteTexture.Delete();
     blackTexture.Delete();
-
-    consoleFont.Texture()->Delete();
 
     for(int i = 0; i < MAX_HASH; i++) {
         for(texture = textureList.GetData(i); texture; texture = textureList.Next()) {
@@ -724,11 +725,78 @@ kexFont *kexRenderSystem::CacheFont(const char *name) {
 }
 
 //
+// kexRenderSystem::CacheMaterial
+//
+
+kexMaterial *kexRenderSystem::CacheMaterial(const char *file) {
+    kexMaterial *material;
+    filepath_t tStr;
+    int pos;
+    int len;
+    
+    if(file == NULL) {
+        return NULL;
+    }
+    else if(file[0] == 0) {
+        return NULL;
+    }
+
+    pos = kexStr::IndexOf(file, "@");
+
+    if(pos == -1) {
+        return NULL;
+    }
+
+    len = strlen(file);
+    strncpy(tStr, file, pos);
+    tStr[pos] = 0;
+    
+    if(!(material = materials.Find(tStr))) {
+        kexLexer *lexer;
+        bool bFoundMaterial = false;
+        
+        if(!(lexer = parser.Open(tStr))) {
+            common.Warning("kexMaterialManager::LoadMaterial: %s not found\n", tStr);
+            return NULL;
+        }
+
+        strncpy(tStr, file + pos + 1, len - pos);
+        tStr[len - pos] = 0;
+
+        while(lexer->CheckState()) {
+            lexer->Find();
+
+            if(lexer->Matches(tStr)) {
+                bFoundMaterial = true;
+                material = materials.Add(file);
+                strncpy(material->fileName, file, MAX_FILEPATH);
+
+                material->Init();
+                material->Parse(lexer);
+                break;
+            }
+        }
+
+        if(bFoundMaterial == false) {
+            common.Warning("kexMaterialManager::LoadMaterial: %s not found\n", tStr);
+            parser.Close();
+            return NULL;
+        }
+        
+        // we're done with the file
+        parser.Close();
+    }
+    
+    return material;
+}
+
+//
 // kexRenderSystem::DisableShaders
 //
 
 void kexRenderSystem::DisableShaders(void) {
     dglUseProgramObjectARB(0);
+    glState.currentProgram = 0;
 }
 
 //
