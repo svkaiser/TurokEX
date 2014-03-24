@@ -146,7 +146,7 @@ kexDefinition *kexDefManager::LoadDefinition(const char *file) {
 kexKeyMap *kexDefManager::FindDefEntry(const char *name) {
     kexDefinition *def;
     kexKeyMap *defEntry;
-    char tStr[64];
+    filepath_t tStr;
     int pos;
     int len;
 
