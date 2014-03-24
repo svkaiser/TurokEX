@@ -49,6 +49,7 @@ public:
     void                    Shutdown(void);
     void                    OnShutdown(void);
     void                    SetTitle(void);
+    void                    SpawnGame(void);
     bool                    ProcessInput(const event_t *ev);
     void                    OnTick(void);
     void                    OnLocalTick(void);

@@ -440,5 +440,6 @@ void kexSystem::Main(int argc, char **argv) {
     kexRenderWorld::Init();
 
     common.Printf("Running kernel...\n");
+    gameManager.SpawnGame();
     MainLoop();
 }

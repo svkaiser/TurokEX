@@ -186,6 +186,13 @@ void kexGameManager::InitGame(void) {
     }
 
     Construct(gameClass.c_str());
+}
+
+//
+// kexGameManager::SpawnGame
+//
+
+void kexGameManager::SpawnGame(void) {
     CallFunction(onSpawn);
 }
 
