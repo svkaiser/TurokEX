@@ -27,6 +27,7 @@
 #include "common.h"
 #include "memHeap.h"
 #include "renderSystem.h"
+#include "renderSurface.h"
 #include "defs.h"
 
 kexCvar cvarRenderFinish("r_finish", CVF_BOOL|CVF_CONFIG, "0", "Force a GL command sync");
@@ -367,7 +368,7 @@ void kexRenderSystem::SwapBuffers(void) {
 // kexRenderSystem::SetState
 //
 
-void kexRenderSystem::SetState(int bits, bool bEnable) {
+void kexRenderSystem::SetState(const int bits, bool bEnable) {
 #define TOGGLEGLBIT(flag, bit)                                  \
     if(bEnable && !(glState.glStateBits & (1 << flag))) {       \
         dglEnable(bit);                                         \
@@ -421,6 +422,21 @@ void kexRenderSystem::SetState(int bits, bool bEnable) {
     }
     
 #undef TOGGLEGLBIT
+}
+
+//
+// kexRenderSystem::SetState
+//
+
+void kexRenderSystem::SetState(unsigned int flags) {
+    for(int i = 0; i < NUMGLSTATES; i++) {
+        if(!(flags & BIT(i))) {
+            SetState(i, false);
+            continue;
+        }
+
+        SetState(i, true);
+    }
 }
 
 //
@@ -797,6 +813,7 @@ kexMaterial *kexRenderSystem::CacheMaterial(const char *file) {
 void kexRenderSystem::DisableShaders(void) {
     dglUseProgramObjectARB(0);
     glState.currentProgram = 0;
+    kexRenderSurface::currentSurface = NULL;
 }
 
 //
@@ -892,6 +909,32 @@ void kexRenderSystem::AddLine(float x1, float y1, float z1,
 void kexRenderSystem::DrawElements(void) {
     dglDrawElements(GL_TRIANGLES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
 
+    indiceCount = 0;
+    vertexCount = 0;
+}
+
+//
+// kexRenderSystem::DrawElements
+//
+// Draws using the specified material. A temp. surface
+// is created in order to draw the material
+//
+
+void kexRenderSystem::DrawElements(const kexMaterial *material) {
+    surface_t surf;
+    
+    surf.numVerts   = vertexCount;
+    surf.numIndices = indiceCount;
+    surf.vertices   = reinterpret_cast<kexVec3*>(drawVertices);
+    surf.coords     = drawTexCoords;
+    surf.rgb        = drawRGB;
+    surf.normals    = NULL;
+    surf.indices    = drawIndices;
+    surf.material   = (kexMaterial*)material;
+    
+    kexRenderSurface::DrawElements(&surf);
+    DisableShaders(); // TODO: remove once everything relies on materials
+    
     indiceCount = 0;
     vertexCount = 0;
 }

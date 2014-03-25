@@ -53,6 +53,8 @@ void kexMaterial::Init(void) {
     this->flags         = 0;
     this->stateBits     = 0;
     this->cullType      = GLCULL_BACK;
+    this->alphaFunction = GLFUNC_GEQUAL;
+    this->alphaMask     = 0.01f;
     this->units         = 0;
     this->genID         = 0;
     this->bShaderErrors = false;
@@ -192,9 +194,33 @@ void kexMaterial::ParseSampler(kexLexer *lexer) {
         lexer->Find();
     }
 
+    stateBits |= BIT(GLSTATE_TEXTURE0 + unit);
     sampler->texture = renderSystem.CacheTexture(texFile.c_str(),
                                                  sampler->clamp,
                                                  sampler->filter);
+}
+
+//
+// kexMaterial::ParseFunction
+//
+
+glFunctions_t kexMaterial::ParseFunction(kexLexer *lexer) {
+    lexer->Find();
+    
+    if(lexer->Matches("lequal")) {
+        return GLFUNC_LEQUAL;
+    }
+    else if(lexer->Matches("gequal")) {
+        return GLFUNC_GEQUAL;
+    }
+    else if(lexer->Matches("equal")) {
+        return GLFUNC_EQUAL;
+    }
+    else if(lexer->Matches("always")) {
+        return GLFUNC_ALWAYS;
+    }
+    
+    return GLFUNC_NEVER;
 }
 
 //
@@ -223,41 +249,38 @@ void kexMaterial::Parse(kexLexer *lexer) {
                 else if(lexer->Matches("fullbright")) {
                     flags |= MTF_FULLBRIGHT;
                 }
-                else if(lexer->Matches("solid")) {
-                    flags |= MTF_SOLID;
-                }
-                else if(lexer->Matches("masked")) {
-                    flags |= MTF_MASKED;
-                }
                 else if(lexer->Matches("nodraw")) {
                     flags |= MTF_NODRAW;
                 }
-                else if(lexer->Matches("transparent")) {
-                    flags |= MTF_TRANSPARENT;
-                }
                 else if(lexer->Matches("blend")) {
-                    stateBits |= GLSTATE_BLEND;
+                    stateBits |= BIT(GLSTATE_BLEND);
                 }
                 else if(lexer->Matches("alphatest")) {
-                    stateBits |= GLSTATE_ALPHATEST;
+                    stateBits |= BIT(GLSTATE_ALPHATEST);
                 }
                 else if(lexer->Matches("depthtest")) {
-                    stateBits |= GLSTATE_DEPTHTEST;
+                    stateBits |= BIT(GLSTATE_DEPTHTEST);
                 }
                 else if(lexer->Matches("allowfog")) {
-                    stateBits |= GLSTATE_FOG;
+                    stateBits |= BIT(GLSTATE_FOG);
                 }
                 else if(lexer->Matches("cull")) {
                     lexer->Find();
                     
                     if(lexer->Matches("back")) {
-                        stateBits |= GLSTATE_CULL;
+                        stateBits |= BIT(GLSTATE_CULL);
                         cullType = GLCULL_BACK;
                     }
                     else if(lexer->Matches("front")) {
-                        stateBits |= GLSTATE_CULL;
+                        stateBits |= BIT(GLSTATE_CULL);
                         cullType = GLCULL_FRONT;
                     }
+                }
+                else if(lexer->Matches("alphafunc")) {
+                    alphaFunction = ParseFunction(lexer);
+                }
+                else if(lexer->Matches("alphamask")) {
+                    alphaMask = (float)lexer->GetFloat();
                 }
                 else if(lexer->Matches("param")) {
                     ParseParam(lexer);

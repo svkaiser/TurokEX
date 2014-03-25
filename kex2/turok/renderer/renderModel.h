@@ -24,6 +24,7 @@
 #define __RENDER_MODEL_H__
 
 #include "cachefilelist.h"
+#include "renderSurface.h"
 
 #define MDF_UNKNOWN1                1
 #define MDF_FULLBRIGHT              2
@@ -42,20 +43,6 @@
 #define MDF_UNKNOWN16384            16384
 #define MDF_UNKNOWN32768            32768
 #define MDF_UNKNOWN65536            65536
-
-typedef struct {
-    unsigned int                    flags;
-    unsigned int                    numVerts;
-    unsigned int                    numIndices;
-    kexVec3                         *vertices;
-    float                           *coords;
-    float                           *normals;
-    byte                            *rgb;
-    word                            *indices;
-    filepath_t                      texturePath;
-    rcolor                          color1;
-    rcolor                          color2;
-} surface_t;
 
 typedef struct {
     unsigned int                    numVariants;

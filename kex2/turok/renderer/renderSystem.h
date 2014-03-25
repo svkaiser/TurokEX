@@ -37,7 +37,8 @@ typedef enum {
     GLSTATE_TEXGEN_T,
     GLSTATE_DEPTHTEST,
     GLSTATE_LIGHTING,
-    GLSTATE_FOG
+    GLSTATE_FOG,
+    NUMGLSTATES
 } glState_t;
 
 typedef enum {
@@ -106,7 +107,8 @@ public:
     void                            SetDefaultState(void);
     void                            SetOrtho(void);
     void                            SwapBuffers(void);
-    void                            SetState(int bits, bool bEnable);
+    void                            SetState(const int bits, bool bEnable);
+    void                            SetState(unsigned int flags);
     void                            SetAlphaFunc(int func, float val);
     void                            SetDepth(int func);
     void                            SetBlend(int src, int dest);
@@ -130,6 +132,7 @@ public:
                                             float x2, float y2, float z2,
                                             byte r, byte g, byte b, byte a);
     void                            DrawElements(void);
+    void                            DrawElements(const kexMaterial *material);
     void                            DrawLineElements(void);
 
     const int                       ViewWidth(void) const { return viewWidth; }

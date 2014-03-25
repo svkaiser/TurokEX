@@ -145,9 +145,6 @@ void kexFont::DrawString(const char *string, float x, float y, float scale,
     tri = 0;
     len = strlen(string);
 
-    renderSystem.BindDrawPointers();
-    texture->Bind();
-
     for(i = 0; i < len; i++) {
         ch      = string[i];
         at      = &atlas[ch];
@@ -172,11 +169,8 @@ void kexFont::DrawString(const char *string, float x, float y, float scale,
         x += at->w * scale;
         tri += 4;
     }
-
-    renderSystem.SetState(GLSTATE_BLEND, material->StateBits() & GLSTATE_BLEND);
-    renderSystem.SetState(GLSTATE_ALPHATEST, material->StateBits() & GLSTATE_ALPHATEST);
-    renderSystem.SetState(GLSTATE_CULL, material->StateBits() & GLSTATE_CULL);
-    renderSystem.DrawElements();
+    
+    renderSystem.DrawElements(material);
 }
 
 //

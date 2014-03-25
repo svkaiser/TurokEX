@@ -30,14 +30,11 @@
 #include "script.h"
 
 typedef enum {
-    MTF_SOLID       = BIT(0),
-    MTF_MASKED      = BIT(1),
-    MTF_TRANSPARENT = BIT(2),
-    MTF_FULLBRIGHT  = BIT(3),
-    MTF_NODRAW      = BIT(4)
+    MTF_FULLBRIGHT  = BIT(0),
+    MTF_NODRAW      = BIT(1)
 } materialFlags_t;
 
-#define MAX_SAMPLER_UNITS   8
+#define MAX_SAMPLER_UNITS   4
 
 typedef struct {
     kexStr          param;
@@ -60,9 +57,12 @@ public:
     void                                Parse(kexLexer *lexer);
     
     const glCullType_t                  CullType(void) const { return cullType; }
-    const kexShaderObj                  *ShaderObj(void) const { return &shaderObj; }
+    const glFunctions_t                 AlphaFunction(void) const { return alphaFunction; }
+    kexShaderObj                        *ShaderObj(void) { return &shaderObj; }
     const unsigned int                  Flags(void) const { return flags; }
     const unsigned int                  StateBits(void) const { return stateBits; }
+    const float                         AlphaMask(void) const { return alphaMask; }
+    const unsigned int                  NumUnits(void) const { return units; }
 
     filepath_t                          fileName;
     kexMaterial                         *next;
@@ -70,11 +70,14 @@ public:
 private:
     void                                ParseParam(kexLexer *lexer);
     void                                ParseSampler(kexLexer *lexer);
+    glFunctions_t                       ParseFunction(kexLexer *lexer);
     
     kexShaderObj                        shaderObj;
     matSampler_t                        samplers[MAX_SAMPLER_UNITS];
     unsigned int                        stateBits;
     glCullType_t                        cullType;
+    glFunctions_t                       alphaFunction;
+    float                               alphaMask;
     unsigned int                        flags;
     unsigned int                        units;
     unsigned int                        genID;
