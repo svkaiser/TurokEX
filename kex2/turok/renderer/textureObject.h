@@ -59,6 +59,8 @@ public:
     byte                    *PadImage(byte **data);
     void                    VerticalFlipImage(byte **data);
     void                    Bind(void);
+    void                    BindFrameBuffer(void);
+    void                    BindDepthBuffer(void);
     void                    Delete(void);
 
     const int               Width(void) const { return width; }

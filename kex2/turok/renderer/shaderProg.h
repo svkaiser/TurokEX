@@ -40,6 +40,7 @@ public:
     void                        Compile(const char *name, rShaderType_t type);
     bool                        Link(void);
     void                        Enable(void);
+    void                        Delete(void);
     void                        SetUniform(const char *name, const int val);
     void                        SetUniform(const char *name, const float val);
     void                        SetUniform(const char *name, kexVec2 &val);
@@ -51,6 +52,7 @@ public:
     rhandle                     &VertexProgram(void) { return vertexProgram; }
     rhandle                     &FragmentProgram(void) { return fragmentProgram; }
     const bool                  HasErrors(void) const { return bHasErrors; }
+    const bool                  IsLoaded(void) const { return bLoaded; }
     
     filepath_t                  fileName;
 
@@ -59,6 +61,7 @@ private:
     rhandle                     vertexProgram;
     rhandle                     fragmentProgram;
     bool                        bHasErrors;
+    bool                        bLoaded;
 };
 
 #endif

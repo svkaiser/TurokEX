@@ -40,6 +40,7 @@ kexShaderObj::kexShaderObj(void) {
     this->vertexProgram     = 0;
     this->fragmentProgram   = 0;
     this->bHasErrors        = false;
+    this->bLoaded           = false;
 }
 
 //
@@ -68,6 +69,21 @@ void kexShaderObj::Enable(void) {
     
     dglUseProgramObjectARB(programObj);
     renderSystem.glState.currentProgram = programObj;
+}
+
+//
+// kexShaderObj::Delete
+//
+
+void kexShaderObj::Delete(void) {
+    if(bLoaded == false) {
+        return;
+    }
+    
+    dglDeleteObjectARB(fragmentProgram);
+    dglDeleteObjectARB(vertexProgram);
+    dglDeleteObjectARB(programObj);
+    bLoaded = false;
 }
 
 //
@@ -211,5 +227,6 @@ bool kexShaderObj::Link(void) {
     }
     
     dglUseProgramObjectARB(0);
+    bLoaded = true;
     return (linked > 0);
 }

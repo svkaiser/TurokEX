@@ -154,6 +154,8 @@ public:
     kexTexture                      defaultTexture;
     kexTexture                      whiteTexture;
     kexTexture                      blackTexture;
+    kexTexture                      *frameBuffer;
+    kexTexture                      *depthBuffer;
 
     kexShaderObj                    defaultProg;
     kexShaderObj                    *currentProg;

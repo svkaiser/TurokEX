@@ -683,6 +683,78 @@ void kexTexture::Bind(void) {
 }
 
 //
+// kexTexture::BindFrameBuffer
+//
+
+void kexTexture::BindFrameBuffer(void) {
+    if(!renderSystem.IsInitialized()) {
+        return;
+    }
+    
+    if(bLoaded == false) {
+        dglGenTextures(1, &texid);
+        bLoaded = true;
+        
+        if(texid == 0) {
+            return;
+        }
+    }
+    
+    int unit = renderSystem.glState.currentUnit;
+    dtexture currentTexture = renderSystem.glState.textureUnits[unit].currentTexture;
+    
+    if(texid != currentTexture) {
+        dglBindTexture(GL_TEXTURE_2D, texid);
+        renderSystem.glState.textureUnits[unit].currentTexture = texid;
+    }
+    
+    dglReadBuffer(GL_BACK);
+    
+    origwidth   = sysMain.VideoWidth();
+    origheight  = sysMain.VideoHeight();
+    width       = origwidth;
+    height      = origheight;
+    
+    dglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, origwidth, origheight, 0);
+    SetParameters();
+}
+
+//
+// kexTexture::BindDepthBuffer
+//
+
+void kexTexture::BindDepthBuffer(void) {
+    if(!renderSystem.IsInitialized()) {
+        return;
+    }
+    
+    if(bLoaded == false) {
+        dglGenTextures(1, &texid);
+        bLoaded = true;
+        
+        if(texid == 0) {
+            return;
+        }
+    }
+    
+    int unit = renderSystem.glState.currentUnit;
+    dtexture currentTexture = renderSystem.glState.textureUnits[unit].currentTexture;
+    
+    if(texid != currentTexture) {
+        dglBindTexture(GL_TEXTURE_2D, texid);
+        renderSystem.glState.textureUnits[unit].currentTexture = texid;
+    }
+    
+    origwidth   = sysMain.VideoWidth();
+    origheight  = sysMain.VideoHeight();
+    width       = origwidth;
+    height      = origheight;
+    
+    dglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24_ARB, 0, 0, origwidth, origheight, 0);
+    SetParameters();
+}
+
+//
 // kexTexture::Delete
 //
 

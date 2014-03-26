@@ -20,7 +20,7 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION:
+// DESCRIPTION: Surface rendering
 //
 //-----------------------------------------------------------------------------
 
@@ -55,15 +55,6 @@ void kexRenderSurface::DrawElements(const surface_t *surface)  {
     renderSystem.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
     renderSystem.SetCull(material->CullType());
     
-    if(kexRenderSurface::currentSurface != surface) {
-        dglNormalPointer(GL_FLOAT, sizeof(float)*3, surface->normals);
-        dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, surface->coords);
-        dglVertexPointer(3, GL_FLOAT, sizeof(kexVec3), surface->vertices);
-        dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, surface->rgb);
-        
-        kexRenderSurface::currentSurface = surface;
-    }
-    
     for(unsigned int i = 0; i < material->NumUnits(); i++) {
         matSampler_t *sampler = material->Sampler(i);
         
@@ -73,12 +64,29 @@ void kexRenderSurface::DrawElements(const surface_t *surface)  {
             renderSystem.defaultTexture.Bind();
         }
         else {
-            sampler->texture->Bind();
+            if(sampler->texture == renderSystem.frameBuffer) {
+                sampler->texture->BindFrameBuffer();
+            }
+            else if(sampler->texture == renderSystem.depthBuffer) {
+                sampler->texture->BindDepthBuffer();
+            }
+            else {
+                sampler->texture->Bind();
+            }
             sampler->texture->ChangeParameters(sampler->clamp, sampler->filter);
         }
     }
     
     renderSystem.SetTextureUnit(0);
+
+    if(kexRenderSurface::currentSurface != surface) {
+        dglNormalPointer(GL_FLOAT, sizeof(float)*3, surface->normals);
+        dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, surface->coords);
+        dglVertexPointer(3, GL_FLOAT, sizeof(kexVec3), surface->vertices);
+        dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, surface->rgb);
+        
+        kexRenderSurface::currentSurface = surface;
+    }
     
     dglDrawElements(GL_TRIANGLES, surface->numIndices, GL_UNSIGNED_SHORT, surface->indices);
 }

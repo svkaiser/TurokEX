@@ -20,7 +20,11 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION:
+// DESCRIPTION: Material system. Kex materials have no texture stages
+//              but rather lets the shader program handle everything.
+//              Each unique material will have it's own instance of a
+//              shader program (TODO: should research if this is a good
+//              idea or not).
 //
 //-----------------------------------------------------------------------------
 
@@ -71,6 +75,20 @@ void kexMaterial::Init(void) {
         this->samplers[i].scale[1]  = 0;
         this->samplers[i].scale[2]  = 0;
         this->samplers[i].rotate    = 0;
+    }
+}
+
+//
+// kexMaterial::Delete
+//
+
+void kexMaterial::Delete(void) {
+    shaderObj.Delete();
+    
+    for(unsigned int i = 0; i < units; i++) {
+        if(samplers[i].texture != NULL) {
+            samplers[i].texture->Delete();
+        }
     }
 }
 
@@ -146,6 +164,7 @@ void kexMaterial::ParseSampler(kexLexer *lexer) {
     sampler->param = paramName;
     sampler->filter = TF_LINEAR;
     sampler->clamp = TC_CLAMP;
+    sampler->unit = unit;
     
     shaderObj.SetUniform(sampler->param, sampler->unit);
     

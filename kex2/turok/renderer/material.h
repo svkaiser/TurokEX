@@ -55,6 +55,7 @@ public:
     matSampler_t                        *Sampler(const int which);
     void                                Init(void);
     void                                Parse(kexLexer *lexer);
+    void                                Delete(void);
     
     const glCullType_t                  CullType(void) const { return cullType; }
     const glFunctions_t                 AlphaFunction(void) const { return alphaFunction; }

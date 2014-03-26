@@ -132,6 +132,7 @@ kexRenderSystem::kexRenderSystem(void) {
     this->glState.depthMask         = -1;
     this->glState.currentUnit       = -1;
     this->glState.currentProgram    = 0;
+    this->frameBuffer               = NULL;
 }
 
 //
@@ -269,8 +270,6 @@ void kexRenderSystem::Init(void) {
     common.Printf("GL_VERSION: %s\n", gl_version);
     common.Printf("GL_MAX_TEXTURE_SIZE: %i\n", maxTextureSize);
     common.Printf("GL_MAX_TEXTURE_UNITS_ARB: %i\n", maxTextureUnits);
-    
-    SetDefaultState();
 
     GL_ARB_multitexture_Init();
     GL_EXT_compiled_vertex_array_Init();
@@ -280,6 +279,8 @@ void kexRenderSystem::Init(void) {
     GL_EXT_texture_env_combine_Init();
     GL_EXT_texture_filter_anisotropic_Init();
     GL_ARB_shader_objects_Init();
+
+    SetDefaultState();
 
     byte *data;
 
@@ -297,6 +298,14 @@ void kexRenderSystem::Init(void) {
         blackTexture.Upload(&data, TC_CLAMP, TF_LINEAR);
         Mem_Free(data);
     }
+    
+    // create framebuffer texture
+    frameBuffer = textureList.Add("framebuffer", kexTexture::hb_texture);
+    frameBuffer->SetParameters();
+
+    // create depthbuffer texture
+    depthBuffer = textureList.Add("depthbuffer", kexTexture::hb_texture);
+    depthBuffer->SetParameters();
 
     consoleFont.LoadKFont("fonts/confont.kfont");
 
@@ -319,19 +328,25 @@ void kexRenderSystem::Init(void) {
 
 void kexRenderSystem::Shutdown(void) {
     kexTexture *texture;
+    kexMaterial *material;
 
     common.Printf("Shutting down render system\n");
 
     defaultTexture.Delete();
     whiteTexture.Delete();
     blackTexture.Delete();
+    consoleFont.Material()->Delete();
 
     for(int i = 0; i < MAX_HASH; i++) {
+        for(material = materials.GetData(i); material; material = materials.Next()) {
+            material->Delete();
+        }
         for(texture = textureList.GetData(i); texture; texture = textureList.Next()) {
             texture->Delete();
         }
     }
 
+    // do last round of texture flushing to make sure we freed everything
     Mem_Purge(kexTexture::hb_texture);
 }
 
@@ -387,15 +402,19 @@ void kexRenderSystem::SetState(const int bits, bool bEnable) {
             TOGGLEGLBIT(GLSTATE_CULL, GL_CULL_FACE);
             break;
         case GLSTATE_TEXTURE0:
+            SetTextureUnit(0);
             TOGGLEGLBIT(GLSTATE_TEXTURE0, GL_TEXTURE_2D);
             break;
         case GLSTATE_TEXTURE1:
+            SetTextureUnit(1);
             TOGGLEGLBIT(GLSTATE_TEXTURE1, GL_TEXTURE_2D);
             break;
         case GLSTATE_TEXTURE2:
+            SetTextureUnit(2);
             TOGGLEGLBIT(GLSTATE_TEXTURE2, GL_TEXTURE_2D);
             break;
         case GLSTATE_TEXTURE3:
+            SetTextureUnit(3);
             TOGGLEGLBIT(GLSTATE_TEXTURE3, GL_TEXTURE_2D);
             break;
         case GLSTATE_ALPHATEST:
@@ -692,6 +711,7 @@ void kexRenderSystem::SetTextureUnit(int unit) {
     }
         
     dglActiveTextureARB(GL_TEXTURE0_ARB + unit);
+    dglClientActiveTextureARB(GL_TEXTURE0_ARB + unit);
     glState.currentUnit = unit;
 }
 
@@ -767,7 +787,7 @@ kexMaterial *kexRenderSystem::CacheMaterial(const char *file) {
     strncpy(tStr, file, pos);
     tStr[pos] = 0;
     
-    if(!(material = materials.Find(tStr))) {
+    if(!(material = materials.Find(file))) {
         kexLexer *lexer;
         bool bFoundMaterial = false;
         
