@@ -715,7 +715,14 @@ void kexTexture::BindFrameBuffer(void) {
     width       = origwidth;
     height      = origheight;
     
-    dglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, origwidth, origheight, 0);
+    dglCopyTexImage2D(GL_TEXTURE_2D,
+                      0,
+                      GL_RGBA8,
+                      0,
+                      0,
+                      origwidth,
+                      origheight,
+                      0);
     SetParameters();
 }
 
@@ -750,7 +757,14 @@ void kexTexture::BindDepthBuffer(void) {
     width       = origwidth;
     height      = origheight;
     
-    dglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24_ARB, 0, 0, origwidth, origheight, 0);
+    dglCopyTexImage2D(GL_TEXTURE_2D,
+                      0,
+                      GL_DEPTH_COMPONENT24_ARB,
+                      0,
+                      0,
+                      origwidth,
+                      origheight,
+                      0);
     SetParameters();
 }
 
