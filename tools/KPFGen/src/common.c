@@ -316,6 +316,15 @@ void Com_Strcat(const char *string, ...)
 }
 
 //
+// Com_Strcpy
+//
+
+void Com_Strcpy(const char *string)
+{
+    strcpy(com_textbuffer, string);
+}
+
+//
 // Com_StrcatAddToFile
 //
 

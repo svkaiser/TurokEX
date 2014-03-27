@@ -181,6 +181,8 @@ static short curnode;
 static short curmesh;
 static short curvariant;
 static short *typedata;
+static char materialText[40 * 1024];
+static byte materialSet[1100][32][2048];
 
 short model_nodeCount[800];
 short model_meshCount[800][100];
@@ -614,6 +616,111 @@ static void ProcessVertices(byte *data)
 }
 
 //
+// StrcatMaterialText
+//
+
+void StrcatMaterialText(const char *string, ...)
+{
+    char s[1024];
+    va_list v;
+    
+    va_start(v, string);
+    vsprintf(s, string, v);
+    va_end(v);
+
+    strcat(materialText, s);
+}
+
+//
+// ProcessMaterial
+//
+
+static void ProcessMaterial(geomheader_t *header, int textureSwap)
+{
+    int flags = header->flags;
+
+    if(header->texture != -1)
+    {
+        if(flags & 4096)
+            flags |= 16;
+
+        flags &= ~(1|8|32|64|1024|2048|4096);
+
+        if(materialSet[header->texture][textureSwap][flags] == 0) {
+            StrcatMaterialText("mat_%04d_%02d_%i {\n", header->texture, textureSwap, flags);
+
+            StrcatMaterialText("    shaders {\n");
+            if(flags & 16)
+                StrcatMaterialText("        vertexProgram \"progs/spheremap.vert\"\n\n");
+            else
+                StrcatMaterialText("        vertexProgram \"progs/world.vert\"\n");
+            
+            StrcatMaterialText("        fragmentProgram \"progs/world.frag\"\n\n");
+            StrcatMaterialText("    }\n\n");
+
+            if(flags & 2)
+                StrcatMaterialText("    fullbright\n");
+
+            if(flags & (128|256|512))
+                StrcatMaterialText("    blend\n");
+
+            if(flags & 128)
+            {
+                StrcatMaterialText("    alphatest\n");
+                StrcatMaterialText("    alphafunc gequal\n");
+                StrcatMaterialText("    alphamask 0.6525\n");
+            }
+
+            if(!(flags & 4))
+                StrcatMaterialText("    cull back\n");
+
+            StrcatMaterialText("    depthtest\n\n");
+            StrcatMaterialText("    param \"diffuseColor\" vec4 \"%f %f %f %f\"\n\n",
+                (float)header->rgba2[0] / 255.0f,
+                (float)header->rgba2[1] / 255.0f,
+                (float)header->rgba2[2] / 255.0f,
+                (flags & (256|512)) ? 0.625f : (float)header->rgba2[3] / 255.0f);
+            StrcatMaterialText("    sampler \"diffuse\" 0 \"textures/tex%04d_%02d.tga\" {\n",
+                header->texture, textureSwap);
+            StrcatMaterialText("        filter      linear\n");
+            StrcatMaterialText("        wrap        repeat\n");
+            StrcatMaterialText("    }\n");
+            StrcatMaterialText("}\n\n");
+
+            materialSet[header->texture][textureSwap][flags] = 1;
+        }
+    }
+    else if(flags & 1024)
+    {
+        StrcatMaterialText("mat_%x%x%x%x {\n",
+            header->rgba1[0],
+            header->rgba1[1],
+            header->rgba1[2],
+            header->rgba1[3]);
+
+        StrcatMaterialText("    shaders {\n");
+        StrcatMaterialText("        vertexProgram \"progs/colortex.vert\"\n\n");
+        StrcatMaterialText("        fragmentProgram \"progs/colortex.frag\"\n\n");
+        StrcatMaterialText("    }\n\n");
+
+        if(!(flags & 4))
+            StrcatMaterialText("    cull back\n");
+
+        StrcatMaterialText("    depthtest\n\n");
+        StrcatMaterialText("    param \"diffuseColor\" vec4 \"%f %f %f %f\"\n\n",
+            (float)header->rgba1[0] / 255.0f,
+            (float)header->rgba1[1] / 255.0f,
+            (float)header->rgba1[2] / 255.0f,
+            (flags & (256|512)) ? 0.625f : (float)header->rgba1[3] / 255.0f);
+        StrcatMaterialText("    sampler \"diffuse\" 0 \"textures/white.tga\" {\n");
+        StrcatMaterialText("        filter      linear\n");
+        StrcatMaterialText("        wrap        repeat\n");
+        StrcatMaterialText("    }\n");
+        StrcatMaterialText("}\n\n");
+    }
+}
+
+//
 // ProcessGeometry
 //
 
@@ -629,6 +736,7 @@ static void ProcessGeometry(byte *data)
     int vertexsize;
     short vertexcount;
     short tmp;
+    int textureSwap = 0;
 
     header = (geomheader_t*)Com_GetCartData(data, CHUNK_SECTION_HEADER, &headersize);
     indices = Com_GetCartData(data, CHUNK_SECTION_INDICES, &indicesize);
@@ -645,8 +753,6 @@ static void ProcessGeometry(byte *data)
     PrintFlags(header->flags);
     if(header->texture != -1)
     {
-        int textureSwap = 0;
-
         // texture swaps for grunt model
         if(curmodel == 391)
             textureSwap = GetGruntTextureIndex(curnode, curvariant);
@@ -654,6 +760,9 @@ static void ProcessGeometry(byte *data)
         Com_Strcat("texture = \"textures/tex%04d_%02d.tga\"\n",
             header->texture, textureSwap);
     }
+
+    ProcessMaterial(header, textureSwap);
+
     Com_Strcat("rgba = %i %i %i %i\n",
         header->rgba1[0], header->rgba1[1], header->rgba1[2], header->rgba1[3]);
     Com_Strcat("// rgba = %i %i %i %i\n",
@@ -992,6 +1101,20 @@ static void AddModel(byte *data, int index)
     }
 
     Com_Free(&mdldata);
+}
+
+//
+// AddMaterial
+//
+
+static void AddMaterial(void)
+{
+    if(materialText[0] == 0)
+        return;
+
+    Com_StrcatClear();
+    Com_Strcpy(materialText);
+    Com_StrcatAddToFile(va("materials/mat%03d.kmat", curmodel));
 }
 
 //
@@ -1706,6 +1829,8 @@ void MDL_StoreModels(void)
     nummodels = Com_GetCartOffset(modeldata, CHUNK_MODEL_COUNT, 0);
 
     PK_AddFolder("models/");
+    PK_AddFolder("materials/");
+
     StoreExternalFile("default.kmesh", "models/default.kmesh");
     /*PK_AddFolder("models/actors/");
     PK_AddFolder("models/arenas/");
@@ -1732,7 +1857,11 @@ void MDL_StoreModels(void)
 
         curmodel = i;
 
+        memset(materialSet, 0, sizeof(materialSet));
+        memset(materialText, 0, sizeof(materialText));
+
         AddModel(modeldata, i);
+        AddMaterial();
         AddAnimations(modeldata, i);
 
         // do garbage collection / cleanup

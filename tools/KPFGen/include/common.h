@@ -71,6 +71,7 @@ void Com_SetDataProgress(int range);
 void Com_StrcatClear(void);
 void Com_StrcatAddToFile(const char *name);
 void Com_Strcat(const char *string, ...);
+void Com_Strcpy(const char *string);
 
 #ifdef _WIN32
 byte *Com_GetCartFile(const char *filter, const char *title);
