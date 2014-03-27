@@ -108,7 +108,7 @@ matSampler_t *kexMaterial::Sampler(const int which) {
 
 void kexMaterial::ParseParam(kexLexer *lexer) {
     kexStr paramName;
-
+    
     lexer->GetString();
     paramName = lexer->StringToken();
 
@@ -243,27 +243,54 @@ glFunctions_t kexMaterial::ParseFunction(kexLexer *lexer) {
 }
 
 //
+// kexMaterial::ParseShader
+//
+
+void kexMaterial::ParseShader(kexLexer *lexer) {
+    shaderObj.InitProgram();
+    
+    lexer->ExpectNextToken(TK_LBRACK);
+    lexer->Find();
+    
+    while(lexer->TokenType() != TK_RBRACK) {
+        if(lexer->Matches("vertexProgram")) {
+            lexer->GetString();
+            shaderObj.Compile(lexer->StringToken(), RST_VERTEX);
+        }
+        else if(lexer->Matches("fragmentProgram")) {
+            lexer->GetString();
+            shaderObj.Compile(lexer->StringToken(), RST_FRAGMENT);
+        }
+        
+        lexer->Find();
+    }
+    
+    shaderObj.Link();
+    
+    if(shaderObj.HasErrors()) {
+        bShaderErrors = true;
+    }
+    else {
+        // shader needs to be enabled before we can set parameters
+        shaderObj.Enable();
+    }
+}
+
+//
 // kexMaterial::Parse
 //
 
 void kexMaterial::Parse(kexLexer *lexer) {
     lexer->ExpectNextToken(TK_LBRACK);
     lexer->Find();
-
-    shaderObj.InitProgram();
     
     while(lexer->TokenType() != TK_RBRACK) {
         switch(lexer->TokenType()) {
             case TK_EOF:
                 return;
             case TK_IDENIFIER:
-                if(lexer->Matches("vertexProgram")) {
-                    lexer->GetString();
-                    shaderObj.Compile(lexer->StringToken(), RST_VERTEX);
-                }
-                else if(lexer->Matches("fragmentProgram")) {
-                    lexer->GetString();
-                    shaderObj.Compile(lexer->StringToken(), RST_FRAGMENT);
+                if(lexer->Matches("shaders")) {
+                    ParseShader(lexer);
                 }
                 else if(lexer->Matches("fullbright")) {
                     flags |= MTF_FULLBRIGHT;
@@ -315,10 +342,6 @@ void kexMaterial::Parse(kexLexer *lexer) {
         
         lexer->Find();
     }
-
-    shaderObj.Link();
     
-    if(shaderObj.HasErrors()) {
-        bShaderErrors = true;
-    }
+    renderSystem.DisableShaders();
 }

@@ -72,6 +72,7 @@ private:
     void                                ParseParam(kexLexer *lexer);
     void                                ParseSampler(kexLexer *lexer);
     glFunctions_t                       ParseFunction(kexLexer *lexer);
+    void                                ParseShader(kexLexer *lexer);
     
     kexShaderObj                        shaderObj;
     matSampler_t                        samplers[MAX_SAMPLER_UNITS];
