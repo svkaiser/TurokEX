@@ -766,9 +766,6 @@ kexFont *kexRenderSystem::CacheFont(const char *name) {
 
 kexMaterial *kexRenderSystem::CacheMaterial(const char *file) {
     kexMaterial *material;
-    filepath_t tStr;
-    int pos;
-    int len;
     
     if(file == NULL) {
         return NULL;
@@ -776,20 +773,23 @@ kexMaterial *kexRenderSystem::CacheMaterial(const char *file) {
     else if(file[0] == 0) {
         return NULL;
     }
-
-    pos = kexStr::IndexOf(file, "@");
-
-    if(pos == -1) {
-        return NULL;
-    }
-
-    len = strlen(file);
-    strncpy(tStr, file, pos);
-    tStr[pos] = 0;
     
     if(!(material = materials.Find(file))) {
         kexLexer *lexer;
+        filepath_t tStr;
+        int pos;
+        int len;
         bool bFoundMaterial = false;
+        
+        pos = kexStr::IndexOf(file, "@");
+        
+        if(pos == -1) {
+            return NULL;
+        }
+        
+        len = strlen(file);
+        strncpy(tStr, file, pos);
+        tStr[pos] = 0;
         
         if(!(lexer = parser.Open(tStr))) {
             common.Warning("kexMaterialManager::LoadMaterial: %s not found\n", tStr);
