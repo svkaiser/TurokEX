@@ -199,6 +199,26 @@ void kexShaderObj::SetUniform(const char *name, kexMatrix &val, bool bTranspose)
 }
 
 //
+// kexShaderObj::DumpErrorLog
+//
+
+void kexShaderObj::DumpErrorLog(const rhandle handle) {
+    int logLength;
+    
+    dglGetObjectParameterivARB(handle, GL_OBJECT_INFO_LOG_LENGTH_ARB, &logLength);
+    
+    if(logLength > 0) {
+        int cw;
+        char *log;
+        
+        log = (char*)Mem_Alloca(logLength);
+        
+        dglGetInfoLogARB(handle, logLength, &cw, log);
+        common.Warning("%s\n", log);
+    }
+}
+
+//
 // kexShaderObj::Link
 //
 
@@ -210,20 +230,10 @@ bool kexShaderObj::Link(void) {
     dglGetObjectParameterivARB(programObj, GL_OBJECT_LINK_STATUS_ARB, &linked);
     
     if(!linked) {
-        int logLength;
-        
-        dglGetObjectParameterivARB(programObj, GL_OBJECT_INFO_LOG_LENGTH_ARB, &logLength);
         bHasErrors = true;
-        
-        if(logLength > 0) {
-            int cw;
-            char *log;
-            
-            log = (char*)Mem_Alloca(logLength);
-            
-            dglGetInfoLogARB(programObj, logLength, &cw, log);
-            common.Warning("%s\n", log);
-        }
+        DumpErrorLog(programObj);
+        DumpErrorLog(vertexProgram);
+        DumpErrorLog(fragmentProgram);
     }
     
     dglUseProgramObjectARB(0);

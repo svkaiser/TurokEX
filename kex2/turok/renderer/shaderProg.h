@@ -57,6 +57,8 @@ public:
     filepath_t                  fileName;
 
 private:
+    void                        DumpErrorLog(const rhandle handle);
+    
     rhandle                     programObj;
     rhandle                     vertexProgram;
     rhandle                     fragmentProgram;
