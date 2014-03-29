@@ -58,6 +58,7 @@ void kexMaterial::Init(void) {
     this->stateBits     = 0;
     this->cullType      = GLCULL_BACK;
     this->alphaFunction = GLFUNC_GEQUAL;
+    this->sortOrder     = MSO_DEFAULT;
     this->alphaMask     = 0.01f;
     this->units         = 0;
     this->genID         = 0;
@@ -320,6 +321,28 @@ void kexMaterial::Parse(kexLexer *lexer) {
                     else if(lexer->Matches("front")) {
                         stateBits |= BIT(GLSTATE_CULL);
                         cullType = GLCULL_FRONT;
+                    }
+                }
+                else if(lexer->Matches("sort")) {
+                    lexer->Find();
+
+                    if(lexer->Matches("default")) {
+                        sortOrder = MSO_DEFAULT;
+                    }
+                    else if(lexer->Matches("masked")) {
+                        sortOrder = MSO_MASKED;
+                    }
+                    else if(lexer->Matches("transparent")) {
+                        sortOrder = MSO_TRANSPARENT;
+                    }
+                    else if(lexer->Matches("custom1")) {
+                        sortOrder = MSO_CUSTOM1;
+                    }
+                    else if(lexer->Matches("custom2")) {
+                        sortOrder = MSO_CUSTOM2;
+                    }
+                    else if(lexer->Matches("custom3")) {
+                        sortOrder = MSO_CUSTOM3;
                     }
                 }
                 else if(lexer->Matches("alphafunc")) {

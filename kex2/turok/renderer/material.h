@@ -47,6 +47,15 @@ typedef struct {
     float           rotate;
 } matSampler_t;
 
+typedef enum {
+    MSO_DEFAULT     = 0,
+    MSO_TRANSPARENT,
+    MSO_MASKED,
+    MSO_CUSTOM1,
+    MSO_CUSTOM2,
+    MSO_CUSTOM3
+} matSortOrder_t;
+
 class kexMaterial {
 public:
                                         kexMaterial(void);
@@ -59,6 +68,7 @@ public:
     
     const glCullType_t                  CullType(void) const { return cullType; }
     const glFunctions_t                 AlphaFunction(void) const { return alphaFunction; }
+    const matSortOrder_t                SortOrder(void) const { return sortOrder; }
     kexShaderObj                        *ShaderObj(void) { return &shaderObj; }
     const unsigned int                  Flags(void) const { return flags; }
     const unsigned int                  StateBits(void) const { return stateBits; }
@@ -79,6 +89,7 @@ private:
     unsigned int                        stateBits;
     glCullType_t                        cullType;
     glFunctions_t                       alphaFunction;
+    matSortOrder_t                      sortOrder;
     float                               alphaMask;
     unsigned int                        flags;
     unsigned int                        units;
