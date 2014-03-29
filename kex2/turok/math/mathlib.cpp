@@ -88,6 +88,15 @@ float kexMath::InvSqrt(float x) {
 }
 
 //
+// kexMath::Clamp
+//
+
+void kexMath::Clamp(float &f, const float min, const float max) {
+    if(f < min) f = min;
+    if(f > max) f = max;
+}
+
+//
 // kexMath::CubicCurve
 //
 
