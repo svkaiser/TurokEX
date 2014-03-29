@@ -110,18 +110,21 @@ bool kexFrustum::TestBoundingBox(const kexBBox &bbox) {
 //
 
 bool kexFrustum::TestTriangle(const kexTri &triangle) {
+    float d;
+    kexVec3 *pt1 = triangle.point[0];
+    kexVec3 *pt2 = triangle.point[1];
+    kexVec3 *pt3 = triangle.point[2];
     for(int i = 0; i < 6; i++) {
-        kexVec3 n(p[i].Normal());
-        
-        float d = 0;
-        int bits = 0;
-        
-        for(int j = 0; j < 3; j++) {
-            d = n.Dot(*triangle.point[j]);
-            bits |= (FLOATSIGNBIT(d) << j);
+        d = p[i].a * pt1->x + p[i].b * pt1->y + p[i].c * pt1->z + p[i].d;
+        if(!FLOATSIGNBIT(d)) {
+            continue;
         }
-       
-        if(bits != 0x7) {
+        d = p[i].a * pt2->x + p[i].b * pt2->y + p[i].c * pt2->z + p[i].d;
+        if(!FLOATSIGNBIT(d)) {
+            continue;
+        }
+        d = p[i].a * pt3->x + p[i].b * pt3->y + p[i].c * pt3->z + p[i].d;
+        if(!FLOATSIGNBIT(d)) {
             continue;
         }
        
@@ -137,9 +140,7 @@ bool kexFrustum::TestTriangle(const kexTri &triangle) {
 
 bool kexFrustum::TestSphere(const kexVec3 &org, const float radius) {
     for(int i = 0; i < 6; i++) {
-        kexVec3 n(p[i].Normal());
-        
-        if(n.Dot(org) <= -radius)
+        if(p[i].Distance(org) + p[i].d <= -radius)
             return false;
         
     }
