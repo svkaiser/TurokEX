@@ -20,10 +20,12 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __RENDER_SURFACE_H__
-#define __RENDER_SURFACE_H__
+#ifndef __RENDER_MAIN_H__
+#define __RENDER_MAIN_H__
 
 class kexMaterial;
+class kexSector;
+class kexTri;
 
 typedef struct {
     unsigned int            flags;
@@ -40,10 +42,32 @@ typedef struct {
     rcolor                  color2;
 } surface_t;
 
-class kexRenderSurface {
+class kexRenderer {
 public:
-    static void             DrawElements(const surface_t *surface);
-    static const surface_t  *currentSurface;
+                            kexRenderer(void);
+                            ~kexRenderer(void);
+
+    void                    Init(void);
+    void                    DrawSurface(const surface_t *surface);
+    void                    Draw(void);
+    void                    DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b);
+    void                    DrawRadius(float x, float y, float z,
+                                       float radius, float height,
+                                       byte r, byte g, byte b);
+    void                    DrawOrigin(float x, float y, float z, float size);
+    void                    DrawSectors(kexSector *sectors, const int count);
+    void                    DrawTriangle(const kexTri &tri, const word index,
+                                         byte r, byte g, byte b, byte a);
+    
+    const surface_t         *currentSurface;
+
+private:
+    void                    ProcessMotionBlur(void);
+
+    kexMaterial             *motionBlurMaterial;
+    kexMatrix               prevMVMatrix;
 };
+
+extern kexRenderer renderer;
 
 #endif

@@ -24,7 +24,7 @@
 #define __RENDER_MODEL_H__
 
 #include "cachefilelist.h"
-#include "renderSurface.h"
+#include "renderMain.h"
 
 #define MDF_UNKNOWN1                1
 #define MDF_FULLBRIGHT              2

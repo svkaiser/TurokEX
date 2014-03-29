@@ -36,7 +36,7 @@
 #include "console.h"
 #include "world.h"
 #include "renderSystem.h"
-#include "renderWorld.h"
+#include "renderMain.h"
 
 kexGameManager gameManager;
 
@@ -274,19 +274,9 @@ void kexGameManager::OnLocalTick(void) {
     localWorld.LocalTick();
     
     // draw
-    renderWorld.RenderScene();
-    renderSystem.SetOrtho();
-    renderSystem.Canvas().Draw();
-    gameManager.MenuCanvas().Draw();
-    console.Draw();
+    renderer.Draw();
     
-    // draw debug stats
-    kexHeap::DrawHeapInfo();
-    scriptManager.DrawGCStats();
-    
-    // finish frame
     inputSystem.UpdateGrab();
-    renderSystem.SwapBuffers();
     
     // update all sound sources
     soundSystem.UpdateListener();

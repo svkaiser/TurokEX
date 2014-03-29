@@ -32,10 +32,6 @@ public:
                     kexRenderWorld(void);
 
     void            RenderScene(void);
-    void            DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b);
-    void            DrawRadius(float x, float y, float z, float radius, float height,
-                               byte r, byte g, byte b);
-    void            DrawOrigin(float x, float y, float z, float size);
     void            DrawWorldNode(worldNode_t *node);
     void            DrawAreaNode(void);
 

@@ -132,8 +132,12 @@ public:
     void                            AddLine(float x1, float y1, float z1,
                                             float x2, float y2, float z2,
                                             byte r, byte g, byte b, byte a);
-    void                            DrawElements(void);
-    void                            DrawElements(const kexMaterial *material);
+    void                            AddLine(float x1, float y1, float z1,
+                                            float x2, float y2, float z2,
+                                            byte r1, byte g1, byte b1, byte a1,
+                                            byte r2, byte g2, byte b2, byte a2);
+    void                            DrawElements(const bool bClearCount = true);
+    void                            DrawElements(const kexMaterial *material, const bool bClearCount = true);
     void                            DrawLineElements(void);
 
     const int                       ViewWidth(void) const { return viewWidth; }

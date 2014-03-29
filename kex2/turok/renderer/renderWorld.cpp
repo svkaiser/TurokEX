@@ -32,6 +32,7 @@
 #include "world.h"
 #include "renderSystem.h"
 #include "renderWorld.h"
+#include "renderMain.h"
 #include "gameManager.h"
 
 kexCvar cvarRenderFog("r_fog", CVF_BOOL|CVF_CONFIG, "1", "TODO");
@@ -193,22 +194,13 @@ void kexRenderWorld::Init(void) {
 //
 
 void kexRenderWorld::RenderScene(void) {
-    if(!world->IsLoaded()) {
-        dglClearColor(0.25f, 0.25f, 0.25f, 1.0f);
-        dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        return;
-    }
-
     bDrawTris = cvarRenderTris.GetBool();
 
     SetupGlobalFog();
 
-    dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
     renderSystem.SetCull(GLCULL_BACK);
     renderSystem.SetState(GLSTATE_DEPTHTEST, true);
 
-    dglDisableClientState(GL_COLOR_ARRAY);
     dglEnableClientState(GL_NORMAL_ARRAY);
 
     world->Camera()->SetupMatrices();
@@ -238,13 +230,13 @@ void kexRenderWorld::RenderScene(void) {
     }
 
     if(bShowCollisionMap) {
-        world->CollisionMap().DebugDraw();
+        renderer.DrawSectors(world->CollisionMap().sectors,
+            world->CollisionMap().numSectors);
     }
 
     DrawFX();
     DrawViewActors();
 
-    dglEnableClientState(GL_COLOR_ARRAY);
     dglDisableClientState(GL_NORMAL_ARRAY);
 
     if(bWireframe) {
@@ -329,6 +321,8 @@ void kexRenderWorld::DrawSurface(const surface_t *surface, const char *texturePa
     renderSystem.SetState(GLSTATE_TEXGEN_S, (surface->flags & MDF_SHINYSURFACE) != 0);
     renderSystem.SetState(GLSTATE_TEXGEN_T, (surface->flags & MDF_SHINYSURFACE) != 0);
 
+    dglDisableClientState(GL_COLOR_ARRAY);
+
     if(surface->flags & MDF_COLORIZE) {
         color = surface->color1;
         renderSystem.SetState(GLSTATE_LIGHTING, false);
@@ -390,6 +384,8 @@ void kexRenderWorld::DrawSurface(const surface_t *surface, const char *texturePa
         renderSystem.SetState(GLSTATE_TEXTURE0, true);
         renderSystem.SetState(GLSTATE_LIGHTING, true);
     }
+
+    dglEnableClientState(GL_COLOR_ARRAY);
 }
 
 //
@@ -528,16 +524,16 @@ void kexRenderWorld::DrawStaticActors(void) {
 
             if(bShowBBox) {
                 if(actor->bTraced) {
-                    DrawBoundingBox(box, 255, 0, 0);
+                    renderer.DrawBoundingBox(box, 255, 0, 0);
                     actor->bTraced = false;
                 }
                 else {
-                    DrawBoundingBox(box, 255, 255, 0);
+                    renderer.DrawBoundingBox(box, 255, 255, 0);
                 }
             }
             if(bShowRadius && actor->bCollision) {
                 kexVec3 org = actor->GetOrigin();
-                DrawRadius(org[0], org[1], org[2],
+                renderer.DrawRadius(org[0], org[1], org[2],
                     actor->Radius(), actor->Height(), 255, 128, 128);
             }
     }
@@ -574,7 +570,7 @@ void kexRenderWorld::DrawActors(void) {
                 dglMultMatrixf(actor->Matrix().ToFloatPtr());
 
                 if(bShowOrigin) {
-                    DrawOrigin(0, 0, 0, 32);
+                    renderer.DrawOrigin(0, 0, 0, 32);
                 }
 
                 if(actor->bNoFixedTransform == false) {
@@ -597,11 +593,11 @@ void kexRenderWorld::DrawActors(void) {
 
             if(bShowBBox) {
                 if(actor->bTraced) {
-                    DrawBoundingBox(box, 255, 0, 0);
+                    renderer.DrawBoundingBox(box, 255, 0, 0);
                     actor->bTraced = false;
                 }
                 else {
-                    DrawBoundingBox(box,
+                    renderer.DrawBoundingBox(box,
                         actor->bTouch ? 0 : 255,
                         actor->bTouch ? 255 : 128,
                         actor->bTouch ? 0 : 128);
@@ -609,11 +605,11 @@ void kexRenderWorld::DrawActors(void) {
             }
             if(bShowRadius && actor->bCollision) {
                 kexVec3 org = actor->GetOrigin();
-                DrawRadius(org[0], org[1], org[2],
+                renderer.DrawRadius(org[0], org[1], org[2],
                     actor->Radius(), actor->BaseHeight(), 255, 128, 128);
-                DrawRadius(org[0], org[1], org[2],
+                renderer.DrawRadius(org[0], org[1], org[2],
                     actor->Radius() * 0.5f, actor->Height(), 128, 128, 255);
-                DrawRadius(org[0], org[1], org[2],
+                renderer.DrawRadius(org[0], org[1], org[2],
                     actor->Radius() * 0.5f, actor->GetViewHeight(), 128, 255, 128);
             }
     }
@@ -754,6 +750,9 @@ void kexRenderWorld::DrawFX(void) {
     if(!bWireframe) {
         dglEnableClientState(GL_COLOR_ARRAY);
     }
+    else {
+        dglDisableClientState(GL_COLOR_ARRAY);
+    }
 
     // draw sorted fx list
     for(i = 0; i < fxDisplayNum; i++) {
@@ -861,7 +860,7 @@ void kexRenderWorld::DrawFX(void) {
         dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, spriteIndices);
 
         if(bShowOrigin) {
-            DrawOrigin(0, 0, 0, 32);
+            renderer.DrawOrigin(0, 0, 0, 32);
         }
 
         dglPopMatrix();
@@ -874,134 +873,13 @@ void kexRenderWorld::DrawFX(void) {
     if(!bWireframe) {
         dglDisableClientState(GL_COLOR_ARRAY);
     }
+    else {
+        dglEnableClientState(GL_COLOR_ARRAY);
+    }
 
     renderSystem.SetState(GLSTATE_DEPTHTEST, true);
     renderSystem.SetDepthMask(GLDEPTHMASK_YES);
     dglEnableClientState(GL_NORMAL_ARRAY);
-}
-
-//
-// kexRenderWorld::DrawBoundingBox
-//
-
-void kexRenderWorld::DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b) {
-    kexFrustum frustum = world->Camera()->Frustum();
-
-    if(!frustum.TestBoundingBox(bbox)) {
-        return;
-    }
-
-    renderSystem.SetState(GLSTATE_TEXTURE0, false);
-    renderSystem.SetState(GLSTATE_CULL, false);
-    renderSystem.SetState(GLSTATE_BLEND, true);
-    renderSystem.SetState(GLSTATE_LIGHTING, false);
-
-    dglEnableClientState(GL_COLOR_ARRAY);
-
-#define ADD_LINE(ba1, ba2, ba3, bb1, bb2, bb3)                      \
-    renderSystem.AddLine(bbox[ba1][0], bbox[ba2][1], bbox[ba3][2],  \
-                         bbox[bb1][0], bbox[bb2][1], bbox[bb3][2],  \
-                         r, g, b, 255)
-    
-    renderSystem.BindDrawPointers();
-    ADD_LINE(0, 0, 0, 1, 0, 0);
-    ADD_LINE(1, 0, 0, 1, 0, 1);
-    ADD_LINE(1, 0, 1, 0, 0, 1);
-    ADD_LINE(0, 0, 1, 0, 0, 0);
-    ADD_LINE(0, 0, 0, 0, 1, 0);
-    ADD_LINE(0, 1, 0, 0, 1, 1);
-    ADD_LINE(0, 1, 1, 0, 0, 1);
-    ADD_LINE(0, 0, 1, 0, 0, 0);
-    ADD_LINE(0, 1, 0, 1, 1, 0);
-    ADD_LINE(1, 1, 0, 1, 1, 1);
-    ADD_LINE(1, 1, 1, 0, 1, 1);
-    ADD_LINE(0, 1, 1, 0, 1, 0);
-    ADD_LINE(1, 0, 0, 1, 1, 0);
-    ADD_LINE(1, 1, 0, 1, 1, 1);
-    ADD_LINE(1, 1, 1, 1, 0, 1);
-    ADD_LINE(1, 0, 1, 1, 0, 0);
-    renderSystem.DrawLineElements();
-    
-    dglDisableClientState(GL_COLOR_ARRAY);
-    
-#undef ADD_LINE
-
-    renderSystem.SetState(GLSTATE_TEXTURE0, true);
-    renderSystem.SetState(GLSTATE_CULL, true);
-    renderSystem.SetState(GLSTATE_BLEND, false);
-    renderSystem.SetState(GLSTATE_LIGHTING, true);
-}
-
-//
-// kexRenderWorld::DrawRadius
-//
-
-void kexRenderWorld::DrawRadius(float x, float y, float z, float radius, float height,
-                                byte r, byte g, byte b) {
-    float an;
-    int i;
-
-    renderSystem.SetState(GLSTATE_TEXTURE0, false);
-    renderSystem.SetState(GLSTATE_CULL, false);
-    renderSystem.SetState(GLSTATE_BLEND, true);
-    renderSystem.SetState(GLSTATE_LIGHTING, false);
-    
-    dglEnableClientState(GL_COLOR_ARRAY);
-    renderSystem.BindDrawPointers();
-
-    an = DEG2RAD(360 / 32);
-
-    for(i = 0; i < 32; i++) {
-        float s1 = kexMath::Sin(an * i);
-        float c1 = kexMath::Cos(an * i);
-        float s2 = kexMath::Sin(an * ((i+1)%31));
-        float c2 = kexMath::Cos(an * ((i+1)%31));
-        float x1 = x + (radius * s1);
-        float x2 = x + (radius * s2);
-        float y1 = y;
-        float y2 = y + height;
-        float z1 = z + (radius * c1);
-        float z2 = z + (radius * c2);
-        
-        renderSystem.AddLine(x1, y1, z1, x1, y2, z1, r, g, b, 255);
-        renderSystem.AddLine(x1, y1, z1, x2, y1, z2, r, g, b, 255);
-        renderSystem.AddLine(x1, y2, z1, x2, y2, z2, r, g, b, 255);
-    }
-
-    renderSystem.DrawLineElements();
-    
-    dglDisableClientState(GL_COLOR_ARRAY);
-
-    renderSystem.SetState(GLSTATE_TEXTURE0, true);
-    renderSystem.SetState(GLSTATE_CULL, true);
-    renderSystem.SetState(GLSTATE_BLEND, false);
-    renderSystem.SetState(GLSTATE_LIGHTING, true);
-}
-
-//
-// kexRenderWorld::DrawOrigin
-//
-
-void kexRenderWorld::DrawOrigin(float x, float y, float z, float size) {
-    renderSystem.SetState(GLSTATE_TEXTURE0, false);
-    renderSystem.SetState(GLSTATE_FOG, false);
-    renderSystem.SetState(GLSTATE_LIGHTING, false);
-
-    dglDepthRange(0.0f, 0.0f);
-    dglLineWidth(2.0f);
-    
-    dglEnableClientState(GL_COLOR_ARRAY);
-    renderSystem.BindDrawPointers();
-    renderSystem.AddLine(x, y, z, x + size, y, z, 255, 0, 0, 255); // x
-    renderSystem.AddLine(x, y, z, x, y + size, z, 0, 255, 0, 255); // y
-    renderSystem.AddLine(x, y, z, x, y, z + size, 0, 0, 255, 255); // z
-    renderSystem.DrawLineElements();
-    dglDisableClientState(GL_COLOR_ARRAY);
-    
-    renderSystem.SetState(GLSTATE_TEXTURE0, true);
-    
-    dglLineWidth(1.0f);
-    dglDepthRange(0.0f, 1.0f);
 }
 
 //
@@ -1010,16 +888,16 @@ void kexRenderWorld::DrawOrigin(float x, float y, float z, float size) {
 
 void kexRenderWorld::DrawWorldNode(worldNode_t *node) {
     if(node->bLeaf) {
-        DrawBoundingBox(node->bounds, 0, 255, 0);
+        renderer.DrawBoundingBox(node->bounds, 0, 255, 0);
         if(showWorldNode >= 1) {
             for(unsigned int i = 0; i < node->actors.Length(); i++) {
-                DrawBoundingBox(node->actors[i]->Bounds(), 0, 255, 255);
+                renderer.DrawBoundingBox(node->actors[i]->Bounds(), 0, 255, 255);
             }
         }
         return;
     }
     else {
-        DrawBoundingBox(node->bounds, 255, 255, 0);
+        renderer.DrawBoundingBox(node->bounds, 255, 255, 0);
     }
 
     if(showWorldNode >= 1) {
@@ -1057,7 +935,7 @@ void kexRenderWorld::DrawAreaNode(void) {
 
     for(int i = 0; i < world->NumAreaNodes(); i++) {
         nodes = &world->areaNodes[i];
-        DrawBoundingBox(nodes->bounds, 64, 128, 255);
+        renderer.DrawBoundingBox(nodes->bounds, 64, 128, 255);
     }
 
     for(int i = 0; i < world->NumAreaNodes(); i++) {
@@ -1066,7 +944,7 @@ void kexRenderWorld::DrawAreaNode(void) {
             actor != NULL;
             actor = static_cast<kexActor*>(actor->areaLink.Next())) {
                 if(actor == gameManager.localPlayer.Puppet()) {
-                    DrawBoundingBox(nodes->bounds, 255, 0, 0);
+                    renderer.DrawBoundingBox(nodes->bounds, 255, 0, 0);
                 }
                 else {
                     renderSystem.SetState(GLSTATE_TEXTURE0, false);

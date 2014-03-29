@@ -39,7 +39,7 @@
 #include "filesystem.h"
 #include "console.h"
 #include "renderSystem.h"
-#include "renderWorld.h"
+#include "world.h"
 #include "scriptAPI/scriptSystem.h"
 #include "gameManager.h"
 
@@ -437,7 +437,6 @@ void kexSystem::Main(int argc, char **argv) {
 
     renderSystem.Init();
     fxManager.Init();
-    kexRenderWorld::Init();
 
     common.Printf("Running kernel...\n");
     gameManager.SpawnGame();

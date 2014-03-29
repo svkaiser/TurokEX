@@ -27,7 +27,8 @@
 #include "common.h"
 #include "memHeap.h"
 #include "renderSystem.h"
-#include "renderSurface.h"
+#include "renderMain.h"
+#include "renderWorld.h"
 #include "defs.h"
 
 kexCvar cvarRenderFinish("r_finish", CVF_BOOL|CVF_CONFIG, "0", "Force a GL command sync");
@@ -318,6 +319,9 @@ void kexRenderSystem::Init(void) {
     if(has_GL_EXT_texture_filter_anisotropic) {
         dglGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropic);
     }
+
+    renderer.Init();
+    kexRenderWorld::Init();
 
     bIsInit = true;
     common.Printf("Renderer Initialized\n");
@@ -834,7 +838,7 @@ kexMaterial *kexRenderSystem::CacheMaterial(const char *file) {
 void kexRenderSystem::DisableShaders(void) {
     dglUseProgramObjectARB(0);
     glState.currentProgram = 0;
-    kexRenderSurface::currentSurface = NULL;
+    renderer.currentSurface = NULL;
 }
 
 //
@@ -887,6 +891,7 @@ void kexRenderSystem::DrawLoadingScreen(const char *text) {
 //
 
 void kexRenderSystem::BindDrawPointers(void) {
+    dglNormalPointer(GL_FLOAT, sizeof(float)*3, drawVertices);
     dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, drawTexCoords);
     dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, drawVertices);
     dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, drawRGB);
@@ -946,14 +951,31 @@ void kexRenderSystem::AddLine(float x1, float y1, float z1,
 }
 
 //
+// kexRenderSystem::AddLine
+//
+
+void kexRenderSystem::AddLine(float x1, float y1, float z1,
+                              float x2, float y2, float z2,
+                              byte r1, byte g1, byte b1, byte a1,
+                              byte r2, byte g2, byte b2, byte a2) {
+    
+    drawIndices[indiceCount++] = vertexCount;
+    AddVertex(x1, y1, z1, 0, 0, r1, g1, b1, a1);
+    drawIndices[indiceCount++] = vertexCount;
+    AddVertex(x2, y2, z2, 0, 0, r2, g2, b2, a2);
+}
+
+//
 // kexRenderSystem::DrawElements
 //
 
-void kexRenderSystem::DrawElements(void) {
+void kexRenderSystem::DrawElements(const bool bClearCount) {
     dglDrawElements(GL_TRIANGLES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
 
-    indiceCount = 0;
-    vertexCount = 0;
+    if(bClearCount) {
+        indiceCount = 0;
+        vertexCount = 0;
+    }
 }
 
 //
@@ -963,7 +985,7 @@ void kexRenderSystem::DrawElements(void) {
 // is created in order to draw the material
 //
 
-void kexRenderSystem::DrawElements(const kexMaterial *material) {
+void kexRenderSystem::DrawElements(const kexMaterial *material, const bool bClearCount) {
     surface_t surf;
     
     surf.numVerts   = vertexCount;
@@ -975,11 +997,13 @@ void kexRenderSystem::DrawElements(const kexMaterial *material) {
     surf.indices    = drawIndices;
     surf.material   = (kexMaterial*)material;
     
-    kexRenderSurface::DrawElements(&surf);
+    renderer.DrawSurface(&surf);
     DisableShaders(); // TODO: remove once everything relies on materials
     
-    indiceCount = 0;
-    vertexCount = 0;
+    if(bClearCount) {
+        indiceCount = 0;
+        vertexCount = 0;
+    }
 }
 
 //

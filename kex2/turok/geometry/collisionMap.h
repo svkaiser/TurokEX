@@ -118,7 +118,6 @@ public:
     void                            RecursiveChangeHeight(kexSector *sector, float destHeight,
                                         unsigned int areaID);
     void                            ToggleBlock(const kexVec3 pos, bool bToggle);
-    void                            DebugDraw(void);
 
     kexVec3                         *points[2];
     word                            *indices;

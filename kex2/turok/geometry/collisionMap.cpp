@@ -436,6 +436,7 @@ void kexCollisionMap::Load(const char *name) {
             sec->lowerTri.point[1],
             sec->lowerTri.point[2]);
         sec->lowerTri.id = kexTri::globalID++;
+        sec->lowerTri.SetBounds();
 
         // build plane for upper triangle
         sec->upperTri.Set(
@@ -443,6 +444,7 @@ void kexCollisionMap::Load(const char *name) {
             sec->upperTri.point[1],
             sec->upperTri.point[2]);
         sec->upperTri.id = kexTri::globalID++;
+        sec->lowerTri.SetBounds();
     }
 
     binFile.Close();
@@ -803,140 +805,4 @@ void kexCollisionMap::ToggleBlock(const kexVec3 pos, bool bToggle) {
     }
 
     RecursiveToggleBlock(sector, bToggle, sector->area->WorldID());
-}
-
-//
-// kexCollisionMap::DebugDraw
-//
-
-void kexCollisionMap::DebugDraw(void) {
-    float xyz[3];
-
-    if(numSectors <= 0 || numPoints <= 0 || sectors == NULL) {
-        return;
-    }
-
-    renderSystem.SetState(GLSTATE_CULL, true);
-    renderSystem.SetState(GLSTATE_TEXTURE0, false);
-    renderSystem.SetState(GLSTATE_BLEND, true);
-    renderSystem.SetState(GLSTATE_ALPHATEST, true);
-    renderSystem.SetState(GLSTATE_LIGHTING, false);
-
-    dglDisableClientState(GL_NORMAL_ARRAY);
-    dglDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
-    for(int i = 0; i < numSectors; i++) {
-        kexSector *sector = &sectors[i];
-        kexTri *tri;
-        
-        if(sector->flags & CLF_CHECKHEIGHT) {
-            tri = &sector->upperTri;
-            dglColor4ub(128, 255, 128, 128);
-            dglBegin(GL_TRIANGLES);
-            dglVertex3f((*tri->point[0]).x, (*tri->point[0]).y, (*tri->point[0]).z);
-            dglVertex3f((*tri->point[1]).x, (*tri->point[1]).y, (*tri->point[1]).z);
-            dglVertex3f((*tri->point[2]).x, (*tri->point[2]).y, (*tri->point[2]).z);
-            dglEnd();
-
-            renderSystem.SetPolyMode(GLPOLY_LINE);
-            dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
-            dglBegin(GL_TRIANGLES);
-            dglVertex3f((*tri->point[0]).x, (*tri->point[0]).y, (*tri->point[0]).z);
-            dglVertex3f((*tri->point[1]).x, (*tri->point[1]).y, (*tri->point[1]).z);
-            dglVertex3f((*tri->point[2]).x, (*tri->point[2]).y, (*tri->point[2]).z);
-            dglEnd();
-            renderSystem.SetPolyMode(GLPOLY_FILL);
-        }
-
-        tri = &sector->lowerTri;
-
-        if(sector->bTraced == false) {
-            continue;
-        }
-
-        dglColor4ub(0xFF, 0xFF, 0xFF, 192);
-        dglBegin(GL_TRIANGLES);
-        dglVertex3f((*tri->point[0]).x, (*tri->point[0]).y, (*tri->point[0]).z);
-        dglVertex3f((*tri->point[1]).x, (*tri->point[1]).y, (*tri->point[1]).z);
-        dglVertex3f((*tri->point[2]).x, (*tri->point[2]).y, (*tri->point[2]).z);
-        dglEnd();
-
-        for(unsigned k = 0; k < sector->stacks.Length(); k++) {
-            kexSector *ssec = sector->stacks[k];
-            kexTri *stri = &ssec->lowerTri;
-
-            dglColor4ub(0xFF, 0xFF, 0xFF, 192);
-            dglBegin(GL_TRIANGLES);
-            dglVertex3f((*stri->point[0]).x, (*stri->point[0]).y, (*stri->point[0]).z);
-            dglVertex3f((*stri->point[1]).x, (*stri->point[1]).y, (*stri->point[1]).z);
-            dglVertex3f((*stri->point[2]).x, (*stri->point[2]).y, (*stri->point[2]).z);
-            dglEnd();
-        }
-
-        sector->bTraced = false;
-    }
-
-    dglColor4ub(255, 128, 128, 128);
-    dglVertexPointer(3, GL_FLOAT, sizeof(kexVec3),
-        reinterpret_cast<float*>(points[0]));
-    dglDrawElements(GL_TRIANGLES, numSectors * 3,
-        GL_UNSIGNED_SHORT, indices);
-
-    renderSystem.SetPolyMode(GLPOLY_LINE);
-    dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
-
-    dglDrawElements(GL_TRIANGLES, numSectors * 3,
-        GL_UNSIGNED_SHORT, indices);
-
-    renderSystem.SetPolyMode(GLPOLY_FILL);
-    renderSystem.SetState(GLSTATE_CULL, false);
-
-    dglLineWidth(2.0f);
-    dglBegin(GL_LINES);
-
-    for(int i = 0; i < numSectors; i++) {
-        kexSector *sector = &sectors[i];
-        kexTri *tri = &sector->lowerTri;
-        kexVec3 n = tri->plane.Normal();
-
-        for(int j = 0; j < 3; j++) {
-            xyz[j] = ((*tri->point[0])[j] + (*tri->point[1])[j] + (*tri->point[2])[j]) / 3;
-        }
-
-        dglColor4ub(0, 32, 255, 255);
-        dglVertex3fv(xyz);
-        dglColor4ub(0, 255, 0, 255);
-        dglVertex3f(
-            xyz[0] + (16 * n[0]),
-            xyz[1] + (16 * n[1]),
-            xyz[2] + (16 * n[2]));
-
-        if(sector->flags & CLF_CHECKHEIGHT) {
-            tri = &sector->upperTri;
-            n = tri->plane.Normal();
-
-            for(int j = 0; j < 3; j++) {
-                xyz[j] = ((*tri->point[0])[j] + (*tri->point[1])[j] + (*tri->point[2])[j]) / 3;
-            }
-
-            dglColor4ub(255, 255, 32, 255);
-            dglVertex3fv(xyz);
-            dglColor4ub(255, 0, 0, 255);
-            dglVertex3f(
-                xyz[0] + (16 * n[0]),
-                xyz[1] + (16 * n[1]),
-                xyz[2] + (16 * n[2]));
-        }
-    }
-
-    dglEnd();
-    dglLineWidth(1.0f);
-
-    dglEnableClientState(GL_NORMAL_ARRAY);
-    dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-    renderSystem.SetState(GLSTATE_TEXTURE0, true);
-    renderSystem.SetState(GLSTATE_BLEND, false);
-    renderSystem.SetState(GLSTATE_ALPHATEST, false);
-    renderSystem.SetState(GLSTATE_LIGHTING, true);
 }
