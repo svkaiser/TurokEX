@@ -20,7 +20,7 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION: Renderer backend
+// DESCRIPTION: Renderer backend 
 //
 //-----------------------------------------------------------------------------
 
@@ -31,6 +31,7 @@
 #include "defs.h"
 
 kexCvar cvarRenderFinish("r_finish", CVF_BOOL|CVF_CONFIG, "0", "Force a GL command sync");
+extern kexCvar cvarVidDepthSize;
 
 kexRenderSystem renderSystem;
 
@@ -834,6 +835,28 @@ void kexRenderSystem::DisableShaders(void) {
     dglUseProgramObjectARB(0);
     glState.currentProgram = 0;
     kexRenderSurface::currentSurface = NULL;
+}
+
+//
+// kexRenderSystem::GetDepthSizeComponent
+//
+
+const int kexRenderSystem::GetDepthSizeComponent(void) {
+    int depthSize = cvarVidDepthSize.GetInt();
+    
+    switch(depthSize) {
+        case 16:
+            return GL_DEPTH_COMPONENT16_ARB;
+        case 24:
+            return GL_DEPTH_COMPONENT24_ARB;
+        case 32:
+            return GL_DEPTH_COMPONENT32_ARB;
+        default:
+            common.Warning("GetDepthSizeComponent: unknown depth size (%i)", depthSize);
+            break;
+    }
+    
+    return GL_DEPTH_COMPONENT24_ARB;
 }
 
 //

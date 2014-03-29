@@ -119,6 +119,7 @@ public:
     void                            SetTextureUnit(int unit);
     void                            SetViewDimensions(void);
     void                            DisableShaders(void);
+    const int                       GetDepthSizeComponent(void);
     void                            DrawLoadingScreen(const char *text);
     kexFont                         *CacheFont(const char *name);
     kexTexture                      *CacheTexture(const char *name, texClampMode_t clampMode,

@@ -759,7 +759,7 @@ void kexTexture::BindDepthBuffer(void) {
     
     dglCopyTexImage2D(GL_TEXTURE_2D,
                       0,
-                      GL_DEPTH_COMPONENT24_ARB,
+                      renderSystem.GetDepthSizeComponent(),
                       0,
                       0,
                       origwidth,
