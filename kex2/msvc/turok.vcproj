@@ -264,11 +264,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\turok\renderer\renderModel.cpp"
+					RelativePath="..\turok\renderer\renderMain.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\renderer\renderSurface.cpp"
+					RelativePath="..\turok\renderer\renderModel.cpp"
 					>
 				</File>
 				<File
@@ -609,11 +609,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\turok\renderer\renderModel.h"
+					RelativePath="..\turok\renderer\renderMain.h"
 					>
 				</File>
 				<File
-					RelativePath="..\turok\renderer\renderSurface.h"
+					RelativePath="..\turok\renderer\renderModel.h"
 					>
 				</File>
 				<File
