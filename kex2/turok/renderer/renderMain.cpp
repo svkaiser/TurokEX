@@ -68,12 +68,6 @@ void kexRenderer::Init(void) {
 //
 
 void kexRenderer::Draw(void) {
-    if(!localWorld.IsLoaded()) {
-        dglClearColor(0.25f, 0.25f, 0.25f, 1.0f);
-        dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        return;
-    }
-
     dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     renderWorld.RenderScene();
@@ -368,14 +362,6 @@ void kexRenderer::DrawSectors(kexSector *sectors, const int count) {
     kexTri *tri;
     kexVec3 n;
 
-    renderSystem.SetState(GLSTATE_CULL, true);
-    renderSystem.SetState(GLSTATE_TEXTURE0, false);
-    renderSystem.SetState(GLSTATE_BLEND, true);
-    renderSystem.SetState(GLSTATE_ALPHATEST, true);
-    renderSystem.SetState(GLSTATE_LIGHTING, false);
-
-    renderSystem.BindDrawPointers();
-
     for(int i = 0; i < count; i++) {
         byte r, g, b, a;
 
@@ -388,8 +374,9 @@ void kexRenderer::DrawSectors(kexSector *sectors, const int count) {
                 sector->bTraced = false;
             }
             else {
-                r = 255;
-                g = b = a = 128;
+                r = 192;
+                a = 255;
+                g = b = 96;
             }
 
             DrawTriangle(*tri, idx, r, g, b, a);
@@ -401,25 +388,49 @@ void kexRenderer::DrawSectors(kexSector *sectors, const int count) {
             tri = &sector->upperTri;
 
             if(frustum.TestTriangle(*tri)) {
-                DrawTriangle(*tri, idx, 128, 255, 128, 128);
+                DrawTriangle(*tri, idx, 96, 192, 96, 255);
                 idx += 3;
                 num++;
             }
         }
+
+        if(sector->area && sector->area->Flags() & AAF_WATER) {
+            for(int j = 0; j < 3; j++) {
+                renderSystem.AddVertex(tri->point[j]->x,
+                                       sector->area->WaterPlane(),
+                                       tri->point[j]->z,
+                                       0,
+                                       0,
+                                       32,
+                                       0,
+                                       255,
+                                       192);
+            }
+            renderSystem.AddTriangle(idx + 0, idx + 1, idx + 2);
+
+            idx += 3;
+            num++;
+        }
     }
 
     if(num != 0) {
+        renderSystem.SetState(GLSTATE_CULL, true);
+        renderSystem.SetState(GLSTATE_TEXTURE0, false);
+        renderSystem.SetState(GLSTATE_BLEND, true);
+        renderSystem.SetState(GLSTATE_ALPHATEST, true);
+        renderSystem.SetState(GLSTATE_LIGHTING, false);
+
+        renderSystem.BindDrawPointers();
         renderSystem.DrawElements(false);
-        renderSystem.SetPolyMode(GLPOLY_LINE);
-        renderSystem.SetState(GLSTATE_DEPTHTEST, false);
 
         // draw wireframe outline
+        renderSystem.SetPolyMode(GLPOLY_LINE);
+
         dglDisableClientState(GL_COLOR_ARRAY);
         dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
 
         renderSystem.DrawElements();
         renderSystem.SetPolyMode(GLPOLY_FILL);
-        renderSystem.SetState(GLSTATE_DEPTHTEST, true);
 
         dglEnableClientState(GL_COLOR_ARRAY);
 
@@ -478,7 +489,7 @@ void kexRenderer::DrawSectors(kexSector *sectors, const int count) {
 
         renderSystem.DrawLineElements();
         dglLineWidth(1.0f);
-    }
 
-    renderSystem.SetState(GLSTATE_TEXTURE0, true);
+        renderSystem.SetState(GLSTATE_TEXTURE0, true);
+    }
 }

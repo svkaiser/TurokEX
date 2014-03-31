@@ -194,6 +194,10 @@ void kexRenderWorld::Init(void) {
 //
 
 void kexRenderWorld::RenderScene(void) {
+    if(!world->IsLoaded()) {
+        return;
+    }
+
     bDrawTris = cvarRenderTris.GetBool();
 
     SetupGlobalFog();
