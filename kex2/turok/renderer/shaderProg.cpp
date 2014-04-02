@@ -31,16 +31,27 @@
 #include "shaderProg.h"
 #include "defs.h"
 
+static const char *shaderParamNames[RSP_TOTAL] = {
+    { "diffuseColor" },
+    { "uMVMatrix" },
+    { "uPVMatrix" },
+    { "uViewWidth" },
+    { "uViewHeight" },
+    { "uRunTime" },
+    { "uLightDirection" },
+    { "uLightDirectionColor" },
+    { "uLightAmbience" },
+    { "uFogNear" },
+    { "uFogFar" },
+    { "uFogColor" }
+};
+
 //
 // kexShaderObj::kexShaderObj
 //
 
 kexShaderObj::kexShaderObj(void) {
-    this->programObj        = 0;
-    this->vertexProgram     = 0;
-    this->fragmentProgram   = 0;
-    this->bHasErrors        = false;
-    this->bLoaded           = false;
+    Init();
 }
 
 //
@@ -51,11 +62,47 @@ kexShaderObj::~kexShaderObj(void) {
 }
 
 //
+// kexShaderObj::Init
+//
+
+void kexShaderObj::Init(void) {
+    this->programObj        = 0;
+    this->vertexProgram     = 0;
+    this->fragmentProgram   = 0;
+    this->bHasErrors        = false;
+    this->bLoaded           = false;
+}
+
+//
+// kexShaderObj::InitFromDefinition
+//
+
+void kexShaderObj::InitFromDefinition(kexKeyMap *def) {
+    kexStr string;
+
+    Init();
+    InitProgram();
+            
+    if(def->GetString("fragmentProgram", string)) {
+        Compile(string.c_str(), RST_FRAGMENT);
+    }
+    if(def->GetString("vertexProgram", string)) {
+        Compile(string.c_str(), RST_VERTEX);
+    }
+    
+    Link();
+}
+
+//
 // kexShaderObj::InitProgram
 //
 
 void kexShaderObj::InitProgram(void) {
     programObj = dglCreateProgramObjectARB();
+
+    for(int i = 0; i < RSP_TOTAL; i++) {
+        paramLocations[i] = -1;
+    }
 }
 
 //
@@ -234,6 +281,13 @@ bool kexShaderObj::Link(void) {
         DumpErrorLog(programObj);
         DumpErrorLog(vertexProgram);
         DumpErrorLog(fragmentProgram);
+    }
+    else {
+        dglUseProgramObjectARB(programObj);
+
+        for(int i = 0; i < RSP_TOTAL; i++) {
+            paramLocations[i] = dglGetUniformLocationARB(programObj, shaderParamNames[i]);
+        }
     }
     
     dglUseProgramObjectARB(0);

@@ -23,11 +23,29 @@
 #ifndef __SHADERPROG_H__
 #define __SHADERPROG_H__
 
+#include "keymap.h"
+
 typedef enum {
-    RST_VERTEX      = 0,
+    RST_VERTEX          = 0,
     RST_FRAGMENT,
     RST_TOTAL
 } rShaderType_t;
+
+typedef enum {
+    RSP_DIFFUSE_COLOR   = 0,
+    RSP_MVMATRIX,
+    RSP_PVMATRIX,
+    RSP_VIEW_WIDTH,
+    RSP_VIEW_HEIGHT,
+    RSP_RUNTIME,
+    RSP_LIGHT_DIRECTION,
+    RSP_LIGHT_DIRECTION_COLOR,
+    RSP_LIGHT_AMBIENCE,
+    RSP_FOG_NEAR,
+    RSP_FOG_FAR,
+    RSP_FOG_COLOR,
+    RSP_TOTAL
+} rShaderParams_t;
 
 typedef GLhandleARB	rhandle;
 
@@ -37,6 +55,8 @@ public:
                                 ~kexShaderObj(void);
                                 
     void                        InitProgram(void);
+    void                        Init(void);
+    void                        InitFromDefinition(kexKeyMap *def);
     void                        Compile(const char *name, rShaderType_t type);
     bool                        Link(void);
     void                        Enable(void);
@@ -64,6 +84,7 @@ private:
     rhandle                     fragmentProgram;
     bool                        bHasErrors;
     bool                        bLoaded;
+    int                         paramLocations[RSP_TOTAL];
 };
 
 #endif

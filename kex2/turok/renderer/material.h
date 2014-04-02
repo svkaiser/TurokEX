@@ -69,7 +69,7 @@ public:
     const glCullType_t                  CullType(void) const { return cullType; }
     const glFunctions_t                 AlphaFunction(void) const { return alphaFunction; }
     const matSortOrder_t                SortOrder(void) const { return sortOrder; }
-    kexShaderObj                        *ShaderObj(void) { return &shaderObj; }
+    kexShaderObj                        *ShaderObj(void) { return shaderObj; }
     const unsigned int                  Flags(void) const { return flags; }
     const unsigned int                  StateBits(void) const { return stateBits; }
     const float                         AlphaMask(void) const { return alphaMask; }
@@ -84,7 +84,7 @@ private:
     glFunctions_t                       ParseFunction(kexLexer *lexer);
     void                                ParseShader(kexLexer *lexer);
     
-    kexShaderObj                        shaderObj;
+    kexShaderObj                        *shaderObj;
     matSampler_t                        samplers[MAX_SAMPLER_UNITS];
     unsigned int                        stateBits;
     glCullType_t                        cullType;

@@ -63,6 +63,7 @@ void kexMaterial::Init(void) {
     this->units         = 0;
     this->genID         = 0;
     this->bShaderErrors = false;
+    this->shaderObj     = NULL;
     
     for(int i = 0; i < MAX_SAMPLER_UNITS; i++) {
         this->samplers[i].param     = "";
@@ -84,8 +85,6 @@ void kexMaterial::Init(void) {
 //
 
 void kexMaterial::Delete(void) {
-    shaderObj.Delete();
-    
     for(unsigned int i = 0; i < units; i++) {
         if(samplers[i].texture != NULL) {
             samplers[i].texture->Delete();
@@ -118,28 +117,28 @@ void kexMaterial::ParseParam(kexLexer *lexer) {
         int param;
 
         param = lexer->GetNumber();
-        shaderObj.SetUniform(paramName.c_str(), param);
+        shaderObj->SetUniform(paramName.c_str(), param);
     }
     else if(lexer->Matches("vec2")) {
         kexVec2 param;
 
         lexer->GetString();
         sscanf(lexer->StringToken(), "%f %f", &param.x, &param.z);
-        shaderObj.SetUniform(paramName.c_str(), param);
+        shaderObj->SetUniform(paramName.c_str(), param);
     }
     else if(lexer->Matches("vec3")) {
         kexVec3 param;
 
         lexer->GetString();
         sscanf(lexer->StringToken(), "%f %f %f", &param.x, &param.y, &param.z);
-        shaderObj.SetUniform(paramName.c_str(), param);
+        shaderObj->SetUniform(paramName.c_str(), param);
     }
     else if(lexer->Matches("vec4")) {
         kexVec4 param;
 
         lexer->GetString();
         sscanf(lexer->StringToken(), "%f %f %f %f", &param.x, &param.y, &param.z, &param.w);
-        shaderObj.SetUniform(paramName.c_str(), param);
+        shaderObj->SetUniform(paramName.c_str(), param);
     }
 }
 
@@ -167,7 +166,7 @@ void kexMaterial::ParseSampler(kexLexer *lexer) {
     sampler->clamp = TC_CLAMP;
     sampler->unit = unit;
     
-    shaderObj.SetUniform(sampler->param, sampler->unit);
+    shaderObj->SetUniform(sampler->param, sampler->unit);
     
     if(unit+1 > units) {
         units = unit+1;
@@ -248,32 +247,16 @@ glFunctions_t kexMaterial::ParseFunction(kexLexer *lexer) {
 //
 
 void kexMaterial::ParseShader(kexLexer *lexer) {
-    shaderObj.InitProgram();
+    lexer->GetString();
+
+    shaderObj = renderSystem.CacheShader(lexer->StringToken());
     
-    lexer->ExpectNextToken(TK_LBRACK);
-    lexer->Find();
-    
-    while(lexer->TokenType() != TK_RBRACK) {
-        if(lexer->Matches("vertexProgram")) {
-            lexer->GetString();
-            shaderObj.Compile(lexer->StringToken(), RST_VERTEX);
-        }
-        else if(lexer->Matches("fragmentProgram")) {
-            lexer->GetString();
-            shaderObj.Compile(lexer->StringToken(), RST_FRAGMENT);
-        }
-        
-        lexer->Find();
-    }
-    
-    shaderObj.Link();
-    
-    if(shaderObj.HasErrors()) {
+    if(!shaderObj || shaderObj->HasErrors()) {
         bShaderErrors = true;
     }
     else {
         // shader needs to be enabled before we can set parameters
-        shaderObj.Enable();
+        shaderObj->Enable();
     }
 }
 
@@ -290,7 +273,7 @@ void kexMaterial::Parse(kexLexer *lexer) {
             case TK_EOF:
                 return;
             case TK_IDENIFIER:
-                if(lexer->Matches("shaders")) {
+                if(lexer->Matches("shader")) {
                     ParseShader(lexer);
                 }
                 else if(lexer->Matches("fullbright")) {

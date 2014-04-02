@@ -36,7 +36,7 @@ typedef struct {
     float                   *normals;
     byte                    *rgb;
     word                    *indices;
-    kexMaterial             *material;
+    char                    *material;
     filepath_t              texturePath;
     rcolor                  color1;
     rcolor                  color2;
@@ -48,7 +48,7 @@ public:
                             ~kexRenderer(void);
 
     void                    Init(void);
-    void                    DrawSurface(const surface_t *surface);
+    void                    DrawSurface(const surface_t *surface, kexMaterial *material);
     void                    Draw(void);
     void                    DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b);
     void                    DrawRadius(float x, float y, float z,

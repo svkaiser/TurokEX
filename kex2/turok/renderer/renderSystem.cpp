@@ -334,6 +334,7 @@ void kexRenderSystem::Init(void) {
 void kexRenderSystem::Shutdown(void) {
     kexTexture *texture;
     kexMaterial *material;
+    kexShaderObj *shader;
 
     common.Printf("Shutting down render system\n");
 
@@ -348,6 +349,9 @@ void kexRenderSystem::Shutdown(void) {
         }
         for(texture = textureList.GetData(i); texture; texture = textureList.Next()) {
             texture->Delete();
+        }
+        for(shader = shaders.GetData(i); shader; shader = shaders.Next()) {
+            shader->Delete();
         }
     }
 
@@ -751,6 +755,42 @@ kexTexture *kexRenderSystem::CacheTexture(const char *name, texClampMode_t clamp
 }
 
 //
+// kexRenderSystem::LoadShader
+//
+
+kexShaderObj *kexRenderSystem::CacheShader(const char *file) {
+    kexShaderObj *sobj;
+    
+    if(file == NULL) {
+        return NULL;
+    }
+    else if(file[0] == 0) {
+        return NULL;
+    }
+    
+    if(!(sobj = shaders.Find(file))) {
+        kexKeyMap *def;
+        
+        if((def = defManager.FindDefEntry(file))) {
+            sobj = shaders.Add(file);
+            strncpy(sobj->fileName, file, MAX_FILEPATH);
+
+            sobj->InitFromDefinition(def);
+
+            if(sobj->HasErrors()) {
+                common.Warning("There were some errors when compiling %s\n", file);
+            }
+            
+        }
+        else {
+            return NULL;
+        }
+    }
+    
+    return sobj;
+}
+
+//
 // kexRenderSystem::CacheFont
 //
 
@@ -860,7 +900,7 @@ const int kexRenderSystem::GetDepthSizeComponent(void) {
             break;
     }
     
-    return GL_DEPTH_COMPONENT24_ARB;
+    return GL_DEPTH_COMPONENT;
 }
 
 //
@@ -995,9 +1035,8 @@ void kexRenderSystem::DrawElements(const kexMaterial *material, const bool bClea
     surf.rgb        = drawRGB;
     surf.normals    = NULL;
     surf.indices    = drawIndices;
-    surf.material   = (kexMaterial*)material;
     
-    renderer.DrawSurface(&surf);
+    renderer.DrawSurface(&surf, (kexMaterial*)material);
     DisableShaders(); // TODO: remove once everything relies on materials
     
     if(bClearCount) {

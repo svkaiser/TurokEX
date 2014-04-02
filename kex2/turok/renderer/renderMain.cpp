@@ -91,20 +91,17 @@ void kexRenderer::Draw(void) {
 // kexRenderer::DrawElements
 //
 
-void kexRenderer::DrawSurface(const surface_t *surface)  {
-    kexMaterial *material;
-    
+void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  {
     if(surface == NULL) {
         return;
     }
-    if(surface->material == NULL) {
+    if(material == NULL) {
         return;
     }
-    if(surface->material->Flags() & MTF_NODRAW) {
+    if(material->Flags() & MTF_NODRAW) {
         return;
     }
     
-    material = surface->material;
     material->ShaderObj()->Enable();
     
     renderSystem.SetState(material->StateBits());

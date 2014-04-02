@@ -125,6 +125,7 @@ public:
     kexTexture                      *CacheTexture(const char *name, texClampMode_t clampMode,
                                                   texFilterMode_t filterMode = TF_LINEAR);
     kexMaterial                     *CacheMaterial(const char *file);
+    kexShaderObj                    *CacheShader(const char *file);
     void                            BindDrawPointers(void);
     void                            AddTriangle(int v0, int v1, int v2);
     void                            AddVertex(float x, float y, float z, float s, float t,
@@ -206,6 +207,7 @@ private:
     kexHashList<kexTexture>         textureList;
     kexHashList<kexFont>            fontList;
     kexHashList<kexMaterial>        materials;
+    kexHashList<kexShaderObj>       shaders;
 
     const char                      *gl_vendor;
     const char                      *gl_renderer;

@@ -30,6 +30,7 @@
 #include "editorCommon.h"
 #endif
 #include "script.h"
+#include "renderSystem.h"
 #include "renderModel.h"
 #ifndef EDITOR
 #include "animation.h"
@@ -56,6 +57,7 @@ enum {
     scmdl_numsections,
     scmdl_sections,
     scmdl_texture,
+    scmdl_material,
     scmdl_rgba1,
     scmdl_rgba2,
     scmdl_numtriangles,
@@ -86,6 +88,7 @@ static const sctokens_t mdltokens[scmdl_end+1] = {
     { scmdl_numsections,    "numsections"   },
     { scmdl_sections,       "sections"      },
     { scmdl_texture,        "texture"       },
+    { scmdl_material,       "material"      },
     { scmdl_rgba1,          "rgba"          },
     { scmdl_rgba2,          "rgba2"         },
     { scmdl_numtriangles,   "numtriangles"  },
@@ -231,6 +234,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                             surface->normals = NULL;
                             surface->vertices = NULL;
                             surface->rgb = NULL;
+                            surface->material = NULL;
 
                             // read into the nested surface block
                             lexer->ExpectNextToken(TK_LBRACK);
@@ -249,6 +253,11 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                                 case scmdl_texture:
                                     lexer->AssignFromTokenList(mdltokens, surface->texturePath,
                                         scmdl_texture, false);
+                                    break;
+                                case scmdl_material:
+                                    lexer->ExpectNextToken(TK_EQUAL);
+                                    lexer->GetString();
+                                    surface->material = Mem_Strdup(lexer->StringToken(), hb_model);
                                     break;
                                 case scmdl_rgba1:
 
@@ -289,6 +298,13 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                                     lexer->AssignFromTokenList(mdltokens, AT_FLOAT,
                                         (void**)&surface->normals, surface->numVerts * 3,
                                         scmdl_normals, true, hb_model);
+                                    surface->rgb = (byte*)Mem_Malloc(surface->numVerts * 4, hb_model);
+                                    for(l = 0; l < surface->numVerts; l++) {
+                                        surface->rgb[l * 4 + 0] = 255;
+                                        surface->rgb[l * 4 + 1] = 255;
+                                        surface->rgb[l * 4 + 2] = 255;
+                                        surface->rgb[l * 4 + 3] = 255;
+                                    }
                                     lexer->ExpectNextToken(TK_RBRACK);
                                     break;
                                 default:
