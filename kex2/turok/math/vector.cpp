@@ -1058,6 +1058,30 @@ float *kexVec4::ToFloatPtr(void) {
 }
 
 //
+// kexVec4::operator+
+//
+
+kexVec4 kexVec4::operator+(const kexVec4 &vec) {
+    return kexVec4(x + vec.x, y + vec.y, z + vec.z, w + vec.w);
+}
+
+//
+// kexVec4::operator+
+//
+
+kexVec4 kexVec4::operator+(const kexVec4 &vec) const {
+    return kexVec4(x + vec.x, y + vec.y, z + vec.z, w + vec.w);
+}
+
+//
+// kexVec4::operator+
+//
+
+kexVec4 kexVec4::operator+(kexVec4 &vec) {
+    return kexVec4(x + vec.x, y + vec.y, z + vec.z, w + vec.w);
+}
+
+//
 // kexVec4::operator|
 //
 

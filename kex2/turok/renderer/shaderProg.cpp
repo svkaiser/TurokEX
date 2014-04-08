@@ -31,19 +31,20 @@
 #include "shaderProg.h"
 #include "defs.h"
 
-static const char *shaderParamNames[RSP_TOTAL] = {
-    { "diffuseColor" },
-    { "uMVMatrix" },
-    { "uPVMatrix" },
-    { "uViewWidth" },
-    { "uViewHeight" },
-    { "uRunTime" },
-    { "uLightDirection" },
-    { "uLightDirectionColor" },
-    { "uLightAmbience" },
-    { "uFogNear" },
-    { "uFogFar" },
-    { "uFogColor" }
+static const char *shaderParamNames[RSP_TOTAL+1] = {
+    "uDiffuseColor" ,
+    "uMVMatrix" ,
+    "uPVMatrix",
+    "uViewWidth",
+    "uViewHeight",
+    "uRunTime",
+    "uLightDirection",
+    "uLightDirectionColor",
+    "uLightAmbience",
+    "uFogNear",
+    "uFogFar",
+    "uFogColor",
+    NULL
 };
 
 //
@@ -101,7 +102,7 @@ void kexShaderObj::InitProgram(void) {
     programObj = dglCreateProgramObjectARB();
 
     for(int i = 0; i < RSP_TOTAL; i++) {
-        paramLocations[i] = -1;
+        globalParams[i] = -1;
     }
 }
 
@@ -144,11 +145,13 @@ void kexShaderObj::Compile(const char *name, rShaderType_t type) {
     if(cvarDeveloper.GetBool()) {
         if(fileSystem.OpenFile(name, &data, hb_static) == 0 &&
             fileSystem.ReadExternalTextFile(name, &data) <= 0) {
-            return;
+                common.Warning("kexShaderObj::Compile: %s not found\n", name);
+                return;
         }
     }
     else {
         if(fileSystem.OpenFile(name, &data, hb_static) == 0) {
+            common.Warning("kexShaderObj::Compile: %s not found\n", name);
             return;
         }
     }
@@ -246,6 +249,78 @@ void kexShaderObj::SetUniform(const char *name, kexMatrix &val, bool bTranspose)
 }
 
 //
+// kexShaderObj::SetGlobalUniform
+//
+
+void kexShaderObj::SetGlobalUniform(const rShaderGlobalParams_t param, int val) {
+    if(globalParams[param] <= -1) {
+        return;
+    }
+
+    dglUniform1iARB(globalParams[param], val);
+}
+
+//
+// kexShaderObj::SetGlobalUniform
+//
+
+void kexShaderObj::SetGlobalUniform(const rShaderGlobalParams_t param, float val) {
+    if(globalParams[param] <= -1) {
+        return;
+    }
+
+    dglUniform1fARB(globalParams[param], val);
+}
+
+//
+// kexShaderObj::SetGlobalUniform
+//
+
+void kexShaderObj::SetGlobalUniform(const rShaderGlobalParams_t param, kexVec2 &val) {
+    if(globalParams[param] <= -1) {
+        return;
+    }
+
+    dglUniform2fvARB(globalParams[param], 1, val.ToFloatPtr());
+}
+
+//
+// kexShaderObj::SetGlobalUniform
+//
+
+void kexShaderObj::SetGlobalUniform(const rShaderGlobalParams_t param, kexVec3 &val) {
+    if(globalParams[param] <= -1) {
+        return;
+    }
+
+    dglUniform3fvARB(globalParams[param], 1, val.ToFloatPtr());
+}
+
+//
+// kexShaderObj::SetGlobalUniform
+//
+
+void kexShaderObj::SetGlobalUniform(const rShaderGlobalParams_t param, kexVec4 &val) {
+    if(globalParams[param] <= -1) {
+        return;
+    }
+
+    dglUniform4fvARB(globalParams[param], 1, val.ToFloatPtr());
+}
+
+//
+// kexShaderObj::SetGlobalUniform
+//
+
+void kexShaderObj::SetGlobalUniform(const rShaderGlobalParams_t param, kexMatrix &val) {
+    if(globalParams[param] <= -1) {
+        return;
+    }
+
+    dglUniformMatrix4fvARB(globalParams[param], 1, false, val.ToFloatPtr());
+}
+
+//
 // kexShaderObj::DumpErrorLog
 //
 
@@ -286,7 +361,7 @@ bool kexShaderObj::Link(void) {
         dglUseProgramObjectARB(programObj);
 
         for(int i = 0; i < RSP_TOTAL; i++) {
-            paramLocations[i] = dglGetUniformLocationARB(programObj, shaderParamNames[i]);
+            globalParams[i] = dglGetUniformLocationARB(programObj, shaderParamNames[i]);
         }
     }
     

@@ -22,9 +22,6 @@
 //
 // DESCRIPTION: Material system. Kex materials have no texture stages
 //              but rather lets the shader program handle everything.
-//              Each unique material will have it's own instance of a
-//              shader program (TODO: should research if this is a good
-//              idea or not).
 //
 //-----------------------------------------------------------------------------
 
@@ -64,6 +61,8 @@ void kexMaterial::Init(void) {
     this->genID         = 0;
     this->bShaderErrors = false;
     this->shaderObj     = NULL;
+
+    this->diffuseColor.Set(1, 1, 1, 1);
     
     for(int i = 0; i < MAX_SAMPLER_UNITS; i++) {
         this->samplers[i].param     = "";
@@ -101,6 +100,16 @@ matSampler_t *kexMaterial::Sampler(const int which) {
     return &samplers[which];
 }
 
+//
+// kexMaterial::SetDiffuseColor
+//
+
+void kexMaterial::SetDiffuseColor(void) {
+    if(shaderObj == NULL) {
+        return;
+    }
+}
+
 
 //
 // kexMaterial::ParseParam
@@ -117,28 +126,40 @@ void kexMaterial::ParseParam(kexLexer *lexer) {
         int param;
 
         param = lexer->GetNumber();
-        shaderObj->SetUniform(paramName.c_str(), param);
+
+        if(shaderObj || !bShaderErrors) {
+            shaderObj->SetUniform(paramName.c_str(), param);
+        }
     }
     else if(lexer->Matches("vec2")) {
         kexVec2 param;
 
         lexer->GetString();
-        sscanf(lexer->StringToken(), "%f %f", &param.x, &param.z);
-        shaderObj->SetUniform(paramName.c_str(), param);
+
+        if(shaderObj || !bShaderErrors) {
+            param = lexer->GetVectorString2();
+            shaderObj->SetUniform(paramName.c_str(), param);
+        }
     }
     else if(lexer->Matches("vec3")) {
         kexVec3 param;
 
         lexer->GetString();
-        sscanf(lexer->StringToken(), "%f %f %f", &param.x, &param.y, &param.z);
-        shaderObj->SetUniform(paramName.c_str(), param);
+
+        if(shaderObj || !bShaderErrors) {
+            param = lexer->GetVectorString3();
+            shaderObj->SetUniform(paramName.c_str(), param);
+        }
     }
     else if(lexer->Matches("vec4")) {
         kexVec4 param;
 
         lexer->GetString();
-        sscanf(lexer->StringToken(), "%f %f %f %f", &param.x, &param.y, &param.z, &param.w);
-        shaderObj->SetUniform(paramName.c_str(), param);
+
+        if(shaderObj || !bShaderErrors) {
+            param = lexer->GetVectorString4();
+            shaderObj->SetUniform(paramName.c_str(), param);
+        }
     }
 }
 
@@ -315,7 +336,7 @@ void kexMaterial::Parse(kexLexer *lexer) {
                     else if(lexer->Matches("masked")) {
                         sortOrder = MSO_MASKED;
                     }
-                    else if(lexer->Matches("transparent")) {
+                    else if(lexer->Matches("translucent")) {
                         sortOrder = MSO_TRANSPARENT;
                     }
                     else if(lexer->Matches("custom1")) {
@@ -339,6 +360,9 @@ void kexMaterial::Parse(kexLexer *lexer) {
                 }
                 else if(lexer->Matches("sampler")) {
                     ParseSampler(lexer);
+                }
+                else if(lexer->Matches("color_diffuse")) {
+                    diffuseColor = lexer->GetVectorString4();
                 }
                 break;
             default:

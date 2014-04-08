@@ -42,6 +42,10 @@ typedef struct {
     rcolor                  color2;
 } surface_t;
 
+#define MAX_FX_DISPLAYS 2048
+
+class kexFx;
+
 class kexRenderer {
 public:
                             kexRenderer(void);
@@ -50,6 +54,7 @@ public:
     void                    Init(void);
     void                    DrawSurface(const surface_t *surface, kexMaterial *material);
     void                    Draw(void);
+    void                    DrawFX(void);
     void                    DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b);
     void                    DrawRadius(float x, float y, float z,
                                        float radius, float height,
@@ -58,6 +63,8 @@ public:
     void                    DrawSectors(kexSector *sectors, const int count);
     void                    DrawTriangle(const kexTri &tri, const word index,
                                          byte r, byte g, byte b, byte a);
+
+    static int              SortSprites(const void *a, const void *b);
     
     const surface_t         *currentSurface;
 
@@ -66,6 +73,12 @@ private:
 
     kexMaterial             *motionBlurMaterial;
     kexMatrix               prevMVMatrix;
+
+    typedef struct {
+        kexFx               *fx;
+    } fxDisplay_t;
+
+    fxDisplay_t             fxDisplayList[MAX_FX_DISPLAYS];
 };
 
 extern kexRenderer renderer;

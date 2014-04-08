@@ -90,7 +90,7 @@ kexWorld::kexWorld(void) {
 
     this->SetFogRGB(0, 0, 0);
     this->fogRGB[3] = 1;
-    memcpy(this->currentFogRGB, this->fogRGB, sizeof(float) * 4);
+    this->currentFogRGB.Set(0, 0, 0, 1);
 
     this->gravity.Set(0, -1, 0);
 }

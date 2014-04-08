@@ -108,7 +108,7 @@ public:
     void                                SetFogNear(float n) { fogNear = n; }
     float                               GetFogFar(void) { return currentFogFar; }
     void                                SetFogFar(float f) { fogFar = f; }
-    float                               *GetCurrentFogRGB(void) { return currentFogRGB; }
+    kexVec4                             &GetCurrentFogRGB(void) { return currentFogRGB; }
     bool                                FogEnabled(void) { return bEnableFog; }
     void                                ToggleFog(bool toggle) { bEnableFog = toggle; }
     const int                           NumAreaNodes(void) const { return numAreaNodes; }
@@ -164,7 +164,7 @@ private:
     float                               fogRGB[4];
     float                               currentFogNear;
     float                               currentFogFar;
-    float                               currentFogRGB[4];
+    kexVec4                             currentFogRGB;
     int                                 validcount;
     int                                 numAreaNodes;
 };

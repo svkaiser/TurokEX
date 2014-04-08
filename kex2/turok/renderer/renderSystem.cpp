@@ -43,6 +43,7 @@ GL_ARB_texture_non_power_of_two_Define();
 GL_ARB_texture_env_combine_Define();
 GL_EXT_texture_env_combine_Define();
 GL_EXT_texture_filter_anisotropic_Define();
+GL_ARB_vertex_buffer_object_Define();
 GL_ARB_shader_objects_Define();
 
 //
@@ -231,13 +232,14 @@ void kexRenderSystem::SetDefaultState(void) {
     SetState(GLSTATE_TEXTURE0, true);
     SetState(GLSTATE_CULL, true);
     SetState(GLSTATE_LIGHTING, false);
+    SetState(GLSTATE_FOG, false);
     SetCull(GLCULL_FRONT);
     SetDepth(GLFUNC_LEQUAL);
     SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
     SetBlend(GLSRC_SRC_ALPHA, GLDST_ONE_MINUS_SRC_ALPHA);
     SetDepthMask(GLDEPTHMASK_YES);
 
-    dglEnable(GL_NORMALIZE);
+    dglDisable(GL_NORMALIZE);
     dglShadeModel(GL_SMOOTH);
     dglHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
     dglFogi(GL_FOG_MODE, GL_LINEAR);
@@ -252,7 +254,7 @@ void kexRenderSystem::SetDefaultState(void) {
     dglEnableClientState(GL_VERTEX_ARRAY);
     dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
     dglEnableClientState(GL_COLOR_ARRAY);
-    dglDisableClientState(GL_NORMAL_ARRAY);
+    dglEnableClientState(GL_NORMAL_ARRAY);
 }
 
 //
@@ -280,6 +282,7 @@ void kexRenderSystem::Init(void) {
     GL_ARB_texture_env_combine_Init();
     GL_EXT_texture_env_combine_Init();
     GL_EXT_texture_filter_anisotropic_Init();
+    GL_ARB_vertex_buffer_object_Init();
     GL_ARB_shader_objects_Init();
 
     SetDefaultState();
@@ -876,8 +879,11 @@ kexMaterial *kexRenderSystem::CacheMaterial(const char *file) {
 //
 
 void kexRenderSystem::DisableShaders(void) {
-    dglUseProgramObjectARB(0);
-    glState.currentProgram = 0;
+    if(glState.currentProgram != 0) {
+        dglUseProgramObjectARB(0);
+        glState.currentProgram = 0;
+    }
+
     renderer.currentSurface = NULL;
 }
 
@@ -1010,6 +1016,7 @@ void kexRenderSystem::AddLine(float x1, float y1, float z1,
 //
 
 void kexRenderSystem::DrawElements(const bool bClearCount) {
+    DisableShaders();
     dglDrawElements(GL_TRIANGLES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
 
     if(bClearCount) {
@@ -1033,11 +1040,10 @@ void kexRenderSystem::DrawElements(const kexMaterial *material, const bool bClea
     surf.vertices   = reinterpret_cast<kexVec3*>(drawVertices);
     surf.coords     = drawTexCoords;
     surf.rgb        = drawRGB;
-    surf.normals    = NULL;
+    surf.normals    = drawVertices;
     surf.indices    = drawIndices;
     
     renderer.DrawSurface(&surf, (kexMaterial*)material);
-    DisableShaders(); // TODO: remove once everything relies on materials
     
     if(bClearCount) {
         indiceCount = 0;
@@ -1050,6 +1056,7 @@ void kexRenderSystem::DrawElements(const kexMaterial *material, const bool bClea
 //
 
 void kexRenderSystem::DrawLineElements(void) {
+    DisableShaders();
     dglDrawElements(GL_LINES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
     
     indiceCount = 0;

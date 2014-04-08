@@ -92,6 +92,8 @@ void kexRenderer::Draw(void) {
 //
 
 void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  {
+    kexShaderObj *shader;
+
     if(surface == NULL) {
         return;
     }
@@ -101,8 +103,17 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
     if(material->Flags() & MTF_NODRAW) {
         return;
     }
-    
-    material->ShaderObj()->Enable();
+
+    shader = material->ShaderObj();
+
+    shader->Enable();
+    shader->SetGlobalUniform(RSP_DIFFUSE_COLOR, material->DiffuseColor());
+    shader->SetGlobalUniform(RSP_FOG_COLOR, localWorld.GetCurrentFogRGB());
+    shader->SetGlobalUniform(RSP_FOG_NEAR, localWorld.GetFogNear());
+    shader->SetGlobalUniform(RSP_FOG_FAR, localWorld.GetFogFar());
+    shader->SetGlobalUniform(RSP_LIGHT_DIRECTION, renderWorld.WorldLightTransform());
+    shader->SetGlobalUniform(RSP_LIGHT_DIRECTION_COLOR, localWorld.worldLightColor);
+    shader->SetGlobalUniform(RSP_LIGHT_AMBIENCE, localWorld.worldLightAmbience);
     
     renderSystem.SetState(material->StateBits());
     renderSystem.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
@@ -145,6 +156,212 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
 }
 
 //
+// kexRenderer::SortSprites
+//
+
+int kexRenderer::SortSprites(const void *a, const void *b) {
+    kexFx *xa = ((fxDisplay_t*)a)->fx;
+    kexFx *xb = ((fxDisplay_t*)b)->fx;
+
+    return (int)(xb->Distance() - xa->Distance());
+}
+
+//
+// kexRenderer::DrawFX
+//
+
+void kexRenderer::DrawFX(void) {
+    static const word   spriteIndices[6] = { 0, 1, 2, 2, 1, 3 };
+    static float        spriteTexCoords[8] = { 0, 1, 1, 1, 0, 0, 1, 0 };
+    static float        spriteVertices[4][3];
+    static byte         spriteColors[4][4];
+    int                 fxDisplayNum;
+    int                 i;
+    int                 j;
+    kexMatrix           mtx;
+    kexMatrix           scalemtx;
+    kexMatrix           finalmtx;
+    kexFx               *fx;
+    float               scale;
+    float               w;
+    float               h;
+    float               y;
+    fxinfo_t            *fxinfo;
+    kexTexture          *texture;
+    kexFrustum          frustum;
+    kexShaderObj        *shader;
+
+    memset(fxDisplayList, 0, sizeof(fxDisplay_t) * MAX_FX_DISPLAYS);
+
+    // gather particle fx and add to display list for sorting
+    for(localWorld.fxRover = localWorld.fxList.Next(), fxDisplayNum = 0;
+        localWorld.fxRover != NULL; localWorld.fxRover = localWorld.fxRover->worldLink.Next()) {
+            if(fxDisplayNum >= MAX_FX_DISPLAYS) {
+                break;
+            }
+            if(localWorld.fxRover == NULL) {
+                break;
+            }
+            if(localWorld.fxRover->restart > 0) {
+                continue;
+            }
+            if(localWorld.fxRover->IsStale()) {
+                continue;
+            }
+
+            fxDisplayList[fxDisplayNum++].fx = localWorld.fxRover;
+    }
+
+    if(fxDisplayNum <= 0) {
+        return;
+    }
+
+    renderSystem.SetState(GLSTATE_BLEND, true);
+    renderSystem.SetState(GLSTATE_ALPHATEST, true);
+    renderSystem.SetState(GLSTATE_TEXGEN_S, false);
+    renderSystem.SetState(GLSTATE_TEXGEN_T, false);
+
+    renderSystem.SetCull(GLCULL_FRONT);
+    renderSystem.SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
+    renderSystem.SetDepthMask(GLDEPTHMASK_NO);
+
+    qsort(fxDisplayList, fxDisplayNum, sizeof(fxDisplay_t), kexRenderer::SortSprites);
+
+    dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, spriteTexCoords);
+    dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, spriteVertices);
+    dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, spriteColors);
+
+    dglDisableClientState(GL_NORMAL_ARRAY);
+
+    frustum = localWorld.Camera()->Frustum();
+
+    // draw sorted fx list
+    for(i = 0; i < fxDisplayNum; i++) {
+        fx = fxDisplayList[i].fx;
+        fxinfo = fx->fxInfo;
+
+        if(fxinfo == NULL) {
+            continue;
+        }
+
+        texture = fx->Texture();
+
+        w = (float)texture->OriginalWidth();
+        h = (float)texture->OriginalHeight();
+
+        scale = fx->drawScale * 0.01f;
+
+        if(!frustum.TestSphere(fx->GetOrigin(), w * scale)) {
+            continue;
+        }
+
+        if((shader = fxinfo->shaderObj)) {
+            kexVec4 diffuse_color;
+
+            shader->Enable();
+
+            diffuse_color.Set(
+                fx->color2[0] / 255.0f,
+                fx->color2[1] / 255.0f,
+                fx->color2[2] / 255.0f,
+                fx->color2[3] / 255.0f);
+
+            shader->SetGlobalUniform(RSP_DIFFUSE_COLOR, diffuse_color);
+            shader->SetUniform("diffuse", 0);
+        }
+
+        scalemtx = kexMatrix(fx->rotationOffset + DEG2RAD(180), 2);
+
+        if(fxinfo->screen_offset_x != 0 || fxinfo->screen_offset_y != 0) {
+            scalemtx *= kexVec3(fxinfo->screen_offset_x, fxinfo->screen_offset_y, 0);
+        }
+
+        scalemtx.Scale(scale, scale, scale);
+
+        switch(fxinfo->drawtype) {
+            case VFX_DRAWFLAT:
+            case VFX_DRAWDECAL:
+                mtx = kexMatrix(DEG2RAD(90), 1);
+                renderSystem.SetState(GLSTATE_CULL, false);
+                break;
+            case VFX_DRAWBILLBOARD:
+                mtx = kexMatrix(kexQuat(localWorld.Camera()->GetAngles().yaw, 0, 1, 0));
+                renderSystem.SetState(GLSTATE_CULL, true);
+                break;
+            case VFX_DRAWSURFACE:
+                mtx = kexMatrix(fx->GetRotation());
+                renderSystem.SetState(GLSTATE_CULL, false);
+                break;
+            default:
+                mtx = kexMatrix(localWorld.Camera()->GetRotation());
+                renderSystem.SetState(GLSTATE_CULL, true);
+                break;
+        }
+        
+        y = fx->GetOrigin().y;
+
+        // snap sprite to floor based on texture height
+        if(fxinfo->bOffsetFromFloor) {
+            y += 3.42f;
+            if(fxinfo->drawtype == VFX_DRAWBILLBOARD) {
+                y += (float)texture->OriginalHeight();
+            }
+        }
+
+        finalmtx = (scalemtx | mtx);
+        finalmtx.AddTranslation(fx->GetOrigin().x, y, fx->GetOrigin().z);
+
+        dglPushMatrix();
+        dglMultMatrixf(finalmtx.ToFloatPtr());
+
+        spriteVertices[0][0] = -w;
+        spriteVertices[0][1] = -h;
+        spriteVertices[1][0] =  w;
+        spriteVertices[1][1] = -h;
+        spriteVertices[2][0] = -w;
+        spriteVertices[2][1] =  h;
+        spriteVertices[3][0] =  w;
+        spriteVertices[3][1] =  h;
+
+        for(j = 0; j < 4; j++) {
+            spriteColors[j][0] = fx->color1[0];
+            spriteColors[j][1] = fx->color1[1];
+            spriteColors[j][2] = fx->color1[2];
+            spriteColors[j][3] = fx->color1[3];
+        }
+
+        renderSystem.SetState(GLSTATE_DEPTHTEST, fxinfo->bDepthBuffer);
+
+        texture->Bind();
+        if(fxinfo->bTextureWrapMirror) {
+            texture->ChangeParameters(TC_MIRRORED, TF_LINEAR);
+            spriteTexCoords[1] = 2;
+            spriteTexCoords[2] = 2;
+            spriteTexCoords[3] = 2;
+            spriteTexCoords[6] = 2;
+        }
+        else {
+            texture->ChangeParameters(TC_CLAMP, TF_LINEAR);
+            spriteTexCoords[1] = 1;
+            spriteTexCoords[2] = 1;
+            spriteTexCoords[3] = 1;
+            spriteTexCoords[6] = 1;
+        }
+
+        dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, spriteIndices);
+        dglPopMatrix();
+
+        if(fxinfo->lifetime.value == 1 && fx->bClientOnly) {
+            fx->Remove();
+        }
+    }
+
+    renderSystem.SetState(GLSTATE_DEPTHTEST, true);
+    renderSystem.SetDepthMask(GLDEPTHMASK_YES);
+    dglEnableClientState(GL_NORMAL_ARRAY);
+}
+
+//
 // kexRenderer::ProcessMotionBlur
 //
 
@@ -153,7 +370,7 @@ void kexRenderer::ProcessMotionBlur(void) {
         return;
     }
 
-    kexMatrix mat = localWorld.Camera()->ModelView();
+    kexMatrix mat = localWorld.Camera()->RotationMatrix();
     kexMatrix inverseMat;
     kexMatrix motionMat;
     int samples;
@@ -171,7 +388,6 @@ void kexRenderer::ProcessMotionBlur(void) {
         return;
     }
 
-    mat.SetTranslation(0, 0, 0);
     inverseMat = kexMatrix::Invert(mat);
     motionMat = inverseMat * prevMVMatrix;
 
@@ -229,6 +445,8 @@ void kexRenderer::DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b) {
     renderSystem.SetState(GLSTATE_BLEND, true);
     renderSystem.SetState(GLSTATE_LIGHTING, false);
 
+    renderSystem.DisableShaders();
+
 #define ADD_LINE(ba1, ba2, ba3, bb1, bb2, bb3)                      \
     renderSystem.AddLine(bbox[ba1][0], bbox[ba2][1], bbox[ba3][2],  \
                          bbox[bb1][0], bbox[bb2][1], bbox[bb3][2],  \
@@ -272,6 +490,8 @@ void kexRenderer::DrawRadius(float x, float y, float z,
     renderSystem.SetState(GLSTATE_CULL, false);
     renderSystem.SetState(GLSTATE_BLEND, true);
     renderSystem.SetState(GLSTATE_LIGHTING, false);
+
+    renderSystem.DisableShaders();
     renderSystem.BindDrawPointers();
 
     an = DEG2RAD(360 / 32);
@@ -308,6 +528,8 @@ void kexRenderer::DrawOrigin(float x, float y, float z, float size) {
 
     dglDepthRange(0.0f, 0.0f);
     dglLineWidth(2.0f);
+
+    renderSystem.DisableShaders();
     
     renderSystem.BindDrawPointers();
     renderSystem.AddLine(x, y, z, x + size, y, z, 255, 0, 0, 255); // x
@@ -358,6 +580,8 @@ void kexRenderer::DrawSectors(kexSector *sectors, const int count) {
     kexSector *sector;
     kexTri *tri;
     kexVec3 n;
+
+    renderSystem.DisableShaders();
 
     for(int i = 0; i < count; i++) {
         byte r, g, b, a;

@@ -51,25 +51,24 @@ public:
     int             showWorldNode;
     int             showAreaNode;
 
+    kexVec3         &WorldLightTransform(void) { return worldLightTransform; }
+
 private:
-    void            SetupGlobalFog(void);
-    void            SetupGlobalLight(void);
     void            DrawActors(void);
     void            DrawStaticActors(void);
     void            DrawViewActors(void);
     void            DrawFX(void);
-    void            DrawSurface(const surface_t *surface, const char *texturePath);
     void            TraverseDrawActorNode(kexActor *actor,
                         const modelNode_t *node, kexAnimState *animState);
 
     kexWorld        *world;
-    bool            bDrawTris;
 
     typedef struct {
         kexFx       *fx;
     } fxDisplay_t;
 
     fxDisplay_t     fxDisplayList[MAX_FX_DISPLAYS];
+    kexVec3         worldLightTransform;
 };
 
 extern kexRenderWorld renderWorld;

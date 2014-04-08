@@ -80,10 +80,6 @@ kexFx::kexFx(void) {
 //
 
 kexFx::~kexFx(void) {
-    if(textures) {
-        Mem_Free(textures);
-    }
-
     SetParent(NULL);
 }
 
@@ -348,7 +344,6 @@ void kexFx::SetViewDistance(void) {
 //
 
 void kexFx::Spawn(void) {
-    int i;
     kexVec3 vel;
     kexVec3 destVel;
 
@@ -377,13 +372,6 @@ void kexFx::Spawn(void) {
     bAnimate = fxInfo->numTextures > 1 ? true : false;
     bForcedRestart = false;
     frameTime = client.GetTime() + fxInfo->animspeed;
-    textures = (kexTexture**)Mem_Malloc(sizeof(kexTexture*) *
-        fxInfo->numTextures, hb_static);
-
-    // setup texture lookup array
-    for(i = 0; i < fxInfo->numTextures; i++) {
-        textures[i] = renderSystem.CacheTexture(fxInfo->textures[i], TC_CLAMP, TF_LINEAR);
-    }
 
     // instances
     instances = fxInfo->instances.value;
@@ -597,6 +585,7 @@ enum {
     scvfx_onWaterTick,
     scvfx_bDestroyOnWaterSurface,
     scvfx_bLinkArea,
+    scvfx_shader,
     scvfx_end
 };
 
@@ -663,6 +652,7 @@ static const sctokens_t vfxtokens[scvfx_end+1] = {
     { scvfx_onWaterTick,                    "onWaterTick"                       },
     { scvfx_bDestroyOnWaterSurface,         "bDestroyOnWaterSurface"            },
     { scvfx_bLinkArea,                      "bLinkArea"                         },
+    { scvfx_shader,                         "shader"                            },
     { -1,                                   NULL                                }
 };
 
@@ -694,21 +684,7 @@ void kexFxManager::Init(void) {
         fileSystem.GetMatchingFiles(fxList, "fx/");
 
         for(unsigned int i = 0; i < fxList.Length(); i++) {
-            fxfile_t *fxfile = LoadKFX(fxList[i].c_str());
-
-            if(!fxfile) {
-                continue;
-            }
-
-            for(unsigned int j = 0; j < fxfile->numfx; j++) {
-                fxinfo_t *info;
-
-                info = &fxfile->info[j];
-
-                for(int k = 0; k < info->numTextures; k++) {
-                    renderSystem.CacheTexture(info->textures[k], TC_CLAMP, TF_LINEAR);
-                }
-            }
+            LoadKFX(fxList[i].c_str());
         }
     }
 }
@@ -938,14 +914,16 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                 case scvfx_texture:
                     lexer->ExpectNextToken(TK_LSQBRACK);
                     info->numTextures = lexer->GetNumber();
-                    info->textures = (char**)Mem_Calloc(sizeof(char*) *
-                        info->numTextures, hb_static);
+                    info->textures = (kexTexture**)Mem_Malloc(sizeof(kexTexture*) *
+                        info->numTextures, kexTexture::hb_texture);
                     lexer->ExpectNextToken(TK_RSQBRACK);
                     lexer->ExpectNextToken(TK_EQUAL);
                     lexer->ExpectNextToken(TK_LBRACK);
                     for(j = 0; j < info->numTextures; j++) {
                         lexer->GetString();
-                        info->textures[j] = Mem_Strdup(lexer->StringToken(), hb_static);
+                        info->textures[j] = renderSystem.CacheTexture(lexer->StringToken(),
+                                                                      TC_CLAMP,
+                                                                      TF_LINEAR);
                     }
                     lexer->ExpectNextToken(TK_RBRACK);
                     break;
@@ -1028,6 +1006,11 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                     else {
                         info->animtype = VFX_ANIMDEFAULT;
                     }
+                    break;
+                case scvfx_shader:
+                    lexer->ExpectNextToken(TK_EQUAL);
+                    lexer->GetString();
+                    info->shaderObj = renderSystem.CacheShader(lexer->StringToken());
                     break;
                 case scvfx_onImpact:
                     ParseEvent(info->onImpact, lexer);

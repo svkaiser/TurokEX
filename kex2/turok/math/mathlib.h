@@ -270,6 +270,9 @@ public:
     
     const kexVec3           &ToVec3(void) const;
     kexVec3                 &ToVec3(void);
+    kexVec4                 operator+(const kexVec4 &vec);
+    kexVec4                 operator+(const kexVec4 &vec) const;
+    kexVec4                 operator+(kexVec4 &vec);
     kexVec4                 operator|(const kexMatrix &mtx);
     kexVec4                 &operator|=(const kexMatrix &mtx);
     float                   operator[](int index) const;

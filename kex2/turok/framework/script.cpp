@@ -229,6 +229,45 @@ kexVec4 kexLexer::GetVector4(void) {
 }
 
 //
+// kexLexer::GetVectorString2
+//
+
+kexVec2 kexLexer::GetVectorString2(void) {
+    kexVec2 vec;
+
+    GetString();
+    sscanf(StringToken(), "%f %f", &vec.x, &vec.z);
+
+    return vec;
+}
+
+//
+// kexLexer::GetVectorString3
+//
+
+kexVec3 kexLexer::GetVectorString3(void) {
+    kexVec3 vec;
+
+    GetString();
+    sscanf(StringToken(), "%f %f %f", &vec.x, &vec.y, &vec.z);
+
+    return vec;
+}
+
+//
+// kexLexer::GetVectorString4
+//
+
+kexVec4 kexLexer::GetVectorString4(void) {
+    kexVec4 vec;
+
+    GetString();
+    sscanf(StringToken(), "%f %f %f %f", &vec.x, &vec.y, &vec.z, &vec.w);
+
+    return vec;
+}
+
+//
 // kexLexer::GetString
 //
 

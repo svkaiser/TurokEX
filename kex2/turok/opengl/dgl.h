@@ -4448,17 +4448,17 @@ PFNGLGETBUFFERPOINTERVARBPROC _glGetBufferPointervARB = NULL
 
 #define GL_ARB_vertex_buffer_object_Init() \
 has_GL_ARB_vertex_buffer_object = GL_CheckExtension("GL_ARB_vertex_buffer_object"); \
-_glBindBufferARB = GL_RegisterProc("glBindBufferARB"); \
-_glDeleteBuffersARB = GL_RegisterProc("glDeleteBuffersARB"); \
-_glGenBuffersARB = GL_RegisterProc("glGenBuffersARB"); \
-_glIsBufferARB = GL_RegisterProc("glIsBufferARB"); \
-_glBufferDataARB = GL_RegisterProc("glBufferDataARB"); \
-_glBufferSubDataARB = GL_RegisterProc("glBufferSubDataARB"); \
-_glGetBufferSubDataARB = GL_RegisterProc("glGetBufferSubDataARB"); \
-_glMapBufferARB = GL_RegisterProc("glMapBufferARB"); \
-_glUnmapBufferARB = GL_RegisterProc("glUnmapBufferARB"); \
-_glGetBufferParameterivARB = GL_RegisterProc("glGetBufferParameterivARB"); \
-_glGetBufferPointervARB = GL_RegisterProc("glGetBufferPointervARB")
+_glBindBufferARB = (PFNGLBINDBUFFERARBPROC)GL_RegisterProc("glBindBufferARB"); \
+_glDeleteBuffersARB = (PFNGLDELETEBUFFERSARBPROC)GL_RegisterProc("glDeleteBuffersARB"); \
+_glGenBuffersARB = (PFNGLGENBUFFERSARBPROC)GL_RegisterProc("glGenBuffersARB"); \
+_glIsBufferARB = (PFNGLISBUFFERARBPROC)GL_RegisterProc("glIsBufferARB"); \
+_glBufferDataARB = (PFNGLBUFFERDATAARBPROC)GL_RegisterProc("glBufferDataARB"); \
+_glBufferSubDataARB = (PFNGLBUFFERSUBDATAARBPROC)GL_RegisterProc("glBufferSubDataARB"); \
+_glGetBufferSubDataARB = (PFNGLGETBUFFERSUBDATAARBPROC)GL_RegisterProc("glGetBufferSubDataARB"); \
+_glMapBufferARB = (PFNGLMAPBUFFERARBPROC)GL_RegisterProc("glMapBufferARB"); \
+_glUnmapBufferARB = (PFNGLUNMAPBUFFERARBPROC)GL_RegisterProc("glUnmapBufferARB"); \
+_glGetBufferParameterivARB = (PFNGLGETBUFFERPARAMETERIVARBPROC)GL_RegisterProc("glGetBufferParameterivARB"); \
+_glGetBufferPointervARB = (PFNGLGETBUFFERPOINTERVARBPROC)GL_RegisterProc("glGetBufferPointervARB")
 
 #ifndef USE_DEBUG_GLFUNCS
 

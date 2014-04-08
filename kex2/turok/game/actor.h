@@ -85,7 +85,7 @@ public:
     kexKeyMap                   *definition;
 
     // TODO - need some sort of skin system
-    char                        ***textureSwaps;
+    char                        **materials;
     bool                        bTraced;
     int                         validcount;
     bool                        bNoFixedTransform;
@@ -128,7 +128,7 @@ public:
 
 protected:
     void                        ParseDefault(kexLexer *lexer);
-    void                        AllocateTextures(void);
+    void                        AllocateMaterials(void);
 
     kexClipMesh                 clipMesh;
     kexStr                      name;

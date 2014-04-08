@@ -82,6 +82,9 @@ public:
     double              GetFloat(void);
     kexVec3             GetVector3(void);
     kexVec4             GetVector4(void);
+    kexVec2             GetVectorString2(void);
+    kexVec3             GetVectorString3(void);
+    kexVec4             GetVectorString4(void);
     void                GetString(void);
     int                 GetIDForTokenList(const sctokens_t *tokenlist, const char *token);
     void                ExpectTokenListID(const sctokens_t *tokenlist, int id);

@@ -71,6 +71,8 @@ typedef struct {
     kexKeyMap                   *damageDef;
 } fxEvent_t;
 
+class kexShaderObj;
+
 typedef struct {
     bool                        bFadeout;
     bool                        bStopAnimOnImpact;
@@ -104,7 +106,8 @@ typedef struct {
     float                       screen_offset_x;
     float                       screen_offset_y;
     int                         numTextures;
-    char                        **textures;
+    kexTexture                  **textures;
+    kexShaderObj                *shaderObj;
     fxint_t                     instances;
     fxint_t                     lifetime;
     float                       restart;
@@ -176,7 +179,7 @@ public:
     kexVec3                     &GetVelocityOffset(void) { return velOffset; }
     void                        SetVelocityOffset(const kexVec3 &vel) { velOffset = vel; }
     const float                 Distance(void)const { return distance; }
-    kexTexture                  *Texture(void) { return textures[frame]; }
+    kexTexture                  *Texture(void) { return fxInfo->textures[frame]; }
     kexFxPhysics                *Physics(void) { return &physics; }
     kexFx                       *GetParent(void) { return parent; }
 
@@ -202,7 +205,6 @@ private:
     kexVec3                     velOffset;
     int                         instances;
     float                       lifeTime;
-    kexTexture                  **textures;
     int                         frame;
     int                         frameTime;
     float                       distance;

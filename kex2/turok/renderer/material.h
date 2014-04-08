@@ -65,6 +65,7 @@ public:
     void                                Init(void);
     void                                Parse(kexLexer *lexer);
     void                                Delete(void);
+    void                                SetDiffuseColor(void);
     
     const glCullType_t                  CullType(void) const { return cullType; }
     const glFunctions_t                 AlphaFunction(void) const { return alphaFunction; }
@@ -74,6 +75,7 @@ public:
     const unsigned int                  StateBits(void) const { return stateBits; }
     const float                         AlphaMask(void) const { return alphaMask; }
     const unsigned int                  NumUnits(void) const { return units; }
+    kexVec4                             &DiffuseColor(void) { return diffuseColor; }
 
     filepath_t                          fileName;
     kexMaterial                         *next;
@@ -91,6 +93,7 @@ private:
     glFunctions_t                       alphaFunction;
     matSortOrder_t                      sortOrder;
     float                               alphaMask;
+    kexVec4                             diffuseColor;
     unsigned int                        flags;
     unsigned int                        units;
     unsigned int                        genID;

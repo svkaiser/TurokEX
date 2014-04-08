@@ -34,7 +34,7 @@ enum {
     scactor_name = 0,
     scactor_mesh,
     scactor_bounds,
-    scactor_textureSwaps,
+    scactor_materials,
     scactor_component,
     scactor_bCollision,
     scactor_bHidden,
@@ -65,7 +65,7 @@ static const sctokens_t mapactortokens[scactor_end+1] = {
     { scactor_name,             "name"              },
     { scactor_mesh,             "mesh"              },
     { scactor_bounds,           "bounds"            },
-    { scactor_textureSwaps,     "textureSwaps"      },
+    { scactor_materials,        "materials"         },
     { scactor_component,        "component"         },
     { scactor_bCollision,       "bCollision"        },
     { scactor_bHidden,          "bHidden"           },
@@ -113,7 +113,7 @@ kexActor::kexActor(void) {
     this->bTraced           = false;
     this->validcount        = 0;
     this->bNoFixedTransform = false;
-    this->textureSwaps      = NULL;
+    this->materials         = NULL;
     this->definition        = NULL;
 }
 
@@ -134,26 +134,19 @@ kexActor::~kexActor(void) {
         Mem_Free(nodeOffsets_r);
     }
 
-    if(model && textureSwaps) {
-        for(unsigned int j = 0; j < (int)model->numNodes; j++) {
-            modelNode_t *node = &model->nodes[j];
-                
-            for(unsigned int l = 0; l < node->numSurfaces; l++) {
-                if(textureSwaps[j][l]) {
-                    Mem_Free(textureSwaps[j][l]);
-                    textureSwaps[j][l] = NULL;
-                }
-            }
+    if(model && materials) {
+        modelNode_t *node = &model->nodes[0];
 
-            if(textureSwaps[j]) {
-                Mem_Free(textureSwaps[j]);
-                textureSwaps[j] = NULL;
+        for(unsigned int l = 0; l < node->numSurfaces; l++) {
+            if(materials[l]) {
+                Mem_Free(materials[l]);
+                materials[l] = NULL;
             }
         }
 
-        if(textureSwaps) {
-            Mem_Free(textureSwaps);
-            textureSwaps = NULL;
+        if(materials) {
+            Mem_Free(materials);
+            materials = NULL;
         }
     }
 }
@@ -250,7 +243,7 @@ void kexActor::Spawn(void) {
     clipMesh.CreateShape();
     clipMesh.Transform();
 
-    if(bStatic == false) {
+    if(bStatic == false && localWorld.CollisionMap().IsLoaded()) {
         physicsRef->sector = localWorld.CollisionMap().PointInSector(origin);
     }
 
@@ -291,32 +284,22 @@ void kexActor::ParseDefault(kexLexer *lexer) {
         baseBBox.max = lexer->GetVector3();
         bbox = baseBBox;
         break;
-    case scactor_textureSwaps:
+    case scactor_materials:
         if(model == NULL) {
-            parser.Error("kexActor::ParseDefault: attempted to parse \"textureSwaps\" token while model is null\n");
+            parser.Error("kexActor::ParseDefault: attempted to parse \"materials\" token while model is null\n");
         }
 
-        AllocateTextures();
+        AllocateMaterials();
 
         // texture swap block
         lexer->ExpectNextToken(TK_LBRACK);
-        for(unsigned int j = 0; j < (int)model->numNodes; j++) {
-            modelNode_t *node = &model->nodes[j];
 
-            // node block
-            lexer->ExpectNextToken(TK_LBRACK);
-            // mesh block
-            lexer->ExpectNextToken(TK_LBRACK);
-            for(unsigned int l = 0; l < node->numSurfaces; l++) {
-                // parse sections
-                lexer->GetString();
-                textureSwaps[j][l] = Mem_Strdup(lexer->StringToken(), hb_static);
-            }
-            // end mesh block
-            lexer->ExpectNextToken(TK_RBRACK);
-            // end node block
-            lexer->ExpectNextToken(TK_RBRACK);
+        for(unsigned int l = 0; l < model->nodes[0].numSurfaces; l++) {
+            // parse sections
+            lexer->GetString();
+            materials[l] = Mem_Strdup(lexer->StringToken(), hb_static);
         }
+
         // end texture swap block
         lexer->ExpectNextToken(TK_RBRACK);
         break;
@@ -443,26 +426,21 @@ void kexActor::UpdateTransform(void) {
 }
 
 //
-// kexActor::AllocateTextures
+// kexActor::AllocateMaterials
 //
 
-void kexActor::AllocateTextures(void) {
+void kexActor::AllocateMaterials(void) {
     modelNode_t *node;
-    unsigned int j;
 
-    // allocate data for texture swap array
-    textureSwaps = (char***)Mem_Calloc(sizeof(char**) *
-        model->numNodes, hb_static);
+    node = &model->nodes[0];
 
-    for(j = 0; j < model->numNodes; j++) {
-        node = &model->nodes[j];
-
-        if(node->numSurfaces == 0)
-            continue;
-
-        textureSwaps[j] = (char**)Mem_Calloc(sizeof(char*) *
-            node->numSurfaces, hb_static);
+    if(node->numSurfaces == 0) {
+        return;
     }
+
+    // allocate data for material swap array
+    materials = (char**)Mem_Calloc(sizeof(char*) *
+        node->numSurfaces, hb_static);
 }
 
 //

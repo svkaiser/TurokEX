@@ -45,7 +45,22 @@ typedef enum {
     RSP_FOG_FAR,
     RSP_FOG_COLOR,
     RSP_TOTAL
-} rShaderParams_t;
+} rShaderGlobalParams_t;
+
+typedef enum {
+    RPT_FLOAT           = 0,
+    RPT_INT,
+    RPT_BOOL,
+    RPT_VEC2,
+    RPT_VEC3,
+    RPT_VEC4
+} rShaderParamType_t;
+
+typedef struct {
+    int                 parmLocation;
+    rShaderParamType_t  type;
+    float               value[4];
+} rShaderUserParam_t;
 
 typedef GLhandleARB	rhandle;
 
@@ -67,6 +82,12 @@ public:
     void                        SetUniform(const char *name, kexVec3 &val);
     void                        SetUniform(const char *name, kexVec4 &val);
     void                        SetUniform(const char *name, kexMatrix &val, bool bTranspose = false);
+    void                        SetGlobalUniform(const rShaderGlobalParams_t param, const int val);
+    void                        SetGlobalUniform(const rShaderGlobalParams_t param, const float val);
+    void                        SetGlobalUniform(const rShaderGlobalParams_t param, kexVec2 &val);
+    void                        SetGlobalUniform(const rShaderGlobalParams_t param, kexVec3 &val);
+    void                        SetGlobalUniform(const rShaderGlobalParams_t param, kexVec4 &val);
+    void                        SetGlobalUniform(const rShaderGlobalParams_t param, kexMatrix &val);
     
     rhandle                     &Program(void) { return programObj; }
     rhandle                     &VertexProgram(void) { return vertexProgram; }
@@ -84,7 +105,7 @@ private:
     rhandle                     fragmentProgram;
     bool                        bHasErrors;
     bool                        bLoaded;
-    int                         paramLocations[RSP_TOTAL];
+    int                         globalParams[RSP_TOTAL];
 };
 
 #endif
