@@ -180,16 +180,19 @@ static short curmodel;
 static short curnode;
 static short curmesh;
 static short curvariant;
+static int cursection = 0;
 static short *typedata;
 static char materialText[40 * 1024];
-static byte materialSet[1100][32][2048];
 
 short model_nodeCount[800];
 short model_meshCount[800][100];
 short section_count[800][100][100];
+int section_flags[800][100];
 short section_textures[800][100][100][100];
 byte model_masked[800];
 bbox mdlboxes[1000];
+
+extern short texindexes[2000];
 
 typedef struct
 {
@@ -228,6 +231,15 @@ typedef struct
     int u3;
 } unknownstruct2_t;
 
+typedef struct hashKey_s
+{
+    geomheader_t        data;
+    char                name[256];
+    struct hashKey_s    *next;
+} hashKey_t;
+
+hashKey_t *hashlist[MAX_HASH];
+
 static const flagnames_t flagnames[17] =
 {
     { "unknown1",       1       },
@@ -253,6 +265,56 @@ static const int mdl_namespace[] =
 {
     0
 };
+
+//
+// HashMaterial
+//
+
+static geomheader_t *HashMaterial(const char *tname, ...) {
+    unsigned int hash;
+    hashKey_t *o;
+    va_list v;
+    static char vastr[1024];
+	
+    va_start(v, tname);
+    vsprintf(vastr, tname, v);
+    va_end(v);
+    
+    o = (hashKey_t*)Com_Alloc(sizeof(hashKey_t));
+    strncpy(o->name, vastr, 256);
+
+    // add to hash for future reference
+    hash = Com_Hash(o->name);
+    o->next = hashlist[hash];
+    hashlist[hash] = o;
+
+    return &o->data;
+}
+
+//
+// FindMaterial
+//
+
+static geomheader_t *FindMaterial(const char *tname, ...) {
+    hashKey_t *t;
+    unsigned int hash;
+    va_list v;
+    static char vastr[1024];
+	
+    va_start(v, tname);
+    vsprintf(vastr, tname, v);
+    va_end(v);
+
+    hash = Com_Hash(vastr);
+
+    for(t = hashlist[hash]; t; t = t->next) {
+        if(!strcmp(vastr, t->name)) {
+            return &t->data;
+        }
+    }
+
+    return NULL;
+}
 
 //
 // GetModelNamespace
@@ -635,28 +697,46 @@ void StrcatMaterialText(const char *string, ...)
 // ProcessMaterial
 //
 
-static void ProcessMaterial(geomheader_t *header, int textureSwap)
+static void ProcessMaterial(geomheader_t *header, int textureSwap, dboolean writeToKMesh)
 {
     int flags = header->flags;
+    char *tmp;
 
     if(header->texture != -1)
     {
         if(flags & 4096)
             flags |= 16;
 
-        flags &= ~(1|8|32|64|1024|2048|4096);
+        flags &= ~(1|8|32|64|2048|4096);
 
-        if(materialSet[header->texture][textureSwap][flags] == 0) {
-            StrcatMaterialText("mat_%04d_%02d_%i {\n", header->texture, textureSwap, flags);
+        if(writeToKMesh)
+        {
+            Com_Strcat("material = \"%s\"\n",
+                va("materials/mat%03d.kmat@mat_%04d_%02d_%i",
+                curmodel, header->texture, textureSwap, flags));
+        }
 
-            StrcatMaterialText("    shaders {\n");
-            if(flags & 16)
-                StrcatMaterialText("        vertexProgram \"progs/spheremap.vert\"\n\n");
+        tmp = va("mat_%04d_%02d_%i", header->texture, textureSwap, flags);
+
+        if(FindMaterial("materials/mat%03d.kmat@%s", curmodel, tmp) == NULL)
+        {
+            geomheader_t *geoheader = HashMaterial("materials/mat%03d.kmat@%s", curmodel, tmp);
+            memcpy(geoheader, header, sizeof(geomheader_t));
+
+            section_flags[curmodel][cursection] = flags;
+
+            StrcatMaterialText("%s {\n", tmp);
+
+            if(flags & 16 && flags & 1024)
+                StrcatMaterialText("    shader \"defs/shaders.def@worldSphereMapOverlay\"\n");
+            else if(flags & 16)
+                StrcatMaterialText("    shader \"defs/shaders.def@worldSphereMap\"\n");
+            else if(flags & 1024)
+                StrcatMaterialText("    shader \"defs/shaders.def@colorOverlay\"\n");
             else
-                StrcatMaterialText("        vertexProgram \"progs/world.vert\"\n");
-            
-            StrcatMaterialText("        fragmentProgram \"progs/world.frag\"\n\n");
-            StrcatMaterialText("    }\n\n");
+                StrcatMaterialText("    shader \"defs/shaders.def@world\"\n");
+
+            StrcatMaterialText("\n");
 
             if(flags & 2)
                 StrcatMaterialText("    fullbright\n");
@@ -671,11 +751,39 @@ static void ProcessMaterial(geomheader_t *header, int textureSwap)
                 StrcatMaterialText("    alphamask 0.6525\n");
             }
 
-            if(!(flags & 4))
-                StrcatMaterialText("    cull back\n");
+            if(flags & (256|512))
+                StrcatMaterialText("    sort transclucent\n");
+            else if(flags & 128)
+                StrcatMaterialText("    sort masked\n");
+            else
+                StrcatMaterialText("    sort default\n");
 
-            StrcatMaterialText("    depthtest\n\n");
-            StrcatMaterialText("    param \"diffuseColor\" vec4 \"%f %f %f %f\"\n\n",
+            switch(curmodel)
+            {
+            case 642:
+            case 644:
+            case 645:
+            case 650:
+            case 652:
+            case 653:
+            case 655:
+            case 661:
+            case 662:
+            case 663:
+            case 665:
+            case 666:
+            case 668:
+            case 669:
+                StrcatMaterialText("    cull front\n");
+                break;
+            default:
+                if(!(flags & 4))
+                    StrcatMaterialText("    cull back\n");
+                break;
+            }
+
+            StrcatMaterialText("    depthtest\n");
+            StrcatMaterialText("    color_diffuse \"%f %f %f %f\"\n\n",
                 (float)header->rgba2[0] / 255.0f,
                 (float)header->rgba2[1] / 255.0f,
                 (float)header->rgba2[2] / 255.0f,
@@ -686,28 +794,61 @@ static void ProcessMaterial(geomheader_t *header, int textureSwap)
             StrcatMaterialText("        wrap        repeat\n");
             StrcatMaterialText("    }\n");
             StrcatMaterialText("}\n\n");
-
-            materialSet[header->texture][textureSwap][flags] = 1;
         }
     }
-    else if(flags & 1024)
+    else
     {
-        StrcatMaterialText("mat_%x%x%x%x {\n",
+        tmp = va("mat_%x%x%x%x",
             header->rgba1[0],
             header->rgba1[1],
             header->rgba1[2],
             header->rgba1[3]);
 
-        StrcatMaterialText("    shaders {\n");
-        StrcatMaterialText("        vertexProgram \"progs/colortex.vert\"\n\n");
-        StrcatMaterialText("        fragmentProgram \"progs/colortex.frag\"\n\n");
-        StrcatMaterialText("    }\n\n");
+        if(FindMaterial("materials/mat%03d.kmat@%s", curmodel, tmp) != NULL)
+            return;
 
-        if(!(flags & 4))
-            StrcatMaterialText("    cull back\n");
+        HashMaterial("materials/mat%03d.kmat@%s", curmodel, tmp);
 
-        StrcatMaterialText("    depthtest\n\n");
-        StrcatMaterialText("    param \"diffuseColor\" vec4 \"%f %f %f %f\"\n\n",
+        if(writeToKMesh)
+            Com_Strcat("material = \"materials/mat%03d.kmat@%s\"\n", curmodel, tmp);
+
+        StrcatMaterialText("%s {\n", tmp);
+
+        StrcatMaterialText("    shader \"defs/shaders.def@colortex\"\n");
+
+        if(flags & 128)
+            StrcatMaterialText("    sort masked\n");
+        else if(flags & (256|512))
+            StrcatMaterialText("    sort transclucent\n");
+        else
+            StrcatMaterialText("    sort default\n");
+
+        switch(curmodel)
+        {
+        case 642:
+        case 644:
+        case 645:
+        case 650:
+        case 652:
+        case 653:
+        case 655:
+        case 661:
+        case 662:
+        case 663:
+        case 665:
+        case 666:
+        case 668:
+        case 669:
+            StrcatMaterialText("    cull front\n");
+            break;
+        default:
+            if(!(flags & 4))
+                StrcatMaterialText("    cull back\n");
+            break;
+        }
+
+        StrcatMaterialText("    depthtest\n");
+        StrcatMaterialText("    color_diffuse \"%f %f %f %f\"\n\n",
             (float)header->rgba1[0] / 255.0f,
             (float)header->rgba1[1] / 255.0f,
             (float)header->rgba1[2] / 255.0f,
@@ -723,8 +864,6 @@ static void ProcessMaterial(geomheader_t *header, int textureSwap)
 //
 // ProcessGeometry
 //
-
-static int cursection = 0;
 
 static void ProcessGeometry(byte *data)
 {
@@ -750,23 +889,31 @@ static void ProcessGeometry(byte *data)
         model_masked[curmodel] = 1;
     }
 
-    PrintFlags(header->flags);
+    //PrintFlags(header->flags);
     if(header->texture != -1)
     {
         // texture swaps for grunt model
         if(curmodel == 391)
             textureSwap = GetGruntTextureIndex(curnode, curvariant);
 
-        Com_Strcat("texture = \"textures/tex%04d_%02d.tga\"\n",
-            header->texture, textureSwap);
+        //Com_Strcat("texture = \"textures/tex%04d_%02d.tga\"\n",
+            //header->texture, textureSwap);
     }
 
-    ProcessMaterial(header, textureSwap);
+    if(model_nodeCount[curmodel] > 1)
+        ProcessMaterial(header, textureSwap, true);
+    else if(model_nodeCount[curmodel] == 1 && header->texture != -1)
+    {
+        int i;
 
-    Com_Strcat("rgba = %i %i %i %i\n",
-        header->rgba1[0], header->rgba1[1], header->rgba1[2], header->rgba1[3]);
-    Com_Strcat("// rgba = %i %i %i %i\n",
-        header->rgba2[0], header->rgba2[1], header->rgba2[2], header->rgba2[3]);
+        for(i = 0; i < texindexes[header->texture]; i++)
+            ProcessMaterial(header, i, i == 0 ? true : false);
+    }
+
+    //Com_Strcat("rgba = %i %i %i %i\n",
+        //header->rgba1[0], header->rgba1[1], header->rgba1[2], header->rgba1[3]);
+    //Com_Strcat("// rgba = %i %i %i %i\n",
+        //header->rgba2[0], header->rgba2[1], header->rgba2[2], header->rgba2[3]);
 
     tmp = Com_GetCartOffset(indices, CHUNK_INDICES_COUNT, 0);
     Com_Strcat("\nnumtriangles = %i\n", tmp);
@@ -1857,7 +2004,6 @@ void MDL_StoreModels(void)
 
         curmodel = i;
 
-        memset(materialSet, 0, sizeof(materialSet));
         memset(materialText, 0, sizeof(materialText));
 
         AddModel(modeldata, i);

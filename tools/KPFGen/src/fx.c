@@ -77,6 +77,8 @@ static byte *fxdata;
 #define FXF_UNKNOWN26       0x4000000
 #define FXF_UNKNOWN27       0x8000000
 
+static int curfx = 0;
+
 typedef struct
 {
     short hitplane;
@@ -427,12 +429,20 @@ static void FX_PrintFloat(const char *name, short val)
 
 static void FX_PrintVector(const char *name, short *val)
 {
-    float f1 = CoerceFloat(val[0]);
-    float f2 = CoerceFloat(val[1]);
-    float f3 = CoerceFloat(val[2]);
+    if(curfx == 255 && !strcmp(name, "offset"))
+    {
+        // stupid view offset hack for projectile_pulseshot_trail
+        Com_Strcat("        %s = { 0.0 0.0 6.375 }\n", name);
+    }
+    else
+    {
+        float f1 = CoerceFloat(val[0]);
+        float f2 = CoerceFloat(val[1]);
+        float f3 = CoerceFloat(val[2]);
 
-    if(f1 != 0 || f2 != 0 || f3 != 0)
-        Com_Strcat("        %s = { %f %f %f }\n", name, f1, f2, f3);
+        if(f1 != 0 || f2 != 0 || f3 != 0)
+            Com_Strcat("        %s = { %f %f %f }\n", name, f1, f2, f3);
+    }
 }
 
 void FX_StoreParticleEffects(void)
@@ -473,6 +483,7 @@ void FX_StoreParticleEffects(void)
             Com_StrcatClear();
             Com_SetDataProgress(1);
 
+            curfx = i;
             Com_Strcat("fx[%i] =\n{\n", (end-start)+1);
 
             while(start <= end)
@@ -532,6 +543,7 @@ void FX_StoreParticleEffects(void)
                 FX_PrintFloat("screen_offset_y", vfx[32]);
                 FX_PrintVector("offset", &vfx[33]);
 
+                Com_Strcat("        shader = \"defs/shaders.def@worldfx\"\n");
                 Com_Strcat("        textures[%i] =\n", texindexes[vfx[36]]);
                 Com_Strcat("        {\n");
                 for(k = 0; k < texindexes[vfx[36]]; k++)

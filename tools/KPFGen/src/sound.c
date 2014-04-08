@@ -721,7 +721,7 @@ byte *GetSndFxChunk(byte *a1, byte *a2, int a3)
     return a2 + ptr[a3 + 1];
 }
 
-float ConvertTurokPitchToOAL(short value)
+float ConvertTurokPitchToOAL(int waveid, short value)
 {
     float pitch = -CoerceFloat(value);
 
@@ -729,6 +729,17 @@ float ConvertTurokPitchToOAL(short value)
         pitch = 2.0f - (pitch / 1200.0f);
     else
         pitch = (1200.0f / pitch);
+
+    switch(waveid)
+    {
+    case 110:   // HISGRLPP
+    case 112:   // wmscrmpp
+    case 157:   // trxragpp
+    case 200:   // lion1pp
+    case 201:   // PUMA1PP
+        pitch *= 2;
+        break;
+    }
 
     return pitch;
 }
@@ -778,7 +789,7 @@ void SND_StoreSoundShaders(void)
                 Com_Strcat("    {\n");
                 Com_Strcat("        wavefile = \"sounds/waves/%s\"\n", sndnames[sfx->waveid]);
                 Com_Strcat("        delay = %i\n", sfx->delay);
-                Com_Strcat("        dbFreq = %f\n", ConvertTurokPitchToOAL(sfx->frequency));
+                Com_Strcat("        dbFreq = %f\n", ConvertTurokPitchToOAL(sfx->waveid, sfx->frequency));
                 Com_Strcat("        gain = %f\n", (CoerceFloat(sfx->volume) / 32.0f) + 1.0f);
                 Com_Strcat("        random = %f\n", (float)sfx->random / 100.0f);
                 Com_Strcat("        bInterpGain = %i\n", (sfx->flags & 0x4) != 0);
@@ -787,8 +798,8 @@ void SND_StoreSoundShaders(void)
                 Com_Strcat("        gainFactorEnd = %f\n", CoerceFloat(sfx->volEnd));
                 Com_Strcat("        gainInterpTime = %i\n", sfx->volRamp);
                 Com_Strcat("        gainInterpDelay = %i\n", sfx->volRampDelay);
-                Com_Strcat("        freqFactorEnd = %f\n", ConvertTurokPitchToOAL(sfx->freqStart));
-                Com_Strcat("        freqFactorStart = %f\n", ConvertTurokPitchToOAL(sfx->freqEnd));
+                Com_Strcat("        freqFactorEnd = %f\n", ConvertTurokPitchToOAL(sfx->waveid, sfx->freqStart));
+                Com_Strcat("        freqFactorStart = %f\n", ConvertTurokPitchToOAL(sfx->waveid, sfx->freqEnd));
                 Com_Strcat("        freqInterpTime = %i\n", sfx->freqRamp);
                 Com_Strcat("        freqInterpDelay = %i\n", sfx->freqRampDelay);
                 Com_Strcat("    }\n");

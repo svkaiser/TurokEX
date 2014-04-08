@@ -335,6 +335,7 @@ extern short model_nodeCount[800];
 extern short model_meshCount[800][100];
 extern short section_count[800][100][100];
 extern short section_textures[800][100][100][100];
+extern int section_flags[800][100];
 extern byte model_masked[800];
 extern bbox mdlboxes[1000];
 
@@ -692,29 +693,29 @@ static void ProcessTextureOverrides(short model, int textureid)
 
     ncount = model_nodeCount[model];
 
-    if(ncount <= 0)
+    if(ncount <= 0 || ncount > 1)
         return;
 
 #ifdef OLD_FORMAT
     Com_Strcat("textureSwaps =\n");
 #else
-    Com_Strcat("textureSwaps\n");
+    Com_Strcat("materials\n");
 #endif
     Com_Strcat("{\n");
 
-    for(j = 0; j < ncount; j++)
-    {
+    //for(j = 0; j < ncount; j++)
+    //{
         // node block start
-        Com_Strcat("{\n");
+        //Com_Strcat("{\n");
 
-        for(k = 0; k < model_meshCount[model][j]; k++)
-        {
+        //for(k = 0; k < model_meshCount[model][j]; k++)
+        //{
             // mesh block start
-            Com_Strcat("{ ");
+            //Com_Strcat("{ ");
 
-            for(i = 0; i < section_count[model][j][k]; i++)
+            for(i = 0; i < section_count[model][0][0]; i++)
             {
-                int texid = section_textures[model][j][k][i];
+                int texid = section_textures[model][0][0][i];
 
                 if(textureid >= texindexes[texid])
                 {
@@ -722,18 +723,20 @@ static void ProcessTextureOverrides(short model, int textureid)
                 }
                 else
                 {
-                    Com_Strcat("\"textures/tex%04d_%02d.tga\" ",
-                        texid, textureid);
+                    //Com_Strcat("\"textures/tex%04d_%02d.tga\" ",
+                        //texid, textureid);
+                    Com_Strcat("\"materials/mat%03d.kmat@mat_%04d_%02d_%i\"",
+                        model, texid, textureid, section_flags[model][i]);
                 }
             }
 
             // mesh block end
-            Com_Strcat("}\n");
-        }
+            //Com_Strcat("}\n");
+        //}
 
         // node block end
-        Com_Strcat("}\n");
-    }
+        //Com_Strcat("}\n");
+    //}
 
     Com_Strcat("}\n");
 }

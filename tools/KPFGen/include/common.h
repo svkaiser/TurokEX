@@ -28,6 +28,8 @@ void StoreExternalFile(const char *name, const char *store);
 extern byte *cartfile;
 extern unsigned long com_fileoffset;
 
+#define MAX_HASH    2048
+
 void Com_Printf(char* s, ...);
 void Com_Error(char *fmt, ...);
 void* Com_Alloc(int size);
@@ -55,6 +57,7 @@ void Com_WriteBufferPad4(byte *buffer);
 void Com_FPrintf(char* s, ...);
 void Com_StripExt(char *name);
 void Com_StripPath(char *name);
+int Com_Hash(const char *s);
 const char *Com_GetExePath(void);
 char *va(char *str, ...);
 int Com_GetCartOffset(byte *buf, int count, int *size);

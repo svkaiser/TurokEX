@@ -667,6 +667,22 @@ void Com_StripPath(char *name)
 }
 
 //
+// Com_Hash
+//
+
+int Com_Hash(const char *s) {
+    unsigned int hash   = 0;
+    char *str           = (char*)s;
+    char c;
+
+    while((c = *str++)) {
+        hash = c + (hash << 6) + (hash << 16) - hash;
+    }
+
+    return hash & (MAX_HASH-1);
+}
+
+//
 // Com_GetExePath
 //
 
