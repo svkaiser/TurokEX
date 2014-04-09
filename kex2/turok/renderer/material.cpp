@@ -28,7 +28,7 @@
 #include "common.h"
 #include "fileSystem.h"
 #include "memHeap.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "material.h"
 
 //
@@ -235,7 +235,7 @@ void kexMaterial::ParseSampler(kexLexer *lexer) {
     }
 
     stateBits |= BIT(GLSTATE_TEXTURE0 + unit);
-    sampler->texture = renderSystem.CacheTexture(texFile.c_str(),
+    sampler->texture = renderBackend.CacheTexture(texFile.c_str(),
                                                  sampler->clamp,
                                                  sampler->filter);
 }
@@ -270,7 +270,7 @@ glFunctions_t kexMaterial::ParseFunction(kexLexer *lexer) {
 void kexMaterial::ParseShader(kexLexer *lexer) {
     lexer->GetString();
 
-    shaderObj = renderSystem.CacheShader(lexer->StringToken());
+    shaderObj = renderBackend.CacheShader(lexer->StringToken());
     
     if(!shaderObj || shaderObj->HasErrors()) {
         bShaderErrors = true;
@@ -373,5 +373,5 @@ void kexMaterial::Parse(kexLexer *lexer) {
         lexer->Find();
     }
     
-    renderSystem.DisableShaders();
+    renderBackend.DisableShaders();
 }

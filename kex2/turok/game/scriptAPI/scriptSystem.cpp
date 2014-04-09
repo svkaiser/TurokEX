@@ -29,7 +29,7 @@
 #include "fileSystem.h"
 #include "world.h"
 #include "physics/physics.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "scriptAPI/scriptSystem.h"
 #include "scriptAPI/component.h"
 #include "gameManager.h"
@@ -379,15 +379,15 @@ void kexScriptManager::DrawGCStats(void) {
     c = RGBA(255, 255, 0, 255);
     cb = (byte*)&c;
 
-    renderSystem.consoleFont.DrawString("Current Size:", 32, 32, 1, false, cb, cb);
-    renderSystem.consoleFont.DrawString("Total Destroyed:", 32, 48, 1, false, cb, cb);
-    renderSystem.consoleFont.DrawString("Total Detected:", 32, 64, 1, false, cb, cb);
-    renderSystem.consoleFont.DrawString("New Objects:", 32, 80, 1, false, cb, cb);
-    renderSystem.consoleFont.DrawString("Total New Destroyed:", 32, 96, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString("Current Size:", 32, 32, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString("Total Destroyed:", 32, 48, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString("Total Detected:", 32, 64, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString("New Objects:", 32, 80, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString("Total New Destroyed:", 32, 96, 1, false, cb, cb);
 
-    renderSystem.consoleFont.DrawString(kva("%i", data[0]), 192, 32, 1, false, cb, cb);
-    renderSystem.consoleFont.DrawString(kva("%i", data[1]), 192, 48, 1, false, cb, cb);
-    renderSystem.consoleFont.DrawString(kva("%i", data[2]), 192, 64, 1, false, cb, cb);
-    renderSystem.consoleFont.DrawString(kva("%i", data[3]), 192, 80, 1, false, cb, cb);
-    renderSystem.consoleFont.DrawString(kva("%i", data[4]), 192, 96, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString(kva("%i", data[0]), 192, 32, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString(kva("%i", data[1]), 192, 48, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString(kva("%i", data[2]), 192, 64, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString(kva("%i", data[3]), 192, 80, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString(kva("%i", data[4]), 192, 96, 1, false, cb, cb);
 }

@@ -27,7 +27,7 @@
 #include "common.h"
 #include "clipmesh.h"
 #include "actor.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "renderWorld.h"
 #include "stanHull.h"
 
@@ -801,11 +801,11 @@ void kexClipMesh::DebugDraw(void) {
     if(owner == NULL || type == CMT_NONE) {
         return;
     }
-    renderSystem.SetState(GLSTATE_CULL, true);
-    renderSystem.SetState(GLSTATE_TEXTURE0, false);
-    renderSystem.SetState(GLSTATE_BLEND, true);
-    renderSystem.SetState(GLSTATE_ALPHATEST, true);
-    renderSystem.SetState(GLSTATE_LIGHTING, false);
+    renderBackend.SetState(GLSTATE_CULL, true);
+    renderBackend.SetState(GLSTATE_TEXTURE0, false);
+    renderBackend.SetState(GLSTATE_BLEND, true);
+    renderBackend.SetState(GLSTATE_ALPHATEST, true);
+    renderBackend.SetState(GLSTATE_LIGHTING, false);
 
     dglDisableClientState(GL_NORMAL_ARRAY);
     dglDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -837,22 +837,22 @@ void kexClipMesh::DebugDraw(void) {
         dglDrawElements(GL_TRIANGLES, cmGroup->numIndices,
             GL_UNSIGNED_SHORT, cmGroup->indices);
 
-        renderSystem.SetPolyMode(GLPOLY_LINE);
+        renderBackend.SetPolyMode(GLPOLY_LINE);
         dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
 
         dglDrawElements(GL_TRIANGLES, cmGroup->numIndices,
             GL_UNSIGNED_SHORT, cmGroup->indices);
 
-        renderSystem.SetPolyMode(GLPOLY_FILL);
+        renderBackend.SetPolyMode(GLPOLY_FILL);
     }
 
     dglEnableClientState(GL_NORMAL_ARRAY);
     dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    renderSystem.SetState(GLSTATE_TEXTURE0, true);
-    renderSystem.SetState(GLSTATE_BLEND, false);
-    renderSystem.SetState(GLSTATE_ALPHATEST, false);
-    renderSystem.SetState(GLSTATE_LIGHTING, true);
+    renderBackend.SetState(GLSTATE_TEXTURE0, true);
+    renderBackend.SetState(GLSTATE_BLEND, false);
+    renderBackend.SetState(GLSTATE_ALPHATEST, false);
+    renderBackend.SetState(GLSTATE_LIGHTING, true);
 #if 0
     for(unsigned int i = 0; i < numGroups; i++) {
         cmGroup_t *cmGroup = &cmGroups[i];

@@ -26,7 +26,7 @@
 
 #include "common.h"
 #include "memHeap.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "renderMain.h"
 #include "renderWorld.h"
 #include "defs.h"
@@ -34,7 +34,7 @@
 kexCvar cvarRenderFinish("r_finish", CVF_BOOL|CVF_CONFIG, "0", "Force a GL command sync");
 extern kexCvar cvarVidDepthSize;
 
-kexRenderSystem renderSystem;
+kexRenderBackend renderBackend;
 
 GL_ARB_multitexture_Define();
 GL_EXT_compiled_vertex_array_Define();
@@ -113,10 +113,10 @@ void* GL_RegisterProc(const char *address) {
 }
 
 //
-// kexRenderSystem::kexRenderSystem
+// kexRenderBackend::kexRenderBackend
 //
 
-kexRenderSystem::kexRenderSystem(void) {
+kexRenderBackend::kexRenderBackend(void) {
     this->viewWidth                 = this->SCREEN_WIDTH;
     this->viewHeight                = this->SCREEN_HEIGHT;
     this->viewWindowX               = 0;
@@ -139,17 +139,17 @@ kexRenderSystem::kexRenderSystem(void) {
 }
 
 //
-// kexRenderSystem::~kexRenderSystem
+// kexRenderBackend::~kexRenderBackend
 //
 
-kexRenderSystem::~kexRenderSystem(void) {
+kexRenderBackend::~kexRenderBackend(void) {
 }
 
 //
-// kexRenderSystem::SetViewDimensions
+// kexRenderBackend::SetViewDimensions
 //
 
-void kexRenderSystem::SetViewDimensions(void) {
+void kexRenderBackend::SetViewDimensions(void) {
     viewWidth = sysMain.VideoWidth();
     viewHeight = sysMain.VideoHeight();
 
@@ -166,7 +166,7 @@ void kexRenderSystem::SetViewDimensions(void) {
 }
 
 //
-// kexRenderSystem::GetOGLVersion
+// kexRenderBackend::GetOGLVersion
 //
 
 typedef enum {
@@ -180,7 +180,7 @@ typedef enum {
     OPENGL_VERSION_2_1,
 } glversion_t;
 
-int kexRenderSystem::GetOGLVersion(const char* version) {
+int kexRenderBackend::GetOGLVersion(const char* version) {
     int MajorVersion;
     int MinorVersion;
     int versionvar;
@@ -210,10 +210,10 @@ int kexRenderSystem::GetOGLVersion(const char* version) {
 }
 
 //
-// kexRenderSystem::SetDefaultState
+// kexRenderBackend::SetDefaultState
 //
 
-void kexRenderSystem::SetDefaultState(void) {
+void kexRenderBackend::SetDefaultState(void) {
     SetViewDimensions();
 
     glState.glStateBits     = 0;
@@ -258,10 +258,10 @@ void kexRenderSystem::SetDefaultState(void) {
 }
 
 //
-// kexRenderSystem::Init
+// kexRenderBackend::Init
 //
 
-void kexRenderSystem::Init(void) {
+void kexRenderBackend::Init(void) {
     gl_vendor = (const char*)dglGetString(GL_VENDOR);
     gl_renderer = (const char*)dglGetString(GL_RENDERER);
     gl_version = (const char*)dglGetString(GL_VERSION);
@@ -331,10 +331,10 @@ void kexRenderSystem::Init(void) {
 }
 
 //
-// kexRenderSystem::Shutdown
+// kexRenderBackend::Shutdown
 //
 
-void kexRenderSystem::Shutdown(void) {
+void kexRenderBackend::Shutdown(void) {
     kexTexture *texture;
     kexMaterial *material;
     kexShaderObj *shader;
@@ -363,10 +363,10 @@ void kexRenderSystem::Shutdown(void) {
 }
 
 //
-// kexRenderSystem::SetOrtho
+// kexRenderBackend::SetOrtho
 //
 
-void kexRenderSystem::SetOrtho(void) {
+void kexRenderBackend::SetOrtho(void) {
     kexMatrix mtx;
 
     dglMatrixMode(GL_MODELVIEW);
@@ -380,10 +380,10 @@ void kexRenderSystem::SetOrtho(void) {
 }
 
 //
-// kexRenderSystem::SwapBuffers
+// kexRenderBackend::SwapBuffers
 //
 
-void kexRenderSystem::SwapBuffers(void) {
+void kexRenderBackend::SwapBuffers(void) {
     if(cvarRenderFinish.GetBool()) {
         dglFinish();
     }
@@ -392,10 +392,10 @@ void kexRenderSystem::SwapBuffers(void) {
 }
 
 //
-// kexRenderSystem::SetState
+// kexRenderBackend::SetState
 //
 
-void kexRenderSystem::SetState(const int bits, bool bEnable) {
+void kexRenderBackend::SetState(const int bits, bool bEnable) {
 #define TOGGLEGLBIT(flag, bit)                                  \
     if(bEnable && !(glState.glStateBits & (1 << flag))) {       \
         dglEnable(bit);                                         \
@@ -448,7 +448,7 @@ void kexRenderSystem::SetState(const int bits, bool bEnable) {
             TOGGLEGLBIT(GLSTATE_FOG, GL_FOG);
             break;
         default:
-            common.Warning("kexRenderSystem::SetState: unknown bit flag: %i\n", bits);
+            common.Warning("kexRenderBackend::SetState: unknown bit flag: %i\n", bits);
             break;
     }
     
@@ -456,10 +456,10 @@ void kexRenderSystem::SetState(const int bits, bool bEnable) {
 }
 
 //
-// kexRenderSystem::SetState
+// kexRenderBackend::SetState
 //
 
-void kexRenderSystem::SetState(unsigned int flags) {
+void kexRenderBackend::SetState(unsigned int flags) {
     for(int i = 0; i < NUMGLSTATES; i++) {
         if(!(flags & BIT(i))) {
             SetState(i, false);
@@ -471,10 +471,10 @@ void kexRenderSystem::SetState(unsigned int flags) {
 }
 
 //
-// kexRenderSystem::SetFunc
+// kexRenderBackend::SetFunc
 //
 
-void kexRenderSystem::SetAlphaFunc(int func, float val) {
+void kexRenderBackend::SetAlphaFunc(int func, float val) {
     int pFunc = (glState.alphaFunction ^ func) |
         (glState.alphaFuncThreshold != val);
         
@@ -508,10 +508,10 @@ void kexRenderSystem::SetAlphaFunc(int func, float val) {
 }
 
 //
-// kexRenderSystem::SetDepth
+// kexRenderBackend::SetDepth
 //
 
-void kexRenderSystem::SetDepth(int func) {
+void kexRenderBackend::SetDepth(int func) {
     int pFunc = glState.depthFunction ^ func;
     
     if(pFunc == 0) {
@@ -543,10 +543,10 @@ void kexRenderSystem::SetDepth(int func) {
 }
 
 //
-// kexRenderSystem::SetBlend
+// kexRenderBackend::SetBlend
 //
 
-void kexRenderSystem::SetBlend(int src, int dest) {
+void kexRenderBackend::SetBlend(int src, int dest) {
     int pBlend = (glState.blendSrc ^ src) | (glState.blendDest ^ dest);
     
     if(pBlend == 0) {
@@ -619,17 +619,17 @@ void kexRenderSystem::SetBlend(int src, int dest) {
 }
 
 //
-// kexRenderSystem::SetEnv
+// kexRenderBackend::SetEnv
 //
 
-void kexRenderSystem::SetEnv(int env) {
+void kexRenderBackend::SetEnv(int env) {
 }
 
 //
-// kexRenderSystem::SetCull
+// kexRenderBackend::SetCull
 //
 
-void kexRenderSystem::SetCull(int type) {
+void kexRenderBackend::SetCull(int type) {
     int pCullType = glState.cullType ^ type;
     
     if(pCullType == 0) {
@@ -654,10 +654,10 @@ void kexRenderSystem::SetCull(int type) {
 }
 
 //
-// kexRenderSystem::SetPolyMode
+// kexRenderBackend::SetPolyMode
 //
 
-void kexRenderSystem::SetPolyMode(int type) {
+void kexRenderBackend::SetPolyMode(int type) {
     int pPolyMode = glState.polyMode ^ type;
     
     if(pPolyMode == 0) {
@@ -682,10 +682,10 @@ void kexRenderSystem::SetPolyMode(int type) {
 }
 
 //
-// kexRenderSystem::SetDepthMask
+// kexRenderBackend::SetDepthMask
 //
 
-void kexRenderSystem::SetDepthMask(int enable) {
+void kexRenderBackend::SetDepthMask(int enable) {
     int pEnable = glState.depthMask ^ enable;
     
     if(pEnable == 0) {
@@ -710,10 +710,10 @@ void kexRenderSystem::SetDepthMask(int enable) {
 }
 
 //
-// kexRenderSystem::SetTextureUnit
+// kexRenderBackend::SetTextureUnit
 //
 
-void kexRenderSystem::SetTextureUnit(int unit) {
+void kexRenderBackend::SetTextureUnit(int unit) {
     if(unit > MAX_TEXTURE_UNITS || unit < 0) {
         return;
     }
@@ -728,10 +728,10 @@ void kexRenderSystem::SetTextureUnit(int unit) {
 }
 
 //
-// kexRenderSystem::CacheTexture
+// kexRenderBackend::CacheTexture
 //
 
-kexTexture *kexRenderSystem::CacheTexture(const char *name, texClampMode_t clampMode,
+kexTexture *kexRenderBackend::CacheTexture(const char *name, texClampMode_t clampMode,
                                           texFilterMode_t filterMode) {
     kexTexture *texture = NULL;
 
@@ -758,10 +758,10 @@ kexTexture *kexRenderSystem::CacheTexture(const char *name, texClampMode_t clamp
 }
 
 //
-// kexRenderSystem::LoadShader
+// kexRenderBackend::LoadShader
 //
 
-kexShaderObj *kexRenderSystem::CacheShader(const char *file) {
+kexShaderObj *kexRenderBackend::CacheShader(const char *file) {
     kexShaderObj *sobj;
     
     if(file == NULL) {
@@ -794,10 +794,10 @@ kexShaderObj *kexRenderSystem::CacheShader(const char *file) {
 }
 
 //
-// kexRenderSystem::CacheFont
+// kexRenderBackend::CacheFont
 //
 
-kexFont *kexRenderSystem::CacheFont(const char *name) {
+kexFont *kexRenderBackend::CacheFont(const char *name) {
     kexFont *font = NULL;
 
     if(!(font = fontList.Find(name))) {
@@ -809,10 +809,10 @@ kexFont *kexRenderSystem::CacheFont(const char *name) {
 }
 
 //
-// kexRenderSystem::CacheMaterial
+// kexRenderBackend::CacheMaterial
 //
 
-kexMaterial *kexRenderSystem::CacheMaterial(const char *file) {
+kexMaterial *kexRenderBackend::CacheMaterial(const char *file) {
     kexMaterial *material;
     
     if(file == NULL) {
@@ -875,10 +875,10 @@ kexMaterial *kexRenderSystem::CacheMaterial(const char *file) {
 }
 
 //
-// kexRenderSystem::DisableShaders
+// kexRenderBackend::DisableShaders
 //
 
-void kexRenderSystem::DisableShaders(void) {
+void kexRenderBackend::DisableShaders(void) {
     if(glState.currentProgram != 0) {
         dglUseProgramObjectARB(0);
         glState.currentProgram = 0;
@@ -888,10 +888,10 @@ void kexRenderSystem::DisableShaders(void) {
 }
 
 //
-// kexRenderSystem::GetDepthSizeComponent
+// kexRenderBackend::GetDepthSizeComponent
 //
 
-const int kexRenderSystem::GetDepthSizeComponent(void) {
+const int kexRenderBackend::GetDepthSizeComponent(void) {
     int depthSize = cvarVidDepthSize.GetInt();
     
     switch(depthSize) {
@@ -910,10 +910,10 @@ const int kexRenderSystem::GetDepthSizeComponent(void) {
 }
 
 //
-// kexRenderSystem::DrawLoadingScreen
+// kexRenderBackend::DrawLoadingScreen
 //
 
-void kexRenderSystem::DrawLoadingScreen(const char *text) {
+void kexRenderBackend::DrawLoadingScreen(const char *text) {
     rcolor c = 0xffffffff;
 
     dglClearColor(0, 0, 0, 1.0f);
@@ -933,10 +933,10 @@ void kexRenderSystem::DrawLoadingScreen(const char *text) {
 }
 
 //
-// kexRenderSystem::BindDrawPointers
+// kexRenderBackend::BindDrawPointers
 //
 
-void kexRenderSystem::BindDrawPointers(void) {
+void kexRenderBackend::BindDrawPointers(void) {
     dglNormalPointer(GL_FLOAT, sizeof(float)*3, drawVertices);
     dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, drawTexCoords);
     dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, drawVertices);
@@ -944,10 +944,10 @@ void kexRenderSystem::BindDrawPointers(void) {
 }
 
 //
-// kexRenderSystem::AddTriangle
+// kexRenderBackend::AddTriangle
 //
 
-void kexRenderSystem::AddTriangle(int v0, int v1, int v2) {
+void kexRenderBackend::AddTriangle(int v0, int v1, int v2) {
     if(indiceCount + 3 >= GL_MAX_INDICES) {
         common.Warning("Static triangle indice overflow");
         return;
@@ -959,10 +959,10 @@ void kexRenderSystem::AddTriangle(int v0, int v1, int v2) {
 }
 
 //
-// kexRenderSystem::AddVertex
+// kexRenderBackend::AddVertex
 //
 
-void kexRenderSystem::AddVertex(float x, float y, float z, float s, float t,
+void kexRenderBackend::AddVertex(float x, float y, float z, float s, float t,
                                 byte r, byte g, byte b, byte a) {
     if((vertexCount * 4 + 3) >= GL_MAX_VERTICES) {
         common.Warning("Static vertex draw overflow");
@@ -983,10 +983,10 @@ void kexRenderSystem::AddVertex(float x, float y, float z, float s, float t,
 }
 
 //
-// kexRenderSystem::AddLine
+// kexRenderBackend::AddLine
 //
 
-void kexRenderSystem::AddLine(float x1, float y1, float z1,
+void kexRenderBackend::AddLine(float x1, float y1, float z1,
                               float x2, float y2, float z2,
                               byte r, byte g, byte b, byte a) {
     
@@ -997,10 +997,10 @@ void kexRenderSystem::AddLine(float x1, float y1, float z1,
 }
 
 //
-// kexRenderSystem::AddLine
+// kexRenderBackend::AddLine
 //
 
-void kexRenderSystem::AddLine(float x1, float y1, float z1,
+void kexRenderBackend::AddLine(float x1, float y1, float z1,
                               float x2, float y2, float z2,
                               byte r1, byte g1, byte b1, byte a1,
                               byte r2, byte g2, byte b2, byte a2) {
@@ -1012,10 +1012,10 @@ void kexRenderSystem::AddLine(float x1, float y1, float z1,
 }
 
 //
-// kexRenderSystem::DrawElements
+// kexRenderBackend::DrawElements
 //
 
-void kexRenderSystem::DrawElements(const bool bClearCount) {
+void kexRenderBackend::DrawElements(const bool bClearCount) {
     DisableShaders();
     dglDrawElements(GL_TRIANGLES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
 
@@ -1026,13 +1026,13 @@ void kexRenderSystem::DrawElements(const bool bClearCount) {
 }
 
 //
-// kexRenderSystem::DrawElements
+// kexRenderBackend::DrawElements
 //
 // Draws using the specified material. A temp. surface
 // is created in order to draw the material
 //
 
-void kexRenderSystem::DrawElements(const kexMaterial *material, const bool bClearCount) {
+void kexRenderBackend::DrawElements(const kexMaterial *material, const bool bClearCount) {
     surface_t surf;
     
     surf.numVerts   = vertexCount;
@@ -1052,10 +1052,10 @@ void kexRenderSystem::DrawElements(const kexMaterial *material, const bool bClea
 }
 
 //
-// kexRenderSystem::DrawLineElements
+// kexRenderBackend::DrawLineElements
 //
 
-void kexRenderSystem::DrawLineElements(void) {
+void kexRenderBackend::DrawLineElements(void) {
     DisableShaders();
     dglDrawElements(GL_LINES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
     

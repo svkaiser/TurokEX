@@ -30,7 +30,7 @@
 #include "renderModel.h"
 #include "actor.h"
 #include "world.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "renderWorld.h"
 #include "renderMain.h"
 #include "gameManager.h"
@@ -209,21 +209,21 @@ void kexRenderWorld::RenderScene(void) {
     worldLightTransform = (world->worldLightOrigin | world->Camera()->RotationMatrix()).ToVec3();
 
     /*if(bWireframe) {
-        renderSystem.SetPolyMode(GLPOLY_LINE);
+        renderBackend.SetPolyMode(GLPOLY_LINE);
     }*/
 
     DrawStaticActors();
     DrawActors();
 
     /*if(showWorldNode >= 0 || showAreaNode >= 0) {
-        renderSystem.SetState(GLSTATE_DEPTHTEST, false);
+        renderBackend.SetState(GLSTATE_DEPTHTEST, false);
         if(showWorldNode >= 0) {
             DrawWorldNode(&world->worldNode);
         }
         if(showAreaNode >= 0) {
             DrawAreaNode();
         }
-        renderSystem.SetState(GLSTATE_DEPTHTEST, true);
+        renderBackend.SetState(GLSTATE_DEPTHTEST, true);
     }*/
 
     if(bShowCollisionMap) {
@@ -235,7 +235,7 @@ void kexRenderWorld::RenderScene(void) {
     DrawViewActors();
 
     /*if(bWireframe) {
-        renderSystem.SetPolyMode(GLPOLY_FILL);
+        renderBackend.SetPolyMode(GLPOLY_FILL);
     }*/
 }
 
@@ -322,7 +322,7 @@ void kexRenderWorld::TraverseDrawActorNode(kexActor *actor,
                 materialPath = mat;
         }
 
-        kexMaterial *material = renderSystem.CacheMaterial(materialPath);
+        kexMaterial *material = renderBackend.CacheMaterial(materialPath);
         renderer.DrawSurface(surface, material);
     }
 
@@ -484,7 +484,7 @@ void kexRenderWorld::DrawViewActors(void) {
     dglMatrixMode(GL_MODELVIEW);
     dglLoadIdentity();
 
-    renderSystem.SetCull(GLCULL_FRONT);
+    renderBackend.SetCull(GLCULL_FRONT);
 
     for(kexActor *actor = world->actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
@@ -581,13 +581,13 @@ void kexRenderWorld::DrawAreaNode(void) {
                     renderer.DrawBoundingBox(nodes->bounds, 255, 0, 0);
                 }
                 else {
-                    renderSystem.SetState(GLSTATE_TEXTURE0, false);
+                    renderBackend.SetState(GLSTATE_TEXTURE0, false);
                     dglBegin(GL_LINES);
                     dglColor4ub(255, 0, 0, 255);
                     dglVertex3fv(nodes->bounds.Center().ToFloatPtr());
                     dglVertex3fv(actor->GetOrigin().ToFloatPtr());
                     dglEnd();
-                    renderSystem.SetState(GLSTATE_TEXTURE0, true);
+                    renderBackend.SetState(GLSTATE_TEXTURE0, true);
                 }
         }
     }

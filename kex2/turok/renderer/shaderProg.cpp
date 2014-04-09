@@ -27,7 +27,7 @@
 #include "common.h"
 #include "fileSystem.h"
 #include "memHeap.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "shaderProg.h"
 #include "defs.h"
 
@@ -111,12 +111,12 @@ void kexShaderObj::InitProgram(void) {
 //
 
 void kexShaderObj::Enable(void) {
-    if(programObj == renderSystem.glState.currentProgram) {
+    if(programObj == renderBackend.glState.currentProgram) {
         return;
     }
     
     dglUseProgramObjectARB(programObj);
-    renderSystem.glState.currentProgram = programObj;
+    renderBackend.glState.currentProgram = programObj;
 }
 
 //

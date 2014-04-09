@@ -35,7 +35,7 @@
 #include "sound.h"
 #include "console.h"
 #include "world.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "renderMain.h"
 
 kexGameManager gameManager;

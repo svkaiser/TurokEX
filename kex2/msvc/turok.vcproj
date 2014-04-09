@@ -260,6 +260,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\renderer\renderBackend.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\renderFont.cpp"
 					>
 				</File>
@@ -269,10 +273,6 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\renderModel.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\renderer\renderSystem.cpp"
 					>
 				</File>
 				<File
@@ -605,6 +605,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\renderer\renderBackend.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\renderFont.h"
 					>
 				</File>
@@ -614,10 +618,6 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\renderModel.h"
-					>
-				</File>
-				<File
-					RelativePath="..\turok\renderer\renderSystem.h"
 					>
 				</File>
 				<File

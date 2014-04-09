@@ -25,7 +25,7 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "memHeap.h"
 #include "canvas.h"
 #include "system.h"
@@ -141,8 +141,8 @@ void kexCanvasImage::Draw(void) {
         return;
     }
 
-    renderSystem.SetState(GLSTATE_BLEND, true);
-    renderSystem.BindDrawPointers();
+    renderBackend.SetState(GLSTATE_BLEND, true);
+    renderBackend.BindDrawPointers();
     texture->Bind();
 
     w = (width <= 0) ? (float)texture->Width() : width * 2;
@@ -175,7 +175,7 @@ void kexCanvasImage::Draw(void) {
         }
     }
 
-    renderSystem.AddVertex(
+    renderBackend.AddVertex(
         rx,
         ry,
         0,
@@ -185,7 +185,7 @@ void kexCanvasImage::Draw(void) {
         rgba[0 * 4 + 1],
         rgba[0 * 4 + 2],
         a[0]);
-    renderSystem.AddVertex(
+    renderBackend.AddVertex(
         rw,
         ry,
         0,
@@ -195,7 +195,7 @@ void kexCanvasImage::Draw(void) {
         rgba[1 * 4 + 1],
         rgba[1 * 4 + 2],
         a[1]);
-    renderSystem.AddVertex(
+    renderBackend.AddVertex(
         rx,
         rh,
         0,
@@ -205,7 +205,7 @@ void kexCanvasImage::Draw(void) {
         rgba[2 * 4 + 1],
         rgba[2 * 4 + 2],
         a[2]);
-    renderSystem.AddVertex(
+    renderBackend.AddVertex(
         rw,
         rh,
         0,
@@ -216,11 +216,11 @@ void kexCanvasImage::Draw(void) {
         rgba[3 * 4 + 2],
         a[3]);
 
-    renderSystem.AddTriangle(0, 1, 2);
-    renderSystem.AddTriangle(2, 1, 3);
+    renderBackend.AddTriangle(0, 1, 2);
+    renderBackend.AddTriangle(2, 1, 3);
 
-    renderSystem.DrawElements();
-    renderSystem.SetState(GLSTATE_BLEND, false);
+    renderBackend.DrawElements();
+    renderBackend.SetState(GLSTATE_BLEND, false);
 }
 
 //-----------------------------------------------------------------------------
@@ -307,9 +307,9 @@ void kexCanvasText::Draw(void) {
         }
     }
 
-    renderSystem.SetState(GLSTATE_BLEND, true);
+    renderBackend.SetState(GLSTATE_BLEND, true);
     font->DrawString(text.c_str(), dx, dy, ds, bCentered, (byte*)&color[0 * 4], (byte*)&color[2 * 4]);
-    renderSystem.SetState(GLSTATE_BLEND, false);
+    renderBackend.SetState(GLSTATE_BLEND, false);
 }
 
 //-----------------------------------------------------------------------------
@@ -431,7 +431,7 @@ kexCanvasImage *kexCanvas::CreateImage(const char *texture) {
         return NULL;
     }
 
-    img->texture = renderSystem.CacheTexture(texture, TC_CLAMP, TF_LINEAR);
+    img->texture = renderBackend.CacheTexture(texture, TC_CLAMP, TF_LINEAR);
 
     img->link.Clear();
     img->mainLink.Clear();
@@ -476,7 +476,7 @@ kexContainer *kexCanvas::CreateContainer(void) {
 kexCanvasText *kexCanvas::CreateText(const char *font) {
     kexCanvasText *str = static_cast<kexCanvasText*>(kexObject::Create("kexCanvasText"));
 
-    str->font = renderSystem.CacheFont(font);
+    str->font = renderBackend.CacheFont(font);
 
     str->link.Clear();
     str->mainLink.Clear();
@@ -671,5 +671,5 @@ void kexCanvas::InitObject(void) {
     scriptManager.Engine()->RegisterObjectProperty("kCanvasText", "bool bCentered",
         asOFFSET(kexCanvasText, bCentered));
 
-    scriptManager.Engine()->RegisterGlobalProperty("kCanvas Canvas", &renderSystem.Canvas());
+    scriptManager.Engine()->RegisterGlobalProperty("kCanvas Canvas", &renderBackend.Canvas());
 }

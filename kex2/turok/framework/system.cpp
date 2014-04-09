@@ -38,7 +38,7 @@
 #include "fx.h"
 #include "filesystem.h"
 #include "console.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "world.h"
 #include "scriptAPI/scriptSystem.h"
 #include "gameManager.h"
@@ -147,7 +147,7 @@ void kexSystem::Shutdown(void) {
     Mem_Purge(kexClipMesh::hb_clipMesh);
     Mem_Purge(kexCollisionMap::hb_collisionMap);
 
-    renderSystem.Shutdown();
+    renderBackend.Shutdown();
     modelManager.Shutdown();
     gameManager.Shutdown();
     scriptManager.Shutdown();
@@ -435,7 +435,7 @@ void kexSystem::Main(int argc, char **argv) {
 
     InitVideo();
 
-    renderSystem.Init();
+    renderBackend.Init();
     fxManager.Init();
 
     common.Printf("Running kernel...\n");

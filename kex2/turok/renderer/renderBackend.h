@@ -20,8 +20,8 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __RENDERSYS_H__
-#define __RENDERSYS_H__
+#ifndef __RENDERBACKEND_H__
+#define __RENDERBACKEND_H__
 
 #include "dgl.h"
 
@@ -97,10 +97,10 @@ typedef enum {
 #include "cachefilelist.h"
 #include "canvas.h"
 
-class kexRenderSystem {
+class kexRenderBackend {
 public:
-                                    kexRenderSystem(void);
-                                    ~kexRenderSystem(void);
+                                    kexRenderBackend(void);
+                                    ~kexRenderBackend(void);
 
     void                            Init(void);
     void                            Shutdown(void);
@@ -223,6 +223,6 @@ private:
     byte                            drawRGB[GL_MAX_VERTICES];
 };
 
-extern kexRenderSystem renderSystem;
+extern kexRenderBackend renderBackend;
 
 #endif

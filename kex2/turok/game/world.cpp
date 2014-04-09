@@ -32,7 +32,7 @@
 #include "server.h"
 #include "world.h"
 #include "sound.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "gameManager.h"
 #include "defs.h"
 
@@ -741,14 +741,14 @@ bool kexWorld::Load(const char *mapFile) {
     kexActor *actor;
     kexStr file(mapFile);
 
-    renderSystem.DrawLoadingScreen("Loading Collision...");
+    renderBackend.DrawLoadingScreen("Loading Collision...");
     collisionMap.Load((file + ".kclm").c_str());
     
     if(!(lexer = parser.Open((file + ".kmap").c_str()))) {
         return false;
     }
 
-    renderSystem.DrawLoadingScreen("Loading Objects...");
+    renderBackend.DrawLoadingScreen("Loading Objects...");
 
     // begin parsing
     while(lexer->CheckState()) {
@@ -795,7 +795,7 @@ bool kexWorld::Load(const char *mapFile) {
                 // read into nested block
                 lexer->ExpectNextToken(TK_LBRACK);
                 lexer->Find();
-                renderSystem.DrawLoadingScreen("Loading Static Meshes...");
+                renderBackend.DrawLoadingScreen("Loading Static Meshes...");
                 while(lexer->TokenType() != TK_RBRACK) {
                     switch(lexer->GetIDForTokenList(maptokens, lexer->Token())) {
                     case scmap_actor:

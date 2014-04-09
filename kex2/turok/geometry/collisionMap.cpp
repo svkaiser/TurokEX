@@ -33,7 +33,7 @@
 #include "world.h"
 #include "fileSystem.h"
 #include "collisionMap.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 
 #define CM_ID_HEADER    0
 #define CM_ID_DATASIZE  1
@@ -333,7 +333,7 @@ void kexCollisionMap::Load(const char *name) {
         return;
     }
 
-    renderSystem.DrawLoadingScreen("Loading Areas...");
+    renderBackend.DrawLoadingScreen("Loading Areas...");
 
     for(i = 0; i < numAreas; i++) {
         if(!(area = static_cast<kexArea*>(localWorld.ConstructObject("kexArea")))) {
@@ -383,7 +383,7 @@ void kexCollisionMap::Load(const char *name) {
     indices = (word*)Mem_Malloc((sizeof(word) * numSectors) * 3,
         kexCollisionMap::hb_collisionMap);
 
-    renderSystem.DrawLoadingScreen("Loading Points...");
+    renderBackend.DrawLoadingScreen("Loading Points...");
 
     for(i = 0; i < numPoints; i++) {
         points[0][i].Set(
@@ -399,7 +399,7 @@ void kexCollisionMap::Load(const char *name) {
     sectors = (kexSector*)Mem_Calloc(sizeof(kexSector) * numSectors,
         kexCollisionMap::hb_collisionMap);
 
-    renderSystem.DrawLoadingScreen("Loading Sectors...");
+    renderBackend.DrawLoadingScreen("Loading Sectors...");
 
     for(i = 0; i < numSectors; i++) {
         sec = &sectors[i];
@@ -449,7 +449,7 @@ void kexCollisionMap::Load(const char *name) {
 
     binFile.Close();
 
-    renderSystem.DrawLoadingScreen("Setting Up Sector Stacks...");
+    renderBackend.DrawLoadingScreen("Setting Up Sector Stacks...");
     SetupSectorStackList();
 }
 

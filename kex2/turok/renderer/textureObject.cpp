@@ -31,7 +31,7 @@
 #include "fileSystem.h"
 #include "memHeap.h"
 #include "mathlib.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "textureObject.h"
 
 kexCvar cvarGamma("gl_gamma", CVF_FLOAT|CVF_CONFIG, "1", "TODO");
@@ -193,7 +193,7 @@ void kexTexture::SetParameters(void) {
 
     if(has_GL_EXT_texture_filter_anisotropic) {
         if(cvarGLAnisotropic.GetInt()) {
-            dglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, renderSystem.MaxAnisotropic());
+            dglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, renderBackend.MaxAnisotropic());
         }
         else {
             dglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 0);
@@ -262,10 +262,10 @@ byte *kexTexture::LoadFromScreenBuffer(void) {
     int x;
     int y;
 
-    width       = renderSystem.ViewWidth();
-    height      = renderSystem.ViewHeight();
-    x           = renderSystem.WindowX();
-    y           = renderSystem.WindowY();
+    width       = renderBackend.ViewWidth();
+    height      = renderBackend.ViewHeight();
+    x           = renderBackend.WindowX();
+    y           = renderBackend.WindowY();
     col         = (width * 3);
     data        = (byte*)Mem_Malloc(height * width * 3, hb_static);
     
@@ -615,7 +615,7 @@ void kexTexture::Upload(byte **data, texClampMode_t clamp, texFilterMode_t filte
     clampMode = clamp;
     filterMode = filter;
 
-    if(!renderSystem.IsInitialized()) {
+    if(!renderBackend.IsInitialized()) {
         return;
     }
 
@@ -664,22 +664,22 @@ void kexTexture::Bind(void) {
 
         if(bLoaded == false || texid == 0) {
             // fall back to default texture
-            tid = *renderSystem.defaultTexture.TextureID();
+            tid = *renderBackend.defaultTexture.TextureID();
         }
         else {
             tid = texid;
         }
     }
 
-    int unit = renderSystem.glState.currentUnit;
-    dtexture currentTexture = renderSystem.glState.textureUnits[unit].currentTexture;
+    int unit = renderBackend.glState.currentUnit;
+    dtexture currentTexture = renderBackend.glState.textureUnits[unit].currentTexture;
 
     if(tid == currentTexture) {
         return;
     }
 
     dglBindTexture(GL_TEXTURE_2D, tid);
-    renderSystem.glState.textureUnits[unit].currentTexture = tid;
+    renderBackend.glState.textureUnits[unit].currentTexture = tid;
 }
 
 //
@@ -687,7 +687,7 @@ void kexTexture::Bind(void) {
 //
 
 void kexTexture::BindFrameBuffer(void) {
-    if(!renderSystem.IsInitialized()) {
+    if(!renderBackend.IsInitialized()) {
         return;
     }
     
@@ -700,12 +700,12 @@ void kexTexture::BindFrameBuffer(void) {
         }
     }
     
-    int unit = renderSystem.glState.currentUnit;
-    dtexture currentTexture = renderSystem.glState.textureUnits[unit].currentTexture;
+    int unit = renderBackend.glState.currentUnit;
+    dtexture currentTexture = renderBackend.glState.textureUnits[unit].currentTexture;
     
     if(texid != currentTexture) {
         dglBindTexture(GL_TEXTURE_2D, texid);
-        renderSystem.glState.textureUnits[unit].currentTexture = texid;
+        renderBackend.glState.textureUnits[unit].currentTexture = texid;
     }
     
     dglReadBuffer(GL_BACK);
@@ -731,7 +731,7 @@ void kexTexture::BindFrameBuffer(void) {
 //
 
 void kexTexture::BindDepthBuffer(void) {
-    if(!renderSystem.IsInitialized()) {
+    if(!renderBackend.IsInitialized()) {
         return;
     }
     
@@ -744,12 +744,12 @@ void kexTexture::BindDepthBuffer(void) {
         }
     }
     
-    int unit = renderSystem.glState.currentUnit;
-    dtexture currentTexture = renderSystem.glState.textureUnits[unit].currentTexture;
+    int unit = renderBackend.glState.currentUnit;
+    dtexture currentTexture = renderBackend.glState.textureUnits[unit].currentTexture;
     
     if(texid != currentTexture) {
         dglBindTexture(GL_TEXTURE_2D, texid);
-        renderSystem.glState.textureUnits[unit].currentTexture = texid;
+        renderBackend.glState.textureUnits[unit].currentTexture = texid;
     }
     
     origwidth   = sysMain.VideoWidth();
@@ -759,7 +759,7 @@ void kexTexture::BindDepthBuffer(void) {
     
     dglCopyTexImage2D(GL_TEXTURE_2D,
                       0,
-                      renderSystem.GetDepthSizeComponent(),
+                      renderBackend.GetDepthSizeComponent(),
                       0,
                       0,
                       origwidth,

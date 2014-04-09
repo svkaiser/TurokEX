@@ -31,7 +31,7 @@
 #include "client.h"
 #include "keyInput.h"
 #include "console.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 
 kexCvar cvarDisplayConsole("con_alwaysShowConsole", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 kexCvar cvarShowFPS("con_showfps", CVF_BOOL|CVF_CONFIG, "0", "Displays current FPS");
@@ -521,7 +521,7 @@ void kexConsole::Draw(void) {
 
     if(cvarShowFPS.GetBool()) {
         color = RGBA(255, 255, 255, 255);
-        renderSystem.consoleFont.DrawString(kva("fps: %i", client.fps), w - 64, 32, 1,
+        renderBackend.consoleFont.DrawString(kva("fps: %i", client.fps), w - 64, 32, 1,
             false, (byte*)&color, (byte*)&color);
     }
 
@@ -531,47 +531,47 @@ void kexConsole::Draw(void) {
     bOverlay = (state == CON_STATE_UP && cvarDisplayConsole.GetBool());
 
     h = (float)sysMain.VideoHeight() * 0.6875f;
-    renderSystem.SetState(GLSTATE_BLEND, true);
+    renderBackend.SetState(GLSTATE_BLEND, true);
 
     if(!bOverlay) {
-        renderSystem.BindDrawPointers();
-        renderSystem.whiteTexture.Bind();
+        renderBackend.BindDrawPointers();
+        renderBackend.whiteTexture.Bind();
 
         // draw tint overlay
-        renderSystem.AddVertex(0, 0, 0, 0, 0, 4, 8, 16, 192);
-        renderSystem.AddVertex(w, 0, 0, 0, 0, 4, 8, 16, 192);
-        renderSystem.AddVertex(0, h, 0, 0, 0, 4, 8, 16, 192);
-        renderSystem.AddVertex(w, h, 0, 0, 0, 4, 8, 16, 192);
-        renderSystem.AddTriangle(0, 1, 2);
-        renderSystem.AddTriangle(2, 1, 3);
-        renderSystem.DrawElements();
+        renderBackend.AddVertex(0, 0, 0, 0, 0, 4, 8, 16, 192);
+        renderBackend.AddVertex(w, 0, 0, 0, 0, 4, 8, 16, 192);
+        renderBackend.AddVertex(0, h, 0, 0, 0, 4, 8, 16, 192);
+        renderBackend.AddVertex(w, h, 0, 0, 0, 4, 8, 16, 192);
+        renderBackend.AddTriangle(0, 1, 2);
+        renderBackend.AddTriangle(2, 1, 3);
+        renderBackend.DrawElements();
 
         // draw borders
-        renderSystem.AddVertex(0, h-17, 0, 0, 0, 0, 128, 255, 255);
-        renderSystem.AddVertex(w, h-17, 0, 0, 0, 0, 128, 255, 255);
-        renderSystem.AddVertex(0, h-16, 0, 0, 0, 0, 128, 255, 255);
-        renderSystem.AddVertex(w, h-16, 0, 0, 0, 0, 128, 255, 255);
-        renderSystem.AddVertex(0, h, 0, 0, 0, 0, 128, 255, 255);
-        renderSystem.AddVertex(w, h, 0, 0, 0, 0, 128, 255, 255);
-        renderSystem.AddVertex(0, h+1, 0, 0, 0, 0, 128, 255, 255);
-        renderSystem.AddVertex(w, h+1, 0, 0, 0, 0, 128, 255, 255);
-        renderSystem.AddTriangle(0, 1, 2);
-        renderSystem.AddTriangle(2, 1, 3);
-        renderSystem.AddTriangle(4, 5, 6);
-        renderSystem.AddTriangle(6, 5, 7);
-        renderSystem.DrawElements();
+        renderBackend.AddVertex(0, h-17, 0, 0, 0, 0, 128, 255, 255);
+        renderBackend.AddVertex(w, h-17, 0, 0, 0, 0, 128, 255, 255);
+        renderBackend.AddVertex(0, h-16, 0, 0, 0, 0, 128, 255, 255);
+        renderBackend.AddVertex(w, h-16, 0, 0, 0, 0, 128, 255, 255);
+        renderBackend.AddVertex(0, h, 0, 0, 0, 0, 128, 255, 255);
+        renderBackend.AddVertex(w, h, 0, 0, 0, 0, 128, 255, 255);
+        renderBackend.AddVertex(0, h+1, 0, 0, 0, 0, 128, 255, 255);
+        renderBackend.AddVertex(w, h+1, 0, 0, 0, 0, 128, 255, 255);
+        renderBackend.AddTriangle(0, 1, 2);
+        renderBackend.AddTriangle(2, 1, 3);
+        renderBackend.AddTriangle(4, 5, 6);
+        renderBackend.AddTriangle(6, 5, 7);
+        renderBackend.DrawElements();
 
         color = RGBA(255, 255, 255, 255);
-        renderSystem.consoleFont.DrawString("> ", 0, h-15, 1, false, (byte*)&color, (byte*)&color);
+        renderBackend.consoleFont.DrawString("> ", 0, h-15, 1, false, (byte*)&color, (byte*)&color);
 
         if(bShowPrompt) {
-            renderSystem.consoleFont.DrawString("_", 16 +
-                renderSystem.consoleFont.StringWidth(typeStr, 1.0f, typeStrPos),
+            renderBackend.consoleFont.DrawString("_", 16 +
+                renderBackend.consoleFont.StringWidth(typeStr, 1.0f, typeStrPos),
                 h-15, 1, false, (byte*)&color, (byte*)&color);
         }
 
         if(strlen(typeStr) > 0) {
-            renderSystem.consoleFont.DrawString(typeStr, 16, h-15, 1, false,
+            renderBackend.consoleFont.DrawString(typeStr, 16, h-15, 1, false,
                 (byte*)&color, (byte*)&color);
         }
     }
@@ -585,11 +585,11 @@ void kexConsole::Draw(void) {
             }
 
             color = lineColor[i];
-            renderSystem.consoleFont.DrawString(scrollBackStr[i], 0, scy,
+            renderBackend.consoleFont.DrawString(scrollBackStr[i], 0, scy,
                 1, false, (byte*)&color, (byte*)&color);
             scy -= 16;
         }
     }
 
-    renderSystem.SetState(GLSTATE_BLEND, false);
+    renderBackend.SetState(GLSTATE_BLEND, false);
 }

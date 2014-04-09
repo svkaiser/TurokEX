@@ -26,7 +26,7 @@
 #include "enet/enet.h"
 #include "common.h"
 #include "keymap.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "client.h"
 #include "scriptAPI/component.h"
 #include "player/player.h"

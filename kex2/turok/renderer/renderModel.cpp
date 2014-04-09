@@ -30,7 +30,7 @@
 #include "editorCommon.h"
 #endif
 #include "script.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "renderModel.h"
 #ifndef EDITOR
 #include "animation.h"

@@ -31,7 +31,7 @@
 #include "editorCommon.h"
 #endif
 #include "memHeap.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 
 int kexHeap::numHeapBlocks = 0;
 int kexHeap::currentHeapBlockID = -1;
@@ -451,11 +451,11 @@ void kexHeap::DrawHeapInfo(void) {
 
     for(kexHeapBlock *heapBlock = kexHeap::blockList; heapBlock; heapBlock = heapBlock->next) {
         c = RGBA(0, 255, 0, 255);
-        renderSystem.consoleFont.DrawString(kva("%s", heapBlock->name), 32, y, 1, false, cb, cb);
+        renderBackend.consoleFont.DrawString(kva("%s", heapBlock->name), 32, y, 1, false, cb, cb);
         c = RGBA(255, 255, 0, 255);
-        renderSystem.consoleFont.DrawString(kva(": %ikb", kexHeap::Usage(*heapBlock) >> 10),
+        renderBackend.consoleFont.DrawString(kva(": %ikb", kexHeap::Usage(*heapBlock) >> 10),
             128, y, 1, false, cb, cb);
-        renderSystem.consoleFont.DrawString(kva(" allocated: %i", heapBlock->numAllocated),
+        renderBackend.consoleFont.DrawString(kva(" allocated: %i", heapBlock->numAllocated),
             192, y, 1, false, cb, cb);
 
         numBlocks = 0;
@@ -463,7 +463,7 @@ void kexHeap::DrawHeapInfo(void) {
             numBlocks++;
         }
 
-        renderSystem.consoleFont.DrawString(kva(" freed: %i", heapBlock->numAllocated - numBlocks),
+        renderBackend.consoleFont.DrawString(kva(" freed: %i", heapBlock->numAllocated - numBlocks),
             320, y, 1, false, cb, cb);
 
         heapBlock->numAllocated = numBlocks;

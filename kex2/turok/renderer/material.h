@@ -23,7 +23,7 @@
 #ifndef __MATERIAL_H__
 #define __MATERIAL_H__
 
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "shaderProg.h"
 #include "textureObject.h"
 #include "cachefilelist.h"

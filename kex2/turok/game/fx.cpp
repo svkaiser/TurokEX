@@ -31,7 +31,7 @@
 #include "client.h"
 #include "sound.h"
 #include "fileSystem.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "world.h"
 #include "defs.h"
 
@@ -921,7 +921,7 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                     lexer->ExpectNextToken(TK_LBRACK);
                     for(j = 0; j < info->numTextures; j++) {
                         lexer->GetString();
-                        info->textures[j] = renderSystem.CacheTexture(lexer->StringToken(),
+                        info->textures[j] = renderBackend.CacheTexture(lexer->StringToken(),
                                                                       TC_CLAMP,
                                                                       TF_LINEAR);
                     }
@@ -1010,7 +1010,7 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                 case scvfx_shader:
                     lexer->ExpectNextToken(TK_EQUAL);
                     lexer->GetString();
-                    info->shaderObj = renderSystem.CacheShader(lexer->StringToken());
+                    info->shaderObj = renderBackend.CacheShader(lexer->StringToken());
                     break;
                 case scvfx_onImpact:
                     ParseEvent(info->onImpact, lexer);

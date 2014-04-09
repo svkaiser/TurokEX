@@ -26,7 +26,7 @@
 
 #include "common.h"
 #include "script.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "renderFont.h"
 
 //
@@ -69,7 +69,7 @@ void kexFont::LoadKFont(const char *file) {
 
         if(lexer->Matches("material")) {
             lexer->GetString();
-            material = renderSystem.CacheMaterial(lexer->StringToken());
+            material = renderBackend.CacheMaterial(lexer->StringToken());
         }
 
         if(lexer->Matches("mapchar")) {
@@ -136,7 +136,7 @@ void kexFont::DrawString(const char *string, float x, float y, float scale,
     }
 
     if(!(texture = material->Sampler(0)->texture)) {
-        texture = &renderSystem.defaultTexture;
+        texture = &renderBackend.defaultTexture;
     }
 
     w = (float)texture->OriginalWidth();
@@ -158,19 +158,19 @@ void kexFont::DrawString(const char *string, float x, float y, float scale,
         ty2     = (ty1 + at->h / h);
         check   = (char*)string+i;
 
-        renderSystem.AddVertex(vx1, vy1, 0, tx1, ty1, rgba1[0], rgba1[1], rgba1[2], rgba1[3]);
-        renderSystem.AddVertex(vx2, vy1, 0, tx2, ty1, rgba1[0], rgba1[1], rgba1[2], rgba1[3]);
-        renderSystem.AddVertex(vx1, vy2, 0, tx1, ty2, rgba2[0], rgba2[1], rgba2[2], rgba2[3]);
-        renderSystem.AddVertex(vx2, vy2, 0, tx2, ty2, rgba2[0], rgba2[1], rgba2[2], rgba2[3]);
+        renderBackend.AddVertex(vx1, vy1, 0, tx1, ty1, rgba1[0], rgba1[1], rgba1[2], rgba1[3]);
+        renderBackend.AddVertex(vx2, vy1, 0, tx2, ty1, rgba1[0], rgba1[1], rgba1[2], rgba1[3]);
+        renderBackend.AddVertex(vx1, vy2, 0, tx1, ty2, rgba2[0], rgba2[1], rgba2[2], rgba2[3]);
+        renderBackend.AddVertex(vx2, vy2, 0, tx2, ty2, rgba2[0], rgba2[1], rgba2[2], rgba2[3]);
 
-        renderSystem.AddTriangle(0+tri, 1+tri, 2+tri);
-        renderSystem.AddTriangle(2+tri, 1+tri, 3+tri);
+        renderBackend.AddTriangle(0+tri, 1+tri, 2+tri);
+        renderBackend.AddTriangle(2+tri, 1+tri, 3+tri);
 
         x += at->w * scale;
         tri += 4;
     }
     
-    renderSystem.DrawElements(material);
+    renderBackend.DrawElements(material);
 }
 
 //

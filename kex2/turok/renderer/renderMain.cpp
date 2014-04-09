@@ -25,7 +25,7 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
-#include "renderSystem.h"
+#include "renderBackend.h"
 #include "material.h"
 #include "renderMain.h"
 #include "renderWorld.h"
@@ -60,7 +60,7 @@ kexRenderer::~kexRenderer(void) {
 //
 
 void kexRenderer::Init(void) {
-    motionBlurMaterial = renderSystem.CacheMaterial("materials/motionBlur.kmat@motionBlur");
+    motionBlurMaterial = renderBackend.CacheMaterial("materials/motionBlur.kmat@motionBlur");
 }
 
 //
@@ -71,11 +71,11 @@ void kexRenderer::Draw(void) {
     dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     renderWorld.RenderScene();
-    renderSystem.SetOrtho();
+    renderBackend.SetOrtho();
 
     ProcessMotionBlur();
 
-    renderSystem.Canvas().Draw();
+    renderBackend.Canvas().Draw();
     gameManager.MenuCanvas().Draw();
     console.Draw();
     
@@ -84,7 +84,7 @@ void kexRenderer::Draw(void) {
     scriptManager.DrawGCStats();
     
     // finish frame
-    renderSystem.SwapBuffers();
+    renderBackend.SwapBuffers();
 }
 
 //
@@ -115,23 +115,23 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
     shader->SetGlobalUniform(RSP_LIGHT_DIRECTION_COLOR, localWorld.worldLightColor);
     shader->SetGlobalUniform(RSP_LIGHT_AMBIENCE, localWorld.worldLightAmbience);
     
-    renderSystem.SetState(material->StateBits());
-    renderSystem.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
-    renderSystem.SetCull(material->CullType());
+    renderBackend.SetState(material->StateBits());
+    renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
+    renderBackend.SetCull(material->CullType());
     
     for(unsigned int i = 0; i < material->NumUnits(); i++) {
         matSampler_t *sampler = material->Sampler(i);
         
-        renderSystem.SetTextureUnit(sampler->unit);
+        renderBackend.SetTextureUnit(sampler->unit);
         
         if(sampler->texture == NULL) {
-            renderSystem.defaultTexture.Bind();
+            renderBackend.defaultTexture.Bind();
         }
         else {
-            if(sampler->texture == renderSystem.frameBuffer) {
+            if(sampler->texture == renderBackend.frameBuffer) {
                 sampler->texture->BindFrameBuffer();
             }
-            else if(sampler->texture == renderSystem.depthBuffer) {
+            else if(sampler->texture == renderBackend.depthBuffer) {
                 sampler->texture->BindDepthBuffer();
             }
             else {
@@ -141,7 +141,7 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
         }
     }
     
-    renderSystem.SetTextureUnit(0);
+    renderBackend.SetTextureUnit(0);
 
     if(currentSurface != surface) {
         dglNormalPointer(GL_FLOAT, sizeof(float)*3, surface->normals);
@@ -216,14 +216,14 @@ void kexRenderer::DrawFX(void) {
         return;
     }
 
-    renderSystem.SetState(GLSTATE_BLEND, true);
-    renderSystem.SetState(GLSTATE_ALPHATEST, true);
-    renderSystem.SetState(GLSTATE_TEXGEN_S, false);
-    renderSystem.SetState(GLSTATE_TEXGEN_T, false);
+    renderBackend.SetState(GLSTATE_BLEND, true);
+    renderBackend.SetState(GLSTATE_ALPHATEST, true);
+    renderBackend.SetState(GLSTATE_TEXGEN_S, false);
+    renderBackend.SetState(GLSTATE_TEXGEN_T, false);
 
-    renderSystem.SetCull(GLCULL_FRONT);
-    renderSystem.SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
-    renderSystem.SetDepthMask(GLDEPTHMASK_NO);
+    renderBackend.SetCull(GLCULL_FRONT);
+    renderBackend.SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
+    renderBackend.SetDepthMask(GLDEPTHMASK_NO);
 
     qsort(fxDisplayList, fxDisplayNum, sizeof(fxDisplay_t), kexRenderer::SortSprites);
 
@@ -282,19 +282,19 @@ void kexRenderer::DrawFX(void) {
             case VFX_DRAWFLAT:
             case VFX_DRAWDECAL:
                 mtx = kexMatrix(DEG2RAD(90), 1);
-                renderSystem.SetState(GLSTATE_CULL, false);
+                renderBackend.SetState(GLSTATE_CULL, false);
                 break;
             case VFX_DRAWBILLBOARD:
                 mtx = kexMatrix(kexQuat(localWorld.Camera()->GetAngles().yaw, 0, 1, 0));
-                renderSystem.SetState(GLSTATE_CULL, true);
+                renderBackend.SetState(GLSTATE_CULL, true);
                 break;
             case VFX_DRAWSURFACE:
                 mtx = kexMatrix(fx->GetRotation());
-                renderSystem.SetState(GLSTATE_CULL, false);
+                renderBackend.SetState(GLSTATE_CULL, false);
                 break;
             default:
                 mtx = kexMatrix(localWorld.Camera()->GetRotation());
-                renderSystem.SetState(GLSTATE_CULL, true);
+                renderBackend.SetState(GLSTATE_CULL, true);
                 break;
         }
         
@@ -330,7 +330,7 @@ void kexRenderer::DrawFX(void) {
             spriteColors[j][3] = fx->color1[3];
         }
 
-        renderSystem.SetState(GLSTATE_DEPTHTEST, fxinfo->bDepthBuffer);
+        renderBackend.SetState(GLSTATE_DEPTHTEST, fxinfo->bDepthBuffer);
 
         texture->Bind();
         if(fxinfo->bTextureWrapMirror) {
@@ -356,8 +356,8 @@ void kexRenderer::DrawFX(void) {
         }
     }
 
-    renderSystem.SetState(GLSTATE_DEPTHTEST, true);
-    renderSystem.SetDepthMask(GLDEPTHMASK_YES);
+    renderBackend.SetState(GLSTATE_DEPTHTEST, true);
+    renderBackend.SetDepthMask(GLDEPTHMASK_YES);
     dglEnableClientState(GL_NORMAL_ARRAY);
 }
 
@@ -426,13 +426,13 @@ void kexRenderer::ProcessMotionBlur(void) {
 
     dglGetIntegerv(GL_VIEWPORT, vp);
 
-    renderSystem.AddVertex((float)vp[0], (float)vp[1], 0, 0, 1, 255, 255, 255, 255);
-    renderSystem.AddVertex((float)vp[2], (float)vp[1], 0, 1, 1, 255, 255, 255, 255);
-    renderSystem.AddVertex((float)vp[0], (float)vp[3], 0, 0, 0, 255, 255, 255, 255);
-    renderSystem.AddVertex((float)vp[2], (float)vp[3], 0, 1, 0, 255, 255, 255, 255);
-    renderSystem.AddTriangle(0, 1, 2);
-    renderSystem.AddTriangle(2, 1, 3);
-    renderSystem.DrawElements(motionBlurMaterial);
+    renderBackend.AddVertex((float)vp[0], (float)vp[1], 0, 0, 1, 255, 255, 255, 255);
+    renderBackend.AddVertex((float)vp[2], (float)vp[1], 0, 1, 1, 255, 255, 255, 255);
+    renderBackend.AddVertex((float)vp[0], (float)vp[3], 0, 0, 0, 255, 255, 255, 255);
+    renderBackend.AddVertex((float)vp[2], (float)vp[3], 0, 1, 0, 255, 255, 255, 255);
+    renderBackend.AddTriangle(0, 1, 2);
+    renderBackend.AddTriangle(2, 1, 3);
+    renderBackend.DrawElements(motionBlurMaterial);
 }
 
 //
@@ -440,19 +440,19 @@ void kexRenderer::ProcessMotionBlur(void) {
 //
 
 void kexRenderer::DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b) {
-    renderSystem.SetState(GLSTATE_TEXTURE0, false);
-    renderSystem.SetState(GLSTATE_CULL, false);
-    renderSystem.SetState(GLSTATE_BLEND, true);
-    renderSystem.SetState(GLSTATE_LIGHTING, false);
+    renderBackend.SetState(GLSTATE_TEXTURE0, false);
+    renderBackend.SetState(GLSTATE_CULL, false);
+    renderBackend.SetState(GLSTATE_BLEND, true);
+    renderBackend.SetState(GLSTATE_LIGHTING, false);
 
-    renderSystem.DisableShaders();
+    renderBackend.DisableShaders();
 
 #define ADD_LINE(ba1, ba2, ba3, bb1, bb2, bb3)                      \
-    renderSystem.AddLine(bbox[ba1][0], bbox[ba2][1], bbox[ba3][2],  \
+    renderBackend.AddLine(bbox[ba1][0], bbox[ba2][1], bbox[ba3][2],  \
                          bbox[bb1][0], bbox[bb2][1], bbox[bb3][2],  \
                          r, g, b, 255)
     
-    renderSystem.BindDrawPointers();
+    renderBackend.BindDrawPointers();
     ADD_LINE(0, 0, 0, 1, 0, 0);
     ADD_LINE(1, 0, 0, 1, 0, 1);
     ADD_LINE(1, 0, 1, 0, 0, 1);
@@ -469,11 +469,11 @@ void kexRenderer::DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b) {
     ADD_LINE(1, 1, 0, 1, 1, 1);
     ADD_LINE(1, 1, 1, 1, 0, 1);
     ADD_LINE(1, 0, 1, 1, 0, 0);
-    renderSystem.DrawLineElements();
+    renderBackend.DrawLineElements();
     
 #undef ADD_LINE
 
-    renderSystem.SetState(GLSTATE_TEXTURE0, true);
+    renderBackend.SetState(GLSTATE_TEXTURE0, true);
 }
 
 //
@@ -486,13 +486,13 @@ void kexRenderer::DrawRadius(float x, float y, float z,
     float an;
     int i;
 
-    renderSystem.SetState(GLSTATE_TEXTURE0, false);
-    renderSystem.SetState(GLSTATE_CULL, false);
-    renderSystem.SetState(GLSTATE_BLEND, true);
-    renderSystem.SetState(GLSTATE_LIGHTING, false);
+    renderBackend.SetState(GLSTATE_TEXTURE0, false);
+    renderBackend.SetState(GLSTATE_CULL, false);
+    renderBackend.SetState(GLSTATE_BLEND, true);
+    renderBackend.SetState(GLSTATE_LIGHTING, false);
 
-    renderSystem.DisableShaders();
-    renderSystem.BindDrawPointers();
+    renderBackend.DisableShaders();
+    renderBackend.BindDrawPointers();
 
     an = DEG2RAD(360 / 32);
 
@@ -508,13 +508,13 @@ void kexRenderer::DrawRadius(float x, float y, float z,
         float z1 = z + (radius * c1);
         float z2 = z + (radius * c2);
         
-        renderSystem.AddLine(x1, y1, z1, x1, y2, z1, r, g, b, 255);
-        renderSystem.AddLine(x1, y1, z1, x2, y1, z2, r, g, b, 255);
-        renderSystem.AddLine(x1, y2, z1, x2, y2, z2, r, g, b, 255);
+        renderBackend.AddLine(x1, y1, z1, x1, y2, z1, r, g, b, 255);
+        renderBackend.AddLine(x1, y1, z1, x2, y1, z2, r, g, b, 255);
+        renderBackend.AddLine(x1, y2, z1, x2, y2, z2, r, g, b, 255);
     }
 
-    renderSystem.DrawLineElements();
-    renderSystem.SetState(GLSTATE_TEXTURE0, true);
+    renderBackend.DrawLineElements();
+    renderBackend.SetState(GLSTATE_TEXTURE0, true);
 }
 
 //
@@ -522,22 +522,22 @@ void kexRenderer::DrawRadius(float x, float y, float z,
 //
 
 void kexRenderer::DrawOrigin(float x, float y, float z, float size) {
-    renderSystem.SetState(GLSTATE_TEXTURE0, false);
-    renderSystem.SetState(GLSTATE_FOG, false);
-    renderSystem.SetState(GLSTATE_LIGHTING, false);
+    renderBackend.SetState(GLSTATE_TEXTURE0, false);
+    renderBackend.SetState(GLSTATE_FOG, false);
+    renderBackend.SetState(GLSTATE_LIGHTING, false);
 
     dglDepthRange(0.0f, 0.0f);
     dglLineWidth(2.0f);
 
-    renderSystem.DisableShaders();
+    renderBackend.DisableShaders();
     
-    renderSystem.BindDrawPointers();
-    renderSystem.AddLine(x, y, z, x + size, y, z, 255, 0, 0, 255); // x
-    renderSystem.AddLine(x, y, z, x, y + size, z, 0, 255, 0, 255); // y
-    renderSystem.AddLine(x, y, z, x, y, z + size, 0, 0, 255, 255); // z
-    renderSystem.DrawLineElements();
+    renderBackend.BindDrawPointers();
+    renderBackend.AddLine(x, y, z, x + size, y, z, 255, 0, 0, 255); // x
+    renderBackend.AddLine(x, y, z, x, y + size, z, 0, 255, 0, 255); // y
+    renderBackend.AddLine(x, y, z, x, y, z + size, 0, 0, 255, 255); // z
+    renderBackend.DrawLineElements();
     
-    renderSystem.SetState(GLSTATE_TEXTURE0, true);
+    renderBackend.SetState(GLSTATE_TEXTURE0, true);
     
     dglLineWidth(1.0f);
     dglDepthRange(0.0f, 1.0f);
@@ -550,7 +550,7 @@ void kexRenderer::DrawOrigin(float x, float y, float z, float size) {
 void kexRenderer::DrawTriangle(const kexTri &tri, const word index,
                                byte r, byte g, byte b, byte a) {
     for(int j = 0; j < 3; j++) {
-        renderSystem.AddVertex(tri.point[j]->x,
+        renderBackend.AddVertex(tri.point[j]->x,
                                tri.point[j]->y,
                                tri.point[j]->z,
                                0,
@@ -561,7 +561,7 @@ void kexRenderer::DrawTriangle(const kexTri &tri, const word index,
                                a);
     }
     
-    renderSystem.AddTriangle(index + 0, index + 1, index + 2);
+    renderBackend.AddTriangle(index + 0, index + 1, index + 2);
 }
 
 //
@@ -581,7 +581,7 @@ void kexRenderer::DrawSectors(kexSector *sectors, const int count) {
     kexTri *tri;
     kexVec3 n;
 
-    renderSystem.DisableShaders();
+    renderBackend.DisableShaders();
 
     for(int i = 0; i < count; i++) {
         byte r, g, b, a;
@@ -617,7 +617,7 @@ void kexRenderer::DrawSectors(kexSector *sectors, const int count) {
 
         if(sector->area && sector->area->Flags() & AAF_WATER) {
             for(int j = 0; j < 3; j++) {
-                renderSystem.AddVertex(tri->point[j]->x,
+                renderBackend.AddVertex(tri->point[j]->x,
                                        sector->area->WaterPlane(),
                                        tri->point[j]->z,
                                        0,
@@ -627,7 +627,7 @@ void kexRenderer::DrawSectors(kexSector *sectors, const int count) {
                                        255,
                                        192);
             }
-            renderSystem.AddTriangle(idx + 0, idx + 1, idx + 2);
+            renderBackend.AddTriangle(idx + 0, idx + 1, idx + 2);
 
             idx += 3;
             num++;
@@ -635,27 +635,27 @@ void kexRenderer::DrawSectors(kexSector *sectors, const int count) {
     }
 
     if(num != 0) {
-        renderSystem.SetState(GLSTATE_CULL, true);
-        renderSystem.SetState(GLSTATE_TEXTURE0, false);
-        renderSystem.SetState(GLSTATE_BLEND, true);
-        renderSystem.SetState(GLSTATE_ALPHATEST, true);
-        renderSystem.SetState(GLSTATE_LIGHTING, false);
+        renderBackend.SetState(GLSTATE_CULL, true);
+        renderBackend.SetState(GLSTATE_TEXTURE0, false);
+        renderBackend.SetState(GLSTATE_BLEND, true);
+        renderBackend.SetState(GLSTATE_ALPHATEST, true);
+        renderBackend.SetState(GLSTATE_LIGHTING, false);
 
-        renderSystem.BindDrawPointers();
-        renderSystem.DrawElements(false);
+        renderBackend.BindDrawPointers();
+        renderBackend.DrawElements(false);
 
         // draw wireframe outline
-        renderSystem.SetPolyMode(GLPOLY_LINE);
+        renderBackend.SetPolyMode(GLPOLY_LINE);
 
         dglDisableClientState(GL_COLOR_ARRAY);
         dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
 
-        renderSystem.DrawElements();
-        renderSystem.SetPolyMode(GLPOLY_FILL);
+        renderBackend.DrawElements();
+        renderBackend.SetPolyMode(GLPOLY_FILL);
 
         dglEnableClientState(GL_COLOR_ARRAY);
 
-        renderSystem.SetState(GLSTATE_CULL, false);
+        renderBackend.SetState(GLSTATE_CULL, false);
         dglLineWidth(2.0f);
 
         // draw plane normal vectors
@@ -667,7 +667,7 @@ void kexRenderer::DrawSectors(kexSector *sectors, const int count) {
                 n = tri->plane.Normal();
                 pt = tri->GetCenterPoint();
 
-                renderSystem.AddLine(pt.x,
+                renderBackend.AddLine(pt.x,
                                      pt.y,
                                      pt.z,
                                      pt.x + (16 * n[0]),
@@ -690,7 +690,7 @@ void kexRenderer::DrawSectors(kexSector *sectors, const int count) {
                     n = tri->plane.Normal();
                     pt = tri->GetCenterPoint();
 
-                    renderSystem.AddLine(pt.x,
+                    renderBackend.AddLine(pt.x,
                                          pt.y,
                                          pt.z,
                                          pt.x + (16 * n[0]),
@@ -708,9 +708,9 @@ void kexRenderer::DrawSectors(kexSector *sectors, const int count) {
             }
         }
 
-        renderSystem.DrawLineElements();
+        renderBackend.DrawLineElements();
         dglLineWidth(1.0f);
 
-        renderSystem.SetState(GLSTATE_TEXTURE0, true);
+        renderBackend.SetState(GLSTATE_TEXTURE0, true);
     }
 }
