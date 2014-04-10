@@ -46,11 +46,11 @@ kexWorldObject::kexWorldObject(void) {
     this->baseHeight    = 10.24f;
     this->viewHeight    = 8.192f;
     this->centerHeight  = 5.12f;
-    this->areaNode      = NULL;
     this->impactType    = IT_DEFAULT;
     this->physicsRef    = NULL;
 
-    this->areaLink.SetData(this);
+    this->areaLink.link.SetData(this);
+    this->areaLink.node = NULL;
 }
 
 //
@@ -81,38 +81,18 @@ void kexWorldObject::OnTouch(kexWorldObject *instigator) {
 //
 
 void kexWorldObject::LinkArea(void) {
-    areaNode_t *node;
     kexBBox box;
 
     if(IsStale()) {
         return;
     }
 
-    UnlinkArea();
-
-    node = localWorld.areaNodes;
     box.min.Set(-radius, 0, -radius);
     box.max.Set(radius, 0, radius);
     box.min += origin;
     box.max += origin;
 
-    while(1) {
-        if(node->axis == -1) {
-            break;
-        }
-        if(box.min[node->axis] > node->dist) {
-            node = node->children[0];
-        }
-        else if(box.max[node->axis] < node->dist) {
-            node = node->children[1];
-        }
-        else {
-            break;
-        }
-    }
-
-    areaLink.AddBefore(node->objects);
-    areaNode = node;
+    areaLink.Link(localWorld.areaNodes, box);
 }
 
 //
@@ -120,8 +100,7 @@ void kexWorldObject::LinkArea(void) {
 //
 
 void kexWorldObject::UnlinkArea(void) {
-    areaLink.Remove();
-    areaNode = NULL;
+    areaLink.UnLink();
 }
 
 //
@@ -312,11 +291,11 @@ void kexWorldObject::InflictDamage(kexWorldObject *target, kexKeyMap *damageDef)
 void kexWorldObject::RangeDamage(const char *damageDef,
                                  const float dmgRadius,
                                  const kexVec3 &dmgOrigin) {
-    if(areaNode) {
+    if(areaLink.node) {
         float dist;
 
-        for(kexWorldObject *obj = areaNode->objects.Next(); obj != NULL;
-            obj = obj->areaLink.Next()) {
+        for(kexWorldObject *obj = areaLink.node->objects.Next(); obj != NULL;
+            obj = obj->areaLink.link.Next()) {
                 if(obj == this || !obj->bCollision) {
                     continue;
                 }

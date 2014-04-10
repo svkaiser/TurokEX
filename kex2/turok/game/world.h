@@ -29,31 +29,7 @@
 #include "camera.h"
 #include "fx.h"
 #include "collisionMap.h"
-
-typedef enum {
-    NODE_FRONT  = 0,
-    NODE_BACK,
-    NODE_SIDES
-} nodeSide_t;
-
-typedef struct worldNode_s {
-    kexBBox                             bounds;
-    kexPlane                            plane;
-    kexArray<kexActor*>                 actors;
-    bool                                bLeaf;
-    struct worldNode_s                  *children[NODE_SIDES];
-} worldNode_t;
-
-#define MAX_AREA_DEPTH                  8
-#define MAX_AREA_NODES                  512
-
-typedef struct areaNode_s {
-    kexBBox                             bounds;
-    int                                 axis;
-    float                               dist;
-    kexLinklist<kexWorldObject>         objects;
-    struct areaNode_s                   *children[NODE_SIDES];
-} areaNode_t;
+#include "sdNodes.h"
 
 //-----------------------------------------------------------------------------
 //
@@ -111,7 +87,6 @@ public:
     kexVec4                             &GetCurrentFogRGB(void) { return currentFogRGB; }
     bool                                FogEnabled(void) { return bEnableFog; }
     void                                ToggleFog(bool toggle) { bEnableFog = toggle; }
-    const int                           NumAreaNodes(void) const { return numAreaNodes; }
     bool                                &ReadyUnLoad(void) { return bReadyUnload; }
     const int                           MapID(void) const { return mapID; }
     int                                 &NextMapID(void) { return nextMapID; }
@@ -122,8 +97,7 @@ public:
 
     kexActor                            *actorRover;
     kexFx                               *fxRover;
-    worldNode_t                         worldNode;
-    areaNode_t                          areaNodes[MAX_AREA_NODES];
+    kexSDNode<kexWorldObject>           areaNodes;
 
     // TEMP
     kexVec4                             worldLightOrigin;
@@ -137,15 +111,8 @@ public:
     static void                         InitObject(void);
 
 private:
-    void                                BuildWorldNodes(void);
     void                                BuildAreaNodes(void);
-    void                                AddWorldNode(worldNode_t *node, int split);
-    areaNode_t                          *AddAreaNode(int depth, kexBBox &box);
-    bool                                SetupChildWorldNode(worldNode_t *parent, worldNode_t *child,
-                                            float *splitX, float *splitZ,
-                                            nodeSide_t side, int split);
-    void                                TraverseWorldNodes(worldNode_t *node, traceInfo_t *trace);
-    void                                TraverseAreaNodes(traceInfo_t *trace, areaNode_t *areaNode);
+    void                                TraverseAreaNodes(traceInfo_t *trace, kexSDNodeObj<kexWorldObject> *areaNode);
 
     bool                                bLoaded;
     bool                                bReadyUnload;
@@ -166,7 +133,6 @@ private:
     float                               currentFogFar;
     kexVec4                             currentFogRGB;
     int                                 validcount;
-    int                                 numAreaNodes;
 };
 
 extern kexWorld localWorld;

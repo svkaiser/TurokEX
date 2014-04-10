@@ -117,10 +117,10 @@ void kexPlayerPhysics::Think(const float timeDelta) {
     trace.bbox |= (velocity * time);
 
     // handle interactions with touchable objects
-    if(owner->bCanPickup && owner->areaNode) {
-        for(kexWorldObject *obj = owner->areaNode->objects.Next();
+    if(owner->bCanPickup && owner->areaLink.node) {
+        for(kexWorldObject *obj = owner->areaLink.node->objects.Next();
             obj != NULL;
-            obj = obj->areaLink.Next()) {
+            obj = obj->areaLink.link.Next()) {
                 if(obj == owner || !obj->bTouch) {
                     continue;
                 }

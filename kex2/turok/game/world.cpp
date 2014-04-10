@@ -507,80 +507,36 @@ void kexWorld::SpawnLocalPlayer(void) {
 }
 
 //
-// kexWorld::TraverseWorldNodes
-//
-
-void kexWorld::TraverseWorldNodes(worldNode_t *node, traceInfo_t *trace) {
-    if(node->bLeaf) {
-        kexBBox box;
-        kexActor *actor;
-        float r = 16.384f;
-
-        if(trace->bUseBBox) {
-            r = trace->localBBox.Radius();
-        }
-
-        for(unsigned i = 0; i < node->actors.Length(); i++) {
-            actor = node->actors[i];
-
-            if(actor->validcount == validcount) {
-                // already checked this one
-                continue;
-            }
-
-            box = actor->Bounds() + r;
-            actor->validcount = validcount;
-
-            if(box.LineIntersect(trace->start, trace->end)) {
-                actor->bTraced = true;
-
-                // do simple sphere intersection test if no collision
-                // mesh is present
-                if(actor->ClipMesh().GetType() == CMT_NONE) {
-                    actor->Trace(trace);
-                }
-                else {
-                    actor->ClipMesh().Trace(trace);
-                }
-            }
-        }
-
-        return;
-    }
-
-    kexVec3 normal = node->plane.Normal();
-
-    float d1 = normal.Dot(trace->start) - node->plane.d;
-    float d2 = normal.Dot(trace->end) - node->plane.d;
-
-    if((d1 >= 0 || d2 >= 0) && node->children[0]) {
-        TraverseWorldNodes(node->children[0], trace);
-    }
-    
-    if((d1 < 0 || d2 < 0) && node->children[1]) {
-        TraverseWorldNodes(node->children[1], trace);
-    }
-}
-
-//
 // kexWorld::TraverseAreaNodes
 //
 
-void kexWorld::TraverseAreaNodes(traceInfo_t *trace, areaNode_t *areaNode) {
+void kexWorld::TraverseAreaNodes(traceInfo_t *trace, kexSDNodeObj<kexWorldObject> *areaNode) {
     float min, max;
+    kexBBox box;
+    float r;
+
+    if(trace->bUseBBox) {
+        r = trace->localBBox.Radius();
+    }
+    else {
+        r = 16.384f;
+    }
 
     for(kexWorldObject *obj = areaNode->objects.Next();
         obj != NULL;
-        obj = obj->areaLink.Next()) {
+        obj = obj->areaLink.link.Next()) {
             if(obj == trace->owner || !obj->bCollision) {
                 continue;
             }
+
+            box = obj->Bounds() + r;
+
             if(trace->bUseBBox) {
-                if(!obj->Bounds().IntersectingBox(trace->bbox)) {
+                if(!box.IntersectingBox(trace->bbox)) {
                     continue;
                 }
             }
-            else if(!obj->Bounds().LineIntersect(trace->start, trace->end)) {
+            else if(!box.LineIntersect(trace->start, trace->end)) {
                 continue;
             }
 
@@ -605,11 +561,11 @@ void kexWorld::TraverseAreaNodes(traceInfo_t *trace, areaNode_t *areaNode) {
     }
 
     if(max > areaNode->dist) {
-        TraverseAreaNodes(trace, areaNode->children[0]);
+        TraverseAreaNodes(trace, areaNode->children[NODE_FRONT]);
     }
 
     if(min < areaNode->dist) {
-        TraverseAreaNodes(trace, areaNode->children[1]);
+        TraverseAreaNodes(trace, areaNode->children[NODE_BACK]);
     }
 }
 
@@ -625,12 +581,8 @@ void kexWorld::Trace(traceInfo_t *trace, const int clipFlags) {
     trace->hitVector = trace->end;
     trace->hitNormal.Clear();
 
-    if(!(clipFlags & PF_NOCLIPACTORS)) {
-        TraverseAreaNodes(trace, areaNodes);
-    }
-
-    if(!(clipFlags & PF_NOCLIPSTATICS)) {
-        TraverseWorldNodes(&worldNode, trace);
+    if(!(clipFlags & (PF_NOCLIPACTORS|PF_NOCLIPSTATICS))) {
+        TraverseAreaNodes(trace, areaNodes.nodes);
     }
 
     if(trace->hitTri) {
@@ -715,6 +667,49 @@ void kexWorld::TriggerActor(const int targetID) {
             if(actorRover->TargetID() == targetID) {
                 actorRover->OnTrigger();
             }
+    }
+}
+
+//
+// kexWorld::BuildAreaNodes
+//
+
+void kexWorld::BuildAreaNodes(void) {
+    areaNodes.Init(8, 512);
+
+    if(collisionMap.IsLoaded()) {
+        for(int i = 0; i < collisionMap.numSectors; i++) {
+            kexSector *s;
+            s = &collisionMap.sectors[i];
+
+            areaNodes.AddBoxToRoot(s->lowerTri.bounds);
+        }
+    }
+    else {
+        for(kexActor *actor = staticActors.Next(); actor != NULL;
+            actor = actor->worldLink.Next()) {
+                if(actor->bStatic == false || actor->bCollision == false) {
+                    continue;
+                }
+
+                areaNodes.AddBoxToRoot(actor->Bounds());
+        }
+    }
+
+    areaNodes.BuildNodes();
+
+    for(actorRover = actors.Next(); actorRover != NULL;
+        actorRover = actorRover->worldLink.Next()) {
+            actorRover->LinkArea();
+    }
+
+    for(kexActor *actor = staticActors.Next();
+        actor != NULL; actor = actor->worldLink.Next()) {
+            if(actor->bCollision == false) {
+                continue;
+            }
+
+            actor->LinkArea();
     }
 }
 
@@ -832,9 +827,7 @@ bool kexWorld::Load(const char *mapFile) {
     nextMapID = -1;
     bLoaded = true;
 
-    BuildWorldNodes();
     BuildAreaNodes();
-
     SpawnLocalPlayer();
     return true;
 }
@@ -902,9 +895,7 @@ void kexWorld::Unload(void) {
     
     Mem_Purge(hb_world);
 
-    worldNode.actors.Empty();
-    worldNode.children[0] = NULL;
-    worldNode.children[1] = NULL;
+    areaNodes.Destroy();
 }
 
 //
@@ -1028,269 +1019,4 @@ void kexWorld::InitObject(void) {
     scriptManager.Engine()->RegisterGlobalProperty(
         "kWorld LocalWorld",
         &localWorld);
-}
-
-//
-// kexWorld::SetupChildWorldNode
-//
-
-bool kexWorld::SetupChildWorldNode(worldNode_t *parent, worldNode_t *child,
-                                    float *splitX, float *splitZ,
-                                    nodeSide_t side, int split) {
-    float rx;
-    float rz;
-    float r;
-    kexBBox *box = &child->bounds;
-    kexBBox abox;
-
-    // resize the bounding box for the child node
-    switch(side) {
-        case NODE_FRONT:
-            if(split == 0) {
-                box->min.Set(parent->bounds.min.x, 0, parent->bounds.min.z);
-                box->max.Set(parent->bounds.max.x, 0, splitZ[1]);
-            }
-            else {
-                box->min.Set(parent->bounds.min.x, 0, parent->bounds.min.z);
-                box->max.Set(splitX[1], 0, parent->bounds.max.z);
-            }
-            break;
-        case NODE_BACK:
-            if(split == 0) {
-                box->min.Set(parent->bounds.min.x, 0, splitZ[0]);
-                box->max.Set(parent->bounds.max.x, 0, parent->bounds.max.z);
-            }
-            else {
-                box->min.Set(splitX[0], 0, parent->bounds.min.z);
-                box->max.Set(parent->bounds.max.x, 0, parent->bounds.max.z);
-            }
-            break;
-        default:
-            break;
-    }
-
-    rx = box->max.x - ((box->max.x + box->min.x) * 0.5f);
-    rz = box->max.z - ((box->max.z + box->min.z) * 0.5f);
-    r = kexMath::Sqrt(rx*rx+rz*rz);
-
-    // test all actors bounding boxes with this node
-    for(kexActor *actor = staticActors.Next(); actor != NULL;
-        actor = actor->worldLink.Next()) {
-            if(actor->bStatic == false || actor->bCollision == false) {
-                continue;
-            }
-            
-            abox = actor->Bounds();
-
-            // expand a little bit
-            abox += (((abox.max - abox.Center()).Unit()) * 0.5f);
-            
-            if(abox.max.x > child->bounds.max.x && abox.min.x < child->bounds.min.x &&
-                abox.max.z > child->bounds.max.z && abox.min.z < child->bounds.min.z) {
-                    // node box completely inside actor box
-                    child->actors.Push(actor);
-                    continue;
-            }
-
-            if(!(abox.max.x < child->bounds.min.x || abox.max.z < child->bounds.min.z ||
-                abox.min.x > child->bounds.max.x || abox.min.z > child->bounds.max.z)) {
-                    // node box intersecting with actor box
-                    child->actors.Push(actor);
-            }
-    }
-
-    // determine if we need to break this grid volume down even more
-    if(child->actors.Length() > NODE_MAX_CONTENTS && r >= NODE_MAX_SIZE) {
-        child->actors.Empty();
-        return false;
-    }
-    else {
-        child->bLeaf = true;
-    }
-    
-    return true;
-}
-
-//
-// kexWorld::AddWorldNode
-//
-
-void kexWorld::AddWorldNode(worldNode_t *node, int split) {
-    float mx = (node->bounds.max.x + node->bounds.min.x) * 0.5f;
-    float mz = (node->bounds.max.z + node->bounds.min.z) * 0.5f;
-    float splitX[2];
-    float splitZ[2];
-    worldNode_t *frontNode;
-    worldNode_t *backNode;
-    kexPlane *plane;
-
-    if(split == 0) {
-        splitX[0] = node->bounds.min.x;
-        splitZ[0] = mz;
-        splitX[1] = node->bounds.max.x;
-        splitZ[1] = mz;
-    }
-    else {
-        splitX[0] = mx;
-        splitZ[0] = node->bounds.min.z;
-        splitX[1] = mx;
-        splitZ[1] = node->bounds.max.z;
-    }
-
-    plane = &node->plane;
-
-    // splitting planes are either vertical or horizontal
-    plane->a = (split == 0 ? 0 : -1.0f);
-    plane->b = 0;
-    plane->c = (split == 0 ? -1.0f : 0);
-    plane->d = (plane->a * splitX[0] + plane->c * splitZ[0]);
-
-    frontNode = (worldNode_t*)Mem_Calloc(sizeof(worldNode_t), hb_world);
-    node->children[NODE_FRONT] = frontNode;
-
-    if(!SetupChildWorldNode(node, frontNode, splitX, splitZ, NODE_FRONT, split)) {
-        AddWorldNode(frontNode, split ^ 1);
-    }
-
-    backNode = (worldNode_t*)Mem_Calloc(sizeof(worldNode_t), hb_world);
-    node->children[NODE_BACK] = backNode;
-
-    if(!SetupChildWorldNode(node, backNode, splitX, splitZ, NODE_BACK, split)) {
-        AddWorldNode(backNode, split ^ 1);
-    }
-}
-
-//
-// kexWorld::BuildWorldNodes
-//
-// Recursively split a group of bounding boxes
-// into grid volumes
-//
-
-void kexWorld::BuildWorldNodes(void) {
-    kexActor *actor;
-
-    float maxX = -M_INFINITY;
-    float maxZ = -M_INFINITY;
-    float minX =  M_INFINITY;
-    float minZ =  M_INFINITY;
-
-    kexBBox box;
-    int count = 0;
-
-    // setup the root node bounding box
-    for(actor = staticActors.Next(); actor != NULL;
-        actor = actor->worldLink.Next()) {
-            if(actor->bStatic == false || actor->bCollision == false) {
-                continue;
-            }
-
-            box = actor->Bounds();
-        
-            if(box.min[0] < minX) minX = box.min[0];
-            if(box.min[2] < minZ) minZ = box.min[2];
-            if(box.max[0] > maxX) maxX = box.max[0];
-            if(box.max[2] > maxZ) maxZ = box.max[2];
-
-            count++;
-    }
-
-    if(count <= 0) {
-        return;
-    }
-
-    worldNode.bounds.min.Set(minX, 0, minZ);
-    worldNode.bounds.max.Set(maxX, 0, maxZ);
-
-    AddWorldNode(&worldNode, 0);
-}
-
-//
-// kexWorld::AddAreaNode
-//
-
-areaNode_t *kexWorld::AddAreaNode(int depth, kexBBox &box) {
-    areaNode_t *node = &areaNodes[numAreaNodes++];
-
-    node->objects.Clear();
-    node->bounds = box;
-
-    if(depth == MAX_AREA_DEPTH || ((box.max - box.min) * 0.5f).Unit() <= 512) {
-        node->axis = -1;
-        node->children[0] = NULL;
-        node->children[1] = NULL;
-    }
-    else {
-        kexVec3 size = box.max - box.min;
-        kexBBox box1, box2;
-
-        node->axis = (size.x > size.z) ? 0 : 2;
-        node->dist = (box.max[node->axis] + box.min[node->axis]) * 0.5f;
-
-        box1 = box;
-        box2 = box;
-
-        box1.max[node->axis] = node->dist;
-        box2.min[node->axis] = node->dist;
-
-        node->children[0] = AddAreaNode(depth+1, box2);
-        node->children[1] = AddAreaNode(depth+1, box1);
-    }
-
-    return node;
-}
-
-//
-// kexWorld::BuildAreaNodes
-//
-
-void kexWorld::BuildAreaNodes(void) {
-    float maxX = -M_INFINITY;
-    float maxZ = -M_INFINITY;
-    float minX =  M_INFINITY;
-    float minZ =  M_INFINITY;
-    kexBBox box;
-
-    numAreaNodes = 0;
-    memset(areaNodes, 0, sizeof(areaNodes));
-
-    if(collisionMap.IsLoaded()) {
-        for(int i = 0; i < collisionMap.numSectors; i++) {
-            kexSector *s;
-
-            s = &collisionMap.sectors[i];
-
-            box = s->lowerTri.bounds;
-
-            if(box.min[0] < minX) minX = box.min[0];
-            if(box.min[2] < minZ) minZ = box.min[2];
-            if(box.max[0] > maxX) maxX = box.max[0];
-            if(box.max[2] > maxZ) maxZ = box.max[2];
-        }
-    }
-    else {
-        for(kexActor *actor = staticActors.Next(); actor != NULL;
-            actor = actor->worldLink.Next()) {
-                if(actor->bStatic == false || actor->bCollision == false) {
-                    continue;
-                }
-
-                box = actor->Bounds();
-            
-                if(box.min[0] < minX) minX = box.min[0];
-                if(box.min[2] < minZ) minZ = box.min[2];
-                if(box.max[0] > maxX) maxX = box.max[0];
-                if(box.max[2] > maxZ) maxZ = box.max[2];
-        }
-    }
-
-    box.min.Set(minX, 0, minZ);
-    box.max.Set(maxX, 0, maxZ);
-
-    AddAreaNode(0, box);
-
-    for(actorRover = actors.Next(); actorRover != NULL;
-        actorRover = actorRover->worldLink.Next()) {
-            actorRover->LinkArea();
-    }
 }

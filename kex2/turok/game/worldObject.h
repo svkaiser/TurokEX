@@ -29,8 +29,7 @@
 #include "linkedlist.h"
 #include "physics/physics.h"
 #include "keymap.h"
-
-typedef struct areaNode_s areaNode_t;
+#include "sdNodes.h"
 
 //-----------------------------------------------------------------------------
 //
@@ -40,58 +39,57 @@ typedef struct areaNode_s areaNode_t;
 
 BEGIN_EXTENDED_CLASS(kexWorldObject, kexDisplayObject);
 public:
-                                kexWorldObject(void);
-                                ~kexWorldObject(void);
+                                    kexWorldObject(void);
+                                    ~kexWorldObject(void);
 
-    virtual void                LocalTick(void) = 0;
-    virtual void                Tick(void) = 0;
-    virtual void                OnTouch(kexWorldObject *instigator);
-    virtual void                OnDamage(kexWorldObject *instigator, int damage, kexKeyMap *damageDef);
-    virtual void                OnDeath(kexWorldObject *instigator, kexKeyMap *damageDef);
+    virtual void                    LocalTick(void) = 0;
+    virtual void                    Tick(void) = 0;
+    virtual void                    OnTouch(kexWorldObject *instigator);
+    virtual void                    OnDamage(kexWorldObject *instigator, int damage, kexKeyMap *damageDef);
+    virtual void                    OnDeath(kexWorldObject *instigator, kexKeyMap *damageDef);
 
-    void                        SetBoundingBox(const kexVec3 &min, const kexVec3 &max);
-    bool                        Trace(traceInfo_t *trace);
-    bool                        TryMove(const kexVec3 &position, kexVec3 &dest, kexSector **sector = NULL);
-    bool                        AlignToSurface(void);
-    void                        LinkArea(void);
-    void                        UnlinkArea(void);
-    float                       ObjectDistance(kexWorldObject *obj, const kexVec3 &offset);
-    void                        InflictDamage(kexWorldObject *target, kexKeyMap *damageDef);
-    void                        RangeDamage(const char *damageDef,
-                                            const float dmgRadius,
-                                            const kexVec3 &dmgOrigin);
-    void                        RangeDamage(const kexStr &damageDef,
-                                            const float dmgRadius,
-                                            const kexVec3 &dmgOrigin);
+    void                            SetBoundingBox(const kexVec3 &min, const kexVec3 &max);
+    bool                            Trace(traceInfo_t *trace);
+    bool                            TryMove(const kexVec3 &position, kexVec3 &dest, kexSector **sector = NULL);
+    bool                            AlignToSurface(void);
+    void                            LinkArea(void);
+    void                            UnlinkArea(void);
+    float                           ObjectDistance(kexWorldObject *obj, const kexVec3 &offset);
+    void                            InflictDamage(kexWorldObject *target, kexKeyMap *damageDef);
+    void                            RangeDamage(const char *damageDef,
+                                                const float dmgRadius,
+                                                const kexVec3 &dmgOrigin);
+    void                            RangeDamage(const kexStr &damageDef,
+                                                const float dmgRadius,
+                                                const kexVec3 &dmgOrigin);
 
-    float                       Radius(void) { return radius; }
-    float                       Height(void) { return height; }
-    float                       BaseHeight(void) { return baseHeight; }
-    float                       GetCenterHeight(void) { return centerHeight; }
-    void                        SetCenterHeight(float f) { centerHeight = f; }
-    float                       GetViewHeight(void) { return viewHeight; }
-    void                        SetViewHeight(float f) { viewHeight = f; }
-    kexPhysics                  *Physics(void) { return physicsRef; }
-    kexBBox                     &Bounds(void) { return bbox; }
-    const impactType_t          GetImpactType(void) const { return impactType; }
-    void                        SetImpactType(const impactType_t iType) { impactType = iType; }
-    int                         &Health(void) { return health; }
+    float                           Radius(void) { return radius; }
+    float                           Height(void) { return height; }
+    float                           BaseHeight(void) { return baseHeight; }
+    float                           GetCenterHeight(void) { return centerHeight; }
+    void                            SetCenterHeight(float f) { centerHeight = f; }
+    float                           GetViewHeight(void) { return viewHeight; }
+    void                            SetViewHeight(float f) { viewHeight = f; }
+    kexPhysics                      *Physics(void) { return physicsRef; }
+    kexBBox                         &Bounds(void) { return bbox; }
+    const impactType_t              GetImpactType(void) const { return impactType; }
+    void                            SetImpactType(const impactType_t iType) { impactType = iType; }
+    int                             &Health(void) { return health; }
 
-    kexLinklist<kexWorldObject> areaLink;
-    areaNode_t                  *areaNode;
+    kexSDNodeRef<kexWorldObject>    areaLink;
 
-    bool                        bStatic;        // no tick/think behavior
-    bool                        bCollision;     // handle collision with this actor
-    bool                        bTouch;         // can be touched/picked up by other actors
-    bool                        bOrientOnSlope;
-    bool                        bCanPickup;
-    bool                        bAllowDamage;
+    bool                            bStatic;        // no tick/think behavior
+    bool                            bCollision;     // handle collision with this actor
+    bool                            bTouch;         // can be touched/picked up by other actors
+    bool                            bOrientOnSlope;
+    bool                            bCanPickup;
+    bool                            bAllowDamage;
 
     //
     // template for registering default script actor methods and properties
     //
     template<class type>
-    static void                 RegisterBaseProperties(const char *scriptClass) {
+    static void                     RegisterBaseProperties(const char *scriptClass) {
     #define OBJMETHOD(str, a, b, c)                     \
         scriptManager.Engine()->RegisterObjectMethod(   \
             scriptClass,                                \
@@ -134,17 +132,17 @@ public:
     }
 
 protected:
-    kexBBox                     bbox;           // bounding box
-    kexBBox                     baseBBox;       // unmodified bounding box
-    int                         health;
-    float                       radius;
-    float                       height;
-    float                       baseHeight;
-    float                       centerHeight;
-    float                       viewHeight;
-    kexPhysics                  physics;        // physics object
-    kexPhysics                  *physicsRef;
-    impactType_t                impactType;
+    kexBBox                         bbox;           // bounding box
+    kexBBox                         baseBBox;       // unmodified bounding box
+    int                             health;
+    float                           radius;
+    float                           height;
+    float                           baseHeight;
+    float                           centerHeight;
+    float                           viewHeight;
+    kexPhysics                      physics;        // physics object
+    kexPhysics                      *physicsRef;
+    impactType_t                    impactType;
 END_CLASS();
 
 #endif

@@ -129,18 +129,6 @@ static void FCmd_ShowWireFrame(void) {
 }
 
 //
-// FCmd_ShowWorldNode
-//
-
-static void FCmd_ShowWorldNode(void) {
-    if(command.GetArgc() < 2) {
-        return;
-    }
-
-    renderWorld.showWorldNode = atoi(command.GetArgv(1));
-}
-
-//
 // FCmd_ShowAreaNode
 //
 
@@ -167,7 +155,6 @@ kexRenderWorld::kexRenderWorld(void) {
     this->bWireframe        = false;
     this->bShowClipMesh     = false;
     this->bShowCollisionMap = false;
-    this->showWorldNode     = -1;
     this->showAreaNode      = -1;
 }
 
@@ -182,7 +169,6 @@ void kexRenderWorld::Init(void) {
     command.Add("showradius", FCmd_ShowRadius);
     command.Add("showorigin", FCmd_ShowOrigin);
     command.Add("drawwireframe", FCmd_ShowWireFrame);
-    command.Add("showworldnode", FCmd_ShowWorldNode);
     command.Add("showareanode", FCmd_ShowAreaNode);
     command.Add("showcollision", FCmd_ShowCollisionMap);
 }
@@ -215,16 +201,14 @@ void kexRenderWorld::RenderScene(void) {
     DrawStaticActors();
     DrawActors();
 
-    /*if(showWorldNode >= 0 || showAreaNode >= 0) {
+    if(showAreaNode >= 0) {
         renderBackend.SetState(GLSTATE_DEPTHTEST, false);
-        if(showWorldNode >= 0) {
-            DrawWorldNode(&world->worldNode);
-        }
+        renderBackend.DisableShaders();
         if(showAreaNode >= 0) {
             DrawAreaNode();
         }
         renderBackend.SetState(GLSTATE_DEPTHTEST, true);
-    }*/
+    }
 
     if(bShowCollisionMap) {
         renderer.DrawSectors(world->CollisionMap().sectors,
@@ -517,66 +501,24 @@ void kexRenderWorld::DrawViewActors(void) {
 }
 
 //
-// kexRenderWorld::DrawWorldNode
-//
-
-void kexRenderWorld::DrawWorldNode(worldNode_t *node) {
-    if(node->bLeaf) {
-        renderer.DrawBoundingBox(node->bounds, 0, 255, 0);
-        if(showWorldNode >= 1) {
-            for(unsigned int i = 0; i < node->actors.Length(); i++) {
-                renderer.DrawBoundingBox(node->actors[i]->Bounds(), 0, 255, 255);
-            }
-        }
-        return;
-    }
-    else {
-        renderer.DrawBoundingBox(node->bounds, 255, 255, 0);
-    }
-
-    if(showWorldNode >= 1) {
-        float d = node->plane.Normal().Dot(world->Camera()->GetOrigin()) - node->plane.d;
-
-        if(d >= 0) {
-            if(node->children[0]) {
-                DrawWorldNode(node->children[0]);
-            }
-        }
-        else {
-            if(node->children[1]) {
-                DrawWorldNode(node->children[1]);
-            }
-        }
-    }
-    else {
-        if(node->children[0]) {
-            DrawWorldNode(node->children[0]);
-        }
-        if(node->children[1]) {
-            DrawWorldNode(node->children[1]);
-        }
-    }
-}
-
-//
 // kexRenderWorld::DrawAreaNode
 //
 
 void kexRenderWorld::DrawAreaNode(void) {
-    areaNode_t *nodes;
+    kexSDNodeObj<kexWorldObject> *nodes;
 
     dglDepthRange(0.0f, 0.0f);
 
-    for(int i = 0; i < world->NumAreaNodes(); i++) {
-        nodes = &world->areaNodes[i];
+    for(unsigned int i = 0; i < world->areaNodes.numNodes; i++) {
+        nodes = &world->areaNodes.nodes[i];
         renderer.DrawBoundingBox(nodes->bounds, 64, 128, 255);
     }
 
-    for(int i = 0; i < world->NumAreaNodes(); i++) {
-        nodes = &world->areaNodes[i];
+    for(unsigned int i = 0; i < world->areaNodes.numNodes; i++) {
+        nodes = &world->areaNodes.nodes[i];
         for(kexActor *actor = static_cast<kexActor*>(nodes->objects.Next());
             actor != NULL;
-            actor = static_cast<kexActor*>(actor->areaLink.Next())) {
+            actor = static_cast<kexActor*>(actor->areaLink.link.Next())) {
                 if(actor == gameManager.localPlayer.Puppet()) {
                     renderer.DrawBoundingBox(nodes->bounds, 255, 0, 0);
                 }

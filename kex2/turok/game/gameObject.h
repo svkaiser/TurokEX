@@ -66,6 +66,7 @@ public:
     
     static unsigned int         id;
     
+    const unsigned int          ObjectID(void) const { return objID; }
     const int                   RefCount(void) const { return refCount; }
     const bool                  IsStale(void) const { return bStale; }
 

@@ -725,6 +725,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\framework\sdNodes.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\server.h"
 					>
 				</File>

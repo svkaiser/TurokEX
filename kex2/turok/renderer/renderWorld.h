@@ -32,7 +32,6 @@ public:
                     kexRenderWorld(void);
 
     void            RenderScene(void);
-    void            DrawWorldNode(worldNode_t *node);
     void            DrawAreaNode(void);
 
     static void     Init(void);
@@ -48,7 +47,6 @@ public:
     bool            bShowClipMesh;
     bool            bShowCollisionMap;
 
-    int             showWorldNode;
     int             showAreaNode;
 
     kexVec3         &WorldLightTransform(void) { return worldLightTransform; }
