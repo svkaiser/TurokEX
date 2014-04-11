@@ -9,9 +9,12 @@
 /* Begin PBXBuildFile section */
 		415E211218CF710A000589E5 /* libSDL2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41DD4F9618CA685500664EF8 /* libSDL2.a */; };
 		415E211518CF711D000589E5 /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41DD4F9418CA685500664EF8 /* SDL2.framework */; };
+		4193C4F018F5AE370008503A /* worldModel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4193C4EE18F5AE370008503A /* worldModel.cpp */; };
+		41AF69F618F5A83B00BF3E77 /* renderBackend.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41AF69F418F5A83B00BF3E77 /* renderBackend.cpp */; };
 		41B0A86F18D9FB5A006C831C /* trigger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41B0A86D18D9FB5A006C831C /* trigger.cpp */; };
 		41B198F418D754DF00E05F5F /* animation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41B198F218D754DF00E05F5F /* animation.cpp */; };
 		41B2A86F18DB769400FAFCB9 /* material.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41B2A86E18DB769400FAFCB9 /* material.cpp */; };
+		41CAA0DB18E9CF2600C03A0A /* renderMain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41CAA0D918E9CF2600C03A0A /* renderMain.cpp */; };
 		41DD4FB018CA69EE00664EF8 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41DD4FAC18CA69EE00664EF8 /* Carbon.framework */; };
 		41DD4FB118CA69EE00664EF8 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41DD4FAD18CA69EE00664EF8 /* Cocoa.framework */; };
 		41DD4FB218CA69EE00664EF8 /* OpenAL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41DD4FAE18CA69EE00664EF8 /* OpenAL.framework */; };
@@ -80,7 +83,6 @@
 		41DD509518CA6FE100664EF8 /* frustum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41DD508518CA6FE100664EF8 /* frustum.cpp */; };
 		41DD509618CA6FE100664EF8 /* renderFont.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41DD508718CA6FE100664EF8 /* renderFont.cpp */; };
 		41DD509718CA6FE100664EF8 /* renderModel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41DD508918CA6FE100664EF8 /* renderModel.cpp */; };
-		41DD509818CA6FE100664EF8 /* renderSystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41DD508B18CA6FE100664EF8 /* renderSystem.cpp */; };
 		41DD509918CA6FE100664EF8 /* renderWorld.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41DD508D18CA6FE100664EF8 /* renderWorld.cpp */; };
 		41DD509A18CA6FE100664EF8 /* shaderProg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41DD508F18CA6FE100664EF8 /* shaderProg.cpp */; };
 		41DD509B18CA6FE100664EF8 /* textureObject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41DD509118CA6FE100664EF8 /* textureObject.cpp */; };
@@ -168,12 +170,19 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4193C4EE18F5AE370008503A /* worldModel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = worldModel.cpp; path = ../turok/game/worldModel.cpp; sourceTree = "<group>"; };
+		4193C4EF18F5AE370008503A /* worldModel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = worldModel.h; path = ../turok/game/worldModel.h; sourceTree = "<group>"; };
+		41AEA9E518F6FC7A00CC202E /* sdNodes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = sdNodes.h; path = ../turok/framework/sdNodes.h; sourceTree = "<group>"; };
+		41AF69F418F5A83B00BF3E77 /* renderBackend.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = renderBackend.cpp; path = ../turok/renderer/renderBackend.cpp; sourceTree = "<group>"; };
+		41AF69F518F5A83B00BF3E77 /* renderBackend.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = renderBackend.h; path = ../turok/renderer/renderBackend.h; sourceTree = "<group>"; };
 		41B0A86D18D9FB5A006C831C /* trigger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = trigger.cpp; path = ../turok/game/trigger.cpp; sourceTree = "<group>"; };
 		41B0A86E18D9FB5A006C831C /* trigger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = trigger.h; path = ../turok/game/trigger.h; sourceTree = "<group>"; };
 		41B198F218D754DF00E05F5F /* animation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = animation.cpp; path = ../turok/game/animation.cpp; sourceTree = "<group>"; };
 		41B198F318D754DF00E05F5F /* animation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = animation.h; path = ../turok/game/animation.h; sourceTree = "<group>"; };
 		41B2A86718DB59B800FAFCB9 /* material.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = material.h; path = ../turok/renderer/material.h; sourceTree = "<group>"; };
 		41B2A86E18DB769400FAFCB9 /* material.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = material.cpp; path = ../turok/renderer/material.cpp; sourceTree = "<group>"; };
+		41CAA0D918E9CF2600C03A0A /* renderMain.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = renderMain.cpp; path = ../turok/renderer/renderMain.cpp; sourceTree = "<group>"; };
+		41CAA0DA18E9CF2600C03A0A /* renderMain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = renderMain.h; path = ../turok/renderer/renderMain.h; sourceTree = "<group>"; };
 		41DD4F8C18CA685500664EF8 /* SDL.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SDL.xcodeproj; path = "../../../SDL2-2.0.1/Xcode/SDL/SDL.xcodeproj"; sourceTree = "<group>"; };
 		41DD4FA018CA692C00664EF8 /* Kex2 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Kex2; sourceTree = BUILT_PRODUCTS_DIR; };
 		41DD4FAC18CA69EE00664EF8 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
@@ -304,8 +313,6 @@
 		41DD508818CA6FE100664EF8 /* renderFont.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = renderFont.h; path = ../turok/renderer/renderFont.h; sourceTree = "<group>"; };
 		41DD508918CA6FE100664EF8 /* renderModel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = renderModel.cpp; path = ../turok/renderer/renderModel.cpp; sourceTree = "<group>"; };
 		41DD508A18CA6FE100664EF8 /* renderModel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = renderModel.h; path = ../turok/renderer/renderModel.h; sourceTree = "<group>"; };
-		41DD508B18CA6FE100664EF8 /* renderSystem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = renderSystem.cpp; path = ../turok/renderer/renderSystem.cpp; sourceTree = "<group>"; };
-		41DD508C18CA6FE100664EF8 /* renderSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = renderSystem.h; path = ../turok/renderer/renderSystem.h; sourceTree = "<group>"; };
 		41DD508D18CA6FE100664EF8 /* renderWorld.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = renderWorld.cpp; path = ../turok/renderer/renderWorld.cpp; sourceTree = "<group>"; };
 		41DD508E18CA6FE100664EF8 /* renderWorld.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = renderWorld.h; path = ../turok/renderer/renderWorld.h; sourceTree = "<group>"; };
 		41DD508F18CA6FE100664EF8 /* shaderProg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = shaderProg.cpp; path = ../turok/renderer/shaderProg.cpp; sourceTree = "<group>"; };
@@ -463,6 +470,7 @@
 				41DD4FF818CA6F3C00664EF8 /* packet.h */,
 				41DD4FFA18CA6F3C00664EF8 /* psnprntf.h */,
 				41DD4FFC18CA6F3C00664EF8 /* script.h */,
+				41AEA9E518F6FC7A00CC202E /* sdNodes.h */,
 				41DD4FFE18CA6F3C00664EF8 /* server.h */,
 				41DD4FFF18CA6F3C00664EF8 /* shared.h */,
 				41DD500118CA6F3C00664EF8 /* system.h */,
@@ -490,6 +498,7 @@
 				41DD503018CA6F7A00664EF8 /* pickup.cpp */,
 				41B0A86D18D9FB5A006C831C /* trigger.cpp */,
 				41DD503218CA6F7A00664EF8 /* world.cpp */,
+				4193C4EE18F5AE370008503A /* worldModel.cpp */,
 				41DD503418CA6F7A00664EF8 /* worldObject.cpp */,
 				41DD501B18CA6F7A00664EF8 /* actor.h */,
 				41DD501D18CA6F7A00664EF8 /* ai.h */,
@@ -506,6 +515,7 @@
 				41DD503118CA6F7A00664EF8 /* pickup.h */,
 				41B0A86E18D9FB5A006C831C /* trigger.h */,
 				41DD503318CA6F7A00664EF8 /* world.h */,
+				4193C4EF18F5AE370008503A /* worldModel.h */,
 				41DD503518CA6F7A00664EF8 /* worldObject.h */,
 				41DD4FCE18CA6EB700664EF8 /* Physics */,
 				41DD4FCF18CA6EBD00664EF8 /* Player */,
@@ -561,18 +571,20 @@
 				41DD508318CA6FE100664EF8 /* canvas.cpp */,
 				41DD508518CA6FE100664EF8 /* frustum.cpp */,
 				41B2A86E18DB769400FAFCB9 /* material.cpp */,
+				41AF69F418F5A83B00BF3E77 /* renderBackend.cpp */,
 				41DD508718CA6FE100664EF8 /* renderFont.cpp */,
+				41CAA0D918E9CF2600C03A0A /* renderMain.cpp */,
 				41DD508918CA6FE100664EF8 /* renderModel.cpp */,
-				41DD508B18CA6FE100664EF8 /* renderSystem.cpp */,
 				41DD508D18CA6FE100664EF8 /* renderWorld.cpp */,
 				41DD508F18CA6FE100664EF8 /* shaderProg.cpp */,
 				41DD509118CA6FE100664EF8 /* textureObject.cpp */,
 				41DD508418CA6FE100664EF8 /* canvas.h */,
 				41DD508618CA6FE100664EF8 /* frustum.h */,
 				41B2A86718DB59B800FAFCB9 /* material.h */,
+				41AF69F518F5A83B00BF3E77 /* renderBackend.h */,
 				41DD508818CA6FE100664EF8 /* renderFont.h */,
+				41CAA0DA18E9CF2600C03A0A /* renderMain.h */,
 				41DD508A18CA6FE100664EF8 /* renderModel.h */,
-				41DD508C18CA6FE100664EF8 /* renderSystem.h */,
 				41DD508E18CA6FE100664EF8 /* renderWorld.h */,
 				41DD509018CA6FE100664EF8 /* shaderProg.h */,
 				41DD509218CA6FE100664EF8 /* textureObject.h */,
@@ -795,6 +807,7 @@
 				41DD504118CA6F7A00664EF8 /* pickup.cpp in Sources */,
 				41DD503618CA6F7A00664EF8 /* actor.cpp in Sources */,
 				41DD503F18CA6F7A00664EF8 /* gameObject.cpp in Sources */,
+				41AF69F618F5A83B00BF3E77 /* renderBackend.cpp in Sources */,
 				41B2A86F18DB769400FAFCB9 /* material.cpp in Sources */,
 				41DD504018CA6F7A00664EF8 /* mover.cpp in Sources */,
 				41DD507718CA6FCA00664EF8 /* angle.cpp in Sources */,
@@ -808,6 +821,8 @@
 				41DD503718CA6F7A00664EF8 /* ai.cpp in Sources */,
 				41DD500A18CA6F3C00664EF8 /* cvar.cpp in Sources */,
 				41DD503818CA6F7A00664EF8 /* areas.cpp in Sources */,
+				4193C4F018F5AE370008503A /* worldModel.cpp in Sources */,
+				41CAA0DB18E9CF2600C03A0A /* renderMain.cpp in Sources */,
 				41DD503918CA6F7A00664EF8 /* attachment.cpp in Sources */,
 				41DD505E18CA6FAD00664EF8 /* scriptSystem.cpp in Sources */,
 				41DD509718CA6FE100664EF8 /* renderModel.cpp in Sources */,
@@ -826,7 +841,6 @@
 				41DD501818CA6F3C00664EF8 /* system.cpp in Sources */,
 				41DD507A18CA6FCA00664EF8 /* matrix.cpp in Sources */,
 				41DD509A18CA6FE100664EF8 /* shaderProg.cpp in Sources */,
-				41DD509818CA6FE100664EF8 /* renderSystem.cpp in Sources */,
 				41DD501018CA6F3C00664EF8 /* kstring.cpp in Sources */,
 				41DD507F18CA6FCA00664EF8 /* vector.cpp in Sources */,
 				41DD501718CA6F3C00664EF8 /* server.cpp in Sources */,
