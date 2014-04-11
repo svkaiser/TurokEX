@@ -27,9 +27,7 @@
 #include "worldObject.h"
 #include "renderModel.h"
 #include "animation.h"
-#include "clipmesh.h"
 
-class kexClipMesh;
 class kexAI;
 
 //-----------------------------------------------------------------------------
@@ -68,7 +66,6 @@ public:
     const int                   Variant(void) const { return variant; }
     kexStr                      &GetName(void) { return name; }
     void                        SetName(kexStr &str) { name = str; }
-    kexClipMesh                 &ClipMesh(void) { return clipMesh; }
     kexVec3                     *GetNodeTranslations(void) { return nodeOffsets_t; }
     kexQuat                     *GetNodeRotations(void) { return nodeOffsets_r; }
     kexAnimState                *AnimState(void) { return &animState; }
@@ -130,7 +127,6 @@ protected:
     void                        ParseDefault(kexLexer *lexer);
     void                        AllocateMaterials(void);
 
-    kexClipMesh                 clipMesh;
     kexStr                      name;
     kexStr                      footstepSound;
     kexModel_t                  *model;

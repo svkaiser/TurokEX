@@ -182,6 +182,19 @@ float &kexPlane::operator[](int index) {
 }
 
 //
+// kexPlane::operator=
+//
+
+kexPlane &kexPlane::operator=(const kexPlane &p) {
+    a = p.a;
+    b = p.b;
+    c = p.c;
+    d = p.d;
+    
+    return *this;
+}
+
+//
 // kexPlane::ToYaw
 //
 

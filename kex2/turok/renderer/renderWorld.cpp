@@ -34,10 +34,7 @@
 #include "renderWorld.h"
 #include "renderMain.h"
 #include "gameManager.h"
-
-kexCvar cvarRenderFog("r_fog", CVF_BOOL|CVF_CONFIG, "1", "TODO");
-kexCvar cvarRenderCull("r_cull", CVF_BOOL|CVF_CONFIG, "1", "TODO");
-kexCvar cvarRenderFxTexture("r_fxtexture", CVF_BOOL|CVF_CONFIG, "1", "TODO");
+#include "worldModel.h"
 
 kexRenderWorld renderWorld;
 
@@ -100,6 +97,18 @@ static void FCmd_ShowOrigin(void) {
     }
 
     renderWorld.bShowOrigin ^= 1;
+}
+
+//
+// FCmd_ShowRenderNodes
+//
+
+static void FCmd_ShowRenderNodes(void) {
+    if(command.GetArgc() < 1) {
+        return;
+    }
+
+    renderWorld.bShowRenderNodes ^= 1;
 }
 
 //
@@ -170,6 +179,7 @@ void kexRenderWorld::Init(void) {
     command.Add("showorigin", FCmd_ShowOrigin);
     command.Add("drawwireframe", FCmd_ShowWireFrame);
     command.Add("showareanode", FCmd_ShowAreaNode);
+    command.Add("showrendernodes", FCmd_ShowRenderNodes);
     command.Add("showcollision", FCmd_ShowCollisionMap);
 }
 
@@ -201,11 +211,14 @@ void kexRenderWorld::RenderScene(void) {
     DrawStaticActors();
     DrawActors();
 
-    if(showAreaNode >= 0) {
+    if(showAreaNode >= 0 || bShowRenderNodes) {
         renderBackend.SetState(GLSTATE_DEPTHTEST, false);
         renderBackend.DisableShaders();
         if(showAreaNode >= 0) {
             DrawAreaNode();
+        }
+        if(bShowRenderNodes) {
+            DrawRenderNode();
         }
         renderBackend.SetState(GLSTATE_DEPTHTEST, true);
     }
@@ -221,6 +234,56 @@ void kexRenderWorld::RenderScene(void) {
     /*if(bWireframe) {
         renderBackend.SetPolyMode(GLPOLY_FILL);
     }*/
+}
+
+//
+// kexRenderWorld::BuildNodes
+//
+
+void kexRenderWorld::BuildNodes(void) {
+    kexWorldModel *wm;
+    
+    renderNodes.Init(8, 512);
+    
+    for(wm = world->staticActors.Next(); wm != NULL; wm = wm->worldLink.Next()) {
+        renderNodes.AddBoxToRoot(wm->Bounds());
+    }
+    
+    renderNodes.BuildNodes();
+    
+    for(wm = world->staticActors.Next(); wm != NULL; wm = wm->worldLink.Next()) {
+        wm->renderNode.Link(renderNodes, wm->Bounds());
+    }
+}
+
+//
+// kexRenderWorld::DrawWorldModel
+//
+
+void kexRenderWorld::DrawWorldModel(kexWorldModel *wm) {
+    const kexModel_t *model;
+    const modelNode_t *node;
+    
+    if(!(model = wm->Model())) {
+        return;
+    }
+    
+    node = &model->nodes[0];
+    
+    for(unsigned i = 0; i < model->nodes[0].numSurfaces; i++) {
+        surface_t *surface = &node->surfaces[i];
+        char *materialPath = surface->material;
+        
+        if(wm->materials != NULL) {
+            char *mat = wm->materials[i];
+            
+            if(mat != NULL && mat[0] != '-')
+                materialPath = mat;
+        }
+        
+        kexMaterial *material = renderBackend.CacheMaterial(materialPath);
+        renderer.DrawSurface(surface, material);
+    }
 }
 
 //
@@ -321,58 +384,87 @@ void kexRenderWorld::TraverseDrawActorNode(kexActor *actor,
 }
 
 //
+// kexRenderWorld::RecursiveSDNode
+//
+
+void kexRenderWorld::RecursiveSDNode(int nodenum) {
+    kexSDNodeObj<kexWorldModel> *node;
+    kexWorldModel *wm;
+    kexFrustum frustum;
+    kexCamera *camera;
+    kexVec3 org;
+    kexBBox box;
+
+    node = &renderNodes.nodes[nodenum];
+    camera = world->Camera();
+    frustum = camera->Frustum();
+
+    org = node->bounds.Center();
+    org.y = camera->GetOrigin().y;
+
+    if(!frustum.TestSphere(org, node->radius * 2.0f)) {
+        return;
+    }
+
+    for(wm = node->objects.Next(); wm != NULL; wm = wm->renderNode.link.Next()) {
+        if(wm->bHidden) {
+            if(bShowClipMesh) {
+                //actor->ClipMesh().DebugDraw();
+            }
+            continue;
+        }
+
+        box = wm->Bounds();
+        wm->bCulled = !frustum.TestBoundingBox(box);
+
+        if(wm->bCulled) {
+            continue;
+        }
+
+        if(!bShowClipMesh && !bShowCollisionMap) {
+            dglPushMatrix();
+            dglMultMatrixf(wm->Matrix().ToFloatPtr());
+
+            if(bWireframe) {
+                dglColor4ub(0, 224, 224, 255);
+            }
+            DrawWorldModel(wm);
+            dglPopMatrix();
+        }
+        else if(bShowClipMesh) {
+            //actor->ClipMesh().DebugDraw();
+        }
+
+        if(bShowBBox) {
+            if(wm->bTraced) {
+                renderer.DrawBoundingBox(box, 255, 0, 0);
+                wm->bTraced = false;
+            }
+            else {
+                renderer.DrawBoundingBox(box, 255, 255, 0);
+            }
+        }
+        if(bShowRadius && wm->bCollision) {
+            kexVec3 org = wm->GetOrigin();
+            renderer.DrawRadius(org[0], org[1], org[2],
+                wm->Radius(), wm->Height(), 255, 128, 128);
+        }
+    }
+
+    if(node->axis == -1) {
+        return;
+    }
+
+    RecursiveSDNode(node->children[NODE_FRONT]->nodeNum);
+    RecursiveSDNode(node->children[NODE_BACK]->nodeNum);
+}
+
+//
 // kexRenderWorld::DrawStaticActors
 //
 
 void kexRenderWorld::DrawStaticActors(void) {
-    kexBBox box;
-    kexFrustum frustum = world->Camera()->Frustum();
-
-    for(kexActor *actor = world->staticActors.Next();
-        actor != NULL; actor = actor->worldLink.Next()) {
-            if(actor->bHidden) {
-                if(bShowClipMesh) {
-                    actor->ClipMesh().DebugDraw();
-                }
-                continue;
-            }
-
-            box = actor->Bounds();
-            actor->bCulled = !frustum.TestBoundingBox(box);
-
-            if(actor->bCulled) {
-                continue;
-            }
-
-            if(!bShowClipMesh && !bShowCollisionMap) {
-                dglPushMatrix();
-                dglMultMatrixf(actor->Matrix().ToFloatPtr());
-
-                if(bWireframe) {
-                    dglColor4ub(0, 224, 224, 255);
-                }
-                TraverseDrawActorNode(actor, &actor->Model()->nodes[0], NULL);
-                dglPopMatrix();
-            }
-            else if(bShowClipMesh) {
-                actor->ClipMesh().DebugDraw();
-            }
-
-            if(bShowBBox) {
-                if(actor->bTraced) {
-                    renderer.DrawBoundingBox(box, 255, 0, 0);
-                    actor->bTraced = false;
-                }
-                else {
-                    renderer.DrawBoundingBox(box, 255, 255, 0);
-                }
-            }
-            if(bShowRadius && actor->bCollision) {
-                kexVec3 org = actor->GetOrigin();
-                renderer.DrawRadius(org[0], org[1], org[2],
-                    actor->Radius(), actor->Height(), 255, 128, 128);
-            }
-    }
+    RecursiveSDNode(0);
 }
 
 //
@@ -514,24 +606,26 @@ void kexRenderWorld::DrawAreaNode(void) {
         renderer.DrawBoundingBox(nodes->bounds, 64, 128, 255);
     }
 
-    for(unsigned int i = 0; i < world->areaNodes.numNodes; i++) {
-        nodes = &world->areaNodes.nodes[i];
-        for(kexActor *actor = static_cast<kexActor*>(nodes->objects.Next());
-            actor != NULL;
-            actor = static_cast<kexActor*>(actor->areaLink.link.Next())) {
-                if(actor == gameManager.localPlayer.Puppet()) {
-                    renderer.DrawBoundingBox(nodes->bounds, 255, 0, 0);
-                }
-                else {
-                    renderBackend.SetState(GLSTATE_TEXTURE0, false);
-                    dglBegin(GL_LINES);
-                    dglColor4ub(255, 0, 0, 255);
-                    dglVertex3fv(nodes->bounds.Center().ToFloatPtr());
-                    dglVertex3fv(actor->GetOrigin().ToFloatPtr());
-                    dglEnd();
-                    renderBackend.SetState(GLSTATE_TEXTURE0, true);
-                }
-        }
+    nodes = gameManager.localPlayer.Puppet()->areaLink.node;
+    if(nodes) {
+        renderer.DrawBoundingBox(nodes->bounds, 255, 0, 0);
+    }
+
+    dglDepthRange(0.0f, 1.0f);
+}
+
+//
+// kexRenderWorld::DrawRenderNode
+//
+
+void kexRenderWorld::DrawRenderNode(void) {
+    kexSDNodeObj<kexWorldModel> *nodes;
+
+    dglDepthRange(0.0f, 0.0f);
+
+    for(unsigned int i = 0; i < renderNodes.numNodes; i++) {
+        nodes = &renderNodes.nodes[i];
+        renderer.DrawBoundingBox(nodes->bounds, 0, 255, 0);
     }
 
     dglDepthRange(0.0f, 1.0f);

@@ -358,6 +358,7 @@ public:
 
     float                   operator[](int index) const;
     float                   &operator[](int index);
+    kexPlane                &operator=(const kexPlane &p);
 
     static void             ObjectConstruct(kexPlane *p);
     static void             ObjectConstruct(const float a, const float b, const float c, const float d,

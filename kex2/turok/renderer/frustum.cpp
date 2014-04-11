@@ -140,10 +140,10 @@ bool kexFrustum::TestTriangle(const kexTri &triangle) {
 
 bool kexFrustum::TestSphere(const kexVec3 &org, const float radius) {
     for(int i = 0; i < 6; i++) {
-        if(p[i].Distance(org) + p[i].d <= -radius)
+        if(p[i].Distance(org) + p[i].d <= -radius) {
             return false;
+        }
         
     }
-    
     return true;
 }

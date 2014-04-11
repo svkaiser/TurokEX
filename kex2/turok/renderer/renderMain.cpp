@@ -544,6 +544,72 @@ void kexRenderer::DrawOrigin(float x, float y, float z, float size) {
 }
 
 //
+// kexRenderer::DrawSphere
+//
+
+void kexRenderer::DrawSphere(float x, float y, float z, float radius, byte r, byte g, byte b) {
+    float points[72];
+    int count;
+    int i;
+    int j;
+    int k;
+    float s;
+    float c;
+    float v1[3];
+    float v2[3];
+
+    renderBackend.SetState(GLSTATE_TEXTURE0, false);
+    renderBackend.SetState(GLSTATE_CULL, false);
+
+    renderBackend.DisableShaders();
+    renderBackend.BindDrawPointers();
+
+    count = (360 / 15);
+    points[0 * 3 + 0] = x;
+    points[0 * 3 + 1] = y;
+    points[0 * 3 + 2] = z + radius;
+
+    for(i = 1; i < count; i++) {
+        points[i * 3 + 0] = points[0 * 3 + 0];
+        points[i * 3 + 1] = points[0 * 3 + 1];
+        points[i * 3 + 2] = points[0 * 3 + 2];
+    }
+
+    for(i = 15; i <= 360; i += 15) {
+        s = kexMath::Sin(DEG2RAD(i));
+        c = kexMath::Cos(DEG2RAD(i));
+
+        v1[0] = x;
+        v1[1] = y + radius * s;
+        v1[2] = z + radius * c;
+
+        for(k = 0, j = 15; j <= 360; j += 15, k++) {
+            v2[0] = x + kexMath::Sin(DEG2RAD(j)) * radius * s;
+            v2[1] = y + kexMath::Cos(DEG2RAD(j)) * radius * s;
+            v2[2] = v1[2];
+
+            renderBackend.AddLine(v1[0], v1[1], v2[2], v2[0], v2[1], v2[2], r, g, b, 255);
+            renderBackend.AddLine(v1[0], v1[1], v2[2],
+                points[k * 3 + 0],
+                points[k * 3 + 1],
+                points[k * 3 + 2],
+                r, g, b, 255);
+
+            points[k * 3 + 0] = v1[0];
+            points[k * 3 + 1] = v1[1];
+            points[k * 3 + 2] = v1[2];
+
+            v1[0] = v2[0];
+            v1[1] = v2[1];
+            v1[2] = v2[2];
+        }
+    }
+
+    renderBackend.DrawLineElements();
+    renderBackend.SetState(GLSTATE_TEXTURE0, true);
+}
+
+//
 // kexRenderer::DrawTriangle
 //
 

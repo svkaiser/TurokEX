@@ -26,7 +26,7 @@
 
 #include "common.h"
 #include "clipmesh.h"
-#include "actor.h"
+#include "worldModel.h"
 #include "renderBackend.h"
 #include "renderWorld.h"
 #include "stanHull.h"

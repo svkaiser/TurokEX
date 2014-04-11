@@ -43,7 +43,10 @@ public:
     kexBBox             bounds;
     int                 axis;
     float               dist;
+    kexPlane            plane;
     kexLinklist<type>   objects;
+    int                 nodeNum;
+    float               radius;
     kexSDNodeObj        *children[NODE_SIDES];
 };
 
@@ -54,6 +57,8 @@ template<class type>
 kexSDNodeObj<type>::kexSDNodeObj(void) {
     axis = 0;
     dist = 0;
+    nodeNum = -1;
+    radius = 0;
     children[0] = NULL;
     children[1] = NULL;
 }
@@ -190,6 +195,8 @@ kexSDNodeObj<type> *kexSDNode<type>::AddNode(int depth, kexBBox &box) {
     kexSDNodeObj<type> *node = &nodes[numNodes++];
     
     node->bounds = box;
+    node->nodeNum = numNodes-1;
+    node->radius = node->bounds.Radius();
     
     if(depth == maxDepth || ((box.max - box.min) * 0.5f).Unit() <= maxNodes) {
         node->axis = -1;
@@ -205,6 +212,13 @@ kexSDNodeObj<type> *kexSDNode<type>::AddNode(int depth, kexBBox &box) {
         
         box1 = box;
         box2 = box;
+        
+        if(node->axis == 0) {
+            node->plane = kexPlane(1, 0, 0, node->dist);
+        }
+        else {
+            node->plane = kexPlane(0, 0, 1, node->dist);
+        }
         
         box1.max[node->axis] = node->dist;
         box2.min[node->axis] = node->dist;
@@ -228,6 +242,7 @@ public:
     
     void                Link(kexSDNode<type> &sdNode, kexBBox &box);
     void                UnLink(void);
+    int                 PointInNode(kexSDNode<type> &sdNode, const kexVec3 &point, const float min = 0);
     
     kexLinklist<type>   link;
     kexSDNodeObj<type>  *node;
@@ -268,6 +283,35 @@ template<class type>
 void kexSDNodeRef<type>::UnLink(void) {
     link.Remove();
     node = NULL;
+}
+
+//
+// kexSDNodeRef::PointInNode
+//
+template<class type>
+int kexSDNodeRef<type>::PointInNode(kexSDNode<type> &sdNode, const kexVec3 &point, const float min) {
+    kexSDNodeObj<type> *n = sdNode.nodes;
+    float d;
+    
+    while(1) {
+        if(n->axis == -1) {
+            break;
+        }
+        
+        d = n->plane.Distance(point) - n->plane.d;
+        
+        if(d > min) {
+            n = n->children[0];
+        }
+        else if(d < -min) {
+            n = n->children[1];
+        }
+        else {
+            break;
+        }
+    }
+    
+    return n->nodeNum;
 }
 
 #endif

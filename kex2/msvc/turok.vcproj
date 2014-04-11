@@ -492,6 +492,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\game\worldModel.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\game\worldObject.cpp"
 					>
 				</File>
@@ -826,6 +830,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\game\world.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\game\worldModel.h"
 					>
 				</File>
 				<File

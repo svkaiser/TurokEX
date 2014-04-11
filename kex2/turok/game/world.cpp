@@ -35,6 +35,8 @@
 #include "renderBackend.h"
 #include "gameManager.h"
 #include "defs.h"
+#include "worldModel.h"
+#include "renderWorld.h"
 
 #define FOG_LERP_SPEED      0.025f
 
@@ -686,13 +688,13 @@ void kexWorld::BuildAreaNodes(void) {
         }
     }
     else {
-        for(kexActor *actor = staticActors.Next(); actor != NULL;
-            actor = actor->worldLink.Next()) {
-                if(actor->bStatic == false || actor->bCollision == false) {
+        for(kexWorldModel *wm = staticActors.Next(); wm != NULL;
+            wm = wm->worldLink.Next()) {
+                if(wm->bStatic == false || wm->bCollision == false) {
                     continue;
                 }
 
-                areaNodes.AddBoxToRoot(actor->Bounds());
+                areaNodes.AddBoxToRoot(wm->Bounds());
         }
     }
 
@@ -703,13 +705,13 @@ void kexWorld::BuildAreaNodes(void) {
             actorRover->LinkArea();
     }
 
-    for(kexActor *actor = staticActors.Next();
-        actor != NULL; actor = actor->worldLink.Next()) {
-            if(actor->bCollision == false) {
+    for(kexWorldModel *wm = staticActors.Next();
+        wm != NULL; wm = wm->worldLink.Next()) {
+            if(wm->bCollision == false) {
                 continue;
             }
 
-            actor->LinkArea();
+            wm->LinkArea();
     }
 }
 
@@ -734,6 +736,7 @@ bool kexWorld::Load(const char *mapFile) {
     
     kexLexer *lexer;
     kexActor *actor;
+    kexWorldModel *wm;
     kexStr file(mapFile);
 
     renderBackend.DrawLoadingScreen("Loading Collision...");
@@ -795,10 +798,10 @@ bool kexWorld::Load(const char *mapFile) {
                     switch(lexer->GetIDForTokenList(maptokens, lexer->Token())) {
                     case scmap_actor:
                         lexer->GetString();
-                        actor = ConstructActor(lexer->StringToken());
-                        actor->Parse(lexer);
-                        actor->worldLink.Add(staticActors);
-                        actor->CallSpawn();
+                        wm = static_cast<kexWorldModel*>(ConstructObject("kexWorldModel"));
+                        wm->Parse(lexer);
+                        wm->worldLink.Add(staticActors);
+                        wm->CallSpawn();
                         break;
                     default:
                         if(lexer->TokenType() == TK_IDENIFIER) {
@@ -828,6 +831,8 @@ bool kexWorld::Load(const char *mapFile) {
     bLoaded = true;
 
     BuildAreaNodes();
+    renderWorld.BuildNodes();
+    
     SpawnLocalPlayer();
     return true;
 }
@@ -839,7 +844,9 @@ bool kexWorld::Load(const char *mapFile) {
 void kexWorld::Unload(void) {
     kexLocalPlayer *localPlayer;
     kexActor *actor;
+    kexWorldModel *wm;
     kexActor *next;
+    kexWorldModel *nextWm;
     kexFx *nextFx;
 
     if(bLoaded == false) {
@@ -882,11 +889,11 @@ void kexWorld::Unload(void) {
     }
     
     // remove all static actors
-    for(actor = staticActors.Next(); actor != NULL; actor = next) {
-        next = actor->worldLink.Next();
+    for(wm = staticActors.Next(); wm != NULL; wm = nextWm) {
+        nextWm = wm->worldLink.Next();
 
-        actor->worldLink.Remove();
-        delete actor;
+        wm->worldLink.Remove();
+        delete wm;
     }
 
     fxList.Clear();
@@ -896,6 +903,7 @@ void kexWorld::Unload(void) {
     Mem_Purge(hb_world);
 
     areaNodes.Destroy();
+    renderWorld.renderNodes.Destroy();
 }
 
 //

@@ -24,49 +24,49 @@
 #define __RENDER_WORLD_H__
 
 #include "world.h"
-
-#define MAX_FX_DISPLAYS 2048
+#include "sdNodes.h"
 
 class kexRenderWorld {
 public:
-                    kexRenderWorld(void);
+                                kexRenderWorld(void);
 
-    void            RenderScene(void);
-    void            DrawAreaNode(void);
+    void                        RenderScene(void);
+    void                        BuildNodes(void);
+    void                        DrawAreaNode(void);
+    void                        DrawRenderNode(void);
 
-    static void     Init(void);
-    static int      SortSprites(const void *a, const void *b);
+    static void                 Init(void);
+    static int                  SortSprites(const void *a, const void *b);
 
-    bool            bShowBBox;
-    bool            bShowGrid;
-    bool            bShowNormals;
-    bool            bShowRadius;
-    bool            bShowNodes;
-    bool            bShowOrigin;
-    bool            bWireframe;
-    bool            bShowClipMesh;
-    bool            bShowCollisionMap;
+    bool                        bShowBBox;
+    bool                        bShowGrid;
+    bool                        bShowNormals;
+    bool                        bShowRadius;
+    bool                        bShowNodes;
+    bool                        bShowOrigin;
+    bool                        bWireframe;
+    bool                        bShowClipMesh;
+    bool                        bShowCollisionMap;
+    bool                        bShowRenderNodes;
 
-    int             showAreaNode;
+    int                         showAreaNode;
+    kexSDNode<kexWorldModel>    renderNodes;
 
-    kexVec3         &WorldLightTransform(void) { return worldLightTransform; }
+    kexVec3                     &WorldLightTransform(void) { return worldLightTransform; }
 
 private:
-    void            DrawActors(void);
-    void            DrawStaticActors(void);
-    void            DrawViewActors(void);
-    void            DrawFX(void);
-    void            TraverseDrawActorNode(kexActor *actor,
-                        const modelNode_t *node, kexAnimState *animState);
+    void                        DrawActors(void);
+    void                        DrawStaticActors(void);
+    void                        DrawViewActors(void);
+    void                        DrawFX(void);
+    void                        DrawWorldModel(kexWorldModel *wm);
+    void                        RecursiveSDNode(int nodenum);
+    void                        TraverseDrawActorNode(kexActor *actor,
+                                                      const modelNode_t *node,
+                                                      kexAnimState *animState);
 
-    kexWorld        *world;
-
-    typedef struct {
-        kexFx       *fx;
-    } fxDisplay_t;
-
-    fxDisplay_t     fxDisplayList[MAX_FX_DISPLAYS];
-    kexVec3         worldLightTransform;
+    kexWorld                    *world;
+    kexVec3                     worldLightTransform;
 };
 
 extern kexRenderWorld renderWorld;

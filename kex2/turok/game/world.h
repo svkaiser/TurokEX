@@ -92,7 +92,7 @@ public:
     int                                 &NextMapID(void) { return nextMapID; }
 
     kexLinklist<kexActor>               actors;
-    kexLinklist<kexActor>               staticActors;
+    kexLinklist<kexWorldModel>          staticActors;
     kexLinklist<kexFx>                  fxList;
 
     kexActor                            *actorRover;

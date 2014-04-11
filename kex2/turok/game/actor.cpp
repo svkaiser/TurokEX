@@ -54,7 +54,6 @@ enum {
     scactor_cullDistance,
     scactor_tickDistance,
     scactor_physics,
-    scactor_clipmesh,
     scactor_bNoFixedTransform,
     scactor_bAllowDamage,
     scactor_impactType,
@@ -85,7 +84,6 @@ static const sctokens_t mapactortokens[scactor_end+1] = {
     { scactor_cullDistance,     "cullDistance"      },
     { scactor_tickDistance,     "tickDistance"      },
     { scactor_physics,          "physics"           },
-    { scactor_clipmesh,         "clipMesh"          },
     { scactor_bNoFixedTransform,"bNoFixedTransform" },
     { scactor_bAllowDamage,     "bAllowDamage"      },
     { scactor_impactType,       "impactType"        },
@@ -106,7 +104,6 @@ kexActor::kexActor(void) {
 
     this->worldLink.SetData(this);
     this->scriptComponent.SetOwner(this);
-    this->clipMesh.SetOwner(this);
     this->AnimState()->SetOwner(this);
 
     this->bbox              = baseBBox;
@@ -240,9 +237,6 @@ void kexActor::Spawn(void) {
         viewHeight = baseHeight * 0.5f;
     }
 
-    clipMesh.CreateShape();
-    clipMesh.Transform();
-
     if(bStatic == false && localWorld.CollisionMap().IsLoaded()) {
         physicsRef->sector = localWorld.CollisionMap().PointInSector(origin);
     }
@@ -357,9 +351,6 @@ void kexActor::ParseDefault(kexLexer *lexer) {
         break;
     case scactor_physics:
         physics.Parse(lexer);
-        break;
-    case scactor_clipmesh:
-        clipMesh.Parse(lexer);
         break;
     default:
         if(lexer->TokenType() != TK_IDENIFIER) {
