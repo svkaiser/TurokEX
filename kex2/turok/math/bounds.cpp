@@ -122,18 +122,16 @@ bool kexBBox::IntersectingBox2D(const kexBBox &box) const {
 
 float kexBBox::DistanceToPlane(kexPlane &plane) {
     kexVec3 c;
-    kexVec3 n;
     float distStart;
     float distEnd;
     float dist = 0;
     
     c = Center();
-    n = plane.Normal();
     
     distStart = plane.Distance(c);
-    distEnd = kexMath::Fabs((max.x - c.x) * n.x) +
-              kexMath::Fabs((max.y - c.y) * n.y) +
-              kexMath::Fabs((max.z - c.z) * n.z);
+    distEnd = kexMath::Fabs((max.x - c.x) * plane.a) +
+              kexMath::Fabs((max.y - c.y) * plane.b) +
+              kexMath::Fabs((max.z - c.z) * plane.c);
 
     dist = distStart - distEnd;
     

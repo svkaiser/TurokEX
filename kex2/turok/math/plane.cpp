@@ -119,7 +119,7 @@ kexVec3 &kexPlane::Normal(void) {
 //
 
 float kexPlane::Distance(const kexVec3 &point) {
-    return point.Dot(Normal());
+    return point.x * a + point.y * b + point.z * c;
 }
 
 //
@@ -127,7 +127,7 @@ float kexPlane::Distance(const kexVec3 &point) {
 //
 
 kexPlane &kexPlane::SetDistance(const kexVec3 &point) {
-    this->d = point.Dot(Normal());
+    this->d = Distance(point);
     return *this;
 }
 
