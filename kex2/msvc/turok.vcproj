@@ -276,6 +276,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\renderer\renderUtils.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\renderWorld.cpp"
 					>
 				</File>
@@ -622,6 +626,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\renderModel.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\renderUtils.h"
 					>
 				</File>
 				<File
