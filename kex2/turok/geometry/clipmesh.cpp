@@ -853,13 +853,4 @@ void kexClipMesh::DebugDraw(void) {
     renderBackend.SetState(GLSTATE_BLEND, false);
     renderBackend.SetState(GLSTATE_ALPHATEST, false);
     renderBackend.SetState(GLSTATE_LIGHTING, true);
-#if 0
-    for(unsigned int i = 0; i < numGroups; i++) {
-        cmGroup_t *cmGroup = &cmGroups[i];
-
-        for(unsigned int j = 0; j < cmGroup->numTriangles; j++) {
-            renderWorld.DrawBoundingBox(cmGroup->triangles[j].bounds, 255, 255, 0);
-        }
-    }
-#endif
 }
