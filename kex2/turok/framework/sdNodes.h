@@ -80,6 +80,7 @@ public:
     void                Reset(void);
     void                Destroy(void);
     void                BuildNodes(void);
+    int                 PointInNode(const kexVec3 &point, const float min = 0);
     
     kexSDNodeObj<type>  *nodes;
     unsigned int        numNodes;
@@ -89,8 +90,8 @@ private:
     
     unsigned int        maxDepth;
     unsigned int        maxNodes;
-    kexVec2             rootBoundMin;
-    kexVec2             rootBoundMax;
+    kexVec3             rootBoundMin;
+    kexVec3             rootBoundMax;
 };
 
 //
@@ -100,8 +101,10 @@ template<class type>
 kexSDNode<type>::kexSDNode(void) {
     rootBoundMax[0] = -M_INFINITY;
     rootBoundMax[1] = -M_INFINITY;
+    rootBoundMax[2] = -M_INFINITY;
     rootBoundMin[0] =  M_INFINITY;
     rootBoundMin[1] =  M_INFINITY;
+    rootBoundMin[2] =  M_INFINITY;
     
     nodes = NULL;
     numNodes = 0;
@@ -147,9 +150,11 @@ void kexSDNode<type>::Destroy(void) {
 template<class type>
 void kexSDNode<type>::AddBoxToRoot(const kexBBox &box) {
     if(box.min[0] < rootBoundMin[0]) rootBoundMin[0] = box.min[0];
-    if(box.min[2] < rootBoundMin[1]) rootBoundMin[1] = box.min[2];
+    if(box.min[1] < rootBoundMin[1]) rootBoundMin[1] = box.min[1];
+    if(box.min[2] < rootBoundMin[2]) rootBoundMin[2] = box.min[2];
     if(box.max[0] > rootBoundMax[0]) rootBoundMax[0] = box.max[0];
-    if(box.max[2] > rootBoundMax[1]) rootBoundMax[1] = box.max[2];
+    if(box.max[1] > rootBoundMax[1]) rootBoundMax[1] = box.max[1];
+    if(box.max[2] > rootBoundMax[2]) rootBoundMax[2] = box.max[2];
 }
 
 //
@@ -159,8 +164,10 @@ template<class type>
 void kexSDNode<type>::Reset(void) {
     rootBoundMax[0] = -M_INFINITY;
     rootBoundMax[1] = -M_INFINITY;
+    rootBoundMax[2] = -M_INFINITY;
     rootBoundMin[0] =  M_INFINITY;
     rootBoundMin[1] =  M_INFINITY;
+    rootBoundMin[2] =  M_INFINITY;
 
     numNodes = 0;
     
@@ -181,8 +188,8 @@ template<class type>
 void kexSDNode<type>::BuildNodes(void) {
     kexBBox box;
 
-    box.min.Set(rootBoundMin[0], 0, rootBoundMin[1]);
-    box.max.Set(rootBoundMax[0], 0, rootBoundMax[1]);
+    box.min = rootBoundMin;
+    box.max = rootBoundMax;
     
     AddNode(0, box);
 }
@@ -207,17 +214,33 @@ kexSDNodeObj<type> *kexSDNode<type>::AddNode(int depth, kexBBox &box) {
         kexVec3 size = box.max - box.min;
         kexBBox box1, box2;
         
-        node->axis = (size.x > size.z) ? 0 : 2;
+        if(size.x > size.y && size.x > size.z) {
+            node->axis = 0;
+        }
+        else if(size.y > size.x && size.y > size.z) {
+            node->axis = 1;
+        }
+        else {
+            node->axis = 2;
+        }
+        
         node->dist = (box.max[node->axis] + box.min[node->axis]) * 0.5f;
         
         box1 = box;
         box2 = box;
         
-        if(node->axis == 0) {
-            node->plane = kexPlane(1, 0, 0, node->dist);
-        }
-        else {
-            node->plane = kexPlane(0, 0, 1, node->dist);
+        switch(node->axis) {
+            case 0:
+                node->plane = kexPlane(1, 0, 0, node->dist);
+                break;
+            case 1:
+                node->plane = kexPlane(0, 1, 0, node->dist);
+                break;
+            case 2:
+                node->plane = kexPlane(0, 0, 1, node->dist);
+                break;
+            default:
+                break;
         }
         
         box1.max[node->axis] = node->dist;
@@ -228,6 +251,35 @@ kexSDNodeObj<type> *kexSDNode<type>::AddNode(int depth, kexBBox &box) {
     }
     
     return node;
+}
+
+//
+// kexSDNode::PointInNode
+//
+template<class type>
+int kexSDNode<type>::PointInNode(const kexVec3 &point, const float min) {
+    kexSDNodeObj<type> *n = nodes;
+    float d;
+    
+    while(1) {
+        if(n->axis == -1) {
+            break;
+        }
+        
+        d = n->plane.Distance(point) - n->plane.d;
+        
+        if(d > min) {
+            n = n->children[0];
+        }
+        else if(d < -min) {
+            n = n->children[1];
+        }
+        else {
+            break;
+        }
+    }
+    
+    return n->nodeNum;
 }
 
 //-----------------------------------------------------------------------------
@@ -242,7 +294,6 @@ public:
     
     void                Link(kexSDNode<type> &sdNode, kexBBox &box);
     void                UnLink(void);
-    int                 PointInNode(kexSDNode<type> &sdNode, const kexVec3 &point, const float min = 0);
     
     kexLinklist<type>   link;
     kexSDNodeObj<type>  *node;
@@ -283,35 +334,6 @@ template<class type>
 void kexSDNodeRef<type>::UnLink(void) {
     link.Remove();
     node = NULL;
-}
-
-//
-// kexSDNodeRef::PointInNode
-//
-template<class type>
-int kexSDNodeRef<type>::PointInNode(kexSDNode<type> &sdNode, const kexVec3 &point, const float min) {
-    kexSDNodeObj<type> *n = sdNode.nodes;
-    float d;
-    
-    while(1) {
-        if(n->axis == -1) {
-            break;
-        }
-        
-        d = n->plane.Distance(point) - n->plane.d;
-        
-        if(d > min) {
-            n = n->children[0];
-        }
-        else if(d < -min) {
-            n = n->children[1];
-        }
-        else {
-            break;
-        }
-    }
-    
-    return n->nodeNum;
 }
 
 #endif

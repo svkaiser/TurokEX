@@ -562,11 +562,11 @@ void kexWorld::TraverseAreaNodes(traceInfo_t *trace, kexSDNodeObj<kexWorldObject
         min = trace->start[areaNode->axis];
     }
 
-    if(max > areaNode->dist) {
+    if(min > areaNode->dist || areaNode->axis == 1) {
         TraverseAreaNodes(trace, areaNode->children[NODE_FRONT]);
     }
 
-    if(min < areaNode->dist) {
+    if(max < areaNode->dist || areaNode->axis == 1) {
         TraverseAreaNodes(trace, areaNode->children[NODE_BACK]);
     }
 }
@@ -679,23 +679,13 @@ void kexWorld::TriggerActor(const int targetID) {
 void kexWorld::BuildAreaNodes(void) {
     areaNodes.Init(8, 512);
 
-    if(collisionMap.IsLoaded()) {
-        for(int i = 0; i < collisionMap.numSectors; i++) {
-            kexSector *s;
-            s = &collisionMap.sectors[i];
+    for(kexWorldModel *wm = staticActors.Next(); wm != NULL;
+        wm = wm->worldLink.Next()) {
+            if(wm->bStatic == false || wm->bCollision == false) {
+                continue;
+            }
 
-            areaNodes.AddBoxToRoot(s->lowerTri.bounds);
-        }
-    }
-    else {
-        for(kexWorldModel *wm = staticActors.Next(); wm != NULL;
-            wm = wm->worldLink.Next()) {
-                if(wm->bStatic == false || wm->bCollision == false) {
-                    continue;
-                }
-
-                areaNodes.AddBoxToRoot(wm->Bounds());
-        }
+            areaNodes.AddBoxToRoot(wm->Bounds());
     }
 
     areaNodes.BuildNodes();
