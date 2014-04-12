@@ -35,6 +35,7 @@
 #include "renderMain.h"
 #include "gameManager.h"
 #include "worldModel.h"
+#include "renderUtils.h"
 
 kexRenderWorld renderWorld;
 
@@ -224,7 +225,7 @@ void kexRenderWorld::RenderScene(void) {
     }
 
     if(bShowCollisionMap) {
-        renderer.DrawSectors(world->CollisionMap().sectors,
+        DrawSectors(world->CollisionMap().sectors,
             world->CollisionMap().numSectors);
     }
 
@@ -243,7 +244,7 @@ void kexRenderWorld::RenderScene(void) {
 void kexRenderWorld::BuildNodes(void) {
     kexWorldModel *wm;
     
-    renderNodes.Init(8, 512);
+    renderNodes.Init(4, 32);
     
     for(wm = world->staticActors.Next(); wm != NULL; wm = wm->worldLink.Next()) {
         renderNodes.AddBoxToRoot(wm->Bounds());
@@ -392,17 +393,13 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
     kexWorldModel *wm;
     kexFrustum frustum;
     kexCamera *camera;
-    kexVec3 org;
     kexBBox box;
 
     node = &renderNodes.nodes[nodenum];
     camera = world->Camera();
     frustum = camera->Frustum();
 
-    org = node->bounds.Center();
-    org.y = camera->GetOrigin().y;
-
-    if(!frustum.TestSphere(org, node->radius * 2.0f)) {
+    if(!frustum.TestBoundingBox(node->bounds)) {
         return;
     }
 
@@ -437,16 +434,16 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
 
         if(bShowBBox) {
             if(wm->bTraced) {
-                renderer.DrawBoundingBox(box, 255, 0, 0);
+                kexRenderUtils::DrawBoundingBox(box, 255, 0, 0);
                 wm->bTraced = false;
             }
             else {
-                renderer.DrawBoundingBox(box, 255, 255, 0);
+                kexRenderUtils::DrawBoundingBox(box, 255, 255, 0);
             }
         }
         if(bShowRadius && wm->bCollision) {
             kexVec3 org = wm->GetOrigin();
-            renderer.DrawRadius(org[0], org[1], org[2],
+            kexRenderUtils::DrawRadius(org[0], org[1], org[2],
                 wm->Radius(), wm->Height(), 255, 128, 128);
         }
     }
@@ -498,7 +495,7 @@ void kexRenderWorld::DrawActors(void) {
                 dglMultMatrixf(actor->Matrix().ToFloatPtr());
 
                 if(bShowOrigin) {
-                    renderer.DrawOrigin(0, 0, 0, 32);
+                    kexRenderUtils::DrawOrigin(0, 0, 0, 32);
                 }
 
                 if(actor->bNoFixedTransform == false) {
@@ -521,11 +518,11 @@ void kexRenderWorld::DrawActors(void) {
 
             if(bShowBBox) {
                 if(actor->bTraced) {
-                    renderer.DrawBoundingBox(box, 255, 0, 0);
+                    kexRenderUtils::DrawBoundingBox(box, 255, 0, 0);
                     actor->bTraced = false;
                 }
                 else {
-                    renderer.DrawBoundingBox(box,
+                    kexRenderUtils::DrawBoundingBox(box,
                         actor->bTouch ? 0 : 255,
                         actor->bTouch ? 255 : 128,
                         actor->bTouch ? 0 : 128);
@@ -533,11 +530,11 @@ void kexRenderWorld::DrawActors(void) {
             }
             if(bShowRadius && actor->bCollision) {
                 kexVec3 org = actor->GetOrigin();
-                renderer.DrawRadius(org[0], org[1], org[2],
+                kexRenderUtils::DrawRadius(org[0], org[1], org[2],
                     actor->Radius(), actor->BaseHeight(), 255, 128, 128);
-                renderer.DrawRadius(org[0], org[1], org[2],
+                kexRenderUtils::DrawRadius(org[0], org[1], org[2],
                     actor->Radius() * 0.5f, actor->Height(), 128, 128, 255);
-                renderer.DrawRadius(org[0], org[1], org[2],
+                kexRenderUtils::DrawRadius(org[0], org[1], org[2],
                     actor->Radius() * 0.5f, actor->GetViewHeight(), 128, 255, 128);
             }
     }
@@ -603,12 +600,12 @@ void kexRenderWorld::DrawAreaNode(void) {
 
     for(unsigned int i = 0; i < world->areaNodes.numNodes; i++) {
         nodes = &world->areaNodes.nodes[i];
-        renderer.DrawBoundingBox(nodes->bounds, 64, 128, 255);
+        kexRenderUtils::DrawBoundingBox(nodes->bounds, 64, 128, 255);
     }
 
     nodes = gameManager.localPlayer.Puppet()->areaLink.node;
     if(nodes) {
-        renderer.DrawBoundingBox(nodes->bounds, 255, 0, 0);
+        kexRenderUtils::DrawBoundingBox(nodes->bounds, 255, 0, 0);
     }
 
     dglDepthRange(0.0f, 1.0f);
@@ -625,8 +622,180 @@ void kexRenderWorld::DrawRenderNode(void) {
 
     for(unsigned int i = 0; i < renderNodes.numNodes; i++) {
         nodes = &renderNodes.nodes[i];
-        renderer.DrawBoundingBox(nodes->bounds, 0, 255, 0);
+        kexRenderUtils::DrawBoundingBox(nodes->bounds, 0, 255, 0);
     }
 
     dglDepthRange(0.0f, 1.0f);
+}
+
+//
+// kexRenderWorld::DrawTriangle
+//
+
+void kexRenderWorld::DrawTriangle(const kexTri &tri, const word index,
+                               byte r, byte g, byte b, byte a) {
+    for(int j = 0; j < 3; j++) {
+        renderBackend.AddVertex(tri.point[j]->x,
+                                tri.point[j]->y,
+                                tri.point[j]->z,
+                                0,
+                                0,
+                                r,
+                                g,
+                                b,
+                                a);
+    }
+    
+    renderBackend.AddTriangle(index + 0, index + 1, index + 2);
+}
+
+//
+// kexRenderWorld::DrawSectors
+//
+
+void kexRenderWorld::DrawSectors(kexSector *sectors, const int count) {
+    if(!localWorld.CollisionMap().IsLoaded() || sectors == NULL || count <= 0) {
+        return;
+    }
+    
+    kexFrustum frustum = localWorld.Camera()->Frustum();
+    int idx = 0;
+    int num = 0;
+    kexVec3 pt;
+    kexSector *sector;
+    kexTri *tri;
+    kexVec3 n;
+    
+    renderBackend.DisableShaders();
+    
+    for(int i = 0; i < count; i++) {
+        byte r, g, b, a;
+        
+        sector = &sectors[i];
+        tri = &sector->lowerTri;
+        
+        if(frustum.TestTriangle(*tri)) {
+            if(sector->bTraced == true) {
+                r = g = b = a = 255;
+                sector->bTraced = false;
+            }
+            else {
+                r = 192;
+                a = 255;
+                g = b = 96;
+            }
+            
+            DrawTriangle(*tri, idx, r, g, b, a);
+            idx += 3;
+            num++;
+        }
+        
+        if(sector->flags & CLF_CHECKHEIGHT) {
+            tri = &sector->upperTri;
+            
+            if(frustum.TestTriangle(*tri)) {
+                DrawTriangle(*tri, idx, 96, 192, 96, 255);
+                idx += 3;
+                num++;
+            }
+        }
+        
+        if(sector->area && sector->area->Flags() & AAF_WATER) {
+            for(int j = 0; j < 3; j++) {
+                renderBackend.AddVertex(tri->point[j]->x,
+                                        sector->area->WaterPlane(),
+                                        tri->point[j]->z,
+                                        0,
+                                        0,
+                                        32,
+                                        0,
+                                        255,
+                                        192);
+            }
+            renderBackend.AddTriangle(idx + 0, idx + 1, idx + 2);
+            
+            idx += 3;
+            num++;
+        }
+    }
+    
+    if(num != 0) {
+        renderBackend.SetState(GLSTATE_CULL, true);
+        renderBackend.SetState(GLSTATE_TEXTURE0, false);
+        renderBackend.SetState(GLSTATE_BLEND, true);
+        renderBackend.SetState(GLSTATE_ALPHATEST, true);
+        renderBackend.SetState(GLSTATE_LIGHTING, false);
+        
+        renderBackend.BindDrawPointers();
+        renderBackend.DrawElements(false);
+        
+        // draw wireframe outline
+        renderBackend.SetPolyMode(GLPOLY_LINE);
+        
+        dglDisableClientState(GL_COLOR_ARRAY);
+        dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
+        
+        renderBackend.DrawElements();
+        renderBackend.SetPolyMode(GLPOLY_FILL);
+        
+        dglEnableClientState(GL_COLOR_ARRAY);
+        
+        renderBackend.SetState(GLSTATE_CULL, false);
+        dglLineWidth(2.0f);
+        
+        // draw plane normal vectors
+        for(int i = 0; i < count; i++) {
+            sector = &sectors[i];
+            tri = &sector->lowerTri;
+            
+            if(frustum.TestTriangle(*tri)) {
+                n = tri->plane.Normal();
+                pt = tri->GetCenterPoint();
+                
+                renderBackend.AddLine(pt.x,
+                                      pt.y,
+                                      pt.z,
+                                      pt.x + (16 * n[0]),
+                                      pt.y + (16 * n[1]),
+                                      pt.z + (16 * n[2]),
+                                      0,
+                                      32,
+                                      255,
+                                      255,
+                                      0,
+                                      255,
+                                      0,
+                                      255);
+            }
+            
+            if(sector->flags & CLF_CHECKHEIGHT) {
+                tri = &sector->upperTri;
+                
+                if(frustum.TestTriangle(*tri)) {
+                    n = tri->plane.Normal();
+                    pt = tri->GetCenterPoint();
+                    
+                    renderBackend.AddLine(pt.x,
+                                          pt.y,
+                                          pt.z,
+                                          pt.x + (16 * n[0]),
+                                          pt.y + (16 * n[1]),
+                                          pt.z + (16 * n[2]),
+                                          255,
+                                          0,
+                                          0,
+                                          255,
+                                          255,
+                                          255,
+                                          32,
+                                          255);
+                }
+            }
+        }
+        
+        renderBackend.DrawLineElements();
+        dglLineWidth(1.0f);
+        
+        renderBackend.SetState(GLSTATE_TEXTURE0, true);
+    }
 }

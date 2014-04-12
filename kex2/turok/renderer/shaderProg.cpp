@@ -37,6 +37,7 @@ static const char *shaderParamNames[RSP_TOTAL+1] = {
     "uPVMatrix",
     "uViewWidth",
     "uViewHeight",
+    "uTime",
     "uRunTime",
     "uLightDirection",
     "uLightDirectionColor",

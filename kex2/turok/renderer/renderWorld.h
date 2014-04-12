@@ -64,6 +64,9 @@ private:
     void                        TraverseDrawActorNode(kexActor *actor,
                                                       const modelNode_t *node,
                                                       kexAnimState *animState);
+    void                        DrawSectors(kexSector *sectors, const int count);
+    void                        DrawTriangle(const kexTri &tri, const word index,
+                                             byte r, byte g, byte b, byte a);
 
     kexWorld                    *world;
     kexVec3                     worldLightTransform;

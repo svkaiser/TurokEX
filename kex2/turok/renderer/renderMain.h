@@ -55,15 +55,6 @@ public:
     void                    DrawSurface(const surface_t *surface, kexMaterial *material);
     void                    Draw(void);
     void                    DrawFX(void);
-    void                    DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b);
-    void                    DrawRadius(float x, float y, float z,
-                                       float radius, float height,
-                                       byte r, byte g, byte b);
-    void                    DrawOrigin(float x, float y, float z, float size);
-    void                    DrawSphere(float x, float y, float z, float radius, byte r, byte g, byte b);
-    void                    DrawSectors(kexSector *sectors, const int count);
-    void                    DrawTriangle(const kexTri &tri, const word index,
-                                         byte r, byte g, byte b, byte a);
 
     static int              SortSprites(const void *a, const void *b);
     

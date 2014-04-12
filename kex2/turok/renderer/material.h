@@ -53,7 +53,8 @@ typedef enum {
     MSO_MASKED,
     MSO_CUSTOM1,
     MSO_CUSTOM2,
-    MSO_CUSTOM3
+    MSO_CUSTOM3,
+    NUMSORTORDERS
 } matSortOrder_t;
 
 class kexMaterial {
