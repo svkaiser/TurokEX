@@ -34,9 +34,9 @@ public:
     void                        BuildNodes(void);
     void                        DrawAreaNode(void);
     void                        DrawRenderNode(void);
+    void                        PrintStats(void);
 
     static void                 Init(void);
-    static int                  SortSprites(const void *a, const void *b);
 
     bool                        bShowBBox;
     bool                        bShowGrid;
@@ -48,6 +48,7 @@ public:
     bool                        bShowClipMesh;
     bool                        bShowCollisionMap;
     bool                        bShowRenderNodes;
+    bool                        bPrintStats;
 
     int                         showAreaNode;
     kexSDNode<kexWorldModel>    renderNodes;
@@ -70,6 +71,10 @@ private:
 
     kexWorld                    *world;
     kexVec3                     worldLightTransform;
+    int                         renderSceneMS;
+    int                         renderStaticsMS;
+    int                         renderActorsMS;
+    int                         renderFXMS;
 };
 
 extern kexRenderWorld renderWorld;

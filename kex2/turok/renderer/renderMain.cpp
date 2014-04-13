@@ -81,6 +81,7 @@ void kexRenderer::Draw(void) {
     
     // draw debug stats
     kexHeap::DrawHeapInfo();
+    renderWorld.PrintStats();
     scriptManager.DrawGCStats();
     
     // finish frame
@@ -120,6 +121,7 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
     renderBackend.SetState(material->StateBits());
     renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
     renderBackend.SetCull(material->CullType());
+    renderBackend.SetDepthMask(material->DepthMask());
     
     for(unsigned int i = 0; i < material->NumUnits(); i++) {
         matSampler_t *sampler = material->Sampler(i);

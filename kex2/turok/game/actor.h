@@ -82,10 +82,11 @@ public:
     kexKeyMap                   *definition;
 
     // TODO - need some sort of skin system
-    char                        **materials;
+    kexMaterial                 **materials;
     bool                        bTraced;
     int                         validcount;
     bool                        bNoFixedTransform;
+    bool                        bNoCull;        // not culled by view frustum
 
     //
     // template for registering default script actor methods and properties
@@ -118,6 +119,7 @@ public:
     OBJPROPERTY("kKeyMap args", args);
     OBJPROPERTY("kKeyMapMem @def", definition);
     OBJPROPERTY("bool bCanPickup", bCanPickup);
+    OBJPROPERTY("bool bNoCull", bNoCull);
 
     #undef OBJMETHOD
     #undef OBJPROPERTY

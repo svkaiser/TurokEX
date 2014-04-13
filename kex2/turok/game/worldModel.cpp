@@ -27,6 +27,7 @@
 #include "common.h"
 #include "worldModel.h"
 #include "world.h"
+#include "renderBackend.h"
 
 enum {
     scwmdl_mesh = 0,
@@ -96,19 +97,8 @@ kexWorldModel::kexWorldModel(void) {
 
 kexWorldModel::~kexWorldModel(void) {
     if(model && materials) {
-        modelNode_t *node = &model->nodes[0];
-
-        for(unsigned int l = 0; l < node->numSurfaces; l++) {
-            if(materials[l]) {
-                Mem_Free(materials[l]);
-                materials[l] = NULL;
-            }
-        }
-
-        if(materials) {
-            Mem_Free(materials);
-            materials = NULL;
-        }
+        Mem_Free(materials);
+        materials = NULL;
     }
 }
 
@@ -187,9 +177,17 @@ void kexWorldModel::Parse(kexLexer *lexer) {
                 lexer->ExpectNextToken(TK_LBRACK);
                 
                 for(unsigned int l = 0; l < model->nodes[0].numSurfaces; l++) {
+                    char *str;
                     // parse sections
                     lexer->GetString();
-                    materials[l] = Mem_Strdup(lexer->StringToken(), hb_static);
+                    str = lexer->StringToken();
+
+                    if(str[0] != '-') {
+                        materials[l] = renderBackend.CacheMaterial(lexer->StringToken());
+                    }
+                    else {
+                        materials[l] = NULL;
+                    }
                 }
                 
                 // end texture swap block
@@ -266,7 +264,7 @@ void kexWorldModel::AllocateMaterials(void) {
     }
 
     // allocate data for material swap array
-    materials = (char**)Mem_Calloc(sizeof(char*) *
+    materials = (kexMaterial**)Mem_Calloc(sizeof(kexMaterial*) *
         node->numSurfaces, hb_static);
 }
 

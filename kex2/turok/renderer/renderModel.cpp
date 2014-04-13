@@ -257,7 +257,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                                 case scmdl_material:
                                     lexer->ExpectNextToken(TK_EQUAL);
                                     lexer->GetString();
-                                    surface->material = Mem_Strdup(lexer->StringToken(), hb_model);
+                                    surface->material = renderBackend.CacheMaterial(lexer->StringToken());
                                     break;
                                 case scmdl_rgba1:
 

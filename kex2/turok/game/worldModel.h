@@ -54,7 +54,7 @@ public:
     const kexModel_t                *Model(void) const { return model; }
 
     // TODO - need some sort of skin system
-    char                            **materials;
+    kexMaterial                     **materials;
     bool                            bTraced;
     int                             validcount;
 

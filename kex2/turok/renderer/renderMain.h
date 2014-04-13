@@ -36,7 +36,7 @@ typedef struct {
     float                   *normals;
     byte                    *rgb;
     word                    *indices;
-    char                    *material;
+    kexMaterial             *material;
     filepath_t              texturePath;
     rcolor                  color1;
     rcolor                  color2;

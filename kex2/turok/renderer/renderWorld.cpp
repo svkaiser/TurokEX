@@ -151,6 +151,18 @@ static void FCmd_ShowAreaNode(void) {
 }
 
 //
+// FCmd_PrintStats
+//
+
+static void FCmd_PrintStats(void) {
+    if(command.GetArgc() < 1) {
+        return;
+    }
+
+    renderWorld.bPrintStats ^= 1;
+}
+
+//
 // kexRenderWorld::kexRenderWorld
 //
 
@@ -165,6 +177,7 @@ kexRenderWorld::kexRenderWorld(void) {
     this->bWireframe        = false;
     this->bShowClipMesh     = false;
     this->bShowCollisionMap = false;
+    this->bPrintStats       = false;
     this->showAreaNode      = -1;
 }
 
@@ -182,6 +195,7 @@ void kexRenderWorld::Init(void) {
     command.Add("showareanode", FCmd_ShowAreaNode);
     command.Add("showrendernodes", FCmd_ShowRenderNodes);
     command.Add("showcollision", FCmd_ShowCollisionMap);
+    command.Add("printscenestats", FCmd_PrintStats);
 }
 
 //
@@ -191,6 +205,10 @@ void kexRenderWorld::Init(void) {
 void kexRenderWorld::RenderScene(void) {
     if(!world->IsLoaded()) {
         return;
+    }
+
+    if(bPrintStats) {
+        renderSceneMS = sysMain.GetMS();
     }
 
     kexVec4 fogRGB = world->GetCurrentFogRGB();
@@ -229,12 +247,25 @@ void kexRenderWorld::RenderScene(void) {
             world->CollisionMap().numSectors);
     }
 
+    if(bPrintStats) {
+        renderFXMS = sysMain.GetMS();
+    }
+
     renderer.DrawFX();
+
+    if(bPrintStats) {
+        renderFXMS = sysMain.GetMS() - renderFXMS;
+    }
+
     DrawViewActors();
 
     /*if(bWireframe) {
         renderBackend.SetPolyMode(GLPOLY_FILL);
     }*/
+
+    if(bPrintStats) {
+        renderSceneMS = sysMain.GetMS() - renderSceneMS;
+    }
 }
 
 //
@@ -244,7 +275,7 @@ void kexRenderWorld::RenderScene(void) {
 void kexRenderWorld::BuildNodes(void) {
     kexWorldModel *wm;
     
-    renderNodes.Init(4, 32);
+    renderNodes.Init(8);
     
     for(wm = world->staticActors.Next(); wm != NULL; wm = wm->worldLink.Next()) {
         renderNodes.AddBoxToRoot(wm->Bounds());
@@ -273,16 +304,15 @@ void kexRenderWorld::DrawWorldModel(kexWorldModel *wm) {
     
     for(unsigned i = 0; i < model->nodes[0].numSurfaces; i++) {
         surface_t *surface = &node->surfaces[i];
-        char *materialPath = surface->material;
+        kexMaterial *material = surface->material;
         
         if(wm->materials != NULL) {
-            char *mat = wm->materials[i];
+            kexMaterial *mat = wm->materials[i];
             
-            if(mat != NULL && mat[0] != '-')
-                materialPath = mat;
+            if(mat != NULL)
+                material = mat;
         }
-        
-        kexMaterial *material = renderBackend.CacheMaterial(materialPath);
+
         renderer.DrawSurface(surface, material);
     }
 }
@@ -361,17 +391,7 @@ void kexRenderWorld::TraverseDrawActorNode(kexActor *actor,
 
     for(i = 0; i < node->numSurfaces; i++) {
         surface_t *surface = &node->surfaces[i];
-        char *materialPath = surface->material;
-
-        if(actor->materials != NULL) {
-            char *mat = actor->materials[i];
-
-            if(mat != NULL && mat[0] != '-')
-                materialPath = mat;
-        }
-
-        kexMaterial *material = renderBackend.CacheMaterial(materialPath);
-        renderer.DrawSurface(surface, material);
+        renderer.DrawSurface(surface, surface->material);
     }
 
     for(i = 0; i < node->numChildren; i++) {
@@ -461,7 +481,15 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
 //
 
 void kexRenderWorld::DrawStaticActors(void) {
+    if(bPrintStats) {
+        renderStaticsMS = sysMain.GetMS();
+    }
+
     RecursiveSDNode(0);
+
+    if(bPrintStats) {
+        renderStaticsMS = sysMain.GetMS() - renderStaticsMS;
+    }
 }
 
 //
@@ -474,6 +502,10 @@ void kexRenderWorld::DrawActors(void) {
     kexMatrix mtx(DEG2RAD(-90), 1);
     mtx.Scale(-1, 1, 1);
 
+    if(bPrintStats) {
+        renderActorsMS = sysMain.GetMS();
+    }
+
     for(kexActor *actor = world->actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
             if(actor->bStatic) {
@@ -484,10 +516,13 @@ void kexRenderWorld::DrawActors(void) {
             }
 
             box = actor->Bounds();
-            actor->bCulled = !frustum.TestBoundingBox(box);
 
-            if(actor->bCulled) {
-                continue;
+            if(actor->bNoCull == false) {
+                actor->bCulled = !frustum.TestBoundingBox(box);
+
+                if(actor->bCulled) {
+                    continue;
+                }
             }
 
             if(actor->Model()) {
@@ -538,6 +573,10 @@ void kexRenderWorld::DrawActors(void) {
                     actor->Radius() * 0.5f, actor->GetViewHeight(), 128, 255, 128);
             }
     }
+
+    if(bPrintStats) {
+        renderActorsMS = sysMain.GetMS() - renderActorsMS;
+    }
 }
 
 //
@@ -556,8 +595,6 @@ void kexRenderWorld::DrawViewActors(void) {
 
     dglMatrixMode(GL_MODELVIEW);
     dglLoadIdentity();
-
-    renderBackend.SetCull(GLCULL_FRONT);
 
     for(kexActor *actor = world->actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
@@ -590,6 +627,37 @@ void kexRenderWorld::DrawViewActors(void) {
 }
 
 //
+// kexRenderWorld::PrintStats
+//
+
+void kexRenderWorld::PrintStats(void) {
+    unsigned int c;
+    byte *cb;
+
+    if(!bPrintStats) {
+        return;
+    }
+
+    cb = (byte*)&c;
+
+    c = RGBA(0, 255, 0, 255);
+    renderBackend.consoleFont.DrawString("scene time", 32, 32, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString("statics time", 32, 48, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString("actor time", 32, 64, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString("fx time", 32, 80, 1, false, cb, cb);
+
+    c = RGBA(255, 255, 0, 255);
+    renderBackend.consoleFont.DrawString(kva(": %ims", renderSceneMS),
+            128, 32, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString(kva(": %ims", renderStaticsMS),
+            128, 48, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString(kva(": %ims", renderActorsMS),
+            128, 64, 1, false, cb, cb);
+    renderBackend.consoleFont.DrawString(kva(": %ims", renderFXMS),
+            128, 80, 1, false, cb, cb);
+}
+
+//
 // kexRenderWorld::DrawAreaNode
 //
 
@@ -617,12 +685,23 @@ void kexRenderWorld::DrawAreaNode(void) {
 
 void kexRenderWorld::DrawRenderNode(void) {
     kexSDNodeObj<kexWorldModel> *nodes;
+    kexWorldModel *wm;
+    int nodenum;
 
     dglDepthRange(0.0f, 0.0f);
 
     for(unsigned int i = 0; i < renderNodes.numNodes; i++) {
         nodes = &renderNodes.nodes[i];
         kexRenderUtils::DrawBoundingBox(nodes->bounds, 0, 255, 0);
+    }
+
+    nodenum = renderNodes.PointInNode(world->Camera()->GetOrigin(), 16);
+    nodes = &renderNodes.nodes[nodenum];
+
+    kexRenderUtils::DrawBoundingBox(nodes->bounds, 255, 255, 0);
+
+    for(wm = nodes->objects.Next(); wm != NULL; wm = wm->renderNode.link.Next()) {
+        kexRenderUtils::DrawBoundingBox(wm->Bounds(), 0, 255, 255);
     }
 
     dglDepthRange(0.0f, 1.0f);

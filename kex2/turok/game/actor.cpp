@@ -29,6 +29,7 @@
 #include "server.h"
 #include "world.h"
 #include "defs.h"
+#include "renderBackend.h"
 
 enum {
     scactor_name = 0,
@@ -41,6 +42,8 @@ enum {
     scactor_bStatic,
     scactor_bTouch,
     scactor_bOrientOnSlope,
+    scactor_bNoCull,
+    scactor_bClientView,
     scactor_origin,
     scactor_scale,
     scactor_angles,
@@ -71,6 +74,8 @@ static const sctokens_t mapactortokens[scactor_end+1] = {
     { scactor_bStatic,          "bStatic"           },
     { scactor_bTouch,           "bTouch"            },
     { scactor_bOrientOnSlope,   "bOrientOnSlope"    },
+    { scactor_bNoCull,          "bNoCull"           },
+    { scactor_bClientView,      "bClientView"       },
     { scactor_origin,           "origin"            },
     { scactor_scale,            "scale"             },
     { scactor_angles,           "angles"            },
@@ -110,6 +115,7 @@ kexActor::kexActor(void) {
     this->bTraced           = false;
     this->validcount        = 0;
     this->bNoFixedTransform = false;
+    this->bNoCull           = false;
     this->materials         = NULL;
     this->definition        = NULL;
 }
@@ -132,19 +138,8 @@ kexActor::~kexActor(void) {
     }
 
     if(model && materials) {
-        modelNode_t *node = &model->nodes[0];
-
-        for(unsigned int l = 0; l < node->numSurfaces; l++) {
-            if(materials[l]) {
-                Mem_Free(materials[l]);
-                materials[l] = NULL;
-            }
-        }
-
-        if(materials) {
-            Mem_Free(materials);
-            materials = NULL;
-        }
+        Mem_Free(materials);
+        materials = NULL;
     }
 }
 
@@ -200,6 +195,7 @@ void kexActor::Spawn(void) {
         definition->GetBool("bTouch", bTouch);
         definition->GetBool("bNoFixedTransform", bNoFixedTransform);
         definition->GetBool("bAllowDamage", bAllowDamage);
+        definition->GetBool("bNoCull", bNoCull);
         definition->GetFloat("radius", radius, 10.24f);
         definition->GetFloat("height", baseHeight, 10.24f);
         definition->GetFloat("centerHeight", centerHeight, 5.12f);
@@ -289,9 +285,18 @@ void kexActor::ParseDefault(kexLexer *lexer) {
         lexer->ExpectNextToken(TK_LBRACK);
 
         for(unsigned int l = 0; l < model->nodes[0].numSurfaces; l++) {
+            char *str;
+
             // parse sections
             lexer->GetString();
-            materials[l] = Mem_Strdup(lexer->StringToken(), hb_static);
+            str = lexer->StringToken();
+
+            if(str[0] != '-') {
+                materials[l] = renderBackend.CacheMaterial(lexer->StringToken());
+            }
+            else {
+                materials[l] = NULL;
+            }
         }
 
         // end texture swap block
@@ -315,6 +320,12 @@ void kexActor::ParseDefault(kexLexer *lexer) {
         break;
     case scactor_bOrientOnSlope:
         bOrientOnSlope = (lexer->GetNumber() > 0);
+        break;
+    case scactor_bNoCull:
+        bNoCull = (lexer->GetNumber() > 0);
+        break;
+    case scactor_bClientView:
+        bClientView = (lexer->GetNumber() > 0);
         break;
     case scactor_bNoFixedTransform:
         bNoFixedTransform = (lexer->GetNumber() > 0);
@@ -430,7 +441,7 @@ void kexActor::AllocateMaterials(void) {
     }
 
     // allocate data for material swap array
-    materials = (char**)Mem_Calloc(sizeof(char*) *
+    materials = (kexMaterial**)Mem_Calloc(sizeof(kexMaterial*) *
         node->numSurfaces, hb_static);
 }
 
