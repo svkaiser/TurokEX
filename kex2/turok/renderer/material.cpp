@@ -55,6 +55,7 @@ void kexMaterial::Init(void) {
     this->stateBits     = 0;
     this->cullType      = GLCULL_BACK;
     this->alphaFunction = GLFUNC_GEQUAL;
+    this->depthMask     = GLDEPTHMASK_YES;
     this->sortOrder     = MSO_DEFAULT;
     this->alphaMask     = 0.01f;
     this->units         = 0;
@@ -363,6 +364,9 @@ void kexMaterial::Parse(kexLexer *lexer) {
                 }
                 else if(lexer->Matches("color_diffuse")) {
                     diffuseColor = lexer->GetVectorString4();
+                }
+                else if(lexer->Matches("nodepthmask")) {
+                    depthMask = GLDEPTHMASK_NO;
                 }
                 break;
             default:
