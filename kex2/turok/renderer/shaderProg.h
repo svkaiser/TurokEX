@@ -45,6 +45,9 @@ typedef enum {
     RSP_FOG_NEAR,
     RSP_FOG_FAR,
     RSP_FOG_COLOR,
+    RSP_CAMERA_ANGLE,
+    RSP_CAMERA_TRANSFORM,
+    RSP_CAMERA_POSITION,
     RSP_TOTAL
 } rShaderGlobalParams_t;
 

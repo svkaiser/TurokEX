@@ -45,6 +45,9 @@ static const char *shaderParamNames[RSP_TOTAL+1] = {
     "uFogNear",
     "uFogFar",
     "uFogColor",
+    "uCameraAngle",
+    "uCameraTransform",
+    "uCameraPosition",
     NULL
 };
 
