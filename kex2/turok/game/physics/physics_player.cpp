@@ -116,20 +116,6 @@ void kexPlayerPhysics::Think(const float timeDelta) {
     // resize box to account for movement
     trace.bbox |= (velocity * time);
 
-    // handle interactions with touchable objects
-    if(owner->bCanPickup && owner->areaLink.node) {
-        for(kexWorldObject *obj = owner->areaLink.node->objects.Next();
-            obj != NULL;
-            obj = obj->areaLink.link.Next()) {
-                if(obj == owner || !obj->bTouch) {
-                    continue;
-                }
-                if(obj->Bounds().IntersectingBox(trace.bbox)) {
-                    obj->OnTouch(owner);
-                }
-        }
-    }
-
     trace.start = start;
     trace.end = start + (gravity * mass) * mass;
     trace.dir = gravity;

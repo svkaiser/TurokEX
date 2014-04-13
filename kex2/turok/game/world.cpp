@@ -527,11 +527,15 @@ void kexWorld::TraverseAreaNodes(traceInfo_t *trace, kexSDNodeObj<kexWorldObject
     for(kexWorldObject *obj = areaNode->objects.Next();
         obj != NULL;
         obj = obj->areaLink.link.Next()) {
-            if(obj == trace->owner || !obj->bCollision) {
+            if(obj == trace->owner || (!obj->bCollision && !obj->bTouch)) {
                 continue;
             }
 
-            box = obj->Bounds() + r;
+            box = obj->Bounds();
+
+            if(!obj->bTouch) {
+                box += r;
+            }
 
             if(trace->bUseBBox) {
                 if(!box.IntersectingBox(trace->bbox)) {
@@ -539,6 +543,11 @@ void kexWorld::TraverseAreaNodes(traceInfo_t *trace, kexSDNodeObj<kexWorldObject
                 }
             }
             else if(!box.LineIntersect(trace->start, trace->end)) {
+                continue;
+            }
+
+            if(trace->owner && trace->owner->bCanPickup && obj->bTouch) {
+                obj->OnTouch(trace->owner);
                 continue;
             }
 
@@ -677,7 +686,7 @@ void kexWorld::TriggerActor(const int targetID) {
 //
 
 void kexWorld::BuildAreaNodes(void) {
-    areaNodes.Init(8, 512);
+    areaNodes.Init(8);
 
     for(kexWorldModel *wm = staticActors.Next(); wm != NULL;
         wm = wm->worldLink.Next()) {
@@ -783,7 +792,6 @@ bool kexWorld::Load(const char *mapFile) {
                 // read into nested block
                 lexer->ExpectNextToken(TK_LBRACK);
                 lexer->Find();
-                renderBackend.DrawLoadingScreen("Loading Static Meshes...");
                 while(lexer->TokenType() != TK_RBRACK) {
                     switch(lexer->GetIDForTokenList(maptokens, lexer->Token())) {
                     case scmap_actor:
