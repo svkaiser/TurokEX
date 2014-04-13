@@ -75,7 +75,7 @@ public:
                         kexSDNode(void);
                         ~kexSDNode(void);
     
-    void                Init(const unsigned int depth, const unsigned int max);
+    void                Init(const unsigned int depth);
     void                AddBoxToRoot(const kexBBox &box);
     void                Reset(void);
     void                Destroy(void);
@@ -124,9 +124,9 @@ kexSDNode<type>::~kexSDNode(void) {
 // kexSDNode::Init
 //
 template<class type>
-void kexSDNode<type>::Init(const unsigned int depth, const unsigned int max) {
+void kexSDNode<type>::Init(const unsigned int depth) {
     maxDepth = depth;
-    maxNodes = max;
+    maxNodes = (2 << depth);
     numNodes = 0;
     
     nodes = new kexSDNodeObj<type>[maxNodes];
