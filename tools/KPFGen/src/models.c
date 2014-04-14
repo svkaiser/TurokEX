@@ -909,6 +909,8 @@ static void ProcessGeometry(byte *data)
         for(i = 0; i < texindexes[header->texture]; i++)
             ProcessMaterial(header, i, i == 0 ? true : false);
     }
+    else
+        ProcessMaterial(header, 0, true);
 
     //Com_Strcat("rgba = %i %i %i %i\n",
         //header->rgba1[0], header->rgba1[1], header->rgba1[2], header->rgba1[3]);

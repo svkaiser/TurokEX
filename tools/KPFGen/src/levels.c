@@ -685,8 +685,8 @@ static void ProcessTextureOverrides(short model, int textureid)
 {
     int ncount;
     int i;
-    int j;
-    int k;
+    //int j;
+    //int k;
 
     if(textureid == -1 || textureid == 0)
         return;
@@ -1387,6 +1387,7 @@ static void WriteGenericActorProps(mapactor_t *actor, attribute_t *attr)
     Com_Strcat("angles { %f 0.0 0.0 }\n",
         -((((-(float)actor->angle / 180.0f) * M_RAD) + M_PI) + M_PI) + M_PI);
     Com_Strcat("bStatic 0\n");
+    Com_Strcat("sectorIndex %i\n", actor->leaf);
 
     if(actor->flags & 1)
         Com_Strcat("bOrientOnSlope 0\n");
