@@ -30,6 +30,7 @@
 #include "world.h"
 #include "defs.h"
 #include "renderBackend.h"
+#include "pickup.h"
 
 enum {
     scactor_name = 0,
@@ -233,8 +234,19 @@ void kexActor::Spawn(void) {
         viewHeight = baseHeight * 0.5f;
     }
 
-    if(bStatic == false && localWorld.CollisionMap().IsLoaded()) {
-        physicsRef->sector = localWorld.CollisionMap().PointInSector(origin);
+    kexCollisionMap *cm = &localWorld.CollisionMap();
+
+    if(bStatic == false && cm->IsLoaded()) {
+        int sectorIdx;
+        
+        args.GetInt("sectorIndex", sectorIdx, -1);
+
+        if(sectorIdx <= -1) {
+            physicsRef->sector = cm->PointInSector(origin);
+        }
+        else {
+            physicsRef->sector = &cm->sectors[sectorIdx];
+        }
     }
 
     scriptComponent.CallFunction(scriptComponent.onSpawn);
@@ -419,8 +431,12 @@ void kexActor::UpdateTransform(void) {
 
     matrix.AddTranslation(origin);
 
-    if(!bStatic) {
+    if(!InstanceOf(&kexPickup::info)) {
         bbox = (baseBBox | rotMatrix);
+    }
+    else {
+        // pickups will have a fixed bounding box size regardless of rotation
+        bbox = baseBBox;
     }
 
     bbox.min += origin;
