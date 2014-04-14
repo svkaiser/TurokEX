@@ -28,14 +28,14 @@ typedef struct
 {
     int type;
     dboolean pointer;
-    char name[32];
+    char name[64];
 } glinfo_t;
 
 typedef struct
 {
     glinfo_t header;
     glinfo_t args[16];
-    char name[32];
+    char name[64];
     char extname[64];
 } gldata_t;
 
@@ -806,6 +806,7 @@ int main(int argc, char** argv)
     SlapGLExtensionsToFile(f, "GL_EXT_texture_env_combine");
     SlapGLExtensionsToFile(f, "GL_EXT_texture_filter_anisotropic");
     SlapGLExtensionsToFile(f, "GL_ARB_shader_objects");
+    SlapGLExtensionsToFile(f, "GL_ARB_framebuffer_object");
 
     fclose(f);
 
