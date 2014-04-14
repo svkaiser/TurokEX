@@ -5201,5 +5201,306 @@ d_inline static void glGetShaderSourceARB_DEBUG (GLhandleARB obj, GLsizei maxLen
 
 #endif
 
+//
+// GL_ARB_framebuffer_object
+//
+extern bool has_GL_ARB_framebuffer_object;
+
+extern PFNGLISRENDERBUFFERPROC _glIsRenderbuffer;
+extern PFNGLBINDRENDERBUFFERPROC _glBindRenderbuffer;
+extern PFNGLDELETERENDERBUFFERSPROC _glDeleteRenderbuffers;
+extern PFNGLGENRENDERBUFFERSPROC _glGenRenderbuffers;
+extern PFNGLRENDERBUFFERSTORAGEPROC _glRenderbufferStorage;
+extern PFNGLGETRENDERBUFFERPARAMETERIVPROC _glGetRenderbufferParameteriv;
+extern PFNGLISFRAMEBUFFERPROC _glIsFramebuffer;
+extern PFNGLBINDFRAMEBUFFERPROC _glBindFramebuffer;
+extern PFNGLDELETEFRAMEBUFFERSPROC _glDeleteFramebuffers;
+extern PFNGLGENFRAMEBUFFERSPROC _glGenFramebuffers;
+extern PFNGLCHECKFRAMEBUFFERSTATUSPROC _glCheckFramebufferStatus;
+extern PFNGLFRAMEBUFFERTEXTURE1DPROC _glFramebufferTexture1D;
+extern PFNGLFRAMEBUFFERTEXTURE2DPROC _glFramebufferTexture2D;
+extern PFNGLFRAMEBUFFERTEXTURE3DPROC _glFramebufferTexture3D;
+extern PFNGLFRAMEBUFFERRENDERBUFFERPROC _glFramebufferRenderbuffer;
+extern PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC _glGetFramebufferAttachmentParameteriv;
+extern PFNGLGENERATEMIPMAPPROC _glGenerateMipmap;
+extern PFNGLBLITFRAMEBUFFERPROC _glBlitFramebuffer;
+extern PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC _glRenderbufferStorageMultisample;
+extern PFNGLFRAMEBUFFERTEXTURELAYERPROC _glFramebufferTextureLayer;
+
+#define GL_ARB_framebuffer_object_Define() \
+bool has_GL_ARB_framebuffer_object = false; \
+PFNGLISRENDERBUFFERPROC _glIsRenderbuffer = NULL; \
+PFNGLBINDRENDERBUFFERPROC _glBindRenderbuffer = NULL; \
+PFNGLDELETERENDERBUFFERSPROC _glDeleteRenderbuffers = NULL; \
+PFNGLGENRENDERBUFFERSPROC _glGenRenderbuffers = NULL; \
+PFNGLRENDERBUFFERSTORAGEPROC _glRenderbufferStorage = NULL; \
+PFNGLGETRENDERBUFFERPARAMETERIVPROC _glGetRenderbufferParameteriv = NULL; \
+PFNGLISFRAMEBUFFERPROC _glIsFramebuffer = NULL; \
+PFNGLBINDFRAMEBUFFERPROC _glBindFramebuffer = NULL; \
+PFNGLDELETEFRAMEBUFFERSPROC _glDeleteFramebuffers = NULL; \
+PFNGLGENFRAMEBUFFERSPROC _glGenFramebuffers = NULL; \
+PFNGLCHECKFRAMEBUFFERSTATUSPROC _glCheckFramebufferStatus = NULL; \
+PFNGLFRAMEBUFFERTEXTURE1DPROC _glFramebufferTexture1D = NULL; \
+PFNGLFRAMEBUFFERTEXTURE2DPROC _glFramebufferTexture2D = NULL; \
+PFNGLFRAMEBUFFERTEXTURE3DPROC _glFramebufferTexture3D = NULL; \
+PFNGLFRAMEBUFFERRENDERBUFFERPROC _glFramebufferRenderbuffer = NULL; \
+PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC _glGetFramebufferAttachmentParameteriv = NULL; \
+PFNGLGENERATEMIPMAPPROC _glGenerateMipmap = NULL; \
+PFNGLBLITFRAMEBUFFERPROC _glBlitFramebuffer = NULL; \
+PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC _glRenderbufferStorageMultisample = NULL; \
+PFNGLFRAMEBUFFERTEXTURELAYERPROC _glFramebufferTextureLayer = NULL
+
+#define GL_ARB_framebuffer_object_Init() \
+has_GL_ARB_framebuffer_object = GL_CheckExtension("GL_ARB_framebuffer_object"); \
+_glIsRenderbuffer = (PFNGLISRENDERBUFFERPROC)GL_RegisterProc("glIsRenderbuffer"); \
+_glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)GL_RegisterProc("glBindRenderbuffer"); \
+_glDeleteRenderbuffers = (PFNGLDELETERENDERBUFFERSPROC)GL_RegisterProc("glDeleteRenderbuffers"); \
+_glGenRenderbuffers = (PFNGLGENRENDERBUFFERSPROC)GL_RegisterProc("glGenRenderbuffers"); \
+_glRenderbufferStorage = (PFNGLRENDERBUFFERSTORAGEPROC)GL_RegisterProc("glRenderbufferStorage"); \
+_glGetRenderbufferParameteriv = (PFNGLGETRENDERBUFFERPARAMETERIVPROC)GL_RegisterProc("glGetRenderbufferParameteriv"); \
+_glIsFramebuffer = (PFNGLISFRAMEBUFFERPROC)GL_RegisterProc("glIsFramebuffer"); \
+_glBindFramebuffer = (PFNGLBINDFRAMEBUFFERPROC)GL_RegisterProc("glBindFramebuffer"); \
+_glDeleteFramebuffers = (PFNGLDELETEFRAMEBUFFERSPROC)GL_RegisterProc("glDeleteFramebuffers"); \
+_glGenFramebuffers = (PFNGLGENFRAMEBUFFERSPROC)GL_RegisterProc("glGenFramebuffers"); \
+_glCheckFramebufferStatus = (PFNGLCHECKFRAMEBUFFERSTATUSPROC)GL_RegisterProc("glCheckFramebufferStatus"); \
+_glFramebufferTexture1D = (PFNGLFRAMEBUFFERTEXTURE1DPROC)GL_RegisterProc("glFramebufferTexture1D"); \
+_glFramebufferTexture2D = (PFNGLFRAMEBUFFERTEXTURE2DPROC)GL_RegisterProc("glFramebufferTexture2D"); \
+_glFramebufferTexture3D = (PFNGLFRAMEBUFFERTEXTURE3DPROC)GL_RegisterProc("glFramebufferTexture3D"); \
+_glFramebufferRenderbuffer = (PFNGLFRAMEBUFFERRENDERBUFFERPROC)GL_RegisterProc("glFramebufferRenderbuffer"); \
+_glGetFramebufferAttachmentParameteriv = (PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC)GL_RegisterProc("glGetFramebufferAttachmentParameteriv"); \
+_glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)GL_RegisterProc("glGenerateMipmap"); \
+_glBlitFramebuffer = (PFNGLBLITFRAMEBUFFERPROC)GL_RegisterProc("glBlitFramebuffer"); \
+_glRenderbufferStorageMultisample = (PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC)GL_RegisterProc("glRenderbufferStorageMultisample"); \
+_glFramebufferTextureLayer = (PFNGLFRAMEBUFFERTEXTURELAYERPROC)GL_RegisterProc("glFramebufferTextureLayer")
+
+#ifndef USE_DEBUG_GLFUNCS
+
+#define dglIsRenderbuffer(renderbuffer) _glIsRenderbuffer(renderbuffer)
+#define dglBindRenderbuffer(target, renderbuffer) _glBindRenderbuffer(target, renderbuffer)
+#define dglDeleteRenderbuffers(n, renderbuffers) _glDeleteRenderbuffers(n, renderbuffers)
+#define dglGenRenderbuffers(n, renderbuffers) _glGenRenderbuffers(n, renderbuffers)
+#define dglRenderbufferStorage(target, internalformat, width, height) _glRenderbufferStorage(target, internalformat, width, height)
+#define dglGetRenderbufferParameteriv(target, pname, params) _glGetRenderbufferParameteriv(target, pname, params)
+#define dglIsFramebuffer(framebuffer) _glIsFramebuffer(framebuffer)
+#define dglBindFramebuffer(target, framebuffer) _glBindFramebuffer(target, framebuffer)
+#define dglDeleteFramebuffers(n, framebuffers) _glDeleteFramebuffers(n, framebuffers)
+#define dglGenFramebuffers(n, framebuffers) _glGenFramebuffers(n, framebuffers)
+#define dglCheckFramebufferStatus(target) _glCheckFramebufferStatus(target)
+#define dglFramebufferTexture1D(target, attachment, textarget, texture, level) _glFramebufferTexture1D(target, attachment, textarget, texture, level)
+#define dglFramebufferTexture2D(target, attachment, textarget, texture, level) _glFramebufferTexture2D(target, attachment, textarget, texture, level)
+#define dglFramebufferTexture3D(target, attachment, textarget, texture, level, zoffset) _glFramebufferTexture3D(target, attachment, textarget, texture, level, zoffset)
+#define dglFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer) _glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer)
+#define dglGetFramebufferAttachmentParameteriv(target, attachment, pname, params) _glGetFramebufferAttachmentParameteriv(target, attachment, pname, params)
+#define dglGenerateMipmap(target) _glGenerateMipmap(target)
+#define dglBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter) _glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter)
+#define dglRenderbufferStorageMultisample(target, samples, internalformat, width, height) _glRenderbufferStorageMultisample(target, samples, internalformat, width, height)
+#define dglFramebufferTextureLayer(target, attachment, texture, level, layer) _glFramebufferTextureLayer(target, attachment, texture, level, layer)
+
+#else
+
+d_inline static GLboolean glIsRenderbuffer_DEBUG (GLuint renderbuffer, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glIsRenderbuffer(renderbuffer=%i)\n", file, line, renderbuffer);
+#endif
+    _glIsRenderbuffer(renderbuffer);
+    dglLogError("glIsRenderbuffer", file, line);
+}
+
+d_inline static void glBindRenderbuffer_DEBUG (GLenum target, GLuint renderbuffer, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glBindRenderbuffer(target=0x%x, renderbuffer=%i)\n", file, line, target, renderbuffer);
+#endif
+    _glBindRenderbuffer(target, renderbuffer);
+    dglLogError("glBindRenderbuffer", file, line);
+}
+
+d_inline static void glDeleteRenderbuffers_DEBUG (GLsizei n, GLuint* renderbuffers, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glDeleteRenderbuffers(n=0x%x, renderbuffers=%p)\n", file, line, n, renderbuffers);
+#endif
+    _glDeleteRenderbuffers(n, renderbuffers);
+    dglLogError("glDeleteRenderbuffers", file, line);
+}
+
+d_inline static void glGenRenderbuffers_DEBUG (GLsizei n, GLuint* renderbuffers, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGenRenderbuffers(n=0x%x, renderbuffers=%p)\n", file, line, n, renderbuffers);
+#endif
+    _glGenRenderbuffers(n, renderbuffers);
+    dglLogError("glGenRenderbuffers", file, line);
+}
+
+d_inline static void glRenderbufferStorage_DEBUG (GLenum target, GLenum internalformat, GLsizei width, GLsizei height, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glRenderbufferStorage(target=0x%x, internalformat=0x%x, width=0x%x, height=0x%x)\n", file, line, target, internalformat, width, height);
+#endif
+    _glRenderbufferStorage(target, internalformat, width, height);
+    dglLogError("glRenderbufferStorage", file, line);
+}
+
+d_inline static void glGetRenderbufferParameteriv_DEBUG (GLenum target, GLenum pname, GLint* params, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetRenderbufferParameteriv(target=0x%x, pname=0x%x, params=%p)\n", file, line, target, pname, params);
+#endif
+    _glGetRenderbufferParameteriv(target, pname, params);
+    dglLogError("glGetRenderbufferParameteriv", file, line);
+}
+
+d_inline static GLboolean glIsFramebuffer_DEBUG (GLuint framebuffer, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glIsFramebuffer(framebuffer=%i)\n", file, line, framebuffer);
+#endif
+    _glIsFramebuffer(framebuffer);
+    dglLogError("glIsFramebuffer", file, line);
+}
+
+d_inline static void glBindFramebuffer_DEBUG (GLenum target, GLuint framebuffer, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glBindFramebuffer(target=0x%x, framebuffer=%i)\n", file, line, target, framebuffer);
+#endif
+    _glBindFramebuffer(target, framebuffer);
+    dglLogError("glBindFramebuffer", file, line);
+}
+
+d_inline static void glDeleteFramebuffers_DEBUG (GLsizei n, GLuint* framebuffers, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glDeleteFramebuffers(n=0x%x, framebuffers=%p)\n", file, line, n, framebuffers);
+#endif
+    _glDeleteFramebuffers(n, framebuffers);
+    dglLogError("glDeleteFramebuffers", file, line);
+}
+
+d_inline static void glGenFramebuffers_DEBUG (GLsizei n, GLuint* framebuffers, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGenFramebuffers(n=0x%x, framebuffers=%p)\n", file, line, n, framebuffers);
+#endif
+    _glGenFramebuffers(n, framebuffers);
+    dglLogError("glGenFramebuffers", file, line);
+}
+
+d_inline static GLenum glCheckFramebufferStatus_DEBUG (GLenum target, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glCheckFramebufferStatus(target=0x%x)\n", file, line, target);
+#endif
+    _glCheckFramebufferStatus(target);
+    dglLogError("glCheckFramebufferStatus", file, line);
+}
+
+d_inline static void glFramebufferTexture1D_DEBUG (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glFramebufferTexture1D(target=0x%x, attachment=0x%x, textarget=0x%x, texture=%i, level=%i)\n", file, line, target, attachment, textarget, texture, level);
+#endif
+    _glFramebufferTexture1D(target, attachment, textarget, texture, level);
+    dglLogError("glFramebufferTexture1D", file, line);
+}
+
+d_inline static void glFramebufferTexture2D_DEBUG (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glFramebufferTexture2D(target=0x%x, attachment=0x%x, textarget=0x%x, texture=%i, level=%i)\n", file, line, target, attachment, textarget, texture, level);
+#endif
+    _glFramebufferTexture2D(target, attachment, textarget, texture, level);
+    dglLogError("glFramebufferTexture2D", file, line);
+}
+
+d_inline static void glFramebufferTexture3D_DEBUG (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint zoffset, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glFramebufferTexture3D(target=0x%x, attachment=0x%x, textarget=0x%x, texture=%i, level=%i, zoffset=%i)\n", file, line, target, attachment, textarget, texture, level, zoffset);
+#endif
+    _glFramebufferTexture3D(target, attachment, textarget, texture, level, zoffset);
+    dglLogError("glFramebufferTexture3D", file, line);
+}
+
+d_inline static void glFramebufferRenderbuffer_DEBUG (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glFramebufferRenderbuffer(target=0x%x, attachment=0x%x, renderbuffertarget=0x%x, renderbuffer=%i)\n", file, line, target, attachment, renderbuffertarget, renderbuffer);
+#endif
+    _glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer);
+    dglLogError("glFramebufferRenderbuffer", file, line);
+}
+
+d_inline static void glGetFramebufferAttachmentParameteriv_DEBUG (GLenum target, GLenum attachment, GLenum pname, GLint* params, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetFramebufferAttachmentParameteriv(target=0x%x, attachment=0x%x, pname=0x%x, params=%p)\n", file, line, target, attachment, pname, params);
+#endif
+    _glGetFramebufferAttachmentParameteriv(target, attachment, pname, params);
+    dglLogError("glGetFramebufferAttachmentParameteriv", file, line);
+}
+
+d_inline static void glGenerateMipmap_DEBUG (GLenum target, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGenerateMipmap(target=0x%x)\n", file, line, target);
+#endif
+    _glGenerateMipmap(target);
+    dglLogError("glGenerateMipmap", file, line);
+}
+
+d_inline static void glBlitFramebuffer_DEBUG (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glBlitFramebuffer(srcX0=%i, srcY0=%i, srcX1=%i, srcY1=%i, dstX0=%i, dstY0=%i, dstX1=%i, dstY1=%i, mask=0x%x, filter=0x%x)\n", file, line, srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+#endif
+    _glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
+    dglLogError("glBlitFramebuffer", file, line);
+}
+
+d_inline static void glRenderbufferStorageMultisample_DEBUG (GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glRenderbufferStorageMultisample(target=0x%x, samples=0x%x, internalformat=0x%x, width=0x%x, height=0x%x)\n", file, line, target, samples, internalformat, width, height);
+#endif
+    _glRenderbufferStorageMultisample(target, samples, internalformat, width, height);
+    dglLogError("glRenderbufferStorageMultisample", file, line);
+}
+
+d_inline static void glFramebufferTextureLayer_DEBUG (GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glFramebufferTextureLayer(target=0x%x, attachment=0x%x, texture=%i, level=%i, layer=%i)\n", file, line, target, attachment, texture, level, layer);
+#endif
+    _glFramebufferTextureLayer(target, attachment, texture, level, layer);
+    dglLogError("glFramebufferTextureLayer", file, line);
+}
+
+
+#define dglIsRenderbuffer(renderbuffer) glIsRenderbuffer_DEBUG(renderbuffer, __FILE__, __LINE__)
+#define dglBindRenderbuffer(target, renderbuffer) glBindRenderbuffer_DEBUG(target, renderbuffer, __FILE__, __LINE__)
+#define dglDeleteRenderbuffers(n, renderbuffers) glDeleteRenderbuffers_DEBUG(n, renderbuffers, __FILE__, __LINE__)
+#define dglGenRenderbuffers(n, renderbuffers) glGenRenderbuffers_DEBUG(n, renderbuffers, __FILE__, __LINE__)
+#define dglRenderbufferStorage(target, internalformat, width, height) glRenderbufferStorage_DEBUG(target, internalformat, width, height, __FILE__, __LINE__)
+#define dglGetRenderbufferParameteriv(target, pname, params) glGetRenderbufferParameteriv_DEBUG(target, pname, params, __FILE__, __LINE__)
+#define dglIsFramebuffer(framebuffer) glIsFramebuffer_DEBUG(framebuffer, __FILE__, __LINE__)
+#define dglBindFramebuffer(target, framebuffer) glBindFramebuffer_DEBUG(target, framebuffer, __FILE__, __LINE__)
+#define dglDeleteFramebuffers(n, framebuffers) glDeleteFramebuffers_DEBUG(n, framebuffers, __FILE__, __LINE__)
+#define dglGenFramebuffers(n, framebuffers) glGenFramebuffers_DEBUG(n, framebuffers, __FILE__, __LINE__)
+#define dglCheckFramebufferStatus(target) glCheckFramebufferStatus_DEBUG(target, __FILE__, __LINE__)
+#define dglFramebufferTexture1D(target, attachment, textarget, texture, level) glFramebufferTexture1D_DEBUG(target, attachment, textarget, texture, level, __FILE__, __LINE__)
+#define dglFramebufferTexture2D(target, attachment, textarget, texture, level) glFramebufferTexture2D_DEBUG(target, attachment, textarget, texture, level, __FILE__, __LINE__)
+#define dglFramebufferTexture3D(target, attachment, textarget, texture, level, zoffset) glFramebufferTexture3D_DEBUG(target, attachment, textarget, texture, level, zoffset, __FILE__, __LINE__)
+#define dglFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer) glFramebufferRenderbuffer_DEBUG(target, attachment, renderbuffertarget, renderbuffer, __FILE__, __LINE__)
+#define dglGetFramebufferAttachmentParameteriv(target, attachment, pname, params) glGetFramebufferAttachmentParameteriv_DEBUG(target, attachment, pname, params, __FILE__, __LINE__)
+#define dglGenerateMipmap(target) glGenerateMipmap_DEBUG(target, __FILE__, __LINE__)
+#define dglBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter) glBlitFramebuffer_DEBUG(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter, __FILE__, __LINE__)
+#define dglRenderbufferStorageMultisample(target, samples, internalformat, width, height) glRenderbufferStorageMultisample_DEBUG(target, samples, internalformat, width, height, __FILE__, __LINE__)
+#define dglFramebufferTextureLayer(target, attachment, texture, level, layer) glFramebufferTextureLayer_DEBUG(target, attachment, texture, level, layer, __FILE__, __LINE__)
+
+#endif // USE_DEBUG_GLFUNCS
+
 #endif // __DGL_H__
 

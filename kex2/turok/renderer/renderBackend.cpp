@@ -45,6 +45,7 @@ GL_EXT_texture_env_combine_Define();
 GL_EXT_texture_filter_anisotropic_Define();
 GL_ARB_vertex_buffer_object_Define();
 GL_ARB_shader_objects_Define();
+GL_ARB_framebuffer_object_Define();
 
 //
 // FindExtension
@@ -284,6 +285,7 @@ void kexRenderBackend::Init(void) {
     GL_EXT_texture_filter_anisotropic_Init();
     GL_ARB_vertex_buffer_object_Init();
     GL_ARB_shader_objects_Init();
+    GL_ARB_framebuffer_object_Init();
 
     SetDefaultState();
 
@@ -338,6 +340,7 @@ void kexRenderBackend::Shutdown(void) {
     kexTexture *texture;
     kexMaterial *material;
     kexShaderObj *shader;
+    kexLensFlares *lens;
 
     common.Printf("Shutting down render system\n");
 
@@ -355,6 +358,9 @@ void kexRenderBackend::Shutdown(void) {
         }
         for(shader = shaders.GetData(i); shader; shader = shaders.Next()) {
             shader->Delete();
+        }
+        for(lens = lensFlaresList.GetData(i); lens; lens = lensFlaresList.Next()) {
+            lens->Delete();
         }
     }
 
@@ -872,6 +878,21 @@ kexMaterial *kexRenderBackend::CacheMaterial(const char *file) {
     }
     
     return material;
+}
+
+//
+// kexRenderBackend::CacheLensFlares
+//
+
+kexLensFlares *kexRenderBackend::CacheLensFlares(const char *name) {
+    kexLensFlares *lens = NULL;
+
+    if(!(lens = lensFlaresList.Find(name))) {
+        lens = lensFlaresList.Add(name);
+        lens->LoadKLF(name);
+    }
+
+    return lens;
 }
 
 //

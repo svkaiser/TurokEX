@@ -72,6 +72,7 @@ typedef struct {
 } fxEvent_t;
 
 class kexShaderObj;
+class kexLensFlares;
 
 typedef struct {
     bool                        bFadeout;
@@ -108,6 +109,7 @@ typedef struct {
     int                         numTextures;
     kexTexture                  **textures;
     kexShaderObj                *shaderObj;
+    kexLensFlares               *lensFlares;
     fxint_t                     instances;
     fxint_t                     lifetime;
     float                       restart;

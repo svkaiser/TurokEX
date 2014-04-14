@@ -96,6 +96,7 @@ typedef enum {
 #include "renderFont.h"
 #include "cachefilelist.h"
 #include "canvas.h"
+#include "lensFlares.h"
 
 class kexRenderBackend {
 public:
@@ -126,6 +127,7 @@ public:
                                                   texFilterMode_t filterMode = TF_LINEAR);
     kexMaterial                     *CacheMaterial(const char *file);
     kexShaderObj                    *CacheShader(const char *file);
+    kexLensFlares                   *CacheLensFlares(const char *file);
     void                            BindDrawPointers(void);
     void                            AddTriangle(int v0, int v1, int v2);
     void                            AddVertex(float x, float y, float z, float s, float t,
@@ -208,6 +210,7 @@ private:
     kexHashList<kexFont>            fontList;
     kexHashList<kexMaterial>        materials;
     kexHashList<kexShaderObj>       shaders;
+    kexHashList<kexLensFlares>      lensFlaresList;
 
     const char                      *gl_vendor;
     const char                      *gl_renderer;

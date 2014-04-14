@@ -117,6 +117,8 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
     shader->SetGlobalUniform(RSP_LIGHT_AMBIENCE, localWorld.worldLightAmbience);
     shader->SetGlobalUniform(RSP_TIME, client.GetTime());
     shader->SetGlobalUniform(RSP_RUNTIME, client.GetRunTime());
+    shader->SetGlobalUniform(RSP_VIEW_WIDTH, sysMain.VideoWidth());
+    shader->SetGlobalUniform(RSP_VIEW_HEIGHT, sysMain.VideoHeight());
     
     renderBackend.SetState(material->StateBits());
     renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
@@ -354,6 +356,13 @@ void kexRenderer::DrawFX(void) {
 
         dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, spriteIndices);
         dglPopMatrix();
+
+        if(fxinfo->bLensFlares && fxinfo->lensFlares) {
+            fxinfo->lensFlares->Origin() = fx->GetOrigin();
+            fxinfo->lensFlares->Draw();
+
+            // TODO - fx draw pointers needs to be rebinded and state reset
+        }
 
         if(fxinfo->lifetime.value == 1 && fx->bClientOnly) {
             fx->Remove();

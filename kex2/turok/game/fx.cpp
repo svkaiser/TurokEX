@@ -586,6 +586,7 @@ enum {
     scvfx_bDestroyOnWaterSurface,
     scvfx_bLinkArea,
     scvfx_shader,
+    scvfx_lensflares,
     scvfx_end
 };
 
@@ -653,6 +654,7 @@ static const sctokens_t vfxtokens[scvfx_end+1] = {
     { scvfx_bDestroyOnWaterSurface,         "bDestroyOnWaterSurface"            },
     { scvfx_bLinkArea,                      "bLinkArea"                         },
     { scvfx_shader,                         "shader"                            },
+    { scvfx_lensflares,                     "lensFlares"                        },
     { -1,                                   NULL                                }
 };
 
@@ -1011,6 +1013,11 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                     lexer->ExpectNextToken(TK_EQUAL);
                     lexer->GetString();
                     info->shaderObj = renderBackend.CacheShader(lexer->StringToken());
+                    break;
+                case scvfx_lensflares:
+                    lexer->ExpectNextToken(TK_EQUAL);
+                    lexer->GetString();
+                    info->lensFlares = renderBackend.CacheLensFlares(lexer->StringToken());
                     break;
                 case scvfx_onImpact:
                     ParseEvent(info->onImpact, lexer);

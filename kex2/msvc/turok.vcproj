@@ -256,6 +256,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\renderer\lensFlares.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\material.cpp"
 					>
 				</File>
@@ -606,6 +610,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\frustum.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\lensFlares.h"
 					>
 				</File>
 				<File
