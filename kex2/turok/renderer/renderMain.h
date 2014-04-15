@@ -46,6 +46,10 @@ typedef struct {
 
 class kexFx;
 
+typedef struct {
+    kexFx                   *fx;
+} fxDisplay_t;
+
 class kexRenderer {
 public:
                             kexRenderer(void);
@@ -54,9 +58,7 @@ public:
     void                    Init(void);
     void                    DrawSurface(const surface_t *surface, kexMaterial *material);
     void                    Draw(void);
-    void                    DrawFX(void);
-
-    static int              SortSprites(const void *a, const void *b);
+    void                    DrawFX(const fxDisplay_t *fxList, const int count);
     
     const surface_t         *currentSurface;
 
@@ -65,12 +67,6 @@ private:
 
     kexMaterial             *motionBlurMaterial;
     kexMatrix               prevMVMatrix;
-
-    typedef struct {
-        kexFx               *fx;
-    } fxDisplay_t;
-
-    fxDisplay_t             fxDisplayList[MAX_FX_DISPLAYS];
 };
 
 extern kexRenderer renderer;

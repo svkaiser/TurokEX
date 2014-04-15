@@ -97,6 +97,7 @@ typedef enum {
 #include "cachefilelist.h"
 #include "canvas.h"
 #include "lensFlares.h"
+#include "fbo.h"
 
 class kexRenderBackend {
 public:
@@ -149,11 +150,13 @@ public:
     const int                       WindowY(void) const { return viewWindowY; }
     const int                       MaxTextureUnits(void) const { return maxTextureUnits; }
     const int                       MaxTextureSize(void) const { return maxTextureSize; }
+    const int                       MaxColorAttachments(void) const { return maxColorAttachments; }
     const float                     MaxAnisotropic(void) const { return maxAnisotropic; }
     const bool                      IsWideScreen(void) const { return bWideScreen; }
     const bool                      IsFullScreen(void) const { return bFullScreen; }
     kexCanvas                       &Canvas(void) { return canvas; }
     const bool                      IsInitialized(void) { return bIsInit; }
+    const int                       ValidFrameNum(void) const { return validFrameNum; }
 
     static const int                SCREEN_WIDTH        = 320;
     static const int                SCREEN_HEIGHT       = 240;
@@ -187,6 +190,7 @@ public:
         float                       alphaFuncThreshold;
         int                         currentUnit;
         rhandle                     currentProgram;
+        dtexture                    currentFBO;
         texUnit_t                   textureUnits[MAX_TEXTURE_UNITS];
     } glState_t;
 
@@ -201,6 +205,7 @@ private:
     int                             viewWindowY;
     int                             maxTextureUnits;
     int                             maxTextureSize;
+    int                             maxColorAttachments;
     float                           maxAnisotropic;
     bool                            bWideScreen;
     bool                            bFullScreen;
@@ -224,6 +229,8 @@ private:
     float                           drawVertices[GL_MAX_VERTICES];
     float                           drawTexCoords[GL_MAX_VERTICES];
     byte                            drawRGB[GL_MAX_VERTICES];
+    
+    int                             validFrameNum;
 };
 
 extern kexRenderBackend renderBackend;

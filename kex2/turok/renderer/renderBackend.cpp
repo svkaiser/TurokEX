@@ -125,6 +125,7 @@ kexRenderBackend::kexRenderBackend(void) {
     this->maxTextureUnits           = 1;
     this->maxTextureSize            = 64;
     this->maxAnisotropic            = 0;
+    this->maxColorAttachments       = 0;
     this->bWideScreen               = false;
     this->bFullScreen               = false;
     this->bIsInit                   = false;
@@ -136,7 +137,10 @@ kexRenderBackend::kexRenderBackend(void) {
     this->glState.depthMask         = -1;
     this->glState.currentUnit       = -1;
     this->glState.currentProgram    = 0;
+    this->glState.currentFBO        = 0;
     this->frameBuffer               = NULL;
+    this->depthBuffer               = NULL;
+    this->validFrameNum             = 0;
 }
 
 //
@@ -225,6 +229,9 @@ void kexRenderBackend::SetDefaultState(void) {
     glState.depthMask       = -1;
     glState.currentUnit     = -1;
     glState.currentProgram  = 0;
+    glState.currentFBO      = 0;
+    
+    validFrameNum           = 0;
     
     dglViewport(0, 0, sysMain.VideoWidth(), sysMain.VideoHeight());
     dglClearDepth(1.0f);
@@ -269,12 +276,14 @@ void kexRenderBackend::Init(void) {
     
     dglGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
     dglGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &maxTextureUnits);
+    dglGetIntegerv(GL_MAX_COLOR_ATTACHMENTS_EXT, &maxColorAttachments);
     
     common.Printf("GL_VENDOR: %s\n", gl_vendor);
     common.Printf("GL_RENDERER: %s\n", gl_renderer);
     common.Printf("GL_VERSION: %s\n", gl_version);
     common.Printf("GL_MAX_TEXTURE_SIZE: %i\n", maxTextureSize);
     common.Printf("GL_MAX_TEXTURE_UNITS_ARB: %i\n", maxTextureUnits);
+    common.Printf("GL_MAX_COLOR_ATTACHMENTS_EXT: %i\n", maxColorAttachments);
 
     GL_ARB_multitexture_Init();
     GL_EXT_compiled_vertex_array_Init();
@@ -395,6 +404,7 @@ void kexRenderBackend::SwapBuffers(void) {
     }
 
     sysMain.SwapBuffers();
+    validFrameNum++;
 }
 
 //

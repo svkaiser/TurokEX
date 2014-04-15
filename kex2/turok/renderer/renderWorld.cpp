@@ -251,7 +251,7 @@ void kexRenderWorld::RenderScene(void) {
         renderFXMS = sysMain.GetMS();
     }
 
-    renderer.DrawFX();
+    DrawFX();
 
     if(bPrintStats) {
         renderFXMS = sysMain.GetMS() - renderFXMS;
@@ -624,6 +624,56 @@ void kexRenderWorld::DrawViewActors(void) {
                 dglPopMatrix();
             }
     }
+}
+
+//
+// kexRenderWorld::SortSprites
+//
+
+int kexRenderWorld::SortSprites(const void *a, const void *b) {
+    kexFx *xa = ((fxDisplay_t*)a)->fx;
+    kexFx *xb = ((fxDisplay_t*)b)->fx;
+    
+    return (int)(xb->Distance() - xa->Distance());
+}
+
+//
+// kexRenderWorld::DrawFX
+//
+
+void kexRenderWorld::DrawFX(void) {
+    static fxDisplay_t fxDisplayList[MAX_FX_DISPLAYS];
+    
+    int fxDisplayNum;
+    
+    memset(fxDisplayList, 0, sizeof(fxDisplay_t) * MAX_FX_DISPLAYS);
+    
+    // gather particle fx and add to display list for sorting
+    for(world->fxRover = world->fxList.Next(), fxDisplayNum = 0;
+        world->fxRover != NULL; world->fxRover = world->fxRover->worldLink.Next()) {
+        if(fxDisplayNum >= MAX_FX_DISPLAYS) {
+            break;
+        }
+        if(world->fxRover == NULL) {
+            break;
+        }
+        if(world->fxRover->restart > 0) {
+            continue;
+        }
+        if(world->fxRover->IsStale()) {
+            continue;
+        }
+        
+        fxDisplayList[fxDisplayNum++].fx = world->fxRover;
+    }
+    
+    if(fxDisplayNum <= 0) {
+        return;
+    }
+    
+    qsort(fxDisplayList, fxDisplayNum, sizeof(fxDisplay_t), kexRenderWorld::SortSprites);
+    
+    renderer.DrawFX(fxDisplayList, fxDisplayNum);
 }
 
 //

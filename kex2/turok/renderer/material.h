@@ -78,6 +78,7 @@ public:
     const float                         AlphaMask(void) const { return alphaMask; }
     const unsigned int                  NumUnits(void) const { return units; }
     kexVec4                             &DiffuseColor(void) { return diffuseColor; }
+    const kexVec4                       DiffuseColor(void) const { return diffuseColor; }
 
     filepath_t                          fileName;
     kexMaterial                         *next;

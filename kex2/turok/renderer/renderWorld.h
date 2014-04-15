@@ -37,6 +37,7 @@ public:
     void                        PrintStats(void);
 
     static void                 Init(void);
+    static int                  SortSprites(const void *a, const void *b);
 
     bool                        bShowBBox;
     bool                        bShowGrid;

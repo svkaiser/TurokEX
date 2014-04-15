@@ -119,6 +119,7 @@ kexActor::kexActor(void) {
     this->bNoCull           = false;
     this->materials         = NULL;
     this->definition        = NULL;
+    this->cullDistance      = 4096;
 }
 
 //
@@ -201,7 +202,7 @@ void kexActor::Spawn(void) {
         definition->GetFloat("height", baseHeight, 10.24f);
         definition->GetFloat("centerHeight", centerHeight, 5.12f);
         definition->GetFloat("viewHeight", viewHeight, 8.192f);
-        definition->GetFloat("cullDistance", cullDistance);
+        definition->GetFloat("cullDistance", cullDistance, 4096);
         definition->GetFloat("tickDistance", tickDistance);
         definition->GetVector("bounds_min", baseBBox.min);
         definition->GetVector("bounds_max", baseBBox.max);

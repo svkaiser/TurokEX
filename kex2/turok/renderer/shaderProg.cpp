@@ -30,6 +30,9 @@
 #include "renderBackend.h"
 #include "shaderProg.h"
 #include "defs.h"
+#include "world.h"
+#include "gameManager.h"
+#include "renderWorld.h"
 
 static const char *shaderParamNames[RSP_TOTAL+1] = {
     "uDiffuseColor" ,
@@ -74,6 +77,7 @@ void kexShaderObj::Init(void) {
     this->programObj        = 0;
     this->vertexProgram     = 0;
     this->fragmentProgram   = 0;
+    this->validCount        = 0;
     this->bHasErrors        = false;
     this->bLoaded           = false;
 }
@@ -104,6 +108,7 @@ void kexShaderObj::InitFromDefinition(kexKeyMap *def) {
 
 void kexShaderObj::InitProgram(void) {
     programObj = dglCreateProgramObjectARB();
+    validCount = -1;
 
     for(int i = 0; i < RSP_TOTAL; i++) {
         globalParams[i] = -1;
@@ -251,6 +256,40 @@ void kexShaderObj::SetUniform(const char *name, kexMatrix &val, bool bTranspose)
         dglUniformMatrix4fvARB(loc, 1, bTranspose, val.ToFloatPtr());
     }
 }
+
+//
+// kexShaderObj::CommitGlobalUniforms
+//
+
+void kexShaderObj::CommitGlobalUniforms(const kexMaterial *material) {
+    kexVec4 diffuseColor;
+    
+    if(material != NULL) {
+        diffuseColor = material->DiffuseColor();
+    }
+    else {
+        diffuseColor.Set(1, 1, 1, 1);
+    }
+
+    // diffuse color can change a lot per frame
+    SetGlobalUniform(RSP_DIFFUSE_COLOR, diffuseColor);
+
+    if(validCount == renderBackend.ValidFrameNum()) {
+        return;
+    }
+    
+    validCount = renderBackend.ValidFrameNum();
+    
+    SetGlobalUniform(RSP_FOG_COLOR, localWorld.GetCurrentFogRGB());
+    SetGlobalUniform(RSP_FOG_NEAR, localWorld.GetFogNear());
+    SetGlobalUniform(RSP_FOG_FAR, localWorld.GetFogFar());
+    SetGlobalUniform(RSP_LIGHT_DIRECTION, renderWorld.WorldLightTransform());
+    SetGlobalUniform(RSP_LIGHT_DIRECTION_COLOR, localWorld.worldLightColor);
+    SetGlobalUniform(RSP_LIGHT_AMBIENCE, localWorld.worldLightAmbience);
+    SetGlobalUniform(RSP_TIME, client.GetTime());
+    SetGlobalUniform(RSP_RUNTIME, client.GetRunTime());
+    SetGlobalUniform(RSP_VIEW_WIDTH, sysMain.VideoWidth());
+    SetGlobalUniform(RSP_VIEW_HEIGHT, sysMain.VideoHeight());}
 
 //
 // kexShaderObj::SetGlobalUniform

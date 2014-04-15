@@ -106,19 +106,13 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
     }
 
     shader = material->ShaderObj();
+    
+    if(shader == NULL) {
+        return;
+    }
 
     shader->Enable();
-    shader->SetGlobalUniform(RSP_DIFFUSE_COLOR, material->DiffuseColor());
-    shader->SetGlobalUniform(RSP_FOG_COLOR, localWorld.GetCurrentFogRGB());
-    shader->SetGlobalUniform(RSP_FOG_NEAR, localWorld.GetFogNear());
-    shader->SetGlobalUniform(RSP_FOG_FAR, localWorld.GetFogFar());
-    shader->SetGlobalUniform(RSP_LIGHT_DIRECTION, renderWorld.WorldLightTransform());
-    shader->SetGlobalUniform(RSP_LIGHT_DIRECTION_COLOR, localWorld.worldLightColor);
-    shader->SetGlobalUniform(RSP_LIGHT_AMBIENCE, localWorld.worldLightAmbience);
-    shader->SetGlobalUniform(RSP_TIME, client.GetTime());
-    shader->SetGlobalUniform(RSP_RUNTIME, client.GetRunTime());
-    shader->SetGlobalUniform(RSP_VIEW_WIDTH, sysMain.VideoWidth());
-    shader->SetGlobalUniform(RSP_VIEW_HEIGHT, sysMain.VideoHeight());
+    shader->CommitGlobalUniforms(material);
     
     renderBackend.SetState(material->StateBits());
     renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
@@ -162,26 +156,14 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
 }
 
 //
-// kexRenderer::SortSprites
-//
-
-int kexRenderer::SortSprites(const void *a, const void *b) {
-    kexFx *xa = ((fxDisplay_t*)a)->fx;
-    kexFx *xb = ((fxDisplay_t*)b)->fx;
-
-    return (int)(xb->Distance() - xa->Distance());
-}
-
-//
 // kexRenderer::DrawFX
 //
 
-void kexRenderer::DrawFX(void) {
+void kexRenderer::DrawFX(const fxDisplay_t *fxList, const int count) {
     static const word   spriteIndices[6] = { 0, 1, 2, 2, 1, 3 };
     static float        spriteTexCoords[8] = { 0, 1, 1, 1, 0, 0, 1, 0 };
     static float        spriteVertices[4][3];
     static byte         spriteColors[4][4];
-    int                 fxDisplayNum;
     int                 i;
     int                 j;
     kexMatrix           mtx;
@@ -197,41 +179,14 @@ void kexRenderer::DrawFX(void) {
     kexFrustum          frustum;
     kexShaderObj        *shader;
 
-    memset(fxDisplayList, 0, sizeof(fxDisplay_t) * MAX_FX_DISPLAYS);
-
-    // gather particle fx and add to display list for sorting
-    for(localWorld.fxRover = localWorld.fxList.Next(), fxDisplayNum = 0;
-        localWorld.fxRover != NULL; localWorld.fxRover = localWorld.fxRover->worldLink.Next()) {
-            if(fxDisplayNum >= MAX_FX_DISPLAYS) {
-                break;
-            }
-            if(localWorld.fxRover == NULL) {
-                break;
-            }
-            if(localWorld.fxRover->restart > 0) {
-                continue;
-            }
-            if(localWorld.fxRover->IsStale()) {
-                continue;
-            }
-
-            fxDisplayList[fxDisplayNum++].fx = localWorld.fxRover;
-    }
-
-    if(fxDisplayNum <= 0) {
-        return;
-    }
-
     renderBackend.SetState(GLSTATE_BLEND, true);
     renderBackend.SetState(GLSTATE_ALPHATEST, true);
     renderBackend.SetState(GLSTATE_TEXGEN_S, false);
     renderBackend.SetState(GLSTATE_TEXGEN_T, false);
-
+    
     renderBackend.SetCull(GLCULL_FRONT);
     renderBackend.SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
     renderBackend.SetDepthMask(GLDEPTHMASK_NO);
-
-    qsort(fxDisplayList, fxDisplayNum, sizeof(fxDisplay_t), kexRenderer::SortSprites);
 
     dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, spriteTexCoords);
     dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, spriteVertices);
@@ -242,8 +197,8 @@ void kexRenderer::DrawFX(void) {
     frustum = localWorld.Camera()->Frustum();
 
     // draw sorted fx list
-    for(i = 0; i < fxDisplayNum; i++) {
-        fx = fxDisplayList[i].fx;
+    for(i = 0; i < count; i++) {
+        fx = fxList[i].fx;
         fxinfo = fx->fxInfo;
 
         if(fxinfo == NULL) {

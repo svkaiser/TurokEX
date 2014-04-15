@@ -68,6 +68,8 @@ typedef struct {
 
 typedef GLhandleARB	rhandle;
 
+class kexMaterial;
+
 class kexShaderObj {
 public:
                                 kexShaderObj(void);
@@ -86,6 +88,7 @@ public:
     void                        SetUniform(const char *name, kexVec3 &val);
     void                        SetUniform(const char *name, kexVec4 &val);
     void                        SetUniform(const char *name, kexMatrix &val, bool bTranspose = false);
+    void                        CommitGlobalUniforms(const kexMaterial *material = NULL);
     void                        SetGlobalUniform(const rShaderGlobalParams_t param, const int val);
     void                        SetGlobalUniform(const rShaderGlobalParams_t param, const float val);
     void                        SetGlobalUniform(const rShaderGlobalParams_t param, kexVec2 &val);
@@ -99,6 +102,8 @@ public:
     const bool                  HasErrors(void) const { return bHasErrors; }
     const bool                  IsLoaded(void) const { return bLoaded; }
     
+    void                        ResetValidCount(void) { validCount = 0; }
+    
     filepath_t                  fileName;
 
 private:
@@ -110,6 +115,7 @@ private:
     bool                        bHasErrors;
     bool                        bLoaded;
     int                         globalParams[RSP_TOTAL];
+    int                         validCount;
 };
 
 #endif
