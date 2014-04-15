@@ -252,6 +252,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\renderer\fbo.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\frustum.cpp"
 					>
 				</File>
@@ -606,6 +610,10 @@
 				>
 				<File
 					RelativePath="..\turok\renderer\canvas.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\fbo.h"
 					>
 				</File>
 				<File
