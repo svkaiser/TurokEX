@@ -33,6 +33,7 @@ public:
     bool                TestBoundingBox(const kexBBox &bbox);
     bool                TestTriangle(const kexTri &triangle);
     bool                TestSphere(const kexVec3 &org, const float radius);
+    bool                BoxDistance(const kexBBox &box, const float distance);
     
     kexPlane            &Right(void) { return p[0]; }
     kexPlane            &Left(void) { return p[1]; }

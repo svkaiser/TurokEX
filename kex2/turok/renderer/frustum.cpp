@@ -147,3 +147,13 @@ bool kexFrustum::TestSphere(const kexVec3 &org, const float radius) {
     }
     return true;
 }
+
+//
+// kexFrustum::BoxDistance
+//
+
+bool kexFrustum::BoxDistance(const kexBBox &box, const float distance) {
+    kexPlane nearPlane = Near();
+    
+    return (nearPlane.Distance(box.Center()) + nearPlane.d) > distance;
+}
