@@ -34,6 +34,7 @@
 #include "scriptAPI/component.h"
 #include "gameManager.h"
 #include "ai.h"
+#include "renderUtils.h"
 
 kexScriptManager scriptManager;
 
@@ -207,7 +208,7 @@ void kexScriptManager::Init(void) {
 
     command.Add("call", FCmd_Call);
     command.Add("callfile", FCmd_CallFile);
-    command.Add("showGCStats", FCmd_DrawGCStats);
+    command.Add("statscripts", FCmd_DrawGCStats);
     command.Add("scriptMem", FCmd_MemUsage);
     common.Printf("Script System Initialized\n");
 }
@@ -362,8 +363,6 @@ void kexScriptManager::CallCommand(const char *decl) {
 
 void kexScriptManager::DrawGCStats(void) {
     unsigned int data[5];
-    unsigned int c;
-    byte *cb;
 
     if(scriptManager.bDrawGCStats == false) {
         return;
@@ -375,19 +374,11 @@ void kexScriptManager::DrawGCStats(void) {
         &data[2],
         &data[3],
         &data[4]);
-
-    c = RGBA(255, 255, 0, 255);
-    cb = (byte*)&c;
-
-    renderBackend.consoleFont.DrawString("Current Size:", 32, 32, 1, false, cb, cb);
-    renderBackend.consoleFont.DrawString("Total Destroyed:", 32, 48, 1, false, cb, cb);
-    renderBackend.consoleFont.DrawString("Total Detected:", 32, 64, 1, false, cb, cb);
-    renderBackend.consoleFont.DrawString("New Objects:", 32, 80, 1, false, cb, cb);
-    renderBackend.consoleFont.DrawString("Total New Destroyed:", 32, 96, 1, false, cb, cb);
-
-    renderBackend.consoleFont.DrawString(kva("%i", data[0]), 192, 32, 1, false, cb, cb);
-    renderBackend.consoleFont.DrawString(kva("%i", data[1]), 192, 48, 1, false, cb, cb);
-    renderBackend.consoleFont.DrawString(kva("%i", data[2]), 192, 64, 1, false, cb, cb);
-    renderBackend.consoleFont.DrawString(kva("%i", data[3]), 192, 80, 1, false, cb, cb);
-    renderBackend.consoleFont.DrawString(kva("%i", data[4]), 192, 96, 1, false, cb, cb);
+    
+    kexRenderUtils::PrintStatsText("CurrentSize:", ": %i", data[0]);
+    kexRenderUtils::PrintStatsText("Total Destroyed:", ": %i", data[1]);
+    kexRenderUtils::PrintStatsText("Total Detected:", ": %i", data[2]);
+    kexRenderUtils::PrintStatsText("New Objects:", ": %i", data[3]);
+    kexRenderUtils::PrintStatsText("Total New Destroyed:", ": %i", data[4]);
+    kexRenderUtils::AddDebugLineSpacing();
 }

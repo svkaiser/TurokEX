@@ -30,6 +30,7 @@ class kexRenderWorld {
 public:
                                 kexRenderWorld(void);
 
+    void                        SetCameraView(kexCamera *camera);
     void                        RenderScene(void);
     void                        BuildNodes(void);
     void                        DrawAreaNode(void);
@@ -76,6 +77,9 @@ private:
     int                         renderStaticsMS;
     int                         renderActorsMS;
     int                         renderFXMS;
+    int                         numDrawnStatics;
+    int                         numDrawnSDNodes;
+    int                         numDrawnActors;
 };
 
 extern kexRenderWorld renderWorld;

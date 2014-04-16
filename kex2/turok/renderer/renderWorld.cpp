@@ -195,7 +195,20 @@ void kexRenderWorld::Init(void) {
     command.Add("showareanode", FCmd_ShowAreaNode);
     command.Add("showrendernodes", FCmd_ShowRenderNodes);
     command.Add("showcollision", FCmd_ShowCollisionMap);
-    command.Add("printscenestats", FCmd_PrintStats);
+    command.Add("statscene", FCmd_PrintStats);
+}
+
+//
+// kexRenderWorld::SetCameraView
+//
+
+void kexRenderWorld::SetCameraView(kexCamera *camera) {
+    camera->SetupMatrices();
+    
+    dglMatrixMode(GL_PROJECTION);
+    dglLoadMatrixf(camera->Projection().ToFloatPtr());
+    dglMatrixMode(GL_MODELVIEW);
+    dglLoadMatrixf(camera->ModelView().ToFloatPtr());
 }
 
 //
@@ -209,17 +222,13 @@ void kexRenderWorld::RenderScene(void) {
 
     if(bPrintStats) {
         renderSceneMS = sysMain.GetMS();
+        numDrawnStatics = numDrawnSDNodes = numDrawnActors = 0;
     }
 
     kexVec4 fogRGB = world->GetCurrentFogRGB();
     dglClearColor(fogRGB[0], fogRGB[1], fogRGB[2], fogRGB[3]);
 
-    world->Camera()->SetupMatrices();
-
-    dglMatrixMode(GL_PROJECTION);
-    dglLoadMatrixf(world->Camera()->Projection().ToFloatPtr());
-    dglMatrixMode(GL_MODELVIEW);
-    dglLoadMatrixf(world->Camera()->ModelView().ToFloatPtr());
+    SetCameraView(world->Camera());
 
     worldLightTransform = (world->worldLightOrigin | world->Camera()->RotationMatrix()).ToVec3();
 
@@ -296,24 +305,42 @@ void kexRenderWorld::DrawWorldModel(kexWorldModel *wm) {
     const kexModel_t *model;
     const modelNode_t *node;
     
-    if(!(model = wm->Model())) {
-        return;
+    if(!bShowClipMesh && !bShowCollisionMap) {
+        dglPushMatrix();
+        dglMultMatrixf(wm->Matrix().ToFloatPtr());
+        
+        if(bWireframe) {
+            dglColor4ub(0, 224, 224, 255);
+        }
+    
+        if(!(model = wm->Model())) {
+            return;
+        }
+        
+        node = &model->nodes[0];
+        
+        for(unsigned i = 0; i < model->nodes[0].numSurfaces; i++) {
+            surface_t *surface = &node->surfaces[i];
+            kexMaterial *material = surface->material;
+            
+            if(wm->materials != NULL) {
+                kexMaterial *mat = wm->materials[i];
+                
+                if(mat != NULL) {
+                    material = mat;
+                }
+            }
+
+            renderer.DrawSurface(surface, material);
+        }
+        dglPopMatrix();
+    }
+    else if(bShowClipMesh) {
+        //actor->ClipMesh().DebugDraw();
     }
     
-    node = &model->nodes[0];
-    
-    for(unsigned i = 0; i < model->nodes[0].numSurfaces; i++) {
-        surface_t *surface = &node->surfaces[i];
-        kexMaterial *material = surface->material;
-        
-        if(wm->materials != NULL) {
-            kexMaterial *mat = wm->materials[i];
-            
-            if(mat != NULL)
-                material = mat;
-        }
-
-        renderer.DrawSurface(surface, material);
+    if(bPrintStats) {
+        numDrawnStatics++;
     }
 }
 
@@ -414,13 +441,24 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
     kexFrustum frustum;
     kexCamera *camera;
     kexBBox box;
+    int side;
+    float d;
 
     node = &renderNodes.nodes[nodenum];
     camera = world->Camera();
     frustum = camera->Frustum();
 
-    if(!frustum.TestBoundingBox(node->bounds)) {
-        return;
+    if(node->axis != -1) {
+        d = node->plane.Distance(camera->GetOrigin()) - node->plane.d;
+        side = FLOATSIGNBIT(d);
+
+        if(frustum.TestBoundingBox(node->children[side]->bounds)) {
+            RecursiveSDNode(node->children[side]->nodeNum);
+        }
+
+        if(frustum.TestBoundingBox(node->children[side ^ 1]->bounds)) {
+            RecursiveSDNode(node->children[side ^ 1]->nodeNum);
+        }
     }
 
     for(wm = node->objects.Next(); wm != NULL; wm = wm->renderNode.link.Next()) {
@@ -438,20 +476,8 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
             continue;
         }
 
-        if(!bShowClipMesh && !bShowCollisionMap) {
-            dglPushMatrix();
-            dglMultMatrixf(wm->Matrix().ToFloatPtr());
-
-            if(bWireframe) {
-                dglColor4ub(0, 224, 224, 255);
-            }
-            DrawWorldModel(wm);
-            dglPopMatrix();
-        }
-        else if(bShowClipMesh) {
-            //actor->ClipMesh().DebugDraw();
-        }
-
+        DrawWorldModel(wm);
+        
         if(bShowBBox) {
             if(wm->bTraced) {
                 kexRenderUtils::DrawBoundingBox(box, 255, 0, 0);
@@ -464,16 +490,13 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
         if(bShowRadius && wm->bCollision) {
             kexVec3 org = wm->GetOrigin();
             kexRenderUtils::DrawRadius(org[0], org[1], org[2],
-                wm->Radius(), wm->Height(), 255, 128, 128);
+                                       wm->Radius(), wm->Height(), 255, 128, 128);
         }
     }
-
-    if(node->axis == -1) {
-        return;
+    
+    if(bPrintStats) {
+        numDrawnSDNodes++;
     }
-
-    RecursiveSDNode(node->children[NODE_FRONT]->nodeNum);
-    RecursiveSDNode(node->children[NODE_BACK]->nodeNum);
 }
 
 //
@@ -548,6 +571,10 @@ void kexRenderWorld::DrawActors(void) {
 
                 if(actor->bNoFixedTransform == false) {
                     dglPopMatrix();
+                }
+                
+                if(bPrintStats) {
+                    numDrawnActors++;
                 }
             }
 
@@ -681,30 +708,18 @@ void kexRenderWorld::DrawFX(void) {
 //
 
 void kexRenderWorld::PrintStats(void) {
-    unsigned int c;
-    byte *cb;
-
     if(!bPrintStats) {
         return;
     }
-
-    cb = (byte*)&c;
-
-    c = RGBA(0, 255, 0, 255);
-    renderBackend.consoleFont.DrawString("scene time", 32, 32, 1, false, cb, cb);
-    renderBackend.consoleFont.DrawString("statics time", 32, 48, 1, false, cb, cb);
-    renderBackend.consoleFont.DrawString("actor time", 32, 64, 1, false, cb, cb);
-    renderBackend.consoleFont.DrawString("fx time", 32, 80, 1, false, cb, cb);
-
-    c = RGBA(255, 255, 0, 255);
-    renderBackend.consoleFont.DrawString(kva(": %ims", renderSceneMS),
-            128, 32, 1, false, cb, cb);
-    renderBackend.consoleFont.DrawString(kva(": %ims", renderStaticsMS),
-            128, 48, 1, false, cb, cb);
-    renderBackend.consoleFont.DrawString(kva(": %ims", renderActorsMS),
-            128, 64, 1, false, cb, cb);
-    renderBackend.consoleFont.DrawString(kva(": %ims", renderFXMS),
-            128, 80, 1, false, cb, cb);
+    
+    kexRenderUtils::PrintStatsText("scene time", ": %ims", renderSceneMS);
+    kexRenderUtils::PrintStatsText("statics time", ": %ims", renderStaticsMS);
+    kexRenderUtils::PrintStatsText("actor time", ": %ims", renderActorsMS);
+    kexRenderUtils::PrintStatsText("fx time", ": %ims", renderFXMS);
+    kexRenderUtils::PrintStatsText("drawn statics", ": %i", numDrawnStatics);
+    kexRenderUtils::PrintStatsText("nodes visited", ": %i", numDrawnSDNodes);
+    kexRenderUtils::PrintStatsText("drawn actors", ": %i", numDrawnActors);
+    kexRenderUtils::AddDebugLineSpacing();
 }
 
 //

@@ -32,6 +32,7 @@
 #include "world.h"
 #include "console.h"
 #include "gameManager.h"
+#include "renderUtils.h"
 
 kexCvar cvarRenderMotionBlur("r_motionblur", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 kexCvar cvarRenderMotionBlurSamples("r_motionblursamples", CVF_INT|CVF_CONFIG, "32", "TODO");
@@ -83,6 +84,7 @@ void kexRenderer::Draw(void) {
     kexHeap::DrawHeapInfo();
     renderWorld.PrintStats();
     scriptManager.DrawGCStats();
+    kexRenderUtils::ClearDebugLine();
     
     // finish frame
     renderBackend.SwapBuffers();

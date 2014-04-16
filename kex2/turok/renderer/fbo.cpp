@@ -138,6 +138,14 @@ void kexFBO::Delete(void) {
         dglDeleteTextures(1, &fboTexId);
         fboTexId = 0;
     }
+    if(fboId != 0) {
+        dglDeleteFramebuffers(1, &fboId);
+        fboId = 0;
+    }
+    if(rboId != 0) {
+        dglDeleteRenderbuffers(1, &rboId);
+        rboId = 0;
+    }
     
     bLoaded = false;
 }

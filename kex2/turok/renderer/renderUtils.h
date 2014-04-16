@@ -23,6 +23,8 @@
 #ifndef __RENDER_UTILS_H__
 #define __RENDER_UTILS_H__
 
+#define DEBUG_LINE_TOP  32
+
 class kexRenderUtils {
 public:
     static void     DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b);
@@ -31,6 +33,12 @@ public:
                                byte r, byte g, byte b);
     static void     DrawOrigin(float x, float y, float z, float size);
     static void     DrawSphere(float x, float y, float z, float radius, byte r, byte g, byte b);
+    static void     PrintStatsText(const char *title, const char *s, ...);
+    
+    static void     ClearDebugLine(void) { debugLineNum = DEBUG_LINE_TOP; }
+    static void     AddDebugLineSpacing(void) { debugLineNum += 16; }
+    
+    static float    debugLineNum;
 };
 
 #endif

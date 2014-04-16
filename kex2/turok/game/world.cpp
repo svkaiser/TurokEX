@@ -40,9 +40,6 @@
 
 #define FOG_LERP_SPEED      0.025f
 
-#define NODE_MAX_CONTENTS   16
-#define NODE_MAX_SIZE       128
-
 kexHeapBlock kexWorld::hb_world("world", false, NULL, NULL);
 
 kexWorld localWorld;

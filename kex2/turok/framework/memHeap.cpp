@@ -32,6 +32,7 @@
 #endif
 #include "memHeap.h"
 #include "renderBackend.h"
+#include "renderUtils.h"
 
 int kexHeap::numHeapBlocks = 0;
 int kexHeap::currentHeapBlockID = -1;
@@ -131,7 +132,7 @@ kexHeapBlock *kexHeapBlock::operator[](int index) {
 //
 
 void kexHeap::Init(void) {
-    command.Add("printheap", FCmd_PrintHeapInfo);
+    command.Add("statheap", FCmd_PrintHeapInfo);
     common.Printf("Heap Manager Initialized\n");
 }
 
@@ -447,26 +448,31 @@ void kexHeap::DrawHeapInfo(void) {
     }
 
     cb = (byte*)&c;
-    y = 32;
+    y = kexRenderUtils::debugLineNum;
+    
+#define PRINT_HEAP  renderBackend.consoleFont.DrawString
 
     for(kexHeapBlock *heapBlock = kexHeap::blockList; heapBlock; heapBlock = heapBlock->next) {
         c = RGBA(0, 255, 0, 255);
-        renderBackend.consoleFont.DrawString(kva("%s", heapBlock->name), 32, y, 1, false, cb, cb);
+        PRINT_HEAP(kva("%s", heapBlock->name), 32, y, 1, false, cb, cb);
+        
         c = RGBA(255, 255, 0, 255);
-        renderBackend.consoleFont.DrawString(kva(": %ikb", kexHeap::Usage(*heapBlock) >> 10),
-            128, y, 1, false, cb, cb);
-        renderBackend.consoleFont.DrawString(kva(" allocated: %i", heapBlock->numAllocated),
-            192, y, 1, false, cb, cb);
+        PRINT_HEAP(kva(": %ikb", kexHeap::Usage(*heapBlock) >> 10), 128, y, 1, false, cb, cb);
+        PRINT_HEAP(kva(" allocated: %i", heapBlock->numAllocated), 192, y, 1, false, cb, cb);
 
         numBlocks = 0;
         for(block = heapBlock->blocks; block != NULL; block = block->next) {
             numBlocks++;
         }
 
-        renderBackend.consoleFont.DrawString(kva(" freed: %i", heapBlock->numAllocated - numBlocks),
-            320, y, 1, false, cb, cb);
+        PRINT_HEAP(kva(" freed: %i", heapBlock->numAllocated - numBlocks), 320, y, 1, false, cb, cb);
 
         heapBlock->numAllocated = numBlocks;
         y += 16;
     }
+    
+    kexRenderUtils::debugLineNum = y;
+    kexRenderUtils::AddDebugLineSpacing();
+    
+#undef PRINT_HEAP
 }

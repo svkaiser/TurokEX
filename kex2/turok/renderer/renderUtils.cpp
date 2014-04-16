@@ -29,6 +29,8 @@
 #include "material.h"
 #include "renderUtils.h"
 
+float kexRenderUtils::debugLineNum = 0;
+
 //
 // kexRenderUtils::DrawBoundingBox
 //
@@ -202,3 +204,33 @@ void kexRenderUtils::DrawSphere(float x, float y, float z, float radius, byte r,
     renderBackend.DrawLineElements();
     renderBackend.SetState(GLSTATE_TEXTURE0, true);
 }
+
+//
+// kexRenderUtils::PrintStatsText
+//
+
+void kexRenderUtils::PrintStatsText(const char *title, const char *s, ...) {
+    va_list v;
+    static char vastr[1024];
+    unsigned int c;
+    byte *cb;
+	
+    cb = (byte*)&c;
+    
+    if(title != NULL) {
+        c = RGBA(0, 255, 0, 255);
+        renderBackend.consoleFont.DrawString(title, 32, debugLineNum, 1, false, cb, cb);
+    }
+    
+    if(s != NULL) {
+        va_start(v, s);
+        vsprintf(vastr, s, v);
+        va_end(v);
+        
+        c = RGBA(255, 255, 0, 255);
+        renderBackend.consoleFont.DrawString(vastr, 192, debugLineNum, 1, false, cb, cb);
+    }
+    
+    debugLineNum += 16.0f;
+}
+
