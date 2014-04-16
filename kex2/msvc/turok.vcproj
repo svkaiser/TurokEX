@@ -299,6 +299,10 @@
 					RelativePath="..\turok\renderer\textureObject.cpp"
 					>
 				</File>
+				<File
+					RelativePath="..\turok\renderer\viewBounds.cpp"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="framework"
@@ -658,6 +662,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\textureObject.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\viewBounds.h"
 					>
 				</File>
 			</Filter>
