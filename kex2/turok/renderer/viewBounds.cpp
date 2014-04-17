@@ -80,7 +80,16 @@ void kexViewBounds::AddBox(kexCamera *camera, kexBBox &box) {
 
     bits = 0;
     
+    kexPlane nearPlane = frustum.Near();
+    kexVec3 n = nearPlane.Normal().Normalize();
+    
     for(i = 0; i < 8; i++) {
+        
+        d = frustum.Near().Distance(points[i]) + nearPlane.d;
+        if(d < 0) {
+            points[i] += (n * -d);
+        }
+        
         pmin = camera->ProjectPoint(points[i], 0, 0);
         
         if(pmin[0] < min[0]) {
