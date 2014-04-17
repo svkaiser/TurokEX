@@ -163,6 +163,23 @@ static void FCmd_PrintStats(void) {
 }
 
 //
+// FCmd_RenderNodeStep
+//
+
+static void FCmd_RenderNodeStep(void) {
+    if(command.GetArgc() < 1) {
+        return;
+    }
+    
+    if(command.GetArgc() < 2) {
+        renderWorld.renderNodeStep++;
+        return;
+    }
+    
+    renderWorld.renderNodeStep = atoi(command.GetArgv(1));
+}
+
+//
 // kexRenderWorld::kexRenderWorld
 //
 
@@ -179,6 +196,7 @@ kexRenderWorld::kexRenderWorld(void) {
     this->bShowCollisionMap = false;
     this->bPrintStats       = false;
     this->showAreaNode      = -1;
+    this->renderNodeStep    = -1;
 }
 
 //
@@ -195,6 +213,7 @@ void kexRenderWorld::Init(void) {
     command.Add("showareanode", FCmd_ShowAreaNode);
     command.Add("showrendernodes", FCmd_ShowRenderNodes);
     command.Add("showcollision", FCmd_ShowCollisionMap);
+    command.Add("rendernodestep", FCmd_RenderNodeStep);
     command.Add("statscene", FCmd_PrintStats);
 }
 
@@ -284,7 +303,7 @@ void kexRenderWorld::RenderScene(void) {
 void kexRenderWorld::BuildNodes(void) {
     kexWorldModel *wm;
     
-    renderNodes.Init(8);
+    renderNodes.Init(4);
     
     for(wm = world->staticActors.Next(); wm != NULL; wm = wm->worldLink.Next()) {
         renderNodes.AddBoxToRoot(wm->Bounds());
@@ -460,6 +479,18 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
             RecursiveSDNode(node->children[side ^ 1]->nodeNum);
         }
     }
+    
+    if(node->objects.Next() == NULL) {
+        return;
+    }
+    
+    if(renderNodeStep >= 0) {
+        if(renderNodeStepNum >= renderNodeStep) {
+            return;
+        }
+        
+        renderNodeStepNum++;
+    }
 
     for(wm = node->objects.Next(); wm != NULL; wm = wm->renderNode.link.Next()) {
         if(wm->bHidden) {
@@ -470,6 +501,13 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
         }
 
         box = wm->Bounds();
+
+        if(renderNodeStep >= 0) {
+            dglDepthRange(0, 0);
+            kexRenderUtils::DrawBoundingBox(box, 0, 255, 255);
+            dglDepthRange(0, 1);
+        }
+
         wm->bCulled = !frustum.TestBoundingBox(box);
 
         if(wm->bCulled) {
@@ -507,6 +545,8 @@ void kexRenderWorld::DrawStaticActors(void) {
     if(bPrintStats) {
         renderStaticsMS = sysMain.GetMS();
     }
+    
+    renderNodeStepNum = 0;
 
     RecursiveSDNode(0);
 

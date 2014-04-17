@@ -51,6 +51,7 @@ public:
     bool                        bShowCollisionMap;
     bool                        bShowRenderNodes;
     bool                        bPrintStats;
+    int                         renderNodeStep;
 
     int                         showAreaNode;
     kexSDNode<kexWorldModel>    renderNodes;
@@ -80,6 +81,7 @@ private:
     int                         numDrawnStatics;
     int                         numDrawnSDNodes;
     int                         numDrawnActors;
+    int                         renderNodeStepNum;
 };
 
 extern kexRenderWorld renderWorld;
