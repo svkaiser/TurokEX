@@ -451,6 +451,14 @@ void kexLexer::GetSymbolToken(char c) {
         tokentype = TK_COMMA;
         token[0] = c;
         break;
+    case '\'':
+        tokentype = TK_QUOTE;
+        token[0] = c;
+        break;
+    case '/':
+        tokentype = TK_FORWARDSLASH;
+        token[0] = c;
+        break;
     default:
         parser.Error("Unknown symbol: %c", c);
         break;
@@ -611,6 +619,26 @@ void kexLexer::Rewind(void) {
 
     rowpos--;
     buffpos--;
+}
+
+//
+// kexLexer::SkipLine
+//
+
+void kexLexer::SkipLine(void) {
+#ifdef SC_DEBUG
+    SC_DebugPrintf("SkipLine\n");
+#endif
+
+    int curline = linepos;
+
+    while(CheckState()) {
+        Find();
+
+        if(curline != linepos) {
+            return;
+        }
+    }
 }
 
 //

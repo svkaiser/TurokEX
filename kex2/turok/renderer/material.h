@@ -66,7 +66,7 @@ public:
     void                                Init(void);
     void                                Parse(kexLexer *lexer);
     void                                Delete(void);
-    void                                SetDiffuseColor(void);
+    void                                SetDiffuseColor(const rcolor color);
     
     const glCullType_t                  CullType(void) const { return cullType; }
     const glFunctions_t                 AlphaFunction(void) const { return alphaFunction; }

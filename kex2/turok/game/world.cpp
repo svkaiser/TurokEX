@@ -548,6 +548,15 @@ void kexWorld::TraverseAreaNodes(traceInfo_t *trace, kexSDNodeObj<kexWorldObject
                 continue;
             }
 
+            if(obj->InstanceOf(&kexWorldModel::info)) {
+                kexWorldModel *wm = static_cast<kexWorldModel*>(obj);
+
+                if(wm->ClipMesh().GetType() != CMT_NONE) {
+                    wm->ClipMesh().Trace(trace);
+                    continue;
+                }
+            }
+
             obj->Trace(trace);
     }
 

@@ -95,6 +95,19 @@ final class TurokGame : KexGame {
     }
     
     //
+    // TurokGame::FadeFromWhite
+    //
+    
+    void FadeFromWhite(void) {
+        CameraEvent event;
+        
+        turokGame.SetOverlayRGB(255, 255, 255);
+        turokGame.SetOverlayAlpha(255);
+        event.FadeIn();
+        @camEvent = event;
+    }
+    
+    //
     // TurokGame::GiveKey
     //
     

@@ -44,7 +44,6 @@ enum {
     scactor_bTouch,
     scactor_bOrientOnSlope,
     scactor_bNoCull,
-    scactor_bClientView,
     scactor_origin,
     scactor_scale,
     scactor_angles,
@@ -54,13 +53,13 @@ enum {
     scactor_centerheight,
     scactor_viewheight,
     scactor_targetID,
-    scactor_modelVariant,
     scactor_cullDistance,
     scactor_tickDistance,
     scactor_physics,
     scactor_bNoFixedTransform,
     scactor_bAllowDamage,
     scactor_impactType,
+    scactor_displayType,
     scactor_end
 };
 
@@ -76,7 +75,6 @@ static const sctokens_t mapactortokens[scactor_end+1] = {
     { scactor_bTouch,           "bTouch"            },
     { scactor_bOrientOnSlope,   "bOrientOnSlope"    },
     { scactor_bNoCull,          "bNoCull"           },
-    { scactor_bClientView,      "bClientView"       },
     { scactor_origin,           "origin"            },
     { scactor_scale,            "scale"             },
     { scactor_angles,           "angles"            },
@@ -86,13 +84,13 @@ static const sctokens_t mapactortokens[scactor_end+1] = {
     { scactor_centerheight,     "centerheight"      },
     { scactor_viewheight,       "viewheight"        },
     { scactor_targetID,         "targetID"          },
-    { scactor_modelVariant,     "modelVariant"      },
     { scactor_cullDistance,     "cullDistance"      },
     { scactor_tickDistance,     "tickDistance"      },
     { scactor_physics,          "physics"           },
     { scactor_bNoFixedTransform,"bNoFixedTransform" },
     { scactor_bAllowDamage,     "bAllowDamage"      },
     { scactor_impactType,       "impactType"        },
+    { scactor_displayType,      "displayType"       },
     { -1,                       NULL                }
 };
 
@@ -120,6 +118,7 @@ kexActor::kexActor(void) {
     this->materials         = NULL;
     this->definition        = NULL;
     this->cullDistance      = 4096;
+    this->wireframeColor    = RGBA(192, 192, 192, 255);
 }
 
 //
@@ -209,6 +208,7 @@ void kexActor::Spawn(void) {
         definition->GetVector("scale", scale);
         definition->GetInt("health", health, 100);
         definition->GetInt("impactType", (int&)impactType);
+        definition->GetInt("displayType", displayType);
         definition->GetString("footstepSound", footstepSound);
 
         definition->GetFloat("mass", physicsRef->mass, 1800);
@@ -337,9 +337,6 @@ void kexActor::ParseDefault(kexLexer *lexer) {
     case scactor_bNoCull:
         bNoCull = (lexer->GetNumber() > 0);
         break;
-    case scactor_bClientView:
-        bClientView = (lexer->GetNumber() > 0);
-        break;
     case scactor_bNoFixedTransform:
         bNoFixedTransform = (lexer->GetNumber() > 0);
         break;
@@ -361,11 +358,11 @@ void kexActor::ParseDefault(kexLexer *lexer) {
     case scactor_targetID:
         targetID = lexer->GetNumber();
         break;
-    case scactor_modelVariant:
-        variant = lexer->GetNumber();
-        break;
     case scactor_impactType:
         impactType = (impactType_t)lexer->GetNumber();
+        break;
+    case scactor_displayType:
+        displayType = lexer->GetNumber();
         break;
     case scactor_cullDistance:
         cullDistance = (float)lexer->GetFloat();
@@ -703,4 +700,9 @@ void kexActor::InitObject(void) {
 
     scriptManager.Engine()->RegisterObjectProperty("kAttachment", "bool bAttachRelativeAngles",
         asOFFSET(kexAttachment, bAttachRelativeAngles));
+
+    scriptManager.Engine()->RegisterEnum("EnumObjectDisplayType");
+    scriptManager.Engine()->RegisterEnumValue("EnumObjectDisplayType", "ODT_NORMAL", ODT_NORMAL);
+    scriptManager.Engine()->RegisterEnumValue("EnumObjectDisplayType", "ODT_CLIENTVIEW", ODT_CLIENTVIEW);
+    scriptManager.Engine()->RegisterEnumValue("EnumObjectDisplayType", "ODT_FOREGROUND", ODT_FOREGROUND);
 }

@@ -29,11 +29,10 @@ public:
                         ~kexLensFlares(void);
 
     void                LoadKLF(const char *file);
-    void                Draw(void);
+    void                Draw(const kexVec3 &origin);
     void                Delete(void);
 
     const bool          IsLoaded(void) const { return bLoaded; }
-    kexVec3             &Origin(void) { return origin; }
 
     filepath_t          filePath;
     kexLensFlares       *next;
@@ -46,7 +45,6 @@ private:
     } lfData_t;
 
     lfData_t            *lens;
-    kexVec3             origin;
     int                 numlens;
     bool                bLoaded;
 };

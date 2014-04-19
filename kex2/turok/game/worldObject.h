@@ -75,6 +75,7 @@ public:
     const impactType_t              GetImpactType(void) const { return impactType; }
     void                            SetImpactType(const impactType_t iType) { impactType = iType; }
     int                             &Health(void) { return health; }
+    const rcolor                    WireFrameColor(void) const { return wireframeColor; }
 
     kexSDNodeRef<kexWorldObject>    areaLink;
 
@@ -143,6 +144,7 @@ protected:
     kexPhysics                      physics;        // physics object
     kexPhysics                      *physicsRef;
     impactType_t                    impactType;
+    rcolor                          wireframeColor;
 END_CLASS();
 
 #endif

@@ -27,6 +27,12 @@
 #include "gameObject.h"
 #include "attachment.h"
 
+typedef enum {
+    ODT_NORMAL      = 0,
+    ODT_CLIENTVIEW,
+    ODT_FOREGROUND
+} objDisplayType_t;
+
 //-----------------------------------------------------------------------------
 //
 // kexDisplayObject
@@ -54,10 +60,10 @@ public:
     kexMatrix                   &RotationMatrix(void) { return rotMatrix; }
     kexAttachment               &Attachment(void) { return attachment; }
     float                       &CullDistance(void) { return cullDistance; }
+    int                         &DisplayType(void) { return displayType; }
 
     bool                        bHidden;        // don't draw by renderer
     bool                        bCulled;        // currently culled by frustum or distance
-    bool                        bClientView;    // can only be rendered through user-commands
 
     //
     // template for registering default script actor methods and properties
@@ -88,7 +94,7 @@ public:
 
         OBJPROPERTY("bool bHidden", bHidden);
         OBJPROPERTY("bool bCulled", bCulled);
-        OBJPROPERTY("bool bClientView", bClientView);
+        OBJPROPERTY("int displayType", displayType);
 
     #undef OBJMETHOD
     #undef OBJPROPERTY
@@ -103,6 +109,7 @@ protected:
     kexMatrix                   matrix;         // modelview matrix
     kexMatrix                   rotMatrix;
     kexVec3                     scale;
+    int                         displayType;
 END_CLASS();
 
 #endif

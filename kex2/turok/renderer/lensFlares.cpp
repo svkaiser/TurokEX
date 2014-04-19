@@ -80,7 +80,6 @@ void kexLensFlares::LoadKLF(const char *file) {
     numlens = 0;
     lens = NULL;
     bLoaded = false;
-    origin.Clear();
 
     while(lexer->CheckState()) {
         lexer->Find();
@@ -129,7 +128,7 @@ void kexLensFlares::LoadKLF(const char *file) {
 // kexLensFlares::Draw
 //
 
-void kexLensFlares::Draw(void) {
+void kexLensFlares::Draw(const kexVec3 &origin) {
     float hw;
     float hh;
     float scale;
@@ -147,7 +146,8 @@ void kexLensFlares::Draw(void) {
 
     hw = (float)sysMain.VideoWidth() * 0.5f;
     hh = (float)sysMain.VideoHeight() * 0.5f;
-    pos = localWorld.Camera()->ProjectPoint(origin, 0, 0);
+    org = origin;
+    pos = localWorld.Camera()->ProjectPoint(org, 0, 0);
     org = pos;
     len = localWorld.Camera()->GetOrigin().Distance(origin);
 

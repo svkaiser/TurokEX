@@ -16,6 +16,7 @@
 #include "scripts/turokgame/components/weapons/turokWeaponRocketLauncher.txt"
 #include "scripts/turokgame/components/weapons/turokWeaponAccelerator.txt"
 #include "scripts/turokgame/components/weapons/turokWeaponFusionCannon.txt"
+#include "scripts/turokgame/components/weapons/turokWeaponChronoScepter.txt"
 
 #include "scripts/turokgame/components/turokPlayer.txt"
 
@@ -39,4 +40,3 @@
 #include "scripts/turokgame/classes/menu.txt"
 #include "scripts/turokgame/classes/cameraEvent.txt"
 
-#include "scripts/aiTest.txt"

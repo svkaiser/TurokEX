@@ -36,6 +36,12 @@
 #include "animation.h"
 #endif
 
+typedef struct {
+    int vert;
+    int coord;
+    int normal;
+} wavefrontObjFace_t;
+
 kexModelManager modelManager;
 kexHeapBlock hb_model("model", false, NULL, NULL);
 
@@ -159,7 +165,6 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
     unsigned int i;
     unsigned int k;
     unsigned int l;
-    byte r, g, b, a;
     bool bNested = false;
 
     while(lexer->CheckState()) {
@@ -224,12 +229,9 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                         for(k = 0; k < node->numSurfaces; k++) {
                             surface_t *surface = &node->surfaces[k];
 
-                            surface->color1 = 0;
-                            surface->color2 = 0;
                             surface->flags = 0;
                             surface->numIndices = 0;
                             surface->numVerts = 0;
-                            surface->texturePath[0] = 0;
                             surface->indices = NULL;
                             surface->normals = NULL;
                             surface->vertices = NULL;
@@ -250,25 +252,10 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                                 lexer->Find();
 
                                 switch(lexer->GetIDForTokenList(mdltokens, lexer->Token())) {
-                                case scmdl_texture:
-                                    lexer->AssignFromTokenList(mdltokens, surface->texturePath,
-                                        scmdl_texture, false);
-                                    break;
                                 case scmdl_material:
                                     lexer->ExpectNextToken(TK_EQUAL);
                                     lexer->GetString();
                                     surface->material = renderBackend.CacheMaterial(lexer->StringToken());
-                                    break;
-                                case scmdl_rgba1:
-
-                                    lexer->ExpectNextToken(TK_EQUAL);
-
-                                    r = lexer->GetNumber();
-                                    g = lexer->GetNumber();
-                                    b = lexer->GetNumber();
-                                    a = lexer->GetNumber();
-
-                                    surface->color1 = RGBA(r, g, b, a);
                                     break;
                                 case scmdl_numtriangles:
                                     lexer->AssignFromTokenList(mdltokens, &surface->numIndices,
@@ -389,18 +376,37 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
     kexArray<float>points;
     kexArray<float>coords;
     kexArray<float>normals;
-    kexArray<int>indices;
+    kexArray<wavefrontObjFace_t>faces;
     int numObjects = 0;
     int numGroups = 0;
+    bool bHasCoords = false;
+    bool bHasNormals = false;
+    int numUniqueVerts = 0;
+
+    lexer->Find();
 
     while(lexer->CheckState()) {
-        lexer->Find();
-
-        if(lexer->TokenType() != TK_IDENIFIER) {
+        if(lexer->TokenType() == TK_POUND) {
+            lexer->SkipLine();
+            continue;
+        }
+        else if(lexer->TokenType() != TK_IDENIFIER) {
             continue;
         }
 
-        if(lexer->Matches("o")) {
+        if(lexer->Matches("mtllib")) {
+            lexer->SkipLine();
+            continue;
+        }
+        else if(lexer->Matches("usemtl")) {
+            lexer->SkipLine();
+            continue;
+        }
+        else if(lexer->Matches("s")) {
+            lexer->SkipLine();
+            continue;
+        }
+        else if(lexer->Matches("o")) {
             // TODO
             lexer->Find();
             numObjects++;
@@ -411,12 +417,11 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
             numGroups++;
         }
         else if(lexer->Matches("v")) {
-            points.Push((float)lexer->GetFloat() * 256.0f);
-            points.Push((float)lexer->GetFloat() * 256.0f);
-            points.Push((float)lexer->GetFloat() * 256.0f);
+            points.Push((float)lexer->GetFloat());
+            points.Push((float)lexer->GetFloat());
+            points.Push((float)lexer->GetFloat());
         }
-        // TODO
-        /*else if(lexer->Matches("vt")) {
+        else if(lexer->Matches("vt")) {
             coords.Push((float)lexer->GetFloat());
             coords.Push((float)lexer->GetFloat());
         }
@@ -424,12 +429,50 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
             normals.Push((float)lexer->GetFloat());
             normals.Push((float)lexer->GetFloat());
             normals.Push((float)lexer->GetFloat());
-        }*/
-        else if(lexer->Matches("f")) {
-            indices.Push(lexer->GetNumber());
-            indices.Push(lexer->GetNumber());
-            indices.Push(lexer->GetNumber());
         }
+        else if(lexer->Matches("f")) {
+            wavefrontObjFace_t wfFace;
+            int numfaces;
+
+            lexer->Find();
+
+            for(numfaces = 0; numfaces < 3;) {
+                wfFace.vert = 0;
+                wfFace.coord = 0;
+                wfFace.normal = 0;
+
+                if(lexer->TokenType() == TK_NUMBER) {
+                    wfFace.vert = atoi(lexer->Token());
+                    numfaces++;
+
+                    lexer->Find();
+
+                    if(lexer->Matches("/")) {
+                        lexer->Find();
+
+                        if(lexer->TokenType() == TK_NUMBER) {
+                            wfFace.coord = atoi(lexer->Token());
+
+                            if(lexer->Matches("/")) {
+                                lexer->Find();
+
+                                if(lexer->TokenType() == TK_NUMBER) {
+                                    wfFace.normal = atoi(lexer->Token());
+                                }
+                            }
+                        }
+                    }
+
+                    faces.Push(wfFace);
+                }
+
+                lexer->Find();
+            }
+
+            continue;
+        }
+
+        lexer->Find();
     }
 
     // TODO
@@ -441,33 +484,61 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
         numGroups = 1;
     }
 
-    model->numNodes = numObjects;
+    bHasCoords = (coords.Length() > 0);
+    bHasNormals = (normals.Length() > 0);
+
+    numUniqueVerts = points.Length() / 3;
+
+    for(unsigned int i = 0; i < faces.Length(); i++) {
+        for(unsigned int j = 0; j < faces.Length(); j++) {
+            if(j == i) {
+                continue;
+            }
+
+            int v1 = faces[i].vert;
+            int v2 = faces[j].vert;
+
+            if(v1 == v2) {
+                if(faces[i].coord != faces[j].coord) {
+                    points.Push(points[(v1-1) * 3 + 0]);
+                    points.Push(points[(v1-1) * 3 + 1]);
+                    points.Push(points[(v1-1) * 3 + 2]);
+
+                    int rv = faces[j].vert;
+                    int rt = faces[j].coord;
+
+                    faces[j].vert = ++numUniqueVerts;
+
+                    for(unsigned int k = 0; k < faces.Length(); k++) {
+                        if(faces[k].vert == rv && faces[k].vert == rt) {
+                            faces[k].vert = faces[j].vert;
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+    }
+
+    model->numNodes = 1;
     model->nodes = (modelNode_t*)Mem_Calloc(sizeof(modelNode_t) *
         model->numNodes, hb_model);
 
-    // objects
     for(unsigned int i = 0; i < model->numNodes; i++) {
         modelNode_t *node = &model->nodes[i];
         node->numChildren = 0;
 
-        // TODO
-        node->numSurfaces = 1;
+        node->numSurfaces = numObjects;
         node->surfaces = (surface_t*)Mem_Calloc(sizeof(surface_t) *
             node->numSurfaces, hb_model);
 
-        // surfaces
         for(unsigned int k = 0; k < node->numSurfaces; k++) {
             surface_t *surface = &node->surfaces[k];
-            surface->color1 = 0xFFFFFFFF;
-            surface->flags |= MDF_SOLID;
 
-            surface->numIndices = indices.Length();
+            surface->numIndices = faces.Length();
             surface->indices = (word*)Mem_Calloc(sizeof(word) *
                 surface->numIndices, hb_model);
-
-            for(unsigned int ind = 0; ind < surface->numIndices; ind++) {
-                surface->indices[ind] = indices[ind] - 1;
-            }
 
             surface->numVerts = points.Length() / 3;
             surface->vertices = (kexVec3*)Mem_Calloc(sizeof(kexVec3) *
@@ -476,20 +547,37 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
                 surface->numVerts * 2, hb_model);
             surface->normals = (float*)Mem_Calloc(sizeof(float) *
                 surface->numVerts * 3, hb_model);
+            surface->rgb = (byte*)Mem_Calloc(sizeof(byte) *
+                surface->numVerts * 4, hb_model);
+
+            for(unsigned int ind = 0; ind < surface->numIndices; ind++) {
+                surface->indices[ind] = faces[ind].vert - 1;
+
+                if(bHasCoords && faces[ind].coord > 0) {
+                    int t = faces[ind].coord - 1;
+                    int v = faces[ind].vert - 1;
+                    surface->coords[v * 2 + 0] = 1.0f - coords[t * 2 + 0];
+                    surface->coords[v * 2 + 1] = coords[t * 2 + 1];
+                }
+                if(bHasNormals && faces[ind].normal > 0) {
+                    int t = faces[ind].normal - 1;
+                    int v = faces[ind].vert - 1;
+                    surface->coords[v * 3 + 0] = normals[t * 3 + 0];
+                    surface->coords[v * 3 + 1] = normals[t * 3 + 1];
+                }
+            }
 
             for(unsigned int v = 0; v < surface->numVerts; v++) {
                 surface->vertices[v].x = points[v * 3 + 0];
                 surface->vertices[v].y = points[v * 3 + 1];
                 surface->vertices[v].z = points[v * 3 + 2];
-                // TODO
-                /*surface->coords[v * 2 + 0] = coords[v * 2 + 0];
-                surface->coords[v * 2 + 1] = coords[v * 2 + 1];
-                surface->normals[v * 2 + 0] = normals[v * 2 + 0];
-                surface->normals[v * 2 + 1] = normals[v * 2 + 1];
-                surface->normals[v * 2 + 2] = normals[v * 2 + 2];*/
+                surface->rgb[v * 4 + 0] = 0xff;
+                surface->rgb[v * 4 + 1] = 0xff;
+                surface->rgb[v * 4 + 2] = 0xff;
+                surface->rgb[v * 4 + 3] = 0xff;
             }
 
-            strcpy(surface->texturePath, "textures/default.tga");
+            surface->material = renderBackend.CacheMaterial("materials/default.kmat@default");
         }
     }
 }

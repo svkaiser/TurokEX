@@ -63,7 +63,6 @@ public:
     void                        SetRotationOffset(const int node, const float angle,
                                                   const float x, const float y, const float z);
 
-    const int                   Variant(void) const { return variant; }
     kexStr                      &GetName(void) { return name; }
     void                        SetName(kexStr &str) { name = str; }
     kexVec3                     *GetNodeTranslations(void) { return nodeOffsets_t; }
@@ -136,8 +135,6 @@ protected:
     kexVec3                     *nodeOffsets_t;
     kexQuat                     *nodeOffsets_r;
     kexAnimState                animState;
-    int                         variant;
-    rcolor                      *vertexColors;
 END_CLASS();
 
 #endif

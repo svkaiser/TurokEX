@@ -105,10 +105,15 @@ matSampler_t *kexMaterial::Sampler(const int which) {
 // kexMaterial::SetDiffuseColor
 //
 
-void kexMaterial::SetDiffuseColor(void) {
-    if(shaderObj == NULL) {
-        return;
-    }
+void kexMaterial::SetDiffuseColor(const rcolor color) {
+    float r, g, b, a;
+
+    r = (float)(color & 0xff) / 255.0f;
+    g = (float)((color >> 8) & 0xff) / 255.0f;
+    b = (float)((color >> 16) & 0xff) / 255.0f;
+    a = (float)((color >> 24) & 0xff) / 255.0f;
+
+    diffuseColor.Set(r, g, b, a);
 }
 
 

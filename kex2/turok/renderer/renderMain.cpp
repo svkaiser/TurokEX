@@ -62,6 +62,7 @@ kexRenderer::~kexRenderer(void) {
 
 void kexRenderer::Init(void) {
     motionBlurMaterial = renderBackend.CacheMaterial("materials/motionBlur.kmat@motionBlur");
+    wireframeMaterial = renderBackend.CacheMaterial("materials/default.kmat@wireframe");
 }
 
 //
@@ -91,7 +92,7 @@ void kexRenderer::Draw(void) {
 }
 
 //
-// kexRenderer::DrawElements
+// kexRenderer::DrawSurface
 //
 
 void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  {
@@ -120,6 +121,7 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
     renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
     renderBackend.SetCull(material->CullType());
     renderBackend.SetDepthMask(material->DepthMask());
+    renderBackend.SetPolyMode(GLPOLY_FILL);
     
     for(unsigned int i = 0; i < material->NumUnits(); i++) {
         matSampler_t *sampler = material->Sampler(i);
@@ -139,6 +141,64 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
             else {
                 sampler->texture->Bind();
             }
+            sampler->texture->ChangeParameters(sampler->clamp, sampler->filter);
+        }
+    }
+    
+    renderBackend.SetTextureUnit(0);
+
+    if(currentSurface != surface) {
+        dglNormalPointer(GL_FLOAT, sizeof(float)*3, surface->normals);
+        dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, surface->coords);
+        dglVertexPointer(3, GL_FLOAT, sizeof(kexVec3), surface->vertices);
+        dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, surface->rgb);
+        
+        currentSurface = surface;
+    }
+    
+    dglDrawElements(GL_TRIANGLES, surface->numIndices, GL_UNSIGNED_SHORT, surface->indices);
+}
+
+//
+// kexRenderer::DrawWireFrameSurface
+//
+
+void kexRenderer::DrawWireFrameSurface(const surface_t *surface, const rcolor color) {
+    kexShaderObj *shader;
+    kexMaterial *material;
+
+    if(surface == NULL) {
+        return;
+    }
+
+    shader = wireframeMaterial->ShaderObj();
+    
+    if(shader == NULL) {
+        return;
+    }
+
+    material = wireframeMaterial;
+    material->SetDiffuseColor(color);
+
+    shader->Enable();
+    shader->CommitGlobalUniforms(material);
+    
+    renderBackend.SetState(material->StateBits());
+    renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
+    renderBackend.SetCull(material->CullType());
+    renderBackend.SetDepthMask(material->DepthMask());
+    renderBackend.SetPolyMode(GLPOLY_LINE);
+    
+    for(unsigned int i = 0; i < material->NumUnits(); i++) {
+        matSampler_t *sampler = material->Sampler(i);
+        
+        renderBackend.SetTextureUnit(sampler->unit);
+        
+        if(sampler->texture == NULL) {
+            renderBackend.defaultTexture.Bind();
+        }
+        else {
+            sampler->texture->Bind();
             sampler->texture->ChangeParameters(sampler->clamp, sampler->filter);
         }
     }
@@ -313,13 +373,6 @@ void kexRenderer::DrawFX(const fxDisplay_t *fxList, const int count) {
 
         dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, spriteIndices);
         dglPopMatrix();
-
-        if(fxinfo->bLensFlares && fxinfo->lensFlares) {
-            fxinfo->lensFlares->Origin() = fx->GetOrigin();
-            fxinfo->lensFlares->Draw();
-
-            // TODO - fx draw pointers needs to be rebinded and state reset
-        }
 
         if(fxinfo->lifetime.value == 1 && fx->bClientOnly) {
             fx->Remove();

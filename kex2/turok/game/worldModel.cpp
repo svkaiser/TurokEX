@@ -89,6 +89,7 @@ kexWorldModel::kexWorldModel(void) {
     this->bTraced           = false;
     this->validcount        = 0;
     this->materials         = NULL;
+    this->wireframeColor    = RGBA(0, 224, 224, 255);
 }
 
 //

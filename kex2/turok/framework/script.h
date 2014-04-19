@@ -34,6 +34,8 @@ typedef enum {
     TK_COLON,
     TK_SEMICOLON,
     TK_PERIOD,
+    TK_QUOTE,
+    TK_FORWARDSLASH,
     TK_EQUAL,
     TK_LBRACK,
     TK_RBRACK,
@@ -77,6 +79,7 @@ public:
     bool                Find(void);
     char                GetChar(void);
     void                Rewind(void);
+    void                SkipLine(void);
     bool                Matches(const char *string);
     int                 GetNumber(void);
     double              GetFloat(void);

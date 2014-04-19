@@ -59,9 +59,11 @@ public:
     kexVec3                     &WorldLightTransform(void) { return worldLightTransform; }
 
 private:
+    void                        DrawSingleActor(kexActor *actor, kexMatrix *matrix);
     void                        DrawActors(void);
     void                        DrawStaticActors(void);
     void                        DrawViewActors(void);
+    void                        DrawForegroundActors(void);
     void                        DrawFX(void);
     void                        DrawWorldModel(kexWorldModel *wm);
     void                        RecursiveSDNode(int nodenum);

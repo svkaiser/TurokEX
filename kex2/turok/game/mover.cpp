@@ -36,16 +36,17 @@ DECLARE_CLASS(kexMover, kexActor)
 //
 
 kexMover::kexMover(void) {
-    this->moveSpeed     = 8;
-    this->moveAmount    = 8;
-    this->diffHeight    = 0;
-    this->destHeight    = 0;
-    this->time          = 0;
-    this->bMove         = false;
-    this->distance      = 0;
-    this->lerpTime      = 0;
-    this->moveSound     = "";
-    this->bStatic       = false;
+    this->moveSpeed         = 8;
+    this->moveAmount        = 8;
+    this->diffHeight        = 0;
+    this->destHeight        = 0;
+    this->time              = 0;
+    this->bMove             = false;
+    this->distance          = 0;
+    this->lerpTime          = 0;
+    this->moveSound         = "";
+    this->bStatic           = false;
+    this->wireframeColor    = RGBA(255, 0, 255, 255);
 }
 
 //

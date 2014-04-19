@@ -34,9 +34,10 @@ DECLARE_CLASS(kexPickup, kexActor)
 //
 
 kexPickup::kexPickup(void) {
-    this->pickupSound   = "";
-    this->bRespawn      = false;
-    this->respawnTime   = 4;
+    this->pickupSound       = "";
+    this->bRespawn          = false;
+    this->respawnTime       = 4;
+    this->wireframeColor    = RGBA(255, 255, 0, 255);
 }
 
 //

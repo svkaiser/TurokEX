@@ -37,8 +37,8 @@ DECLARE_ABSTRACT_CLASS(kexDisplayObject, kexGameObject)
 
 kexDisplayObject::kexDisplayObject(void) {
     this->bHidden       = false;
-    this->bClientView   = false;
     this->bCulled       = false;
+    this->displayType   = ODT_NORMAL;
     
     this->attachment.SetOwner(this);
     this->scale.Set(1, 1, 1);
@@ -70,7 +70,7 @@ void kexDisplayObject::Spawn(void) {
 void kexDisplayObject::Save(kexBinFile *saveFile) {
     saveFile->Write8(bHidden);
     saveFile->Write8(bCulled);
-    saveFile->Write8(bClientView);
+    saveFile->Write32(displayType);
     saveFile->WriteQuaternion(rotation);
     saveFile->WriteFloat(cullDistance);
     saveFile->WriteMatrix(matrix);

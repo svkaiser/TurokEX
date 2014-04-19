@@ -29,7 +29,6 @@ class TurokScriptedObject : Component {
         self.bClientOnly = true;
         self.bCollision = false;
         self.bTouch = false;
-        self.bClientView = false;
     }
     
     //

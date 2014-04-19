@@ -37,9 +37,6 @@ typedef struct {
     byte                    *rgb;
     word                    *indices;
     kexMaterial             *material;
-    filepath_t              texturePath;
-    rcolor                  color1;
-    rcolor                  color2;
 } surface_t;
 
 #define MAX_FX_DISPLAYS 2048
@@ -57,6 +54,7 @@ public:
 
     void                    Init(void);
     void                    DrawSurface(const surface_t *surface, kexMaterial *material);
+    void                    DrawWireFrameSurface(const surface_t *surface, const rcolor color);
     void                    Draw(void);
     void                    DrawFX(const fxDisplay_t *fxList, const int count);
     
@@ -66,6 +64,7 @@ private:
     void                    ProcessMotionBlur(void);
 
     kexMaterial             *motionBlurMaterial;
+    kexMaterial             *wireframeMaterial;
     kexMatrix               prevMVMatrix;
 };
 

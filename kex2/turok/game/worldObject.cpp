@@ -36,18 +36,19 @@ DECLARE_ABSTRACT_CLASS(kexWorldObject, kexDisplayObject)
 //
 
 kexWorldObject::kexWorldObject(void) {
-    this->bStatic       = true;
-    this->bCollision    = false;
-    this->bTouch        = false;
-    this->bCanPickup    = false;
-    this->bAllowDamage  = false;
-    this->health        = 100;
-    this->radius        = 10.24f;
-    this->baseHeight    = 10.24f;
-    this->viewHeight    = 8.192f;
-    this->centerHeight  = 5.12f;
-    this->impactType    = IT_DEFAULT;
-    this->physicsRef    = NULL;
+    this->bStatic           = true;
+    this->bCollision        = false;
+    this->bTouch            = false;
+    this->bCanPickup        = false;
+    this->bAllowDamage      = false;
+    this->health            = 100;
+    this->radius            = 10.24f;
+    this->baseHeight        = 10.24f;
+    this->viewHeight        = 8.192f;
+    this->centerHeight      = 5.12f;
+    this->impactType        = IT_DEFAULT;
+    this->physicsRef        = NULL;
+    this->wireframeColor    = RGBA(255, 255, 255, 255);
 
     this->areaLink.link.SetData(this);
     this->areaLink.node = NULL;

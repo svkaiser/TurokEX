@@ -35,12 +35,13 @@ DECLARE_CLASS(kexDoor, kexActor)
 //
 
 kexDoor::kexDoor(void) {
-    this->delayTime     = 0;
-    this->currentTime   = 0;
-    this->bTriggered    = false;
-    this->idleAnim      = 0;
-    this->openAnim      = 0;
-    this->closeAnim     = 0;
+    this->delayTime         = 0;
+    this->currentTime       = 0;
+    this->bTriggered        = false;
+    this->idleAnim          = 0;
+    this->openAnim          = 0;
+    this->closeAnim         = 0;
+    this->wireframeColor    = RGBA(255, 0, 255, 255);
 }
 
 //
