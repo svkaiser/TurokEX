@@ -69,7 +69,7 @@ class TurokWeapon : Component {
         self.bClientOnly = true;
         self.bCollision = false;
         self.bTouch = false;
-        self.bClientView = true;
+        self.displayType = ODT_CLIENTVIEW;
         self.bHidden = true;
     }
     
@@ -158,6 +158,14 @@ class TurokWeapon : Component {
         bActive = true;
         state = PWPN_STATE_SWAPIN;
         owner.self.Puppet().StartSound(readySound);
+    }
+    
+    //
+    // TurokWeapon::Recoil
+    //
+    
+    void Recoil(const float recoil) {
+        owner.recoilPitch = -recoil;
     }
     
     //
@@ -306,8 +314,7 @@ class TurokWeapon : Component {
         self.SetAngles(angles);
         
         if(bActive == true) {
-            TurokPlayer @player = cast<TurokPlayer@>(owner.self.obj);
-            bUnderWater = (player.waterLevel == WLT_UNDER);
+            bUnderWater = (owner.waterLevel == WLT_UNDER);
             
             switch(state) {
             case PWPN_STATE_READY:
@@ -317,23 +324,23 @@ class TurokWeapon : Component {
                         return;
                     }
                 }
-                if(player.CheckWeaponChange()) {
+                if(owner.CheckWeaponChange()) {
                     return;
                 }
                 ReadyAnimation();
                 break;
             case PWPN_STATE_SWAPOUT:
-                if(player.CheckWeaponChange()) {
+                if(owner.CheckWeaponChange()) {
                     return;
                 }
                 if((self.AnimState().flags & ANF_STOPPED) != 0) {
                     self.bHidden = true;
                     bActive = false;
-                    player.SetWeapon();
+                    owner.SetWeapon();
                 }
                 break;
             case PWPN_STATE_SWAPIN:
-                if(player.CheckWeaponChange()) {
+                if(owner.CheckWeaponChange()) {
                     return;
                 }
                 if((self.AnimState().flags & ANF_STOPPED) != 0) {

@@ -71,7 +71,7 @@ enum turokWeapons_e {
     wp_rocket_l,
     wp_accelerator,
     wp_fusioncannon,
-    //wp_chronoscepter,
+    wp_chronoscepter,
     wp_numweapons
 }
 
@@ -193,6 +193,7 @@ final class TurokPlayer : Component {
     bool                bClimbDone;
     float               jumpPitch;
     float               squatTime;
+    float               recoilPitch;
     
     //
     // game variables
@@ -319,7 +320,12 @@ final class TurokPlayer : Component {
         }
         
         for(int i = 0; i < wp_numweapons; i++) {
-            weapons[i].bClientView = bCameraAttached;
+            if(bCameraAttached) {
+                weapons[i].displayType = ODT_CLIENTVIEW;
+            }
+            else {
+                weapons[i].displayType = ODT_NORMAL;
+            }
         }
     }
 
@@ -379,7 +385,8 @@ final class TurokPlayer : Component {
             "TurokWeaponAlienRifle",
             "TurokWeaponRocketLauncher",
             "TurokWeaponAccelerator",
-            "TurokWeaponFusionCannon"
+            "TurokWeaponFusionCannon",
+            "TurokWeaponChronoScepter"
         };
         
         for(int i = 0; i < wp_numweapons; i++) {
@@ -865,11 +872,18 @@ final class TurokPlayer : Component {
             jumpPitch = 0;
         }
         
+        if(recoilPitch < -0.001f) {
+            recoilPitch = LocalLerp(recoilPitch, 0, 0.08f);
+        }
+        else {
+            recoilPitch = 0;
+        }
+        
         kCamera @camera = LocalWorld.Camera();
         kAngle angle = camera.GetOffsetAngle();
         
         angle.yaw = -bob_y;
-        angle.pitch = bob_x + jumpPitch;
+        angle.pitch = bob_x + jumpPitch + recoilPitch;
         
         if(waterLevel >= WLT_BETWEEN) {
             float t = 60.0f * self.deltaTime;
@@ -1094,7 +1108,7 @@ final class TurokPlayer : Component {
     
     void OnSpawn(void) {
         kActor @puppet = self.Puppet();
-        @localPlayer = cast<TurokPlayer@>(localClient.obj);
+        @localPlayer = this;
         
         ResetVars();
         SetupCamera();
@@ -1138,12 +1152,14 @@ final class TurokPlayer : Component {
                 break;
         }
         
-        turokGame.FadeFromBlack();
-        
         if(bWarping) {
             bWarping = false;
             LocalWorld.TeleportActor(puppet, warpPosition, kAngle(warpYaw, 0, 0), warpSectorID);
             puppet.StartSound("sounds/shaders/warp_inout.ksnd");
+            turokGame.FadeFromWhite();
+        }
+        else {
+            turokGame.FadeFromBlack();
         }
     }
     

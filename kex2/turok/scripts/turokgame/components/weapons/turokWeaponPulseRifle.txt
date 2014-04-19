@@ -40,8 +40,9 @@ final class TurokWeaponPulseRifle : TurokWeapon {
         float playTime = self.AnimState().PlayTime();
         
         if((playTime - shotTime) >= 0.16f) {
-            SpawnFX("fx/projectile_pulseshot.kfx", -10.24f, -14.336f, -61.44f);
+            SpawnFX("fx/projectile_pulseshot.kfx", -10.24f, -14.336f, 25.6f);
             localClient.Puppet().StartSound("sounds/shaders/machine_gun_shot_2.ksnd");
+            Recoil(0.0408f);
             
             shotTime = playTime;
         }

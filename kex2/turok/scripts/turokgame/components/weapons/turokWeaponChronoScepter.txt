@@ -1,0 +1,100 @@
+#include "scripts/turokgame/components/weapons/turokWeapon.txt"
+
+////////////////////////////////////////////////////
+//
+// TurokWeaponChronoScepter
+//
+////////////////////////////////////////////////////
+
+final class TurokWeaponChronoScepter : TurokWeapon {
+    bool bAiming;
+    float chargeTime;
+    
+    //
+    // TurokWeaponChronoScepter::TurokWeaponChronoScepter
+    //
+    
+    TurokWeaponChronoScepter(kActor @actor) {
+        super(actor);
+        bAiming = false;
+        bOwned = true;
+        chargeTime = 0.0f;
+    }
+    
+    //
+    // TurokWeaponChronoScepter::~TurokWeaponChronoScepter
+    //
+    
+    ~TurokWeaponChronoScepter() {
+    }
+    
+    //
+    // TurokWeaponChronoScepter::OnAttack
+    //
+    
+    bool OnAttack(void) {
+        if(bAiming == true) {
+            return true;
+        }
+        
+        self.AnimState().Blend(anim_weaponFire, playSpeed, 62.5f, ANF_LOOP);
+        bAiming = true;
+        chargeTime = 0.0f;
+        
+        return true;
+    }
+    
+    //
+    // TurokWeaponChronoScepter::CheckAttack
+    //
+    
+    void CheckAttack(void) {
+        if(bAiming) {
+            if(owner.self.ActionHeldTime("+attack") > 0) {
+                return;
+            }
+            
+            float time = self.AnimState().PlayTime() + chargeTime;
+            
+            if(time >= 1.0f) {
+                owner.self.Puppet().StartSound("sounds/shaders/shockwave_weapon_fire.ksnd");
+                SpawnFX("fx/projectile_chronoblast.kfx", -4.096f, -14.336f, 25.6f);
+                
+                self.AnimState().Blend(anim_weaponFireCharged, playSpeed, 4.0f, 0);
+                bAiming = false;
+                chargeTime = 0.0f;
+            }
+            else {
+                self.AnimState().Blend(anim_weaponIdle, playSpeed, 8.0f, ANF_LOOP);
+                state = PWPN_STATE_READY;
+                bAiming = false;
+                return;
+            }
+        }
+        else {
+            if((self.AnimState().flags & ANF_STOPPED) != 0) {
+                if(owner.self.ActionHeldTime("+attack") > 0) {
+                    self.AnimState().Blend(anim_weaponFire, playSpeed, 4.0f, ANF_LOOP);
+                    bAiming = true;
+                    chargeTime = 0.5f;
+                    return;
+                }
+            }
+        }
+        
+        TurokWeapon::CheckAttack();
+    }
+    
+    //
+    // TurokWeaponChronoScepter::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        xOffset = 204.8f;
+        yOffset = 14.677f;
+        zOffset = -58.02f;
+        self.SetModel("models/mdl645/mdl645.kmesh");
+        
+        TurokWeapon::OnSpawn();
+    }
+};
