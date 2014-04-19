@@ -37,6 +37,7 @@
 kexCvar cvarRenderMotionBlur("r_motionblur", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 kexCvar cvarRenderMotionBlurSamples("r_motionblursamples", CVF_INT|CVF_CONFIG, "32", "TODO");
 kexCvar cvarRenderMotionBlurRampSpeed("r_motionblurrampspeed", CVF_FLOAT|CVF_CONFIG, "0.0", "TODO");
+kexCvar cvarRenderLightScatter("r_lightscatter", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 
 kexRenderer renderer;
 
@@ -61,8 +62,13 @@ kexRenderer::~kexRenderer(void) {
 //
 
 void kexRenderer::Init(void) {
-    motionBlurMaterial = renderBackend.CacheMaterial("materials/motionBlur.kmat@motionBlur");
-    wireframeMaterial = renderBackend.CacheMaterial("materials/default.kmat@wireframe");
+    motionBlurMaterial  = renderBackend.CacheMaterial("materials/motionBlur.kmat@motionBlur");
+    wireframeMaterial   = renderBackend.CacheMaterial("materials/default.kmat@wireframe");
+    shaderLightScatter  = renderBackend.CacheShader("defs/shaders.def@lightScatter");
+
+    fboLightScatter.InitColorAttachment(0);
+
+    renderWorld.InitSunData();
 }
 
 //
@@ -76,6 +82,7 @@ void kexRenderer::Draw(void) {
     renderBackend.SetOrtho();
 
     ProcessMotionBlur();
+    ProcessLightScatter();
 
     renderBackend.Canvas().Draw();
     gameManager.MenuCanvas().Draw();
@@ -456,4 +463,63 @@ void kexRenderer::ProcessMotionBlur(void) {
     renderBackend.AddTriangle(0, 1, 2);
     renderBackend.AddTriangle(2, 1, 3);
     renderBackend.DrawElements(motionBlurMaterial);
+}
+
+//
+// kexRenderer::ProcessLightScatter
+//
+
+void kexRenderer::ProcessLightScatter(void) {
+    int vp[4];
+    const word  indices[6] = { 0, 1, 2, 2, 1, 3 };
+    const float tcoords[8] = { 0, 0, 1, 0, 0, 1, 1, 1 };
+    float       verts[12];
+    byte        colors[4][4];
+
+    if(cvarRenderLightScatter.GetBool() == false) {
+        return;
+    }
+
+    dglGetIntegerv(GL_VIEWPORT, vp);
+
+    shaderLightScatter->Enable();
+
+    shaderLightScatter->SetUniform("uLightCoordinate", renderWorld.SunPosition());
+    shaderLightScatter->SetUniform("uExposure", 0.0034f);
+    shaderLightScatter->SetUniform("uDecay", 1.0f);
+    shaderLightScatter->SetUniform("uDensity", 0.84f);
+    shaderLightScatter->SetUniform("uWeight", 3.5f);
+    shaderLightScatter->SetUniform("uDiffuse", 0);
+
+    fboLightScatter.BindImage();
+
+    renderBackend.SetState(GLSTATE_BLEND, true);
+    renderBackend.SetBlend(GLSRC_ONE_MINUS_DST_COLOR, GLDST_ONE);
+
+    dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, tcoords);
+    dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, verts);
+    dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, colors);
+
+    dglDisableClientState(GL_NORMAL_ARRAY);
+
+    verts[0 * 3 + 0] = (float)vp[0];
+    verts[0 * 3 + 1] = (float)vp[1];
+    verts[0 * 3 + 2] = 0;
+    verts[1 * 3 + 0] = (float)vp[2];
+    verts[1 * 3 + 1] = (float)vp[1];
+    verts[1 * 3 + 2] = 0;
+    verts[2 * 3 + 0] = (float)vp[0];
+    verts[2 * 3 + 1] = (float)vp[3];
+    verts[2 * 3 + 2] = 0;
+    verts[3 * 3 + 0] = (float)vp[2];
+    verts[3 * 3 + 1] = (float)vp[3];
+    verts[3 * 3 + 2] = 0;
+
+    memset(colors, 0xff, sizeof(colors));
+
+    dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices);
+    dglEnableClientState(GL_NORMAL_ARRAY);
+
+    renderBackend.DisableShaders();
+    renderBackend.SetBlend(GLSRC_SRC_ALPHA, GLDST_ONE_MINUS_SRC_ALPHA);
 }

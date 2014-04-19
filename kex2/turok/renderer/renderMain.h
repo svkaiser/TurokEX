@@ -23,9 +23,12 @@
 #ifndef __RENDER_MAIN_H__
 #define __RENDER_MAIN_H__
 
+#include "fbo.h"
+
 class kexMaterial;
 class kexSector;
 class kexTri;
+class kexShaderObj;
 
 typedef struct {
     unsigned int            flags;
@@ -57,15 +60,20 @@ public:
     void                    DrawWireFrameSurface(const surface_t *surface, const rcolor color);
     void                    Draw(void);
     void                    DrawFX(const fxDisplay_t *fxList, const int count);
+
+    kexFBO                  &FBOLightScatter(void) { return fboLightScatter; }
     
     const surface_t         *currentSurface;
 
 private:
     void                    ProcessMotionBlur(void);
+    void                    ProcessLightScatter(void);
 
     kexMaterial             *motionBlurMaterial;
     kexMaterial             *wireframeMaterial;
     kexMatrix               prevMVMatrix;
+    kexFBO                  fboLightScatter;
+    kexShaderObj            *shaderLightScatter;
 };
 
 extern kexRenderer renderer;

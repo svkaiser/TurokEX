@@ -37,6 +37,8 @@
 #include "worldModel.h"
 #include "renderUtils.h"
 
+extern kexCvar cvarRenderLightScatter;
+
 kexRenderWorld renderWorld;
 
 //
@@ -195,6 +197,7 @@ kexRenderWorld::kexRenderWorld(void) {
     this->bShowClipMesh     = false;
     this->bShowCollisionMap = false;
     this->bPrintStats       = false;
+    this->bLightScatterPass = false;
     this->showAreaNode      = -1;
     this->renderNodeStep    = -1;
 }
@@ -215,6 +218,17 @@ void kexRenderWorld::Init(void) {
     command.Add("showcollision", FCmd_ShowCollisionMap);
     command.Add("rendernodestep", FCmd_RenderNodeStep);
     command.Add("statscene", FCmd_PrintStats);
+}
+
+//
+// kexRenderWorld::InitSunData
+//
+
+void kexRenderWorld::InitSunData(void) {
+    sunModel    = modelManager.LoadModel("models/default.kmesh");
+    sunMaterial = renderBackend.CacheMaterial("materials/default.kmat@whiteFullBright");
+    blackMat    = renderBackend.CacheMaterial("materials/default.kmat@black");
+
 }
 
 //
@@ -252,6 +266,34 @@ void kexRenderWorld::RenderScene(void) {
     }
     else {
         dglClearColor(0.25f, 0.25f, 0.25f, 1.0f);
+    }
+
+    if(cvarRenderLightScatter.GetBool()) {
+        int vp[4];
+
+        renderer.FBOLightScatter().Bind();
+        dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        bLightScatterPass = true;
+        DrawSun();
+
+        SetCameraView(world->Camera());
+
+        sunPosition = world->Camera()->ProjectPoint(sunPosition, 0, 0);
+
+        dglGetIntegerv(GL_VIEWPORT, vp);
+
+        sunPosition.x /= (float)vp[2];
+        sunPosition.y /= (float)vp[3];
+
+        DrawStaticActors();
+        DrawActors();
+        DrawViewActors();
+
+        bLightScatterPass = false;
+
+        renderer.FBOLightScatter().UnBind();
+        dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     DrawForegroundActors();
@@ -335,6 +377,11 @@ void kexRenderWorld::DrawWorldModel(kexWorldModel *wm) {
         
         for(unsigned i = 0; i < model->nodes[0].numSurfaces; i++) {
             surface_t *surface = &node->surfaces[i];
+
+            if(bLightScatterPass) {
+                renderer.DrawSurface(surface, blackMat);
+                continue;
+            }
 
             if(!bWireframe) {
                 kexMaterial *material = surface->material;
@@ -438,6 +485,11 @@ void kexRenderWorld::TraverseDrawActorNode(kexActor *actor,
 
     for(i = 0; i < node->numSurfaces; i++) {
         surface_t *surface = &node->surfaces[i];
+
+        if(bLightScatterPass) {
+            renderer.DrawSurface(surface, blackMat);
+            continue;
+        }
 
         if(!bWireframe) {
             renderer.DrawSurface(surface, surface->material);
@@ -697,6 +749,36 @@ void kexRenderWorld::DrawViewActors(void) {
                 dglPopMatrix();
             }
     }
+}
+
+//
+// kexRenderWorld::DrawSun
+//
+
+void kexRenderWorld::DrawSun(void) {
+    if(sunMaterial == NULL) {
+        return;
+    }
+
+    kexMatrix mtx;
+    float zfar = world->Camera()->ZFar();
+
+    world->Camera()->ZFar() = -1;
+    SetCameraView(world->Camera());
+
+    sunPosition = world->worldLightOrigin.ToVec3() * 32768.0f;
+
+    mtx.Scale(2, 2, 2);
+    mtx.SetTranslation(sunPosition);
+
+    dglPushMatrix();
+    dglMultMatrixf(mtx.ToFloatPtr());
+
+    renderer.DrawSurface(&sunModel->nodes[0].surfaces[0], sunMaterial);
+    world->Camera()->ZFar() = zfar;
+
+    dglPopMatrix();
+    dglClear(GL_DEPTH_BUFFER_BIT);
 }
 
 //

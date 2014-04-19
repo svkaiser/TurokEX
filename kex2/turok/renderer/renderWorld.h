@@ -36,6 +36,7 @@ public:
     void                        DrawAreaNode(void);
     void                        DrawRenderNode(void);
     void                        PrintStats(void);
+    void                        InitSunData(void);
 
     static void                 Init(void);
     static int                  SortSprites(const void *a, const void *b);
@@ -57,8 +58,10 @@ public:
     kexSDNode<kexWorldModel>    renderNodes;
 
     kexVec3                     &WorldLightTransform(void) { return worldLightTransform; }
+    kexVec3                     &SunPosition(void) { return sunPosition; }
 
 private:
+    void                        DrawSun(void);
     void                        DrawSingleActor(kexActor *actor, kexMatrix *matrix);
     void                        DrawActors(void);
     void                        DrawStaticActors(void);
@@ -84,6 +87,11 @@ private:
     int                         numDrawnSDNodes;
     int                         numDrawnActors;
     int                         renderNodeStepNum;
+    kexMaterial                 *blackMat;
+    kexMaterial                 *sunMaterial;
+    kexModel_t                  *sunModel;
+    kexVec3                     sunPosition;
+    bool                        bLightScatterPass;
 };
 
 extern kexRenderWorld renderWorld;
