@@ -131,37 +131,52 @@ void kexLensFlares::LoadKLF(const char *file) {
 void kexLensFlares::Draw(const kexVec3 &origin) {
     float hw;
     float hh;
+    float w;
+    float h;
+    float ndcx;
+    float ndcy;
     float scale;
     float len;
     float offs;
+    float d;
     kexFrustum frustum;
     kexVec3 org;
     kexVec3 pos;
+    byte alpha;
 
     frustum = localWorld.Camera()->Frustum();
 
-    if(!frustum.TestSphere(origin, 4.0f)) {
+    if(!frustum.TestSphere(origin, 0)) {
         return;
     }
 
-    hw = (float)sysMain.VideoWidth() * 0.5f;
-    hh = (float)sysMain.VideoHeight() * 0.5f;
+    w = (float)sysMain.VideoWidth();
+    h = (float)sysMain.VideoHeight();
+    hw = w * 0.5f;
+    hh = h * 0.5f;
     org = origin;
     pos = localWorld.Camera()->ProjectPoint(org, 0, 0);
     org = pos;
     len = localWorld.Camera()->GetOrigin().Distance(origin);
 
+    ndcx = kexMath::Fabs((pos.x / w) * 2.0f - 1.0f);
+    ndcy = kexMath::Fabs((pos.y / h) * 2.0f - 1.0f);
+
+    d = 1.0f - ((ndcx * ndcx + ndcy * ndcy) / 2.0f);
+
+    alpha = (byte)(kexMath::Pow(d, 3.0f) * 255.0f);
+
     for(int i = 0; i < numlens; i++) {
         scale = lens[i].scale * 2.0f;
         offs = lens[i].offset / len;
 
-        renderBackend.AddVertex(org.x - scale, org.y - scale, 0, 0, 0, 255, 255, 255, 255);
-        renderBackend.AddVertex(org.x + scale, org.y - scale, 0, 1, 0, 255, 255, 255, 255);
-        renderBackend.AddVertex(org.x - scale, org.y + scale, 0, 0, 1, 255, 255, 255, 255);
-        renderBackend.AddVertex(org.x + scale, org.y + scale, 0, 1, 1, 255, 255, 255, 255);
-        renderBackend.AddTriangle(0, 1, 2);
-        renderBackend.AddTriangle(2, 1, 3);
-        renderBackend.DrawElements(lens[i].material);
+        renderer.AddVertex(org.x - scale, org.y - scale, 0, 0, 0, 255, 255, 255, alpha);
+        renderer.AddVertex(org.x + scale, org.y - scale, 0, 1, 0, 255, 255, 255, alpha);
+        renderer.AddVertex(org.x - scale, org.y + scale, 0, 0, 1, 255, 255, 255, alpha);
+        renderer.AddVertex(org.x + scale, org.y + scale, 0, 1, 1, 255, 255, 255, alpha);
+        renderer.AddTriangle(0, 1, 2);
+        renderer.AddTriangle(2, 1, 3);
+        renderer.DrawElements(lens[i].material);
 
         org.x = pos.x - ((pos.x - hw) * offs * (i+1));
         org.y = pos.y - ((pos.y - hh) * offs * (i+1));
