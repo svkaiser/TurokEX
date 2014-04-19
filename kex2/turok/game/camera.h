@@ -44,7 +44,7 @@ public:
     const float         Aspect(void) const { return aspect; }
     kexMatrix           &Projection(void) { return projMatrix; }
     kexMatrix           &ModelView(void) { return modelMatrix; }
-    const kexFrustum    &Frustum(void) const { return viewFrustum; }
+    kexFrustum          &Frustum(void) { return viewFrustum; }
     kexAngle            &GetOffsetAngle(void) { return offsetAngle; }
     void                SetOffsetAngle(const kexAngle &an) { offsetAngle = an; }
     float               &ZFar(void) { return zFar; }
