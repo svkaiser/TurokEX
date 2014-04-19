@@ -186,12 +186,12 @@ void kexViewBounds::DebugDraw(void) {
     renderBackend.SetState(GLSTATE_LIGHTING, false);
     
     renderBackend.DisableShaders();
-    renderBackend.BindDrawPointers();
-    renderBackend.AddLine(min[0], min[1], 0, min[0], max[1], 0, 255, 0, 255, 255);
-    renderBackend.AddLine(min[0], max[1], 0, max[0], max[1], 0, 255, 0, 255, 255);
-    renderBackend.AddLine(max[0], max[1], 0, max[0], min[1], 0, 255, 0, 255, 255);
-    renderBackend.AddLine(max[0], min[1], 0, min[0], min[1], 0, 255, 0, 255, 255);
-    renderBackend.DrawLineElements();
+    renderer.BindDrawPointers();
+    renderer.AddLine(min[0], min[1], 0, min[0], max[1], 0, 255, 0, 255, 255);
+    renderer.AddLine(min[0], max[1], 0, max[0], max[1], 0, 255, 0, 255, 255);
+    renderer.AddLine(max[0], max[1], 0, max[0], min[1], 0, 255, 0, 255, 255);
+    renderer.AddLine(max[0], min[1], 0, min[0], min[1], 0, 255, 0, 255, 255);
+    renderer.DrawLineElements();
     
     renderBackend.SetState(GLSTATE_TEXTURE0, true);
 }

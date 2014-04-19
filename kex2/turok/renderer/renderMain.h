@@ -42,7 +42,10 @@ typedef struct {
     kexMaterial             *material;
 } surface_t;
 
-#define MAX_FX_DISPLAYS 2048
+#define MAX_FX_DISPLAYS     2048
+
+#define GL_MAX_INDICES      0x10000
+#define GL_MAX_VERTICES     0x10000
 
 class kexFx;
 
@@ -60,6 +63,21 @@ public:
     void                    DrawWireFrameSurface(const surface_t *surface, const rcolor color);
     void                    Draw(void);
     void                    DrawFX(const fxDisplay_t *fxList, const int count);
+    void                    BindDrawPointers(void);
+    void                    AddTriangle(int v0, int v1, int v2);
+    void                    AddVertex(float x, float y, float z, float s, float t,
+                                      byte r, byte g, byte b, byte a);
+    void                    AddLine(float x1, float y1, float z1,
+                                    float x2, float y2, float z2,
+                                    byte r, byte g, byte b, byte a);
+    void                    AddLine(float x1, float y1, float z1,
+                                    float x2, float y2, float z2,
+                                    byte r1, byte g1, byte b1, byte a1,
+                                    byte r2, byte g2, byte b2, byte a2);
+    void                    DrawElements(const bool bClearCount = true);
+    void                    DrawElements(const kexMaterial *material, const bool bClearCount = true);
+    void                    DrawElementsNoShader(const bool bClearCount = true);
+    void                    DrawLineElements(void);
 
     kexFBO                  &FBOLightScatter(void) { return fboLightScatter; }
     
@@ -74,6 +92,14 @@ private:
     kexMatrix               prevMVMatrix;
     kexFBO                  fboLightScatter;
     kexShaderObj            *shaderLightScatter;
+    kexShaderObj            *blackShader;
+
+    word                    indiceCount;
+    word                    vertexCount;
+    word                    drawIndices[GL_MAX_INDICES];
+    float                   drawVertices[GL_MAX_VERTICES];
+    float                   drawTexCoords[GL_MAX_VERTICES];
+    byte                    drawRGB[GL_MAX_VERTICES];
 };
 
 extern kexRenderer renderer;

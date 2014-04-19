@@ -27,6 +27,7 @@
 #include "common.h"
 #include "script.h"
 #include "renderBackend.h"
+#include "renderMain.h"
 #include "renderFont.h"
 
 //
@@ -158,19 +159,19 @@ void kexFont::DrawString(const char *string, float x, float y, float scale,
         ty2     = (ty1 + at->h / h);
         check   = (char*)string+i;
 
-        renderBackend.AddVertex(vx1, vy1, 0, tx1, ty1, rgba1[0], rgba1[1], rgba1[2], rgba1[3]);
-        renderBackend.AddVertex(vx2, vy1, 0, tx2, ty1, rgba1[0], rgba1[1], rgba1[2], rgba1[3]);
-        renderBackend.AddVertex(vx1, vy2, 0, tx1, ty2, rgba2[0], rgba2[1], rgba2[2], rgba2[3]);
-        renderBackend.AddVertex(vx2, vy2, 0, tx2, ty2, rgba2[0], rgba2[1], rgba2[2], rgba2[3]);
+        renderer.AddVertex(vx1, vy1, 0, tx1, ty1, rgba1[0], rgba1[1], rgba1[2], rgba1[3]);
+        renderer.AddVertex(vx2, vy1, 0, tx2, ty1, rgba1[0], rgba1[1], rgba1[2], rgba1[3]);
+        renderer.AddVertex(vx1, vy2, 0, tx1, ty2, rgba2[0], rgba2[1], rgba2[2], rgba2[3]);
+        renderer.AddVertex(vx2, vy2, 0, tx2, ty2, rgba2[0], rgba2[1], rgba2[2], rgba2[3]);
 
-        renderBackend.AddTriangle(0+tri, 1+tri, 2+tri);
-        renderBackend.AddTriangle(2+tri, 1+tri, 3+tri);
+        renderer.AddTriangle(0+tri, 1+tri, 2+tri);
+        renderer.AddTriangle(2+tri, 1+tri, 3+tri);
 
         x += at->w * scale;
         tri += 4;
     }
     
-    renderBackend.DrawElements(material);
+    renderer.DrawElements(material);
 }
 
 //

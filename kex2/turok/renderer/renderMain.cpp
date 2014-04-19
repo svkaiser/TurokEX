@@ -65,6 +65,7 @@ void kexRenderer::Init(void) {
     motionBlurMaterial  = renderBackend.CacheMaterial("materials/motionBlur.kmat@motionBlur");
     wireframeMaterial   = renderBackend.CacheMaterial("materials/default.kmat@wireframe");
     shaderLightScatter  = renderBackend.CacheShader("defs/shaders.def@lightScatter");
+    blackShader         = renderBackend.CacheShader("defs/shaders.def@black");
 
     fboLightScatter.InitColorAttachment(0);
 
@@ -99,6 +100,150 @@ void kexRenderer::Draw(void) {
 }
 
 //
+// kexRenderer::BindDrawPointers
+//
+
+void kexRenderer::BindDrawPointers(void) {
+    dglNormalPointer(GL_FLOAT, sizeof(float)*3, drawVertices);
+    dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, drawTexCoords);
+    dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, drawVertices);
+    dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, drawRGB);
+}
+
+//
+// kexRenderer::AddTriangle
+//
+
+void kexRenderer::AddTriangle(int v0, int v1, int v2) {
+    if(indiceCount + 3 >= GL_MAX_INDICES) {
+        common.Warning("Static triangle indice overflow");
+        return;
+    }
+
+    drawIndices[indiceCount++] = v0;
+    drawIndices[indiceCount++] = v1;
+    drawIndices[indiceCount++] = v2;
+}
+
+//
+// kexRenderer::AddVertex
+//
+
+void kexRenderer::AddVertex(float x, float y, float z, float s, float t,
+                                byte r, byte g, byte b, byte a) {
+    if((vertexCount * 4 + 3) >= GL_MAX_VERTICES) {
+        common.Warning("Static vertex draw overflow");
+        return;
+    }
+
+    drawVertices[vertexCount * 3 + 0]   = x;
+    drawVertices[vertexCount * 3 + 1]   = y;
+    drawVertices[vertexCount * 3 + 2]   = z;
+    drawTexCoords[vertexCount * 2 + 0]  = s;
+    drawTexCoords[vertexCount * 2 + 1]  = t;
+    drawRGB[vertexCount * 4 + 0]        = r;
+    drawRGB[vertexCount * 4 + 1]        = g;
+    drawRGB[vertexCount * 4 + 2]        = b;
+    drawRGB[vertexCount * 4 + 3]        = a;
+
+    vertexCount++;
+}
+
+//
+// kexRenderer::AddLine
+//
+
+void kexRenderer::AddLine(float x1, float y1, float z1,
+                              float x2, float y2, float z2,
+                              byte r, byte g, byte b, byte a) {
+    
+    drawIndices[indiceCount++] = vertexCount;
+    AddVertex(x1, y1, z1, 0, 0, r, g, b, a);
+    drawIndices[indiceCount++] = vertexCount;
+    AddVertex(x2, y2, z2, 0, 0, r, g, b, a);
+}
+
+//
+// kexRenderer::AddLine
+//
+
+void kexRenderer::AddLine(float x1, float y1, float z1,
+                              float x2, float y2, float z2,
+                              byte r1, byte g1, byte b1, byte a1,
+                              byte r2, byte g2, byte b2, byte a2) {
+    
+    drawIndices[indiceCount++] = vertexCount;
+    AddVertex(x1, y1, z1, 0, 0, r1, g1, b1, a1);
+    drawIndices[indiceCount++] = vertexCount;
+    AddVertex(x2, y2, z2, 0, 0, r2, g2, b2, a2);
+}
+
+//
+// kexRenderer::DrawElements
+//
+
+void kexRenderer::DrawElements(const bool bClearCount) {
+    dglDrawElements(GL_TRIANGLES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
+
+    if(bClearCount) {
+        indiceCount = 0;
+        vertexCount = 0;
+    }
+}
+
+//
+// kexRenderer::DrawElements
+//
+// Draws using the specified material. A temp. surface
+// is created in order to draw the material
+//
+
+void kexRenderer::DrawElements(const kexMaterial *material, const bool bClearCount) {
+    surface_t surf;
+    
+    surf.numVerts   = vertexCount;
+    surf.numIndices = indiceCount;
+    surf.vertices   = reinterpret_cast<kexVec3*>(drawVertices);
+    surf.coords     = drawTexCoords;
+    surf.rgb        = drawRGB;
+    surf.normals    = drawVertices;
+    surf.indices    = drawIndices;
+    
+    DrawSurface(&surf, (kexMaterial*)material);
+    
+    if(bClearCount) {
+        indiceCount = 0;
+        vertexCount = 0;
+    }
+}
+
+//
+// kexRenderer::DrawElementsNoShader
+//
+
+void kexRenderer::DrawElementsNoShader(const bool bClearCount) {
+    renderBackend.DisableShaders();
+    dglDrawElements(GL_TRIANGLES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
+
+    if(bClearCount) {
+        indiceCount = 0;
+        vertexCount = 0;
+    }
+}
+
+//
+// kexRenderer::DrawLineElements
+//
+
+void kexRenderer::DrawLineElements(void) {
+    renderBackend.DisableShaders();
+    dglDrawElements(GL_LINES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
+    
+    indiceCount = 0;
+    vertexCount = 0;
+}
+
+//
 // kexRenderer::DrawSurface
 //
 
@@ -115,7 +260,12 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
         return;
     }
 
-    shader = material->ShaderObj();
+    if(renderWorld.LightScatterPass()) {
+        shader = blackShader;
+    }
+    else {
+        shader = material->ShaderObj();
+    }
     
     if(shader == NULL) {
         return;
@@ -456,13 +606,13 @@ void kexRenderer::ProcessMotionBlur(void) {
 
     dglGetIntegerv(GL_VIEWPORT, vp);
 
-    renderBackend.AddVertex((float)vp[0], (float)vp[1], 0, 0, 1, 255, 255, 255, 255);
-    renderBackend.AddVertex((float)vp[2], (float)vp[1], 0, 1, 1, 255, 255, 255, 255);
-    renderBackend.AddVertex((float)vp[0], (float)vp[3], 0, 0, 0, 255, 255, 255, 255);
-    renderBackend.AddVertex((float)vp[2], (float)vp[3], 0, 1, 0, 255, 255, 255, 255);
-    renderBackend.AddTriangle(0, 1, 2);
-    renderBackend.AddTriangle(2, 1, 3);
-    renderBackend.DrawElements(motionBlurMaterial);
+    AddVertex((float)vp[0], (float)vp[1], 0, 0, 0, 255, 255, 255, 255);
+    AddVertex((float)vp[2], (float)vp[1], 0, 1, 0, 255, 255, 255, 255);
+    AddVertex((float)vp[0], (float)vp[3], 0, 0, 1, 255, 255, 255, 255);
+    AddVertex((float)vp[2], (float)vp[3], 0, 1, 1, 255, 255, 255, 255);
+    AddTriangle(0, 1, 2);
+    AddTriangle(2, 1, 3);
+    DrawElements(motionBlurMaterial);
 }
 
 //
@@ -484,7 +634,7 @@ void kexRenderer::ProcessLightScatter(void) {
 
     shaderLightScatter->Enable();
 
-    shaderLightScatter->SetUniform("uLightCoordinate", renderWorld.SunPosition());
+    shaderLightScatter->SetUniform("uLightCoordinate", renderWorld.ProjectedSunCoords());
     shaderLightScatter->SetUniform("uExposure", 0.0034f);
     shaderLightScatter->SetUniform("uDecay", 1.0f);
     shaderLightScatter->SetUniform("uDensity", 0.84f);

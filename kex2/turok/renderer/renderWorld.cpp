@@ -225,9 +225,9 @@ void kexRenderWorld::Init(void) {
 //
 
 void kexRenderWorld::InitSunData(void) {
-    sunModel    = modelManager.LoadModel("models/default.kmesh");
-    sunMaterial = renderBackend.CacheMaterial("materials/default.kmat@whiteFullBright");
-    blackMat    = renderBackend.CacheMaterial("materials/default.kmat@black");
+    sunModel        = modelManager.LoadModel("models/default.kmesh");
+    sunMaterial     = renderBackend.CacheMaterial("materials/default.kmat@whiteFullBright");
+    blackMat        = renderBackend.CacheMaterial("materials/default.kmat@black");
 
 }
 
@@ -260,6 +260,41 @@ void kexRenderWorld::RenderScene(void) {
         numDrawnStatics = numDrawnSDNodes = numDrawnActors = 0;
     }
 
+    if(cvarRenderLightScatter.GetBool()) {
+        int vp[4];
+
+        sunPosition = world->worldLightOrigin.ToVec3() * 32768.0f;
+
+        if(world->Camera()->Frustum().TestSphere(sunPosition, 8192.0f)) {
+            renderer.FBOLightScatter().Bind();
+            dglClearColor(world->worldLightAmbience[0],
+                          world->worldLightAmbience[1],
+                          world->worldLightAmbience[2], 1);
+            dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            DrawSun(true);
+            SetCameraView(world->Camera());
+
+            projectedSunCoords = world->Camera()->ProjectPoint(sunPosition, 0, 0);
+
+            dglGetIntegerv(GL_VIEWPORT, vp);
+
+            projectedSunCoords.x /= (float)vp[2];
+            projectedSunCoords.y /= (float)vp[3];
+
+            bLightScatterPass = true;
+
+            DrawStaticActors();
+            DrawActors();
+            DrawViewActors();
+
+            bLightScatterPass = false;
+
+            renderer.FBOLightScatter().UnBind();
+            dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        }
+    }
+
     if(!bWireframe) {
         kexVec4 fogRGB = world->GetCurrentFogRGB();
         dglClearColor(fogRGB[0], fogRGB[1], fogRGB[2], fogRGB[3]);
@@ -268,32 +303,9 @@ void kexRenderWorld::RenderScene(void) {
         dglClearColor(0.25f, 0.25f, 0.25f, 1.0f);
     }
 
+    // force the fog clear color to be visible
     if(cvarRenderLightScatter.GetBool()) {
-        int vp[4];
-
-        renderer.FBOLightScatter().Bind();
-        dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        bLightScatterPass = true;
-        DrawSun();
-
-        SetCameraView(world->Camera());
-
-        sunPosition = world->Camera()->ProjectPoint(sunPosition, 0, 0);
-
-        dglGetIntegerv(GL_VIEWPORT, vp);
-
-        sunPosition.x /= (float)vp[2];
-        sunPosition.y /= (float)vp[3];
-
-        DrawStaticActors();
-        DrawActors();
-        DrawViewActors();
-
-        bLightScatterPass = false;
-
-        renderer.FBOLightScatter().UnBind();
-        dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        dglClear(GL_COLOR_BUFFER_BIT);
     }
 
     DrawForegroundActors();
@@ -377,11 +389,6 @@ void kexRenderWorld::DrawWorldModel(kexWorldModel *wm) {
         
         for(unsigned i = 0; i < model->nodes[0].numSurfaces; i++) {
             surface_t *surface = &node->surfaces[i];
-
-            if(bLightScatterPass) {
-                renderer.DrawSurface(surface, blackMat);
-                continue;
-            }
 
             if(!bWireframe) {
                 kexMaterial *material = surface->material;
@@ -485,11 +492,6 @@ void kexRenderWorld::TraverseDrawActorNode(kexActor *actor,
 
     for(i = 0; i < node->numSurfaces; i++) {
         surface_t *surface = &node->surfaces[i];
-
-        if(bLightScatterPass) {
-            renderer.DrawSurface(surface, blackMat);
-            continue;
-        }
 
         if(!bWireframe) {
             renderer.DrawSurface(surface, surface->material);
@@ -755,7 +757,7 @@ void kexRenderWorld::DrawViewActors(void) {
 // kexRenderWorld::DrawSun
 //
 
-void kexRenderWorld::DrawSun(void) {
+void kexRenderWorld::DrawSun(const bool bForceInfiniteProjection) {
     if(sunMaterial == NULL) {
         return;
     }
@@ -763,10 +765,10 @@ void kexRenderWorld::DrawSun(void) {
     kexMatrix mtx;
     float zfar = world->Camera()->ZFar();
 
-    world->Camera()->ZFar() = -1;
-    SetCameraView(world->Camera());
-
-    sunPosition = world->worldLightOrigin.ToVec3() * 32768.0f;
+    if(bForceInfiniteProjection) {
+        world->Camera()->ZFar() = -1;
+        SetCameraView(world->Camera());
+    }
 
     mtx.Scale(2, 2, 2);
     mtx.SetTranslation(sunPosition);
@@ -775,10 +777,13 @@ void kexRenderWorld::DrawSun(void) {
     dglMultMatrixf(mtx.ToFloatPtr());
 
     renderer.DrawSurface(&sunModel->nodes[0].surfaces[0], sunMaterial);
-    world->Camera()->ZFar() = zfar;
 
     dglPopMatrix();
-    dglClear(GL_DEPTH_BUFFER_BIT);
+
+    if(bForceInfiniteProjection) {
+        world->Camera()->ZFar() = zfar;
+        dglClear(GL_DEPTH_BUFFER_BIT);
+    }
 }
 
 //
@@ -791,6 +796,8 @@ void kexRenderWorld::DrawForegroundActors(void) {
 
     world->Camera()->ZFar() = -1;
     SetCameraView(world->Camera());
+
+    DrawSun(false);
 
     for(kexActor *actor = world->actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
@@ -947,7 +954,7 @@ void kexRenderWorld::DrawRenderNode(void) {
 void kexRenderWorld::DrawTriangle(const kexTri &tri, const word index,
                                byte r, byte g, byte b, byte a) {
     for(int j = 0; j < 3; j++) {
-        renderBackend.AddVertex(tri.point[j]->x,
+        renderer.AddVertex(tri.point[j]->x,
                                 tri.point[j]->y,
                                 tri.point[j]->z,
                                 0,
@@ -958,7 +965,7 @@ void kexRenderWorld::DrawTriangle(const kexTri &tri, const word index,
                                 a);
     }
     
-    renderBackend.AddTriangle(index + 0, index + 1, index + 2);
+    renderer.AddTriangle(index + 0, index + 1, index + 2);
 }
 
 //
@@ -1014,7 +1021,7 @@ void kexRenderWorld::DrawSectors(kexSector *sectors, const int count) {
         
         if(sector->area && sector->area->Flags() & AAF_WATER) {
             for(int j = 0; j < 3; j++) {
-                renderBackend.AddVertex(tri->point[j]->x,
+                renderer.AddVertex(tri->point[j]->x,
                                         sector->area->WaterPlane(),
                                         tri->point[j]->z,
                                         0,
@@ -1024,7 +1031,7 @@ void kexRenderWorld::DrawSectors(kexSector *sectors, const int count) {
                                         255,
                                         192);
             }
-            renderBackend.AddTriangle(idx + 0, idx + 1, idx + 2);
+            renderer.AddTriangle(idx + 0, idx + 1, idx + 2);
             
             idx += 3;
             num++;
@@ -1038,8 +1045,8 @@ void kexRenderWorld::DrawSectors(kexSector *sectors, const int count) {
         renderBackend.SetState(GLSTATE_ALPHATEST, true);
         renderBackend.SetState(GLSTATE_LIGHTING, false);
         
-        renderBackend.BindDrawPointers();
-        renderBackend.DrawElements(false);
+        renderer.BindDrawPointers();
+        renderer.DrawElementsNoShader(false);
         
         // draw wireframe outline
         renderBackend.SetPolyMode(GLPOLY_LINE);
@@ -1047,7 +1054,7 @@ void kexRenderWorld::DrawSectors(kexSector *sectors, const int count) {
         dglDisableClientState(GL_COLOR_ARRAY);
         dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
         
-        renderBackend.DrawElements();
+        renderer.DrawElementsNoShader();
         renderBackend.SetPolyMode(GLPOLY_FILL);
         
         dglEnableClientState(GL_COLOR_ARRAY);
@@ -1064,7 +1071,7 @@ void kexRenderWorld::DrawSectors(kexSector *sectors, const int count) {
                 n = tri->plane.Normal();
                 pt = tri->GetCenterPoint();
                 
-                renderBackend.AddLine(pt.x,
+                renderer.AddLine(pt.x,
                                       pt.y,
                                       pt.z,
                                       pt.x + (16 * n[0]),
@@ -1087,7 +1094,7 @@ void kexRenderWorld::DrawSectors(kexSector *sectors, const int count) {
                     n = tri->plane.Normal();
                     pt = tri->GetCenterPoint();
                     
-                    renderBackend.AddLine(pt.x,
+                    renderer.AddLine(pt.x,
                                           pt.y,
                                           pt.z,
                                           pt.x + (16 * n[0]),
@@ -1105,7 +1112,7 @@ void kexRenderWorld::DrawSectors(kexSector *sectors, const int count) {
             }
         }
         
-        renderBackend.DrawLineElements();
+        renderer.DrawLineElements();
         dglLineWidth(1.0f);
         
         renderBackend.SetState(GLSTATE_TEXTURE0, true);

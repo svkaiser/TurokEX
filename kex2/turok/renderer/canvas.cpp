@@ -26,6 +26,7 @@
 
 #include "common.h"
 #include "renderBackend.h"
+#include "renderMain.h"
 #include "memHeap.h"
 #include "canvas.h"
 #include "system.h"
@@ -142,7 +143,7 @@ void kexCanvasImage::Draw(void) {
     }
 
     renderBackend.SetState(GLSTATE_BLEND, true);
-    renderBackend.BindDrawPointers();
+    renderer.BindDrawPointers();
     texture->Bind();
 
     w = (width <= 0) ? (float)texture->Width() : width * 2;
@@ -175,7 +176,7 @@ void kexCanvasImage::Draw(void) {
         }
     }
 
-    renderBackend.AddVertex(
+    renderer.AddVertex(
         rx,
         ry,
         0,
@@ -185,7 +186,7 @@ void kexCanvasImage::Draw(void) {
         rgba[0 * 4 + 1],
         rgba[0 * 4 + 2],
         a[0]);
-    renderBackend.AddVertex(
+    renderer.AddVertex(
         rw,
         ry,
         0,
@@ -195,7 +196,7 @@ void kexCanvasImage::Draw(void) {
         rgba[1 * 4 + 1],
         rgba[1 * 4 + 2],
         a[1]);
-    renderBackend.AddVertex(
+    renderer.AddVertex(
         rx,
         rh,
         0,
@@ -205,7 +206,7 @@ void kexCanvasImage::Draw(void) {
         rgba[2 * 4 + 1],
         rgba[2 * 4 + 2],
         a[2]);
-    renderBackend.AddVertex(
+    renderer.AddVertex(
         rw,
         rh,
         0,
@@ -216,10 +217,10 @@ void kexCanvasImage::Draw(void) {
         rgba[3 * 4 + 2],
         a[3]);
 
-    renderBackend.AddTriangle(0, 1, 2);
-    renderBackend.AddTriangle(2, 1, 3);
+    renderer.AddTriangle(0, 1, 2);
+    renderer.AddTriangle(2, 1, 3);
 
-    renderBackend.DrawElements();
+    renderer.DrawElementsNoShader();
     renderBackend.SetState(GLSTATE_BLEND, false);
 }
 

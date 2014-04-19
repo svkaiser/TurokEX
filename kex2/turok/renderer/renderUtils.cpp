@@ -26,6 +26,7 @@
 
 #include "common.h"
 #include "renderBackend.h"
+#include "renderMain.h"
 #include "material.h"
 #include "renderUtils.h"
 
@@ -44,11 +45,11 @@ void kexRenderUtils::DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b
     renderBackend.DisableShaders();
 
 #define ADD_LINE(ba1, ba2, ba3, bb1, bb2, bb3)                          \
-    renderBackend.AddLine(bbox[ba1][0], bbox[ba2][1], bbox[ba3][2],     \
+    renderer.AddLine(bbox[ba1][0], bbox[ba2][1], bbox[ba3][2],     \
                          bbox[bb1][0], bbox[bb2][1], bbox[bb3][2],      \
                          r, g, b, 255)
     
-    renderBackend.BindDrawPointers();
+    renderer.BindDrawPointers();
     ADD_LINE(0, 0, 0, 1, 0, 0);
     ADD_LINE(1, 0, 0, 1, 0, 1);
     ADD_LINE(1, 0, 1, 0, 0, 1);
@@ -65,7 +66,7 @@ void kexRenderUtils::DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b
     ADD_LINE(1, 1, 0, 1, 1, 1);
     ADD_LINE(1, 1, 1, 1, 0, 1);
     ADD_LINE(1, 0, 1, 1, 0, 0);
-    renderBackend.DrawLineElements();
+    renderer.DrawLineElements();
     
 #undef ADD_LINE
 
@@ -88,7 +89,7 @@ void kexRenderUtils::DrawRadius(float x, float y, float z,
     renderBackend.SetState(GLSTATE_LIGHTING, false);
 
     renderBackend.DisableShaders();
-    renderBackend.BindDrawPointers();
+    renderer.BindDrawPointers();
 
     an = DEG2RAD(360 / 32);
 
@@ -104,12 +105,12 @@ void kexRenderUtils::DrawRadius(float x, float y, float z,
         float z1 = z + (radius * c1);
         float z2 = z + (radius * c2);
         
-        renderBackend.AddLine(x1, y1, z1, x1, y2, z1, r, g, b, 255);
-        renderBackend.AddLine(x1, y1, z1, x2, y1, z2, r, g, b, 255);
-        renderBackend.AddLine(x1, y2, z1, x2, y2, z2, r, g, b, 255);
+        renderer.AddLine(x1, y1, z1, x1, y2, z1, r, g, b, 255);
+        renderer.AddLine(x1, y1, z1, x2, y1, z2, r, g, b, 255);
+        renderer.AddLine(x1, y2, z1, x2, y2, z2, r, g, b, 255);
     }
 
-    renderBackend.DrawLineElements();
+    renderer.DrawLineElements();
     renderBackend.SetState(GLSTATE_TEXTURE0, true);
 }
 
@@ -127,11 +128,11 @@ void kexRenderUtils::DrawOrigin(float x, float y, float z, float size) {
 
     renderBackend.DisableShaders();
     
-    renderBackend.BindDrawPointers();
-    renderBackend.AddLine(x, y, z, x + size, y, z, 255, 0, 0, 255); // x
-    renderBackend.AddLine(x, y, z, x, y + size, z, 0, 255, 0, 255); // y
-    renderBackend.AddLine(x, y, z, x, y, z + size, 0, 0, 255, 255); // z
-    renderBackend.DrawLineElements();
+    renderer.BindDrawPointers();
+    renderer.AddLine(x, y, z, x + size, y, z, 255, 0, 0, 255); // x
+    renderer.AddLine(x, y, z, x, y + size, z, 0, 255, 0, 255); // y
+    renderer.AddLine(x, y, z, x, y, z + size, 0, 0, 255, 255); // z
+    renderer.DrawLineElements();
     
     renderBackend.SetState(GLSTATE_TEXTURE0, true);
     
@@ -158,7 +159,7 @@ void kexRenderUtils::DrawSphere(float x, float y, float z, float radius, byte r,
     renderBackend.SetState(GLSTATE_CULL, false);
 
     renderBackend.DisableShaders();
-    renderBackend.BindDrawPointers();
+    renderer.BindDrawPointers();
 
     count = (360 / 15);
     points[0 * 3 + 0] = x;
@@ -184,8 +185,8 @@ void kexRenderUtils::DrawSphere(float x, float y, float z, float radius, byte r,
             v2[1] = y + kexMath::Cos(DEG2RAD(j)) * radius * s;
             v2[2] = v1[2];
 
-            renderBackend.AddLine(v1[0], v1[1], v2[2], v2[0], v2[1], v2[2], r, g, b, 255);
-            renderBackend.AddLine(v1[0], v1[1], v2[2],
+            renderer.AddLine(v1[0], v1[1], v2[2], v2[0], v2[1], v2[2], r, g, b, 255);
+            renderer.AddLine(v1[0], v1[1], v2[2],
                 points[k * 3 + 0],
                 points[k * 3 + 1],
                 points[k * 3 + 2],
@@ -201,7 +202,7 @@ void kexRenderUtils::DrawSphere(float x, float y, float z, float radius, byte r,
         }
     }
 
-    renderBackend.DrawLineElements();
+    renderer.DrawLineElements();
     renderBackend.SetState(GLSTATE_TEXTURE0, true);
 }
 

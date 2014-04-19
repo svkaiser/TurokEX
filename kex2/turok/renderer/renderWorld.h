@@ -58,10 +58,11 @@ public:
     kexSDNode<kexWorldModel>    renderNodes;
 
     kexVec3                     &WorldLightTransform(void) { return worldLightTransform; }
-    kexVec3                     &SunPosition(void) { return sunPosition; }
+    kexVec3                     &ProjectedSunCoords(void) { return projectedSunCoords; }
+    const bool                  LightScatterPass(void) const { return bLightScatterPass; }
 
 private:
-    void                        DrawSun(void);
+    void                        DrawSun(const bool bForceInfiniteProjection);
     void                        DrawSingleActor(kexActor *actor, kexMatrix *matrix);
     void                        DrawActors(void);
     void                        DrawStaticActors(void);
@@ -91,6 +92,7 @@ private:
     kexMaterial                 *sunMaterial;
     kexModel_t                  *sunModel;
     kexVec3                     sunPosition;
+    kexVec3                     projectedSunCoords;
     bool                        bLightScatterPass;
 };
 
