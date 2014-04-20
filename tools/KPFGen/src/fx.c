@@ -190,18 +190,18 @@ void FX_GetName(int index, char *name)
     case 29:
         sprintf(name, "fx/steppuff2.kfx");
         break;
-    /*case 30:
+    case 30:
         sprintf(name, "fx/muzzle_rifle.kfx");
-        break;*/
+        break;
     case 32:
         sprintf(name, "fx/muzzle_grenade_launcher.kfx");
         break;
-    /*case 38:
+    case 38:
         sprintf(name, "fx/muzzle_pistol.kfx");
         break;
     case 39:
         sprintf(name, "fx/muzzle_shotgun.kfx");
-        break;*/
+        break;
     case 43:
         sprintf(name, "fx/projectile_flame.kfx");
         break;
@@ -440,6 +440,11 @@ static void FX_PrintVector(const char *name, short *val)
         float f2 = CoerceFloat(val[1]);
         float f3 = CoerceFloat(val[2]);
 
+        // another stupid hack
+        if(curfx == 310 && !strcmp(name, "offset")) {
+            f1 = -f1;
+        }
+
         if(f1 != 0 || f2 != 0 || f3 != 0)
             Com_Strcat("        %s = { %f %f %f }\n", name, f1, f2, f3);
     }
@@ -468,9 +473,9 @@ void FX_StoreParticleEffects(void)
     fxevents = (fxevent_t*)(events + 8);
 
     PK_AddFolder("fx/");
-    StoreExternalFile("fx/muzzle_pistol.kfx", "fx/muzzle_pistol.kfx");
-    StoreExternalFile("fx/muzzle_rifle.kfx", "fx/muzzle_rifle.kfx");
-    StoreExternalFile("fx/muzzle_shotgun.kfx", "fx/muzzle_shotgun.kfx");
+    //StoreExternalFile("fx/muzzle_pistol.kfx", "fx/muzzle_pistol.kfx");
+    //StoreExternalFile("fx/muzzle_rifle.kfx", "fx/muzzle_rifle.kfx");
+    //StoreExternalFile("fx/muzzle_shotgun.kfx", "fx/muzzle_shotgun.kfx");
 
     for(i = 0, j = 0; i < count; i++)
     {
@@ -544,6 +549,10 @@ void FX_StoreParticleEffects(void)
                 FX_PrintVector("offset", &vfx[33]);
 
                 Com_Strcat("        shader = \"defs/shaders.def@worldfx\"\n");
+
+                if(flags & FXF_LENSFLARES)
+                    Com_Strcat("        lensFlares = \"lensflares/turoklens.klf\"\n");
+
                 Com_Strcat("        textures[%i] =\n", texindexes[vfx[36]]);
                 Com_Strcat("        {\n");
                 for(k = 0; k < texindexes[vfx[36]]; k++)
@@ -604,26 +613,31 @@ void FX_StoreParticleEffects(void)
                     Com_Strcat("        // onplane = unknown_%i\n", (vfx[43] >> 8) & 0xff);
                     break;
                 }
-                switch(vfx[44] & 0xff)
+                if((vfx[50] & 0xff) == 3)
+                    Com_Strcat("        drawtype = hidden\n");
+                else
                 {
-                case 0:
-                    Com_Strcat("        drawtype = default\n");
-                    break;
-                case 1:
-                    Com_Strcat("        drawtype = flat\n");
-                    break;
-                case 2:
-                    Com_Strcat("        drawtype = decal\n");
-                    break;
-                case 4:
-                    Com_Strcat("        drawtype = surface\n");
-                    break;
-                case 5:
-                    Com_Strcat("        drawtype = billboard\n");
-                    break;
-                default:
-                    Com_Strcat("        // drawtype = unknown_%i\n", vfx[44] & 0xff);
-                    break;
+                    switch(vfx[44] & 0xff)
+                    {
+                    case 0:
+                        Com_Strcat("        drawtype = default\n");
+                        break;
+                    case 1:
+                        Com_Strcat("        drawtype = flat\n");
+                        break;
+                    case 2:
+                        Com_Strcat("        drawtype = decal\n");
+                        break;
+                    case 4:
+                        Com_Strcat("        drawtype = surface\n");
+                        break;
+                    case 5:
+                        Com_Strcat("        drawtype = billboard\n");
+                        break;
+                    default:
+                        Com_Strcat("        // drawtype = unknown_%i\n", vfx[44] & 0xff);
+                        break;
+                    }
                 }
                 switch((vfx[49] >> 8) & 0xff)
                 {
@@ -638,6 +652,9 @@ void FX_StoreParticleEffects(void)
                     break;
                 case 3:
                     Com_Strcat("        animtype = sinwave\n");
+                    break;
+                case 4:
+                    Com_Strcat("        animtype = drawsingleframe\n");
                     break;
                 default:
                     Com_Strcat("        // animtype = unknown_%i\n", (vfx[49] >> 8) & 0xff);

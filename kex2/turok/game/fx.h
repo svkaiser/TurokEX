@@ -47,7 +47,8 @@ typedef enum {
     VFX_ANIMDEFAULT     = 0,
     VFX_ANIMONETIME,
     VFX_ANIMLOOP,
-    VFX_ANIMSINWAVE
+    VFX_ANIMSINWAVE,
+    VFX_ANIMDRAWSINGLEFRAME
 } fxAnimType_t;
 
 typedef enum {
@@ -55,7 +56,8 @@ typedef enum {
     VFX_DRAWFLAT,
     VFX_DRAWDECAL,
     VFX_DRAWBILLBOARD,
-    VFX_DRAWSURFACE
+    VFX_DRAWSURFACE,
+    VFX_DRAWHIDDEN
 } fxDrawType_t;
 
 typedef enum {

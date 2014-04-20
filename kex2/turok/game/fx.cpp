@@ -140,7 +140,7 @@ void kexFx::LocalTick(void) {
     }
 
     // animation effects
-    if(bAnimate) {
+    if(bAnimate && fxInfo->animtype != VFX_ANIMDRAWSINGLEFRAME) {
         if(frameTime < client.GetTime() && fxInfo->numTextures > 1) {
             if(frame + 1 == fxInfo->numTextures) {
                 switch(fxInfo->animtype) {
@@ -989,6 +989,9 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                     else if(lexer->Matches("surface")) {
                         info->drawtype = VFX_DRAWSURFACE;
                     }
+                    else if(lexer->Matches("hidden")) {
+                        info->drawtype = VFX_DRAWHIDDEN;
+                    }
                     else {
                         info->drawtype = VFX_DRAWDEFAULT;
                     }
@@ -1004,6 +1007,9 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                     }
                     else if(lexer->Matches("sinwave")) {
                         info->animtype = VFX_ANIMSINWAVE;
+                    }
+                    else if(lexer->Matches("drawsingleframe")) {
+                        info->animtype = VFX_ANIMDRAWSINGLEFRAME;
                     }
                     else {
                         info->animtype = VFX_ANIMDEFAULT;

@@ -859,6 +859,9 @@ void kexRenderWorld::DrawFX(void) {
         if(world->fxRover->IsStale()) {
             continue;
         }
+        if(world->fxRover->fxInfo->drawtype == VFX_DRAWHIDDEN) {
+            continue;
+        }
         
         fxDisplayList[fxDisplayNum++].fx = world->fxRover;
 

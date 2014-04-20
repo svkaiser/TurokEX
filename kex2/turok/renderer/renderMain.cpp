@@ -531,7 +531,7 @@ void kexRenderer::DrawFX(const fxDisplay_t *fxList, const int count) {
         dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, spriteIndices);
         dglPopMatrix();
 
-        if(fxinfo->lifetime.value == 1 && fx->bClientOnly) {
+        if(fxinfo->animtype == VFX_ANIMDRAWSINGLEFRAME && fx->bClientOnly) {
             fx->Remove();
         }
     }

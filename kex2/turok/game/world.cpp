@@ -459,7 +459,7 @@ kexFx *kexWorld::SpawnFX(const char *name, kexGameObject *source, kexVec3 &veloc
                 fx->SetParent(parentFx);
             }
 
-            fx->worldLink.Add(fxList);
+            fx->worldLink.AddBefore(fxList);
             fx->CallSpawn();
         }
     }

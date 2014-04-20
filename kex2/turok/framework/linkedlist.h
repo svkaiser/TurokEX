@@ -32,6 +32,7 @@ public:
     void            Add(kexLinklist &link);
     void            AddBefore(kexLinklist &link);
     void            Remove(void);
+    void            Reset(void);
     void            Clear(void);
     int             GetCount(void) const;
     void            SetData(type *src);
@@ -51,9 +52,7 @@ private:
 //
 template<class type>
 kexLinklist<type>::kexLinklist() {
-    data        = NULL;
-    next        = this;
-    prev        = this;
+    Reset();
 }
 
 //
@@ -61,6 +60,16 @@ kexLinklist<type>::kexLinklist() {
 //
 template<class type>
 kexLinklist<type>::~kexLinklist() {
+}
+
+//
+// kexLinkList::Reset
+//
+template<class type>
+void kexLinklist<type>::Reset(void) {
+    data    = NULL;
+    next    = this;
+    prev    = this;
 }
 
 //
