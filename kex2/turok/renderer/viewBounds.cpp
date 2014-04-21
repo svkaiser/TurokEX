@@ -31,6 +31,15 @@
 #include "viewBounds.h"
 
 //
+// kexViewBounds::kexViewBounds
+//
+
+kexViewBounds::kexViewBounds(void) {
+    Clear();
+}
+
+
+//
 // kexViewBounds::Clear
 //
 
@@ -85,56 +94,55 @@ void kexViewBounds::AddBox(kexCamera *camera, kexBBox &box) {
     
     for(i = 0; i < 8; i++) {
         
+        bits = 0;
+
         d = frustum.Near().Distance(points[i]) + nearPlane.d;
         if(d < 0) {
             points[i] += (n * -d);
         }
-        
+
+        d = frustum.Left().Distance(points[i]) + frustum.Left().d;
+        bits |= (FLOATSIGNBIT(d)) << 0;
+        d = frustum.Top().Distance(points[i]) + frustum.Top().d;
+        bits |= (FLOATSIGNBIT(d)) << 1;
+        d = frustum.Right().Distance(points[i]) + frustum.Right().d;
+        bits |= (FLOATSIGNBIT(d)) << 2;
+        d = frustum.Bottom().Distance(points[i]) + frustum.Bottom().d;
+        bits |= (FLOATSIGNBIT(d)) << 3;
+
         pmin = camera->ProjectPoint(points[i], 0, 0);
+
+        if(bits & 1) {
+            pmin[0] = 0;
+        }
+
+        if(bits & 2) {
+            pmin[1] = 0;
+        }
+
+        if(bits & 4) {
+            pmin[0] = (float)sysMain.VideoWidth();
+        }
+
+        if(bits & 8) {
+            pmin[1] = (float)sysMain.VideoHeight();
+        }
         
         if(pmin[0] < min[0]) {
             min[0] = pmin[0];
-
-            d = frustum.Left().Distance(points[i]) + frustum.Left().d;
-            bits |= (FLOATSIGNBIT(d)) << 0;
         }
         if(pmin[1] < min[1]) {
             min[1] = pmin[1];
-
-            d = frustum.Top().Distance(points[i]) + frustum.Top().d;
-            bits |= (FLOATSIGNBIT(d)) << 1;
         }
         if(pmin[0] > max[0]) {
             max[0] = pmin[0];
-
-            d = frustum.Right().Distance(points[i]) + frustum.Right().d;
-            bits |= (FLOATSIGNBIT(d)) << 2;
         }
         if(pmin[1] > max[1]) {
             max[1] = pmin[1];
-
-            d = frustum.Bottom().Distance(points[i]) + frustum.Bottom().d;
-            bits |= (FLOATSIGNBIT(d)) << 3;
         }
         
         // get closest z-clip
         if(pmin[2] < zfar) zfar = pmin[2];
-    }
-
-    if(bits & 1) {
-        min[0] = 0;
-    }
-
-    if(bits & 2) {
-        min[1] = 0;
-    }
-
-    if(bits & 4) {
-        max[0] = (float)sysMain.VideoWidth();
-    }
-
-    if(bits & 8) {
-        max[1] = (float)sysMain.VideoHeight();
     }
 }
 

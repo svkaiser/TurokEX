@@ -25,6 +25,8 @@
 
 class kexViewBounds {
 public:
+                        kexViewBounds(void);
+
     void                Clear(void);
     void                AddBox(kexCamera *camera, kexBBox &box);
     bool                ViewBoundInside(const kexViewBounds &viewBounds);
