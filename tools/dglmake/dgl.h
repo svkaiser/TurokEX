@@ -5466,3 +5466,136 @@ d_inline static void glFramebufferTextureLayer_DEBUG (GLenum target, GLenum atta
 
 #endif // USE_DEBUG_GLFUNCS
 
+//
+// GL_ARB_occlusion_query
+//
+extern bool has_GL_ARB_occlusion_query;
+
+extern PFNGLGENQUERIESARBPROC _glGenQueriesARB;
+extern PFNGLDELETEQUERIESARBPROC _glDeleteQueriesARB;
+extern PFNGLISQUERYARBPROC _glIsQueryARB;
+extern PFNGLBEGINQUERYARBPROC _glBeginQueryARB;
+extern PFNGLENDQUERYARBPROC _glEndQueryARB;
+extern PFNGLGETQUERYIVARBPROC _glGetQueryivARB;
+extern PFNGLGETQUERYOBJECTIVARBPROC _glGetQueryObjectivARB;
+extern PFNGLGETQUERYOBJECTUIVARBPROC _glGetQueryObjectuivARB;
+
+#define GL_ARB_occlusion_query_Define() \
+bool has_GL_ARB_occlusion_query = false; \
+PFNGLGENQUERIESARBPROC _glGenQueriesARB = NULL; \
+PFNGLDELETEQUERIESARBPROC _glDeleteQueriesARB = NULL; \
+PFNGLISQUERYARBPROC _glIsQueryARB = NULL; \
+PFNGLBEGINQUERYARBPROC _glBeginQueryARB = NULL; \
+PFNGLENDQUERYARBPROC _glEndQueryARB = NULL; \
+PFNGLGETQUERYIVARBPROC _glGetQueryivARB = NULL; \
+PFNGLGETQUERYOBJECTIVARBPROC _glGetQueryObjectivARB = NULL; \
+PFNGLGETQUERYOBJECTUIVARBPROC _glGetQueryObjectuivARB = NULL
+
+#define GL_ARB_occlusion_query_Init() \
+has_GL_ARB_occlusion_query = GL_CheckExtension("GL_ARB_occlusion_query"); \
+_glGenQueriesARB = (PFNGLGENQUERIESARBPROC)GL_RegisterProc("glGenQueriesARB"); \
+_glDeleteQueriesARB = (PFNGLDELETEQUERIESARBPROC)GL_RegisterProc("glDeleteQueriesARB"); \
+_glIsQueryARB = (PFNGLISQUERYARBPROC)GL_RegisterProc("glIsQueryARB"); \
+_glBeginQueryARB = (PFNGLBEGINQUERYARBPROC)GL_RegisterProc("glBeginQueryARB"); \
+_glEndQueryARB = (PFNGLENDQUERYARBPROC)GL_RegisterProc("glEndQueryARB"); \
+_glGetQueryivARB = (PFNGLGETQUERYIVARBPROC)GL_RegisterProc("glGetQueryivARB"); \
+_glGetQueryObjectivARB = (PFNGLGETQUERYOBJECTIVARBPROC)GL_RegisterProc("glGetQueryObjectivARB"); \
+_glGetQueryObjectuivARB = (PFNGLGETQUERYOBJECTUIVARBPROC)GL_RegisterProc("glGetQueryObjectuivARB")
+
+#ifndef USE_DEBUG_GLFUNCS
+
+#define dglGenQueriesARB(n, ids) _glGenQueriesARB(n, ids)
+#define dglDeleteQueriesARB(n, ids) _glDeleteQueriesARB(n, ids)
+#define dglIsQueryARB(id) _glIsQueryARB(id)
+#define dglBeginQueryARB(target, id) _glBeginQueryARB(target, id)
+#define dglEndQueryARB(target) _glEndQueryARB(target)
+#define dglGetQueryivARB(target, pname, params) _glGetQueryivARB(target, pname, params)
+#define dglGetQueryObjectivARB(id, pname, params) _glGetQueryObjectivARB(id, pname, params)
+#define dglGetQueryObjectuivARB(id, pname, params) _glGetQueryObjectuivARB(id, pname, params)
+
+#else
+
+d_inline static void glGenQueriesARB_DEBUG (GLsizei n, GLuint* ids, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGenQueriesARB(n=0x%x, ids=%p)\n", file, line, n, ids);
+#endif
+    _glGenQueriesARB(n, ids);
+    dglLogError("glGenQueriesARB", file, line);
+}
+
+d_inline static void glDeleteQueriesARB_DEBUG (GLsizei n, GLuint* ids, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glDeleteQueriesARB(n=0x%x, ids=%p)\n", file, line, n, ids);
+#endif
+    _glDeleteQueriesARB(n, ids);
+    dglLogError("glDeleteQueriesARB", file, line);
+}
+
+d_inline static GLboolean glIsQueryARB_DEBUG (GLuint id, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glIsQueryARB(id=%i)\n", file, line, id);
+#endif
+    _glIsQueryARB(id);
+    dglLogError("glIsQueryARB", file, line);
+}
+
+d_inline static void glBeginQueryARB_DEBUG (GLenum target, GLuint id, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glBeginQueryARB(target=0x%x, id=%i)\n", file, line, target, id);
+#endif
+    _glBeginQueryARB(target, id);
+    dglLogError("glBeginQueryARB", file, line);
+}
+
+d_inline static void glEndQueryARB_DEBUG (GLenum target, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glEndQueryARB(target=0x%x)\n", file, line, target);
+#endif
+    _glEndQueryARB(target);
+    dglLogError("glEndQueryARB", file, line);
+}
+
+d_inline static void glGetQueryivARB_DEBUG (GLenum target, GLenum pname, GLint* params, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetQueryivARB(target=0x%x, pname=0x%x, params=%p)\n", file, line, target, pname, params);
+#endif
+    _glGetQueryivARB(target, pname, params);
+    dglLogError("glGetQueryivARB", file, line);
+}
+
+d_inline static void glGetQueryObjectivARB_DEBUG (GLuint id, GLenum pname, GLint* params, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetQueryObjectivARB(id=%i, pname=0x%x, params=%p)\n", file, line, id, pname, params);
+#endif
+    _glGetQueryObjectivARB(id, pname, params);
+    dglLogError("glGetQueryObjectivARB", file, line);
+}
+
+d_inline static void glGetQueryObjectuivARB_DEBUG (GLuint id, GLenum pname, GLuint* params, const char* file, int line)
+{
+#ifdef LOG_GLFUNC_CALLS
+    I_Printf("file = %s, line = %i, glGetQueryObjectuivARB(id=%i, pname=0x%x, params=%p)\n", file, line, id, pname, params);
+#endif
+    _glGetQueryObjectuivARB(id, pname, params);
+    dglLogError("glGetQueryObjectuivARB", file, line);
+}
+
+
+#define dglGenQueriesARB(n, ids) glGenQueriesARB_DEBUG(n, ids, __FILE__, __LINE__)
+#define dglDeleteQueriesARB(n, ids) glDeleteQueriesARB_DEBUG(n, ids, __FILE__, __LINE__)
+#define dglIsQueryARB(id) glIsQueryARB_DEBUG(id, __FILE__, __LINE__)
+#define dglBeginQueryARB(target, id) glBeginQueryARB_DEBUG(target, id, __FILE__, __LINE__)
+#define dglEndQueryARB(target) glEndQueryARB_DEBUG(target, __FILE__, __LINE__)
+#define dglGetQueryivARB(target, pname, params) glGetQueryivARB_DEBUG(target, pname, params, __FILE__, __LINE__)
+#define dglGetQueryObjectivARB(id, pname, params) glGetQueryObjectivARB_DEBUG(id, pname, params, __FILE__, __LINE__)
+#define dglGetQueryObjectuivARB(id, pname, params) glGetQueryObjectuivARB_DEBUG(id, pname, params, __FILE__, __LINE__)
+
+#endif // USE_DEBUG_GLFUNCS
+

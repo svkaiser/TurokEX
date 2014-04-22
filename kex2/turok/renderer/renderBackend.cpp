@@ -46,6 +46,7 @@ GL_EXT_texture_filter_anisotropic_Define();
 GL_ARB_vertex_buffer_object_Define();
 GL_ARB_shader_objects_Define();
 GL_ARB_framebuffer_object_Define();
+GL_ARB_occlusion_query_Define();
 
 //
 // FindExtension
@@ -295,6 +296,7 @@ void kexRenderBackend::Init(void) {
     GL_ARB_vertex_buffer_object_Init();
     GL_ARB_shader_objects_Init();
     GL_ARB_framebuffer_object_Init();
+    GL_ARB_occlusion_query_Init();
 
     SetDefaultState();
 
