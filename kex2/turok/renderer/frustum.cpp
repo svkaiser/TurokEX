@@ -27,6 +27,7 @@
 #include "common.h"
 #include "mathlib.h"
 #include "frustum.h"
+#include "renderUtils.h"
 
 //
 // kexFrustum::kexFrustum
@@ -65,7 +66,7 @@ void kexFrustum::TransformToView(kexMatrix &proj, kexMatrix &model) {
 
 bool kexFrustum::TestBoundingBox(const kexBBox &bbox) {
     float d;
-    for(int i = 0; i < 6; i++) {
+    for(int i = 0; i < NUMFRUSTUMPLANES; i++) {
         d = p[i].a * bbox.min.x + p[i].b * bbox.min.y + p[i].c * bbox.min.z + p[i].d;
         if(!FLOATSIGNBIT(d)) {
             continue;
@@ -114,7 +115,7 @@ bool kexFrustum::TestTriangle(const kexTri &triangle) {
     kexVec3 *pt1 = triangle.point[0];
     kexVec3 *pt2 = triangle.point[1];
     kexVec3 *pt3 = triangle.point[2];
-    for(int i = 0; i < 6; i++) {
+    for(int i = 0; i < NUMFRUSTUMPLANES; i++) {
         d = p[i].a * pt1->x + p[i].b * pt1->y + p[i].c * pt1->z + p[i].d;
         if(!FLOATSIGNBIT(d)) {
             continue;
@@ -139,7 +140,7 @@ bool kexFrustum::TestTriangle(const kexTri &triangle) {
 //
 
 bool kexFrustum::TestSphere(const kexVec3 &org, const float radius) {
-    for(int i = 0; i < 6; i++) {
+    for(int i = 0; i < NUMFRUSTUMPLANES; i++) {
         if(p[i].Distance(org) + p[i].d <= -radius) {
             return false;
         }
@@ -156,4 +157,48 @@ bool kexFrustum::BoxDistance(const kexBBox &box, const float distance) {
     kexPlane nearPlane = Near();
     
     return (nearPlane.Distance(box.Center()) + nearPlane.d) > distance;
+}
+
+//
+// kexFrustum::ClipSegment
+//
+
+bool kexFrustum::ClipSegment(kexVec3 &start, kexVec3 &end) {
+    float d1;
+    float d2;
+    float frac;
+    kexVec3 hit;
+    int clipbits[2];
+
+    clipbits[0] = 0;
+    clipbits[1] = 0;
+    
+    for(int i = 0; i < NUMFRUSTUMPLANES; i++) {
+        d1 = p[i].Distance(start) + p[i].d;
+        d2 = p[i].Distance(end) + p[i].d;
+
+        clipbits[0] |= (FLOATSIGNBIT(d1) << i);
+        clipbits[1] |= (FLOATSIGNBIT(d2) << i);
+
+        if(FLOATSIGNBIT(d1) ^ FLOATSIGNBIT(d2)) {
+            if(d2 < d1) {
+                frac = (d1 / (d1 - d2));
+
+                if(frac > 1) {
+                    continue;
+                }
+                end = start.Lerp(end, frac);
+            }
+            else {
+                frac = (d2 / (d2 - d1));
+
+                if(frac > 1) {
+                    continue;
+                }
+                start = end.Lerp(start, frac);
+            }
+        }
+    }
+    
+    return (clipbits[0] | clipbits[1]) != 0;
 }

@@ -53,6 +53,63 @@ void kexViewBounds::Clear(void) {
 }
 
 //
+// kexViewBounds::AddPoint
+//
+
+void kexViewBounds::AddPoint(const float x, const float y, const float z) {
+    if(x < min[0]) min[0] = x;
+    if(x > max[0]) max[0] = x;
+    if(y < min[1]) min[1] = y;
+    if(y > max[1]) max[1] = y;
+    
+    // get closest z-clip
+    if(z < zfar) zfar = z;
+}
+
+//
+// kexViewBounds::AddVector
+//
+
+void kexViewBounds::AddVector(kexCamera *camera, kexVec3 &vector) {
+    int bits;
+    float d;
+    kexFrustum frustum;
+    kexVec3 pmin;
+    
+    frustum = camera->Frustum();
+    bits = 0;
+    
+    d = frustum.Left().Distance(vector) + frustum.Left().d;
+    bits |= (FLOATSIGNBIT(d)) << 0;
+    d = frustum.Top().Distance(vector) + frustum.Top().d;
+    bits |= (FLOATSIGNBIT(d)) << 1;
+    d = frustum.Right().Distance(vector) + frustum.Right().d;
+    bits |= (FLOATSIGNBIT(d)) << 2;
+    d = frustum.Bottom().Distance(vector) + frustum.Bottom().d;
+    bits |= (FLOATSIGNBIT(d)) << 3;
+    
+    pmin = camera->ProjectPoint(vector, 0, 0);
+    
+    if(bits & 1) {
+        pmin[0] = 0;
+    }
+    
+    if(bits & 2) {
+        pmin[1] = 0;
+    }
+    
+    if(bits & 4) {
+        pmin[0] = (float)sysMain.VideoWidth();
+    }
+    
+    if(bits & 8) {
+        pmin[1] = (float)sysMain.VideoHeight();
+    }
+    
+    AddPoint(pmin[0], pmin[1], pmin[2]);
+}
+
+//
 // kexViewBounds::AddBox
 //
 
@@ -93,7 +150,6 @@ void kexViewBounds::AddBox(kexCamera *camera, kexBBox &box) {
     kexVec3 n = nearPlane.Normal().Normalize();
     
     for(i = 0; i < 8; i++) {
-        
         bits = 0;
 
         d = frustum.Near().Distance(points[i]) + nearPlane.d;
@@ -101,48 +157,7 @@ void kexViewBounds::AddBox(kexCamera *camera, kexBBox &box) {
             points[i] += (n * -d);
         }
 
-        d = frustum.Left().Distance(points[i]) + frustum.Left().d;
-        bits |= (FLOATSIGNBIT(d)) << 0;
-        d = frustum.Top().Distance(points[i]) + frustum.Top().d;
-        bits |= (FLOATSIGNBIT(d)) << 1;
-        d = frustum.Right().Distance(points[i]) + frustum.Right().d;
-        bits |= (FLOATSIGNBIT(d)) << 2;
-        d = frustum.Bottom().Distance(points[i]) + frustum.Bottom().d;
-        bits |= (FLOATSIGNBIT(d)) << 3;
-
-        pmin = camera->ProjectPoint(points[i], 0, 0);
-
-        if(bits & 1) {
-            pmin[0] = 0;
-        }
-
-        if(bits & 2) {
-            pmin[1] = 0;
-        }
-
-        if(bits & 4) {
-            pmin[0] = (float)sysMain.VideoWidth();
-        }
-
-        if(bits & 8) {
-            pmin[1] = (float)sysMain.VideoHeight();
-        }
-        
-        if(pmin[0] < min[0]) {
-            min[0] = pmin[0];
-        }
-        if(pmin[1] < min[1]) {
-            min[1] = pmin[1];
-        }
-        if(pmin[0] > max[0]) {
-            max[0] = pmin[0];
-        }
-        if(pmin[1] > max[1]) {
-            max[1] = pmin[1];
-        }
-        
-        // get closest z-clip
-        if(pmin[2] < zfar) zfar = pmin[2];
+        AddVector(camera, points[i]);
     }
 }
 

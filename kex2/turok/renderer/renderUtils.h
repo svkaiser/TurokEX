@@ -27,12 +27,16 @@
 
 class kexRenderUtils {
 public:
-    static void     DrawBoundingBox(const kexBBox &bbox, byte r, byte g, byte b);
+    static void     DrawBoundingBox(const kexBBox &bbox,
+                                    const byte r, const byte g, const byte b);
     static void     DrawRadius(float x, float y, float z,
                                float radius, float height,
-                               byte r, byte g, byte b);
+                               const byte r, const byte g, const byte b);
     static void     DrawOrigin(float x, float y, float z, float size);
-    static void     DrawSphere(float x, float y, float z, float radius, byte r, byte g, byte b);
+    static void     DrawSphere(float x, float y, float z, float radius,
+                               const byte r, const byte g, const byte b);
+    static void     DrawLine(const kexVec3 &p1, const kexVec3 &p2,
+                             const byte r, const byte g, const byte b);
     static void     PrintStatsText(const char *title, const char *s, ...);
     
     static void     ClearDebugLine(void) { debugLineNum = DEBUG_LINE_TOP; }

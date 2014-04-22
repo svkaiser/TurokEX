@@ -28,6 +28,8 @@ public:
                         kexViewBounds(void);
 
     void                Clear(void);
+    void                AddPoint(const float x, const float y, const float z);
+    void                AddVector(kexCamera *camera, kexVec3 &vector);
     void                AddBox(kexCamera *camera, kexBBox &box);
     bool                ViewBoundInside(const kexViewBounds &viewBounds);
     void                DebugDraw(void);
