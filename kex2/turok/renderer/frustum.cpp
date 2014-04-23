@@ -150,6 +150,28 @@ bool kexFrustum::TestSphere(const kexVec3 &org, const float radius) {
 }
 
 //
+// kexFrustum::TestSegment
+//
+
+bool kexFrustum::TestSegment(const kexVec3 pt1, const kexVec3 &pt2) {
+    float d;
+    for(int i = 0; i < NUMFRUSTUMPLANES; i++) {
+        d = p[i].a * pt1.x + p[i].b * pt1.y + p[i].c * pt1.z + p[i].d;
+        if(!FLOATSIGNBIT(d)) {
+            continue;
+        }
+        d = p[i].a * pt2.x + p[i].b * pt2.y + p[i].c * pt2.z + p[i].d;
+        if(!FLOATSIGNBIT(d)) {
+            continue;
+        }
+        
+        return false;
+    }
+    
+    return true;
+}
+
+//
 // kexFrustum::BoxDistance
 //
 
@@ -162,43 +184,70 @@ bool kexFrustum::BoxDistance(const kexBBox &box, const float distance) {
 //
 // kexFrustum::ClipSegment
 //
+//
 
-bool kexFrustum::ClipSegment(kexVec3 &start, kexVec3 &end) {
+bool kexFrustum::ClipSegment(kexVec3 &out1, kexVec3 &out2,
+                             int &clipbits1, int &clipbits2,
+                             const kexVec3 &start, const kexVec3 &end) {
     float d1;
     float d2;
     float frac;
+    float f1;
+    float f2;
+    int bit1;
+    int bit2;
     kexVec3 hit;
-    int clipbits[2];
 
-    clipbits[0] = 0;
-    clipbits[1] = 0;
+    clipbits1 = 0;
+    clipbits2 = 0;
+    f1 = 1.0f;
+    f2 = 1.0f;
+    
+    out1 = start;
+    out2 = end;
+    
+    if(!TestSegment(start, end)) {
+        clipbits1 = FRUSTUM_CLIPPED;
+        clipbits2 = FRUSTUM_CLIPPED;
+        return false;
+    }
     
     for(int i = 0; i < NUMFRUSTUMPLANES; i++) {
         d1 = p[i].Distance(start) + p[i].d;
         d2 = p[i].Distance(end) + p[i].d;
+        
+        bit1 = FLOATSIGNBIT(d1);
+        bit2 = FLOATSIGNBIT(d2);
+        
+        if(d1 <= 0 && d2 <= 0) {
+            clipbits1 |= FRUSTUM_CLIPPED | (bit1 << i);
+            clipbits2 |= FRUSTUM_CLIPPED | (bit2 << i);
+            return false;
+        }
 
-        clipbits[0] |= (FLOATSIGNBIT(d1) << i);
-        clipbits[1] |= (FLOATSIGNBIT(d2) << i);
-
-        if(FLOATSIGNBIT(d1) ^ FLOATSIGNBIT(d2)) {
+        if(bit1 ^ bit2) {
             if(d2 < d1) {
                 frac = (d1 / (d1 - d2));
 
-                if(frac > 1) {
+                if(frac > 1 || frac > f1) {
                     continue;
                 }
-                end = start.Lerp(end, frac);
+                clipbits2 |= (bit2 << i);
+                out2 = start.Lerp(end, frac);
+                f1 = frac;
             }
             else {
                 frac = (d2 / (d2 - d1));
 
-                if(frac > 1) {
+                if(frac > 1 || frac > f2) {
                     continue;
                 }
-                start = end.Lerp(start, frac);
+                clipbits1 |= (bit1 << i);
+                out1 = end.Lerp(start, frac);
+                f2 = frac;
             }
         }
     }
     
-    return (clipbits[0] | clipbits[1]) != 0;
+    return true;
 }

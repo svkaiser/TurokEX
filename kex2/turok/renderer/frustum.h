@@ -35,6 +35,8 @@ typedef enum {
     NUMFRUSTUMPLANES
 } frustumPlane_t;
 
+#define FRUSTUM_CLIPPED BIT(NUMFRUSTUMPLANES)
+
 class kexFrustum {
 public:
                         kexFrustum(void);
@@ -43,8 +45,11 @@ public:
     bool                TestBoundingBox(const kexBBox &bbox);
     bool                TestTriangle(const kexTri &triangle);
     bool                TestSphere(const kexVec3 &org, const float radius);
+    bool                TestSegment(const kexVec3 pt1, const kexVec3 &pt2);
     bool                BoxDistance(const kexBBox &box, const float distance);
-    bool                ClipSegment(kexVec3 &start, kexVec3 &end);
+    bool                ClipSegment(kexVec3 &out1, kexVec3 &out2,
+                                    int &clipbits1, int &clipbits2,
+                                    const kexVec3 &start, const kexVec3 &end);
     
     kexPlane            &Right(void) { return p[FP_RIGHT]; }
     kexPlane            &Left(void) { return p[FP_LEFT]; }
