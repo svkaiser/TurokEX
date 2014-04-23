@@ -381,3 +381,34 @@ bool kexBBox::LineIntersect(const kexVec3 &start, const kexVec3 &end) {
 
     return true;
 }
+
+//
+// kexBBox::ToPoints
+//
+
+void kexBBox::ToPoints(float *points) const {
+    points[0 * 3 + 0] = max[0];
+    points[0 * 3 + 1] = min[1];
+    points[0 * 3 + 2] = min[2];
+    points[1 * 3 + 0] = max[0];
+    points[1 * 3 + 1] = min[1];
+    points[1 * 3 + 2] = max[2];
+    points[2 * 3 + 0] = min[0];
+    points[2 * 3 + 1] = min[1];
+    points[2 * 3 + 2] = max[2];
+    points[3 * 3 + 0] = min[0];
+    points[3 * 3 + 1] = min[1];
+    points[3 * 3 + 2] = min[2];
+    points[4 * 3 + 0] = max[0];
+    points[4 * 3 + 1] = max[1];
+    points[4 * 3 + 2] = min[2];
+    points[5 * 3 + 0] = max[0];
+    points[5 * 3 + 1] = max[1];
+    points[5 * 3 + 2] = max[2];
+    points[6 * 3 + 0] = min[0];
+    points[6 * 3 + 1] = max[1];
+    points[6 * 3 + 2] = max[2];
+    points[7 * 3 + 0] = min[0];
+    points[7 * 3 + 1] = max[1];
+    points[7 * 3 + 2] = min[2];
+}

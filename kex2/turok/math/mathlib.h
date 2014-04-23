@@ -434,6 +434,7 @@ public:
     bool                    IntersectingBox2D(const kexBBox &box) const;
     float                   DistanceToPlane(kexPlane &plane);
     bool                    LineIntersect(const kexVec3 &start, const kexVec3 &end);
+    void                    ToPoints(float *points) const;
     
     kexBBox                 operator+(const float radius) const;
     kexBBox                 &operator+=(const float radius);
