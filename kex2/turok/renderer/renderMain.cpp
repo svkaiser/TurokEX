@@ -38,6 +38,7 @@ kexCvar cvarRenderMotionBlur("r_motionblur", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 kexCvar cvarRenderMotionBlurSamples("r_motionblursamples", CVF_INT|CVF_CONFIG, "32", "TODO");
 kexCvar cvarRenderMotionBlurRampSpeed("r_motionblurrampspeed", CVF_FLOAT|CVF_CONFIG, "0.0", "TODO");
 kexCvar cvarRenderLightScatter("r_lightscatter", CVF_BOOL|CVF_CONFIG, "0", "TODO");
+kexCvar cvarRenderActorOcclusionQueries("r_actorocclusionqueries", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 
 kexRenderer renderer;
 

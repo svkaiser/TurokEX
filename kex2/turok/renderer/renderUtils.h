@@ -29,6 +29,8 @@ class kexRenderUtils {
 public:
     static void     DrawBoundingBox(const kexBBox &bbox,
                                     const byte r, const byte g, const byte b);
+    static void     DrawFilledBoundingBox(const kexBBox &bbox,
+                                          const byte r, const byte g, const byte b);
     static void     DrawRadius(float x, float y, float z,
                                float radius, float height,
                                const byte r, const byte g, const byte b);

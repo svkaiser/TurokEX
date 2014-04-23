@@ -44,9 +44,9 @@ void kexRenderUtils::DrawBoundingBox(const kexBBox &bbox, const byte r, const by
 
     renderBackend.DisableShaders();
 
-#define ADD_LINE(ba1, ba2, ba3, bb1, bb2, bb3)                          \
-    renderer.AddLine(bbox[ba1][0], bbox[ba2][1], bbox[ba3][2],     \
-                         bbox[bb1][0], bbox[bb2][1], bbox[bb3][2],      \
+#define ADD_LINE(ba1, ba2, ba3, bb1, bb2, bb3)                      \
+    renderer.AddLine(bbox[ba1][0], bbox[ba2][1], bbox[ba3][2],      \
+                         bbox[bb1][0], bbox[bb2][1], bbox[bb3][2],  \
                          r, g, b, 255)
     
     renderer.BindDrawPointers();
@@ -66,6 +66,58 @@ void kexRenderUtils::DrawBoundingBox(const kexBBox &bbox, const byte r, const by
     
 #undef ADD_LINE
 
+    renderBackend.SetState(GLSTATE_TEXTURE0, true);
+}
+
+//
+// kexRenderUtils::DrawFilledBoundingBox
+//
+
+void kexRenderUtils::DrawFilledBoundingBox(const kexBBox &bbox,
+                                           const byte r, const byte g, const byte b) {
+    
+    word indices[36];
+    float points[24];
+    byte colors[96];
+    
+    renderBackend.SetState(GLSTATE_TEXTURE0, false);
+    renderBackend.SetState(GLSTATE_CULL, false);
+    renderBackend.SetState(GLSTATE_BLEND, false);
+    
+    indices[ 0] = 0; indices[ 1] = 1; indices[ 2] = 3;
+    indices[ 3] = 4; indices[ 4] = 7; indices[ 5] = 5;
+    indices[ 6] = 0; indices[ 7] = 4; indices[ 8] = 1;
+    indices[ 9] = 1; indices[10] = 5; indices[11] = 6;
+    indices[12] = 2; indices[13] = 6; indices[14] = 7;
+    indices[15] = 4; indices[16] = 0; indices[17] = 3;
+    indices[18] = 1; indices[19] = 2; indices[20] = 3;
+    indices[21] = 7; indices[22] = 6; indices[23] = 5;
+    indices[24] = 2; indices[25] = 1; indices[26] = 6;
+    indices[27] = 3; indices[28] = 2; indices[29] = 7;
+    indices[30] = 7; indices[31] = 4; indices[32] = 3;
+    indices[33] = 4; indices[34] = 5; indices[35] = 1;
+    
+    bbox.ToPoints(points);
+    
+    for(int i = 0; i < 96 / 4; i++) {
+        colors[i * 4 + 0] = r;
+        colors[i * 4 + 1] = g;
+        colors[i * 4 + 2] = b;
+        colors[i * 4 + 3] = 255;
+    }
+    
+    dglDisableClientState(GL_NORMAL_ARRAY);
+    dglDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    
+    dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, points);
+    dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, colors);
+    
+    renderBackend.DisableShaders();
+    dglDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, indices);
+    
+    dglEnableClientState(GL_NORMAL_ARRAY);
+    dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    
     renderBackend.SetState(GLSTATE_TEXTURE0, true);
 }
 

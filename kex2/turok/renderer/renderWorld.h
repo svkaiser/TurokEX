@@ -30,6 +30,7 @@ class kexRenderWorld {
 public:
                                 kexRenderWorld(void);
 
+    void                        Shutdown(void);
     void                        SetCameraView(kexCamera *camera);
     void                        RenderScene(void);
     void                        BuildNodes(void);
@@ -62,6 +63,7 @@ public:
     const bool                  LightScatterPass(void) const { return bLightScatterPass; }
 
 private:
+    void                        PreProcessLightScatter(void);
     void                        DrawSun(const bool bForceInfiniteProjection);
     void                        DrawSingleActor(kexActor *actor, kexMatrix *matrix);
     void                        DrawActors(void);
@@ -85,8 +87,11 @@ private:
     int                         renderActorsMS;
     int                         renderFXMS;
     int                         numDrawnStatics;
+    int                         numCulledStatics;
     int                         numDrawnSDNodes;
     int                         numDrawnActors;
+    int                         numOccludedActors;
+    int                         numCulledActors;
     int                         renderNodeStepNum;
     kexMaterial                 *blackMat;
     kexMaterial                 *sunMaterial;
@@ -94,6 +99,7 @@ private:
     kexVec3                     sunPosition;
     kexVec3                     projectedSunCoords;
     bool                        bLightScatterPass;
+    kexArray<GLuint>            actorQueries;
 };
 
 extern kexRenderWorld renderWorld;

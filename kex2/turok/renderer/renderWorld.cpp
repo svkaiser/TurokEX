@@ -38,6 +38,7 @@
 #include "renderUtils.h"
 
 extern kexCvar cvarRenderLightScatter;
+extern kexCvar cvarRenderActorOcclusionQueries;
 
 kexRenderWorld renderWorld;
 
@@ -225,10 +226,22 @@ void kexRenderWorld::Init(void) {
 //
 
 void kexRenderWorld::InitSunData(void) {
-    sunModel        = modelManager.LoadModel("models/default.kmesh");
-    sunMaterial     = renderBackend.CacheMaterial("materials/default.kmat@whiteFullBright");
-    blackMat        = renderBackend.CacheMaterial("materials/default.kmat@black");
+    sunModel    = modelManager.LoadModel("models/default.kmesh");
+    sunMaterial = renderBackend.CacheMaterial("materials/default.kmat@whiteFullBright");
+    blackMat    = renderBackend.CacheMaterial("materials/default.kmat@black");
 
+}
+
+//
+// kexRenderWorld::Shutdown
+//
+
+void kexRenderWorld::Shutdown(void) {
+    for(unsigned int i = 0; i < actorQueries.Length(); i++) {
+        dglDeleteQueriesARB(1, &actorQueries[i]);
+    }
+
+    actorQueries.Empty();
 }
 
 //
@@ -261,38 +274,7 @@ void kexRenderWorld::RenderScene(void) {
     }
 
     if(cvarRenderLightScatter.GetBool()) {
-        int vp[4];
-
-        sunPosition = world->worldLightOrigin.ToVec3() * 32768.0f;
-
-        if(world->Camera()->Frustum().TestSphere(sunPosition, 8192.0f)) {
-            renderer.FBOLightScatter().Bind();
-            dglClearColor(world->worldLightAmbience[0],
-                          world->worldLightAmbience[1],
-                          world->worldLightAmbience[2], 1);
-            dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            DrawSun(true);
-            SetCameraView(world->Camera());
-
-            projectedSunCoords = world->Camera()->ProjectPoint(sunPosition, 0, 0);
-
-            dglGetIntegerv(GL_VIEWPORT, vp);
-
-            projectedSunCoords.x /= (float)vp[2];
-            projectedSunCoords.y /= (float)vp[3];
-
-            bLightScatterPass = true;
-
-            DrawStaticActors();
-            DrawActors();
-            DrawViewActors();
-
-            bLightScatterPass = false;
-
-            renderer.FBOLightScatter().UnBind();
-            dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        }
+        PreProcessLightScatter();
     }
 
     if(!bWireframe) {
@@ -350,13 +332,54 @@ void kexRenderWorld::RenderScene(void) {
 }
 
 //
+// kexRenderWorld::PreProcessLightScatter
+//
+
+void kexRenderWorld::PreProcessLightScatter(void) {
+    int vp[4];
+
+    sunPosition = world->worldLightOrigin.ToVec3() * 32768.0f;
+
+    if(!world->Camera()->Frustum().TestSphere(sunPosition, 8192.0f)) {
+        return;
+    }
+
+    renderer.FBOLightScatter().Bind();
+    dglClearColor(world->worldLightAmbience[0],
+                  world->worldLightAmbience[1],
+                  world->worldLightAmbience[2], 1);
+    dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    DrawSun(true);
+    SetCameraView(world->Camera());
+
+    projectedSunCoords = world->Camera()->ProjectPoint(sunPosition, 0, 0);
+
+    dglGetIntegerv(GL_VIEWPORT, vp);
+
+    projectedSunCoords.x /= (float)vp[2];
+    projectedSunCoords.y /= (float)vp[3];
+
+    bLightScatterPass = true;
+
+    DrawStaticActors();
+    DrawActors();
+    DrawViewActors();
+
+    bLightScatterPass = false;
+
+    renderer.FBOLightScatter().UnBind();
+    dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+//
 // kexRenderWorld::BuildNodes
 //
 
 void kexRenderWorld::BuildNodes(void) {
     kexWorldModel *wm;
     
-    renderNodes.Init(4);
+    renderNodes.Init(8);
     
     for(wm = world->staticActors.Next(); wm != NULL; wm = wm->worldLink.Next()) {
         renderNodes.AddBoxToRoot(wm->Bounds());
@@ -572,6 +595,7 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
         wm->bCulled = !frustum.TestBoundingBox(box);
 
         if(wm->bCulled) {
+            numCulledStatics++;
             continue;
         }
 
@@ -605,6 +629,7 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
 void kexRenderWorld::DrawStaticActors(void) {
     if(bPrintStats) {
         renderStaticsMS = sysMain.GetMS();
+        numCulledStatics = 0;
     }
     
     renderNodeStepNum = 0;
@@ -685,11 +710,63 @@ void kexRenderWorld::DrawSingleActor(kexActor *actor, kexMatrix *matrix) {
 void kexRenderWorld::DrawActors(void) {
     kexFrustum frustum = world->Camera()->Frustum();
     kexMatrix mtx(DEG2RAD(-90), 1);
+
     mtx.Scale(-1, 1, 1);
 
     if(bPrintStats) {
+        numOccludedActors = 0;
+        numCulledActors = 0;
+
         renderActorsMS = sysMain.GetMS();
     }
+
+    unsigned int queryIndex = 0;
+    int samples;
+    bool bUseQueries = cvarRenderActorOcclusionQueries.GetBool();
+
+    // occlusion query pass
+    if(bUseQueries) {
+        // make sure we don't write anything while testing the bounds
+        glColorMask(0, 0, 0, 0);
+        renderBackend.SetDepthMask(GLDEPTHMASK_NO);
+
+        for(kexActor *actor = world->actors.Next();
+            actor != NULL; actor = actor->worldLink.Next()) {
+                if(actor->bStatic) {
+                    continue;
+                }
+                if(actor->bHidden || actor->DisplayType() != ODT_NORMAL) {
+                    continue;
+                }
+                
+                // if we're doing the culling here, don't do it again in the actual draw pass
+                if(actor->bNoCull == false) {
+                    actor->bCulled = !frustum.TestBoundingBox(actor->Bounds());
+
+                    if(actor->bCulled) {
+                        continue;
+                    }
+                }
+
+                // generate a new query if we need to
+                if(actorQueries.Length() <= queryIndex) {
+                    GLuint query;
+
+                    dglGenQueriesARB(1, &query);
+                    actorQueries.Push(query);
+                }
+
+                // query the result based on the bounding box
+                dglBeginQueryARB(GL_SAMPLES_PASSED_ARB, actorQueries[queryIndex++]);
+                kexRenderUtils::DrawFilledBoundingBox(actor->Bounds(), 0, 0, 0);
+                dglEndQueryARB(GL_SAMPLES_PASSED_ARB);
+        }
+
+        dglColorMask(1, 1, 1, 1);
+        renderBackend.SetDepthMask(GLDEPTHMASK_YES);
+    }
+
+    queryIndex = 0;
 
     for(kexActor *actor = world->actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
@@ -700,11 +777,35 @@ void kexRenderWorld::DrawActors(void) {
                 continue;
             }
 
-            if(actor->bNoCull == false) {
-                actor->bCulled = !frustum.TestBoundingBox(actor->Bounds());
+            if(!bUseQueries) {
+                if(actor->bNoCull == false) {
+                    actor->bCulled = !frustum.TestBoundingBox(actor->Bounds());
 
+                    if(actor->bCulled) {
+                        numCulledActors++;
+                        continue;
+                    }
+                }
+            }
+            else {
+                // frustum-cull check was already done in the occlusion query pre-pass
                 if(actor->bCulled) {
+                    numCulledActors++;
                     continue;
+                }
+            }
+            
+            if(bUseQueries) {
+                samples = 0;
+
+                // check if it's occluded by any static geometry
+                dglGetQueryObjectivARB(actorQueries[queryIndex++], GL_QUERY_RESULT_ARB, &samples);
+                if(samples <= 16) {
+                    // omit if the camera is completely inside the bounds
+                    if(!actor->Bounds().PointInside(world->Camera()->GetOrigin())) {
+                        numOccludedActors++;
+                        continue;
+                    }
                 }
             }
 
@@ -797,7 +898,9 @@ void kexRenderWorld::DrawForegroundActors(void) {
     world->Camera()->ZFar() = -1;
     SetCameraView(world->Camera());
 
-    DrawSun(false);
+    if(cvarRenderLightScatter.GetBool()) {
+        DrawSun(false);
+    }
 
     for(kexActor *actor = world->actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
@@ -895,8 +998,12 @@ void kexRenderWorld::PrintStats(void) {
     kexRenderUtils::PrintStatsText("actor time", ": %ims", renderActorsMS);
     kexRenderUtils::PrintStatsText("fx time", ": %ims", renderFXMS);
     kexRenderUtils::PrintStatsText("drawn statics", ": %i", numDrawnStatics);
+    kexRenderUtils::PrintStatsText("culled statics", ": %i", numCulledStatics);
     kexRenderUtils::PrintStatsText("nodes visited", ": %i", numDrawnSDNodes);
     kexRenderUtils::PrintStatsText("drawn actors", ": %i", numDrawnActors);
+    kexRenderUtils::PrintStatsText("occluded actors", ": %i", numOccludedActors);
+    kexRenderUtils::PrintStatsText("culled actors", ": %i", numCulledActors);
+    kexRenderUtils::PrintStatsText("actor query size", ": %i", actorQueries.Length());
     kexRenderUtils::AddDebugLineSpacing();
 }
 
