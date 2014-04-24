@@ -117,7 +117,7 @@ kexActor::kexActor(void) {
     this->bNoCull           = false;
     this->materials         = NULL;
     this->definition        = NULL;
-    this->cullDistance      = 4096;
+    this->cullDistance      = 2048;
     this->wireframeColor    = RGBA(192, 192, 192, 255);
 }
 
