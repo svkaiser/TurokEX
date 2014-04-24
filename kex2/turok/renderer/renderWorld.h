@@ -64,6 +64,7 @@ public:
 
 private:
     void                        PreProcessLightScatter(void);
+    void                        PreProcessOcclusionQueries(void);
     void                        DrawSun(const bool bForceInfiniteProjection);
     void                        DrawSingleActor(kexActor *actor, kexMatrix *matrix);
     void                        DrawActors(void);
@@ -86,9 +87,12 @@ private:
     int                         renderStaticsMS;
     int                         renderActorsMS;
     int                         renderFXMS;
+    int                         renderOcclusionPrePassMS;
     int                         numDrawnStatics;
     int                         numCulledStatics;
     int                         numDrawnSDNodes;
+    int                         numOccludedNodes;
+    int                         numOccludedStatics;
     int                         numDrawnActors;
     int                         numOccludedActors;
     int                         numCulledActors;
@@ -99,7 +103,9 @@ private:
     kexVec3                     sunPosition;
     kexVec3                     projectedSunCoords;
     bool                        bLightScatterPass;
+    kexArray<GLuint>            nodeQueries;
     kexArray<GLuint>            actorQueries;
+    kexArray<GLuint>            staticQueries;
 };
 
 extern kexRenderWorld renderWorld;

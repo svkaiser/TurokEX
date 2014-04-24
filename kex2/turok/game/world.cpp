@@ -907,7 +907,8 @@ void kexWorld::Unload(void) {
     Mem_Purge(hb_world);
 
     areaNodes.Destroy();
-    renderWorld.renderNodes.Destroy();
+    
+    renderWorld.Shutdown();
 }
 
 //

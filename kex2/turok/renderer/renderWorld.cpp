@@ -38,6 +38,7 @@
 #include "renderUtils.h"
 
 extern kexCvar cvarRenderLightScatter;
+extern kexCvar cvarRenderNodeOcclusionQueries;
 extern kexCvar cvarRenderActorOcclusionQueries;
 
 kexRenderWorld renderWorld;
@@ -235,13 +236,27 @@ void kexRenderWorld::InitSunData(void) {
 //
 // kexRenderWorld::Shutdown
 //
+// Called after world has unloaded
+//
 
 void kexRenderWorld::Shutdown(void) {
+    renderNodes.Destroy();
+    
     for(unsigned int i = 0; i < actorQueries.Length(); i++) {
         dglDeleteQueriesARB(1, &actorQueries[i]);
     }
+    
+    for(unsigned int i = 0; i < nodeQueries.Length(); i++) {
+        dglDeleteQueriesARB(1, &nodeQueries[i]);
+    }
+
+    for(unsigned int i = 0; i < staticQueries.Length(); i++) {
+        dglDeleteQueriesARB(1, &staticQueries[i]);
+    }
 
     actorQueries.Empty();
+    nodeQueries.Empty();
+    staticQueries.Empty();
 }
 
 //
@@ -296,6 +311,8 @@ void kexRenderWorld::RenderScene(void) {
 
     DrawStaticActors();
     DrawActors();
+
+    PreProcessOcclusionQueries();
 
     if(showAreaNode >= 0 || bShowRenderNodes) {
         renderBackend.SetState(GLSTATE_DEPTHTEST, false);
@@ -373,22 +390,137 @@ void kexRenderWorld::PreProcessLightScatter(void) {
 }
 
 //
+// kexRenderWorld::PreProcessOcclusionQueries
+//
+
+void kexRenderWorld::PreProcessOcclusionQueries(void) {
+    bool bNodeOcclusion = cvarRenderActorOcclusionQueries.GetBool();
+    bool bActorOcclusion = cvarRenderActorOcclusionQueries.GetBool();
+
+    // node occlusion query pass
+    if(bNodeOcclusion | bActorOcclusion) {
+        kexBBox box;
+
+        if(bPrintStats) {
+            renderOcclusionPrePassMS = sysMain.GetMS();
+        }
+
+        renderer.PrepareOcclusionQuery();
+        
+        if(bNodeOcclusion) {
+            kexWorldModel *wm;
+
+            for(unsigned int i = 0; i < renderNodes.numNodes; i++) {
+                kexSDNodeObj<kexWorldModel> *node = &renderNodes.nodes[i];
+                
+                if(node->objects.Next() == NULL) {
+                    continue;
+                }
+
+                if(!world->Camera()->Frustum().TestBoundingBox(node->bounds)) {
+                    continue;
+                }
+                
+                // test bounds of the node against the occlusion query
+                renderer.TestBoundsForOcclusionQuery(nodeQueries[i], node->bounds);
+
+                for(wm = node->objects.Next(); wm != NULL; wm = wm->renderNode.link.Next()) {
+                    if(wm->bHidden) {
+                        continue;
+                    }
+
+                    if(wm->bCulled) {
+                        continue;
+                    }
+
+                    if(wm->queryIndex == -1) {
+                        continue;
+                    }
+
+                    box = wm->Bounds();
+                    box += 16.0f;
+
+                    renderer.TestBoundsForOcclusionQuery(staticQueries[wm->queryIndex], box);
+                }
+            }
+        }
+
+        if(bActorOcclusion) {
+            unsigned int queryIndex = 0;
+
+            for(kexActor *actor = world->actors.Next();
+                actor != NULL; actor = actor->worldLink.Next()) {
+                    if(actor->bStatic) {
+                        continue;
+                    }
+                    if(actor->bHidden || actor->DisplayType() != ODT_NORMAL) {
+                        continue;
+                    }
+                    
+                    if(actor->bCulled) {
+                        continue;
+                    }
+
+                    // generate a new query if we need to
+                    if(actorQueries.Length() <= queryIndex) {
+                        GLuint query;
+
+                        dglGenQueriesARB(1, &query);
+                        actorQueries.Push(query);
+                    }
+
+                    // keep reference for next frame
+                    actor->queryIndex = queryIndex++;
+
+                    box = actor->Bounds();
+                    box += 16.0f;
+
+                    // query the result based on the bounding box
+                    renderer.TestBoundsForOcclusionQuery(actorQueries[actor->queryIndex], box);
+            }
+        }
+
+        renderer.EndOcclusionQueryTest();
+
+        if(bPrintStats) {
+            renderOcclusionPrePassMS = sysMain.GetMS() - renderOcclusionPrePassMS;
+        }
+    }
+}
+
+//
 // kexRenderWorld::BuildNodes
 //
 
 void kexRenderWorld::BuildNodes(void) {
     kexWorldModel *wm;
+    unsigned int idx = 0;
     
     renderNodes.Init(8);
     
     for(wm = world->staticActors.Next(); wm != NULL; wm = wm->worldLink.Next()) {
+        GLuint query = 0;
+
         renderNodes.AddBoxToRoot(wm->Bounds());
+
+        // create a new query for every world model
+        dglGenQueriesARB(1, &query);
+        staticQueries.Push(query);
+
+        // keep a reference to it so we'll know which query belongs to which model
+        wm->queryIndex = idx++;
     }
     
     renderNodes.BuildNodes();
     
     for(wm = world->staticActors.Next(); wm != NULL; wm = wm->worldLink.Next()) {
         wm->renderNode.Link(renderNodes, wm->Bounds());
+    }
+    
+    nodeQueries.Resize(renderNodes.numNodes);
+    
+    for(unsigned int i = 0; i < nodeQueries.Length(); i++) {
+        dglGenQueriesARB(1, &nodeQueries[i]);
     }
 }
 
@@ -546,6 +678,7 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
     kexBBox box;
     int side;
     float d;
+    bool bNodeQueries;
 
     node = &renderNodes.nodes[nodenum];
     camera = world->Camera();
@@ -566,6 +699,16 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
     
     if(node->objects.Next() == NULL) {
         return;
+    }
+
+    bNodeQueries = cvarRenderNodeOcclusionQueries.GetBool();
+    
+    if(bNodeQueries) {
+        // check if it's occluded from the previous frame
+        if(renderer.GetOcclusionSampleResult(nodeQueries[nodenum], node->bounds)) {
+            numOccludedNodes++;
+            return;
+        }
     }
     
     if(renderNodeStep >= 0) {
@@ -599,6 +742,15 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
             continue;
         }
 
+        if(bNodeQueries) {
+            box += 18.0f;
+
+            if(renderer.GetOcclusionSampleResult(staticQueries[wm->queryIndex], box)) {
+                numOccludedStatics++;
+                continue;
+            }
+        }
+
         DrawWorldModel(wm);
         
         if(bShowBBox) {
@@ -630,6 +782,8 @@ void kexRenderWorld::DrawStaticActors(void) {
     if(bPrintStats) {
         renderStaticsMS = sysMain.GetMS();
         numCulledStatics = 0;
+        numOccludedNodes = 0;
+        numOccludedStatics = 0;
     }
     
     renderNodeStepNum = 0;
@@ -710,6 +864,8 @@ void kexRenderWorld::DrawSingleActor(kexActor *actor, kexMatrix *matrix) {
 void kexRenderWorld::DrawActors(void) {
     kexFrustum frustum = world->Camera()->Frustum();
     kexMatrix mtx(DEG2RAD(-90), 1);
+    kexBBox box;
+    kexVec3 camOrg;
 
     mtx.Scale(-1, 1, 1);
 
@@ -720,53 +876,9 @@ void kexRenderWorld::DrawActors(void) {
         renderActorsMS = sysMain.GetMS();
     }
 
-    unsigned int queryIndex = 0;
-    int samples;
+    camOrg = world->Camera()->GetOrigin();
+
     bool bUseQueries = cvarRenderActorOcclusionQueries.GetBool();
-
-    // occlusion query pass
-    if(bUseQueries) {
-        // make sure we don't write anything while testing the bounds
-        glColorMask(0, 0, 0, 0);
-        renderBackend.SetDepthMask(GLDEPTHMASK_NO);
-
-        for(kexActor *actor = world->actors.Next();
-            actor != NULL; actor = actor->worldLink.Next()) {
-                if(actor->bStatic) {
-                    continue;
-                }
-                if(actor->bHidden || actor->DisplayType() != ODT_NORMAL) {
-                    continue;
-                }
-                
-                // if we're doing the culling here, don't do it again in the actual draw pass
-                if(actor->bNoCull == false) {
-                    actor->bCulled = !frustum.TestBoundingBox(actor->Bounds());
-
-                    if(actor->bCulled) {
-                        continue;
-                    }
-                }
-
-                // generate a new query if we need to
-                if(actorQueries.Length() <= queryIndex) {
-                    GLuint query;
-
-                    dglGenQueriesARB(1, &query);
-                    actorQueries.Push(query);
-                }
-
-                // query the result based on the bounding box
-                dglBeginQueryARB(GL_SAMPLES_PASSED_ARB, actorQueries[queryIndex++]);
-                kexRenderUtils::DrawFilledBoundingBox(actor->Bounds(), 0, 0, 0);
-                dglEndQueryARB(GL_SAMPLES_PASSED_ARB);
-        }
-
-        dglColorMask(1, 1, 1, 1);
-        renderBackend.SetDepthMask(GLDEPTHMASK_YES);
-    }
-
-    queryIndex = 0;
 
     for(kexActor *actor = world->actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
@@ -777,35 +889,26 @@ void kexRenderWorld::DrawActors(void) {
                 continue;
             }
 
-            if(!bUseQueries) {
-                if(actor->bNoCull == false) {
-                    actor->bCulled = !frustum.TestBoundingBox(actor->Bounds());
-
-                    if(actor->bCulled) {
-                        numCulledActors++;
-                        continue;
-                    }
+            if(actor->bNoCull == false) {
+                if(actor->GetOrigin().DistanceSq(camOrg) >= (actor->CullDistance() * actor->CullDistance())) {
+                    actor->bCulled = true;
                 }
-            }
-            else {
-                // frustum-cull check was already done in the occlusion query pre-pass
+                else {
+                    actor->bCulled = !frustum.TestBoundingBox(actor->Bounds());
+                }
+
                 if(actor->bCulled) {
                     numCulledActors++;
                     continue;
                 }
             }
             
-            if(bUseQueries) {
-                samples = 0;
-
-                // check if it's occluded by any static geometry
-                dglGetQueryObjectivARB(actorQueries[queryIndex++], GL_QUERY_RESULT_ARB, &samples);
-                if(samples <= 16) {
-                    // omit if the camera is completely inside the bounds
-                    if(!actor->Bounds().PointInside(world->Camera()->GetOrigin())) {
-                        numOccludedActors++;
-                        continue;
-                    }
+            if(bUseQueries && actor->queryIndex != -1) {
+                box = actor->Bounds();
+                box += 18.0f;
+                if(renderer.GetOcclusionSampleResult(actorQueries[actor->queryIndex], box)) {
+                    numOccludedActors++;
+                    continue;
                 }
             }
 
@@ -997,12 +1100,18 @@ void kexRenderWorld::PrintStats(void) {
     kexRenderUtils::PrintStatsText("statics time", ": %ims", renderStaticsMS);
     kexRenderUtils::PrintStatsText("actor time", ": %ims", renderActorsMS);
     kexRenderUtils::PrintStatsText("fx time", ": %ims", renderFXMS);
+    kexRenderUtils::PrintStatsText("query time", ": %ims", renderOcclusionPrePassMS);
+    kexRenderUtils::AddDebugLineSpacing();
     kexRenderUtils::PrintStatsText("drawn statics", ": %i", numDrawnStatics);
-    kexRenderUtils::PrintStatsText("culled statics", ": %i", numCulledStatics);
     kexRenderUtils::PrintStatsText("nodes visited", ": %i", numDrawnSDNodes);
     kexRenderUtils::PrintStatsText("drawn actors", ": %i", numDrawnActors);
-    kexRenderUtils::PrintStatsText("occluded actors", ": %i", numOccludedActors);
+    kexRenderUtils::AddDebugLineSpacing();
+    kexRenderUtils::PrintStatsText("culled statics", ": %i", numCulledStatics);
     kexRenderUtils::PrintStatsText("culled actors", ": %i", numCulledActors);
+    kexRenderUtils::AddDebugLineSpacing();
+    kexRenderUtils::PrintStatsText("occluded nodes", ": %i", numOccludedNodes);
+    kexRenderUtils::PrintStatsText("occluded statics", ": %i", numOccludedStatics);
+    kexRenderUtils::PrintStatsText("occluded actors", ": %i", numOccludedActors);
     kexRenderUtils::PrintStatsText("actor query size", ": %i", actorQueries.Length());
     kexRenderUtils::AddDebugLineSpacing();
 }

@@ -355,8 +355,6 @@ void kexRenderBackend::Shutdown(void) {
 
     common.Printf("Shutting down render system\n");
 
-    renderWorld.Shutdown();
-
     defaultTexture.Delete();
     whiteTexture.Delete();
     blackTexture.Delete();

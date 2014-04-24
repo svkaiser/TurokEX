@@ -38,6 +38,7 @@ kexCvar cvarRenderMotionBlur("r_motionblur", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 kexCvar cvarRenderMotionBlurSamples("r_motionblursamples", CVF_INT|CVF_CONFIG, "32", "TODO");
 kexCvar cvarRenderMotionBlurRampSpeed("r_motionblurrampspeed", CVF_FLOAT|CVF_CONFIG, "0.0", "TODO");
 kexCvar cvarRenderLightScatter("r_lightscatter", CVF_BOOL|CVF_CONFIG, "0", "TODO");
+kexCvar cvarRenderNodeOcclusionQueries("r_nodeocclusionqueries", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 kexCvar cvarRenderActorOcclusionQueries("r_actorocclusionqueries", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 
 kexRenderer renderer;
@@ -242,6 +243,90 @@ void kexRenderer::DrawLineElements(void) {
     
     indiceCount = 0;
     vertexCount = 0;
+}
+
+//
+// kexRenderer::PrepareOcclusionQuery
+//
+
+void kexRenderer::PrepareOcclusionQuery(void) {
+    // make sure we don't write anything while testing the bounds
+    glColorMask(0, 0, 0, 0);
+    renderBackend.SetDepthMask(GLDEPTHMASK_NO);
+    
+    renderBackend.SetState(GLSTATE_TEXTURE0, false);
+    renderBackend.SetState(GLSTATE_CULL, false);
+    renderBackend.SetState(GLSTATE_BLEND, false);
+    
+    renderBackend.DisableShaders();
+    
+    dglDisableClientState(GL_NORMAL_ARRAY);
+    dglDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    dglDisableClientState(GL_COLOR_ARRAY);
+}
+
+//
+// kexRenderer::TestBoundsForOcclusionQuery
+//
+
+void kexRenderer::TestBoundsForOcclusionQuery(const unsigned int &query, const kexBBox &bounds) {
+    word indices[36];
+    float points[24];
+    
+    indices[ 0] = 0; indices[ 1] = 1; indices[ 2] = 3;
+    indices[ 3] = 4; indices[ 4] = 7; indices[ 5] = 5;
+    indices[ 6] = 0; indices[ 7] = 4; indices[ 8] = 1;
+    indices[ 9] = 1; indices[10] = 5; indices[11] = 6;
+    indices[12] = 2; indices[13] = 6; indices[14] = 7;
+    indices[15] = 4; indices[16] = 0; indices[17] = 3;
+    indices[18] = 1; indices[19] = 2; indices[20] = 3;
+    indices[21] = 7; indices[22] = 6; indices[23] = 5;
+    indices[24] = 2; indices[25] = 1; indices[26] = 6;
+    indices[27] = 3; indices[28] = 2; indices[29] = 7;
+    indices[30] = 7; indices[31] = 4; indices[32] = 3;
+    indices[33] = 4; indices[34] = 5; indices[35] = 1;
+    
+    bounds.ToPoints(points);
+    
+    dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, points);
+    
+    dglBeginQueryARB(GL_SAMPLES_PASSED_ARB, query);
+    dglDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, indices);
+    dglEndQueryARB(GL_SAMPLES_PASSED_ARB);
+}
+
+//
+// kexRenderer::EndOcclusionQueryTest
+//
+
+void kexRenderer::EndOcclusionQueryTest(void) {
+    dglColorMask(1, 1, 1, 1);
+    renderBackend.SetDepthMask(GLDEPTHMASK_YES);
+    
+    dglEnableClientState(GL_NORMAL_ARRAY);
+    dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    dglEnableClientState(GL_COLOR_ARRAY);
+    
+    renderBackend.SetState(GLSTATE_TEXTURE0, true);
+}
+
+//
+// kexRenderer::GetOcclusionSampleResult
+//
+
+bool kexRenderer::GetOcclusionSampleResult(const unsigned int &query, const kexBBox &bounds) {
+    int samples = -1;
+    
+    dglGetQueryObjectivARB(query, GL_QUERY_RESULT_ARB, &samples);
+
+    if(samples <= 16 && samples >= 0) {
+        // omit if the camera is completely inside the bounds
+        if(!bounds.PointInside(localWorld.Camera()->GetOrigin())) {
+            return true;
+        }
+    }
+    
+    return false;
 }
 
 //
