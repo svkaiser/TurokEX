@@ -39,6 +39,7 @@ kexDisplayObject::kexDisplayObject(void) {
     this->bHidden       = false;
     this->bCulled       = false;
     this->displayType   = ODT_NORMAL;
+    this->queryIndex    = -1;
     
     this->attachment.SetOwner(this);
     this->scale.Set(1, 1, 1);

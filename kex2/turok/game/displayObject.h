@@ -65,6 +65,8 @@ public:
     bool                        bHidden;        // don't draw by renderer
     bool                        bCulled;        // currently culled by frustum or distance
 
+    unsigned int                queryIndex;
+
     //
     // template for registering default script actor methods and properties
     //
