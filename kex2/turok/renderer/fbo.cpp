@@ -60,6 +60,8 @@ void kexFBO::InitColorAttachment(const int attachment, const int width, const in
         return;
     }
     
+    fboAttachment = GL_COLOR_ATTACHMENT0_EXT + attachment;
+    
     // texture
     dglGenTextures(1, &fboTexId);
     dglBindTexture(GL_TEXTURE_2D, fboTexId);
@@ -88,8 +90,10 @@ void kexFBO::InitColorAttachment(const int attachment, const int width, const in
     // framebuffer
     dglGenFramebuffers(1, &fboId);
     dglBindFramebuffer(GL_FRAMEBUFFER_EXT, fboId);
+    dglDrawBuffer(GL_NONE);
+    dglReadBuffer(GL_NONE);
     dglFramebufferTexture2D(GL_FRAMEBUFFER_EXT,
-                            GL_COLOR_ATTACHMENT0_EXT + attachment,
+                            fboAttachment,
                             GL_TEXTURE_2D,
                             fboTexId,
                             0);
@@ -112,6 +116,8 @@ void kexFBO::InitColorAttachment(const int attachment, const int width, const in
     dglBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
     dglBindRenderbuffer(GL_RENDERBUFFER_EXT, 0);
     dglBindTexture(GL_TEXTURE_2D, 0);
+    dglDrawBuffer(GL_BACK);
+    dglReadBuffer(GL_BACK);
 }
 
 //
@@ -160,6 +166,8 @@ void kexFBO::Bind(void) {
     }
     
     dglBindFramebuffer(GL_FRAMEBUFFER_EXT, fboId);
+    dglReadBuffer(fboAttachment);
+    dglDrawBuffer(fboAttachment);
     renderBackend.glState.currentFBO = fboId;
 }
 
@@ -173,6 +181,9 @@ void kexFBO::UnBind(void) {
     }
     
     dglBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
+    dglDrawBuffer(GL_BACK);
+    dglReadBuffer(GL_BACK);
+    
     renderBackend.glState.currentFBO = 0;
 }
 

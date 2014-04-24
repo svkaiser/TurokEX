@@ -42,6 +42,7 @@ private:
     dtexture                rboId;
     dtexture                fboTexId;
     bool                    bLoaded;
+    unsigned int            fboAttachment;
 };
 
 #endif
