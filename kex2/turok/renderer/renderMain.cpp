@@ -628,6 +628,42 @@ void kexRenderer::DrawFX(const fxDisplay_t *fxList, const int count) {
 }
 
 //
+// kexRenderer::DrawScreenQuad
+//
+
+void kexRenderer::DrawScreenQuad(void) {
+    static const word  indices[6] = { 0, 1, 2, 2, 1, 3 };
+    static const float tcoords[8] = { 0, 0, 1, 0, 0, 1, 1, 1 };
+    int vp[4];
+    float verts[12];
+    
+    dglGetIntegerv(GL_VIEWPORT, vp);
+    
+    dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, tcoords);
+    dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, verts);
+    
+    dglDisableClientState(GL_NORMAL_ARRAY);
+    dglDisableClientState(GL_COLOR_ARRAY);
+    
+    verts[0 * 3 + 0] = (float)vp[0];
+    verts[0 * 3 + 1] = (float)vp[1];
+    verts[0 * 3 + 2] = 0;
+    verts[1 * 3 + 0] = (float)vp[2];
+    verts[1 * 3 + 1] = (float)vp[1];
+    verts[1 * 3 + 2] = 0;
+    verts[2 * 3 + 0] = (float)vp[0];
+    verts[2 * 3 + 1] = (float)vp[3];
+    verts[2 * 3 + 2] = 0;
+    verts[3 * 3 + 0] = (float)vp[2];
+    verts[3 * 3 + 1] = (float)vp[3];
+    verts[3 * 3 + 2] = 0;
+    
+    dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices);
+    dglEnableClientState(GL_NORMAL_ARRAY);
+    dglEnableClientState(GL_COLOR_ARRAY);
+}
+
+//
 // kexRenderer::ProcessMotionBlur
 //
 
@@ -706,17 +742,9 @@ void kexRenderer::ProcessMotionBlur(void) {
 //
 
 void kexRenderer::ProcessLightScatter(void) {
-    int vp[4];
-    const word  indices[6] = { 0, 1, 2, 2, 1, 3 };
-    const float tcoords[8] = { 0, 0, 1, 0, 0, 1, 1, 1 };
-    float       verts[12];
-    byte        colors[4][4];
-
     if(cvarRenderLightScatter.GetBool() == false) {
         return;
     }
-
-    dglGetIntegerv(GL_VIEWPORT, vp);
 
     shaderLightScatter->Enable();
 
@@ -732,29 +760,7 @@ void kexRenderer::ProcessLightScatter(void) {
     renderBackend.SetState(GLSTATE_BLEND, true);
     renderBackend.SetBlend(GLSRC_ONE_MINUS_DST_COLOR, GLDST_ONE);
 
-    dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, tcoords);
-    dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, verts);
-    dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, colors);
-
-    dglDisableClientState(GL_NORMAL_ARRAY);
-
-    verts[0 * 3 + 0] = (float)vp[0];
-    verts[0 * 3 + 1] = (float)vp[1];
-    verts[0 * 3 + 2] = 0;
-    verts[1 * 3 + 0] = (float)vp[2];
-    verts[1 * 3 + 1] = (float)vp[1];
-    verts[1 * 3 + 2] = 0;
-    verts[2 * 3 + 0] = (float)vp[0];
-    verts[2 * 3 + 1] = (float)vp[3];
-    verts[2 * 3 + 2] = 0;
-    verts[3 * 3 + 0] = (float)vp[2];
-    verts[3 * 3 + 1] = (float)vp[3];
-    verts[3 * 3 + 2] = 0;
-
-    memset(colors, 0xff, sizeof(colors));
-
-    dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices);
-    dglEnableClientState(GL_NORMAL_ARRAY);
+    DrawScreenQuad();
 
     renderBackend.DisableShaders();
     renderBackend.SetBlend(GLSRC_SRC_ALPHA, GLDST_ONE_MINUS_SRC_ALPHA);
