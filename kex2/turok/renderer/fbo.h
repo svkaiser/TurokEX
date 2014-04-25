@@ -36,6 +36,9 @@ public:
     void                    BindImage(void);
     void                    Bind(void);
     void                    UnBind(void);
+    
+    const int               Width(void) const { return fboWidth; }
+    const int               Height(void) const { return fboHeight; }
 
 private:
     dtexture                fboId;
@@ -43,6 +46,8 @@ private:
     dtexture                fboTexId;
     bool                    bLoaded;
     unsigned int            fboAttachment;
+    int                     fboWidth;
+    int                     fboHeight;
 };
 
 #endif

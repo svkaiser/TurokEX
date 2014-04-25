@@ -62,6 +62,9 @@ void kexFBO::InitColorAttachment(const int attachment, const int width, const in
     
     fboAttachment = GL_COLOR_ATTACHMENT0_EXT + attachment;
     
+    fboWidth = width;
+    fboHeight = height;
+    
     // texture
     dglGenTextures(1, &fboTexId);
     dglBindTexture(GL_TEXTURE_2D, fboTexId);
@@ -72,8 +75,8 @@ void kexFBO::InitColorAttachment(const int attachment, const int width, const in
     dglTexImage2D(GL_TEXTURE_2D,
                   0,
                   GL_RGBA,
-                  width,
-                  height,
+                  fboWidth,
+                  fboHeight,
                   0,
                   GL_RGBA,
                   GL_UNSIGNED_BYTE,
@@ -84,8 +87,8 @@ void kexFBO::InitColorAttachment(const int attachment, const int width, const in
     dglBindRenderbuffer(GL_RENDERBUFFER_EXT, rboId);
     dglRenderbufferStorage(GL_RENDERBUFFER_EXT,
                            GL_DEPTH_COMPONENT,
-                           width,
-                           height);
+                           fboWidth,
+                           fboHeight);
     
     // framebuffer
     dglGenFramebuffers(1, &fboId);
@@ -125,8 +128,8 @@ void kexFBO::InitColorAttachment(const int attachment, const int width, const in
 //
 
 void kexFBO::InitColorAttachment(const int attachment) {
-    int width = sysMain.VideoWidth();
-    int height = sysMain.VideoHeight();
+    int width = kexMath::RoundPowerOfTwo(sysMain.VideoWidth()) >> 1;
+    int height = kexMath::RoundPowerOfTwo(sysMain.VideoHeight()) >> 1;
     
     InitColorAttachment(attachment, width, height);
 }
