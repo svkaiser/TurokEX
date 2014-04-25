@@ -78,6 +78,7 @@ public:
     void                    DrawElements(const kexMaterial *material, const bool bClearCount = true);
     void                    DrawElementsNoShader(const bool bClearCount = true);
     void                    DrawLineElements(void);
+    void                    DrawScreenQuad(void);
     void                    PrepareOcclusionQuery(void);
     void                    TestBoundsForOcclusionQuery(const unsigned int &query, const kexBBox &bounds);
     void                    EndOcclusionQueryTest(void);
