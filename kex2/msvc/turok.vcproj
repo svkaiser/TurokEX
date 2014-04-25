@@ -303,6 +303,10 @@
 					RelativePath="..\turok\renderer\viewBounds.cpp"
 					>
 				</File>
+				<File
+					RelativePath="..\turok\renderer\viewPortals.cpp"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="framework"
@@ -666,6 +670,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\renderer\viewBounds.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\renderer\viewPortals.h"
 					>
 				</File>
 			</Filter>
