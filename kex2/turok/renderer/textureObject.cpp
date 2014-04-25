@@ -686,7 +686,7 @@ void kexTexture::Bind(void) {
 // kexTexture::BindFrameBuffer
 //
 
-void kexTexture::BindFrameBuffer(void) {
+void kexTexture::BindFrameBuffer(const bool bReadBuffer) {
     if(!renderBackend.IsInitialized()) {
         return;
     }
@@ -706,6 +706,10 @@ void kexTexture::BindFrameBuffer(void) {
     if(texid != currentTexture) {
         dglBindTexture(GL_TEXTURE_2D, texid);
         renderBackend.glState.textureUnits[unit].currentTexture = texid;
+    }
+    
+    if(bReadBuffer == false) {
+        return;
     }
     
     dglReadBuffer(GL_BACK);
@@ -730,7 +734,7 @@ void kexTexture::BindFrameBuffer(void) {
 // kexTexture::BindDepthBuffer
 //
 
-void kexTexture::BindDepthBuffer(void) {
+void kexTexture::BindDepthBuffer(const bool bReadDepth) {
     if(!renderBackend.IsInitialized()) {
         return;
     }
@@ -750,6 +754,10 @@ void kexTexture::BindDepthBuffer(void) {
     if(texid != currentTexture) {
         dglBindTexture(GL_TEXTURE_2D, texid);
         renderBackend.glState.textureUnits[unit].currentTexture = texid;
+    }
+    
+    if(bReadDepth == false) {
+        return;
     }
     
     origwidth   = sysMain.VideoWidth();
