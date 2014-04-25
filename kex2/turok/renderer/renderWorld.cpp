@@ -43,6 +43,12 @@ extern kexCvar cvarRenderActorOcclusionQueries;
 
 kexRenderWorld renderWorld;
 
+//-----------------------------------------------------------------------------
+//
+// command functions
+//
+//-----------------------------------------------------------------------------
+
 //
 // FCmd_ShowCollision
 //
@@ -183,6 +189,12 @@ static void FCmd_RenderNodeStep(void) {
     renderWorld.renderNodeStep = atoi(command.GetArgv(1));
 }
 
+//-----------------------------------------------------------------------------
+//
+// initialization and shutdown
+//
+//-----------------------------------------------------------------------------
+
 //
 // kexRenderWorld::kexRenderWorld
 //
@@ -258,6 +270,12 @@ void kexRenderWorld::Shutdown(void) {
     nodeQueries.Empty();
     staticQueries.Empty();
 }
+
+//-----------------------------------------------------------------------------
+//
+// scene rendering
+//
+//-----------------------------------------------------------------------------
 
 //
 // kexRenderWorld::SetCameraView
@@ -348,6 +366,12 @@ void kexRenderWorld::RenderScene(void) {
     }
 }
 
+//-----------------------------------------------------------------------------
+//
+// preprocessing
+//
+//-----------------------------------------------------------------------------
+
 //
 // kexRenderWorld::PreProcessLightScatter
 //
@@ -360,6 +384,9 @@ void kexRenderWorld::PreProcessLightScatter(void) {
     if(!world->Camera()->Frustum().TestSphere(sunPosition, 8192.0f)) {
         return;
     }
+    
+    dglGetIntegerv(GL_VIEWPORT, vp);
+    dglViewport(0, 0, renderer.FBOLightScatter().Width(), renderer.FBOLightScatter().Height());
 
     renderer.FBOLightScatter().Bind();
     dglClearColor(world->worldLightAmbience[0],
@@ -371,8 +398,6 @@ void kexRenderWorld::PreProcessLightScatter(void) {
     SetCameraView(world->Camera());
 
     projectedSunCoords = world->Camera()->ProjectPoint(sunPosition, 0, 0);
-
-    dglGetIntegerv(GL_VIEWPORT, vp);
 
     projectedSunCoords.x /= (float)vp[2];
     projectedSunCoords.y /= (float)vp[3];
@@ -387,6 +412,7 @@ void kexRenderWorld::PreProcessLightScatter(void) {
 
     renderer.FBOLightScatter().UnBind();
     dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    dglViewport(vp[0], vp[1], vp[2], vp[3]);
 }
 
 //
@@ -412,11 +438,9 @@ void kexRenderWorld::PreProcessOcclusionQueries(void) {
 
             for(unsigned int i = 0; i < renderNodes.numNodes; i++) {
                 kexSDNodeObj<kexWorldModel> *node = &renderNodes.nodes[i];
-                
                 if(node->objects.Next() == NULL) {
                     continue;
                 }
-
                 if(!world->Camera()->Frustum().TestBoundingBox(node->bounds)) {
                     continue;
                 }
@@ -425,20 +449,12 @@ void kexRenderWorld::PreProcessOcclusionQueries(void) {
                 renderer.TestBoundsForOcclusionQuery(nodeQueries[i], node->bounds);
 
                 for(wm = node->objects.Next(); wm != NULL; wm = wm->renderNode.link.Next()) {
-                    if(wm->bHidden) {
-                        continue;
-                    }
-
-                    if(wm->bCulled) {
-                        continue;
-                    }
-
-                    if(wm->queryIndex == -1) {
+                    if(wm->bHidden || wm->bCulled || wm->queryIndex == -1) {
                         continue;
                     }
 
                     box = wm->Bounds();
-                    box += 16.0f;
+                    box += 4.0f;
 
                     renderer.TestBoundsForOcclusionQuery(staticQueries[wm->queryIndex], box);
                 }
@@ -450,15 +466,11 @@ void kexRenderWorld::PreProcessOcclusionQueries(void) {
 
             for(kexActor *actor = world->actors.Next();
                 actor != NULL; actor = actor->worldLink.Next()) {
-                    if(actor->bStatic) {
-                        continue;
-                    }
-                    if(actor->bHidden || actor->DisplayType() != ODT_NORMAL) {
-                        continue;
-                    }
-                    
-                    if(actor->bCulled) {
-                        continue;
+                    if(actor->bStatic   ||
+                        actor->bHidden  ||
+                        actor->bCulled  ||
+                        actor->DisplayType() != ODT_NORMAL) {
+                            continue;
                     }
 
                     // generate a new query if we need to
@@ -473,7 +485,7 @@ void kexRenderWorld::PreProcessOcclusionQueries(void) {
                     actor->queryIndex = queryIndex++;
 
                     box = actor->Bounds();
-                    box += 16.0f;
+                    box += 4.0f;
 
                     // query the result based on the bounding box
                     renderer.TestBoundsForOcclusionQuery(actorQueries[actor->queryIndex], box);
@@ -487,6 +499,12 @@ void kexRenderWorld::PreProcessOcclusionQueries(void) {
         }
     }
 }
+
+//-----------------------------------------------------------------------------
+//
+// world model / actor rendering
+//
+//-----------------------------------------------------------------------------
 
 //
 // kexRenderWorld::BuildNodes
@@ -667,6 +685,51 @@ void kexRenderWorld::TraverseDrawActorNode(kexActor *actor,
 }
 
 //
+// kexRenderWorld::TraversePortalView
+//
+
+void kexRenderWorld::TraversePortalView(kexPortal *portal, kexPortal *prevPortal, kexViewBounds *viewBounds) {
+    kexViewBounds vb;
+
+    if(portal == NULL) {
+        return;
+    }
+
+    if(!world->Camera()->Frustum().TestBoundingBox(portal->Bounds())) {
+        return;
+    }
+
+    portal->bInView = true;
+
+    for(unsigned int i = 0; i < portal->links.Length(); i++) {
+        if(!world->Camera()->Frustum().TestBoundingBox(portal->links[i].bounds)) {
+            continue;
+        }
+        if(portal->links[i].portal == NULL) {
+            continue;
+        }
+        if(portal->links[i].portal->bInView == true) {
+            continue;
+        }
+        if(portal->links[i].portal == prevPortal) {
+            continue;
+        }
+
+        portal->ClipLinkToViewBounds(world->Camera(), &portal->links[i], vb);
+
+        if(viewBounds) {
+            if(!viewBounds->ViewBoundInside(vb)) {
+                continue;
+            }
+        }
+
+        portal->links[i].bInView = true;
+
+        TraversePortalView(portal->links[i].portal, portal, &vb);
+    }
+}
+
+//
 // kexRenderWorld::RecursiveSDNode
 //
 
@@ -743,7 +806,7 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
         }
 
         if(bNodeQueries) {
-            box += 18.0f;
+            box += 20.0f;
 
             if(renderer.GetOcclusionSampleResult(staticQueries[wm->queryIndex], box)) {
                 numOccludedStatics++;
@@ -905,7 +968,7 @@ void kexRenderWorld::DrawActors(void) {
             
             if(bUseQueries && actor->queryIndex != -1) {
                 box = actor->Bounds();
-                box += 18.0f;
+                box += 20.0f;
                 if(renderer.GetOcclusionSampleResult(actorQueries[actor->queryIndex], box)) {
                     numOccludedActors++;
                     continue;
@@ -1027,6 +1090,12 @@ void kexRenderWorld::DrawForegroundActors(void) {
     dglClear(GL_DEPTH_BUFFER_BIT);
 }
 
+//-----------------------------------------------------------------------------
+//
+// particle fx rendering
+//
+//-----------------------------------------------------------------------------
+
 //
 // kexRenderWorld::SortSprites
 //
@@ -1086,6 +1155,12 @@ void kexRenderWorld::DrawFX(void) {
     
     renderer.DrawFX(fxDisplayList, fxDisplayNum);
 }
+
+//-----------------------------------------------------------------------------
+//
+// debugging stuff
+//
+//-----------------------------------------------------------------------------
 
 //
 // kexRenderWorld::PrintStats

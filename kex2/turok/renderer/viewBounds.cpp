@@ -53,6 +53,14 @@ void kexViewBounds::Clear(void) {
 }
 
 //
+// kexViewBounds::IsClosed
+//
+
+const bool kexViewBounds::IsClosed(void) const {
+    return (min[0] > max[0] || min[1] > max[1]);
+}
+
+//
 // kexViewBounds::AddPoint
 //
 

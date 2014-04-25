@@ -25,6 +25,8 @@
 
 #include "world.h"
 #include "sdNodes.h"
+#include "viewPortals.h"
+#include "viewBounds.h"
 
 class kexRenderWorld {
 public:
@@ -74,6 +76,8 @@ private:
     void                        DrawFX(void);
     void                        DrawWorldModel(kexWorldModel *wm);
     void                        RecursiveSDNode(int nodenum);
+    void                        TraversePortalView(kexPortal *portal, kexPortal *prevPortal,
+                                                   kexViewBounds *viewBounds);
     void                        TraverseDrawActorNode(kexActor *actor,
                                                       const modelNode_t *node,
                                                       kexAnimState *animState);
