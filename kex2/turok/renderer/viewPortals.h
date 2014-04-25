@@ -51,8 +51,8 @@ public:
         bool                    bInView;
     } portalLink_t;
 
-    kexArray<portalLink_t>      links;
     bool                        bInView;
+    kexArray<portalLink_t>      links;
 
     void                        ClipLinkToViewBounds(kexCamera *camera, portalLink_t *link,
                                                      kexViewBounds &viewBound);
