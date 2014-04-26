@@ -20,7 +20,7 @@
 //
 //-----------------------------------------------------------------------------
 //
-// DESCRIPTION: Bounding box operations
+// DESCRIPTION: Bounding box (axis-aligned) operations
 //
 //-----------------------------------------------------------------------------
 
@@ -385,6 +385,8 @@ bool kexBBox::LineIntersect(const kexVec3 &start, const kexVec3 &end) {
 //
 // kexBBox::ToPoints
 //
+// Assumes points is an array of 24
+//
 
 void kexBBox::ToPoints(float *points) const {
     points[0 * 3 + 0] = max[0];
@@ -411,4 +413,37 @@ void kexBBox::ToPoints(float *points) const {
     points[7 * 3 + 0] = min[0];
     points[7 * 3 + 1] = max[1];
     points[7 * 3 + 2] = min[2];
+}
+
+//
+// kexBBox::ToVectors
+//
+// Assumes vectors is an array of 8
+//
+
+void kexBBox::ToVectors(kexVec3 *vectors) const {
+    vectors[0][0] = max[0];
+    vectors[0][1] = min[1];
+    vectors[0][2] = min[2];
+    vectors[1][0] = max[0];
+    vectors[1][1] = min[1];
+    vectors[1][2] = max[2];
+    vectors[2][0] = min[0];
+    vectors[2][1] = min[1];
+    vectors[2][2] = max[2];
+    vectors[3][0] = min[0];
+    vectors[3][1] = min[1];
+    vectors[3][2] = min[2];
+    vectors[4][0] = max[0];
+    vectors[4][1] = max[1];
+    vectors[4][2] = min[2];
+    vectors[5][0] = max[0];
+    vectors[5][1] = max[1];
+    vectors[5][2] = max[2];
+    vectors[6][0] = min[0];
+    vectors[6][1] = max[1];
+    vectors[6][2] = max[2];
+    vectors[7][0] = min[0];
+    vectors[7][1] = max[1];
+    vectors[7][2] = min[2];
 }
