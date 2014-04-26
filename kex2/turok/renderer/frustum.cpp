@@ -206,12 +206,6 @@ bool kexFrustum::ClipSegment(kexVec3 &out1, kexVec3 &out2,
     out1 = start;
     out2 = end;
     
-    if(!TestSegment(start, end)) {
-        clipbits1 = FRUSTUM_CLIPPED;
-        clipbits2 = FRUSTUM_CLIPPED;
-        return false;
-    }
-    
     for(int i = 0; i < NUMFRUSTUMPLANES; i++) {
         d1 = p[i].Distance(start) + p[i].d;
         d2 = p[i].Distance(end) + p[i].d;

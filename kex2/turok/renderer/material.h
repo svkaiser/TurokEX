@@ -71,7 +71,7 @@ public:
     const glCullType_t                  CullType(void) const { return cullType; }
     const glFunctions_t                 AlphaFunction(void) const { return alphaFunction; }
     const matSortOrder_t                SortOrder(void) const { return sortOrder; }
-    const glDepthMask_t                 DepthMask(void) const { return depthMask; }
+    const int                           DepthMask(void) const { return depthMask; }
     kexShaderObj                        *ShaderObj(void) { return shaderObj; }
     const unsigned int                  Flags(void) const { return flags; }
     const unsigned int                  StateBits(void) const { return stateBits; }
@@ -94,7 +94,7 @@ private:
     unsigned int                        stateBits;
     glCullType_t                        cullType;
     glFunctions_t                       alphaFunction;
-    glDepthMask_t                       depthMask;
+    int                                 depthMask;
     matSortOrder_t                      sortOrder;
     float                               alphaMask;
     kexVec4                             diffuseColor;

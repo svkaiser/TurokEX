@@ -30,6 +30,7 @@
 #include "renderMain.h"
 #include "renderWorld.h"
 #include "defs.h"
+#include "renderUtils.h"
 
 kexCvar cvarRenderFinish("r_finish", CVF_BOOL|CVF_CONFIG, "0", "Force a GL command sync");
 extern kexCvar cvarVidDepthSize;
@@ -47,6 +48,18 @@ GL_ARB_vertex_buffer_object_Define();
 GL_ARB_shader_objects_Define();
 GL_ARB_framebuffer_object_Define();
 GL_ARB_occlusion_query_Define();
+
+//
+// FCmd_PrintStats
+//
+
+static void FCmd_PrintStats(void) {
+    if(command.GetArgc() < 1) {
+        return;
+    }
+
+    renderBackend.bPrintStats ^= 1;
+}
 
 //
 // FindExtension
@@ -136,12 +149,14 @@ kexRenderBackend::kexRenderBackend(void) {
     this->glState.blendSrc          = -1;
     this->glState.cullType          = -1;
     this->glState.depthMask         = -1;
+    this->glState.colormask         = -1;
     this->glState.currentUnit       = -1;
     this->glState.currentProgram    = 0;
     this->glState.currentFBO        = 0;
     this->frameBuffer               = NULL;
     this->depthBuffer               = NULL;
     this->validFrameNum             = 0;
+    this->bPrintStats               = false;
 }
 
 //
@@ -228,6 +243,7 @@ void kexRenderBackend::SetDefaultState(void) {
     glState.blendSrc        = -1;
     glState.cullType        = -1;
     glState.depthMask       = -1;
+    glState.colormask       = -1;
     glState.currentUnit     = -1;
     glState.currentProgram  = 0;
     glState.currentFBO      = 0;
@@ -240,13 +256,13 @@ void kexRenderBackend::SetDefaultState(void) {
     
     SetState(GLSTATE_TEXTURE0, true);
     SetState(GLSTATE_CULL, true);
-    SetState(GLSTATE_LIGHTING, false);
     SetState(GLSTATE_FOG, false);
     SetCull(GLCULL_FRONT);
     SetDepth(GLFUNC_LEQUAL);
     SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
     SetBlend(GLSRC_SRC_ALPHA, GLDST_ONE_MINUS_SRC_ALPHA);
-    SetDepthMask(GLDEPTHMASK_YES);
+    SetDepthMask(1);
+    SetColorMask(1);
 
     dglDisable(GL_NORMALIZE);
     dglShadeModel(GL_SMOOTH);
@@ -257,8 +273,6 @@ void kexRenderBackend::SetDefaultState(void) {
     dglEnable(GL_DITHER);
     dglTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
     dglTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
-    dglColorMaterial(GL_FRONT, GL_DIFFUSE);
-    dglColorMaterial(GL_BACK, GL_DIFFUSE);
 
     dglEnableClientState(GL_VERTEX_ARRAY);
     dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -327,11 +341,6 @@ void kexRenderBackend::Init(void) {
 
     consoleFont.LoadKFont("fonts/confont.kfont");
 
-    defaultProg.InitProgram();
-    defaultProg.Compile("progs/default.vert", RST_VERTEX);
-    defaultProg.Compile("progs/default.frag", RST_FRAGMENT);
-    defaultProg.Link();
-
     if(has_GL_EXT_texture_filter_anisotropic) {
         dglGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropic);
     }
@@ -340,6 +349,8 @@ void kexRenderBackend::Init(void) {
     kexRenderWorld::Init();
 
     bIsInit = true;
+
+    command.Add("statglbackend", FCmd_PrintStats);
     common.Printf("Renderer Initialized\n");
 }
 
@@ -407,6 +418,9 @@ void kexRenderBackend::SwapBuffers(void) {
 
     sysMain.SwapBuffers();
     validFrameNum++;
+
+    glState.numStateChanges = 0;
+    glState.numTextureBinds = 0;
 }
 
 //
@@ -414,63 +428,64 @@ void kexRenderBackend::SwapBuffers(void) {
 //
 
 void kexRenderBackend::SetState(const int bits, bool bEnable) {
-#define TOGGLEGLBIT(flag, bit)                                  \
-    if(bEnable && !(glState.glStateBits & (1 << flag))) {       \
-        dglEnable(bit);                                         \
-        glState.glStateBits |= (1 << flag);                     \
-    }                                                           \
-    else if(!bEnable && (glState.glStateBits & (1 << flag))) {  \
-        dglDisable(bit);                                        \
-        glState.glStateBits &= ~(1 << flag);                    \
-    }
+    int stateFlag = 0;
     
     switch(bits) {
         case GLSTATE_BLEND:
-            TOGGLEGLBIT(GLSTATE_BLEND, GL_BLEND);
+            stateFlag = GL_BLEND;
             break;
         case GLSTATE_CULL:
-            TOGGLEGLBIT(GLSTATE_CULL, GL_CULL_FACE);
+            stateFlag = GL_CULL_FACE;
             break;
         case GLSTATE_TEXTURE0:
             SetTextureUnit(0);
-            TOGGLEGLBIT(GLSTATE_TEXTURE0, GL_TEXTURE_2D);
+            stateFlag = GL_TEXTURE_2D;
             break;
         case GLSTATE_TEXTURE1:
             SetTextureUnit(1);
-            TOGGLEGLBIT(GLSTATE_TEXTURE1, GL_TEXTURE_2D);
+            stateFlag = GL_TEXTURE_2D;
             break;
         case GLSTATE_TEXTURE2:
             SetTextureUnit(2);
-            TOGGLEGLBIT(GLSTATE_TEXTURE2, GL_TEXTURE_2D);
+            stateFlag = GL_TEXTURE_2D;
             break;
         case GLSTATE_TEXTURE3:
             SetTextureUnit(3);
-            TOGGLEGLBIT(GLSTATE_TEXTURE3, GL_TEXTURE_2D);
+            stateFlag = GL_TEXTURE_2D;
             break;
         case GLSTATE_ALPHATEST:
-            TOGGLEGLBIT(GLSTATE_ALPHATEST, GL_ALPHA_TEST);
+            stateFlag = GL_ALPHA_TEST;
             break;
         case GLSTATE_TEXGEN_S:
-            TOGGLEGLBIT(GLSTATE_TEXGEN_S, GL_TEXTURE_GEN_S);
+            stateFlag = GL_TEXTURE_GEN_S;
             break;
         case GLSTATE_TEXGEN_T:
-            TOGGLEGLBIT(GLSTATE_TEXGEN_T, GL_TEXTURE_GEN_T);
+            stateFlag = GL_TEXTURE_GEN_T;
             break;
         case GLSTATE_DEPTHTEST:
-            TOGGLEGLBIT(GLSTATE_DEPTHTEST, GL_DEPTH_TEST);
-            break;
-        case GLSTATE_LIGHTING:
-            TOGGLEGLBIT(GLSTATE_LIGHTING, GL_LIGHTING);
+            stateFlag = GL_DEPTH_TEST;
             break;
         case GLSTATE_FOG:
-            TOGGLEGLBIT(GLSTATE_FOG, GL_FOG);
+            stateFlag = GL_FOG;
+            break;
+        case GLSTATE_STENCILTEST:
+            stateFlag = GL_STENCIL_TEST;
             break;
         default:
             common.Warning("kexRenderBackend::SetState: unknown bit flag: %i\n", bits);
-            break;
+            return;
     }
     
-#undef TOGGLEGLBIT
+    if(bEnable && !(glState.glStateBits & (1 << bits))) {
+        dglEnable(stateFlag);
+        glState.glStateBits |= (1 << bits);
+        glState.numStateChanges++;
+    }
+    else if(!bEnable && (glState.glStateBits & (1 << bits))) {
+        dglDisable(stateFlag);
+        glState.glStateBits &= ~(1 << bits);
+        glState.numStateChanges++;
+    }
 }
 
 //
@@ -713,10 +728,10 @@ void kexRenderBackend::SetDepthMask(int enable) {
     int flag = 0;
     
     switch(enable) {
-        case GLDEPTHMASK_YES:
+        case 1:
             flag = GL_TRUE;
             break;
-        case GLDEPTHMASK_NO:
+        case 0:
             flag = GL_FALSE;
             break;
         default:
@@ -725,6 +740,34 @@ void kexRenderBackend::SetDepthMask(int enable) {
     
     dglDepthMask(flag);
     glState.depthMask = enable;
+}
+
+//
+// kexRenderBackend::SetColorMask
+//
+
+void kexRenderBackend::SetColorMask(int enable) {
+    int pEnable = glState.colormask ^ enable;
+    
+    if(pEnable == 0) {
+        return;
+    }
+    
+    int flag = 0;
+    
+    switch(enable) {
+        case 1:
+            flag = GL_TRUE;
+            break;
+        case 0:
+            flag = GL_FALSE;
+            break;
+        default:
+            return;
+    }
+    
+    dglColorMask(flag, flag, flag, flag);
+    glState.colormask = enable;
 }
 
 //
@@ -963,4 +1006,18 @@ void kexRenderBackend::DrawLoadingScreen(const char *text) {
         (byte*)&c);
 
     SwapBuffers();
+}
+
+//
+// kexRenderBackend::PrintStats
+//
+
+void kexRenderBackend::PrintStats(void) {
+    if(!bPrintStats) {
+        return;
+    }
+
+    kexRenderUtils::PrintStatsText("state changes", ": %i", glState.numStateChanges);
+    kexRenderUtils::PrintStatsText("texture binds", ": %i", glState.numTextureBinds);
+    kexRenderUtils::AddDebugLineSpacing();
 }

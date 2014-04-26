@@ -32,7 +32,8 @@ typedef enum {
     PAS_RIGHT,
     PAS_FRONT,
     PAS_BACK,
-    NUMPORTALSIDES
+    NUMPORTALSIDES,
+    PAS_INVALID = -1
 } portalAxisSide_t;
 
 class kexPortal {
@@ -48,6 +49,8 @@ public:
     typedef struct {
         kexBBox                 bounds;
         kexPortal               *portal;
+        kexPlane                plane;
+        int                     sideRef;
         bool                    bInView;
     } portalLink_t;
 

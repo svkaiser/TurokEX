@@ -679,7 +679,9 @@ void kexTexture::Bind(void) {
     }
 
     dglBindTexture(GL_TEXTURE_2D, tid);
+
     renderBackend.glState.textureUnits[unit].currentTexture = tid;
+    renderBackend.glState.numTextureBinds++;
 }
 
 //

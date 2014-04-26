@@ -85,6 +85,7 @@ public:
     bool                    GetOcclusionSampleResult(const unsigned int &query, const kexBBox &bounds);
 
     kexFBO                  &FBOLightScatter(void) { return fboLightScatter; }
+    void                    ToggleLightScatter(const bool bEnable) { bRenderLightScatter = bEnable; }
     
     const surface_t         *currentSurface;
 
@@ -98,7 +99,7 @@ private:
     kexFBO                  fboLightScatter;
     kexShaderObj            *shaderLightScatter;
     kexShaderObj            *blackShader;
-
+    bool                    bRenderLightScatter;
     word                    indiceCount;
     word                    vertexCount;
     word                    drawIndices[GL_MAX_INDICES];

@@ -29,6 +29,7 @@ public:
 
     void                Clear(void);
     const bool          IsClosed(void) const;
+    void                Fill(void);
     void                AddPoint(const float x, const float y, const float z);
     void                AddVector(kexCamera *camera, kexVec3 &vector);
     void                AddBox(kexCamera *camera, kexBBox &box);
@@ -40,6 +41,9 @@ public:
     float               *Min(void) { return min; }
     float               *Max(void) { return max; }
     const float         ZFar(void) const { return zfar; }
+    
+    void                AddX(const float x) { if(x < min[0]) min[0] = x; if(x > max[0]) max[0] = x; }
+    void                AddY(const float y) { if(y < min[1]) min[1] = y; if(y > max[1]) max[1] = y; }
     
 private:
     float               min[2];

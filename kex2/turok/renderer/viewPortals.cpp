@@ -68,12 +68,12 @@ void kexPortal::SetPlanes(void) {
 void kexPortal::LinkPortal(kexPortal *portal) {
     float dist;
     float d;
-    float min_x;
-    float min_y;
-    float min_z;
-    float max_x;
-    float max_y;
-    float max_z;
+    float min_x = M_INFINITY;
+    float min_y = M_INFINITY;
+    float min_z = M_INFINITY;
+    float max_x = -M_INFINITY;
+    float max_y = -M_INFINITY;
+    float max_z = -M_INFINITY;
 
     if(portal == this) {
         // don't link self
@@ -89,6 +89,8 @@ void kexPortal::LinkPortal(kexPortal *portal) {
                 kexBBox box = portal->bounds;
                 portalLink_t portalLink;
 
+                portalLink.plane = kexPlane(0, 0, 0, 0);
+                
                 switch(i) {
                     case PAS_FRONT:
                     case PAS_BACK:
@@ -98,6 +100,8 @@ void kexPortal::LinkPortal(kexPortal *portal) {
                         max_y = (box.max.y > bounds.max.y) ? bounds.max.y : box.max.y;
 
                         min_z = max_z = (i == PAS_FRONT) ? bounds.max.z : bounds.min.z;
+                        portalLink.plane.c = 1;
+                        portalLink.plane.d = min_z;
                         break;
 
                     case PAS_TOP:
@@ -108,6 +112,8 @@ void kexPortal::LinkPortal(kexPortal *portal) {
                         max_z = (box.max.z > bounds.max.z) ? bounds.max.z : box.max.z;
 
                         min_y = max_y = (i == PAS_TOP) ? bounds.max.y : bounds.min.y;
+                        portalLink.plane.b = 1;
+                        portalLink.plane.d = min_y;
                         break;
 
                     case PAS_LEFT:
@@ -118,6 +124,8 @@ void kexPortal::LinkPortal(kexPortal *portal) {
                         max_y = (box.max.y > bounds.max.y) ? bounds.max.y : box.max.y;
 
                         min_x = max_x = (i == PAS_LEFT) ? bounds.max.x : bounds.min.x;
+                        portalLink.plane.a = 1;
+                        portalLink.plane.d = min_x;
                         break;
                 }
 
@@ -125,6 +133,7 @@ void kexPortal::LinkPortal(kexPortal *portal) {
                 portalLink.bounds.max.Set(max_x, max_y, max_z);
                 portalLink.portal = portal;
                 portalLink.bInView = false;
+                portalLink.sideRef = i;
 
                 links.Push(portalLink);
             }
@@ -139,7 +148,7 @@ void kexPortal::LinkPortal(kexPortal *portal) {
 void kexPortal::ClipLinkToViewBounds(kexCamera *camera, portalLink_t *link, kexViewBounds &viewBound) {
     kexVec3 pt1(link->bounds.min.x, link->bounds.min.y, link->bounds.min.z);
     kexVec3 pt2(link->bounds.max.x, link->bounds.min.y, link->bounds.max.z);
-    kexVec3 pt3(link->bounds.min.x, link->bounds.max.y, link->bounds.max.z);
+    kexVec3 pt3(link->bounds.min.x, link->bounds.max.y, link->bounds.min.z);
     kexVec3 pt4(link->bounds.max.x, link->bounds.max.y, link->bounds.max.z);
     kexVec3 pt5(link->bounds.min.x, link->bounds.max.y, link->bounds.min.z);
     kexVec3 pt6(link->bounds.min.x, link->bounds.min.y, link->bounds.min.z);
@@ -148,24 +157,71 @@ void kexPortal::ClipLinkToViewBounds(kexCamera *camera, portalLink_t *link, kexV
 
     kexVec3 hit[8];
     int clipbits[8];
+    float d = link->plane.Distance(camera->GetOrigin()) - link->plane.d;
+    int side = FLOATSIGNBIT(d);
+    int fullClipBits = 0;
+    
+    if(link->sideRef == PAS_FRONT || link->sideRef == PAS_BACK) {
+        side ^= 1;
+    }
+    
+    viewBound.Clear();
 
+    // test bottom segment
     if(camera->Frustum().ClipSegment(hit[0], hit[1], clipbits[0], clipbits[1], pt1, pt2)) {
         viewBound.AddVector(camera, hit[0]);
         viewBound.AddVector(camera, hit[1]);
     }
 
+    // test upper segment
     if(camera->Frustum().ClipSegment(hit[2], hit[3], clipbits[2], clipbits[3], pt3, pt4)) {
         viewBound.AddVector(camera, hit[2]);
         viewBound.AddVector(camera, hit[3]);
     }
     
+    // test left segment
     if(camera->Frustum().ClipSegment(hit[4], hit[5], clipbits[4], clipbits[5], pt5, pt6)) {
         viewBound.AddVector(camera, hit[4]);
         viewBound.AddVector(camera, hit[5]);
     }
     
+    // test right segment
     if(camera->Frustum().ClipSegment(hit[6], hit[7], clipbits[6], clipbits[7], pt7, pt8)) {
         viewBound.AddVector(camera, hit[6]);
         viewBound.AddVector(camera, hit[7]);
+    }
+    
+    for(int i = 0; i < 4; i++) {
+        if(clipbits[i * 2 + 0] & FRUSTUM_CLIPPED && clipbits[i * 2 + 1] & FRUSTUM_CLIPPED) {
+            fullClipBits |= (1 << i);
+        }
+    }
+    
+    if(fullClipBits == 0xf) {
+        viewBound.Fill();
+    }
+    else {
+        if(fullClipBits & 0x1) {
+            viewBound.AddY((float)sysMain.VideoHeight());
+        }
+        if(fullClipBits & 0x2) {
+            viewBound.AddY(0);
+        }
+        if(fullClipBits & 0x4) {
+            if(side) {
+                viewBound.AddX(0);
+            }
+            else {
+                viewBound.AddX((float)sysMain.VideoWidth());
+            }
+        }
+        if(fullClipBits & 0x8) {
+            if(side) {
+                viewBound.AddX((float)sysMain.VideoWidth());
+            }
+            else {
+                viewBound.AddX(0);
+            }
+        }
     }
 }

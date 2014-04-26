@@ -61,6 +61,18 @@ const bool kexViewBounds::IsClosed(void) const {
 }
 
 //
+// kexViewBounds::Fill
+//
+
+void kexViewBounds::Fill(void) {
+    min[0] = 0;
+    min[1] = 0;
+    max[0] = (float)sysMain.VideoWidth();
+    max[1] = (float)sysMain.VideoHeight();
+    zfar = 0;
+}
+
+//
 // kexViewBounds::AddPoint
 //
 
@@ -115,6 +127,7 @@ void kexViewBounds::AddVector(kexCamera *camera, kexVec3 &vector) {
     }
     
     AddPoint(pmin[0], pmin[1], pmin[2]);
+    vector = pmin;
 }
 
 //
@@ -131,26 +144,7 @@ void kexViewBounds::AddBox(kexCamera *camera, kexBBox &box) {
 
     frustum = camera->Frustum();
     
-    points[0][0]    = box[1][0];
-    points[0][1]    = box[0][1];
-    points[0][2]    = box[0][2];
-    points[1][0]    = box[1][0];
-    points[1][1]    = box[0][1];
-    points[1][2]    = box[1][2];
-    points[2][0]    = box[0][0];
-    points[2][1]    = box[0][1];
-    points[2][2]    = box[1][2];
-    points[3]       = box[0];
-    points[4][0]    = box[1][0];
-    points[4][1]    = box[1][1];
-    points[4][2]    = box[0][2];
-    points[5]       = box[1];
-    points[6][0]    = box[0][0];
-    points[6][1]    = box[1][1];
-    points[6][2]    = box[1][2];
-    points[7][0]    = box[0][0];
-    points[7][1]    = box[1][1];
-    points[7][2]    = box[0][2];
+    box.ToVectors(points);
 
     bits = 0;
     
@@ -174,12 +168,12 @@ void kexViewBounds::AddBox(kexCamera *camera, kexBBox &box) {
 //
 
 bool kexViewBounds::ViewBoundInside(const kexViewBounds &viewBounds) {
-    if((viewBounds.min[0] < min[0] || viewBounds.min[1] < min[1] ||
-        viewBounds.min[0] > max[0] || viewBounds.min[1] > max[1])) {
+    if(((viewBounds.min[0] < min[0] && viewBounds.max[0] < min[0]) ||
+        (viewBounds.min[0] > max[0] && viewBounds.max[0] > max[0]))) {
         return false;
     }
-    if((viewBounds.max[0] < min[0] || viewBounds.max[1] < min[1] ||
-        viewBounds.max[0] > max[0] || viewBounds.max[1] > max[1])) {
+    if(((viewBounds.min[1] < min[1] && viewBounds.max[1] < min[1]) ||
+        (viewBounds.min[1] > max[1] && viewBounds.max[1] > max[1]))) {
         return false;
     }
     
@@ -214,7 +208,6 @@ void kexViewBounds::DebugDraw(void) {
     renderBackend.SetState(GLSTATE_TEXTURE0, false);
     renderBackend.SetState(GLSTATE_CULL, false);
     renderBackend.SetState(GLSTATE_BLEND, true);
-    renderBackend.SetState(GLSTATE_LIGHTING, false);
     
     renderBackend.DisableShaders();
     renderer.BindDrawPointers();

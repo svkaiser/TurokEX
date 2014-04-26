@@ -378,10 +378,14 @@ void kexRenderWorld::RenderScene(void) {
 
 void kexRenderWorld::PreProcessLightScatter(void) {
     int vp[4];
+    bool bSunOccluded;
 
     sunPosition = world->worldLightOrigin.ToVec3() * 32768.0f;
+    bSunOccluded = world->Camera()->Frustum().TestSphere(sunPosition, 8192.0f);
+    
+    renderer.ToggleLightScatter(bSunOccluded);
 
-    if(!world->Camera()->Frustum().TestSphere(sunPosition, 8192.0f)) {
+    if(!bSunOccluded) {
         return;
     }
     
@@ -688,7 +692,8 @@ void kexRenderWorld::TraverseDrawActorNode(kexActor *actor,
 // kexRenderWorld::TraversePortalView
 //
 
-void kexRenderWorld::TraversePortalView(kexPortal *portal, kexPortal *prevPortal, kexViewBounds *viewBounds) {
+void kexRenderWorld::TraversePortalView(kexPortal *portal, kexPortal *prevPortal,
+                                        const int side, kexViewBounds *viewBounds) {
     kexViewBounds vb;
 
     if(portal == NULL) {
@@ -714,6 +719,9 @@ void kexRenderWorld::TraversePortalView(kexPortal *portal, kexPortal *prevPortal
         if(portal->links[i].portal == prevPortal) {
             continue;
         }
+        if(portal->links[i].sideRef == (side ^ 1)) {
+            continue;
+        }
 
         portal->ClipLinkToViewBounds(world->Camera(), &portal->links[i], vb);
 
@@ -721,11 +729,13 @@ void kexRenderWorld::TraversePortalView(kexPortal *portal, kexPortal *prevPortal
             if(!viewBounds->ViewBoundInside(vb)) {
                 continue;
             }
+            
+            vb = *viewBounds;
         }
 
         portal->links[i].bInView = true;
 
-        TraversePortalView(portal->links[i].portal, portal, &vb);
+        TraversePortalView(portal->links[i].portal, portal, portal->links[i].sideRef, &vb);
     }
 }
 
@@ -1337,7 +1347,6 @@ void kexRenderWorld::DrawSectors(kexSector *sectors, const int count) {
         renderBackend.SetState(GLSTATE_TEXTURE0, false);
         renderBackend.SetState(GLSTATE_BLEND, true);
         renderBackend.SetState(GLSTATE_ALPHATEST, true);
-        renderBackend.SetState(GLSTATE_LIGHTING, false);
         
         renderer.BindDrawPointers();
         renderer.DrawElementsNoShader(false);

@@ -77,7 +77,7 @@ private:
     void                        DrawWorldModel(kexWorldModel *wm);
     void                        RecursiveSDNode(int nodenum);
     void                        TraversePortalView(kexPortal *portal, kexPortal *prevPortal,
-                                                   kexViewBounds *viewBounds);
+                                                   const int side, kexViewBounds *viewBounds);
     void                        TraverseDrawActorNode(kexActor *actor,
                                                       const modelNode_t *node,
                                                       kexAnimState *animState);

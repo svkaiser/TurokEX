@@ -36,8 +36,8 @@ typedef enum {
     GLSTATE_TEXGEN_S,
     GLSTATE_TEXGEN_T,
     GLSTATE_DEPTHTEST,
-    GLSTATE_LIGHTING,
     GLSTATE_FOG,
+    GLSTATE_STENCILTEST,
     NUMGLSTATES
 } glState_t;
 
@@ -58,11 +58,6 @@ typedef enum {
     GLPOLY_FILL     = 0,
     GLPOLY_LINE
 } glPolyMode_t;
-
-typedef enum {
-    GLDEPTHMASK_YES = 0,
-    GLDEPTHMASK_NO
-} glDepthMask_t;
 
 typedef enum {
     GLSRC_ZERO      = 0,
@@ -115,11 +110,13 @@ public:
     void                            SetCull(int type);
     void                            SetPolyMode(int type);
     void                            SetDepthMask(int enable);
+    void                            SetColorMask(int enable);
     void                            SetTextureUnit(int unit);
     void                            SetViewDimensions(void);
     void                            DisableShaders(void);
     const int                       GetDepthSizeComponent(void);
     void                            DrawLoadingScreen(const char *text);
+    void                            PrintStats(void);
     kexFont                         *CacheFont(const char *name);
     kexTexture                      *CacheTexture(const char *name, texClampMode_t clampMode,
                                                   texFilterMode_t filterMode = TF_LINEAR);
@@ -145,14 +142,13 @@ public:
     static const int                SCREEN_HEIGHT       = 240;
     static const int                MAX_TEXTURE_UNITS   = 4;
 
+    bool                            bPrintStats;
+
     kexTexture                      defaultTexture;
     kexTexture                      whiteTexture;
     kexTexture                      blackTexture;
     kexTexture                      *frameBuffer;
     kexTexture                      *depthBuffer;
-
-    kexShaderObj                    defaultProg;
-    kexShaderObj                    *currentProg;
 
     kexFont                         consoleFont;
 
@@ -169,12 +165,15 @@ public:
         int                         cullType;
         int                         polyMode;
         int                         depthMask;
+        int                         colormask;
         int                         alphaFunction;
         float                       alphaFuncThreshold;
         int                         currentUnit;
         rhandle                     currentProgram;
         dtexture                    currentFBO;
         texUnit_t                   textureUnits[MAX_TEXTURE_UNITS];
+        int                         numStateChanges;
+        int                         numTextureBinds;
     } glState_t;
 
     glState_t                       glState;

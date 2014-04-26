@@ -40,7 +40,6 @@ void kexRenderUtils::DrawBoundingBox(const kexBBox &bbox, const byte r, const by
     renderBackend.SetState(GLSTATE_TEXTURE0, false);
     renderBackend.SetState(GLSTATE_CULL, false);
     renderBackend.SetState(GLSTATE_BLEND, true);
-    renderBackend.SetState(GLSTATE_LIGHTING, false);
 
     renderBackend.DisableShaders();
 
@@ -134,7 +133,6 @@ void kexRenderUtils::DrawRadius(float x, float y, float z,
     renderBackend.SetState(GLSTATE_TEXTURE0, false);
     renderBackend.SetState(GLSTATE_CULL, false);
     renderBackend.SetState(GLSTATE_BLEND, true);
-    renderBackend.SetState(GLSTATE_LIGHTING, false);
 
     renderBackend.DisableShaders();
     renderer.BindDrawPointers();
@@ -168,8 +166,6 @@ void kexRenderUtils::DrawRadius(float x, float y, float z,
 
 void kexRenderUtils::DrawOrigin(float x, float y, float z, float size) {
     renderBackend.SetState(GLSTATE_TEXTURE0, false);
-    renderBackend.SetState(GLSTATE_FOG, false);
-    renderBackend.SetState(GLSTATE_LIGHTING, false);
 
     dglDepthRange(0.0f, 0.0f);
     dglLineWidth(2.0f);

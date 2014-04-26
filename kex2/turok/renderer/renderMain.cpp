@@ -50,6 +50,7 @@ kexRenderer renderer;
 kexRenderer::kexRenderer(void) {
     this->currentSurface        = NULL;
     this->motionBlurMaterial    = NULL;
+    this->bRenderLightScatter   = false;
 }
 
 //
@@ -93,6 +94,7 @@ void kexRenderer::Draw(void) {
     
     // draw debug stats
     kexHeap::DrawHeapInfo();
+    renderBackend.PrintStats();
     renderWorld.PrintStats();
     scriptManager.DrawGCStats();
     kexRenderUtils::ClearDebugLine();
@@ -251,8 +253,8 @@ void kexRenderer::DrawLineElements(void) {
 
 void kexRenderer::PrepareOcclusionQuery(void) {
     // make sure we don't write anything while testing the bounds
-    glColorMask(0, 0, 0, 0);
-    renderBackend.SetDepthMask(GLDEPTHMASK_NO);
+    renderBackend.SetColorMask(0);
+    renderBackend.SetDepthMask(0);
     
     renderBackend.SetState(GLSTATE_TEXTURE0, false);
     renderBackend.SetState(GLSTATE_CULL, false);
@@ -270,21 +272,10 @@ void kexRenderer::PrepareOcclusionQuery(void) {
 //
 
 void kexRenderer::TestBoundsForOcclusionQuery(const unsigned int &query, const kexBBox &bounds) {
-    word indices[36];
+    static const word indices[36] = { 0, 1, 3, 4, 7, 5, 0, 4, 1, 1, 5, 6,
+                                      2, 6, 7, 4, 0, 3, 1, 2, 3, 7, 6, 5,
+                                      2, 1, 6, 3, 2, 7, 7, 4, 3, 4, 5, 1 };
     float points[24];
-    
-    indices[ 0] = 0; indices[ 1] = 1; indices[ 2] = 3;
-    indices[ 3] = 4; indices[ 4] = 7; indices[ 5] = 5;
-    indices[ 6] = 0; indices[ 7] = 4; indices[ 8] = 1;
-    indices[ 9] = 1; indices[10] = 5; indices[11] = 6;
-    indices[12] = 2; indices[13] = 6; indices[14] = 7;
-    indices[15] = 4; indices[16] = 0; indices[17] = 3;
-    indices[18] = 1; indices[19] = 2; indices[20] = 3;
-    indices[21] = 7; indices[22] = 6; indices[23] = 5;
-    indices[24] = 2; indices[25] = 1; indices[26] = 6;
-    indices[27] = 3; indices[28] = 2; indices[29] = 7;
-    indices[30] = 7; indices[31] = 4; indices[32] = 3;
-    indices[33] = 4; indices[34] = 5; indices[35] = 1;
     
     bounds.ToPoints(points);
     
@@ -300,8 +291,8 @@ void kexRenderer::TestBoundsForOcclusionQuery(const unsigned int &query, const k
 //
 
 void kexRenderer::EndOcclusionQueryTest(void) {
-    dglColorMask(1, 1, 1, 1);
-    renderBackend.SetDepthMask(GLDEPTHMASK_YES);
+    renderBackend.SetColorMask(1);
+    renderBackend.SetDepthMask(1);
     
     dglEnableClientState(GL_NORMAL_ARRAY);
     dglEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -491,7 +482,7 @@ void kexRenderer::DrawFX(const fxDisplay_t *fxList, const int count) {
     
     renderBackend.SetCull(GLCULL_FRONT);
     renderBackend.SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
-    renderBackend.SetDepthMask(GLDEPTHMASK_NO);
+    renderBackend.SetDepthMask(0);
 
     dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, spriteTexCoords);
     dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, spriteVertices);
@@ -623,7 +614,7 @@ void kexRenderer::DrawFX(const fxDisplay_t *fxList, const int count) {
     }
 
     renderBackend.SetState(GLSTATE_DEPTHTEST, true);
-    renderBackend.SetDepthMask(GLDEPTHMASK_YES);
+    renderBackend.SetDepthMask(1);
     dglEnableClientState(GL_NORMAL_ARRAY);
 }
 
@@ -742,7 +733,7 @@ void kexRenderer::ProcessMotionBlur(void) {
 //
 
 void kexRenderer::ProcessLightScatter(void) {
-    if(cvarRenderLightScatter.GetBool() == false) {
+    if(cvarRenderLightScatter.GetBool() == false || bRenderLightScatter == false) {
         return;
     }
 

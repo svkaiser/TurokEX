@@ -805,7 +805,6 @@ void kexClipMesh::DebugDraw(void) {
     renderBackend.SetState(GLSTATE_TEXTURE0, false);
     renderBackend.SetState(GLSTATE_BLEND, true);
     renderBackend.SetState(GLSTATE_ALPHATEST, true);
-    renderBackend.SetState(GLSTATE_LIGHTING, false);
 
     dglDisableClientState(GL_NORMAL_ARRAY);
     dglDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -852,5 +851,4 @@ void kexClipMesh::DebugDraw(void) {
     renderBackend.SetState(GLSTATE_TEXTURE0, true);
     renderBackend.SetState(GLSTATE_BLEND, false);
     renderBackend.SetState(GLSTATE_ALPHATEST, false);
-    renderBackend.SetState(GLSTATE_LIGHTING, true);
 }
