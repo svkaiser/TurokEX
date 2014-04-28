@@ -33,6 +33,41 @@
 float kexRenderUtils::debugLineNum = 0;
 
 //
+// kexRenderUtils::DrawTexturedQuad
+//
+
+void kexRenderUtils::DrawTexturedQuad(const kexVec2 &start, const kexVec2 &end,
+                                      const float height1, const float height2,
+                                      const byte r, const byte g, const byte b) {
+
+    renderBackend.SetState(GLSTATE_CULL, false);
+    renderBackend.SetState(GLSTATE_BLEND, true);
+
+    renderer.BindDrawPointers();
+    renderer.AddVertex(start.x, height1, start.z, 0, 0, r, g, b, 255);
+    renderer.AddVertex(end.x, height1, end.z, 1, 0, r, g, b, 255);
+    renderer.AddVertex(start.x, height2, start.z, 0, 1, r, g, b, 255);
+    renderer.AddVertex(end.x, height2, end.z, 1, 1, r, g, b, 255);
+    renderer.AddTriangle(0, 1, 2);
+    renderer.AddTriangle(2, 1, 3);
+    renderer.DrawElements();
+}
+
+//
+// kexRenderUtils::DrawQuad
+//
+
+void kexRenderUtils::DrawQuad(const kexVec2 &start, const kexVec2 &end,
+                              const float height1, const float height2,
+                              const byte r, const byte g, const byte b) {
+
+    renderBackend.SetState(GLSTATE_TEXTURE0, false);
+    renderBackend.DisableShaders();
+    DrawTexturedQuad(start, end, height1, height2, r, g, b);
+    renderBackend.SetState(GLSTATE_TEXTURE0, true);
+}
+
+//
 // kexRenderUtils::DrawBoundingBox
 //
 
