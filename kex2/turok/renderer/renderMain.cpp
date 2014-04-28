@@ -625,10 +625,11 @@ void kexRenderer::DrawFX(const fxDisplay_t *fxList, const int count) {
 void kexRenderer::DrawScreenQuad(void) {
     static const word  indices[6] = { 0, 1, 2, 2, 1, 3 };
     static const float tcoords[8] = { 0, 0, 1, 0, 0, 1, 1, 1 };
-    int vp[4];
     float verts[12];
+    int w, h;
     
-    dglGetIntegerv(GL_VIEWPORT, vp);
+    w = sysMain.VideoWidth();
+    h = sysMain.VideoHeight();
     
     dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, tcoords);
     dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, verts);
@@ -636,17 +637,17 @@ void kexRenderer::DrawScreenQuad(void) {
     dglDisableClientState(GL_NORMAL_ARRAY);
     dglDisableClientState(GL_COLOR_ARRAY);
     
-    verts[0 * 3 + 0] = (float)vp[0];
-    verts[0 * 3 + 1] = (float)vp[1];
+    verts[0 * 3 + 0] = 0;
+    verts[0 * 3 + 1] = 0;
     verts[0 * 3 + 2] = 0;
-    verts[1 * 3 + 0] = (float)vp[2];
-    verts[1 * 3 + 1] = (float)vp[1];
+    verts[1 * 3 + 0] = (float)w;
+    verts[1 * 3 + 1] = 0;
     verts[1 * 3 + 2] = 0;
-    verts[2 * 3 + 0] = (float)vp[0];
-    verts[2 * 3 + 1] = (float)vp[3];
+    verts[2 * 3 + 0] = 0;
+    verts[2 * 3 + 1] = (float)h;
     verts[2 * 3 + 2] = 0;
-    verts[3 * 3 + 0] = (float)vp[2];
-    verts[3 * 3 + 1] = (float)vp[3];
+    verts[3 * 3 + 0] = (float)w;
+    verts[3 * 3 + 1] = (float)h;
     verts[3 * 3 + 2] = 0;
     
     dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices);
