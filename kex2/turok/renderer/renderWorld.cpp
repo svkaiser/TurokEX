@@ -448,9 +448,12 @@ void kexRenderWorld::PreProcessOcclusionQueries(void) {
                 if(!world->Camera()->Frustum().TestBoundingBox(node->bounds)) {
                     continue;
                 }
+
+                box = node->bounds;
+                box += 8.0f;
                 
                 // test bounds of the node against the occlusion query
-                renderer.TestBoundsForOcclusionQuery(nodeQueries[i], node->bounds);
+                renderer.TestBoundsForOcclusionQuery(nodeQueries[i], box);
 
                 for(wm = node->objects.Next(); wm != NULL; wm = wm->renderNode.link.Next()) {
                     if(wm->bHidden || wm->bCulled || wm->queryIndex == -1) {
@@ -458,7 +461,7 @@ void kexRenderWorld::PreProcessOcclusionQueries(void) {
                     }
 
                     box = wm->Bounds();
-                    box += 4.0f;
+                    box += 8.0f;
 
                     renderer.TestBoundsForOcclusionQuery(staticQueries[wm->queryIndex], box);
                 }
@@ -489,7 +492,7 @@ void kexRenderWorld::PreProcessOcclusionQueries(void) {
                     actor->queryIndex = queryIndex++;
 
                     box = actor->Bounds();
-                    box += 4.0f;
+                    box += 8.0f;
 
                     // query the result based on the bounding box
                     renderer.TestBoundsForOcclusionQuery(actorQueries[actor->queryIndex], box);
@@ -777,8 +780,11 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
     bNodeQueries = cvarRenderNodeOcclusionQueries.GetBool();
     
     if(bNodeQueries) {
+        box = node->bounds;
+        box += 20.0f;
+
         // check if it's occluded from the previous frame
-        if(renderer.GetOcclusionSampleResult(nodeQueries[nodenum], node->bounds)) {
+        if(renderer.GetOcclusionSampleResult(nodeQueries[nodenum], box)) {
             numOccludedNodes++;
             return;
         }
