@@ -44,6 +44,18 @@ kexCvar cvarRenderActorOcclusionQueries("r_actorocclusionqueries", CVF_BOOL|CVF_
 kexRenderer renderer;
 
 //
+// FCmd_PrintStats
+//
+
+static void FCmd_PrintStats(void) {
+    if(command.GetArgc() < 1) {
+        return;
+    }
+
+    renderer.bShowRenderStats ^= 1;
+}
+
+//
 // kexRenderer::kexRenderer
 //
 
@@ -51,6 +63,7 @@ kexRenderer::kexRenderer(void) {
     this->currentSurface        = NULL;
     this->motionBlurMaterial    = NULL;
     this->bRenderLightScatter   = false;
+    this->bShowRenderStats      = false;
 }
 
 //
@@ -73,6 +86,8 @@ void kexRenderer::Init(void) {
     fboLightScatter.InitColorAttachment(0);
 
     renderWorld.InitSunData();
+
+    command.Add("statrenderer", FCmd_PrintStats);
 }
 
 //
@@ -85,19 +100,22 @@ void kexRenderer::Draw(void) {
     renderWorld.RenderScene();
     renderBackend.SetOrtho();
 
+    if(bShowRenderStats) {
+        postProcessMS = sysMain.GetMS();
+    }
+
     ProcessMotionBlur();
     ProcessLightScatter();
+
+    if(bShowRenderStats) {
+        postProcessMS = sysMain.GetMS() - postProcessMS;
+    }
 
     renderBackend.Canvas().Draw();
     gameManager.MenuCanvas().Draw();
     console.Draw();
-    
-    // draw debug stats
-    kexHeap::DrawHeapInfo();
-    renderBackend.PrintStats();
-    renderWorld.PrintStats();
-    scriptManager.DrawGCStats();
-    kexRenderUtils::ClearDebugLine();
+
+    DrawStats();
     
     // finish frame
     renderBackend.SwapBuffers();
@@ -756,4 +774,22 @@ void kexRenderer::ProcessLightScatter(void) {
 
     renderBackend.DisableShaders();
     renderBackend.SetBlend(GLSRC_SRC_ALPHA, GLDST_ONE_MINUS_SRC_ALPHA);
+}
+
+//
+// kexRenderer::DrawStats
+//
+
+void kexRenderer::DrawStats(void) {
+    kexHeap::DrawHeapInfo();
+    renderBackend.PrintStats();
+    renderWorld.PrintStats();
+
+    if(bShowRenderStats) {
+        kexRenderUtils::PrintStatsText("post process time", ": %ims", postProcessMS);
+        kexRenderUtils::AddDebugLineSpacing();
+    }
+
+    scriptManager.DrawGCStats();
+    kexRenderUtils::ClearDebugLine();
 }

@@ -89,10 +89,14 @@ public:
     
     const surface_t         *currentSurface;
 
+    bool                    bShowRenderStats;
+
 private:
     void                    ProcessMotionBlur(void);
     void                    ProcessLightScatter(void);
+    void                    DrawStats(void);
 
+    int                     postProcessMS;
     kexMaterial             *motionBlurMaterial;
     kexMaterial             *wireframeMaterial;
     kexMatrix               prevMVMatrix;
