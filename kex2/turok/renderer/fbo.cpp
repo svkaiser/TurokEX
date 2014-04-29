@@ -48,6 +48,22 @@ kexFBO::~kexFBO(void) {
 }
 
 //
+// kexFBO::CheckStatus
+//
+
+void kexFBO::CheckStatus(void) {
+    GLenum status = dglCheckFramebufferStatus(GL_FRAMEBUFFER_EXT);
+    
+    if(status != GL_FRAMEBUFFER_COMPLETE_EXT) {
+        common.Warning("kexFBO::Init: frame buffer creation didn't complete\n");
+        bLoaded = false;
+    }
+    else {
+        bLoaded = true;
+    }
+}
+
+//
 // kexFBO::InitColorAttachment
 //
 
@@ -106,15 +122,7 @@ void kexFBO::InitColorAttachment(const int attachment, const int width, const in
                                GL_RENDERBUFFER_EXT,
                                rboId);
     
-    GLenum status = dglCheckFramebufferStatus(GL_FRAMEBUFFER_EXT);
-    
-    if(status != GL_FRAMEBUFFER_COMPLETE_EXT) {
-        common.Warning("kexFBO::Init: frame buffer creation didn't complete\n");
-        bLoaded = false;
-    }
-    else {
-        bLoaded = true;
-    }
+    CheckStatus();
     
     dglBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
     dglBindRenderbuffer(GL_RENDERBUFFER_EXT, 0);
@@ -132,6 +140,54 @@ void kexFBO::InitColorAttachment(const int attachment) {
     int height = kexMath::RoundPowerOfTwo(sysMain.VideoHeight()) >> 1;
     
     InitColorAttachment(attachment, width, height);
+}
+
+//
+// kexFBO::InitDepthAttachment
+//
+
+void kexFBO::InitDepthAttachment(const int width, const int height) {
+    if(bLoaded) {
+        return;
+    }
+    
+    fboWidth = width;
+    fboHeight = height;
+    
+    // texture
+    dglGenTextures(1, &fboTexId);
+    dglBindTexture(GL_TEXTURE_2D, fboTexId);
+    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    dglTexImage2D(GL_TEXTURE_2D,
+                  0,
+                  GL_DEPTH_COMPONENT,
+                  fboWidth,
+                  fboHeight,
+                  0,
+                  GL_DEPTH_COMPONENT,
+                  GL_UNSIGNED_BYTE,
+                  0);
+    
+    // framebuffer
+    dglGenFramebuffers(1, &fboId);
+    dglBindFramebuffer(GL_FRAMEBUFFER_EXT, fboId);
+    dglDrawBuffer(GL_NONE);
+    dglReadBuffer(GL_NONE);
+    dglFramebufferTexture2D(GL_FRAMEBUFFER_EXT,
+                            GL_DEPTH_ATTACHMENT_EXT,
+                            GL_TEXTURE_2D,
+                            fboTexId,
+                            0);
+    
+    CheckStatus();
+    
+    dglBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
+    dglBindTexture(GL_TEXTURE_2D, 0);
+    dglDrawBuffer(GL_BACK);
+    dglReadBuffer(GL_BACK);
 }
 
 //

@@ -28,10 +28,12 @@ public:
                             kexFBO(void);
                             ~kexFBO(void);
     
+    void                    CheckStatus(void);
     void                    InitColorAttachment(const int attachment,
                                                 const int width,
                                                 const int height);
     void                    InitColorAttachment(const int attachment);
+    void                    InitDepthAttachment(const int width, const int height);
     void                    Delete(void);
     void                    BindImage(void);
     void                    Bind(void);
