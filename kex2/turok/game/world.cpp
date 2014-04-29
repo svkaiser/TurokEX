@@ -688,6 +688,35 @@ void kexWorld::TriggerActor(const int targetID) {
 }
 
 //
+// kexWorld::GetActorByName
+//
+
+kexActor *kexWorld::GetActorByName(const char *name) {
+    for(actorRover = actors.Next(); actorRover != NULL;
+        actorRover = actorRover->worldLink.Next()) {
+            if(actorRover->bStatic) {
+                continue;
+            }
+            if(actorRover->Removing()) {
+                continue;
+            }
+            if(!strcmp(actorRover->GetName().c_str(), name)) {
+                return actorRover;
+            }
+    }
+
+    return NULL;
+}
+
+//
+// kexWorld::GetActorByName
+//
+
+kexActor *kexWorld::GetActorByName(const kexStr &name) {
+    return GetActorByName(name.c_str());
+}
+
+//
 // kexWorld::BuildAreaNodes
 //
 
@@ -1012,6 +1041,13 @@ void kexWorld::InitObject(void) {
         "kActor @SpawnActor(kStr &in, kVec3 &in, kAngle &in)",
         asMETHODPR(kexWorld, SpawnActor,
         (kexStr &definition, kexVec3 &origin, kexAngle &angles), kexActor*),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
+        "kActor @GetActorByName(const kStr &in)",
+        asMETHODPR(kexWorld, GetActorByName,
+        (const kexStr &name), kexActor*),
         asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectMethod(

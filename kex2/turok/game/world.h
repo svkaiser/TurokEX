@@ -72,6 +72,8 @@ public:
     void                                StartSound(const kexStr &name);
     void                                SetFogRGB(float r, float g, float b);
     void                                TriggerActor(const int targetID);
+    kexActor                            *GetActorByName(const char *name);
+    kexActor                            *GetActorByName(const kexStr &name);
 
     bool                                IsLoaded(void) const { return bLoaded; }
     float                               DeltaTime(void) { return deltaTime; }
