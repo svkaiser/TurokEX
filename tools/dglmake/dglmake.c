@@ -808,6 +808,7 @@ int main(int argc, char** argv)
     SlapGLExtensionsToFile(f, "GL_ARB_shader_objects");
     SlapGLExtensionsToFile(f, "GL_ARB_framebuffer_object");
     SlapGLExtensionsToFile(f, "GL_ARB_occlusion_query");
+    SlapGLExtensionsToFile(f, "GL_EXT_texture_array");
 
     fclose(f);
 

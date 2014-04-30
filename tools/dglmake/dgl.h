@@ -5599,3 +5599,14 @@ d_inline static void glGetQueryObjectuivARB_DEBUG (GLuint id, GLenum pname, GLui
 
 #endif // USE_DEBUG_GLFUNCS
 
+//
+// GL_EXT_texture_array
+//
+extern bool has_GL_EXT_texture_array;
+
+#define GL_EXT_texture_array_Define() \
+bool has_GL_EXT_texture_array = false;
+
+#define GL_EXT_texture_array_Init() \
+has_GL_EXT_texture_array = GL_CheckExtension("GL_EXT_texture_array");
+
