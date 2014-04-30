@@ -48,6 +48,7 @@ GL_ARB_vertex_buffer_object_Define();
 GL_ARB_shader_objects_Define();
 GL_ARB_framebuffer_object_Define();
 GL_ARB_occlusion_query_Define();
+GL_EXT_texture_array_Define();
 
 //
 // FCmd_PrintStats
@@ -311,6 +312,7 @@ void kexRenderBackend::Init(void) {
     GL_ARB_shader_objects_Init();
     GL_ARB_framebuffer_object_Init();
     GL_ARB_occlusion_query_Init();
+    GL_EXT_texture_array_Init();
 
     SetDefaultState();
 
