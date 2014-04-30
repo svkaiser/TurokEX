@@ -541,6 +541,39 @@ kexMatrix kexMatrix::operator*(kexMatrix &matrix) {
 }
 
 //
+// kexMatrix::operator*
+//
+
+kexMatrix operator*(const kexMatrix &m1, const kexMatrix &m2) {
+    kexMatrix out;
+    
+    for(int i = 0; i < 4; i++) {
+        out.vectors[i].x =
+        m1.vectors[i].x * m2.vectors[0].x +
+        m1.vectors[i].y * m2.vectors[1].x +
+        m1.vectors[i].z * m2.vectors[2].x +
+        m1.vectors[i].w * m2.vectors[3].x;
+        out.vectors[i].y =
+        m1.vectors[i].x * m2.vectors[0].y +
+        m1.vectors[i].y * m2.vectors[1].y +
+        m1.vectors[i].z * m2.vectors[2].y +
+        m1.vectors[i].w * m2.vectors[3].y;
+        out.vectors[i].z =
+        m1.vectors[i].x * m2.vectors[0].z +
+        m1.vectors[i].y * m2.vectors[1].z +
+        m1.vectors[i].z * m2.vectors[2].z +
+        m1.vectors[i].w * m2.vectors[3].z;
+        out.vectors[i].w =
+        m1.vectors[i].x * m2.vectors[0].w +
+        m1.vectors[i].y * m2.vectors[1].w +
+        m1.vectors[i].z * m2.vectors[2].w +
+        m1.vectors[i].w * m2.vectors[3].w;
+    }
+    
+    return out;
+}
+
+//
 // kexMatrix::operator|
 //
 

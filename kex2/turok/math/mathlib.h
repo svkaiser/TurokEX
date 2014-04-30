@@ -314,6 +314,7 @@ public:
     kexMatrix               operator*(const kexVec3 &vector);
     kexMatrix               &operator*=(const kexVec3 &vector);
     kexMatrix               operator*(kexMatrix &matrix);
+    friend kexMatrix        operator*(const kexMatrix &m1, const kexMatrix &m2);
     kexMatrix               &operator=(const kexMatrix &matrix);
     kexMatrix               operator|(kexMatrix &matrix);
     
