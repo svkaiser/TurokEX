@@ -390,6 +390,7 @@ void kexRenderWorld::PreProcessLightScatter(void) {
     }
     
     dglGetIntegerv(GL_VIEWPORT, vp);
+    dglPushAttrib(GL_VIEWPORT_BIT);
     dglViewport(0, 0, renderer.FBOLightScatter().Width(), renderer.FBOLightScatter().Height());
 
     renderer.FBOLightScatter().Bind();
@@ -416,7 +417,7 @@ void kexRenderWorld::PreProcessLightScatter(void) {
 
     renderer.FBOLightScatter().UnBind();
     dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    dglViewport(vp[0], vp[1], vp[2], vp[3]);
+    dglPopAttrib();
 }
 
 //
@@ -558,12 +559,12 @@ void kexRenderWorld::DrawWorldModel(kexWorldModel *wm) {
     const modelNode_t *node;
     
     if(!bShowClipMesh && !bShowCollisionMap) {
-        dglPushMatrix();
-        dglMultMatrixf(wm->Matrix().ToFloatPtr());
-    
         if(!(model = wm->Model())) {
             return;
         }
+
+        dglPushMatrix();
+        dglMultMatrixf(wm->Matrix().ToFloatPtr());
         
         node = &model->nodes[0];
         

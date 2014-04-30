@@ -154,6 +154,8 @@ void kexFBO::InitDepthAttachment(const int width, const int height) {
     fboWidth = width;
     fboHeight = height;
     
+    fboAttachment = GL_NONE;
+    
     // texture
     dglGenTextures(1, &fboTexId);
     dglBindTexture(GL_TEXTURE_2D, fboTexId);
@@ -168,7 +170,7 @@ void kexFBO::InitDepthAttachment(const int width, const int height) {
                   fboHeight,
                   0,
                   GL_DEPTH_COMPONENT,
-                  GL_UNSIGNED_BYTE,
+                  GL_FLOAT,
                   0);
     
     // framebuffer
@@ -260,4 +262,19 @@ void kexFBO::BindImage(void) {
     
     dglBindTexture(GL_TEXTURE_2D, fboTexId);
     renderBackend.glState.textureUnits[unit].currentTexture = fboTexId;
+}
+
+//
+// kexFBO::UnBindImage
+//
+
+void kexFBO::UnBindImage(void) {
+    int unit = renderBackend.glState.currentUnit;
+    
+    if(renderBackend.glState.textureUnits[unit].currentTexture == 0) {
+        return;
+    }
+    
+    dglBindTexture(GL_TEXTURE_2D, 0);
+    renderBackend.glState.textureUnits[unit].currentTexture = 0;
 }

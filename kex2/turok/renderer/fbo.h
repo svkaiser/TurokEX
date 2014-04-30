@@ -38,6 +38,7 @@ public:
     void                    BindImage(void);
     void                    Bind(void);
     void                    UnBind(void);
+    void                    UnBindImage(void);
     
     const int               Width(void) const { return fboWidth; }
     const int               Height(void) const { return fboHeight; }
