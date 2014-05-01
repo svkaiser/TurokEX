@@ -143,6 +143,10 @@ void kexCanvasImage::Draw(void) {
     }
 
     renderBackend.SetState(GLSTATE_BLEND, true);
+    renderBackend.SetState(GLSTATE_TEXTURE0, true);
+    renderBackend.SetState(GLSTATE_CULL, false);
+    renderBackend.SetState(GLSTATE_DEPTHTEST, false);
+
     renderer.BindDrawPointers();
     texture->Bind();
 

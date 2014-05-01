@@ -293,13 +293,19 @@ void kexRenderUtils::DrawSphere(float x, float y, float z, float radius,
 void kexRenderUtils::DrawLine(const kexVec3 &p1, const kexVec3 &p2,
                               const byte r, const byte g, const byte b) {
     
+    dglDepthRange(0.0f, 0.0f);
+
     renderBackend.SetState(GLSTATE_TEXTURE0, false);
     renderBackend.SetState(GLSTATE_CULL, false);
     renderBackend.DisableShaders();
+
     renderer.BindDrawPointers();
     renderer.AddLine(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, r, g, b, 255);
     renderer.DrawLineElements();
+
     renderBackend.SetState(GLSTATE_TEXTURE0, true);
+
+    dglDepthRange(0.0f, 1.0f);
 }
 
 //

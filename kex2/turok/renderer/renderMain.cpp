@@ -765,6 +765,7 @@ void kexRenderer::ProcessLightScatter(void) {
     shaderLightScatter->SetUniform("uWeight", 3.5f);
     shaderLightScatter->SetUniform("uDiffuse", 0);
 
+    renderBackend.SetTextureUnit(0);
     fboLightScatter.BindImage();
 
     renderBackend.SetState(GLSTATE_BLEND, true);
