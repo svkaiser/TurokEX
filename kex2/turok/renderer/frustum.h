@@ -35,13 +35,17 @@ typedef enum {
     NUMFRUSTUMPLANES
 } frustumPlane_t;
 
-#define FRUSTUM_CLIPPED BIT(NUMFRUSTUMPLANES)
+#define FRUSTUM_CLIPPED     BIT(NUMFRUSTUMPLANES)
+#define NUMFRUSTUMPOINTS    8
 
 class kexFrustum {
 public:
                         kexFrustum(void);
                         
     void                TransformToView(kexMatrix &proj, kexMatrix &model);
+    void                TransformPoints(const kexVec3 &center, const kexVec3 &dir,
+                                        const float fov, const float aspect,
+                                        const float near, const float far);
     bool                TestBoundingBox(const kexBBox &bbox);
     bool                TestTriangle(const kexTri &triangle);
     bool                TestSphere(const kexVec3 &org, const float radius);
@@ -57,9 +61,12 @@ public:
     kexPlane            &Top(void) { return p[FP_TOP]; }
     kexPlane            &Far(void) { return p[FP_FAR]; }
     kexPlane            &Near(void) { return p[FP_NEAR]; }
+
+    kexVec3             *Points(void) { return points; }
     
 private:
     kexPlane            p[NUMFRUSTUMPLANES];
+    kexVec3             points[NUMFRUSTUMPOINTS];
 };
 
 #endif

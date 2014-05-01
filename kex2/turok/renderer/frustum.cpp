@@ -43,21 +43,50 @@ kexFrustum::kexFrustum(void) {
 void kexFrustum::TransformToView(kexMatrix &proj, kexMatrix &model) {
     kexMatrix clip  = model * proj;
     
-    float *_right   = p[0].ToVec4().ToFloatPtr();
-    float *_left    = p[1].ToVec4().ToFloatPtr();
-    float *_bottom  = p[2].ToVec4().ToFloatPtr();
-    float *_top     = p[3].ToVec4().ToFloatPtr();
-    float *_far     = p[4].ToVec4().ToFloatPtr();
-    float *_near    = p[5].ToVec4().ToFloatPtr();
-    
     for(int i = 0; i < 4; i++) {
-        _right[i]    = clip.vectors[i].w - clip.vectors[i].x;
-        _left[i]     = clip.vectors[i].w + clip.vectors[i].x;
-        _top[i]      = clip.vectors[i].w - clip.vectors[i].y;
-        _bottom[i]   = clip.vectors[i].w + clip.vectors[i].y;
-        _far[i]      = clip.vectors[i].w - clip.vectors[i].z;
-        _near[i]     = clip.vectors[i].w + clip.vectors[i].z;
+        p[FP_RIGHT][i]  = clip.vectors[i].w - clip.vectors[i].x;
+        p[FP_LEFT][i]   = clip.vectors[i].w + clip.vectors[i].x;
+        p[FP_BOTTOM][i] = clip.vectors[i].w - clip.vectors[i].y;
+        p[FP_TOP][i]    = clip.vectors[i].w + clip.vectors[i].y;
+        p[FP_FAR][i]    = clip.vectors[i].w - clip.vectors[i].z;
+        p[FP_NEAR][i]   = clip.vectors[i].w + clip.vectors[i].z;
     }
+}
+
+//
+// kexFrustum::TransformPoints
+//
+// Transforms the corner points of the frustum
+//
+
+void kexFrustum::TransformPoints(const kexVec3 &center, const kexVec3 &dir,
+                                 const float fov, const float aspect,
+                                 const float near, const float far) {
+    kexVec3 right = dir.Cross(kexVec3::vecUp);
+    right.Normalize();
+    
+    kexVec3 up = right.Cross(dir);
+    up.Normalize();
+    
+    const float fovAngle    = DEG2RAD(fov) + 0.2f;
+    
+    const kexVec3 vFar      = center + dir * far;
+    const kexVec3 vNear     = center + dir * near;
+    
+    const float nearHeight  = kexMath::Tan(fovAngle / 2.0f) * near;
+    const float nearWidth   = nearHeight * aspect;
+    const float farHeight   = kexMath::Tan(fovAngle / 2.0f) * far;
+    const float farWidth    = farHeight * aspect;
+    
+    points[0] = vNear - up * nearHeight - right * nearWidth;
+    points[1] = vNear + up * nearHeight - right * nearWidth;
+    points[2] = vNear + up * nearHeight + right * nearWidth;
+    points[3] = vNear - up * nearHeight + right * nearWidth;
+    
+    points[4] = vFar - up * farHeight - right * farWidth;
+    points[5] = vFar + up * farHeight - right * farWidth;
+    points[6] = vFar + up * farHeight + right * farWidth;
+    points[7] = vFar - up * farHeight + right * farWidth;
 }
 
 //

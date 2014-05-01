@@ -86,6 +86,7 @@ void kexCamera::SetupMatrices(void) {
 
     // frustum
     viewFrustum.TransformToView(projMatrix, modelMatrix);
+    viewFrustum.TransformPoints(origin, angles.ToForwardAxis(), fov, aspect, zNear, zFar);
 }
 
 //

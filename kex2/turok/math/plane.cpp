@@ -168,7 +168,7 @@ const int kexPlane::BestAxis(void) const {
 //
 
 float kexPlane::operator[](int index) const {
-    assert(index >= 0 && index < 3);
+    assert(index >= 0 && index < 4);
     return (&a)[index];
 }
 
@@ -177,7 +177,7 @@ float kexPlane::operator[](int index) const {
 //
 
 float &kexPlane::operator[](int index) {
-    assert(index >= 0 && index < 3);
+    assert(index >= 0 && index < 4);
     return (&a)[index];
 }
 
