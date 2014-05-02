@@ -277,6 +277,7 @@ void kexInput::MoveMouse(int x, int y) {
 void kexInput::ActivateMouse(void) {
     SDL_ShowCursor(0);
     SDL_SetRelativeMouseMode(SDL_TRUE);
+    SDL_SetWindowGrab(sysMain.Window(), SDL_TRUE);
 }
 
 //
@@ -286,6 +287,7 @@ void kexInput::ActivateMouse(void) {
 void kexInput::DeactivateMouse(void) {
     SDL_ShowCursor(1);
     SDL_SetRelativeMouseMode(SDL_FALSE);
+    SDL_SetWindowGrab(sysMain.Window(), SDL_FALSE);
 }
 
 //

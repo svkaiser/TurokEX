@@ -443,6 +443,7 @@ bool kexConsole::ProcessInput(const event_t *ev) {
                 switch(c) {
                     case SDLK_BACKQUOTE:
                         state = CON_STATE_UP;
+                        inputSystem.CenterMouse();
                         return true;
                     case SDLK_RETURN:
                         ParseInput();
@@ -525,8 +526,9 @@ void kexConsole::Draw(void) {
             false, (byte*)&color, (byte*)&color);
     }
 
-    if(state == CON_STATE_UP && !cvarDisplayConsole.GetBool())
+    if(state == CON_STATE_UP && !cvarDisplayConsole.GetBool()) {
         return;
+    }
 
     bOverlay = (state == CON_STATE_UP && cvarDisplayConsole.GetBool());
 
