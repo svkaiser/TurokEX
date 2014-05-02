@@ -37,10 +37,10 @@ kexFrustum::kexFrustum(void) {
 }
 
 //
-// kexFrustum::TransformToView
+// kexFrustum::MakeClipPlanes
 //
 
-void kexFrustum::TransformToView(kexMatrix &proj, kexMatrix &model) {
+void kexFrustum::MakeClipPlanes(kexMatrix &proj, kexMatrix &model) {
     kexMatrix clip  = model * proj;
     
     for(int i = 0; i < 4; i++) {

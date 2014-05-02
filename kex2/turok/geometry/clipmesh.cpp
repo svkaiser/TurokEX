@@ -565,7 +565,7 @@ void kexClipMesh::Transform(void) {
 
         for(unsigned int i = 0; i < cmGroup->numPoints; i++) {
             if(type != CMT_BOX) {
-                cmGroup->points[i] |= mtx;
+                cmGroup->points[i] *= mtx;
             }
 
             for(unsigned int i = 0; i < cmGroup->numTriangles; i++) {

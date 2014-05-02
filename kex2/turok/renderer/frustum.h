@@ -42,7 +42,7 @@ class kexFrustum {
 public:
                         kexFrustum(void);
                         
-    void                TransformToView(kexMatrix &proj, kexMatrix &model);
+    void                MakeClipPlanes(kexMatrix &proj, kexMatrix &model);
     void                TransformPoints(const kexVec3 &center, const kexVec3 &dir,
                                         const float fov, const float aspect,
                                         const float near, const float far);

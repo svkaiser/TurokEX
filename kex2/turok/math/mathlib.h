@@ -228,8 +228,8 @@ public:
     kexVec3                 operator*(const float val) const;
     kexVec3                 operator/(const kexVec3 &vec);
     kexVec3                 operator/(const float val);
-    kexVec3                 operator|(const kexQuat &quat);
-    kexVec3                 operator|(const kexMatrix &mtx);
+    kexVec3                 operator*(const kexQuat &quat);
+    kexVec3                 operator*(const kexMatrix &mtx);
     kexVec3                 &operator=(const kexVec3 &vec);
     kexVec3                 &operator=(const float *vecs);
     kexVec3                 &operator+=(const kexVec3 &vec);
@@ -238,8 +238,8 @@ public:
     kexVec3                 &operator*=(const float val);
     kexVec3                 &operator/=(const kexVec3 &vec);
     kexVec3                 &operator/=(const float val);
-    kexVec3                 &operator|=(const kexQuat &quat);
-    kexVec3                 &operator|=(const kexMatrix &mtx);
+    kexVec3                 &operator*=(const kexQuat &quat);
+    kexVec3                 &operator*=(const kexMatrix &mtx);
     float                   operator[](int index) const;
     float                   &operator[](int index);
 
@@ -263,6 +263,7 @@ class kexVec4 {
 public:
                             kexVec4(void);
                             explicit kexVec4(const float x, const float y, const float z, const float w);
+                            explicit kexVec4(const kexVec3 &vector, const float w);
 
     void                    Set(const float x, const float y, const float z, const float w);
     void                    Clear(void);
@@ -273,8 +274,8 @@ public:
     kexVec4                 operator+(const kexVec4 &vec);
     kexVec4                 operator+(const kexVec4 &vec) const;
     kexVec4                 operator+(kexVec4 &vec);
-    kexVec4                 operator|(const kexMatrix &mtx);
-    kexVec4                 &operator|=(const kexMatrix &mtx);
+    kexVec4                 operator*(const kexMatrix &mtx);
+    kexVec4                 &operator*=(const kexMatrix &mtx);
     float                   operator[](int index) const;
     float                   &operator[](int index);
 
@@ -444,10 +445,10 @@ public:
     kexBBox                 operator-(const float radius) const;
     kexBBox                 operator-(const kexVec3 &vec) const;
     kexBBox                 &operator-=(const float radius);
-    kexBBox                 operator|(const kexMatrix &matrix) const;
-    kexBBox                 &operator|=(const kexMatrix &matrix);
-    kexBBox                 operator|(const kexVec3 &vec) const;
-    kexBBox                 &operator|=(const kexVec3 &vec);
+    kexBBox                 operator*(const kexMatrix &matrix) const;
+    kexBBox                 &operator*=(const kexMatrix &matrix);
+    kexBBox                 operator*(const kexVec3 &vec) const;
+    kexBBox                 &operator*=(const kexVec3 &vec);
     kexBBox                 &operator=(const kexBBox &bbox);
     kexVec3                 operator[](int index) const;
     kexVec3                 &operator[](int index);

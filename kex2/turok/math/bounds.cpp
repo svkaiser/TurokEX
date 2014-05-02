@@ -255,12 +255,12 @@ kexBBox &kexBBox::operator-=(const float radius) {
 }
 
 //
-// kexBBox::operator|
+// kexBBox::operator*
 //
 
-kexBBox kexBBox::operator|(const kexMatrix &matrix) const {
+kexBBox kexBBox::operator*(const kexMatrix &matrix) const {
     kexVec3 c  = Center();
-    kexVec3 ct = c | matrix;
+    kexVec3 ct = c * matrix;
     
     kexMatrix mtx(matrix);
     
@@ -270,18 +270,18 @@ kexBBox kexBBox::operator|(const kexMatrix &matrix) const {
         mtx.vectors[i].z = kexMath::Fabs(mtx.vectors[i].z);
     }
     
-    kexVec3 ht = (max - c) | mtx;
+    kexVec3 ht = (max - c) * mtx;
     
     return kexBBox(ct - ht, ct + ht);
 }
 
 //
-// kexBBox::operator|=
+// kexBBox::operator*=
 //
 
-kexBBox &kexBBox::operator|=(const kexMatrix &matrix) {
+kexBBox &kexBBox::operator*=(const kexMatrix &matrix) {
     kexVec3 c  = Center();
-    kexVec3 ct = c | matrix;
+    kexVec3 ct = c * matrix;
     
     kexMatrix mtx(matrix);
     
@@ -291,7 +291,7 @@ kexBBox &kexBBox::operator|=(const kexMatrix &matrix) {
         mtx.vectors[i].z = kexMath::Fabs(mtx.vectors[i].z);
     }
     
-    kexVec3 ht = (max - c) | mtx;
+    kexVec3 ht = (max - c) * mtx;
     
     min = (ct - ht);
     max = (ct + ht);
@@ -300,10 +300,10 @@ kexBBox &kexBBox::operator|=(const kexMatrix &matrix) {
 }
 
 //
-// kexBBox::operator|
+// kexBBox::operator*
 //
 
-kexBBox kexBBox::operator|(const kexVec3 &vec) const {
+kexBBox kexBBox::operator*(const kexVec3 &vec) const {
     kexBBox box = *this;
 
     if(vec.x < 0) box.min.x += (vec.x-1); else box.max.x += (vec.x+1);
@@ -314,10 +314,10 @@ kexBBox kexBBox::operator|(const kexVec3 &vec) const {
 }
 
 //
-// kexBBox::operator|=
+// kexBBox::operator*=
 //
 
-kexBBox &kexBBox::operator|=(const kexVec3 &vec) {
+kexBBox &kexBBox::operator*=(const kexVec3 &vec) {
     if(vec.x < 0) min.x += (vec.x-1); else max.x += (vec.x+1);
     if(vec.y < 0) min.y += (vec.y-1); else max.y += (vec.y+1);
     if(vec.z < 0) min.z += (vec.z-1); else max.z += (vec.z+1);

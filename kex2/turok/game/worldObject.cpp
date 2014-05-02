@@ -209,7 +209,7 @@ bool kexWorldObject::TryMove(const kexVec3 &position, kexVec3 &dest, kexSector *
         trace.bbox = trace.localBBox;
         trace.bbox.min += position;
         trace.bbox.max += position;
-        trace.bbox |= (dest - position);
+        trace.bbox *= (dest - position);
     }
 
     localWorld.Trace(&trace);

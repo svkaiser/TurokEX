@@ -261,10 +261,10 @@ void kexMath::InitObject(void) {
         asMETHODPR(kexQuat, operator*, (const kexQuat &in), kexQuat), asCALL_THISCALL);
     scriptManager.Engine()->RegisterObjectMethod("kQuat", "kQuat &opAssign(const kQuat &in)",
         asMETHODPR(kexQuat, operator=, (const kexQuat&), kexQuat&), asCALL_THISCALL);
-    scriptManager.Engine()->RegisterObjectMethod("kVec3", "kVec3 opOr(const kQuat &in)",
-        asMETHODPR(kexVec3, operator|, (const kexQuat&), kexVec3), asCALL_THISCALL);
-    scriptManager.Engine()->RegisterObjectMethod("kVec3", "kVec3 &opOrAssign(const kQuat &in)",
-        asMETHODPR(kexVec3, operator|=, (const kexQuat&), kexVec3&), asCALL_THISCALL);
+    scriptManager.Engine()->RegisterObjectMethod("kVec3", "kVec3 opMul(const kQuat &in)",
+        asMETHODPR(kexVec3, operator*, (const kexQuat&), kexVec3), asCALL_THISCALL);
+    scriptManager.Engine()->RegisterObjectMethod("kVec3", "kVec3 &opMulAssign(const kQuat &in)",
+        asMETHODPR(kexVec3, operator*=, (const kexQuat&), kexVec3&), asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectProperty("kQuat", "float x", asOFFSET(kexQuat, x));
     scriptManager.Engine()->RegisterObjectProperty("kQuat", "float y", asOFFSET(kexQuat, y));

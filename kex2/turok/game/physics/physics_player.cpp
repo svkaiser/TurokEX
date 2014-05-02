@@ -114,7 +114,7 @@ void kexPlayerPhysics::Think(const float timeDelta) {
     trace.bbox.max += start;
     trace.sector = &sector;
     // resize box to account for movement
-    trace.bbox |= (velocity * time);
+    trace.bbox *= (velocity * time);
 
     trace.start = start;
     trace.end = start + (gravity * mass) * mass;

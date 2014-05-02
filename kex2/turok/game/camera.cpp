@@ -82,10 +82,10 @@ void kexCamera::SetupMatrices(void) {
 
     modelMatrix = kexMatrix((yaw * roll) * pitch);
     rotMatrix = modelMatrix;
-    modelMatrix.AddTranslation(-(origin | modelMatrix));
+    modelMatrix.AddTranslation(-(origin * modelMatrix));
 
     // frustum
-    viewFrustum.TransformToView(projMatrix, modelMatrix);
+    viewFrustum.MakeClipPlanes(projMatrix, modelMatrix);
     viewFrustum.TransformPoints(origin, angles.ToForwardAxis(), fov, aspect, zNear, zFar);
 }
 

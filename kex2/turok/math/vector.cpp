@@ -676,9 +676,9 @@ kexVec3 kexVec3::ScreenProject(kexMatrix &proj, kexMatrix &model,
     kexVec4 modelVec;
 
     modelVec.ToVec3() = *this;
-    modelVec |= model;
+    modelVec *= model;
 
-    projVec = (modelVec | proj);
+    projVec = (modelVec * proj);
     projVec.x *= modelVec.w;
     projVec.y *= modelVec.w;
     projVec.z *= modelVec.w;
@@ -845,10 +845,10 @@ kexVec3 &kexVec3::operator/=(const float val) {
 }
 
 //
-// kexVec3::operator|
+// kexVec3::operator*
 //
 
-kexVec3 kexVec3::operator|(const kexQuat &quat) {
+kexVec3 kexVec3::operator*(const kexQuat &quat) {
     float xx = quat.x * quat.x;
     float yx = quat.y * quat.x;
     float zx = quat.z * quat.x;
@@ -874,10 +874,10 @@ kexVec3 kexVec3::operator|(const kexQuat &quat) {
 }
 
 //
-// kexVec3::operator|
+// kexVec3::operator*
 //
 
-kexVec3 kexVec3::operator|(const kexMatrix &mtx) {
+kexVec3 kexVec3::operator*(const kexMatrix &mtx) {
     return kexVec3(
         mtx.vectors[1].x * y + mtx.vectors[2].x * z + mtx.vectors[0].x * x + mtx.vectors[3].x,
         mtx.vectors[1].y * y + mtx.vectors[2].y * z + mtx.vectors[0].y * x + mtx.vectors[3].y,
@@ -885,10 +885,10 @@ kexVec3 kexVec3::operator|(const kexMatrix &mtx) {
 }
 
 //
-// kexVec3::operator|=
+// kexVec3::operator*=
 //
 
-kexVec3 &kexVec3::operator|=(const kexQuat &quat) {
+kexVec3 &kexVec3::operator*=(const kexQuat &quat) {
     float xx = quat.x * quat.x;
     float yx = quat.y * quat.x;
     float zx = quat.z * quat.x;
@@ -917,10 +917,10 @@ kexVec3 &kexVec3::operator|=(const kexQuat &quat) {
 }
 
 //
-// kexVec3::operator|=
+// kexVec3::operator*=
 //
 
-kexVec3 &kexVec3::operator|=(const kexMatrix &mtx) {
+kexVec3 &kexVec3::operator*=(const kexMatrix &mtx) {
     float _x = x;
     float _y = y;
     float _z = z;
@@ -1015,6 +1015,14 @@ kexVec4::kexVec4(const float x, const float y, const float z, const float w) {
 }
 
 //
+// kexVec4::kexVec4
+//
+
+kexVec4::kexVec4(const kexVec3 &vector, const float w) {
+    Set(vector.x, vector.y, vector.z, w);
+}
+
+//
 // kexVec4::Set
 //
 
@@ -1082,10 +1090,10 @@ kexVec4 kexVec4::operator+(kexVec4 &vec) {
 }
 
 //
-// kexVec4::operator|
+// kexVec4::operator*
 //
 
-kexVec4 kexVec4::operator|(const kexMatrix &mtx) {
+kexVec4 kexVec4::operator*(const kexMatrix &mtx) {
     return kexVec4(
         mtx.vectors[1].x * y + mtx.vectors[2].x * z + mtx.vectors[0].x * x + mtx.vectors[3].x,
         mtx.vectors[1].y * y + mtx.vectors[2].y * z + mtx.vectors[0].y * x + mtx.vectors[3].y,
@@ -1094,10 +1102,10 @@ kexVec4 kexVec4::operator|(const kexMatrix &mtx) {
 }
 
 //
-// kexVec4::operator|=
+// kexVec4::operator*=
 //
 
-kexVec4 &kexVec4::operator|=(const kexMatrix &mtx) {
+kexVec4 &kexVec4::operator*=(const kexMatrix &mtx) {
     float _x = x;
     float _y = y;
     float _z = z;

@@ -373,7 +373,7 @@ void kexAnimState::UpdateRootMotion(void) {
             kexMatrix mtx(DEG2RAD(-90), 1);
             mtx.Scale(-1, 1, 1);
 
-            kexVec3 offs = (pos_next - pos_cur) | mtx;
+            kexVec3 offs = (pos_next - pos_cur) * mtx;
             baseOffset = -pos_cur[2] * owner->GetScale()[1];
             rootMotion = (offs * owner->GetScale()) * (60.0f / frameTime);
         }
@@ -394,7 +394,7 @@ void kexAnimState::UpdateMotion(void) {
         blendFrac = (frameTime / blendTime);
     }
     
-    dir = (rootMotion | owner->GetRotation()) * blendFrac;
+    dir = (rootMotion * owner->GetRotation()) * blendFrac;
 
     if(owner->InstanceOf(&kexAI::info)) {
         owner->Physics()->velocity = dir;

@@ -277,7 +277,7 @@ kexFx *kexFx::SpawnChild(const char *name) {
         kexMatrix mtx1(rotationOffset + DEG2RAD(180), 2);
         kexMatrix mtx3;
 
-        nvec = (svec | mtx1);
+        nvec = (svec * mtx1);
 
         switch(fxInfo->drawtype) {
         case VFX_DRAWFLAT:
@@ -289,7 +289,7 @@ kexFx *kexFx::SpawnChild(const char *name) {
             break;
         }
 
-        org += (nvec | (mtx1 | mtx3));
+        org += (nvec * (mtx1 * mtx3));
     }
 
     return localWorld.SpawnFX(name, owner, physics.velocity, org, rot, this);
@@ -456,7 +456,7 @@ void kexFx::Spawn(void) {
         kexVec3 worldVec;
         kexVec3 tVec;
 
-        worldVec = (destVel | matrix);
+        worldVec = (destVel * matrix);
         tVec.Set(FX_RAND_RANGE(), FX_RAND_RANGE(), FX_RAND_RANGE());
 
         worldVec.Normalize();
@@ -489,7 +489,7 @@ void kexFx::Spawn(void) {
     if(fxInfo->offset.rand[2] != 0) offset.z += FX_RAND_FLOAT(fxInfo->offset.rand[2]);
 
     if(offset.Unit() != 0) {
-        kexVec3 newDest = origin + (offset | matrix);
+        kexVec3 newDest = origin + (offset * matrix);
 
         // clip position if outside of collision map. non-moving particles are ignored
         if(localWorld.CollisionMap().IsLoaded() && owner && fxInfo->bLinkArea) {

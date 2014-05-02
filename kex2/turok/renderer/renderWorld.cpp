@@ -289,7 +289,7 @@ void kexRenderWorld::SetCameraView(kexCamera *camera) {
     dglMatrixMode(GL_MODELVIEW);
     dglLoadMatrixf(camera->ModelView().ToFloatPtr());
 
-    worldLightTransform = (world->worldLightOrigin | world->Camera()->RotationMatrix()).ToVec3();
+    worldLightTransform = (world->worldLightOrigin * world->Camera()->RotationMatrix()).ToVec3();
 }
 
 //

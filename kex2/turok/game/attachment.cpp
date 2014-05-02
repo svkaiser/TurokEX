@@ -59,7 +59,7 @@ void kexAttachment::DettachObject(void) {
 void kexAttachment::Transform(void) {
     if(obj != NULL) {
         owner->SetOrigin((obj->GetOrigin() + sourceOffset) +
-            ((attachOffset - sourceOffset) | obj->GetRotation()));
+            ((attachOffset - sourceOffset) * obj->GetRotation()));
 
         if(bAttachRelativeAngles) {
             owner->SetAngles(obj->GetAngles());

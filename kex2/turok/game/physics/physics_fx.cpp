@@ -216,7 +216,7 @@ void kexFxPhysics::Think(const float timeDelta) {
             trace.bbox.min += start;
             trace.bbox.max += start;
             // resize box to account for movement
-            trace.bbox |= (velocity * timeDelta);
+            trace.bbox *= (velocity * timeDelta);
         }
 
         localWorld.Trace(&trace);

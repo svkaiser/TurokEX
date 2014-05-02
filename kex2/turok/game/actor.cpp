@@ -430,7 +430,7 @@ void kexActor::UpdateTransform(void) {
     matrix.AddTranslation(origin);
 
     if(!InstanceOf(&kexPickup::info)) {
-        bbox = (baseBBox | rotMatrix);
+        bbox = (baseBBox * rotMatrix);
     }
     else {
         // pickups will have a fixed bounding box size regardless of rotation
@@ -541,7 +541,7 @@ kexVec3 kexActor::ToLocalOrigin(const float x, const float y, const float z) {
     kexMatrix mtx(DEG2RAD(-90), 1);
     mtx.Scale(-1, 1, 1);
     
-    return ((kexVec3(x, y, z) | mtx) | matrix);
+    return ((kexVec3(x, y, z) * mtx) * matrix);
 }
 
 //
