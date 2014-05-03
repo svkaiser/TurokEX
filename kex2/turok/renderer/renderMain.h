@@ -24,6 +24,7 @@
 #define __RENDER_MAIN_H__
 
 #include "fbo.h"
+#include "material.h"
 
 class kexMaterial;
 class kexSector;
@@ -42,6 +43,12 @@ typedef struct {
     kexMaterial             *material;
 } surface_t;
 
+typedef struct {
+    surface_t               *surf;
+    kexMaterial             *material;
+    kexMatrix               matrix;
+} drawSurface_t;
+
 #define MAX_FX_DISPLAYS     2048
 
 #define GL_MAX_INDICES      0x10000
@@ -59,8 +66,12 @@ public:
                             ~kexRenderer(void);
 
     void                    Init(void);
+    void                    AddSurface(const surface_t *surf, const kexMaterial *material,
+                                       const kexMatrix mtx, const matSortOrder_t sortOrder = MSO_DEFAULT);
+    void                    DrawSurfaceList(void);
     void                    DrawSurface(const surface_t *surface, kexMaterial *material);
     void                    DrawWireFrameSurface(const surface_t *surface, const rcolor color);
+    void                    DrawBlackSurface(const surface_t *surface, kexMaterial *material);
     void                    Draw(void);
     void                    DrawFX(const fxDisplay_t *fxList, const int count);
     void                    BindDrawPointers(void);
@@ -104,6 +115,8 @@ private:
     kexShaderObj            *shaderLightScatter;
     kexShaderObj            *blackShader;
     bool                    bRenderLightScatter;
+    kexArray<drawSurface_t> drawSurfaces[NUMSORTORDERS];
+    int                     numDrawList[NUMSORTORDERS];
     word                    indiceCount;
     word                    vertexCount;
     word                    drawIndices[GL_MAX_INDICES];

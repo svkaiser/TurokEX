@@ -49,8 +49,8 @@ typedef struct {
 
 typedef enum {
     MSO_DEFAULT     = 0,
-    MSO_TRANSPARENT,
     MSO_MASKED,
+    MSO_TRANSPARENT,
     MSO_CUSTOM1,
     MSO_CUSTOM2,
     MSO_CUSTOM3,

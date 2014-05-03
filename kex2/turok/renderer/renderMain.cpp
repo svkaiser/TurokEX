@@ -40,6 +40,7 @@ kexCvar cvarRenderMotionBlurRampSpeed("r_motionblurrampspeed", CVF_FLOAT|CVF_CON
 kexCvar cvarRenderLightScatter("r_lightscatter", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 kexCvar cvarRenderNodeOcclusionQueries("r_nodeocclusionqueries", CVF_BOOL|CVF_CONFIG, "1", "TODO");
 kexCvar cvarRenderActorOcclusionQueries("r_actorocclusionqueries", CVF_BOOL|CVF_CONFIG, "1", "TODO");
+kexCvar cvarRenderNoSortMaterials("r_nosortmaterials", CVF_BOOL, "0", "TODO");
 
 kexRenderer renderer;
 
@@ -56,6 +57,17 @@ static void FCmd_PrintStats(void) {
 }
 
 //
+// SortDrawList
+//
+
+static int SortDrawList(const drawSurface_t *a, const drawSurface_t *b) {
+    kexMaterial *xa = a->material;
+    kexMaterial *xb = b->material;
+    
+    return (int)(xb - xa);
+}
+
+//
 // kexRenderer::kexRenderer
 //
 
@@ -64,6 +76,8 @@ kexRenderer::kexRenderer(void) {
     this->motionBlurMaterial    = NULL;
     this->bRenderLightScatter   = false;
     this->bShowRenderStats      = false;
+
+    memset(numDrawList, 0, sizeof(numDrawList));
 }
 
 //
@@ -71,6 +85,9 @@ kexRenderer::kexRenderer(void) {
 //
 
 kexRenderer::~kexRenderer(void) {
+    for(int i = 0; i < NUMSORTORDERS; i++) {
+        drawSurfaces[i].Empty();
+    }
 }
 
 //
@@ -339,6 +356,56 @@ bool kexRenderer::GetOcclusionSampleResult(const unsigned int &query, const kexB
 }
 
 //
+// kexRenderer::AddSurface
+//
+
+void kexRenderer::AddSurface(const surface_t *surf, const kexMaterial *material,
+                             const kexMatrix mtx, const matSortOrder_t sortOrder) {
+    drawSurface_t drawSurf;
+    
+    drawSurf.surf = (surface_t*)surf;
+    drawSurf.material = (kexMaterial*)material;
+    drawSurf.matrix = mtx;
+    
+    if(drawSurfaces[sortOrder].Length() <= (unsigned int)numDrawList[sortOrder]) {
+        drawSurfaces[sortOrder].Push(drawSurf);
+    }
+    else {
+        drawSurfaces[sortOrder][numDrawList[sortOrder]] = drawSurf;
+    }
+
+    numDrawList[sortOrder]++;
+}
+
+//
+// kexRenderer::DrawSurfaceList
+//
+
+void kexRenderer::DrawSurfaceList(void) {
+    drawSurface_t *drawSurf;
+    bool bNoSort = cvarRenderNoSortMaterials.GetBool();
+    
+    for(int i = 0; i < NUMSORTORDERS; i++) {
+        if(bNoSort == false) {
+            drawSurfaces[i].Sort(SortDrawList, numDrawList[i]);
+        }
+        
+        for(int j = 0; j < numDrawList[i]; j++) {
+            drawSurf = &drawSurfaces[i][j];
+            
+            dglPushMatrix();
+            dglMultMatrixf(drawSurf->matrix.ToFloatPtr());
+
+            DrawSurface(drawSurf->surf, drawSurf->material);
+
+            dglPopMatrix();
+        }
+
+        numDrawList[i] = 0;
+    }
+}
+
+//
 // kexRenderer::DrawSurface
 //
 
@@ -355,12 +422,7 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
         return;
     }
 
-    if(renderWorld.LightScatterPass()) {
-        shader = blackShader;
-    }
-    else {
-        shader = material->ShaderObj();
-    }
+    shader = material->ShaderObj();
     
     if(shader == NULL) {
         return;
@@ -457,6 +519,67 @@ void kexRenderer::DrawWireFrameSurface(const surface_t *surface, const rcolor co
     
     renderBackend.SetTextureUnit(0);
 
+    if(currentSurface != surface) {
+        dglNormalPointer(GL_FLOAT, sizeof(float)*3, surface->normals);
+        dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, surface->coords);
+        dglVertexPointer(3, GL_FLOAT, sizeof(kexVec3), surface->vertices);
+        dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, surface->rgb);
+        
+        currentSurface = surface;
+    }
+    
+    dglDrawElements(GL_TRIANGLES, surface->numIndices, GL_UNSIGNED_SHORT, surface->indices);
+}
+
+//
+// kexRenderer::DrawBlackSurface
+//
+
+void kexRenderer::DrawBlackSurface(const surface_t *surface, kexMaterial *material)  {
+    kexShaderObj *shader = blackShader;
+    
+    if(surface == NULL) {
+        return;
+    }
+    if(shader == NULL) {
+        return;
+    }
+    if(material == NULL) {
+        return;
+    }
+    if(material->Flags() & MTF_NODRAW) {
+        return;
+    }
+    if(material->SortOrder() == MSO_TRANSPARENT) {
+        return;
+    }
+    
+    shader->Enable();
+    shader->CommitGlobalUniforms(material);
+    
+    renderBackend.SetState(material->StateBits());
+    renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
+    renderBackend.SetCull(material->CullType());
+    renderBackend.SetDepthMask(material->DepthMask());
+    renderBackend.SetPolyMode(GLPOLY_FILL);
+    
+    for(unsigned int i = 0; i < material->NumUnits(); i++) {
+        matSampler_t *sampler = material->Sampler(i);
+        
+        renderBackend.SetTextureUnit(sampler->unit);
+        
+        if(sampler->texture == NULL) {
+            renderBackend.defaultTexture.Bind();
+        }
+        else {
+            sampler->texture->Bind();
+            sampler->texture->ChangeParameters(sampler->clamp, sampler->filter);
+        }
+    }
+    
+    renderBackend.SetTextureUnit(0);
+    
+    
     if(currentSurface != surface) {
         dglNormalPointer(GL_FLOAT, sizeof(float)*3, surface->normals);
         dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, surface->coords);
@@ -786,10 +909,21 @@ void kexRenderer::DrawStats(void) {
     renderBackend.PrintStats();
     renderWorld.PrintStats();
 
+#define DRAWSURF_SIZE(x) ((sizeof(drawSurface_t) * drawSurfaces[x].Length()) >> 10)
+
     if(bShowRenderStats) {
         kexRenderUtils::PrintStatsText("post process time", ": %ims", postProcessMS);
         kexRenderUtils::AddDebugLineSpacing();
+        kexRenderUtils::PrintStatsText("draw surf default", ": %ikb", DRAWSURF_SIZE(MSO_DEFAULT));
+        kexRenderUtils::PrintStatsText("draw surf masked", ": %ikb", DRAWSURF_SIZE(MSO_MASKED));
+        kexRenderUtils::PrintStatsText("draw surf transparent", ": %ikb", DRAWSURF_SIZE(MSO_TRANSPARENT));
+        kexRenderUtils::PrintStatsText("draw surf custom1", ": %ikb", DRAWSURF_SIZE(MSO_CUSTOM1));
+        kexRenderUtils::PrintStatsText("draw surf custom2", ": %ikb", DRAWSURF_SIZE(MSO_CUSTOM2));
+        kexRenderUtils::PrintStatsText("draw surf custom3", ": %ikb", DRAWSURF_SIZE(MSO_CUSTOM3));
+        kexRenderUtils::AddDebugLineSpacing();
     }
+
+#undef DRAWSURF_SIZE
 
     scriptManager.DrawGCStats();
     kexRenderUtils::ClearDebugLine();

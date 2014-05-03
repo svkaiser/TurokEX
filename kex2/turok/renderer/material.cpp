@@ -369,6 +369,11 @@ void kexMaterial::Parse(kexLexer *lexer) {
                 }
                 else if(lexer->Matches("color_diffuse")) {
                     diffuseColor = lexer->GetVectorString4();
+                    if(diffuseColor.w < 1.0f) {
+                        // hack: force transparent sort order and disable depth mask
+                        sortOrder = MSO_TRANSPARENT;
+                        depthMask = 0;
+                    }
                 }
                 else if(lexer->Matches("nodepthmask")) {
                     depthMask = 0;

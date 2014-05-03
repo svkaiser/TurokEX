@@ -30,6 +30,8 @@ class kexArray {
 public:
                         kexArray(void);
                         ~kexArray(void);
+    
+    typedef int         compare_t(const type*, const type*);
 
     void                Push(type o);
     void                Pop(void);
@@ -38,6 +40,9 @@ public:
     void                Resize(unsigned int size);
     type                IndexOf(unsigned int index) const;
     void                Splice(const unsigned int start, unsigned int len);
+    void                Sort(compare_t *function);
+    void                Sort(compare_t *function, unsigned int count);
+    
     const unsigned int  Length(void) const { return length; }
     type                GetData(const int index) { return data[index]; }
 
@@ -181,6 +186,42 @@ void kexArray<type>::Splice(const unsigned int start, unsigned int len) {
     data = tmp;
     length = length - len;
     aidx = length-1;
+}
+
+//
+// kexArray::Sort
+//
+// Note that data will be shuffled around, so this could invalidate any
+// pointers that relies on the array/data
+//
+template<class type>
+void kexArray<type>::Sort(compare_t *function) {
+    if(data == NULL) {
+        return;
+    }
+    
+    typedef int compareCast(const void*, const void*);
+    compareCast *cmpFunc = (compareCast*)function;
+    
+    qsort((void*)data, length, sizeof(type), cmpFunc);
+}
+
+//
+// kexArray::Sort
+//
+// Note that data will be shuffled around, so this could invalidate any
+// pointers that relies on the array/data
+//
+template<class type>
+void kexArray<type>::Sort(compare_t *function, unsigned int count) {
+    if(data == NULL) {
+        return;
+    }
+    
+    typedef int compareCast(const void*, const void*);
+    compareCast *cmpFunc = (compareCast*)function;
+    
+    qsort((void*)data, count, sizeof(type), cmpFunc);
 }
 
 //

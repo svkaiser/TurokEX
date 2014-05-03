@@ -78,9 +78,10 @@ private:
     void                        RecursiveSDNode(int nodenum);
     void                        TraversePortalView(kexPortal *portal, kexPortal *prevPortal,
                                                    const int side, kexViewBounds *viewBounds);
-    void                        TraverseDrawActorNode(kexActor *actor,
+    void                        TraverseDrawActorNode(const kexActor *actor,
                                                       const modelNode_t *node,
-                                                      kexAnimState *animState);
+                                                      const kexAnimState *animState,
+                                                      const kexMatrix &matrix);
     void                        DrawSectors(kexSector *sectors, const int count);
     void                        DrawTriangle(const kexTri &tri, const word index,
                                              byte r, byte g, byte b, byte a);

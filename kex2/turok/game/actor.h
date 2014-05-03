@@ -67,6 +67,7 @@ public:
     void                        SetName(kexStr &str) { name = str; }
     kexVec3                     *GetNodeTranslations(void) { return nodeOffsets_t; }
     kexQuat                     *GetNodeRotations(void) { return nodeOffsets_r; }
+    kexQuat                     *GetNodeRotations(void) const { return nodeOffsets_r; }
     kexAnimState                *AnimState(void) { return &animState; }
     const kexModel_t            *Model(void) const { return model; }
     kexAI                       *ToAI(void) { return reinterpret_cast<kexAI*>(this); }
