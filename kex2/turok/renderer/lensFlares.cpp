@@ -129,56 +129,89 @@ void kexLensFlares::LoadKLF(const char *file) {
 //
 
 void kexLensFlares::Draw(const kexVec3 &origin) {
-    float hw;
-    float hh;
-    float w;
-    float h;
-    float ndcx;
-    float ndcy;
-    float scale;
-    float len;
-    float offs;
-    float d;
-    kexFrustum frustum;
-    kexVec3 org;
+    float hw, hh;
+    float w, h;
+    float proj_x, proj_y;
+    float fx, fy;
+    float div_x, div_y;
+    float ndcx, ndcy;
     kexVec3 pos;
+    kexVec3 org;
+    float len;
+    float scale;
+    float d;
     byte alpha;
 
-    frustum = localWorld.Camera()->Frustum();
-
-    if(!frustum.TestSphere(origin, 0)) {
+    if(!localWorld.Camera()->Frustum().TestSphere(origin, 0)) {
         return;
     }
+
+    org = origin;
+    pos = localWorld.Camera()->ProjectPoint(org, 0, 0);
 
     w = (float)sysMain.VideoWidth();
     h = (float)sysMain.VideoHeight();
     hw = w * 0.5f;
     hh = h * 0.5f;
-    org = origin;
-    pos = localWorld.Camera()->ProjectPoint(org, 0, 0);
-    org = pos;
-    len = localWorld.Camera()->GetOrigin().Distance(origin);
 
-    ndcx = kexMath::Fabs((pos.x / w) * 2.0f - 1.0f);
-    ndcy = kexMath::Fabs((pos.y / h) * 2.0f - 1.0f);
+    proj_x = hw - pos.x;
+    proj_y = hh - pos.y;
 
-    d = 1.0f - ((ndcx * ndcx + ndcy * ndcy) / 2.0f);
+    len = kexMath::Sqrt(proj_x * proj_x + proj_y * proj_y) * 0.4f;
 
-    alpha = (byte)(kexMath::Pow(d, 3.0f) * 255.0f);
+    fx = kexMath::Fabs(proj_x);
+    fy = kexMath::Fabs(proj_y);
+
+    div_x = 0;
+    div_y = 0;
+
+    if(fx <= fy) {
+        if(fy > 0) {
+            div_x = proj_x / fy;
+        }
+
+        if(proj_y > 0) {
+            div_y = 1.0f;
+        }
+        else {
+            div_y = -1.0f;
+        }
+    }
+    else {
+        if(fx > 0) {
+            div_y = proj_y / fx;
+        }
+        
+        if(proj_x > 0) {
+            div_x = 1.0f;
+        }
+        else {
+            div_x = -1.0f;
+        }
+    }
+
+    proj_x = pos.x;
+    proj_y = pos.y;
 
     for(int i = 0; i < numlens; i++) {
         scale = lens[i].scale * 2.0f;
-        offs = lens[i].offset / len;
 
-        renderer.AddVertex(org.x - scale, org.y - scale, 0, 0, 0, 255, 255, 255, alpha);
-        renderer.AddVertex(org.x + scale, org.y - scale, 0, 1, 0, 255, 255, 255, alpha);
-        renderer.AddVertex(org.x - scale, org.y + scale, 0, 0, 1, 255, 255, 255, alpha);
-        renderer.AddVertex(org.x + scale, org.y + scale, 0, 1, 1, 255, 255, 255, alpha);
+        ndcx = kexMath::Fabs((proj_x / w) * 2.0f - 1.0f);
+        ndcy = kexMath::Fabs((proj_y / h) * 2.0f - 1.0f);
+
+        d = 1.0f - ((ndcx * ndcx + ndcy * ndcy) / 2.0f);
+
+        alpha = (byte)(kexMath::Pow(d, 3.0f) * 255.0f);
+
+        renderer.AddVertex(proj_x - scale, proj_y - scale, 0, 0, 0, 255, 255, 255, alpha);
+        renderer.AddVertex(proj_x + scale, proj_y - scale, 0, 1, 0, 255, 255, 255, alpha);
+        renderer.AddVertex(proj_x - scale, proj_y + scale, 0, 0, 1, 255, 255, 255, alpha);
+        renderer.AddVertex(proj_x + scale, proj_y + scale, 0, 1, 1, 255, 255, 255, alpha);
         renderer.AddTriangle(0, 1, 2);
         renderer.AddTriangle(2, 1, 3);
         renderer.DrawElements(lens[i].material);
 
-        org.x = pos.x - ((pos.x - hw) * offs * (i+1));
-        org.y = pos.y - ((pos.y - hh) * offs * (i+1));
+        proj_x += (len * div_x);
+        proj_y += (len * div_y);
     }
 }
