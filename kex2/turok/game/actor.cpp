@@ -561,9 +561,6 @@ void kexActor::SpawnFX(const char *fxName, const float x, const float y, const f
         return;
 
     kexVec3 org = ToLocalOrigin(x, y, z);
-    org.y += viewHeight;
-
-
     localWorld.SpawnFX(fxName, this, kexVec3::vecZero, org, rotation);
 }
 
