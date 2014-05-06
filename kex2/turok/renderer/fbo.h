@@ -42,6 +42,10 @@ public:
     
     const int               Width(void) const { return fboWidth; }
     const int               Height(void) const { return fboHeight; }
+    const unsigned int      Attachment(void) const { return fboAttachment; }
+    const dtexture          FBOID(void) const { return fboId; }
+    const dtexture          RBOID(void) const { return rboId; }
+    const dtexture          TexID(void) const { return fboTexId; }
 
 private:
     dtexture                fboId;

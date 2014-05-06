@@ -105,6 +105,7 @@ public:
 private:
     void                    ProcessMotionBlur(void);
     void                    ProcessLightScatter(void);
+    void                    ProcessFXAA(void);
     void                    DrawStats(void);
 
     int                     postProcessMS;
@@ -112,8 +113,10 @@ private:
     kexMaterial             *wireframeMaterial;
     kexMatrix               prevMVMatrix;
     kexFBO                  fboLightScatter;
+    kexFBO                  fboFXAA;
     kexShaderObj            *shaderLightScatter;
     kexShaderObj            *blackShader;
+    kexShaderObj            *fxaaShader;
     bool                    bRenderLightScatter;
     kexArray<drawSurface_t> drawSurfaces[NUMSORTORDERS];
     int                     numDrawList[NUMSORTORDERS];

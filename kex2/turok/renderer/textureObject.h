@@ -23,6 +23,8 @@
 #ifndef __TEXTURE_OBJ_H__
 #define __TEXTURE_OBJ_H__
 
+#include "image.h"
+
 typedef struct {
     int x;
     int y;
@@ -41,23 +43,15 @@ typedef enum {
     TF_NEAREST
 } texFilterMode_t;
 
-typedef enum {
-    TCR_RGB     = 0,
-    TCR_RGBA    = 1
-} texColorMode_t;
-
 class kexTexture {
 public:
                             kexTexture(void);
                             ~kexTexture(void);
 
-    void                    Upload(byte **data, texClampMode_t clamp, texFilterMode_t filter);
+    void                    Upload(kexImageManager &image, texClampMode_t clamp, texFilterMode_t filter);
     void                    SetParameters(void);
     void                    ChangeParameters(const texClampMode_t clamp, const texFilterMode_t filter);
-    byte                    *LoadFromFile(const char *file);
-    byte                    *LoadFromScreenBuffer(void);
-    byte                    *PadImage(byte **data);
-    void                    VerticalFlipImage(byte **data);
+    void                    LoadFromFile(const char *file, const texClampMode_t clamp, const texFilterMode_t filter);
     void                    Bind(void);
     void                    BindFrameBuffer(const bool bReadBuffer = true);
     void                    BindDepthBuffer(const bool bReadDepth = true);
@@ -82,9 +76,6 @@ public:
     static kexHeapBlock     hb_texture;
 
 private:
-    byte                    *LoadFromTGA(byte *input);
-    byte                    *LoadFromBMP(byte *input);
-    byte                    GetRGBGamma(int c);
     int                     width;
     int                     height;
     int                     origwidth;

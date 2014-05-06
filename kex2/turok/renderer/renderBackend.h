@@ -115,6 +115,8 @@ public:
     void                            SetViewDimensions(void);
     void                            DisableShaders(void);
     const int                       GetDepthSizeComponent(void);
+    void                            RestoreFrameBuffer(void);
+    void                            ScreenShot(void);
     void                            DrawLoadingScreen(const char *text);
     void                            PrintStats(void);
     kexFont                         *CacheFont(const char *name);

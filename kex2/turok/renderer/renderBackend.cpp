@@ -31,6 +31,8 @@
 #include "renderWorld.h"
 #include "defs.h"
 #include "renderUtils.h"
+#include "image.h"
+#include "binFile.h"
 
 kexCvar cvarRenderFinish("r_finish", CVF_BOOL|CVF_CONFIG, "0", "Force a GL command sync");
 extern kexCvar cvarVidDepthSize;
@@ -60,6 +62,18 @@ static void FCmd_PrintStats(void) {
     }
 
     renderBackend.bPrintStats ^= 1;
+}
+
+//
+// FCmd_ScreenShot
+//
+
+static void FCmd_ScreenShot(void) {
+    if(command.GetArgc() < 1) {
+        return;
+    }
+
+    renderBackend.ScreenShot();
 }
 
 //
@@ -316,22 +330,9 @@ void kexRenderBackend::Init(void) {
 
     SetDefaultState();
 
-    byte *data;
-
-    if((data = defaultTexture.LoadFromFile("textures/default.tga"))) {
-        defaultTexture.Upload(&data, TC_CLAMP, TF_LINEAR);
-        Mem_Free(data);
-    }
-
-    if((data = whiteTexture.LoadFromFile("textures/white.tga"))) {
-        whiteTexture.Upload(&data, TC_CLAMP, TF_LINEAR);
-        Mem_Free(data);
-    }
-
-    if((data = blackTexture.LoadFromFile("textures/black.tga"))) {
-        blackTexture.Upload(&data, TC_CLAMP, TF_LINEAR);
-        Mem_Free(data);
-    }
+    defaultTexture.LoadFromFile("textures/default.tga", TC_CLAMP, TF_LINEAR);
+    whiteTexture.LoadFromFile("textures/default.tga", TC_CLAMP, TF_LINEAR);
+    blackTexture.LoadFromFile("textures/default.tga", TC_CLAMP, TF_LINEAR);
     
     // create framebuffer texture
     frameBuffer = textureList.Add("framebuffer", kexTexture::hb_texture);
@@ -353,6 +354,8 @@ void kexRenderBackend::Init(void) {
     bIsInit = true;
 
     command.Add("statglbackend", FCmd_PrintStats);
+    command.Add("screenshot", FCmd_ScreenShot);
+
     common.Printf("Renderer Initialized\n");
 }
 
@@ -803,18 +806,9 @@ kexTexture *kexRenderBackend::CacheTexture(const char *name, texClampMode_t clam
     }
 
     if(!(texture = textureList.Find(name))) {
-        byte *data;
-
         texture = textureList.Add(name, kexTexture::hb_texture);
         texture->SetMasked(true);
-        strcpy(texture->filePath, name);
-
-        data = texture->LoadFromFile(name);
-        texture->Upload(&data, clampMode, filterMode);
-
-        if(data != NULL) {
-            Mem_Free(data);
-        }
+        texture->LoadFromFile(name, clampMode, filterMode);
     }
 
     return texture;
@@ -985,6 +979,53 @@ const int kexRenderBackend::GetDepthSizeComponent(void) {
     }
     
     return GL_DEPTH_COMPONENT;
+}
+
+//
+// kexRenderBackend::RestoreFrameBuffer
+//
+
+void kexRenderBackend::RestoreFrameBuffer(void) {
+    dglBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
+    dglDrawBuffer(GL_BACK);
+    dglReadBuffer(GL_BACK);
+    
+    glState.currentFBO = 0;
+}
+
+//
+// kexRenderBackend::ScreenShot
+//
+
+extern kexCvar cvarBasePath;
+
+void kexRenderBackend::ScreenShot(void) {
+    int shotnum = 0;
+    kexBinFile file;
+    kexStr filePath;
+    kexImageManager image;
+
+    while(shotnum < 1000) {
+        filePath = kexStr(kva("%s\\shot%03d.tga", cvarBasePath.GetValue(), shotnum));
+
+        if(!file.Exists(filePath.c_str())) {
+            file.Create(filePath.c_str());
+            break;
+        }
+
+        shotnum++;
+    }
+
+    if(!file.IsOpened()) {
+        return;
+    }
+
+    image.LoadFromScreenBuffer();
+    image.WriteTGA(file);
+
+    file.Close();
+
+    common.Printf("Saved Screenshot %s\n", filePath.c_str());
 }
 
 //

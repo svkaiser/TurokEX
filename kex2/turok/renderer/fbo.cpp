@@ -124,11 +124,10 @@ void kexFBO::InitColorAttachment(const int attachment, const int width, const in
     
     CheckStatus();
     
-    dglBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
     dglBindRenderbuffer(GL_RENDERBUFFER_EXT, 0);
     dglBindTexture(GL_TEXTURE_2D, 0);
-    dglDrawBuffer(GL_BACK);
-    dglReadBuffer(GL_BACK);
+
+    renderBackend.RestoreFrameBuffer();
 }
 
 //
@@ -136,8 +135,8 @@ void kexFBO::InitColorAttachment(const int attachment, const int width, const in
 //
 
 void kexFBO::InitColorAttachment(const int attachment) {
-    int width = kexMath::RoundPowerOfTwo(sysMain.VideoWidth()) >> 1;
-    int height = kexMath::RoundPowerOfTwo(sysMain.VideoHeight()) >> 1;
+    int width = kexMath::RoundPowerOfTwo(sysMain.VideoWidth());
+    int height = kexMath::RoundPowerOfTwo(sysMain.VideoHeight());
     
     InitColorAttachment(attachment, width, height);
 }
@@ -186,10 +185,9 @@ void kexFBO::InitDepthAttachment(const int width, const int height) {
     
     CheckStatus();
     
-    dglBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
     dglBindTexture(GL_TEXTURE_2D, 0);
-    dglDrawBuffer(GL_BACK);
-    dglReadBuffer(GL_BACK);
+    
+    renderBackend.RestoreFrameBuffer();
 }
 
 //
@@ -241,11 +239,7 @@ void kexFBO::UnBind(void) {
         return;
     }
     
-    dglBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
-    dglDrawBuffer(GL_BACK);
-    dglReadBuffer(GL_BACK);
-    
-    renderBackend.glState.currentFBO = 0;
+    renderBackend.RestoreFrameBuffer();
 }
 
 //
