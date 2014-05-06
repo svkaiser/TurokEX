@@ -64,6 +64,7 @@ public:
     FILE                *Handle(void) const { return handle; }
     byte                *Buffer(void) const { return buffer; }
     byte                *BufferAt(void) const { return &buffer[bufferOffset]; }
+    const bool          IsOpened(void) const { return bOpened; }
 
 private:
     FILE                *handle;
