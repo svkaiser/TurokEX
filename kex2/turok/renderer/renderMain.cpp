@@ -34,6 +34,8 @@
 #include "gameManager.h"
 #include "renderUtils.h"
 
+kexCvar cvarRenderBloom("r_bloom", CVF_BOOL|CVF_CONFIG, "0", "TODO");
+kexCvar cvarRenderBloomThreshold("r_bloomthreshold", CVF_FLOAT|CVF_CONFIG, "0.6", 0.01f, 1.0f, "TODO");
 kexCvar cvarRenderFXAA("r_fxaa", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 kexCvar cvarRenderFXAAMaxSpan("r_fxaamaxspan", CVF_FLOAT|CVF_CONFIG, "8.0", 1.0f, 8.0f, "TODO");
 kexCvar cvarRenderFXAAReduceMax("r_fxaareducemax", CVF_FLOAT|CVF_CONFIG, "8.0", 1.0f, 128.0f, "TODO");
@@ -104,12 +106,17 @@ void kexRenderer::Init(void) {
     shaderLightScatter  = renderBackend.CacheShader("defs/shaders.def@lightScatter");
     blackShader         = renderBackend.CacheShader("defs/shaders.def@black");
     fxaaShader          = renderBackend.CacheShader("defs/shaders.def@fxaa");
+    blurShader          = renderBackend.CacheShader("defs/shaders.def@blur");
+    bloomShader         = renderBackend.CacheShader("defs/shaders.def@bloomTest");
 
     int width   = kexMath::RoundPowerOfTwo(sysMain.VideoWidth());
     int height  = kexMath::RoundPowerOfTwo(sysMain.VideoHeight());
     
     fboLightScatter.InitColorAttachment(0, width >> 1, height >> 1);
     fboFXAA.InitColorAttachment(0, width, height);
+    fboBloom.InitColorAttachment(0, width, height);
+    fboBlur[0].InitColorAttachment(0, width >> 1, height >> 1);
+    fboBlur[1].InitColorAttachment(0, width >> 3, height >> 3);
 
     renderWorld.InitSunData();
 
@@ -131,6 +138,7 @@ void kexRenderer::Draw(void) {
     }
 
     ProcessMotionBlur();
+    ProcessBloom();
     ProcessLightScatter();
     ProcessFXAA();
 
@@ -902,7 +910,7 @@ void kexRenderer::ProcessLightScatter(void) {
     fboLightScatter.BindImage();
 
     renderBackend.SetState(GLSTATE_BLEND, true);
-    renderBackend.SetBlend(GLSRC_ONE_MINUS_DST_COLOR, GLDST_ONE);
+    renderBackend.SetBlend(GLSRC_ONE, GLDST_ONE);
 
     DrawScreenQuad();
 
@@ -922,23 +930,7 @@ void kexRenderer::ProcessFXAA(void) {
     int viewWidth = sysMain.VideoWidth();
     int viewHeight = sysMain.VideoHeight();
     
-    // copy over the main framebuffer
-    dglBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-    dglReadBuffer(GL_BACK);
-    dglBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboFXAA.FBOID());
-    dglDrawBuffer(fboFXAA.Attachment());
-    dglBlitFramebuffer(0,
-                       0,
-                       viewWidth,
-                       viewHeight,
-                       0,
-                       0,
-                       fboFXAA.Width(),
-                       fboFXAA.Height() - (fboFXAA.Height() - viewHeight),
-                       GL_COLOR_BUFFER_BIT,
-                       GL_LINEAR);
-    
-    renderBackend.RestoreFrameBuffer();
+    fboFXAA.CopyBackBuffer();
     
     fxaaShader->Enable();
     fxaaShader->SetUniform("uDiffuse", 0);
@@ -961,6 +953,79 @@ void kexRenderer::ProcessFXAA(void) {
 
     dglPopAttrib();
     renderBackend.DisableShaders();
+}
+
+//
+// kexRenderer::ProcessBloom
+//
+
+void kexRenderer::ProcessBloom(void) {
+    if(cvarRenderBloom.GetBool() == false) {
+        return;
+    }
+
+    renderBackend.SetTextureUnit(0);
+    renderBackend.SetState(GLSTATE_BLEND, true);
+
+    // pass 1: bloom
+    renderBackend.frameBuffer->BindFrameBuffer();
+    fboBloom.Bind();
+    bloomShader->Enable();
+    bloomShader->SetUniform("uDiffuse", 0);
+    bloomShader->SetUniform("uBloomThreshold", cvarRenderBloomThreshold.GetFloat());
+    DrawScreenQuad();
+    fboBloom.UnBind();
+
+    blurShader->Enable();
+    blurShader->SetUniform("uDiffuse", 0);
+    blurShader->SetUniform("uBlurRadius", 1.0f);
+
+    // pass 2: blur
+    for(int i = 0; i < MAX_BLUR_SAMPLES; i++) {
+        // horizonal
+        fboBlur[i].CopyFrameBuffer(fboBloom);
+        fboBloom.Bind();
+        fboBlur[i].BindImage();
+        blurShader->SetUniform("uSize", (float)fboBlur[i].Width());
+        blurShader->SetUniform("uDirection", 1);
+        DrawScreenQuad();
+        fboBloom.UnBind();
+
+        // vertical
+        fboBlur[i].CopyFrameBuffer(fboBloom);
+        fboBloom.Bind();
+        fboBlur[i].BindImage();
+        blurShader->SetUniform("uSize", (float)fboBlur[i].Height());
+        blurShader->SetUniform("uDirection", 0);
+        DrawScreenQuad();
+        fboBloom.UnBind();
+    }
+
+    renderBackend.DisableShaders();
+
+    int vp[4];
+    dglGetIntegerv(GL_VIEWPORT, vp);
+
+    // resize viewport to account for FBO dimentions
+    dglPushAttrib(GL_VIEWPORT_BIT);
+    dglViewport(0, 0, fboBloom.Width(), fboBloom.Height());
+    
+    BindDrawPointers();
+    fboBloom.BindImage();
+    
+    renderBackend.SetBlend(GLSRC_ONE, GLDST_ONE);
+
+    AddVertex((float)vp[0], (float)vp[1], 0, 0, 1, 255, 255, 255, 255);
+    AddVertex((float)vp[2], (float)vp[1], 0, 1, 1, 255, 255, 255, 255);
+    AddVertex((float)vp[0], (float)vp[3], 0, 0, 0, 255, 255, 255, 255);
+    AddVertex((float)vp[2], (float)vp[3], 0, 1, 0, 255, 255, 255, 255);
+    AddTriangle(0, 1, 2);
+    AddTriangle(2, 1, 3);
+
+    DrawElementsNoShader();
+
+    renderBackend.SetBlend(GLSRC_SRC_ALPHA, GLDST_ONE_MINUS_SRC_ALPHA);
+    dglPopAttrib();
 }
 
 //

@@ -34,6 +34,8 @@ public:
                                                 const int height);
     void                    InitColorAttachment(const int attachment);
     void                    InitDepthAttachment(const int width, const int height);
+    void                    CopyBackBuffer(void);
+    void                    CopyFrameBuffer(const kexFBO &fbo);
     void                    Delete(void);
     void                    BindImage(void);
     void                    Bind(void);

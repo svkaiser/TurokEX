@@ -98,14 +98,6 @@ void kexFBO::InitColorAttachment(const int attachment, const int width, const in
                   GL_UNSIGNED_BYTE,
                   0);
     
-    // renderbuffer
-    dglGenRenderbuffers(1, &rboId);
-    dglBindRenderbuffer(GL_RENDERBUFFER_EXT, rboId);
-    dglRenderbufferStorage(GL_RENDERBUFFER_EXT,
-                           GL_DEPTH_COMPONENT,
-                           fboWidth,
-                           fboHeight);
-    
     // framebuffer
     dglGenFramebuffers(1, &fboId);
     dglBindFramebuffer(GL_FRAMEBUFFER_EXT, fboId);
@@ -117,16 +109,9 @@ void kexFBO::InitColorAttachment(const int attachment, const int width, const in
                             fboTexId,
                             0);
     
-    dglFramebufferRenderbuffer(GL_FRAMEBUFFER_EXT,
-                               GL_DEPTH_ATTACHMENT_EXT,
-                               GL_RENDERBUFFER_EXT,
-                               rboId);
-    
     CheckStatus();
     
-    dglBindRenderbuffer(GL_RENDERBUFFER_EXT, 0);
     dglBindTexture(GL_TEXTURE_2D, 0);
-
     renderBackend.RestoreFrameBuffer();
 }
 
@@ -186,7 +171,6 @@ void kexFBO::InitDepthAttachment(const int width, const int height) {
     CheckStatus();
     
     dglBindTexture(GL_TEXTURE_2D, 0);
-    
     renderBackend.RestoreFrameBuffer();
 }
 
@@ -213,6 +197,69 @@ void kexFBO::Delete(void) {
     }
     
     bLoaded = false;
+}
+
+//
+// kexFBO::CopyBackBuffer
+//
+
+void kexFBO::CopyBackBuffer(void) {
+    int viewWidth = sysMain.VideoWidth();
+    int viewHeight = sysMain.VideoHeight();
+
+    int w = fboWidth - (fboWidth - viewWidth);
+    int h = fboHeight - (fboHeight - viewHeight);
+
+    if(w > fboWidth) {
+        w = fboWidth;
+    }
+    if(h > fboHeight) {
+        h = fboHeight;
+    }
+    
+    // copy over the main framebuffer
+    dglBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    dglReadBuffer(GL_BACK);
+    dglBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
+    dglDrawBuffer(fboAttachment);
+    dglBlitFramebuffer(0,
+                       0,
+                       viewWidth,
+                       viewHeight,
+                       0,
+                       0,
+                       w,
+                       h,
+                       GL_COLOR_BUFFER_BIT,
+                       GL_LINEAR);
+
+    renderBackend.RestoreFrameBuffer();
+}
+
+//
+// kexFBO::CopyFrameBuffer
+//
+
+void kexFBO::CopyFrameBuffer(const kexFBO &fbo) {
+    int viewWidth = sysMain.VideoWidth();
+    int viewHeight = sysMain.VideoHeight();
+
+    dglBindFramebuffer(GL_READ_FRAMEBUFFER, fbo.fboId);
+    dglReadBuffer(fbo.fboAttachment);
+    dglBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
+    dglDrawBuffer(fboAttachment);
+    dglBlitFramebuffer(0,
+                       0,
+                       fbo.fboWidth,
+                       fbo.fboHeight - (viewWidth - viewHeight),
+                       0,
+                       0,
+                       fboWidth,
+                       fboHeight,
+                       GL_COLOR_BUFFER_BIT,
+                       GL_LINEAR);
+    
+    renderBackend.RestoreFrameBuffer();
 }
 
 //

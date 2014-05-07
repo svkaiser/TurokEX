@@ -103,8 +103,7 @@ private:
     int                         numCulledActors;
     int                         renderNodeStepNum;
     kexMaterial                 *blackMat;
-    kexMaterial                 *sunMaterial;
-    kexModel_t                  *sunModel;
+    kexShaderObj                *sunSpotShader;
     kexVec3                     sunPosition;
     kexVec3                     projectedSunCoords;
     bool                        bLightScatterPass;

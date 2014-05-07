@@ -54,6 +54,8 @@ typedef struct {
 #define GL_MAX_INDICES      0x10000
 #define GL_MAX_VERTICES     0x10000
 
+#define MAX_BLUR_SAMPLES    2
+
 class kexFx;
 
 typedef struct {
@@ -106,6 +108,7 @@ private:
     void                    ProcessMotionBlur(void);
     void                    ProcessLightScatter(void);
     void                    ProcessFXAA(void);
+    void                    ProcessBloom(void);
     void                    DrawStats(void);
 
     int                     postProcessMS;
@@ -114,9 +117,13 @@ private:
     kexMatrix               prevMVMatrix;
     kexFBO                  fboLightScatter;
     kexFBO                  fboFXAA;
+    kexFBO                  fboBloom;
+    kexFBO                  fboBlur[MAX_BLUR_SAMPLES];
     kexShaderObj            *shaderLightScatter;
     kexShaderObj            *blackShader;
     kexShaderObj            *fxaaShader;
+    kexShaderObj            *blurShader;
+    kexShaderObj            *bloomShader;
     bool                    bRenderLightScatter;
     kexArray<drawSurface_t> drawSurfaces[NUMSORTORDERS];
     int                     numDrawList[NUMSORTORDERS];

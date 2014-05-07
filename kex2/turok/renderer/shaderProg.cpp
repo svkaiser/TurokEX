@@ -289,7 +289,8 @@ void kexShaderObj::CommitGlobalUniforms(const kexMaterial *material) {
     SetGlobalUniform(RSP_TIME, client.GetTime());
     SetGlobalUniform(RSP_RUNTIME, client.GetRunTime());
     SetGlobalUniform(RSP_VIEW_WIDTH, sysMain.VideoWidth());
-    SetGlobalUniform(RSP_VIEW_HEIGHT, sysMain.VideoHeight());}
+    SetGlobalUniform(RSP_VIEW_HEIGHT, sysMain.VideoHeight());
+}
 
 //
 // kexShaderObj::SetGlobalUniform
