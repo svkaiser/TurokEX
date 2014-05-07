@@ -1007,6 +1007,7 @@ void kexRenderBackend::ScreenShot(void) {
 
     while(shotnum < 1000) {
         filePath = kexStr(kva("%s\\shot%03d.tga", cvarBasePath.GetValue(), shotnum));
+        filePath.NormalizeSlashes();
 
         if(!file.Exists(filePath.c_str())) {
             file.Create(filePath.c_str());
