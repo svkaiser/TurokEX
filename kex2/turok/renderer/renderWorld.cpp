@@ -241,9 +241,8 @@ void kexRenderWorld::Init(void) {
 //
 
 void kexRenderWorld::InitSunData(void) {
-    sunModel    = modelManager.LoadModel("models/default.kmesh");
-    sunMaterial = renderBackend.CacheMaterial("materials/default.kmat@whiteFullBright");
-    blackMat    = renderBackend.CacheMaterial("materials/default.kmat@black");
+    blackMat        = renderBackend.CacheMaterial("materials/default.kmat@black");
+    sunSpotShader   = renderBackend.CacheShader("defs/shaders.def@sunSpot");
 
 }
 
@@ -1090,27 +1089,27 @@ void kexRenderWorld::DrawViewActors(void) {
 //
 
 void kexRenderWorld::DrawSun(const bool bForceInfiniteProjection) {
-    if(sunMaterial == NULL) {
+    if(sunSpotShader == NULL) {
         return;
     }
 
-    kexMatrix mtx;
     float zfar = world->Camera()->ZFar();
 
     if(bForceInfiniteProjection) {
         world->Camera()->ZFar() = -1;
         SetCameraView(world->Camera());
     }
-
-    mtx.Scale(2, 2, 2);
-    mtx.SetTranslation(sunPosition);
-
-    dglPushMatrix();
-    dglMultMatrixf(mtx.ToFloatPtr());
-
-    renderer.DrawSurface(&sunModel->nodes[0].surfaces[0], sunMaterial);
-
-    dglPopMatrix();
+    
+    renderBackend.SetState(GLSTATE_BLEND, true);
+    renderBackend.SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
+    
+    sunSpotShader->Enable();
+    sunSpotShader->SetUniform("uCameraTransform", world->Camera()->RotationMatrix());
+    sunSpotShader->SetUniform("uOrigin", sunPosition);
+    
+    renderBackend.defaultTexture.Bind();
+    
+    kexRenderUtils::DrawTexturedQuad(kexVec2(-1024, 0), kexVec2(1024, 0), -1024, 1024, 255, 255, 255);
 
     if(bForceInfiniteProjection) {
         world->Camera()->ZFar() = zfar;
