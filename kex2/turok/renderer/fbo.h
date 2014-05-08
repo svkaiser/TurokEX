@@ -23,6 +23,8 @@
 #ifndef __FBO_H__
 #define __FBO_H__
 
+class kexImageManager;
+
 class kexFBO {
 public:
                             kexFBO(void);
@@ -36,6 +38,7 @@ public:
     void                    InitDepthAttachment(const int width, const int height);
     void                    CopyBackBuffer(void);
     void                    CopyFrameBuffer(const kexFBO &fbo);
+    kexImageManager         ToImage(void);
     void                    Delete(void);
     void                    BindImage(void);
     void                    Bind(void);

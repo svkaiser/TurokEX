@@ -35,7 +35,7 @@
 #include "renderUtils.h"
 
 kexCvar cvarRenderBloom("r_bloom", CVF_BOOL|CVF_CONFIG, "0", "TODO");
-kexCvar cvarRenderBloomThreshold("r_bloomthreshold", CVF_FLOAT|CVF_CONFIG, "0.6", 0.01f, 1.0f, "TODO");
+kexCvar cvarRenderBloomThreshold("r_bloomthreshold", CVF_FLOAT|CVF_CONFIG, "0.54", 0.01f, 1.0f, "TODO");
 kexCvar cvarRenderFXAA("r_fxaa", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 kexCvar cvarRenderFXAAMaxSpan("r_fxaamaxspan", CVF_FLOAT|CVF_CONFIG, "8.0", 1.0f, 8.0f, "TODO");
 kexCvar cvarRenderFXAAReduceMax("r_fxaareducemax", CVF_FLOAT|CVF_CONFIG, "8.0", 1.0f, 128.0f, "TODO");
@@ -211,8 +211,8 @@ void kexRenderer::AddVertex(float x, float y, float z, float s, float t,
 //
 
 void kexRenderer::AddLine(float x1, float y1, float z1,
-                              float x2, float y2, float z2,
-                              byte r, byte g, byte b, byte a) {
+                          float x2, float y2, float z2,
+                          byte r, byte g, byte b, byte a) {
     
     drawIndices[indiceCount++] = vertexCount;
     AddVertex(x1, y1, z1, 0, 0, r, g, b, a);
@@ -225,9 +225,9 @@ void kexRenderer::AddLine(float x1, float y1, float z1,
 //
 
 void kexRenderer::AddLine(float x1, float y1, float z1,
-                              float x2, float y2, float z2,
-                              byte r1, byte g1, byte b1, byte a1,
-                              byte r2, byte g2, byte b2, byte a2) {
+                          float x2, float y2, float z2,
+                          byte r1, byte g1, byte b1, byte a1,
+                          byte r2, byte g2, byte b2, byte a2) {
     
     drawIndices[indiceCount++] = vertexCount;
     AddVertex(x1, y1, z1, 0, 0, r1, g1, b1, a1);
@@ -781,14 +781,25 @@ void kexRenderer::DrawFX(const fxDisplay_t *fxList, const int count) {
 // kexRenderer::DrawScreenQuad
 //
 
-void kexRenderer::DrawScreenQuad(void) {
+void kexRenderer::DrawScreenQuad(const kexFBO *fbo) {
     static const word  indices[6] = { 0, 1, 2, 2, 1, 3 };
     static const float tcoords[8] = { 0, 0, 1, 0, 0, 1, 1, 1 };
     float verts[12];
     int w, h;
+    float offset = 0;
     
-    w = sysMain.VideoWidth();
-    h = sysMain.VideoHeight();
+    if(fbo == NULL) {
+        w = sysMain.VideoWidth();
+        h = sysMain.VideoHeight();
+    }
+    else {
+        w = fbo->Width();
+        h = fbo->Height();
+
+        if(h > sysMain.VideoHeight()) {
+            offset = (float)(h - sysMain.VideoHeight());
+        }
+    }
     
     dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, tcoords);
     dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, verts);
@@ -797,16 +808,16 @@ void kexRenderer::DrawScreenQuad(void) {
     dglDisableClientState(GL_COLOR_ARRAY);
     
     verts[0 * 3 + 0] = 0;
-    verts[0 * 3 + 1] = 0;
+    verts[0 * 3 + 1] = -offset;
     verts[0 * 3 + 2] = 0;
     verts[1 * 3 + 0] = (float)w;
-    verts[1 * 3 + 1] = 0;
+    verts[1 * 3 + 1] = -offset;
     verts[1 * 3 + 2] = 0;
     verts[2 * 3 + 0] = 0;
-    verts[2 * 3 + 1] = (float)h;
+    verts[2 * 3 + 1] = (float)h - offset;
     verts[2 * 3 + 2] = 0;
     verts[3 * 3 + 0] = (float)w;
-    verts[3 * 3 + 1] = (float)h;
+    verts[3 * 3 + 1] = (float)h - offset;
     verts[3 * 3 + 2] = 0;
     
     dglDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices);
@@ -944,14 +955,8 @@ void kexRenderer::ProcessFXAA(void) {
     fboFXAA.BindImage();
     
     renderBackend.SetState(GLSTATE_BLEND, true);
-    
-    // resize viewport to account for FBO dimentions
-    dglPushAttrib(GL_VIEWPORT_BIT);
-    dglViewport(0, 0, fboFXAA.Width(), fboFXAA.Height());
 
-    DrawScreenQuad();
-
-    dglPopAttrib();
+    DrawScreenQuad(&fboFXAA);
     renderBackend.DisableShaders();
 }
 

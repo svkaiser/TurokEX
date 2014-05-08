@@ -28,6 +28,8 @@ typedef enum {
     TCR_RGBA    = 1
 } texColorMode_t;
 
+class kexFBO;
+
 class kexImageManager {
 public:
                             kexImageManager(void);
@@ -35,6 +37,7 @@ public:
 
     void                    LoadFromFile(const char *file);
     void                    LoadFromScreenBuffer(void);
+    void                    LoadFromFrameBuffer(kexFBO &fbo);
     void                    FlipVertical(void);
     void                    WriteTGA(kexBinFile &binFile);
     

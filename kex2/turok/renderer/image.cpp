@@ -30,6 +30,7 @@
 #include "textureObject.h"
 #include "image.h"
 #include "binFile.h"
+#include "fbo.h"
 
 kexCvar cvarGamma("gl_gamma", CVF_FLOAT|CVF_CONFIG, "1", "TODO");
 
@@ -218,6 +219,38 @@ void kexImageManager::LoadFromScreenBuffer(void) {
     dglFlush();
     dglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
     dglPixelStorei(GL_PACK_ALIGNMENT, pack);
+    
+    FlipVertical();
+}
+
+//
+// kexImageManager::LoadFromFrameBuffer
+//
+
+void kexImageManager::LoadFromFrameBuffer(kexFBO &fbo) {
+    int pack;
+    int col;
+    int width;
+    int height;
+    
+    origwidth   = fbo.Width();
+    origheight  = fbo.Height();
+    width       = origwidth;
+    height      = origheight;
+    col         = (width * 3);
+    data        = new byte[height * width * 3];
+    
+    colorMode   = TCR_RGB;
+
+    fbo.Bind();
+    
+    dglGetIntegerv(GL_PACK_ALIGNMENT, &pack);
+    dglPixelStorei(GL_PACK_ALIGNMENT, 1);
+    dglFlush();
+    dglReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
+    dglPixelStorei(GL_PACK_ALIGNMENT, pack);
+
+    fbo.UnBind();
     
     FlipVertical();
 }
