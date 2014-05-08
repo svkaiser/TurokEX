@@ -20,6 +20,9 @@
 
 #include "scripts/turokgame/components/turokPlayer.txt"
 
+#include "scripts/turokgame/components/ai/turokAI.txt"
+#include "scripts/turokgame/components/ai/turokAIGrunt.txt"
+
 #include "scripts/turokgame/classes/ambience/turokAmbienceJungle.txt"
 #include "scripts/turokgame/classes/ambience/turokAmbienceLostWorld.txt"
 #include "scripts/turokgame/classes/ambience/turokAmbienceRuins.txt"
@@ -34,9 +37,9 @@
 #include "scripts/turokgame/components/turokAreaTeleport.txt"
 
 #include "scripts/turokgame/components/turokScriptedObject.txt"
+#include "scripts/turokgame/components/turokSky.txt"
 #include "scripts/turokgame/components/turokPickup.txt"
 
 #include "scripts/turokgame/classes/turokHud.txt"
 #include "scripts/turokgame/classes/menu.txt"
 #include "scripts/turokgame/classes/cameraEvent.txt"
-

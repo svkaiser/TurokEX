@@ -1,0 +1,328 @@
+////////////////////////////////////////////////////
+//
+// Constants
+//
+////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////
+//
+// TurokAI
+//
+////////////////////////////////////////////////////
+
+class TurokAI : Component {
+    kActor @self;
+    kAI @ai;
+    int alligenceID;
+    
+    //
+    // TurokAI::TurokAI
+    //
+    
+    TurokAI(kActor @actor) {
+        @self = actor;
+        @ai = self.ToAI();
+        
+        alligenceID = -1;
+    }
+    
+    //
+    // TurokAI::PickAnimSet
+    //
+    
+    void PickAnimSet(const array<int> &anims, const array<int> &weights) {
+        if(anims.length() != weights.length()) {
+            return;
+        }
+        
+        int randomSum = 0;
+        uint i;
+        array<int>rndArray;
+        
+        for(i = 0; i < weights.length(); i++) {
+            rndArray.insertLast(randomSum);
+            randomSum += weights[i];
+        }
+        
+        int r = Math::RandMax(randomSum);
+        
+        for(i = (weights.length())-1; i >= 0; i--) {
+            if(rndArray[i] <= r) {
+                break;
+            }
+        }
+        
+        self.AnimState().Blend(anims[i], 4.0f, 8.0f, ANF_ROOTMOTION);
+    }
+    
+    //
+    // TurokAI::OnStateChange
+    //
+    
+    void OnStateChange(int state) {
+        switch(state) {
+            case AIS_IDLE:
+                self.AnimState().Blend(anim_aiStanding, 4.0f, 8.0f, ANF_LOOP);
+                break;
+            case AIS_CALM:
+                self.AnimState().Blend(anim_aiWalking, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
+                break;
+            case AIS_ALERT:
+                self.AnimState().Blend(anim_aiRunning, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
+                break;
+            case AIS_ATTACK_MELEE:
+                self.AnimState().Blend(anim_aiMelee2, 4.0f, 8.0f, ANF_ROOTMOTION);
+                break;
+            case AIS_ATTACK_RANGE:
+                ai.SetIdealYaw(self.GetAngles().yaw + ai.GetYawToTarget(), 4.096f);
+                self.AnimState().Blend(anim_aiRangeAttack2, 4.0f, 8.0f, ANF_ROOTMOTION);
+                break;
+        }
+    }
+    
+    //
+    // TurokAI::TweenLeftTurn
+    //
+    
+    void TweenLeftTurn(void) {
+        switch(ai.GetAIState()) {
+            case AIS_IDLE:
+                self.AnimState().Blend(anim_aiTurn_L_Stand, 4.0f, 8.0f, ANF_ROOTMOTION);
+                break;
+            case AIS_CALM:
+                self.AnimState().Blend(anim_aiTurn_L_Walk, 4.0f, 8.0f, ANF_ROOTMOTION);
+                break;
+            case AIS_ALERT:
+                self.AnimState().Blend(anim_aiTurn_L_Run, 4.0f, 8.0f, ANF_ROOTMOTION);
+                break;
+            default:
+                return;
+        }
+        
+        ai.bAnimTurning = true;
+    }
+    
+    //
+    // TurokAI::TweenRightTurn
+    //
+    
+    void TweenRightTurn(void) {
+        switch(ai.GetAIState()) {
+            case AIS_IDLE:
+                self.AnimState().Blend(anim_aiTurn_R_Stand, 4.0f, 8.0f, ANF_ROOTMOTION);
+                break;
+            case AIS_CALM:
+                self.AnimState().Blend(anim_aiTurn_R_Walk, 4.0f, 8.0f, ANF_ROOTMOTION);
+                break;
+            case AIS_ALERT:
+                self.AnimState().Blend(anim_aiTurn_R_Run, 4.0f, 8.0f, ANF_ROOTMOTION);
+                break;
+            default:
+                return;
+        }
+        
+        ai.bAnimTurning = true;
+    }
+    
+    //
+    // TurokAI::TweenBackTurn
+    //
+    
+    void TweenBackTurn(void) {
+        switch(ai.GetAIState()) {
+            case AIS_IDLE:
+                self.AnimState().Blend(anim_aiTurn_B_Stand, 4.0f, 8.0f, ANF_ROOTMOTION);
+                break;
+            case AIS_CALM:
+                self.AnimState().Blend(anim_aiTurn_B_Walk, 4.0f, 8.0f, ANF_ROOTMOTION);
+                break;
+            case AIS_ALERT:
+                self.AnimState().Blend(anim_aiTurn_B_Run, 4.0f, 8.0f, ANF_ROOTMOTION);
+                break;
+            default:
+                return;
+        }
+        
+        ai.bAnimTurning = true;
+    }
+    
+    //
+    // TurokAI::TweenFrontTurn
+    //
+    
+    void TweenFrontTurn(const float angle) {
+        switch(ai.GetAIState()) {
+            case AIS_IDLE:
+                self.AnimState().Blend(anim_aiStanding, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
+                break;
+            case AIS_CALM:
+                self.AnimState().Blend(anim_aiWalking, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
+                break;
+            case AIS_ALERT:
+                {
+                    float an4 = DegToRad(4.0f);
+                    float time = 0;
+                    float speed = 4.0f;
+                    
+                    if(!(angle <= an4 && angle >= -an4)) {
+                        kActor @targ = self.GetTarget();
+                        if(!(targ is null)) {
+                            float dist = self.GetOrigin().Distance(targ.GetOrigin()) / 384.0f;
+                            time = 1.7f - dist * 0.7f;
+                        }
+                    }
+                    
+                    if(time < 0) {
+                        time = 0;
+                    }
+                    
+                    speed -= time;
+                    ai.yawSpeed = 2.0f + time;
+                    
+                    self.AnimState().Blend(anim_aiRunning, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
+                    self.AnimState().frameTime = speed;
+                }
+                break;
+            default:
+                return;
+        }
+    }
+    
+    //
+    // TurokAI::PlayingTurnAnimation
+    //
+    
+    bool PlayingTurnAnimation(void) {
+        return (self.AnimState().IsPlaying(anim_aiTurn_L_Stand) ||
+                self.AnimState().IsPlaying(anim_aiTurn_R_Stand) ||
+                self.AnimState().IsPlaying(anim_aiTurn_B_Stand) ||
+                self.AnimState().IsPlaying(anim_aiTurn_L_Walk)  ||
+                self.AnimState().IsPlaying(anim_aiTurn_R_Walk)  ||
+                self.AnimState().IsPlaying(anim_aiTurn_B_Walk)  ||
+                self.AnimState().IsPlaying(anim_aiTurn_L_Run)   ||
+                self.AnimState().IsPlaying(anim_aiTurn_R_Run)   ||
+                self.AnimState().IsPlaying(anim_aiTurn_B_Run));
+    }
+    
+    //
+    // TurokAI::OnTurn
+    //
+    
+    bool OnTurn(const float angle) {
+        float an45 = DegToRad(50.0f);
+        float an150 = DegToRad(150.0f);
+
+        if(PlayingTurnAnimation()) {
+            return false;
+        }
+        
+        if((self.AnimState().flags & ANF_BLEND) != 0) {
+            return false;
+        }
+
+        if(angle > an150 || angle < -an150) {
+            ai.aiFlags &= ~AIF_TURNING;
+            
+            TweenBackTurn();
+            return false;
+        }
+        else if(angle > an45 || angle < -an45) {
+            ai.aiFlags &= ~AIF_TURNING;
+            
+            if(angle < 0) {
+                TweenLeftTurn();
+                return false;
+            }
+            else {
+                TweenRightTurn();
+                return false;
+            }
+        }
+        else {
+            if((ai.aiFlags & AIF_SEETARGET != 0)) {
+                TweenFrontTurn(angle);
+            }
+            else {
+                OnStateChange(ai.GetAIState());
+            }
+        }
+        
+        return true;
+    }
+    
+    //
+    // TurokAI::OnDeath
+    //
+    
+    void OnDeath(kActor@ killer, kKeyMapMem @damageDef) {
+        if((ai.aiFlags & AIF_DISABLED) != 0) {
+            return;
+        }
+        
+        const array<int> anims = {
+            anim_aiDeathStand,
+            anim_aiDeathViolent,
+            anim_aiDeathRunning
+        };
+        
+        const array<int> weights = {
+            18, 3, 8
+        };
+        
+        PickAnimSet(anims, weights);
+        ai.aiFlags |= AIF_DISABLED;
+    }
+    
+    //
+    // TurokAI::OnLocalThink
+    //
+    
+    void OnLocalThink(void) {
+        /*if(alligenceID == 20) {
+            if((ai.aiFlags & AIF_SEETARGET) != 0) {
+                if(!(self.AnimState().IsPlaying(anim_aiRunning))) {
+                    self.AnimState().Blend(anim_aiRunning, 4.0f, 4.0f, ANF_ROOTMOTION|ANF_LOOP);
+                }
+            
+                if((ai.aiFlags & AIF_TURNING) == 0) {
+                    ai.SetIdealYaw(ai.GetBestYawToTarget(2.5f), 4.096f);
+                }
+            }
+            else {
+                self.AnimState().Blend(anim_aiStanding, 4.0f, 4.0f, ANF_ROOTMOTION|ANF_LOOP);
+            }
+        }*/
+    }
+    
+    //
+    // TurokAI::OnThink
+    //
+    
+    void OnThink(void) {
+    }
+    
+    //
+    // TurokAI::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        if(!(self.def is null)) {
+            self.def.GetInt("alligenceID", alligenceID);
+        }
+    }
+    
+    //
+    // TurokAI::OnTouch
+    //
+    
+    bool OnTouch(kActor @instigator) {
+        return true;
+    }
+    
+    //
+    // TurokAI::OnTrigger
+    //
+    
+    void OnTrigger(void) {
+    }
+}

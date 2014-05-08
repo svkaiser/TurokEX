@@ -1,0 +1,54 @@
+////////////////////////////////////////////////////
+//
+// Constants
+//
+////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////
+//
+// TurokAIGrunt
+//
+////////////////////////////////////////////////////
+
+class TurokAIGrunt : TurokAI {
+    
+    //
+    // TurokAIGrunt::TurokAIGrunt
+    //
+    
+    TurokAIGrunt(kActor @actor) {
+        super(actor);
+    }
+    
+    void GruntMelee(void) {
+        const array<int> anims = {
+            anim_aiGruntMelee1,
+            anim_aiGruntMelee2,
+            anim_aiGruntMelee3
+        };
+        
+        const array<int> weights = {
+            10, 10, 10
+        };
+        
+        PickAnimSet(anims, weights);
+    }
+    
+    void OnStateChange(int state) {
+        switch(state) {
+            case AIS_ATTACK_MELEE:
+                GruntMelee();
+                return;
+        }
+        
+        TurokAI::OnStateChange(state);
+    }
+    
+    void OnDeath(kActor@ killer, kKeyMapMem @damageDef) {
+        TurokAI::OnDeath(killer, damageDef);
+    }
+    
+    void OnSpawn(void) {
+        TurokAI::OnSpawn();
+    }
+}

@@ -178,7 +178,7 @@ class TurokWeapon : Component {
         kVec3 org = src.GetOrigin();
         
         org.y += 51.2f;
-        LocalWorld.SpawnFX(str, src, kVec3(0, 0, 0), org + (kVec3(x, y, z) | rot), rot);
+        LocalWorld.SpawnFX(str, src, kVec3(0, 0, 0), org + (kVec3(x, y, z) * rot), rot);
     }
     
     //

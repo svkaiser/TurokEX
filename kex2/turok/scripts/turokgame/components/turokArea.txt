@@ -23,14 +23,20 @@ TurokAmbienceCave       ambCave;
 class TurokArea : AreaComponent {
     kArea @self;
     int ambienceType;
+    bool bSky;
+    float skyYPlane;
+    kActor @skyactor1;
     
     //
     // TurokArea::TurokArea
     //
     
     TurokArea(kArea @area) {
-        @self = area;
-        ambienceType = 0;
+        @self           = area;
+        ambienceType    = 0;
+        bSky            = false;
+        skyYPlane       = 0.0f;
+        @skyactor1      = null;
     }
     
     ~TurokArea() {
@@ -90,6 +96,8 @@ class TurokArea : AreaComponent {
     
     void OnSpawn(void) {
         self.key.GetInt("ambience", ambienceType);
+        self.key.GetBool("bSky", bSky, false);
+        self.key.GetFloat("skyYPlane", skyYPlane);
     }
     
     //
@@ -100,6 +108,20 @@ class TurokArea : AreaComponent {
         LocalWorld.SetFogRGB(self.fogRGB.x, self.fogRGB.y, self.fogRGB.z);
         LocalWorld.SetFogFar(self.fogZFar);
         LocalWorld.SetFogNear(self.fogZFar * 0.5f);
+        
+        if(bSky == true) {
+            if(skyactor1 is null) {
+                @skyactor1 = LocalWorld.GetActorByName("levelsky1");
+                
+                if(skyactor1 is null) {
+                    bSky = false;
+                    return;
+                }
+            }
+            
+            cast<TurokSky@>(skyactor1.obj).height = skyYPlane;
+            skyactor1.bHidden = false;
+        }
     }
     
     //
@@ -107,5 +129,8 @@ class TurokArea : AreaComponent {
     //
     
     void OnExit(void) {
+        if(!(skyactor1 is null)) {
+            skyactor1.bHidden = true;
+        }
     }
 };

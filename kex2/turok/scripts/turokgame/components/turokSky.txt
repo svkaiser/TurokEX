@@ -1,0 +1,82 @@
+////////////////////////////////////////////////////
+//
+// Constants
+//
+////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////
+//
+// TurokSky
+//
+////////////////////////////////////////////////////
+
+class TurokSky : Component {
+    kActor @self;
+    float height;
+    float curHeight;
+    
+    //
+    // TurokSky::TurokSky
+    //
+    
+    TurokSky(kActor @actor) {
+        @self = actor;
+        
+        self.bStatic = false;
+        self.bClientOnly = true;
+        self.bCollision = false;
+        self.bTouch = false;
+        self.bNoCull = true;
+        
+        height = 0.0f;
+        curHeight = 0.0f;
+    }
+    
+    //
+    // TurokSky::TurokSky
+    //
+    
+    ~TurokSky() {
+    }
+    
+    //
+    // TurokSky::OnThink
+    //
+    
+    void OnThink(void) {
+    }
+    
+    //
+    // TurokSky::OnLocalThink
+    //
+    
+    void OnLocalThink(void) {
+        curHeight = (((height - 5.4f) * 10.24f) - curHeight) * 0.5f + curHeight;
+        
+        float cam_y = LocalWorld.Camera().GetOrigin().y;
+        self.GetOrigin().y = curHeight + (cam_y + 266.24f) * 0.5f;
+    }
+    
+    //
+    // TurokSky::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        self.GetAngles().pitch = DegToRad(90.0f);
+    }
+    
+    //
+    // TurokSky::OnTouch
+    //
+    
+    bool OnTouch(kActor @instigator) {
+        return true;
+    }
+    
+    //
+    // TurokSky::OnTrigger
+    //
+    
+    void OnTrigger(void) {
+    }
+};
