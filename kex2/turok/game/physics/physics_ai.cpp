@@ -102,7 +102,7 @@ void kexAIPhysics::Think(const float timeDelta) {
     trace.bbox *= (velocity * time);
 
     trace.start = start;
-    trace.end = start + (gravity * mass) * mass;
+    trace.end = start + (gravity * mass);
     trace.dir = gravity;
 
     // need to determine if we're standing on the ground or not
@@ -133,36 +133,41 @@ void kexAIPhysics::Think(const float timeDelta) {
         }
     }
 
-    trace.start = start;
-    trace.end = start + (velocity * time);
-    trace.dir = (trace.end - trace.start).Normalize();
+    for(int i = 0; i < 3; i++) {
+        start = owner->GetOrigin();
 
-    // trace through world
-    localWorld.Trace(&trace, clipFlags);
+        trace.start = start;
+        trace.end = start + (velocity * time);
+        trace.dir = (trace.end - trace.start).Normalize();
 
-    // project velocity
-    if(trace.fraction != 1) {
-        ImpactVelocity(velocity, trace.hitNormal, 1.024f);
-    }
-
-    if(sector) {
-        groundGeom = &sector->lowerTri;
-    }
-
-    // update origin
-    owner->SetOrigin(trace.hitVector - (trace.dir * 0.125f));
-    owner->LinkArea();
-
-    if(groundMesh) {
-        // fudge the origin if we're slightly clipping below the floor
-        trace.start = start - (gravity * (stepHeight * 0.5f));
-        trace.end = start;
+        // trace through world
         localWorld.Trace(&trace, clipFlags);
-    
-        if(trace.fraction != 1 && !trace.hitActor) {
-            start = trace.hitVector - (gravity * 1.024f);
-            owner->SetOrigin(start);
-            owner->LinkArea();
+        time -= (time * trace.fraction);
+
+        // project velocity
+        if(trace.fraction != 1) {
+            ImpactVelocity(velocity, trace.hitNormal, 1.024f);
+        }
+
+        if(sector) {
+            groundGeom = &sector->lowerTri;
+        }
+
+        // update origin
+        owner->SetOrigin(trace.hitVector - (trace.dir * 0.125f));
+        owner->LinkArea();
+
+        if(groundMesh) {
+            // fudge the origin if we're slightly clipping below the floor
+            trace.start = start - (gravity * (stepHeight * 0.5f));
+            trace.end = start;
+            localWorld.Trace(&trace, clipFlags);
+        
+            if(trace.fraction != 1 && !trace.hitActor) {
+                start = trace.hitVector - (gravity * 1.024f);
+                owner->SetOrigin(start);
+                owner->LinkArea();
+            }
         }
     }
 

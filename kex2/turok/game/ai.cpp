@@ -347,17 +347,15 @@ void kexAI::SeekTarget(void) {
                 }
             }
 
-            if(!(aiFlags & AIF_SEETARGET) && sightThreshold <= 0) {
-                if(kexRand::Max(1000) >= giveUpChance) {
-                    // AI has forgotten about it's target. go back to idling
-                    ClearTargets();
-                    bAnimTurning = false;
-                    bAttacking = false;
-                    ChangeState(AIS_IDLE);
-                    return;
-                }
+            if(!(aiFlags & AIF_SEETARGET) && sightThreshold <= 0 && kexRand::Max(1000) >= giveUpChance) {
+                // AI has forgotten about it's target. go back to idling
+                ClearTargets();
+                bAnimTurning = false;
+                bAttacking = false;
+                ChangeState(AIS_IDLE);
+                return;
             }
-            else if(aiFlags & AIF_FACETARGET) {
+            else {
                 TurnYaw(GetBestYawToTarget(checkRadius));
             }
             break;
@@ -414,12 +412,15 @@ void kexAI::SeekTarget(void) {
 //
 
 void kexAI::AnimStopped(void) {
+    bool bWasTurning = false;
+
     if(!(animState.flags & ANF_STOPPED)) {
         return;
     }
 
     if(bAnimTurning) {
         bAnimTurning = false;
+        bWasTurning = true;
     }
 
     switch(aiState) {
@@ -497,6 +498,9 @@ void kexAI::AnimStopped(void) {
             break;
 
         default:
+            if(bWasTurning) {
+                ChangeState(aiState);
+            }
             break;
     }
 }
@@ -716,7 +720,7 @@ float kexAI::GetYawToTarget(void) {
     float an;
     
     if(!target) {
-        return 0;
+        return angles.yaw;
     }
     
     vec1 = origin;
@@ -813,7 +817,7 @@ float kexAI::GetBestYawToTarget(const float extendedRadius) {
     float yaw;
     kexVec3 position;
     
-    yaw = (target ? GetYawToTarget() : 0);
+    yaw = GetYawToTarget();
     
     position = origin;
     position[1] += (height * 0.8f);

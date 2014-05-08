@@ -90,9 +90,7 @@ void kexDisplayObject::Load(kexBinFile *loadFile) {
 //
 
 void kexDisplayObject::EmitSound(const char *name) {
-    if(bCulled == false) {
-        soundSystem.StartSound(name, this);
-    }
+    soundSystem.StartSound(name, this);
 }
 
 //
