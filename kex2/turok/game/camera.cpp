@@ -72,6 +72,10 @@ void kexCamera::SetupMatrices(void) {
     projMatrix.SetViewProjection(aspect,
         (float)bFixedFOV ? fov : cvarClientFOV.GetFloat(), zNear, zFar);
     
+    // scaling the camera object will affect the view projection
+    projMatrix.vectors[0].x *= scale.x;
+    projMatrix.vectors[1].y *= scale.y;
+    
     // model
     modelMatrix.Identity();
 

@@ -61,6 +61,7 @@ public:
     kexAttachment               &Attachment(void) { return attachment; }
     float                       &CullDistance(void) { return cullDistance; }
     int                         &DisplayType(void) { return displayType; }
+    const int                   DisplayType(void) const { return displayType; }
 
     bool                        bHidden;        // don't draw by renderer
     bool                        bCulled;        // currently culled by frustum or distance
