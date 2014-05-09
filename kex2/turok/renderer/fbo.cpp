@@ -56,7 +56,30 @@ void kexFBO::CheckStatus(void) {
     GLenum status = dglCheckFramebufferStatus(GL_FRAMEBUFFER_EXT);
     
     if(status != GL_FRAMEBUFFER_COMPLETE_EXT) {
-        common.Warning("kexFBO::Init: frame buffer creation didn't complete\n");
+        switch(status) {
+            case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:
+                common.Warning("kexFBO::Init: bad attachment\n");
+                break;
+            case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT:
+                common.Warning("kexFBO::Init: attachment is missing\n");
+                break;
+            case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT:
+                common.Warning("kexFBO::Init: bad dimentions\n");
+                break;
+            case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT:
+                common.Warning("kexFBO::Init: bad format\n");
+                break;
+            case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT:
+                common.Warning("kexFBO::Init: error with draw buffer\n");
+                break;
+            case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT:
+                common.Warning("kexFBO::Init: error with read buffer\n");
+                break;
+            default:
+                common.Warning("kexFBO::Init: frame buffer creation didn't complete\n");
+                break;
+        }
+        
         bLoaded = false;
     }
     else {
@@ -218,8 +241,8 @@ void kexFBO::Delete(void) {
 //
 
 void kexFBO::CopyBackBuffer(void) {
-    int viewWidth = sysMain.VideoWidth();
-    int viewHeight = sysMain.VideoHeight();
+    int viewWidth = kexMath::RoundPowerOfTwo(sysMain.VideoWidth());
+    int viewHeight = kexMath::RoundPowerOfTwo(sysMain.VideoHeight());
     
     // copy over the main framebuffer
     dglBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
@@ -229,7 +252,7 @@ void kexFBO::CopyBackBuffer(void) {
     dglBlitFramebuffer(0,
                        0,
                        viewWidth,
-                       viewHeight + (viewWidth - viewHeight),
+                       viewHeight,
                        0,
                        0,
                        fboWidth,
