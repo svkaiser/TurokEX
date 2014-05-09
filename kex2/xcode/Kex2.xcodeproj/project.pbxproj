@@ -7,16 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		411FAEFD191803D700EC16DA /* image.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 411FAEFB191803D700EC16DA /* image.cpp */; };
 		415E211218CF710A000589E5 /* libSDL2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 41DD4F9618CA685500664EF8 /* libSDL2.a */; };
 		415E211518CF711D000589E5 /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41DD4F9418CA685500664EF8 /* SDL2.framework */; };
 		4193C4F018F5AE370008503A /* worldModel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4193C4EE18F5AE370008503A /* worldModel.cpp */; };
 		41AD473C18FC3C70007B3201 /* lensFlares.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41AD473A18FC3C70007B3201 /* lensFlares.cpp */; };
 		41AD474718FC8149007B3201 /* fbo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41AD474518FC8149007B3201 /* fbo.cpp */; };
 		41AF69F618F5A83B00BF3E77 /* renderBackend.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41AF69F418F5A83B00BF3E77 /* renderBackend.cpp */; };
+		41AFCEF5191C17F80087F2DF /* tinyxml2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41AFCEF3191C17F80087F2DF /* tinyxml2.cpp */; };
 		41B0136618F84A2300C4C0C3 /* renderUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41B0136418F84A2300C4C0C3 /* renderUtils.cpp */; };
 		41B02B4918FDBDA700D7E538 /* viewBounds.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41B02B4718FDBDA700D7E538 /* viewBounds.cpp */; };
 		41B0A86F18D9FB5A006C831C /* trigger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41B0A86D18D9FB5A006C831C /* trigger.cpp */; };
 		41B198F418D754DF00E05F5F /* animation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41B198F218D754DF00E05F5F /* animation.cpp */; };
+		41B1F3CF190AC19200334650 /* viewPortals.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41B1F3CD190AC19200334650 /* viewPortals.cpp */; };
 		41B2A86F18DB769400FAFCB9 /* material.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41B2A86E18DB769400FAFCB9 /* material.cpp */; };
 		41CAA0DB18E9CF2600C03A0A /* renderMain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 41CAA0D918E9CF2600C03A0A /* renderMain.cpp */; };
 		41DD4FB018CA69EE00664EF8 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 41DD4FAC18CA69EE00664EF8 /* Carbon.framework */; };
@@ -174,6 +177,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		411FAEFB191803D700EC16DA /* image.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = image.cpp; path = ../turok/renderer/image.cpp; sourceTree = "<group>"; };
+		411FAEFC191803D700EC16DA /* image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = image.h; path = ../turok/renderer/image.h; sourceTree = "<group>"; };
 		4193C4EE18F5AE370008503A /* worldModel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = worldModel.cpp; path = ../turok/game/worldModel.cpp; sourceTree = "<group>"; };
 		4193C4EF18F5AE370008503A /* worldModel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = worldModel.h; path = ../turok/game/worldModel.h; sourceTree = "<group>"; };
 		41AD473A18FC3C70007B3201 /* lensFlares.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = lensFlares.cpp; path = ../turok/renderer/lensFlares.cpp; sourceTree = "<group>"; };
@@ -183,6 +188,8 @@
 		41AEA9E518F6FC7A00CC202E /* sdNodes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = sdNodes.h; path = ../turok/framework/sdNodes.h; sourceTree = "<group>"; };
 		41AF69F418F5A83B00BF3E77 /* renderBackend.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = renderBackend.cpp; path = ../turok/renderer/renderBackend.cpp; sourceTree = "<group>"; };
 		41AF69F518F5A83B00BF3E77 /* renderBackend.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = renderBackend.h; path = ../turok/renderer/renderBackend.h; sourceTree = "<group>"; };
+		41AFCEF3191C17F80087F2DF /* tinyxml2.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = tinyxml2.cpp; path = ../tinyxml/tinyxml2.cpp; sourceTree = "<group>"; };
+		41AFCEF4191C17F80087F2DF /* tinyxml2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = tinyxml2.h; path = ../tinyxml/tinyxml2.h; sourceTree = "<group>"; };
 		41B0136418F84A2300C4C0C3 /* renderUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = renderUtils.cpp; path = ../turok/renderer/renderUtils.cpp; sourceTree = "<group>"; };
 		41B0136518F84A2300C4C0C3 /* renderUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = renderUtils.h; path = ../turok/renderer/renderUtils.h; sourceTree = "<group>"; };
 		41B02B4718FDBDA700D7E538 /* viewBounds.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = viewBounds.cpp; path = ../turok/renderer/viewBounds.cpp; sourceTree = "<group>"; };
@@ -191,6 +198,8 @@
 		41B0A86E18D9FB5A006C831C /* trigger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = trigger.h; path = ../turok/game/trigger.h; sourceTree = "<group>"; };
 		41B198F218D754DF00E05F5F /* animation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = animation.cpp; path = ../turok/game/animation.cpp; sourceTree = "<group>"; };
 		41B198F318D754DF00E05F5F /* animation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = animation.h; path = ../turok/game/animation.h; sourceTree = "<group>"; };
+		41B1F3CD190AC19200334650 /* viewPortals.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = viewPortals.cpp; path = ../turok/renderer/viewPortals.cpp; sourceTree = "<group>"; };
+		41B1F3CE190AC19200334650 /* viewPortals.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = viewPortals.h; path = ../turok/renderer/viewPortals.h; sourceTree = "<group>"; };
 		41B2A86718DB59B800FAFCB9 /* material.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = material.h; path = ../turok/renderer/material.h; sourceTree = "<group>"; };
 		41B2A86E18DB769400FAFCB9 /* material.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = material.cpp; path = ../turok/renderer/material.cpp; sourceTree = "<group>"; };
 		41CAA0D918E9CF2600C03A0A /* renderMain.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = renderMain.cpp; path = ../turok/renderer/renderMain.cpp; sourceTree = "<group>"; };
@@ -362,13 +371,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		41AFCEF2191C17C60087F2DF /* TinyXML */ = {
+			isa = PBXGroup;
+			children = (
+				41AFCEF3191C17F80087F2DF /* tinyxml2.cpp */,
+				41AFCEF4191C17F80087F2DF /* tinyxml2.h */,
+			);
+			name = TinyXML;
+			sourceTree = "<group>";
+		};
 		41DD4F8518CA684000664EF8 = {
 			isa = PBXGroup;
 			children = (
-				41DD50EC18CA854500664EF8 /* ENet */,
 				41DD4FB418CA6AF800664EF8 /* Frameworks */,
 				41DD4FA118CA692C00664EF8 /* Products */,
-				41DD4FB518CA6B0C00664EF8 /* Projects */,
+				41DD4FB518CA6B0C00664EF8 /* Libraries */,
 				41DD4FC618CA6E4A00664EF8 /* Source */,
 			);
 			sourceTree = "<group>";
@@ -403,13 +420,15 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		41DD4FB518CA6B0C00664EF8 /* Projects */ = {
+		41DD4FB518CA6B0C00664EF8 /* Libraries */ = {
 			isa = PBXGroup;
 			children = (
 				41DD4FBC18CA6C9200664EF8 /* angelscript.xcodeproj */,
 				41DD4F8C18CA685500664EF8 /* SDL.xcodeproj */,
+				41DD50EC18CA854500664EF8 /* ENet */,
+				41AFCEF2191C17C60087F2DF /* TinyXML */,
 			);
-			name = Projects;
+			name = Libraries;
 			sourceTree = "<group>";
 		};
 		41DD4FBD18CA6C9200664EF8 /* Products */ = {
@@ -583,6 +602,7 @@
 				41DD508318CA6FE100664EF8 /* canvas.cpp */,
 				41AD474518FC8149007B3201 /* fbo.cpp */,
 				41DD508518CA6FE100664EF8 /* frustum.cpp */,
+				411FAEFB191803D700EC16DA /* image.cpp */,
 				41AD473A18FC3C70007B3201 /* lensFlares.cpp */,
 				41B2A86E18DB769400FAFCB9 /* material.cpp */,
 				41AF69F418F5A83B00BF3E77 /* renderBackend.cpp */,
@@ -594,9 +614,11 @@
 				41DD508F18CA6FE100664EF8 /* shaderProg.cpp */,
 				41DD509118CA6FE100664EF8 /* textureObject.cpp */,
 				41B02B4718FDBDA700D7E538 /* viewBounds.cpp */,
+				41B1F3CD190AC19200334650 /* viewPortals.cpp */,
 				41DD508418CA6FE100664EF8 /* canvas.h */,
 				41AD474618FC8149007B3201 /* fbo.h */,
 				41DD508618CA6FE100664EF8 /* frustum.h */,
+				411FAEFC191803D700EC16DA /* image.h */,
 				41AD473B18FC3C70007B3201 /* lensFlares.h */,
 				41B2A86718DB59B800FAFCB9 /* material.h */,
 				41AF69F518F5A83B00BF3E77 /* renderBackend.h */,
@@ -608,6 +630,7 @@
 				41DD509018CA6FE100664EF8 /* shaderProg.h */,
 				41DD509218CA6FE100664EF8 /* textureObject.h */,
 				41B02B4818FDBDA700D7E538 /* viewBounds.h */,
+				41B1F3CE190AC19200334650 /* viewPortals.h */,
 			);
 			name = Renderer;
 			sourceTree = "<group>";
@@ -793,6 +816,7 @@
 				41DD509918CA6FE100664EF8 /* renderWorld.cpp in Sources */,
 				41DD509618CA6FE100664EF8 /* renderFont.cpp in Sources */,
 				41DD509F18CA6FF700664EF8 /* snd_shader.cpp in Sources */,
+				41AFCEF5191C17F80087F2DF /* tinyxml2.cpp in Sources */,
 				41DD500E18CA6F3C00664EF8 /* keyinput.cpp in Sources */,
 				41AD474718FC8149007B3201 /* fbo.cpp in Sources */,
 				41DD505418CA6FA200664EF8 /* player_client.cpp in Sources */,
@@ -844,9 +868,11 @@
 				41DD500A18CA6F3C00664EF8 /* cvar.cpp in Sources */,
 				41DD503818CA6F7A00664EF8 /* areas.cpp in Sources */,
 				4193C4F018F5AE370008503A /* worldModel.cpp in Sources */,
+				411FAEFD191803D700EC16DA /* image.cpp in Sources */,
 				41CAA0DB18E9CF2600C03A0A /* renderMain.cpp in Sources */,
 				41DD503918CA6F7A00664EF8 /* attachment.cpp in Sources */,
 				41DD505E18CA6FAD00664EF8 /* scriptSystem.cpp in Sources */,
+				41B1F3CF190AC19200334650 /* viewPortals.cpp in Sources */,
 				41DD509718CA6FE100664EF8 /* renderModel.cpp in Sources */,
 				41DD50F618CA856F00664EF8 /* compress.c in Sources */,
 				41DD500F18CA6F3C00664EF8 /* keymap.cpp in Sources */,
@@ -899,6 +925,7 @@
 					../SDL2/include,
 					../enet/include,
 					../angelscript/angelscript/include,
+					../tinyxml/,
 					../turok/sound,
 					../turok/renderer,
 					../turok/opengl,
@@ -922,6 +949,7 @@
 					../SDL2/include,
 					../enet/include,
 					../angelscript/angelscript/include,
+					../tinyxml/,
 					../turok/sound,
 					../turok/renderer,
 					../turok/opengl,
