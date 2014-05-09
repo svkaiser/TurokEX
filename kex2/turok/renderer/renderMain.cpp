@@ -377,13 +377,17 @@ bool kexRenderer::GetOcclusionSampleResult(const unsigned int &query, const kexB
 // kexRenderer::AddSurface
 //
 
-void kexRenderer::AddSurface(const surface_t *surf, const kexMaterial *material,
-                             const kexMatrix mtx, const matSortOrder_t sortOrder) {
+void kexRenderer::AddSurface(const surface_t *surf,
+                             const kexMaterial *material,
+                             const kexMatrix mtx,
+                             const kexWorldObject *worldObject,
+                             const matSortOrder_t sortOrder) {
     drawSurface_t drawSurf;
     
     drawSurf.surf = (surface_t*)surf;
     drawSurf.material = (kexMaterial*)material;
     drawSurf.matrix = mtx;
+    drawSurf.refObj = (kexWorldObject*)worldObject;
     
     if(drawSurfaces[sortOrder].Length() <= (unsigned int)numDrawList[sortOrder]) {
         drawSurfaces[sortOrder].Push(drawSurf);
@@ -399,11 +403,15 @@ void kexRenderer::AddSurface(const surface_t *surf, const kexMaterial *material,
 // kexRenderer::DrawSurfaceList
 //
 
-void kexRenderer::DrawSurfaceList(void) {
+void kexRenderer::DrawSurfaceList(drawSurfFunc_t function, const int start, const int end) {
     drawSurface_t *drawSurf;
+    kexMaterial *material;
     bool bNoSort = cvarRenderNoSortMaterials.GetBool();
+
+    assert(start >= 0 && start < end);
+    assert(end <= NUMSORTORDERS && end > start);
     
-    for(int i = 0; i < NUMSORTORDERS; i++) {
+    for(int i = start; i < end; i++) {
         if(bNoSort == false) {
             drawSurfaces[i].Sort(SortDrawList, numDrawList[i]);
         }
@@ -413,14 +421,49 @@ void kexRenderer::DrawSurfaceList(void) {
             
             dglPushMatrix();
             dglMultMatrixf(drawSurf->matrix.ToFloatPtr());
+            
+            if(function == (&kexRenderer::DrawWireFrameSurface)) {
+                wireframeMaterial->SetDiffuseColor(drawSurf->refObj->WireFrameColor());
+                material = wireframeMaterial;
+            }
+            else {
+                material = drawSurf->material;
+            }
 
-            DrawSurface(drawSurf->surf, drawSurf->material);
+            (this->*function)(drawSurf->surf, material);
 
             dglPopMatrix();
         }
+    }
+}
 
+//
+// kexRenderer::DrawSurfaceList
+//
+
+void kexRenderer::DrawSurfaceList(drawSurfFunc_t function) {
+    DrawSurfaceList(function, 0, MSO_RESERVED);
+}
+
+//
+// kexRenderer::ClearSurfaceList
+//
+
+void kexRenderer::ClearSurfaceList(const int start, const int end) {
+    assert(start >= 0 && start < end);
+    assert(end <= NUMSORTORDERS && end > start);
+
+    for(int i = start; i < end; i++) {
         numDrawList[i] = 0;
     }
+}
+
+//
+// kexRenderer::ClearSurfaceList
+//
+
+void kexRenderer::ClearSurfaceList(void) {
+    ClearSurfaceList(0, NUMSORTORDERS);
 }
 
 //
@@ -495,22 +538,18 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
 // kexRenderer::DrawWireFrameSurface
 //
 
-void kexRenderer::DrawWireFrameSurface(const surface_t *surface, const rcolor color) {
+void kexRenderer::DrawWireFrameSurface(const surface_t *surface, kexMaterial *material) {
     kexShaderObj *shader;
-    kexMaterial *material;
 
     if(surface == NULL) {
         return;
     }
 
-    shader = wireframeMaterial->ShaderObj();
+    shader = material->ShaderObj();
     
     if(shader == NULL) {
         return;
     }
-
-    material = wireframeMaterial;
-    material->SetDiffuseColor(color);
 
     shader->Enable();
     shader->CommitGlobalUniforms(material);

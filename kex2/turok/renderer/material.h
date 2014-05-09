@@ -54,6 +54,7 @@ typedef enum {
     MSO_CUSTOM1,
     MSO_CUSTOM2,
     MSO_CUSTOM3,
+    MSO_RESERVED,
     NUMSORTORDERS
 } matSortOrder_t;
 

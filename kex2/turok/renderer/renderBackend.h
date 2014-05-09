@@ -152,6 +152,8 @@ public:
     kexTexture                      *frameBuffer;
     kexTexture                      *depthBuffer;
 
+    kexMaterial                     *defaultMaterial;
+
     kexFont                         consoleFont;
 
     typedef struct {

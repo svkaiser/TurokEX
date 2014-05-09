@@ -30,6 +30,7 @@ class kexMaterial;
 class kexSector;
 class kexTri;
 class kexShaderObj;
+class kexWorldObject;
 
 typedef struct {
     unsigned int            flags;
@@ -47,6 +48,7 @@ typedef struct {
     surface_t               *surf;
     kexMaterial             *material;
     kexMatrix               matrix;
+    kexWorldObject          *refObj;
 } drawSurface_t;
 
 #define MAX_FX_DISPLAYS     2048
@@ -55,6 +57,9 @@ typedef struct {
 #define GL_MAX_VERTICES     0x10000
 
 #define MAX_BLUR_SAMPLES    2
+
+class kexRenderer;
+typedef void                (kexRenderer::*drawSurfFunc_t)(const surface_t*, kexMaterial*);
 
 class kexFx;
 
@@ -68,11 +73,17 @@ public:
                             ~kexRenderer(void);
 
     void                    Init(void);
-    void                    AddSurface(const surface_t *surf, const kexMaterial *material,
-                                       const kexMatrix mtx, const matSortOrder_t sortOrder = MSO_DEFAULT);
-    void                    DrawSurfaceList(void);
+    void                    AddSurface(const surface_t *surf,
+                                       const kexMaterial *material,
+                                       const kexMatrix mtx,
+                                       const kexWorldObject *worldObject,
+                                       const matSortOrder_t sortOrder = MSO_DEFAULT);
+    void                    DrawSurfaceList(drawSurfFunc_t function, const int start, const int end);
+    void                    DrawSurfaceList(drawSurfFunc_t function);
+    void                    ClearSurfaceList(const int start, const int end);
+    void                    ClearSurfaceList(void);
     void                    DrawSurface(const surface_t *surface, kexMaterial *material);
-    void                    DrawWireFrameSurface(const surface_t *surface, const rcolor color);
+    void                    DrawWireFrameSurface(const surface_t *surface, kexMaterial *material);
     void                    DrawBlackSurface(const surface_t *surface, kexMaterial *material);
     void                    Draw(void);
     void                    DrawFX(const fxDisplay_t *fxList, const int count);

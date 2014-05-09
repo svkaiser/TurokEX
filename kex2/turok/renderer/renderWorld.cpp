@@ -213,7 +213,6 @@ kexRenderWorld::kexRenderWorld(void) {
     this->bShowClipMesh     = false;
     this->bShowCollisionMap = false;
     this->bPrintStats       = false;
-    this->bLightScatterPass = false;
     this->showAreaNode      = -1;
     this->renderNodeStep    = -1;
 }
@@ -306,6 +305,12 @@ void kexRenderWorld::RenderScene(void) {
         renderSceneMS = sysMain.GetMS();
         numDrawnStatics = numDrawnSDNodes = numDrawnActors = 0;
     }
+    
+    SetCameraView(world->Camera());
+    
+    // create draw lists
+    DrawStaticActors();
+    DrawActors();
 
     if(cvarRenderLightScatter.GetBool()) {
         PreProcessLightScatter();
@@ -327,12 +332,13 @@ void kexRenderWorld::RenderScene(void) {
     DrawForegroundActors();
 
     SetCameraView(world->Camera());
+    
+    // render surfaces normally
+    renderer.DrawSurfaceList(bWireframe ?
+                             &kexRenderer::DrawWireFrameSurface :
+                             &kexRenderer::DrawSurface);
 
-    DrawStaticActors();
-    DrawActors();
-
-    renderer.DrawSurfaceList();
-
+    renderer.ClearSurfaceList();
     PreProcessOcclusionQueries();
 
     if(showAreaNode >= 0 || bShowRenderNodes) {
@@ -362,7 +368,9 @@ void kexRenderWorld::RenderScene(void) {
         renderFXMS = sysMain.GetMS() - renderFXMS;
     }
 
-    DrawViewActors();
+    DrawViewActors(bWireframe ?
+                   &kexRenderer::DrawWireFrameSurface :
+                   &kexRenderer::DrawSurface);
 
     if(bPrintStats) {
         renderSceneMS = sysMain.GetMS() - renderSceneMS;
@@ -410,16 +418,11 @@ void kexRenderWorld::PreProcessLightScatter(void) {
     projectedSunCoords.x /= (float)vp[2];
     projectedSunCoords.y /= (float)vp[3];
 
-    bLightScatterPass = true;
-
-    DrawStaticActors();
-    DrawActors();
-    DrawViewActors();
-
-    bLightScatterPass = false;
+    // redraw surfaces
+    renderer.DrawSurfaceList(&kexRenderer::DrawBlackSurface);
+    DrawViewActors(&kexRenderer::DrawBlackSurface);
 
     renderer.FBOLightScatter().UnBind();
-    dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     dglPopAttrib();
 }
 
@@ -566,41 +569,30 @@ void kexRenderWorld::DrawWorldModel(kexWorldModel *wm) {
             return;
         }
         
-        bool bNoDrawSort = (bLightScatterPass || bWireframe);
-        
         node = &model->nodes[0];
-        
-        if(bNoDrawSort) {
-            dglPushMatrix();
-            dglMultMatrixf(wm->Matrix().ToFloatPtr());
-        }
         
         for(unsigned i = 0; i < model->nodes[0].numSurfaces; i++) {
             surface_t *surface = &node->surfaces[i];
 
-            if(bLightScatterPass) {
-                renderer.DrawBlackSurface(surface, surface->material);
-            }
-            else if(!bWireframe) {
-                kexMaterial *material = surface->material;
+            kexMaterial *material = surface->material;
+            
+            if(wm->materials != NULL) {
+                kexMaterial *mat = wm->materials[i];
                 
-                if(wm->materials != NULL) {
-                    kexMaterial *mat = wm->materials[i];
-                    
-                    if(mat != NULL) {
-                        material = mat;
-                    }
+                if(mat != NULL) {
+                    material = mat;
                 }
+            }
 
-                renderer.AddSurface(surface, material, wm->Matrix(), material->SortOrder());
+            if(material == NULL) {
+                material = renderBackend.defaultMaterial;
             }
-            else {
-                renderer.DrawWireFrameSurface(surface, wm->WireFrameColor());
-            }
-        }
-        
-        if(bNoDrawSort) {
-            dglPopMatrix();
+
+            renderer.AddSurface(surface,
+                                material,
+                                wm->Matrix(),
+                                wm,
+                                material->SortOrder());
         }
     }
     else if(bShowClipMesh) {
@@ -631,10 +623,6 @@ void kexRenderWorld::TraverseDrawActorNode(const kexActor *actor,
         int frame;
         int nextframe;
         float delta;
-
-        if(bLightScatterPass || bWireframe) {
-            dglPushMatrix();
-        }
 
         anim        = animState->track.anim;
         prevanim    = animState->prevTrack.anim;
@@ -683,38 +671,40 @@ void kexRenderWorld::TraverseDrawActorNode(const kexActor *actor,
             rot = rot * actor->GetNodeRotations()[nodenum];
             kexMatrix translation(rot);
             translation.AddTranslation(pos);
-
-            if(bLightScatterPass || bWireframe) {
-                dglMultMatrixf(translation.ToFloatPtr());
-            }
+            
             mtx = translation * matrix;
         }
     }
 
     for(i = 0; i < node->numSurfaces; i++) {
         surface_t *surface = &node->surfaces[i];
+        kexMaterial *material;
+        matSortOrder_t sortOrder;
 
-        if(bLightScatterPass) {
-            renderer.DrawBlackSurface(surface, surface->material);
+        material = surface->material;
+
+        if(actor->DisplayType() == ODT_CLIENTVIEW) {
+            sortOrder = MSO_RESERVED;
         }
-        else if(!bWireframe) {
-            if(surface->material) {
-                renderer.AddSurface(surface, surface->material, mtx, surface->material->SortOrder());
-            }
+        else if(material) {
+            sortOrder = material->SortOrder();
         }
         else {
-            renderer.DrawWireFrameSurface(surface, actor->WireFrameColor());
+            sortOrder = MSO_DEFAULT;
+            material = renderBackend.defaultMaterial;
+        }
+
+        if(material) {
+            renderer.AddSurface(surface,
+                                material,
+                                mtx,
+                                actor,
+                                sortOrder);
         }
     }
 
     for(i = 0; i < node->numChildren; i++) {
         TraverseDrawActorNode(actor, &model->nodes[node->children[i]], animState, mtx);
-    }
-
-    if(animState != NULL) {
-        if(bLightScatterPass || bWireframe) {
-            dglPopMatrix();
-        }
     }
 }
 
@@ -861,11 +851,11 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
         
         if(bShowBBox) {
             if(wm->bTraced) {
-                kexRenderUtils::DrawBoundingBox(box, 255, 0, 0);
+                kexRenderUtils::DrawBoundingBox(wm->Bounds(), 255, 0, 0);
                 wm->bTraced = false;
             }
             else {
-                kexRenderUtils::DrawBoundingBox(box, 255, 255, 0);
+                kexRenderUtils::DrawBoundingBox(wm->Bounds(), 255, 255, 0);
             }
         }
         if(bShowRadius && wm->bCollision) {
@@ -912,10 +902,6 @@ void kexRenderWorld::DrawSingleActor(kexActor *actor, kexMatrix *matrix) {
     box = actor->Bounds();
 
     if(actor->Model()) {
-        if(bLightScatterPass || bWireframe) {
-            dglPushMatrix();
-            dglMultMatrixf(actor->Matrix().ToFloatPtr());
-        }
         curMatrix = actor->Matrix();
 
         if(bShowOrigin) {
@@ -923,29 +909,10 @@ void kexRenderWorld::DrawSingleActor(kexActor *actor, kexMatrix *matrix) {
         }
 
         if(actor->bNoFixedTransform == false && matrix) {
-            if(bLightScatterPass || bWireframe) {
-                dglPushMatrix();
-                dglMultMatrixf(matrix->ToFloatPtr());
-            }
-
             curMatrix = *matrix * curMatrix;
         }
 
-        if(bWireframe) {
-            dglColor4ub(192, 192, 192, 255);
-        }
-
         TraverseDrawActorNode(actor, &actor->Model()->nodes[0], actor->AnimState(), curMatrix);
-
-        if(bLightScatterPass || bWireframe) {
-            dglPopMatrix();
-        }
-
-        if(actor->bNoFixedTransform == false) {
-            if(bLightScatterPass || bWireframe) {
-                dglPopMatrix();
-            }
-        }
         
         if(bPrintStats) {
             numDrawnActors++;
@@ -954,11 +921,11 @@ void kexRenderWorld::DrawSingleActor(kexActor *actor, kexMatrix *matrix) {
 
     if(bShowBBox) {
         if(actor->bTraced) {
-            kexRenderUtils::DrawBoundingBox(box, 255, 0, 0);
+            kexRenderUtils::DrawBoundingBox(actor->Bounds(), 255, 0, 0);
             actor->bTraced = false;
         }
         else {
-            kexRenderUtils::DrawBoundingBox(box,
+            kexRenderUtils::DrawBoundingBox(actor->Bounds(),
                 actor->bTouch ? 0 : 255,
                 actor->bTouch ? 255 : 128,
                 actor->bTouch ? 0 : 128);
@@ -1042,7 +1009,7 @@ void kexRenderWorld::DrawActors(void) {
 // kexRenderWorld::DrawViewActors
 //
 
-void kexRenderWorld::DrawViewActors(void) {
+void kexRenderWorld::DrawViewActors(drawSurfFunc_t function) {
     kexMatrix projMatrix;
     kexMatrix curMatrix;
     kexMatrix modelMatrix(DEG2RAD(-90), 1);
@@ -1063,25 +1030,13 @@ void kexRenderWorld::DrawViewActors(void) {
             }
 
             if(actor->Model()) {
-                if(bLightScatterPass || bWireframe) {
-                    dglPushMatrix();
-                    dglMultMatrixf(actor->Matrix().ToFloatPtr());
-                    dglPushMatrix();
-
-                    dglMultMatrixf(modelMatrix.ToFloatPtr());
-                }
-
                 curMatrix = modelMatrix * actor->Matrix();
                 TraverseDrawActorNode(actor, &actor->Model()->nodes[0], actor->AnimState(), curMatrix);
-
-                if(bLightScatterPass || bWireframe) {
-                    dglPopMatrix();
-                    dglPopMatrix();
-                }
             }
     }
 
-    renderer.DrawSurfaceList();
+    renderer.DrawSurfaceList(function, MSO_RESERVED, MSO_RESERVED+1);
+    renderer.ClearSurfaceList(MSO_RESERVED, MSO_RESERVED+1);
 }
 
 //
@@ -1145,11 +1100,11 @@ void kexRenderWorld::DrawForegroundActors(void) {
             DrawSingleActor(actor, NULL);
     }
 
-    renderer.DrawSurfaceList();
+    //renderer.DrawSurfaceList(bWireframe ?
+      //                       &kexRenderer::DrawWireFrameSurface :
+        //                     &kexRenderer::DrawSurface);
 
-    if(cvarRenderLightScatter.GetBool()) {
-        DrawSun(false);
-    }
+    DrawSun(false);
 
     world->Camera()->ZFar() = zfar;
     dglClear(GL_DEPTH_BUFFER_BIT);

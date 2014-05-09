@@ -62,7 +62,6 @@ public:
 
     kexVec3                     &WorldLightTransform(void) { return worldLightTransform; }
     kexVec3                     &ProjectedSunCoords(void) { return projectedSunCoords; }
-    const bool                  LightScatterPass(void) const { return bLightScatterPass; }
 
 private:
     void                        PreProcessLightScatter(void);
@@ -71,7 +70,7 @@ private:
     void                        DrawSingleActor(kexActor *actor, kexMatrix *matrix);
     void                        DrawActors(void);
     void                        DrawStaticActors(void);
-    void                        DrawViewActors(void);
+    void                        DrawViewActors(drawSurfFunc_t function);
     void                        DrawForegroundActors(void);
     void                        DrawFX(void);
     void                        DrawWorldModel(kexWorldModel *wm);
@@ -106,7 +105,6 @@ private:
     kexShaderObj                *sunSpotShader;
     kexVec3                     sunPosition;
     kexVec3                     projectedSunCoords;
-    bool                        bLightScatterPass;
     kexArray<GLuint>            nodeQueries;
     kexArray<GLuint>            actorQueries;
     kexArray<GLuint>            staticQueries;

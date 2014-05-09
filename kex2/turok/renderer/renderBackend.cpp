@@ -333,6 +333,8 @@ void kexRenderBackend::Init(void) {
     defaultTexture.LoadFromFile("textures/default.tga", TC_CLAMP, TF_LINEAR);
     whiteTexture.LoadFromFile("textures/default.tga", TC_CLAMP, TF_LINEAR);
     blackTexture.LoadFromFile("textures/default.tga", TC_CLAMP, TF_LINEAR);
+
+    defaultMaterial = CacheMaterial("materials/default.kmat@default");
     
     // create framebuffer texture
     frameBuffer = textureList.Add("framebuffer", kexTexture::hb_texture);
