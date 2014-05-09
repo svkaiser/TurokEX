@@ -198,8 +198,6 @@ void kexImageManager::LoadFromFile(const char *file) {
 void kexImageManager::LoadFromScreenBuffer(void) {
     int pack;
     int col;
-    int width;
-    int height;
     int x;
     int y;
     
@@ -210,17 +208,15 @@ void kexImageManager::LoadFromScreenBuffer(void) {
     x           = renderBackend.WindowX();
     y           = renderBackend.WindowY();
     col         = (width * 3);
-    data        = new byte[height * width * 3];
-    
     colorMode   = TCR_RGB;
+    
+    Alloc();
     
     dglGetIntegerv(GL_PACK_ALIGNMENT, &pack);
     dglPixelStorei(GL_PACK_ALIGNMENT, 1);
     dglFlush();
     dglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
     dglPixelStorei(GL_PACK_ALIGNMENT, pack);
-    
-    FlipVertical();
 }
 
 //
@@ -230,17 +226,15 @@ void kexImageManager::LoadFromScreenBuffer(void) {
 void kexImageManager::LoadFromFrameBuffer(kexFBO &fbo) {
     int pack;
     int col;
-    int width;
-    int height;
     
     origwidth   = fbo.Width();
     origheight  = fbo.Height();
     width       = origwidth;
     height      = origheight;
     col         = (width * 3);
-    data        = new byte[height * width * 3];
-    
     colorMode   = TCR_RGB;
+    
+    Alloc();
 
     fbo.Bind();
     
@@ -251,8 +245,6 @@ void kexImageManager::LoadFromFrameBuffer(kexFBO &fbo) {
     dglPixelStorei(GL_PACK_ALIGNMENT, pack);
 
     fbo.UnBind();
-    
-    FlipVertical();
 }
 
 //
