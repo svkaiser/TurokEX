@@ -683,7 +683,7 @@ void kexRenderWorld::TraverseDrawActorNode(const kexActor *actor,
 
         material = surface->material;
 
-        if(actor->DisplayType() == ODT_CLIENTVIEW) {
+        if(actor->DisplayType() == ODT_CLIENTVIEW || actor->DisplayType() == ODT_FOREGROUND) {
             sortOrder = MSO_RESERVED;
         }
         else if(material) {
@@ -1100,9 +1100,12 @@ void kexRenderWorld::DrawForegroundActors(void) {
             DrawSingleActor(actor, NULL);
     }
 
-    //renderer.DrawSurfaceList(bWireframe ?
-      //                       &kexRenderer::DrawWireFrameSurface :
-        //                     &kexRenderer::DrawSurface);
+    renderer.DrawSurfaceList(bWireframe ?
+                            &kexRenderer::DrawWireFrameSurface :
+                            &kexRenderer::DrawSurface,
+                            MSO_RESERVED, MSO_RESERVED+1);
+
+    renderer.ClearSurfaceList(MSO_RESERVED, MSO_RESERVED+1);
 
     DrawSun(false);
 
