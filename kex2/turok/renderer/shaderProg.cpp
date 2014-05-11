@@ -201,6 +201,18 @@ void kexShaderObj::SetUniform(const char *name, const int val) {
 // kexShaderObj::SetUniform
 //
 
+void kexShaderObj::SetUniform(const char *name, const int *val, const int size) {
+    int loc = dglGetUniformLocationARB(programObj, name);
+
+    if(loc != -1) {
+        dglUniform1ivARB(loc, size, val);
+    }
+}
+
+//
+// kexShaderObj::SetUniform
+//
+
 void kexShaderObj::SetUniform(const char *name, const float val) {
     int loc = dglGetUniformLocationARB(programObj, name);
 
@@ -230,6 +242,18 @@ void kexShaderObj::SetUniform(const char *name, kexVec3 &val) {
 
     if(loc != -1) {
         dglUniform3fvARB(loc, 1, val.ToFloatPtr());
+    }
+}
+
+//
+// kexShaderObj::SetUniform
+//
+
+void kexShaderObj::SetUniform(const char *name, kexVec3 *val, const int size) {
+    int loc = dglGetUniformLocationARB(programObj, name);
+
+    if(loc != -1) {
+        dglUniform3fvARB(loc, size, reinterpret_cast<float*>(&val[0].x));
     }
 }
 

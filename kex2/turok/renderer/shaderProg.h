@@ -83,9 +83,11 @@ public:
     void                        Enable(void);
     void                        Delete(void);
     void                        SetUniform(const char *name, const int val);
+    void                        SetUniform(const char *name, const int *val, const int size);
     void                        SetUniform(const char *name, const float val);
     void                        SetUniform(const char *name, kexVec2 &val);
     void                        SetUniform(const char *name, kexVec3 &val);
+    void                        SetUniform(const char *name, kexVec3 *val, const int size);
     void                        SetUniform(const char *name, kexVec4 &val);
     void                        SetUniform(const char *name, kexMatrix &val, bool bTranspose = false);
     void                        CommitGlobalUniforms(const kexMaterial *material = NULL);

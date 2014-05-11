@@ -316,6 +316,7 @@ void kexTexture::BindDepthBuffer(const bool bReadDepth) {
                       origheight,
                       0);
     SetParameters();
+    dglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 }
 
 //
