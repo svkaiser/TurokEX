@@ -188,7 +188,7 @@ void kexAI::Spawn(void) {
 
     physicsRef->sector = localWorld.CollisionMap().PointInSector(origin);
     if(physicsRef->sector) {
-        origin[1] -= (origin[1] - physicsRef->sector->lowerTri.GetDistance(origin));
+        //origin[1] -= (origin[1] - physicsRef->sector->lowerTri.GetDistance(origin));
     }
 
     UpdateTransform();

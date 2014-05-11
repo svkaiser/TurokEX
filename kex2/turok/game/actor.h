@@ -60,6 +60,7 @@ public:
     void                        SetModel(const kexStr &modelFile);
     void                        CreateComponent(const char *name);
     void                        PlayFootStepSound(void);
+    bool                        CallFunction(const kexStr &function, const frameAction_t *actions);
     void                        SetRotationOffset(const int node, const float angle,
                                                   const float x, const float y, const float z);
 

@@ -397,7 +397,7 @@ void kexAnimState::UpdateMotion(void) {
     dir = (rootMotion * owner->GetRotation()) * blendFrac;
 
     if(owner->InstanceOf(&kexAI::info)) {
-        owner->Physics()->velocity = dir;
+        owner->Physics()->velocity += dir;
     }
     else {
         org = &owner->GetOrigin();
@@ -592,7 +592,7 @@ void kexAnimState::ExecuteFrameActions(void) {
                         action->args[3]), false);
                 }
             }
-            else if(cvarDeveloper.GetBool()) {
+            else if(!owner->CallFunction(action->function, action)) {
                 common.DPrintf("kexAnimState::ExecuteFrameActions: Couldn't execute \"%s\":%i\n",
                     action->function, action->frame);
             }

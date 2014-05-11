@@ -604,6 +604,31 @@ void kexActor::OnTrigger(void) {
 }
 
 //
+// kexActor::CallFunction
+//
+
+bool kexActor::CallFunction(const kexStr &function, const frameAction_t *actions) {
+    int state;
+    kexActorComponent *ac = &scriptComponent;
+
+    state = ac->PrepareFunction(kexStr("void ") + function + "(const float, const float, const float)");
+    if(state == -1) {
+        return false;
+    }
+
+    ac->SetCallArgument(0, actions->args[1]);
+    ac->SetCallArgument(1, actions->args[2]);
+    ac->SetCallArgument(2, actions->args[3]);
+
+    if(!ac->ExecuteFunction(state)) {
+        return false;
+    }
+
+    ac->FinishFunction(state);
+    return true;
+}
+
+//
 // kexActor::OnDamage
 //
 
