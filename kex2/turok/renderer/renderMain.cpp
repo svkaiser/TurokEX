@@ -33,6 +33,7 @@
 #include "console.h"
 #include "gameManager.h"
 #include "renderUtils.h"
+#include "ai.h"
 
 kexCvar cvarRenderBloom("r_bloom", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 kexCvar cvarRenderBloomThreshold("r_bloomthreshold", CVF_FLOAT|CVF_CONFIG, "0.54", 0.01f, 1.0f, "TODO");
@@ -1078,6 +1079,7 @@ void kexRenderer::ProcessBloom(void) {
 
 void kexRenderer::DrawStats(void) {
     kexHeap::DrawHeapInfo();
+    kexAI::PrintDebugInfo();
     renderBackend.PrintStats();
     renderWorld.PrintStats();
 

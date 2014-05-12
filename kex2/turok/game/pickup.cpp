@@ -99,6 +99,13 @@ void kexPickup::Spawn(void) {
     bCanPickup = false;
     bNoFixedTransform = true;
 
+    if(definition != NULL) {
+        definition->GetBool("bRespawn", bRespawn);
+        definition->GetFloat("respawnTime", respawnTime, 4.0f);
+        definition->GetString("pickupSound", pickupSound);
+    }
+
+    // TODO: remove this
     args.GetString("pickupSound", pickupSound);
     args.GetBool("bRespawn", bRespawn);
     args.GetFloat("respawnTime", respawnTime);

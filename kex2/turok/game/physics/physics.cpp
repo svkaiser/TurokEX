@@ -427,20 +427,128 @@ float kexPhysics::GetWaterDepth(void) {
 //
 
 void kexPhysics::Think(const float timeDelta) {
+    traceInfo_t trace;
+    float       time;
+    float       massAmount;
+    float       currentMass;
+    float       radius;
+    float       height;
+    kexVec3     start;
+    kexVec3     gravity;
+
     if(!bEnabled) {
         return;
     }
-    // correct position
-    if(sector) {
-        kexVec3 org = owner->GetOrigin();
-        float dist = (org[1] - sector->lowerTri.GetDistance(org));
-        
-        if(dist < 0) {
-            owner->GetOrigin()[1] = org[1] - dist;
-        }
-        
-        groundGeom = &sector->lowerTri;
+
+    if(owner == NULL || timeDelta == 0) {
+        return;
     }
+    if(owner->bStatic == true) {
+        return;
+    }
+
+    // don't update on first two ticks
+    if(localWorld.GetTicks() <= 1) {
+        return;
+    }
+
+    if(velocity.UnitSq() <= 1 && OnGround()) {
+        velocity.Clear();
+        CorrectSectorPosition();
+        return;
+    }
+
+    currentMass = (bInWater && waterLevel >= WLT_BETWEEN) ? 0 : mass;
+    start       = owner->GetOrigin();
+    time        = timeDelta;
+    massAmount  = (currentMass * timeDelta);
+    radius      = owner->Radius();
+    height      = owner->Height();
+    gravity     = localWorld.GetGravity();
+
+    trace.owner = owner;
+    trace.bUseBBox = true;
+    trace.localBBox.min.Set(-(radius * 0.5f), 0, -(radius * 0.5f));
+    trace.localBBox.max.Set(radius * 0.5f, height, radius * 0.5f);
+    trace.bbox = trace.localBBox;
+    trace.bbox.min += start;
+    trace.bbox.max += start;
+    trace.sector = &sector;
+    // resize box to account for movement
+    trace.bbox *= (velocity * time);
+
+    trace.start = start;
+    trace.end = start + (gravity * mass);
+    trace.dir = gravity;
+
+    // need to determine if we're standing on the ground or not
+    localWorld.Trace(&trace, clipFlags);
+    if(trace.hitTri) {
+        groundGeom = trace.hitTri;
+        groundMesh = trace.hitMesh;
+    }
+
+    if(bInWater && waterLevel >= WLT_BETWEEN) {
+        bOnGround = false;
+
+        // slowly drift to the bottom
+        if(waterLevel == WLT_UNDER && sinkVelocity != 0) {
+            kexVec3 sinkVel = (-gravity * (GetWaterDepth() / timeDelta)) + velocity;
+            velocity = velocity.Lerp(sinkVel, -sinkVelocity * timeDelta);
+        }
+    }
+    else {
+        bOnGround = OnGround();
+
+        // handle freefall if not touching the ground
+        if(!bOnGround) {
+            velocity += (gravity * massAmount);
+        }
+        else {
+            ImpactVelocity(velocity, groundGeom->plane.Normal(), 1.024f);
+        }
+    }
+
+    for(int i = 0; i < 3; i++) {
+        start = owner->GetOrigin();
+
+        trace.start = start;
+        trace.end = start + (velocity * time);
+        trace.dir = (trace.end - trace.start).Normalize();
+
+        // trace through world
+        localWorld.Trace(&trace, clipFlags);
+        time -= (time * trace.fraction);
+
+        // project velocity
+        if(trace.fraction != 1) {
+            ImpactVelocity(velocity, trace.hitNormal, 1.024f);
+        }
+
+        if(sector) {
+            groundGeom = &sector->lowerTri;
+        }
+
+        // update origin
+        owner->SetOrigin(trace.hitVector - (trace.dir * 0.125f));
+        owner->LinkArea();
+
+        if(groundMesh) {
+            // fudge the origin if we're slightly clipping below the floor
+            trace.start = start - (gravity * (stepHeight * 0.5f));
+            trace.end = start;
+            localWorld.Trace(&trace, clipFlags);
+        
+            if(trace.fraction != 1 && !trace.hitActor) {
+                start = trace.hitVector - (gravity * 1.024f);
+                owner->SetOrigin(start);
+                owner->LinkArea();
+            }
+        }
+    }
+
+    ApplyFriction();
+    CorrectSectorPosition();
 }
 
 //
@@ -476,6 +584,7 @@ void kexPhysics::InitObject(void) {
         str,                                        \
         asOFFSET(kexPhysics, p))
 
+    OBJPROPERTY("bool bEnabled", bEnabled);
     OBJPROPERTY("bool bRotor", bRotor);
     OBJPROPERTY("bool bOrientOnSlope", bOrientOnSlope);
     OBJPROPERTY("float friction", friction);

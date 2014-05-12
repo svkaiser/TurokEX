@@ -108,6 +108,8 @@ public:
             (const kexStr &str, float x, float y, float z), void);
         OBJMETHOD("void SetRotationOffset(const int, const float, const float, const float, const float)",
             SetRotationOffset, (const int, const float, const float, const float, const float), void);
+        OBJMETHOD("kVec3 ToLocalOrigin(const float, const float, const float)",
+            ToLocalOrigin, (const float x, const float y, const float z), kexVec3);
 
     #define OBJPROPERTY(str, p)                         \
         scriptManager.Engine()->RegisterObjectProperty( \

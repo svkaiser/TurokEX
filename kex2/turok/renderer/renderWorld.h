@@ -84,6 +84,7 @@ private:
     void                        DrawSectors(kexSector *sectors, const int count);
     void                        DrawTriangle(const kexTri &tri, const word index,
                                              byte r, byte g, byte b, byte a);
+    void                        DebugObjects(void);
 
     kexWorld                    *world;
     kexVec3                     worldLightTransform;

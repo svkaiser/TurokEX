@@ -37,6 +37,7 @@
 #include "world.h"
 #include "renderBackend.h"
 #include "renderMain.h"
+#include "ai.h"
 
 kexGameManager gameManager;
 
@@ -186,6 +187,8 @@ void kexGameManager::InitGame(void) {
     }
 
     Construct(gameClass.c_str());
+
+    kexAI::Init();
 }
 
 //

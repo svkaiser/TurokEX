@@ -29,8 +29,64 @@
 #include "binFile.h"
 #include "world.h"
 #include "gameManager.h"
+#include "renderUtils.h"
 
 DECLARE_CLASS(kexAI, kexActor)
+
+//
+// FCmd_DebugAI
+//
+
+static void FCmd_DebugAI(void) {
+    traceInfo_t trace;
+    kexSector *sector;
+    kexVec3 start;
+    kexVec3 end;
+
+    if(command.GetArgc() < 1) {
+        return;
+    }
+
+    start = localWorld.Camera()->GetOrigin();
+    end = start + (localWorld.Camera()->GetAngles().ToForwardAxis() * 2048.0f);
+    sector = NULL;
+
+    kexAI::debugAI = NULL;
+
+    if(localWorld.CollisionMap().IsLoaded()) {
+        sector = localWorld.CollisionMap().PointInSector(start);
+    }
+
+    trace.start     = start;
+    trace.end       = end;
+    trace.dir       = (trace.end - trace.start).Normalize();
+    trace.fraction  = 1.0f;
+    trace.hitActor  = NULL;
+    trace.hitTri    = NULL;
+    trace.hitMesh   = NULL;
+    trace.hitVector = trace.start;
+    trace.owner     = NULL;
+    trace.sector    = &sector;
+    trace.bUseBBox  = true;
+
+    trace.localBBox.min.Set(-200, -200, -200);
+    trace.localBBox.max.Set(200, 200, 200);
+
+    trace.bbox = trace.localBBox;
+
+    trace.bbox.min += trace.start;
+    trace.bbox.max += trace.start;
+    
+    localWorld.Trace(&trace);
+
+    if(trace.hitActor) {
+        if(trace.hitActor->InstanceOf(&kexAI::info)) {
+            kexAI::debugAI = static_cast<kexAI*>(trace.hitActor);
+        }
+    }
+}
+
+kexAI *kexAI::debugAI = NULL;
 
 //
 // kexAI::kexAI
@@ -54,8 +110,8 @@ kexAI::kexAI(void) {
     this->bAnimTurning          = false;
     this->attackThreshold       = 0;
     this->sightThreshold        = 0;
-    this->maxThreshold          = 100.0f;
-    this->attackThresholdTime   = 15.0f;
+    this->maxThreshold          = 100;
+    this->attackThresholdTime   = 15;
     this->checkRadius           = 1.5f;
     this->meleeRange            = 0;
     this->alertRange            = 184.25f;
@@ -77,6 +133,14 @@ kexAI::kexAI(void) {
 //
 
 kexAI::~kexAI(void) {
+}
+
+//
+// kexAI::Init
+//
+
+void kexAI::Init(void) {
+    command.Add("aidebug", FCmd_DebugAI);
 }
 
 //
@@ -106,9 +170,6 @@ void kexAI::LocalTick(void) {
     if(aiFlags & AIF_TURNING) {
         Turn();
     }
-    if(aiFlags & AIF_DORMANT) {
-        return;
-    }
 
     AnimStopped();
 
@@ -127,6 +188,10 @@ void kexAI::LocalTick(void) {
         else {
             WakeUp();
         }
+    }
+
+    if(aiFlags & AIF_DORMANT) {
+        return;
     }
     
     FindTargets();
@@ -171,13 +236,13 @@ void kexAI::Spawn(void) {
         definition->GetFloat("alertRange", alertRange);
         definition->GetFloat("rangeDistance", rangeDistance, 1024.0f);
         definition->GetFloat("checkRadius", checkRadius, 1.5f);
-        definition->GetFloat("maxThreshold", maxThreshold, 100.0f);
         definition->GetFloat("sightRange", sightRange, DEG2RAD(45));
         definition->GetFloat("rangeSightDamp", rangeSightDamp, 0.675f);
         definition->GetFloat("rangeAdjustAngle", rangeAdjustAngle, DEG2RAD(50));
         definition->GetFloat("yawSpeed", yawSpeed, 2.0f);
         definition->GetFloat("thinkTime", thinkTime, 8);
         definition->GetFloat("maxHeadAngle", maxHeadAngle, DEG2RAD(70));
+        definition->GetInt("maxThreshold", maxThreshold, 100);
         definition->GetInt("giveUpChance", giveUpChance, 995);
         definition->GetInt("teleportChance", teleportChance, 985);
         definition->GetInt("rangeChance", rangeChance, 100);
@@ -187,9 +252,6 @@ void kexAI::Spawn(void) {
     }
 
     physicsRef->sector = localWorld.CollisionMap().PointInSector(origin);
-    if(physicsRef->sector) {
-        //origin[1] -= (origin[1] - physicsRef->sector->lowerTri.GetDistance(origin));
-    }
 
     UpdateTransform();
     ChangeState(AIS_IDLE);
@@ -252,7 +314,6 @@ void kexAI::GoDormant(void) {
     if(state == -1) {
         return;
     }
-
     if(!scriptComponent.ExecuteFunction(state)) {
         return;
     }
@@ -277,7 +338,25 @@ void kexAI::WakeUp(void) {
     if(state == -1) {
         return;
     }
+    if(!scriptComponent.ExecuteFunction(state)) {
+        return;
+    }
 
+    scriptComponent.FinishFunction(state);
+}
+
+//
+// kexAI::FoundTarget
+//
+
+void kexAI::FoundTarget(void) {
+    int state;
+    
+    state = scriptComponent.PrepareFunction("void OnTargetFound(void)");
+
+    if(state == -1) {
+        return;
+    }
     if(!scriptComponent.ExecuteFunction(state)) {
         return;
     }
@@ -1023,6 +1102,8 @@ void kexAI::FindTargets(void) {
         if(target == NULL && !(aiFlags & AIF_HASTARGET)) {
             SetTarget(gameManager.localPlayer.Puppet());
             aiFlags |= AIF_HASTARGET;
+
+            FoundTarget();
         }
     }
 }
@@ -1064,4 +1145,75 @@ void kexAI::InitObject(void) {
     scriptManager.Engine()->RegisterEnumValue("EnumAIState", "AIS_SPAWNING", AIS_SPAWNING);
     scriptManager.Engine()->RegisterEnumValue("EnumAIState", "AIS_TELEPORT_OUT", AIS_TELEPORT_OUT);
     scriptManager.Engine()->RegisterEnumValue("EnumAIState", "AIS_TELEPORT_IN", AIS_TELEPORT_IN);
+}
+
+//
+// kexAI::PrintDebugInfo
+//
+
+void kexAI::PrintDebugInfo(void) {
+    if(kexAI::debugAI == NULL) {
+        return;
+    }
+
+    kexAI *ai = kexAI::debugAI;
+
+    if(ai->IsStale() || ai->Removing()) {
+        kexAI::debugAI = NULL;
+        return;
+    }
+
+    kexRenderUtils::PrintStatsText("ai debug info", "");
+    kexRenderUtils::AddDebugLineSpacing();
+    switch(ai->GetAIState()) {
+        case AIS_NONE:
+            kexRenderUtils::PrintStatsText("ai state", ": none");
+            break;
+        case AIS_IDLE:
+            kexRenderUtils::PrintStatsText("ai state", ": idle");
+            break;
+        case AIS_CALM:
+            kexRenderUtils::PrintStatsText("ai state", ": calm");
+            break;
+        case AIS_ALERT:
+            kexRenderUtils::PrintStatsText("ai state", ": alert");
+            break;
+        case AIS_ATTACK_MELEE:
+            kexRenderUtils::PrintStatsText("ai state", ": attack melee");
+            break;
+        case AIS_ATTACK_RANGE:
+            kexRenderUtils::PrintStatsText("ai state", ": attack range");
+            break;
+        case AIS_DEATH:
+            kexRenderUtils::PrintStatsText("ai state", ": death");
+            break;
+        case AIS_SPAWNING:
+            kexRenderUtils::PrintStatsText("ai state", ": spawning");
+            break;
+        case AIS_TELEPORT_OUT:
+            kexRenderUtils::PrintStatsText("ai state", ": teleport in");
+            break;
+        case AIS_TELEPORT_IN:
+            kexRenderUtils::PrintStatsText("ai state", ": teleport out");
+            break;
+    }
+    kexRenderUtils::PrintStatsText("turning", ": %i", (ai->GetAIFlags() & AIF_TURNING) != 0);
+    kexRenderUtils::PrintStatsText("dormant", ": %i", (ai->GetAIFlags() & AIF_DORMANT) != 0);
+    kexRenderUtils::PrintStatsText("see target", ": %i", (ai->GetAIFlags() & AIF_SEETARGET) != 0);
+    kexRenderUtils::PrintStatsText("has target", ": %i", (ai->GetAIFlags() & AIF_HASTARGET) != 0);
+    kexRenderUtils::PrintStatsText("find target", ": %i", (ai->GetAIFlags() & AIF_FINDTARGET) != 0);
+    kexRenderUtils::PrintStatsText("avoid walls", ": %i", (ai->GetAIFlags() & AIF_AVOIDWALLS) != 0);
+    kexRenderUtils::PrintStatsText("avoid actors", ": %i", (ai->GetAIFlags() & AIF_AVOIDACTORS) != 0);
+    kexRenderUtils::PrintStatsText("disabled", ": %i", (ai->GetAIFlags() & AIF_DISABLED) != 0);
+    kexRenderUtils::PrintStatsText("look at target", ": %i", (ai->GetAIFlags() & AIF_LOOKATTARGET) != 0);
+    kexRenderUtils::PrintStatsText("face target", ": %i", (ai->GetAIFlags() & AIF_FACETARGET) != 0);
+    kexRenderUtils::PrintStatsText("think time", ": %f", ai->ThinkTime());
+    kexRenderUtils::PrintStatsText("next think time", ": %f", ai->NextThinkTime());
+    kexRenderUtils::PrintStatsText("is attacking", ": %i", ai->IsAttacking());
+    kexRenderUtils::PrintStatsText("is anim turning", ": %i", ai->IsAnimTurning());
+    kexRenderUtils::PrintStatsText("attack threshold", ": %i", ai->AttackThreshold());
+    kexRenderUtils::PrintStatsText("sight threshold", ": %i", ai->SightThreshold());
+    kexRenderUtils::PrintStatsText("attack threshold time", ": %i", ai->AttackThresholdTime());
+    kexRenderUtils::PrintStatsText("activeDistance", ": %f", ai->ActiveDistance());
+    kexRenderUtils::AddDebugLineSpacing();
 }

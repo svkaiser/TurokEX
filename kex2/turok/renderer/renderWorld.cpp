@@ -36,6 +36,7 @@
 #include "gameManager.h"
 #include "worldModel.h"
 #include "renderUtils.h"
+#include "ai.h"
 
 extern kexCvar cvarRenderLightScatter;
 extern kexCvar cvarRenderNodeOcclusionQueries;
@@ -340,6 +341,8 @@ void kexRenderWorld::RenderScene(void) {
 
     renderer.ClearSurfaceList();
     PreProcessOcclusionQueries();
+
+    DebugObjects();
 
     if(showAreaNode >= 0 || bShowRenderNodes) {
         renderBackend.SetState(GLSTATE_DEPTHTEST, false);
@@ -848,21 +851,6 @@ void kexRenderWorld::RecursiveSDNode(int nodenum) {
         }
 
         DrawWorldModel(wm);
-        
-        if(bShowBBox) {
-            if(wm->bTraced) {
-                kexRenderUtils::DrawBoundingBox(wm->Bounds(), 255, 0, 0);
-                wm->bTraced = false;
-            }
-            else {
-                kexRenderUtils::DrawBoundingBox(wm->Bounds(), 255, 255, 0);
-            }
-        }
-        if(bShowRadius && wm->bCollision) {
-            kexVec3 org = wm->GetOrigin();
-            kexRenderUtils::DrawRadius(org[0], org[1], org[2],
-                                       wm->Radius(), wm->Height(), 255, 128, 128);
-        }
     }
     
     if(bPrintStats) {
@@ -904,10 +892,6 @@ void kexRenderWorld::DrawSingleActor(kexActor *actor, kexMatrix *matrix) {
     if(actor->Model()) {
         curMatrix = actor->Matrix();
 
-        if(bShowOrigin) {
-            kexRenderUtils::DrawOrigin(0, 0, 0, 32);
-        }
-
         if(actor->bNoFixedTransform == false && matrix) {
             curMatrix = *matrix * curMatrix;
         }
@@ -917,28 +901,6 @@ void kexRenderWorld::DrawSingleActor(kexActor *actor, kexMatrix *matrix) {
         if(bPrintStats) {
             numDrawnActors++;
         }
-    }
-
-    if(bShowBBox) {
-        if(actor->bTraced) {
-            kexRenderUtils::DrawBoundingBox(actor->Bounds(), 255, 0, 0);
-            actor->bTraced = false;
-        }
-        else {
-            kexRenderUtils::DrawBoundingBox(actor->Bounds(),
-                actor->bTouch ? 0 : 255,
-                actor->bTouch ? 255 : 128,
-                actor->bTouch ? 0 : 128);
-        }
-    }
-    if(bShowRadius && actor->bCollision) {
-        kexVec3 org = actor->GetOrigin();
-        kexRenderUtils::DrawRadius(org[0], org[1], org[2],
-            actor->Radius(), actor->BaseHeight(), 255, 128, 128);
-        kexRenderUtils::DrawRadius(org[0], org[1], org[2],
-            actor->Radius() * 0.5f, actor->Height(), 128, 128, 255);
-        kexRenderUtils::DrawRadius(org[0], org[1], org[2],
-            actor->Radius() * 0.5f, actor->GetViewHeight(), 128, 255, 128);
     }
 }
 
@@ -1212,6 +1174,68 @@ void kexRenderWorld::PrintStats(void) {
     kexRenderUtils::PrintStatsText("occluded actors", ": %i", numOccludedActors);
     kexRenderUtils::PrintStatsText("actor query size", ": %i", actorQueries.Length());
     kexRenderUtils::AddDebugLineSpacing();
+}
+
+//
+// kexRenderWorld::DebugObjects
+//
+
+void kexRenderWorld::DebugObjects(void) {
+    if(kexAI::debugAI) {
+        kexRenderUtils::DrawBoundingBox(kexAI::debugAI->Bounds(), 255, 0, 255);
+    }
+
+    if(!bShowBBox && !bShowRadius && !bShowOrigin) {
+        return;
+    }
+
+    for(kexWorldModel *wm = world->staticActors.Next(); wm != NULL; wm = wm->worldLink.Next()) {
+        if(bShowBBox) {
+            if(wm->bTraced) {
+                kexRenderUtils::DrawBoundingBox(wm->Bounds(), 255, 0, 0);
+                wm->bTraced = false;
+            }
+            else {
+                kexRenderUtils::DrawBoundingBox(wm->Bounds(), 255, 255, 0);
+            }
+        }
+        if(bShowRadius && wm->bCollision) {
+            kexVec3 org = wm->GetOrigin();
+            kexRenderUtils::DrawRadius(org[0], org[1], org[2],
+                                       wm->Radius(), wm->Height(), 255, 128, 128);
+        }
+    }
+
+    for(kexActor *actor = world->actors.Next();
+        actor != NULL; actor = actor->worldLink.Next()) {
+            if(bShowOrigin) {
+                kexRenderUtils::DrawOrigin(actor->GetOrigin().x,
+                                           actor->GetOrigin().y,
+                                           actor->GetOrigin().z, 32);
+            }
+
+            if(bShowBBox) {
+                if(actor->bTraced) {
+                    kexRenderUtils::DrawBoundingBox(actor->Bounds(), 255, 0, 0);
+                    actor->bTraced = false;
+                }
+                else {
+                    kexRenderUtils::DrawBoundingBox(actor->Bounds(),
+                        actor->bTouch ? 0 : 255,
+                        actor->bTouch ? 255 : 128,
+                        actor->bTouch ? 0 : 128);
+                }
+            }
+            if(bShowRadius && actor->bCollision) {
+                kexVec3 org = actor->GetOrigin();
+                kexRenderUtils::DrawRadius(org[0], org[1], org[2],
+                    actor->Radius(), actor->BaseHeight(), 255, 128, 128);
+                kexRenderUtils::DrawRadius(org[0], org[1], org[2],
+                    actor->Radius() * 0.5f, actor->Height(), 128, 128, 255);
+                kexRenderUtils::DrawRadius(org[0], org[1], org[2],
+                    actor->Radius() * 0.5f, actor->GetViewHeight(), 128, 255, 128);
+            }
+    }
 }
 
 //
