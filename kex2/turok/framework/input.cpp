@@ -153,6 +153,9 @@ void kexInput::GetEvent(const SDL_Event *Event) {
     
     switch(Event->type) {
         case SDL_KEYDOWN:
+            if(Event->key.repeat) {
+                break;
+            }
             event.type = ev_keydown;
             event.data1 = Event->key.keysym.sym;
             client.PostEvent(&event);
