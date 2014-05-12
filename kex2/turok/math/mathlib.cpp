@@ -213,6 +213,10 @@ void kexMath::InitObject(void) {
         asMETHODPR(kexVec3, Clear, (void), void), asCALL_THISCALL);
     scriptManager.Engine()->RegisterObjectMethod("kVec3", "void Set(const float, const float, const float)",
         asMETHODPR(kexVec3, Set, (const float, const float, const float), void), asCALL_THISCALL);
+    scriptManager.Engine()->RegisterObjectMethod("kVec3", "kVec3 Lerp(const kVec3 &in, const float) const",
+        asMETHODPR(kexVec3, Lerp, (const kexVec3 &next, const float movement) const, kexVec3), asCALL_THISCALL);
+    scriptManager.Engine()->RegisterObjectMethod("kVec3", "kVec3 &Lerp(const kVec3 &in, const float)",
+        asMETHODPR(kexVec3, Lerp, (const kexVec3 &next, const float movement), kexVec3&), asCALL_THISCALL);
     scriptManager.Engine()->RegisterObjectMethod("kVec3", "kVec3 opAdd(const kVec3 &in)",
         asMETHODPR(kexVec3, operator+, (const kexVec3&), kexVec3), asCALL_THISCALL);
     scriptManager.Engine()->RegisterObjectMethod("kVec3", "kVec3 opNeg(void)",

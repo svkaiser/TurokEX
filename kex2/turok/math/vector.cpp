@@ -575,7 +575,7 @@ kexVec3 kexVec3::PointAt(kexVec3 &location) const {
 // kexVec3::Lerp
 //
 
-kexVec3 kexVec3::Lerp(const kexVec3 &next, float movement) const {
+kexVec3 kexVec3::Lerp(const kexVec3 &next, const float movement) const {
     return (next - *this) * movement + *this;
 }
 
@@ -583,7 +583,16 @@ kexVec3 kexVec3::Lerp(const kexVec3 &next, float movement) const {
 // kexVec3::Lerp
 //
 
-kexVec3 &kexVec3::Lerp(const kexVec3 &start, const kexVec3 &next, float movement) {
+kexVec3 &kexVec3::Lerp(const kexVec3 &next, const float movement) {
+    *this = (next - *this) * movement + *this;
+    return *this;
+}
+
+//
+// kexVec3::Lerp
+//
+
+kexVec3 &kexVec3::Lerp(const kexVec3 &start, const kexVec3 &next, const float movement) {
     *this = (next - start) * movement + start;
     return *this;
 }

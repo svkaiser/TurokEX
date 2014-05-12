@@ -206,8 +206,9 @@ public:
     float                   Distance(const kexVec3 &vec) const;
     kexVec3                 &Normalize(void);
     kexVec3                 PointAt(kexVec3 &location) const;
-    kexVec3                 Lerp(const kexVec3 &next, float movement) const;
-    kexVec3                 &Lerp(const kexVec3 &start, const kexVec3 &next, float movement);
+    kexVec3                 Lerp(const kexVec3 &next, const float movement) const;
+    kexVec3                 &Lerp(const kexVec3 &next, const float movement);
+    kexVec3                 &Lerp(const kexVec3 &start, const kexVec3 &next, const float movement);
     kexQuat                 ToQuat(void);
     float                   ToYaw(void) const;
     float                   ToPitch(void) const;
