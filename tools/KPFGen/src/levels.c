@@ -306,6 +306,7 @@ static int numattributes;
 static byte decode_buffer[0x40000];
 static int actorTally = 0;
 static int levelID = 0;
+static dboolean hasSky = false;
 
 static byte lightheader_table1[0x40];
 static byte lightheader_table2[0x40];
@@ -1182,6 +1183,12 @@ static void ProcessAreas(byte *buffer, byte *data)
             WRITEAREAKEY("waterlevel", va("%f", area->waterheight));
         }
 
+        if(area->flags & AAF_DRAWSKY)
+        {
+            WRITEAREAKEY("bSky", "1");
+            WRITEAREAKEY("skyYPlane", va("%f", area->skyheight));
+        }
+
         if(area->flags & AAF_EVENT)
         {
             WRITEAREAKEY("bTrigger", "1");
@@ -1972,6 +1979,21 @@ static void ProcessActors(byte *data)
         }
 
         Com_UpdateDataProgress();
+    }
+
+    if(hasSky)
+    {
+        Com_Strcat("actor \"kexActor\"\n");
+        Com_Strcat("{\n");
+        Com_Strcat("origin { 0 0 0 }\n");
+        Com_Strcat("scale { 1 1 1 }\n");
+        Com_Strcat("angles { 0.0 0.0 0.0 }\n");
+        Com_Strcat("bStatic 0\n");
+        Com_Strcat("mesh \"models/sky1.kmesh\"\n");
+        Com_Strcat("bounds { -32768.0 -32768.0 -32768.0 } { 32768.0 32768.0 32768.0 }\n");
+        Com_Strcat("name \"levelsky1\"\n");
+        Com_Strcat("component \"TurokSky\"\n");
+        Com_Strcat("}\n\n");
     }
 }
 #endif
@@ -3196,11 +3218,21 @@ static void ProcessSkyTexture(byte *data, int index)
     byte *texture;
     int size;
     int outsize;
+    int *temp;
 
     rncdata = Com_GetCartData(data, CHUNK_LVROOT_SKYTEXTURE, &size);
     texture = RNC_ParseFile(rncdata, size, &outsize);
 
-    AddTexture(texture, outsize, va("maps/map%02d/mapsky%02d", index, index));
+    temp = (int*)texture;
+
+    if(*temp == 0)
+        hasSky = false;
+    else
+    {
+        hasSky = true;
+        AddTexture(texture, outsize, va("maps/map%02d/mapsky%02d", index, index));
+    }
+
     Com_Free(&texture);
 }
 
@@ -3320,9 +3352,9 @@ static void AddLevel(byte *data, int index)
 
     level = Com_GetCartData(data, CHUNK_LEVEL_OFFSET(index), 0);
 
+    ProcessSkyTexture(level, index);
     ProcessNavigation(level, index);
     ProcessLevel(level, index);
-    ProcessSkyTexture(level, index);
 }
 
 //

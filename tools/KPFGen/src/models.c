@@ -1535,40 +1535,40 @@ char *GetActionName(int id, float arg0)
         sprintf(actionName, "fireWeapon");
         break;
     case 31:
-        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntVeryWimpy\"");
+        sprintf(actionName, "4 \"defs/damage.def@MeleeBluntVeryWimpy\"");
         break;
     case 32:
-        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntWimpy\"");
+        sprintf(actionName, "4 \"defs/damage.def@MeleeBluntWimpy\"");
         break;
     case 33:
-        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntWeak\"");
+        sprintf(actionName, "4 \"defs/damage.def@MeleeBluntWeak\"");
         break;
     case 34:
-        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBlunt\"");
+        sprintf(actionName, "4 \"defs/damage.def@MeleeBlunt\"");
         break;
     case 35:
-        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntStrong\"");
+        sprintf(actionName, "4 \"defs/damage.def@MeleeBluntStrong\"");
         break;
     case 36:
-        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntVeryStrong\"");
+        sprintf(actionName, "4 \"defs/damage.def@MeleeBluntVeryStrong\"");
         break;
     case 37:
-        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntHeavy\"");
+        sprintf(actionName, "4 \"defs/damage.def@MeleeBluntHeavy\"");
         break;
     case 38:
-        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntVeryHeavy\"");
+        sprintf(actionName, "4 \"defs/damage.def@MeleeBluntVeryHeavy\"");
         break;
     case 39:
-        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntFatal\"");
+        sprintf(actionName, "4 \"defs/damage.def@MeleeBluntFatal\"");
         break;
     case 40:
-        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntVeryFatal\"");
+        sprintf(actionName, "4 \"defs/damage.def@MeleeBluntVeryFatal\"");
         break;
     case 41:
-        sprintf(actionName, "\"rangeDamage\" \"defs/damage.def@MeleeBluntDeathBlow\"");
+        sprintf(actionName, "4 \"defs/damage.def@MeleeBluntDeathBlow\"");
         break;
-    case 44:
-        sprintf(actionName, "footstepPuff");
+    case 44: // footstepPuff
+        sprintf(actionName, "7");
         break;
     case 46:
         sprintf(actionName, "alertScream");
@@ -1579,8 +1579,8 @@ char *GetActionName(int id, float arg0)
     case 53:
         sprintf(actionName, "deathScream");
         break;
-    case 55:
-        sprintf(actionName, "footstepSound");
+    case 55: // footstepSound
+        sprintf(actionName, "3");
         break;
     case 56:
         sprintf(actionName, "injuryScream");
@@ -1606,17 +1606,17 @@ char *GetActionName(int id, float arg0)
     case 160:
         sprintf(actionName, "shockwaveDamage");
         break;
-    case 232:
-        sprintf(actionName, "unblockSector");
+    case 232: // unblockSector
+        sprintf(actionName, "5");
         break;
-    case 233:
-        sprintf(actionName, "blockSector");
+    case 233: // blockSector
+        sprintf(actionName, "6");
         break;
     case 238:
         sprintf(actionName, "spawnItem");
         break;
-    case 248:
-        sprintf(actionName, "\"playSound\" \"sounds/shaders/%s.ksnd\"",
+    case 248: // play sound
+        sprintf(actionName, "2 \"sounds/shaders/%s.ksnd\"",
             sndfxnames[(int)arg0]);
         break;
     case 273:
@@ -1706,8 +1706,8 @@ char *GetActionName(int id, float arg0)
     case 463:
         sprintf(actionName, "demonProjectile");
         break;
-    case 407:
-        sprintf(actionName, "removeSelf");
+    case 407: // removeSelf
+        sprintf(actionName, "8");
         break;
     case 471:
         sprintf(actionName, "veryWimpyAcidDamage");
@@ -1728,13 +1728,14 @@ static char *GetActionFunction(factions_t *action)
 {
     int fx = CheckIfFXEvent(action->type);
 
+    // handle common actions first
     if(fx != -1)
     {
         char name[256];
 
         FX_GetName(fx, name);
 
-        return va("\"fx\" \"%s\" %f %f %f 0",
+        return va("1 \"%s\" %f %f %f 0",
             name, action->args[1],
             action->args[2], action->args[3]);
     }
@@ -1755,14 +1756,23 @@ static char *GetActionFunction(factions_t *action)
         return va("%s %f %f %f %f",
             GetActionName(action->type, action->args[0]),
             action->args[0]*10.24f, action->args[1], action->args[2], action->args[3]);
+    case 44:
+    case 55:
+    case 232:
+    case 233:
+    case 407:
+        return va("%s %f %f %f %f 0",
+            GetActionName(action->type, action->args[0]),
+            action->args[0], action->args[1], action->args[2], action->args[3]);
 
     case 248:
         return va("%s %f %f %f 0",
             GetActionName(action->type, action->args[0]),
             action->args[1], action->args[2], action->args[3]);
 
+        // everything else will be regarded as script-only actions
     default:
-        return va("\"%s\" %f %f %f %f 0",
+        return va("900 \"%s\" %f %f %f %f",
             GetActionName(action->type, action->args[0]),
             action->args[0], action->args[1], action->args[2], action->args[3]);
     }
