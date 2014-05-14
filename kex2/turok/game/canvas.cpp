@@ -32,6 +32,46 @@
 #include "system.h"
 #include "scriptAPI/scriptSystem.h"
 
+//
+// kexCanvasComponent::kexCanvasComponent
+//
+
+kexCanvasComponent::kexCanvasComponent(void) {
+    this->onUpdate = NULL;
+    this->onInit = NULL;
+}
+
+//
+// kexCanvasComponent::~kexCanvasComponent
+//
+
+kexCanvasComponent::~kexCanvasComponent(void) {
+}
+
+//
+// kexCanvasComponent::Init
+//
+
+void kexCanvasComponent::Init(void) {
+    scriptManager.Engine()->RegisterInterface("CanvasComponent");
+    scriptManager.Engine()->RegisterInterfaceMethod("CanvasComponent", "void OnUpdate(void)");
+    scriptManager.Engine()->RegisterInterfaceMethod("CanvasComponent", "void OnInit(void)");
+}
+
+//
+// kexCanvasComponent::Construct
+//
+
+void kexCanvasComponent::Construct(const char *className) {
+    if(!Spawn(className)) {
+        return;
+    }
+    
+    CallConstructor((kexStr(className) + " @" + className + "(kCanvasScriptObject@)").c_str());
+    onUpdate = type->GetMethodByDecl("void OnUpdate(void)");
+    onInit = type->GetMethodByDecl("void OnInit(void)");
+}
+
 //-----------------------------------------------------------------------------
 //
 // kexCanvasObject
@@ -230,6 +270,127 @@ void kexCanvasImage::Draw(void) {
 
 //-----------------------------------------------------------------------------
 //
+// kexCanvasScriptObject
+//
+//-----------------------------------------------------------------------------
+
+DECLARE_CLASS(kexCanvasScriptObject, kexCanvasObject)
+
+//
+// kexCanvasScriptObject::kexCanvasScriptObject
+//
+
+kexCanvasScriptObject::kexCanvasScriptObject(void) {
+    this->component.SetOwner(this);
+}
+
+//
+// kexCanvasScriptObject::~kexCanvasScriptObject
+//
+
+kexCanvasScriptObject::~kexCanvasScriptObject(void) {
+    if(component.ScriptObject() != NULL) {
+        component.Release();
+    }
+}
+
+//
+// kexCanvasScriptObject::Draw
+//
+
+void kexCanvasScriptObject::Draw(void) {
+    container.Draw();
+    
+    if(component.onUpdate) {
+        component.CallFunction(component.onUpdate);
+    }
+}
+
+//
+// kexCanvasScriptObject::SetProperty
+//
+
+void kexCanvasScriptObject::SetProperty(const char *name, const char *value) {
+    bool ok = false;
+    int state;
+    kexStr decl;
+    int type = -1;
+    int intVal = 0;
+    
+    
+    if(name == NULL || value == NULL) {
+        return;
+    }
+    
+    decl = "void Set_";
+    
+    if(value[0] >= '0' && value[0] <= '9') {
+        if(kexStr::IndexOf(value, ".") != -1) {
+            decl = decl + name + "(const float)";
+            type = 0;
+        }
+        else {
+            decl = decl + name + "(const int)";
+            type = 1;
+        }
+    }
+    else if(value[0] == '#') {
+        char *hex = (char*)(value+1);
+        
+        decl = decl + name + "(const int)";
+        type = 2;
+        
+        intVal = strtol(hex, &hex, 16);
+    }
+    else if(kexStr::CompareCase(value, "false")) {
+        type = 3;
+    }
+    else if(kexStr::CompareCase(value, "true")) {
+        type = 4;
+    }
+    
+    if(type == -1) {
+        return;
+    }
+    
+    state = component.PrepareFunction(decl.c_str());
+    if(state == -1) {
+        return;
+    }
+    
+    switch(type) {
+        case 0:
+            component.SetCallArgument(0, (float)atof(value));
+            break;
+        case 1:
+            component.SetCallArgument(0, atoi(value));
+            break;
+        case 2:
+            component.SetCallArgument(0, intVal);
+            break;
+        case 3:
+            component.SetCallArgument(0, false);
+            break;
+        case 4:
+            component.SetCallArgument(0, true);
+            break;
+        default:
+            return;
+    }
+    
+    if(!component.ExecuteFunction(state)) {
+        return;
+    }
+    
+    component.FinishFunction(state, &ok);
+    
+    if(ok == false) {
+        return;
+    }
+}
+
+//-----------------------------------------------------------------------------
+//
 // kexCanvasText
 //
 //-----------------------------------------------------------------------------
@@ -337,6 +498,7 @@ kexContainer::kexContainer(void) {
 //
 
 kexContainer::~kexContainer(void) {
+    Empty();
 }
 
 //
@@ -472,6 +634,27 @@ kexContainer *kexCanvas::CreateContainer(void) {
     container->mainLink.Add(objects);
 
     return container;
+}
+
+//
+// kexCanvas::CreateScriptObject
+//
+
+kexCanvasScriptObject *kexCanvas::CreateScriptObject(const char *className) {
+    kexCanvasScriptObject *cso = static_cast<kexCanvasScriptObject*>
+    (kexObject::Create("kexCanvasScriptObject"));
+    
+    cso->link.Clear();
+    cso->mainLink.Clear();
+    cso->mainLink.Add(objects);
+    
+    cso->component.Construct(className);
+    if(cso->component.ScriptObject() == NULL) {
+        delete cso;
+        return NULL;
+    }
+    
+    return cso;
 }
 
 //
@@ -619,26 +802,32 @@ static void RegisterContainerChildMethods(const char *name) {
 //
 
 void kexCanvas::InitObject(void) {
+    kexCanvasComponent::Init();
     kexScriptManager::RegisterDataObject<kexCanvas>("kCanvas");
+    
     RegisterCanvasObject<kexCanvasImage>("kCanvasImage");
     RegisterCanvasObject<kexCanvasText>("kCanvasText");
     RegisterCanvasObject<kexContainer>("kCanvasContainer");
+    RegisterCanvasObject<kexCanvasScriptObject>("kCanvasScriptObject");
 
     scriptManager.Engine()->RegisterObjectMethod(
         "kCanvas",
         "kCanvasImage @CreateImage(const kStr &in)",
         asMETHODPR(kexCanvas, CreateImage, (const kexStr&), kexCanvasImage*),
         asCALL_THISCALL);
+    
     scriptManager.Engine()->RegisterObjectMethod(
         "kCanvas",
         "kCanvasContainer @CreateContainer(void)",
         asMETHODPR(kexCanvas, CreateContainer, (void), kexContainer*),
         asCALL_THISCALL);
+    
     scriptManager.Engine()->RegisterObjectMethod(
         "kCanvas",
         "kCanvasText @CreateText(const kStr &in)",
         asMETHODPR(kexCanvas, CreateText, (const kexStr&), kexCanvasText*),
         asCALL_THISCALL);
+    
     scriptManager.Engine()->RegisterObjectMethod(
         "kCanvas",
         "kCanvasImage @opIndex(const int)",
@@ -654,26 +843,47 @@ void kexCanvas::InitObject(void) {
         "kCanvasImage @opIndex(const int)",
         asMETHODPR(kexContainer, operator[], (const int), kexCanvasObject*),
         asCALL_THISCALL);
-
+    
     scriptManager.Engine()->RegisterObjectMethod(
         "kCanvasImage",
         "void SetRGB(const int, const uint8, const uint8, const uint8)",
         asMETHODPR(kexCanvasImage, SetRGB, (const int, const byte, const byte, const byte), void),
         asCALL_THISCALL);
+    
     scriptManager.Engine()->RegisterObjectMethod(
         "kCanvasText",
         "void SetRGB(const int, const uint8, const uint8, const uint8)",
         asMETHODPR(kexCanvasText, SetRGB, (const int, const byte, const byte, const byte), void),
         asCALL_THISCALL);
 
-    scriptManager.Engine()->RegisterObjectProperty("kCanvasImage", "float width",
+    scriptManager.Engine()->RegisterObjectProperty(
+        "kCanvasScriptObject",
+        "ref @obj",
+        asOFFSET(kexCanvasScriptObject, component.Handle()));
+    
+    scriptManager.Engine()->RegisterObjectProperty(
+        "kCanvasScriptObject",
+        "kCanvasContainer container",
+        asOFFSET(kexCanvasScriptObject, container));
+    
+    scriptManager.Engine()->RegisterObjectProperty(
+        "kCanvasImage",
+        "float width",
         asOFFSET(kexCanvasImage, width));
-    scriptManager.Engine()->RegisterObjectProperty("kCanvasImage", "float height",
+    
+    scriptManager.Engine()->RegisterObjectProperty(
+        "kCanvasImage",
+        "float height",
         asOFFSET(kexCanvasImage, height));
-
-    scriptManager.Engine()->RegisterObjectProperty("kCanvasText", "kStr text",
+    
+    scriptManager.Engine()->RegisterObjectProperty(
+        "kCanvasText",
+        "kStr text",
         asOFFSET(kexCanvasText, text));
-    scriptManager.Engine()->RegisterObjectProperty("kCanvasText", "bool bCentered",
+    
+    scriptManager.Engine()->RegisterObjectProperty(
+        "kCanvasText",
+        "bool bCentered",
         asOFFSET(kexCanvasText, bCentered));
 
     scriptManager.Engine()->RegisterGlobalProperty("kCanvas Canvas", &renderBackend.Canvas());

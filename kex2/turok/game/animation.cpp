@@ -182,11 +182,32 @@ kexAnim_t *kexAnimState::GetAnim(const kexModel_t *model, const int id) {
 bool kexAnimState::CheckAnimID(const kexModel_t *model, const int id) {
     unsigned int i;
 
-    if(model->anims == NULL || model->numAnimations <= 0)
+    if(model->anims == NULL || model->numAnimations <= 0) {
         return false;
+    }
 
     for(i = 0; i < model->numAnimations; i++) {
         if(model->anims[i].animID == id) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+//
+// kexAnimState::CheckAnimID
+//
+
+bool kexAnimState::CheckAnimID(const int id) {
+    unsigned int i;
+
+    if(owner == NULL || owner->Model() == NULL) {
+        return false;
+    }
+
+    for(i = 0; i < owner->Model()->numAnimations; i++) {
+        if(owner->Model()->anims[i].animID == id) {
             return true;
         }
     }
@@ -557,44 +578,59 @@ void kexAnimState::ExecuteFrameActions(void) {
                 continue;
             }
 
-            if(!kexStr::Compare(action->function, "playsound")) {
-                owner->StartSound(action->argStrings[0]);
-            }
-            else if(!kexStr::Compare(action->function, "fx")) {
-                owner->SpawnFX(action->argStrings[0],
-                    action->args[1],
-                    action->args[2],
-                    action->args[3]);
-            }
-            else if(!kexStr::Compare(action->function, "footstepSound")) {
-                owner->PlayFootStepSound();
-            }
-            else if(!kexStr::Compare(action->function, "rangedamage")) {
-                owner->RangeDamage(action->argStrings[0], action->args[1],
-                    owner->ToLocalOrigin(
-                    action->args[2],
-                    action->args[3],
-                    action->args[4]));
-            }
-            else if(!kexStr::Compare(action->function, "unblocksector")) {
-                if(localWorld.CollisionMap().IsLoaded()) {
-                    localWorld.CollisionMap().ToggleBlock(owner->ToLocalOrigin(
+            switch(action->function) {
+                case AA_SPAWNFX:
+                    owner->SpawnFX(action->argStrings[0],
                         action->args[1],
                         action->args[2],
-                        action->args[3]), true);
-                }
-            }
-            else if(!kexStr::Compare(action->function, "blocksector")) {
-                if(localWorld.CollisionMap().IsLoaded()) {
-                    localWorld.CollisionMap().ToggleBlock(owner->ToLocalOrigin(
+                        action->args[3]);
+                    break;
+
+                case AA_PLAYSOUND:
+                    owner->StartSound(action->argStrings[0]);
+                    break;
+
+                case AA_FOOTSTEPSOUND:
+                    owner->PlayFootStepSound();
+                    break;
+
+                case AA_MELEEDAMAGE:
+                    owner->RangeDamage(
+                        action->argStrings[0],
                         action->args[1],
-                        action->args[2],
-                        action->args[3]), false);
-                }
-            }
-            else if(!owner->CallFunction(action->function, action)) {
-                common.DPrintf("kexAnimState::ExecuteFrameActions: Couldn't execute \"%s\":%i\n",
-                    action->function, action->frame);
+                        owner->ToLocalOrigin(action->args[2], action->args[3], action->args[4]));
+                    break;
+
+                case AA_UNBLOCKSECTOR:
+                    if(localWorld.CollisionMap().IsLoaded()) {
+                        localWorld.CollisionMap().ToggleBlock(owner->ToLocalOrigin(
+                            action->args[1],
+                            action->args[2],
+                            action->args[3]), true);
+                    }
+                    break;
+
+                case AA_BLOCKSECTOR:
+                    if(localWorld.CollisionMap().IsLoaded()) {
+                        localWorld.CollisionMap().ToggleBlock(owner->ToLocalOrigin(
+                            action->args[1],
+                            action->args[2],
+                            action->args[3]), false);
+                    }
+                    break;
+
+                case AA_FOOTSTEPPUFF:
+                    break;
+
+                case AA_DESTROYOWNER:
+                    break;
+
+                case AA_CALLFUNCTION:
+                    if(!owner->CallFunction(action->argStrings[0], action)) {
+                        common.DPrintf("kexAnimState::ExecuteFrameActions: Couldn't execute \"%s\":%i\n",
+                            action->argStrings[0], action->frame);
+                    }
+                    break;
             }
         }
     }
@@ -771,10 +807,7 @@ void kexAnimState::ParseKAnim(const kexModel_t *model, kexAnim_t *anim, kexLexer
                         common.Warning("Kanim_ParseAnimScript: Frame 0 set on %i (%s)\n",
                             i, anim->animFile);
                     }
-                    lexer->GetString();
-                    anim->actions[i].function = Mem_Strdup(lexer->StringToken(),
-                        hb_animation);
-
+                    anim->actions[i].function = (animActions_t)lexer->GetNumber();
                     lexer->Find();
 
                     for(j = 0; j < NUMFRAMEACTIONS; j++) {
@@ -918,6 +951,7 @@ void kexAnimState::InitObject(void) {
     OBJMETHOD("const int CurrentFrame(void)", CurrentFrame, (void)const, const int);
     OBJMETHOD("const float PlayTime(void)", PlayTime, (void)const, const float);
     OBJMETHOD("bool IsPlaying(const int)", IsPlaying, (const int animID), bool);
+    OBJMETHOD("bool CheckAnimID(const int)", CheckAnimID, (const int id), bool);
 
 #define OBJPROPERTY(str, p)                         \
     scriptManager.Engine()->RegisterObjectProperty( \

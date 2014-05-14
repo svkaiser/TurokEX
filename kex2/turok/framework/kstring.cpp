@@ -556,6 +556,14 @@ int kexStr::Atoi(void) {
 }
 
 //
+// kexStr::Atof
+//
+
+float kexStr::Atof(void) {
+    return (float)atof(charPtr);
+}
+
+//
 // kexStr::ToUpper
 //
 

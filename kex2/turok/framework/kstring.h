@@ -55,6 +55,7 @@ public:
     kexStr              Substr(int start, int len) const;
     void                Split(kexStrList &list, const char seperator);
     int                 Atoi(void);
+    float               Atof(void);
 
     int                 Length(void) const { return length; }
     const char          *c_str(void) const { return charPtr; }

@@ -42,9 +42,22 @@ typedef struct {
 
 #define NUMFRAMEACTIONS     5
 
+typedef enum {
+    AA_INVALID      = 0,
+    AA_SPAWNFX,
+    AA_PLAYSOUND,
+    AA_FOOTSTEPSOUND,
+    AA_MELEEDAMAGE,
+    AA_UNBLOCKSECTOR,
+    AA_BLOCKSECTOR,
+    AA_FOOTSTEPPUFF,
+    AA_DESTROYOWNER,
+    AA_CALLFUNCTION = 900
+} animActions_t;
+
 typedef struct {
     int                     frame;
-    char                    *function;
+    animActions_t           function;
     float                   args[NUMFRAMEACTIONS];
     char                    *argStrings[NUMFRAMEACTIONS];
 } frameAction_t;
@@ -90,6 +103,7 @@ public:
     void                    Blend(const int id, float animTime, float animBlendTime, int animFlags);
     void                    ExecuteFrameActions(void);
     bool                    IsPlaying(const int animID);
+    bool                    CheckAnimID(const int id);
 
     static kexQuat          GetRotation(kexAnim_t *anim, int nodeNum, int frame);
     static kexVec3          GetTranslation(kexAnim_t *anim, int nodeNum, int frame);

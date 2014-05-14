@@ -617,9 +617,9 @@ bool kexActor::CallFunction(const kexStr &function, const frameAction_t *actions
         return false;
     }
 
-    ac->SetCallArgument(0, actions->args[1]);
-    ac->SetCallArgument(1, actions->args[2]);
-    ac->SetCallArgument(2, actions->args[3]);
+    ac->SetCallArgument(0, actions->args[2]);
+    ac->SetCallArgument(1, actions->args[3]);
+    ac->SetCallArgument(2, actions->args[4]);
 
     if(!ac->ExecuteFunction(state)) {
         return false;

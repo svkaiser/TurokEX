@@ -24,6 +24,20 @@
 #define __CANVAS_H__
 
 #include "linkedlist.h"
+#include "scriptAPI/component.h"
+
+class kexCanvasComponent : public kexComponent {
+public:
+                                    kexCanvasComponent(void);
+                                    ~kexCanvasComponent(void);
+    
+    virtual void                    Construct(const char *className);
+    
+    static void                     Init(void);
+    
+    asIScriptFunction               *onUpdate;
+    asIScriptFunction               *onInit;
+};
 
 //-----------------------------------------------------------------------------
 //
@@ -125,6 +139,24 @@ END_CLASS();
 
 //-----------------------------------------------------------------------------
 //
+// kexCanvasScriptObject
+//
+//-----------------------------------------------------------------------------
+
+BEGIN_EXTENDED_CLASS(kexCanvasScriptObject, kexCanvasObject);
+public:
+                                    kexCanvasScriptObject(void);
+                                    ~kexCanvasScriptObject(void);
+
+    virtual void                    Draw(void);
+    void                            SetProperty(const char *name, const char *value);
+
+    kexCanvasComponent              component;
+    kexContainer                    container;
+END_CLASS();
+
+//-----------------------------------------------------------------------------
+//
 // kexCanvas
 //
 //-----------------------------------------------------------------------------
@@ -137,6 +169,7 @@ public:
     kexCanvasImage                  *CreateImage(const char *texture);
     kexCanvasImage                  *CreateImage(const kexStr &texture);
     kexContainer                    *CreateContainer(void);
+    kexCanvasScriptObject           *CreateScriptObject(const char *className);
     kexCanvasText                   *CreateText(const char *font);
     kexCanvasText                   *CreateText(const kexStr &font);
 
