@@ -116,6 +116,10 @@ bool kexWorldObject::Trace(traceInfo_t *trace) {
     float rd;
     float r;
 
+    if(bCollision == false) {
+        return false;
+    }
+
     // fx can't collide with each other nor with its owner
     if(trace->owner) {
         if(trace->owner->InstanceOf(&kexFx::info)) {

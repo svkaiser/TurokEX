@@ -37,6 +37,7 @@ DECLARE_CLASS(kexAIPhysics, kexPhysics)
 
 kexAIPhysics::kexAIPhysics(void) {
     this->clipFlags = (PF_CLIPEDGES|PF_NOENTERWATER);
+    this->airFriction = 1;
 }
 
 //

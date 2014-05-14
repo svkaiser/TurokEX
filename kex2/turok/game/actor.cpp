@@ -213,7 +213,8 @@ void kexActor::Spawn(void) {
 
         definition->GetFloat("mass", physicsRef->mass, 1800);
         definition->GetFloat("friction", physicsRef->friction, 1);
-        definition->GetFloat("airFriction", physicsRef->airFriction, 0);
+        definition->GetFloat("airFriction", physicsRef->airFriction, 1);
+        definition->GetFloat("fallFriction", physicsRef->fallFriction, 0);
         definition->GetFloat("bounceDamp", physicsRef->bounceDamp, 0);
         definition->GetFloat("stepHeight", physicsRef->stepHeight, 48);
         definition->GetFloat("rotorSpeed", physicsRef->rotorSpeed, 0);

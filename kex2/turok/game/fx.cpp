@@ -513,7 +513,8 @@ void kexFx::Spawn(void) {
     SetViewDistance();
 
     physics.friction = fxInfo->friction;
-    physics.airFriction = 0;
+    physics.airFriction = physics.friction;
+    physics.fallFriction = 0;
     physics.mass = -gravity;
     physics.bounceDamp = fxInfo->mass;
 

@@ -38,6 +38,7 @@ DECLARE_CLASS(kexPlayerPhysics, kexPhysics)
 //
 
 kexPlayerPhysics::kexPlayerPhysics(void) {
+    this->airFriction = 1;
 }
 
 //

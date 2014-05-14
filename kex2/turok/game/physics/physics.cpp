@@ -68,7 +68,8 @@ DECLARE_CLASS(kexPhysics, kexObject)
 kexPhysics::kexPhysics(void) {
     this->mass                  = 1800;
     this->friction              = 1;
-    this->airFriction           = 0;
+    this->airFriction           = 1;
+    this->fallFriction          = 0;
     this->bounceDamp            = 0;
     this->stepHeight            = 48;
     this->rotorSpeed            = 0;
@@ -272,6 +273,7 @@ void kexPhysics::ImpactVelocity(kexVec3 &vel, kexVec3 &normal, const float force
 
 void kexPhysics::ApplyFriction(void) {
     float speed;
+    float xyFriction = bOnGround ? friction : airFriction;
 
     speed = velocity.Unit();
 
@@ -284,7 +286,7 @@ void kexPhysics::ApplyFriction(void) {
         }
     }
     else {
-        float clipspeed = speed - (speed * friction);
+        float clipspeed = speed - (speed * xyFriction);
 
         if(clipspeed < 0) {
             clipspeed = 0;
@@ -304,7 +306,7 @@ void kexPhysics::ApplyFriction(void) {
     if(!bInWater) {
         float yFriction = 0;
 
-        if(airFriction == 0) {
+        if(fallFriction == 0 || bOnGround) {
             float dist;
 
             if(groundGeom == NULL) {
@@ -322,7 +324,7 @@ void kexPhysics::ApplyFriction(void) {
             yFriction = friction;
         }
         else {
-            yFriction = airFriction;
+            yFriction = fallFriction;
         }
 
         speed = velocity.y;
@@ -589,6 +591,7 @@ void kexPhysics::InitObject(void) {
     OBJPROPERTY("bool bOrientOnSlope", bOrientOnSlope);
     OBJPROPERTY("float friction", friction);
     OBJPROPERTY("float airFriction", airFriction);
+    OBJPROPERTY("float fallFriction", fallFriction);
     OBJPROPERTY("float mass", mass);
     OBJPROPERTY("float bounceDamp", bounceDamp);
     OBJPROPERTY("float stepHeight", stepHeight);

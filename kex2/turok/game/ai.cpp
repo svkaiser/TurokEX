@@ -47,8 +47,8 @@ static void FCmd_DebugAI(void) {
         return;
     }
 
-    start = localWorld.Camera()->GetOrigin();
-    end = start + (localWorld.Camera()->GetAngles().ToForwardAxis() * 2048.0f);
+    start = localWorld.Camera()->GetOrigin() - kexVec3(0, 24, 0);
+    end = start + (localWorld.Camera()->GetAngles().ToForwardAxis() * 1024.0f);
     sector = NULL;
 
     kexAI::debugAI = NULL;
@@ -69,15 +69,20 @@ static void FCmd_DebugAI(void) {
     trace.sector    = &sector;
     trace.bUseBBox  = true;
 
-    trace.localBBox.min.Set(-200, -200, -200);
-    trace.localBBox.max.Set(200, 200, 200);
+    trace.localBBox.min.Set(-40, -40, -40);
+    trace.localBBox.max.Set(40, 40, 40);
 
     trace.bbox = trace.localBBox;
 
     trace.bbox.min += trace.start;
     trace.bbox.max += trace.start;
-    
-    localWorld.Trace(&trace);
+
+    for(kexActor *actor = localWorld.actors.Next();
+        actor != NULL; actor = actor->worldLink.Next()) {
+            if(actor->InstanceOf(&kexAI::info)) {
+                actor->Trace(&trace);
+            }
+    }
 
     if(trace.hitActor) {
         if(trace.hitActor->InstanceOf(&kexAI::info)) {
@@ -160,6 +165,11 @@ void kexAI::LocalTick(void) {
     }
 
     physicsRef->Think(client.GetRunTime());
+
+    // handle any additional custom tick routines
+    if(scriptComponent.onLocalThink) {
+        scriptComponent.CallFunction(scriptComponent.onLocalThink);
+    }
     
     // TODO - majority of the code below should be
     // handled by the server...
@@ -209,11 +219,6 @@ void kexAI::LocalTick(void) {
         if(aiFlags & AIF_HASTARGET) {
             SeekTarget();
         }
-    }
-    
-    // handle any additional custom tick routines
-    if(scriptComponent.onLocalThink) {
-        scriptComponent.CallFunction(scriptComponent.onLocalThink);
     }
 
     nextThinkTime = timeStamp + thinkTime;

@@ -98,6 +98,7 @@ public:
     bool                    bOrientOnSlope;
     float                   friction;
     float                   airFriction;
+    float                   fallFriction;
     float                   mass;
     float                   bounceDamp;
     float                   stepHeight;
