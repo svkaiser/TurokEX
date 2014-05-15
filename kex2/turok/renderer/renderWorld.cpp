@@ -1190,6 +1190,9 @@ void kexRenderWorld::DebugObjects(void) {
     }
 
     for(kexWorldModel *wm = world->staticActors.Next(); wm != NULL; wm = wm->worldLink.Next()) {
+        if(!world->Camera()->Frustum().TestBoundingBox(wm->Bounds())) {
+            continue;
+        }
         if(bShowBBox) {
             if(wm->bTraced) {
                 kexRenderUtils::DrawBoundingBox(wm->Bounds(), 255, 0, 0);
@@ -1208,6 +1211,9 @@ void kexRenderWorld::DebugObjects(void) {
 
     for(kexActor *actor = world->actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
+            if(!world->Camera()->Frustum().TestBoundingBox(actor->Bounds())) {
+                continue;
+            }
             if(bShowOrigin) {
                 kexRenderUtils::DrawOrigin(actor->GetOrigin().x,
                                            actor->GetOrigin().y,
