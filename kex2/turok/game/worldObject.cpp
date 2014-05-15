@@ -277,7 +277,12 @@ void kexWorldObject::InflictDamage(kexWorldObject *target, kexKeyMap *damageDef)
         }
 
         impactFalloff = 1.0f / impactFalloff;
-        dmgAmount = (int)((physics.velocity.Unit() * (1.0f / (float)dmgAmount)) * impactFalloff);
+
+        float velocity = physicsRef->velocity.Unit();
+        float det = 1.0f / (float)dmgAmount;
+        float dmgFactor = (velocity * det) * impactFalloff;
+
+        dmgAmount = (int)dmgFactor;
     }
 
     target->StartSound(dmgSound.c_str());
