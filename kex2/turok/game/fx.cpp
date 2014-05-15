@@ -317,7 +317,7 @@ kexFx *kexFx::Event(fxEvent_t *fxEvent, kexWorldObject *target) {
     }
 
     if(fxEvent->damageDef != NULL && owner && target) {
-        nfx->InflictDamage(target, fxEvent->damageDef);
+        InflictDamage(target, fxEvent->damageDef);
     }
 
     return nfx;
