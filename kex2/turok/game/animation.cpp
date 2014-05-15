@@ -395,7 +395,7 @@ void kexAnimState::UpdateRootMotion(void) {
             mtx.Scale(-1, 1, 1);
 
             kexVec3 offs = (pos_next - pos_cur) * mtx;
-            baseOffset = -pos_cur[2] * owner->GetScale()[1];
+            baseOffset = (-pos_cur[2] * owner->GetScale()[1]) * 3.072f;
             rootMotion = (offs * owner->GetScale()) * (60.0f / frameTime);
         }
     }

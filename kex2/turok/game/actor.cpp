@@ -160,6 +160,11 @@ void kexActor::LocalTick(void) {
     }
 
     animState.Update();
+
+    if(animState.frameTime != 0) {
+        height = -animState.baseOffset;
+    }
+
     physicsRef->Think(client.GetRunTime());
 }
 

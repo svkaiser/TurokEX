@@ -161,7 +161,7 @@ void kexAI::LocalTick(void) {
     animState.Update();
 
     if(animState.frameTime != 0) {
-        height = ((baseHeight * 0.72f) - animState.baseOffset) * 0.5f;
+        height = -animState.baseOffset;
     }
 
     physicsRef->Think(client.GetRunTime());
