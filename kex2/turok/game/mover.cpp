@@ -63,6 +63,7 @@ kexMover::~kexMover(void) {
 void kexMover::Spawn(void) {
     args.GetFloat("moveSpeed", moveSpeed);
     args.GetFloat("moveAmount", moveAmount);
+    args.GetString("moveSound", moveSound);
 }
 
 //
