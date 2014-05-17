@@ -172,6 +172,11 @@ void kexArea::Setup(void) {
         flags |= AAF_EVENT;
     }
 
+    keyMap.GetBool("bSky", flag);
+    if(flag) {
+        flags |= AAF_DRAWSKY;
+    }
+
     if((key = keyMap.Find("component"))) {
         scriptComponent.Construct(key->GetString());
         scriptComponent.CallFunction(scriptComponent.onSpawn);
