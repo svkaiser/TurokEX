@@ -144,6 +144,7 @@ void kexAIPhysics::Think(const float timeDelta) {
         // trace through world
         localWorld.Trace(&trace, clipFlags);
         time -= (time * trace.fraction);
+        kexMath::Clamp(time, 0, timeDelta);
 
         // project velocity
         if(trace.fraction != 1) {

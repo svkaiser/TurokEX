@@ -205,6 +205,8 @@ void kexPlayerPhysics::Think(const float timeDelta) {
         localWorld.Trace(&trace, clipFlags);
         time -= (time * trace.fraction);
 
+        kexMath::Clamp(time, 0, timeDelta);
+
         if(sector) {
             groundGeom = &sector->lowerTri;
         }
@@ -327,6 +329,7 @@ void kexPlayerPhysics::Think(const float timeDelta) {
                         }
 
                         time -= (time * trace.fraction);
+                        kexMath::Clamp(time, 0, timeDelta);
                     }
                 }
             }

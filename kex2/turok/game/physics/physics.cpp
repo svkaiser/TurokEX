@@ -153,6 +153,24 @@ void kexPhysics::Parse(kexLexer *lexer) {
 }
 
 //
+// kexPhysics::ParseDefinition
+//
+
+void kexPhysics::ParseDefinition(kexKeyMap *def) {
+    def->GetFloat("physics.mass", mass, 1800);
+    def->GetFloat("physics.friction", friction, 1);
+    def->GetFloat("physics.airFriction", airFriction, 1);
+    def->GetFloat("physics.fallFriction", fallFriction, 0);
+    def->GetFloat("physics.bounceDamp", bounceDamp, 0);
+    def->GetFloat("physics.stepHeight", stepHeight, 48);
+    def->GetFloat("physics.rotorSpeed", rotorSpeed, 0);
+    def->GetFloat("physics.rotorFriction", rotorFriction, 1);
+    def->GetFloat("physics.sinkVelocity", sinkVelocity, 0.2f);
+    def->GetBool("physics.bRotor", bRotor, false);
+    def->GetInt("physics.clipFlags", (int&)clipFlags, (PF_CLIPEDGES|PF_DROPOFF));
+}
+
+//
 // kexPhysics::GroundDistance
 //
 
@@ -521,6 +539,7 @@ void kexPhysics::Think(const float timeDelta) {
         // trace through world
         localWorld.Trace(&trace, clipFlags);
         time -= (time * trace.fraction);
+        kexMath::Clamp(time, 0, timeDelta);
 
         // project velocity
         if(trace.fraction != 1) {

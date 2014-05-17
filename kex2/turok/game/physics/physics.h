@@ -73,6 +73,7 @@ public:
                             ~kexPhysics(void);
 
     void                    Parse(kexLexer *lexer);
+    void                    ParseDefinition(kexKeyMap *def);
     float                   GroundDistance(void);
     bool                    OnGround(void);
     bool                    OnSteepSlope(void);
