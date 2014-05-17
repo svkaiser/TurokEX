@@ -82,6 +82,7 @@ public:
     static int              Max(const int max);
     static float            Float(void);
     static float            CFloat(void);
+    static float            Range(const float r1, const float r2);
     
 private:
     static int              seed;

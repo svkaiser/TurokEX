@@ -29,6 +29,8 @@
 #include "mathlib.h"
 
 #define RANDOM_MAX  0x7FFF
+#define RANGE_MAX   10000
+#define RANGE_DET   (1.0f / (float)RANGE_MAX)
 
 int kexRand::seed = 0;
 
@@ -62,8 +64,9 @@ int kexRand::Int(void) {
 //
 
 int kexRand::Max(const int max) {
-    if(max == 0)
+    if(max == 0) {
         return 0;
+    }
         
     return Int() % max;
 }
@@ -81,6 +84,15 @@ float kexRand::Float(void) {
 //
 
 float kexRand::CFloat(void) {
-    return (float)(Max(20000) - 10000) * 0.0001f;
+    return (float)(Max((RANGE_MAX+RANGE_MAX)) - RANGE_MAX) * RANGE_DET;
+}
+
+//
+// kexRand::Range
+//
+
+float kexRand::Range(const float r1, const float r2) {
+    float f = (float)Max(RANGE_MAX) * RANGE_DET;
+    return (1.0f - f) * r2 + f * r1;
 }
 

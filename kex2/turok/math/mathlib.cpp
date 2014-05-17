@@ -182,6 +182,8 @@ void kexMath::InitObject(void) {
         asFUNCTION(kexRand::Float), asCALL_CDECL);
     scriptManager.Engine()->RegisterGlobalFunction("float RandCFloat(void)",
         asFUNCTION(kexRand::CFloat), asCALL_CDECL);
+    scriptManager.Engine()->RegisterGlobalFunction("float Range(const float, const float)",
+        asFUNCTION(kexRand::Range), asCALL_CDECL);
     scriptManager.Engine()->SetDefaultNamespace("");
 
     //
