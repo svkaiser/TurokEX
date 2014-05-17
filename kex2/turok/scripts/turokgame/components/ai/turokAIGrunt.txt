@@ -20,6 +20,61 @@ class TurokAIGrunt : TurokAI {
         super(actor);
     }
     
+    void footstepPuff(const float x, const float y, const float z) {
+        self.SpawnFX("fx/steppuff1.kfx", x, y, z);
+    }
+    
+    void deathScream(const float a, const float b, const float c) {
+        int rnd = Math::RandMax(100) % 3;
+        switch(rnd) {
+            case 0:
+                self.StartSound("sounds/shaders/human_death_scream_3.ksnd");
+                break;
+            case 1:
+                self.StartSound("sounds/shaders/human_death_scream_2.ksnd");
+                break;
+            case 2:
+                self.StartSound("sounds/shaders/human_death_scream_1.ksnd");
+                break;
+            default:
+                break;
+        }
+    }
+    
+    void injuryScream(const float a, const float b, const float c) {
+        int rnd = Math::RandMax(100) % 3;
+        switch(rnd) {
+            case 0:
+                self.StartSound("sounds/shaders/human_effort_injury_grunt_3.ksnd");
+                break;
+            case 1:
+                self.StartSound("sounds/shaders/human_effort_injury_grunt_2.ksnd");
+                break;
+            case 2:
+                self.StartSound("sounds/shaders/human_effort_injury_grunt_1.ksnd");
+                break;
+            default:
+                break;
+        }
+    }
+    
+    void violentDeathScream(const float a, const float b, const float c) {
+        int rnd = Math::RandMax(100) % 3;
+        switch(rnd) {
+            case 0:
+                self.StartSound("sounds/shaders/human_violent_death_3.ksnd");
+                break;
+            case 1:
+                self.StartSound("sounds/shaders/human_violent_death_2.ksnd");
+                break;
+            case 2:
+                self.StartSound("sounds/shaders/human_violent_death_1.ksnd");
+                break;
+            default:
+                break;
+        }
+    }
+    
     void GruntMelee(void) {
         const array<int> anims = {
             anim_aiGruntMelee1,

@@ -22,6 +22,9 @@
 
 #include "scripts/turokgame/components/ai/turokAI.txt"
 #include "scripts/turokgame/components/ai/turokAIGrunt.txt"
+#include "scripts/turokgame/components/ai/turokAIAnimal.txt"
+#include "scripts/turokgame/components/ai/turokAIBeetle.txt"
+#include "scripts/turokgame/components/ai/turokAIFish.txt"
 
 #include "scripts/turokgame/classes/ambience/turokAmbienceJungle.txt"
 #include "scripts/turokgame/classes/ambience/turokAmbienceLostWorld.txt"

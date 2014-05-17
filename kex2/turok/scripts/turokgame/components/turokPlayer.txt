@@ -35,7 +35,6 @@ const float CLIMB_STRAFEROLL_SPEED      = 0.0256f;
 
 const float PHYSICS_PLAYER_MASS         = 1843.2f;
 const float PHYSICS_PLAYER_STEPHEIGHT   = 36;
-const float PHYSICS_PLAYER_AIR_FRICTION = 0;
 
 const float SWIM_THRUST_SPEED           = 480;
 const float SWIM_THRUST_TIME            = 0.63f;
@@ -110,12 +109,12 @@ void CommandFly(void) {
     
     if(player.bFly == false) {
         player.bFly = true;
-        localClient.Puppet().Physics().airFriction = 1;
+        localClient.Puppet().Physics().fallFriction = 1;
         localClient.Puppet().Physics().mass = 0;
     }
     else {
         player.bFly = false;
-        localClient.Puppet().Physics().airFriction = PHYSICS_PLAYER_AIR_FRICTION;
+        localClient.Puppet().Physics().fallFriction = 0;
         localClient.Puppet().Physics().mass = PHYSICS_PLAYER_MASS;
     }
     

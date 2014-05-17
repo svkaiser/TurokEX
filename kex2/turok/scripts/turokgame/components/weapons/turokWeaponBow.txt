@@ -68,7 +68,7 @@ final class TurokWeaponBow : TurokWeapon {
                 "fx/projectile_arrow.kfx",
                 src,
                 kVec3(0, 0, time * 512 * 15) * rot,
-                org + (kVec3(0.2048f, -6.144f, 25.6f) * rot),
+                org + (kVec3(0.2048f, -6.144f, -25.6f) * rot),
                 rot
             );
             

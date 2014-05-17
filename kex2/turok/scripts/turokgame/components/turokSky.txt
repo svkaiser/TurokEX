@@ -63,6 +63,7 @@ class TurokSky : Component {
     
     void OnSpawn(void) {
         self.GetAngles().pitch = DegToRad(90.0f);
+        self.bHidden = true;
     }
     
     //

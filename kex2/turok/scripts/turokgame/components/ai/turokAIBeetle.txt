@@ -1,0 +1,51 @@
+////////////////////////////////////////////////////
+//
+// TurokAIBeetle
+//
+////////////////////////////////////////////////////
+
+class TurokAIBeetle : TurokAI {
+    
+    //
+    // TurokAIBeetle::TurokAIBeetle
+    //
+    
+    TurokAIBeetle(kActor @actor) {
+        super(actor);
+    }
+    
+    //
+    // TurokAIBeetle::OnTurn
+    //
+    
+    bool OnTurn(const float angle) {
+        return true;
+    }
+    
+    //
+    // TurokAIBeetle::OnStateChange
+    //
+    
+    void OnStateChange(int state) {
+        switch(state) {
+            case AIS_IDLE:
+                self.AnimState().Blend(anim_aiStanding, 4.0f, 4.0f, ANF_LOOP);
+                break;
+            case AIS_CALM:
+            case AIS_ALERT:
+                self.AnimState().Blend(anim_aiWalking, 4.0f, 4.0f, ANF_ROOTMOTION|ANF_LOOP);
+                break;
+            case AIS_ATTACK_MELEE:
+                self.AnimState().Blend(anim_aiRangeAttack1, 4.0f, 4.0f, ANF_ROOTMOTION);
+                break;
+        }
+    }
+    
+    //
+    // TurokAIBeetle::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        TurokAI::OnSpawn();
+    }
+}

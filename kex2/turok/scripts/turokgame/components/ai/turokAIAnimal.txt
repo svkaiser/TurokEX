@@ -1,0 +1,133 @@
+////////////////////////////////////////////////////
+//
+// TurokAIAnimal
+//
+////////////////////////////////////////////////////
+
+class TurokAIAnimal : TurokAI {
+    
+    //
+    // TurokAIAnimal::TurokAIAnimal
+    //
+    
+    TurokAIAnimal(kActor @actor) {
+        super(actor);
+    }
+    
+    //
+    // TurokAIAnimal::OnStateChange
+    //
+    
+    void OnStateChange(int state) {
+        switch(state) {
+            case AIS_IDLE:
+                OnDormant();
+                break;
+                
+            case AIS_CALM:
+                if(ai.sightThreshold <= 0) {
+                    OnDormant();
+                }
+                else {
+                    self.AnimState().Blend(anim_aiRunning, 4.0f, 4.0f, ANF_ROOTMOTION|ANF_LOOP);
+                }
+                break;
+                
+            case AIS_ALERT:
+                self.AnimState().Blend(anim_aiRunning, 4.0f, 4.0f, ANF_ROOTMOTION|ANF_LOOP);
+                break;
+        }
+    }
+    
+    //
+    // TurokAIAnimal::OnDeath
+    //
+    
+    void OnDeath(kActor@ killer, kKeyMapMem @damageDef) {
+        if(ai.GetAIState() == AIS_DEATH) {
+            return;
+        }
+        
+        TurokAI::OnDeath(killer, damageDef);
+        
+        DropPickup(0, 0, 0, "defs/actors.def@Item_Health_Small");
+        DropPickup(0, 0, 0, "defs/actors.def@Item_Health_Small");
+        DropPickup(0, 0, 0, "defs/actors.def@Item_Health_Small");
+        
+        self.StartSound("sounds/shaders/generic_3_energy_pickup.ksnd");
+        LocalWorld.SpawnFX("fx/animal_death_flash.kfx",
+                           null,
+                           kVec3(0, 0, 0),
+                           self.ToLocalOrigin(0, 51.2f, self.height),
+                           self.GetRotation());
+        
+        self.bHidden = true;
+        self.bCollision = false;
+        self.Remove();
+    }
+    
+    //
+    // TurokAIAnimal::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        TurokAI::OnSpawn();
+    }
+    
+    //
+    // TurokAIAnimal::OnDormant
+    //
+    
+    void OnDormant(void) {
+        self.AnimState().Blend(anim_aiStanding, 4.0f, 4.0f, ANF_LOOP);
+        ai.ClearTargets();
+    }
+    
+    //
+    // TurokAIAnimal::OnWake
+    //
+    
+    void OnWake(void) {
+        ai.ClearTargets();
+    }
+    
+    //
+    // TurokAIAnimal::OnTargetFound
+    //
+    
+    void OnTargetFound(void) {
+        self.AnimState().Blend(anim_aiRunning, 4.0f, 4.0f, ANF_ROOTMOTION|ANF_LOOP); 
+        ai.SetIdealYaw(self.GetTarget().GetAngles().yaw, 4.096f);
+        ai.aiState = AIS_ALERT;
+    }
+    
+    //
+    // TurokAIAnimal::OnDamage
+    //
+    
+    void OnDamage(kActor @inflictor, int damage, kKeyMapMem @damageDef) {
+        DropPickup(0, 0, 0, "defs/actors.def@Item_Health_Small");
+    }
+    
+    //
+    // TurokAIAnimal::OnLocalThink
+    //
+    
+    void OnLocalThink(void) {
+        if(ai.sightThreshold > 0) {
+            float selfYaw = self.GetAngles().yaw;
+        
+            if((ai.aiFlags & AIF_TURNING) == 0) {
+                if(!ai.CheckPosition(self.GetOrigin(), ai.checkRadius, selfYaw + 0.5236f)) {
+                    ai.SetIdealYaw(selfYaw - 0.909f, 4.096f);
+                }
+                else if(!ai.CheckPosition(self.GetOrigin(), ai.checkRadius, selfYaw - 0.5236f)) {
+                    ai.SetIdealYaw(selfYaw + 0.909f, 4.096f);
+                }
+            }
+        }
+        else {
+            OnDormant();
+        }
+    }
+}

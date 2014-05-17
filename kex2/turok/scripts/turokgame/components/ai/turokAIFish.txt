@@ -1,0 +1,96 @@
+////////////////////////////////////////////////////
+//
+// TurokAIFish
+//
+////////////////////////////////////////////////////
+
+class TurokAIFish : TurokAI {
+    
+    //
+    // TurokAIFish::TurokAIFish
+    //
+    
+    TurokAIFish(kActor @actor) {
+        super(actor);
+    }
+    
+    //
+    // TurokAIFish::OnStateChange
+    //
+    
+    void OnStateChange(int state) {
+        switch(state) {
+            case AIS_IDLE:
+            case AIS_CALM:
+                self.AnimState().Blend(anim_aiFishSwim, 4.0f, 4.0f, ANF_ROOTMOTION|ANF_LOOP);
+                break;
+                
+            case AIS_ALERT:
+                self.AnimState().Blend(anim_aiFishSwimFast, 4.0f, 4.0f, ANF_ROOTMOTION|ANF_LOOP);
+                break;
+        }
+    }
+    
+    //
+    // TurokAIFish::OnDeath
+    //
+    
+    void OnDeath(kActor@ killer, kKeyMapMem @damageDef) {
+        if(ai.GetAIState() == AIS_DEATH) {
+            return;
+        }
+        
+        self.bHidden = true;
+        self.Remove();
+    }
+    
+    //
+    // TurokAIFish::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        TurokAI::OnSpawn();
+        ai.aiState = AIS_CALM;
+    }
+    
+    //
+    // TurokAIFish::OnTargetFound
+    //
+    
+    void OnTargetFound(void) {
+        self.AnimState().Blend(anim_aiFishSwimFast, 4.0f, 4.0f, ANF_ROOTMOTION|ANF_LOOP);
+        ai.aiState = AIS_ALERT;
+    }
+    
+    //
+    // TurokAIFish::OnLocalThink
+    //
+    
+    void OnLocalThink(void) {
+        if(ai.GetAIState() == AIF_DORMANT) {
+            return;
+        }
+        
+        if(ai.sightThreshold == 1) {
+            self.AnimState().Blend(anim_aiFishSwim, 4.0f, 4.0f, ANF_ROOTMOTION|ANF_LOOP);
+            ai.ClearTargets();
+            ai.sightThreshold = 0;
+        }
+        
+        if((ai.aiFlags & AIF_TURNING) == 0) {
+            if(ai.GetAIState() == AIS_ALERT && (ai.aiFlags & AIF_HASTARGET) != 0) {
+                ai.SetIdealYaw(self.GetTarget().GetAngles().yaw + M_PI, 4.096f);
+            }
+            else {
+                float selfYaw = self.GetAngles().yaw;
+                
+                if(!ai.CheckPosition(self.GetOrigin(), ai.checkRadius, selfYaw + 0.5236f)) {
+                    ai.SetIdealYaw(selfYaw - 0.78f, 4.096f);
+                }
+                else if(!ai.CheckPosition(self.GetOrigin(), ai.checkRadius, selfYaw - 0.5236f)) {
+                    ai.SetIdealYaw(selfYaw + 0.78f, 4.096f);
+                }
+            }
+        }
+    }
+}

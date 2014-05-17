@@ -1,8 +1,17 @@
 ////////////////////////////////////////////////////
 //
-// Constants
+// Enums
 //
 ////////////////////////////////////////////////////
+
+enum pickupDropFlags {
+    pdf_unknown1    = 0,
+    pdf_unknown2,
+    pdf_health_full,
+    pdf_unknown4,
+    pdf_health_small,
+    pdf_health_medium
+}
 
 ////////////////////////////////////////////////////
 //
@@ -14,6 +23,10 @@ class TurokAI : Component {
     kActor @self;
     kAI @ai;
     int alligenceID;
+    int dropItemFlags;
+    bool bDeathFade;
+    float deathFadeTime;
+    float baseYawSpeed;
     
     //
     // TurokAI::TurokAI
@@ -24,6 +37,10 @@ class TurokAI : Component {
         @ai = self.ToAI();
         
         alligenceID = -1;
+        dropItemFlags = 0;
+        bDeathFade = false;
+        deathFadeTime = 0.0f;
+        baseYawSpeed = 2.0f;
     }
     
     //
@@ -37,22 +54,75 @@ class TurokAI : Component {
         
         int randomSum = 0;
         uint i;
+        int count = 0;
         array<int>rndArray;
         
         for(i = 0; i < weights.length(); i++) {
-            rndArray.insertLast(randomSum);
-            randomSum += weights[i];
+            if(self.AnimState().CheckAnimID(anims[i])) {
+                rndArray.insertLast(randomSum);
+                randomSum += weights[i];
+                count++;
+            }
+        }
+        
+        if(randomSum == 0 || count == 0) {
+            return;
         }
         
         int r = Math::RandMax(randomSum);
         
-        for(i = (weights.length())-1; i >= 0; i--) {
+        for(i = count-1; i >= 0; i--) {
             if(rndArray[i] <= r) {
                 break;
             }
         }
         
         self.AnimState().Blend(anims[i], 4.0f, 8.0f, ANF_ROOTMOTION);
+    }
+    
+    //
+    // TurokAI::DropPickup
+    //
+    
+    void DropPickup(const float x, const float y, const float z, const kStr itemName) {
+        kVec3 origin = self.ToLocalOrigin(x, y, z);
+        origin.y += 8.192f;
+        
+        kActor @actor = LocalWorld.SpawnActor(itemName, origin, self.GetAngles());
+        
+        actor.bCollision = false;
+        
+        actor.Physics().bEnabled = true;
+        actor.Physics().friction = 0.5f;
+        actor.Physics().bounceDamp = 0.35f;
+        actor.Physics().airFriction = 0.0f;
+        actor.Physics().fallFriction = 0.0f;
+        
+        kVec3 velocity(0.0f, 1.0f, 0.0f);
+        kVec3 rVector(Math::RandCFloat(),
+                      Math::RandCFloat(),
+                      Math::RandCFloat());
+                      
+        velocity.Lerp(rVector, 0.25f);
+        actor.Physics().GetVelocity() = velocity.Normalize() * 409.6f;
+    }
+    
+    //
+    // TurokAI::CheckDropPickupFlags
+    //
+    
+    const bool CheckDropPickupFlags(const int flag) {
+        return (dropItemFlags & (1 << flag)) != 0;
+    }
+    
+    //
+    // TurokAI::spawnItem
+    //
+    
+    void spawnItem(const float x, const float y, const float z) {
+        if(CheckDropPickupFlags(pdf_health_small)) {
+            DropPickup(x, y, z, "defs/actors.def@Item_Health_Small");
+        }
     }
     
     //
@@ -63,19 +133,42 @@ class TurokAI : Component {
         switch(state) {
             case AIS_IDLE:
                 self.AnimState().Blend(anim_aiStanding, 4.0f, 8.0f, ANF_LOOP);
+                ai.bAnimTurning = false;
                 break;
+                
             case AIS_CALM:
+                if(ai.bAnimTurning == true) {
+                    if(ShouldKeepTurning()) {
+                        break;
+                    }
+                    else {
+                        ai.bAnimTurning = false;
+                    }
+                }
                 self.AnimState().Blend(anim_aiWalking, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
                 break;
+                
             case AIS_ALERT:
+                if(ai.bAnimTurning == true) {
+                    if(ShouldKeepTurning()) {
+                        break;
+                    }
+                    else {
+                        ai.bAnimTurning = false;
+                    }
+                }
                 self.AnimState().Blend(anim_aiRunning, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
                 break;
+                
             case AIS_ATTACK_MELEE:
                 self.AnimState().Blend(anim_aiMelee2, 4.0f, 8.0f, ANF_ROOTMOTION);
+                ai.bAnimTurning = false;
                 break;
+                
             case AIS_ATTACK_RANGE:
                 ai.SetIdealYaw(self.GetAngles().yaw + ai.GetYawToTarget(), 4.096f);
                 self.AnimState().Blend(anim_aiRangeAttack2, 4.0f, 8.0f, ANF_ROOTMOTION);
+                ai.bAnimTurning = false;
                 break;
         }
     }
@@ -89,12 +182,15 @@ class TurokAI : Component {
             case AIS_IDLE:
                 self.AnimState().Blend(anim_aiTurn_L_Stand, 4.0f, 8.0f, ANF_ROOTMOTION);
                 break;
+                
             case AIS_CALM:
                 self.AnimState().Blend(anim_aiTurn_L_Walk, 4.0f, 8.0f, ANF_ROOTMOTION);
                 break;
+                
             case AIS_ALERT:
                 self.AnimState().Blend(anim_aiTurn_L_Run, 4.0f, 8.0f, ANF_ROOTMOTION);
                 break;
+                
             default:
                 return;
         }
@@ -111,12 +207,15 @@ class TurokAI : Component {
             case AIS_IDLE:
                 self.AnimState().Blend(anim_aiTurn_R_Stand, 4.0f, 8.0f, ANF_ROOTMOTION);
                 break;
+                
             case AIS_CALM:
                 self.AnimState().Blend(anim_aiTurn_R_Walk, 4.0f, 8.0f, ANF_ROOTMOTION);
                 break;
+                
             case AIS_ALERT:
                 self.AnimState().Blend(anim_aiTurn_R_Run, 4.0f, 8.0f, ANF_ROOTMOTION);
                 break;
+                
             default:
                 return;
         }
@@ -133,12 +232,15 @@ class TurokAI : Component {
             case AIS_IDLE:
                 self.AnimState().Blend(anim_aiTurn_B_Stand, 4.0f, 8.0f, ANF_ROOTMOTION);
                 break;
+                
             case AIS_CALM:
                 self.AnimState().Blend(anim_aiTurn_B_Walk, 4.0f, 8.0f, ANF_ROOTMOTION);
                 break;
+                
             case AIS_ALERT:
                 self.AnimState().Blend(anim_aiTurn_B_Run, 4.0f, 8.0f, ANF_ROOTMOTION);
                 break;
+                
             default:
                 return;
         }
@@ -155,14 +257,12 @@ class TurokAI : Component {
             case AIS_IDLE:
                 self.AnimState().Blend(anim_aiStanding, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
                 break;
+                
             case AIS_CALM:
-                self.AnimState().Blend(anim_aiWalking, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
-                break;
             case AIS_ALERT:
                 {
-                    float an4 = DegToRad(4.0f);
+                    const float an4 = DegToRad(4.0f);
                     float time = 0;
-                    float speed = 4.0f;
                     
                     if(!(angle <= an4 && angle >= -an4)) {
                         kActor @targ = self.GetTarget();
@@ -176,16 +276,51 @@ class TurokAI : Component {
                         time = 0;
                     }
                     
-                    speed -= time;
-                    ai.yawSpeed = 2.0f + time;
+                    ai.yawSpeed = baseYawSpeed + time;
                     
-                    self.AnimState().Blend(anim_aiRunning, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
-                    self.AnimState().frameTime = speed;
+                    if(ai.GetAIState() == AIS_CALM) {
+                        self.AnimState().Blend(anim_aiWalking, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
+                    }
+                    else {
+                        self.AnimState().Blend(anim_aiRunning, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
+                        self.AnimState().frameTime = 4.0f - time;
+                    }
                 }
                 break;
+                
             default:
                 return;
         }
+    }
+    
+    //
+    // TurokAI::ShouldKeepTurning
+    //
+    
+    bool ShouldKeepTurning(void) {
+        const int state = ai.GetAIState();
+        
+        if(state != AIS_CALM && state != AIS_ALERT) {
+            return false;
+        }
+        
+        const float angle = ai.GetYawToTarget();
+        const float an45 = DegToRad(50.0f);
+        
+        if(angle > an45 || angle < -an45) {
+            ai.aiFlags &= ~AIF_TURNING;
+            
+            if(angle < 0) {
+                TweenLeftTurn();
+                return true;
+            }
+            else {
+                TweenRightTurn();
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     //
@@ -209,8 +344,8 @@ class TurokAI : Component {
     //
     
     bool OnTurn(const float angle) {
-        float an45 = DegToRad(50.0f);
-        float an150 = DegToRad(150.0f);
+        const float an45 = DegToRad(50.0f);
+        const float an150 = DegToRad(150.0f);
 
         if(PlayingTurnAnimation()) {
             return false;
@@ -242,7 +377,7 @@ class TurokAI : Component {
             if((ai.aiFlags & AIF_SEETARGET != 0)) {
                 TweenFrontTurn(angle);
             }
-            else {
+            else if(ai.bAnimTurning == false) {
                 OnStateChange(ai.GetAIState());
             }
         }
@@ -255,7 +390,7 @@ class TurokAI : Component {
     //
     
     void OnDeath(kActor@ killer, kKeyMapMem @damageDef) {
-        if((ai.aiFlags & AIF_DISABLED) != 0) {
+        if(ai.aiState == AIS_DEATH || (ai.aiFlags & AIF_DISABLED) != 0) {
             return;
         }
         
@@ -271,6 +406,24 @@ class TurokAI : Component {
         
         PickAnimSet(anims, weights);
         ai.aiFlags |= AIF_DISABLED;
+        ai.aiState = AIS_DEATH;
+    }
+    
+    //
+    // TurokAI::OnDormant
+    //
+    
+    void OnDormant(void) {
+        self.AnimState().Blend(anim_aiStanding, 4.0f, 4.0f, ANF_LOOP);
+        ai.ClearTargets();
+    }
+    
+    //
+    // TurokAI::OnWake
+    //
+    
+    void OnWake(void) {
+        ai.ClearTargets();
     }
     
     //
@@ -278,20 +431,33 @@ class TurokAI : Component {
     //
     
     void OnLocalThink(void) {
-        /*if(alligenceID == 20) {
-            if((ai.aiFlags & AIF_SEETARGET) != 0) {
-                if(!(self.AnimState().IsPlaying(anim_aiRunning))) {
-                    self.AnimState().Blend(anim_aiRunning, 4.0f, 4.0f, ANF_ROOTMOTION|ANF_LOOP);
+        if(ai.GetAIState() == AIS_DEATH) {
+            if(bDeathFade == false) {
+                if((self.AnimState().flags & ANF_STOPPED) != 0) {
+                    deathFadeTime = 10.0f;
+                    bDeathFade = true;
                 }
-            
-                if((ai.aiFlags & AIF_TURNING) == 0) {
-                    ai.SetIdealYaw(ai.GetBestYawToTarget(2.5f), 4.096f);
+            }
+            else if(deathFadeTime > 0.0f) {
+                float rt = Client.GetRunTime();
+                deathFadeTime -= rt;
+                
+                if(deathFadeTime <= 5.0f) {
+                    float scaleXZ = (1.0f - ((deathFadeTime / 5.0f) * -0.5f)) * (rt * 1.5f);
+                    float scaleY = (1.0f - ((deathFadeTime / 5.0f))) * (rt * 1.5f);
+                    
+                    self.GetScale().x += (scaleXZ * scaleXZ);
+                    self.GetScale().y += (scaleY * scaleY);
+                    self.GetScale().z += (scaleXZ * scaleXZ);
+                    
+                    self.UpdateTransform();
                 }
             }
             else {
-                self.AnimState().Blend(anim_aiStanding, 4.0f, 4.0f, ANF_ROOTMOTION|ANF_LOOP);
+                self.bHidden = true;
+                self.Remove();
             }
-        }*/
+        }
     }
     
     //
@@ -306,9 +472,18 @@ class TurokAI : Component {
     //
     
     void OnSpawn(void) {
+        int dropFlags1 = 0;
+        int dropFlags2 = 0;
+        
         if(!(self.def is null)) {
             self.def.GetInt("alligenceID", alligenceID);
+            self.def.GetInt("dropItemFlags", dropFlags1);
+            self.def.GetFloat("yawSpeed", baseYawSpeed);
         }
+        
+        self.args.GetInt("dropItemFlags", dropFlags2);
+        
+        dropItemFlags |= (dropFlags1 | dropFlags2);
     }
     
     //
