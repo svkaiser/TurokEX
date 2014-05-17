@@ -162,7 +162,7 @@ void kexActor::LocalTick(void) {
     animState.Update();
 
     if(animState.frameTime != 0) {
-        height = -animState.baseOffset;
+        height = -animState.baseOffset * 0.72f;
     }
 
     physicsRef->Think(client.GetRunTime());
@@ -216,17 +216,7 @@ void kexActor::Spawn(void) {
         definition->GetInt("displayType", displayType);
         definition->GetString("footstepSound", footstepSound);
 
-        definition->GetFloat("mass", physicsRef->mass, 1800);
-        definition->GetFloat("friction", physicsRef->friction, 1);
-        definition->GetFloat("airFriction", physicsRef->airFriction, 1);
-        definition->GetFloat("fallFriction", physicsRef->fallFriction, 0);
-        definition->GetFloat("bounceDamp", physicsRef->bounceDamp, 0);
-        definition->GetFloat("stepHeight", physicsRef->stepHeight, 48);
-        definition->GetFloat("rotorSpeed", physicsRef->rotorSpeed, 0);
-        definition->GetFloat("rotorFriction", physicsRef->rotorFriction, 1);
-        definition->GetFloat("sinkVelocity", physicsRef->sinkVelocity, 0.2f);
-        definition->GetBool("bRotor", physicsRef->bRotor, false);
-        definition->GetInt("clipFlags", (int&)physicsRef->clipFlags, (PF_CLIPEDGES|PF_DROPOFF));
+        physicsRef->ParseDefinition(definition);
 
         if(definition->GetString("mesh", str)) {
             SetModel(str.c_str());
@@ -642,6 +632,10 @@ void kexActor::OnDamage(kexWorldObject *instigator, int damage, kexKeyMap *damag
     int state;
     kexActorComponent *ac;
 
+    if(Removing()) {
+        return;
+    }
+
     if(InstanceOf(&kexPlayerPuppet::info)) {
         ac = &static_cast<kexActor*>(owner)->scriptComponent;
     }
@@ -672,6 +666,10 @@ void kexActor::OnDamage(kexWorldObject *instigator, int damage, kexKeyMap *damag
 void kexActor::OnDeath(kexWorldObject *instigator, kexKeyMap *damageDef) {
     int state;
     kexActorComponent *ac;
+
+    if(Removing()) {
+        return;
+    }
 
     if(InstanceOf(&kexPlayerPuppet::info)) {
         ac = &static_cast<kexActor*>(owner)->scriptComponent;

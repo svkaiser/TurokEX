@@ -80,7 +80,10 @@ static void FCmd_DebugAI(void) {
     for(kexActor *actor = localWorld.actors.Next();
         actor != NULL; actor = actor->worldLink.Next()) {
             if(actor->InstanceOf(&kexAI::info)) {
+                bool bSolid = actor->bCollision;
+                actor->bCollision = true;
                 actor->Trace(&trace);
+                actor->bCollision = bSolid;
             }
     }
 
@@ -161,7 +164,7 @@ void kexAI::LocalTick(void) {
     animState.Update();
 
     if(animState.frameTime != 0) {
-        height = -animState.baseOffset;
+        height = -animState.baseOffset * 0.72f;
     }
 
     physicsRef->Think(client.GetRunTime());
@@ -234,26 +237,26 @@ void kexAI::Spawn(void) {
     physicsRef->bEnabled = true;
 
     if(definition != NULL) {
-        definition->GetBool("bCanMelee", bCanMelee);
-        definition->GetBool("bCanRangeAttack", bCanRangeAttack);
-        definition->GetBool("bCanTeleport", bCanTeleport);
-        definition->GetFloat("meleeRange", meleeRange);
-        definition->GetFloat("alertRange", alertRange);
-        definition->GetFloat("rangeDistance", rangeDistance, 1024.0f);
-        definition->GetFloat("checkRadius", checkRadius, 1.5f);
-        definition->GetFloat("sightRange", sightRange, DEG2RAD(45));
-        definition->GetFloat("rangeSightDamp", rangeSightDamp, 0.675f);
-        definition->GetFloat("rangeAdjustAngle", rangeAdjustAngle, DEG2RAD(50));
-        definition->GetFloat("yawSpeed", yawSpeed, 2.0f);
-        definition->GetFloat("thinkTime", thinkTime, 8);
-        definition->GetFloat("maxHeadAngle", maxHeadAngle, DEG2RAD(70));
-        definition->GetInt("maxThreshold", maxThreshold, 100);
-        definition->GetInt("giveUpChance", giveUpChance, 995);
-        definition->GetInt("teleportChance", teleportChance, 985);
-        definition->GetInt("rangeChance", rangeChance, 100);
-        definition->GetInt("aiFlags", (int&)aiFlags, AIF_DEFAULT);
+        definition->GetBool("ai.bCanMelee", bCanMelee);
+        definition->GetBool("ai.bCanRangeAttack", bCanRangeAttack);
+        definition->GetBool("ai.bCanTeleport", bCanTeleport);
+        definition->GetFloat("ai.meleeRange", meleeRange);
+        definition->GetFloat("ai.alertRange", alertRange);
+        definition->GetFloat("ai.rangeDistance", rangeDistance, 1024.0f);
+        definition->GetFloat("ai.checkRadius", checkRadius, 1.5f);
+        definition->GetFloat("ai.sightRange", sightRange, DEG2RAD(45));
+        definition->GetFloat("ai.rangeSightDamp", rangeSightDamp, 0.675f);
+        definition->GetFloat("ai.rangeAdjustAngle", rangeAdjustAngle, DEG2RAD(50));
+        definition->GetFloat("ai.yawSpeed", yawSpeed, 2.0f);
+        definition->GetFloat("ai.thinkTime", thinkTime, 8);
+        definition->GetFloat("ai.maxHeadAngle", maxHeadAngle, DEG2RAD(70));
+        definition->GetInt("ai.maxThreshold", maxThreshold, 100);
+        definition->GetInt("ai.giveUpChance", giveUpChance, 995);
+        definition->GetInt("ai.teleportChance", teleportChance, 985);
+        definition->GetInt("ai.rangeChance", rangeChance, 100);
+        definition->GetInt("ai.aiFlags", (int&)aiFlags, AIF_DEFAULT);
 
-        definition->GetInt("clipFlags", (int&)physicsRef->clipFlags, (PF_CLIPEDGES|PF_NOENTERWATER));
+        physicsRef->ParseDefinition(definition);
     }
 
     physicsRef->sector = localWorld.CollisionMap().PointInSector(origin);
@@ -503,7 +506,6 @@ void kexAI::AnimStopped(void) {
     }
 
     if(bAnimTurning) {
-        bAnimTurning = false;
         bWasTurning = true;
     }
 
@@ -1213,7 +1215,7 @@ void kexAI::PrintDebugInfo(void) {
     kexRenderUtils::PrintStatsText("look at target", ": %i", (ai->GetAIFlags() & AIF_LOOKATTARGET) != 0);
     kexRenderUtils::PrintStatsText("face target", ": %i", (ai->GetAIFlags() & AIF_FACETARGET) != 0);
     kexRenderUtils::PrintStatsText("think time", ": %f", ai->ThinkTime());
-    kexRenderUtils::PrintStatsText("next think time", ": %f", ai->NextThinkTime());
+    kexRenderUtils::PrintStatsText("ideal turn yaw", ": %f", ai->idealYaw);
     kexRenderUtils::PrintStatsText("is attacking", ": %i", ai->IsAttacking());
     kexRenderUtils::PrintStatsText("is anim turning", ": %i", ai->IsAnimTurning());
     kexRenderUtils::PrintStatsText("attack threshold", ": %i", ai->AttackThreshold());
