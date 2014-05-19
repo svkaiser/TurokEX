@@ -51,6 +51,10 @@ static const char *shaderParamNames[RSP_TOTAL+1] = {
     "uCameraAngle",
     "uCameraTransform",
     "uCameraPosition",
+    "uParam1",
+    "uParam2",
+    "uParam3",
+    "uParam4",
     NULL
 };
 

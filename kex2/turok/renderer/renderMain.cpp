@@ -257,17 +257,21 @@ void kexRenderer::DrawElements(const bool bClearCount) {
 //
 
 void kexRenderer::DrawElements(const kexMaterial *material, const bool bClearCount) {
-    surface_t surf;
+    static surface_t surf;
+    static drawSurface_t drawSurf;
     
-    surf.numVerts   = vertexCount;
-    surf.numIndices = indiceCount;
-    surf.vertices   = reinterpret_cast<kexVec3*>(drawVertices);
-    surf.coords     = drawTexCoords;
-    surf.rgb        = drawRGB;
-    surf.normals    = drawVertices;
-    surf.indices    = drawIndices;
+    surf.numVerts       = vertexCount;
+    surf.numIndices     = indiceCount;
+    surf.vertices       = reinterpret_cast<kexVec3*>(drawVertices);
+    surf.coords         = drawTexCoords;
+    surf.rgb            = drawRGB;
+    surf.normals        = drawVertices;
+    surf.indices        = drawIndices;
+    drawSurf.surf       = &surf;
+    drawSurf.material   = (kexMaterial*)material;
+    drawSurf.refObj     = NULL;
     
-    DrawSurface(&surf, (kexMaterial*)material);
+    DrawSurface(&drawSurf, (kexMaterial*)material);
     
     if(bClearCount) {
         indiceCount = 0;
@@ -431,7 +435,7 @@ void kexRenderer::DrawSurfaceList(drawSurfFunc_t function, const int start, cons
                 material = drawSurf->material;
             }
 
-            (this->*function)(drawSurf->surf, material);
+            (this->*function)(drawSurf, material);
 
             dglPopMatrix();
         }
@@ -471,8 +475,9 @@ void kexRenderer::ClearSurfaceList(void) {
 // kexRenderer::DrawSurface
 //
 
-void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  {
+void kexRenderer::DrawSurface(const drawSurface_t *drawSurf, kexMaterial *material)  {
     kexShaderObj *shader;
+    surface_t *surface = drawSurf->surf;
 
     if(surface == NULL) {
         return;
@@ -492,6 +497,13 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
 
     shader->Enable();
     shader->CommitGlobalUniforms(material);
+
+    if(drawSurf->refObj) {
+        shader->SetGlobalUniform(RSP_GENERIC_PARAM1, drawSurf->refObj->ShaderParams()[0]);
+        shader->SetGlobalUniform(RSP_GENERIC_PARAM2, drawSurf->refObj->ShaderParams()[1]);
+        shader->SetGlobalUniform(RSP_GENERIC_PARAM3, drawSurf->refObj->ShaderParams()[2]);
+        shader->SetGlobalUniform(RSP_GENERIC_PARAM4, drawSurf->refObj->ShaderParams()[3]);
+    }
     
     renderBackend.SetState(material->StateBits());
     renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
@@ -539,8 +551,9 @@ void kexRenderer::DrawSurface(const surface_t *surface, kexMaterial *material)  
 // kexRenderer::DrawWireFrameSurface
 //
 
-void kexRenderer::DrawWireFrameSurface(const surface_t *surface, kexMaterial *material) {
+void kexRenderer::DrawWireFrameSurface(const drawSurface_t *drawSurf, kexMaterial *material) {
     kexShaderObj *shader;
+    surface_t *surface = drawSurf->surf;
 
     if(surface == NULL) {
         return;
@@ -554,6 +567,13 @@ void kexRenderer::DrawWireFrameSurface(const surface_t *surface, kexMaterial *ma
 
     shader->Enable();
     shader->CommitGlobalUniforms(material);
+
+    if(drawSurf->refObj) {
+        shader->SetGlobalUniform(RSP_GENERIC_PARAM1, drawSurf->refObj->ShaderParams()[0]);
+        shader->SetGlobalUniform(RSP_GENERIC_PARAM2, drawSurf->refObj->ShaderParams()[1]);
+        shader->SetGlobalUniform(RSP_GENERIC_PARAM3, drawSurf->refObj->ShaderParams()[2]);
+        shader->SetGlobalUniform(RSP_GENERIC_PARAM4, drawSurf->refObj->ShaderParams()[3]);
+    }
     
     renderBackend.SetState(material->StateBits());
     renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
@@ -593,8 +613,9 @@ void kexRenderer::DrawWireFrameSurface(const surface_t *surface, kexMaterial *ma
 // kexRenderer::DrawBlackSurface
 //
 
-void kexRenderer::DrawBlackSurface(const surface_t *surface, kexMaterial *material)  {
+void kexRenderer::DrawBlackSurface(const drawSurface_t *drawSurf, kexMaterial *material)  {
     kexShaderObj *shader = blackShader;
+    surface_t *surface = drawSurf->surf;
     
     if(surface == NULL) {
         return;
@@ -614,6 +635,13 @@ void kexRenderer::DrawBlackSurface(const surface_t *surface, kexMaterial *materi
     
     shader->Enable();
     shader->CommitGlobalUniforms(material);
+
+    if(drawSurf->refObj) {
+        shader->SetGlobalUniform(RSP_GENERIC_PARAM1, drawSurf->refObj->ShaderParams()[0]);
+        shader->SetGlobalUniform(RSP_GENERIC_PARAM2, drawSurf->refObj->ShaderParams()[1]);
+        shader->SetGlobalUniform(RSP_GENERIC_PARAM3, drawSurf->refObj->ShaderParams()[2]);
+        shader->SetGlobalUniform(RSP_GENERIC_PARAM4, drawSurf->refObj->ShaderParams()[3]);
+    }
     
     renderBackend.SetState(material->StateBits());
     renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());

@@ -59,7 +59,7 @@ typedef struct {
 #define MAX_BLUR_SAMPLES    2
 
 class kexRenderer;
-typedef void                (kexRenderer::*drawSurfFunc_t)(const surface_t*, kexMaterial*);
+typedef void                (kexRenderer::*drawSurfFunc_t)(const drawSurface_t*, kexMaterial*);
 
 class kexFx;
 
@@ -82,9 +82,9 @@ public:
     void                    DrawSurfaceList(drawSurfFunc_t function);
     void                    ClearSurfaceList(const int start, const int end);
     void                    ClearSurfaceList(void);
-    void                    DrawSurface(const surface_t *surface, kexMaterial *material);
-    void                    DrawWireFrameSurface(const surface_t *surface, kexMaterial *material);
-    void                    DrawBlackSurface(const surface_t *surface, kexMaterial *material);
+    void                    DrawSurface(const drawSurface_t *drawSurf, kexMaterial *material);
+    void                    DrawWireFrameSurface(const drawSurface_t *drawSurf, kexMaterial *material);
+    void                    DrawBlackSurface(const drawSurface_t *drawSurf, kexMaterial *material);
     void                    Draw(void);
     void                    DrawFX(const fxDisplay_t *fxList, const int count);
     void                    BindDrawPointers(void);
