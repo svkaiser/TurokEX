@@ -49,6 +49,10 @@ kexWorldObject::kexWorldObject(void) {
     this->impactType        = IT_DEFAULT;
     this->physicsRef        = NULL;
     this->wireframeColor    = RGBA(255, 255, 255, 255);
+    this->shaderParams[0]   = 0;
+    this->shaderParams[1]   = 0;
+    this->shaderParams[2]   = 0;
+    this->shaderParams[3]   = 0;
 
     this->areaLink.link.SetData(this);
     this->areaLink.node = NULL;
@@ -223,6 +227,16 @@ bool kexWorldObject::TryMove(const kexVec3 &position, kexVec3 &dest, kexSector *
 }
 
 //
+// kexWorldObject::SetShaderParam
+//
+
+void kexWorldObject::SetShaderParam(const int index, const float value) {
+    assert(index >= 0 && index < 4);
+
+    shaderParams[index] = value;
+}
+
+//
 // kexWorldObject::OnDamage
 //
 
@@ -298,39 +312,58 @@ void kexWorldObject::InflictDamage(kexWorldObject *target, kexKeyMap *damageDef)
 // kexWorldObject::RangeDamage
 //
 
-void kexWorldObject::RangeDamage(const char *damageDef,
+bool kexWorldObject::RangeDamage(const char *damageDef,
                                  const float dmgRadius,
                                  const kexVec3 &dmgOrigin) {
     if(areaLink.node) {
         float dist;
+        kexSDNodeObj<kexWorldObject> *areaNode = areaLink.node;
 
-        for(kexWorldObject *obj = areaLink.node->objects.Next(); obj != NULL;
-            obj = obj->areaLink.link.Next()) {
-                if(obj == this || !obj->bCollision) {
-                    continue;
-                }
-                if(target && obj != target) {
-                    continue;
-                }
+        while(1) {
+            for(kexWorldObject *obj = areaNode->objects.Next(); obj != NULL;
+                obj = obj->areaLink.link.Next()) {
+                    if(obj == this || !obj->bCollision) {
+                        continue;
+                    }
+                    if(target && obj != target) {
+                        continue;
+                    }
 
-                dist = ObjectDistance(obj, dmgOrigin);
+                    dist = ObjectDistance(obj, dmgOrigin);
 
-                if(kexMath::Sqrt(dist) * 0.5f < radius + dmgRadius) {
-                    InflictDamage(obj, defManager.FindDefEntry(damageDef));
-                    return;
-                }
+                    if(kexMath::Sqrt(dist) * 0.5f < radius + dmgRadius) {
+                        InflictDamage(obj, defManager.FindDefEntry(damageDef));
+                        return true;
+                    }
+            }
+
+            if(areaNode->axis == -1) {
+                break;
+            }
+
+            if(bbox.min[areaNode->axis] > areaNode->dist) {
+                areaNode = areaNode->children[NODE_FRONT];
+            }
+            else if(bbox.max[areaNode->axis] < areaNode->dist) {
+                areaNode = areaNode->children[NODE_BACK];
+            }
+            else {
+                break;
+            }
         }
     }
+
+    return false;
 }
 
 //
 // kexWorldObject::RangeDamage
 //
 
-void kexWorldObject::RangeDamage(const kexStr &damageDef,
+bool kexWorldObject::RangeDamage(const kexStr &damageDef,
                                  const float dmgRadius,
                                  const kexVec3 &dmgOrigin) {
-    RangeDamage(damageDef.c_str(), dmgRadius, dmgOrigin);
+    return RangeDamage(damageDef.c_str(), dmgRadius, dmgOrigin);
 }
 
 //

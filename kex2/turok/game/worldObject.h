@@ -54,12 +54,13 @@ public:
     bool                            AlignToSurface(void);
     void                            LinkArea(void);
     void                            UnlinkArea(void);
+    void                            SetShaderParam(const int index, const float value);
     float                           ObjectDistance(kexWorldObject *obj, const kexVec3 &offset);
     void                            InflictDamage(kexWorldObject *target, kexKeyMap *damageDef);
-    void                            RangeDamage(const char *damageDef,
+    bool                            RangeDamage(const char *damageDef,
                                                 const float dmgRadius,
                                                 const kexVec3 &dmgOrigin);
-    void                            RangeDamage(const kexStr &damageDef,
+    bool                            RangeDamage(const kexStr &damageDef,
                                                 const float dmgRadius,
                                                 const kexVec3 &dmgOrigin);
 
@@ -76,6 +77,7 @@ public:
     void                            SetImpactType(const impactType_t iType) { impactType = iType; }
     int                             &Health(void) { return health; }
     const rcolor                    WireFrameColor(void) const { return wireframeColor; }
+    const float                     *ShaderParams(void) const { return shaderParams; }
 
     kexSDNodeRef<kexWorldObject>    areaLink;
 
@@ -100,15 +102,17 @@ public:
 
         kexDisplayObject::RegisterBaseProperties<type>(scriptClass);
 
+        OBJMETHOD("void SetShaderParam(const int, const float)",
+            SetShaderParam, (const int index, const float value), void);
         OBJMETHOD("void SetBoundingBox(const kVec3 &in, const kVec3 &in)",
             SetBoundingBox, (const kexVec3 &min, const kexVec3 &max), void);
         OBJMETHOD("float ObjectDistance(kActor@, const kVec3 &in)",
             ObjectDistance, (kexWorldObject *obj, const kexVec3 &offset), float);
-        OBJMETHOD("void RangeDamage(const kStr &in, const float, const kVec3 &in)",
+        OBJMETHOD("bool RangeDamage(const kStr &in, const float, const kVec3 &in)",
             RangeDamage, (
             const kexStr &damageDef,
             const float dmgRadius,
-            const kexVec3 &dmgOrigin), void);
+            const kexVec3 &dmgOrigin), bool);
 
     #define OBJPROPERTY(str, p)                         \
         scriptManager.Engine()->RegisterObjectProperty( \
@@ -145,6 +149,7 @@ protected:
     kexPhysics                      *physicsRef;
     impactType_t                    impactType;
     rcolor                          wireframeColor;
+    float                           shaderParams[4];
 END_CLASS();
 
 #endif
