@@ -63,26 +63,78 @@ final class TurokWeaponKnife : TurokWeapon {
     }
     
     //
+    // TurokWeaponKnife::KnifeBloodSplatter
+    //
+    
+    void KnifeBloodSplatter(const int which, kVec3 &in pos) {
+        kActor @src = owner.self.Puppet();
+        kQuat rot   = src.GetRotation();
+        kVec3 org   = src.GetOrigin();
+        kStr fxName;
+        
+        switch(which) {
+            case 0:
+                fxName = "fx/fx_060.kfx";
+                break;
+            case 1:
+                fxName = "fx/fx_063.kfx";
+                break;
+            case 2:
+                fxName = "fx/fx_066.kfx";
+                break;
+            default:
+                return;
+        }
+        
+        LocalWorld.SpawnFX(fxName, src, kVec3(0, 0, 0), org + (pos * rot), rot);
+    }
+    
+    //
+    // TurokWeaponKnife::knifeAttack1
+    //
+    
+    void knifeAttack1(const float a, const float b, const float c, const float d) {
+        kActor @player = owner.self.Puppet();
+        kVec3 pos = player.TransformPoint(a, b, -c);
+        
+        if(player.RangeDamage("defs/damage.def@knifeDamage_1", player.radius, pos)) {
+            KnifeBloodSplatter(0, kVec3(a, b, -c));
+        }
+    }
+    
+    //
+    // TurokWeaponKnife::knifeAttack2
+    //
+    
+    void knifeAttack2(const float a, const float b, const float c, const float d) {
+        kActor @player = owner.self.Puppet();
+        kVec3 pos = player.TransformPoint(a, b, -c);
+        
+        if(player.RangeDamage("defs/damage.def@knifeDamage_2", player.radius, pos)) {
+            KnifeBloodSplatter(1, kVec3(a, b, -c));
+        }
+    }
+    
+    //
+    // TurokWeaponKnife::knifeAttack3
+    //
+    
+    void knifeAttack3(const float a, const float b, const float c, const float d) {
+        kActor @player = owner.self.Puppet();
+        kVec3 pos = player.TransformPoint(a, b, -c);
+        
+        if(player.RangeDamage("defs/damage.def@knifeDamage_3", player.radius, pos)) {
+            KnifeBloodSplatter(2, kVec3(a, b, -c));
+        }
+    }
+    
+    //
     // TurokWeaponKnife::CheckAttack
     //
     
     void CheckAttack(void) {
         if(bCanAttack && self.AnimState().PlayTime() >= 0.15f) {
             bCanAttack = false;
-            /*
-            kActor @src = localClient.Puppet();
-            kPhysics @physics = src.Physics();
-            
-            kVec3 org = src.GetOrigin();
-            org.y += src.BaseHeight();
-            
-            kTraceInfo tInfo = physics.RayTrace(org, src.GetAngles().ToForwardAxis(), 64,
-                TF_TRACEPOINT | TF_CLIPALL);
-            
-            if(tInfo.fraction != 1 && !(tInfo.hitActor is null)) {
-                LocalWorld.DamageActor(tInfo.hitActor, src, 15);
-            }
-            */
         }
         
         TurokWeapon::CheckAttack();

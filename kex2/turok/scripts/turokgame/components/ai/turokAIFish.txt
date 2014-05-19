@@ -82,14 +82,7 @@ class TurokAIFish : TurokAI {
                 ai.SetIdealYaw(self.GetTarget().GetAngles().yaw + M_PI, 4.096f);
             }
             else {
-                float selfYaw = self.GetAngles().yaw;
-                
-                if(!ai.CheckPosition(self.GetOrigin(), ai.checkRadius, selfYaw + 0.5236f)) {
-                    ai.SetIdealYaw(selfYaw - 0.78f, 4.096f);
-                }
-                else if(!ai.CheckPosition(self.GetOrigin(), ai.checkRadius, selfYaw - 0.5236f)) {
-                    ai.SetIdealYaw(selfYaw + 0.78f, 4.096f);
-                }
+                BumpAndTurn(0.5236f, 0.78f);
             }
         }
     }

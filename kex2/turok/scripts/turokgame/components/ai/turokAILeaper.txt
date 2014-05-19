@@ -1,0 +1,47 @@
+////////////////////////////////////////////////////
+//
+// TurokAILeaper
+//
+////////////////////////////////////////////////////
+
+class TurokAILeaper : TurokAI {
+    
+    //
+    // TurokAILeaper::TurokAILeaper
+    //
+    
+    TurokAILeaper(kActor @actor) {
+        super(actor);
+    }
+    
+    void deathScream(const float a, const float b, const float c, const float d) {
+        self.StartSound("sounds/shaders/leaper_death.ksnd");
+    }
+    
+    void violentDeathScream(const float a, const float b, const float c, const float d) {
+        self.StartSound("sounds/shaders/leaper_violent_death.ksnd");
+    }
+    
+    //
+    // TurokAILeaper::OnStateChange
+    //
+    
+    void OnStateChange(int state) {
+        switch(state) {
+            case AIS_ATTACK_MELEE:
+                self.AnimState().Blend(anim_aiMelee1, 4.0f, 8.0f, ANF_ROOTMOTION);
+                ai.bAnimTurning = false;
+                return;
+        }
+        
+        TurokAI::OnStateChange(state);
+    }
+    
+    //
+    // TurokAILeaper::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        TurokAI::OnSpawn();
+    }
+}

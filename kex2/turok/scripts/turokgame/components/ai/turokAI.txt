@@ -25,8 +25,12 @@ class TurokAI : Component {
     int alligenceID;
     int dropItemFlags;
     bool bDeathFade;
+    bool bWalkAround;
     float deathFadeTime;
     float baseYawSpeed;
+    float wanderThreshold;
+    int knifeDamage;
+    int backStabDamage;
     
     //
     // TurokAI::TurokAI
@@ -41,6 +45,10 @@ class TurokAI : Component {
         bDeathFade = false;
         deathFadeTime = 0.0f;
         baseYawSpeed = 2.0f;
+        wanderThreshold = 0.0f;
+        bWalkAround = false;
+        knifeDamage = 15;
+        backStabDamage = 30;
     }
     
     //
@@ -85,7 +93,7 @@ class TurokAI : Component {
     //
     
     void DropPickup(const float x, const float y, const float z, const kStr itemName) {
-        kVec3 origin = self.ToLocalOrigin(x, y, z);
+        kVec3 origin = self.TransformPoint(x, y, -z);
         origin.y += 8.192f;
         
         kActor @actor = LocalWorld.SpawnActor(itemName, origin, self.GetAngles());
@@ -119,10 +127,36 @@ class TurokAI : Component {
     // TurokAI::spawnItem
     //
     
-    void spawnItem(const float x, const float y, const float z) {
+    void spawnItem(const float x, const float y, const float z, const float w) {
         if(CheckDropPickupFlags(pdf_health_small)) {
             DropPickup(x, y, z, "defs/actors.def@Item_Health_Small");
         }
+    }
+    
+    //
+    // TurokAI::action_103
+    //
+    
+    void action_103(const float x, const float y, const float z, const float w) {
+        float threshold = w;
+        
+        if(threshold < 1.0f) {
+            threshold = 1.0f;
+        }
+        
+        kVec3 pos = self.TransformPoint(x, y + self.viewHeight, -z);
+        kVec3 velocity = self.Physics().GetVelocity();
+        kVec3 sVec = pos - (velocity * 0.06666667f);
+        kQuat rot = velocity.ToQuaternion();
+        float cnt = 0;
+        kVec3 lVec;
+        
+        do {
+            lVec = pos;
+            lVec.Lerp(sVec, cnt / threshold);
+            LocalWorld.SpawnFX("fx/fx_051.kfx", self, velocity, lVec, rot);
+            cnt += 1.0f;
+        } while(cnt < threshold);
     }
     
     //
@@ -146,6 +180,8 @@ class TurokAI : Component {
                     }
                 }
                 self.AnimState().Blend(anim_aiWalking, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
+                bWalkAround = false;
+                wanderThreshold = 0.0f;
                 break;
                 
             case AIS_ALERT:
@@ -158,6 +194,8 @@ class TurokAI : Component {
                     }
                 }
                 self.AnimState().Blend(anim_aiRunning, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
+                bWalkAround = false;
+                wanderThreshold = 0.0f;
                 break;
                 
             case AIS_ATTACK_MELEE:
@@ -178,23 +216,46 @@ class TurokAI : Component {
     //
     
     void TweenLeftTurn(void) {
-        switch(ai.GetAIState()) {
-            case AIS_IDLE:
-                self.AnimState().Blend(anim_aiTurn_L_Stand, 4.0f, 8.0f, ANF_ROOTMOTION);
+        int animID = self.AnimState().PlayingID();
+        int animIDToPlay = -1;
+        
+        switch(animID) {
+            case anim_aiStanding:
+                animIDToPlay = anim_aiTurn_L_Stand;
                 break;
                 
-            case AIS_CALM:
-                self.AnimState().Blend(anim_aiTurn_L_Walk, 4.0f, 8.0f, ANF_ROOTMOTION);
+            case anim_aiWalking:
+                animIDToPlay = anim_aiTurn_L_Walk;
                 break;
                 
-            case AIS_ALERT:
-                self.AnimState().Blend(anim_aiTurn_L_Run, 4.0f, 8.0f, ANF_ROOTMOTION);
+            case anim_aiRunning:
+                animIDToPlay = anim_aiTurn_L_Run;
                 break;
                 
             default:
-                return;
+                break;
         }
         
+        if(animIDToPlay == -1) {
+            switch(ai.GetAIState()) {
+                case AIS_IDLE:
+                    animIDToPlay = anim_aiTurn_L_Stand;
+                    break;
+                    
+                case AIS_CALM:
+                    animIDToPlay = anim_aiTurn_L_Walk;
+                    break;
+                    
+                case AIS_ALERT:
+                    animIDToPlay = anim_aiTurn_L_Run;
+                    break;
+                    
+                default:
+                    return;
+            }
+        }
+        
+        self.AnimState().Blend(animIDToPlay, 4.0f, 8.0f, ANF_ROOTMOTION);
         ai.bAnimTurning = true;
     }
     
@@ -203,23 +264,46 @@ class TurokAI : Component {
     //
     
     void TweenRightTurn(void) {
-        switch(ai.GetAIState()) {
-            case AIS_IDLE:
-                self.AnimState().Blend(anim_aiTurn_R_Stand, 4.0f, 8.0f, ANF_ROOTMOTION);
+        int animID = self.AnimState().PlayingID();
+        int animIDToPlay = -1;
+        
+        switch(animID) {
+            case anim_aiStanding:
+                animIDToPlay = anim_aiTurn_R_Stand;
                 break;
                 
-            case AIS_CALM:
-                self.AnimState().Blend(anim_aiTurn_R_Walk, 4.0f, 8.0f, ANF_ROOTMOTION);
+            case anim_aiWalking:
+                animIDToPlay = anim_aiTurn_R_Walk;
                 break;
                 
-            case AIS_ALERT:
-                self.AnimState().Blend(anim_aiTurn_R_Run, 4.0f, 8.0f, ANF_ROOTMOTION);
+            case anim_aiRunning:
+                animIDToPlay = anim_aiTurn_R_Run;
                 break;
                 
             default:
-                return;
+                break;
         }
         
+        if(animIDToPlay == -1) {
+            switch(ai.GetAIState()) {
+                case AIS_IDLE:
+                    animIDToPlay = anim_aiTurn_R_Stand;
+                    break;
+                    
+                case AIS_CALM:
+                    animIDToPlay = anim_aiTurn_R_Walk;
+                    break;
+                    
+                case AIS_ALERT:
+                    animIDToPlay = anim_aiTurn_R_Run;
+                    break;
+                    
+                default:
+                    return;
+            }
+        }
+        
+        self.AnimState().Blend(animIDToPlay, 4.0f, 8.0f, ANF_ROOTMOTION);
         ai.bAnimTurning = true;
     }
     
@@ -228,23 +312,46 @@ class TurokAI : Component {
     //
     
     void TweenBackTurn(void) {
-        switch(ai.GetAIState()) {
-            case AIS_IDLE:
-                self.AnimState().Blend(anim_aiTurn_B_Stand, 4.0f, 8.0f, ANF_ROOTMOTION);
+        int animID = self.AnimState().PlayingID();
+        int animIDToPlay = -1;
+        
+        switch(animID) {
+            case anim_aiStanding:
+                animIDToPlay = anim_aiTurn_B_Stand;
                 break;
                 
-            case AIS_CALM:
-                self.AnimState().Blend(anim_aiTurn_B_Walk, 4.0f, 8.0f, ANF_ROOTMOTION);
+            case anim_aiWalking:
+                animIDToPlay = anim_aiTurn_B_Walk;
                 break;
                 
-            case AIS_ALERT:
-                self.AnimState().Blend(anim_aiTurn_B_Run, 4.0f, 8.0f, ANF_ROOTMOTION);
+            case anim_aiRunning:
+                animIDToPlay = anim_aiTurn_B_Run;
                 break;
                 
             default:
-                return;
+                break;
         }
         
+        if(animIDToPlay == -1) {
+            switch(ai.GetAIState()) {
+                case AIS_IDLE:
+                    animIDToPlay = anim_aiTurn_B_Stand;
+                    break;
+                    
+                case AIS_CALM:
+                    animIDToPlay = anim_aiTurn_B_Walk;
+                    break;
+                    
+                case AIS_ALERT:
+                    animIDToPlay = anim_aiTurn_B_Run;
+                    break;
+                    
+                default:
+                    return;
+            }
+        }
+        
+        self.AnimState().Blend(animIDToPlay, 4.0f, 8.0f, ANF_ROOTMOTION);
         ai.bAnimTurning = true;
     }
     
@@ -386,6 +493,83 @@ class TurokAI : Component {
     }
     
     //
+    // TurokAI::BumpAndTurn
+    //
+    
+    void BumpAndTurn(const float spread, const float angle) {
+        float selfYaw = self.GetAngles().yaw;
+                
+        if(!ai.CheckPosition(self.GetOrigin(), ai.checkRadius, selfYaw + spread)) {
+            ai.SetIdealYaw(selfYaw - angle, 4.096f);
+        }
+        else if(!ai.CheckPosition(self.GetOrigin(), ai.checkRadius, selfYaw - spread)) {
+            ai.SetIdealYaw(selfYaw + angle, 4.096f);
+        }
+    }
+    
+    //
+    // TurokAI::DeathThink
+    //
+    
+    void DeathThink(void) {
+        if(bDeathFade == false) {
+            if((self.AnimState().flags & ANF_STOPPED) != 0) {
+                deathFadeTime = 10.0f;
+                bDeathFade = true;
+            }
+        }
+        else if(deathFadeTime > 0.0f) {
+            float rt = Client.GetRunTime();
+            deathFadeTime -= rt;
+            
+            if(deathFadeTime <= 5.0f) {
+                float scaleXZ = (1.0f - ((deathFadeTime / 5.0f) * -0.5f)) * (rt * 1.5f);
+                float scaleY = (1.0f - ((deathFadeTime / 5.0f))) * (rt * 1.5f);
+                
+                self.GetScale().x += (scaleXZ * scaleXZ);
+                self.GetScale().y += (scaleY * scaleY);
+                self.GetScale().z += (scaleXZ * scaleXZ);
+                
+                self.UpdateTransform();
+                self.SetShaderParam(0, 1.0f - (deathFadeTime / 5.0f));
+            }
+        }
+        else {
+            self.bHidden = true;
+            self.Remove();
+        }
+    }
+    
+    //
+    // TurokAI::WanderThink
+    //
+    
+    void WanderThink(void) {
+        if((ai.aiFlags & AIF_FINDTARGET) != 0) {
+            if(bWalkAround == true) {
+                if((ai.aiFlags & AIF_TURNING) == 0) {
+                    BumpAndTurn(0.5236f, 0.78f);
+                }
+            }
+            if(!PlayingTurnAnimation() && ai.nextThinkTime > wanderThreshold) {
+                if(Math::RandFloat() > 0.9f) {
+                    bWalkAround = true;
+                    self.AnimState().Blend(anim_aiWalking, 4.0f, 8.0f, ANF_ROOTMOTION|ANF_LOOP);
+                    wanderThreshold = ai.nextThinkTime + (Math::RandFloat() * 4000.0f);
+                }
+                else {
+                    if(bWalkAround == true) {
+                        self.AnimState().Blend(anim_aiStanding, 4.0f, 8.0f, ANF_LOOP);
+                        bWalkAround = false;
+                    }
+                    ai.TurnYaw(0.872f + (2.26f * Math::RandFloat()));
+                    wanderThreshold = ai.nextThinkTime + (Math::RandFloat() * 2000.0f);
+                }
+            }
+        }
+    }
+    
+    //
     // TurokAI::OnDeath
     //
     
@@ -432,31 +616,43 @@ class TurokAI : Component {
     
     void OnLocalThink(void) {
         if(ai.GetAIState() == AIS_DEATH) {
-            if(bDeathFade == false) {
-                if((self.AnimState().flags & ANF_STOPPED) != 0) {
-                    deathFadeTime = 10.0f;
-                    bDeathFade = true;
-                }
-            }
-            else if(deathFadeTime > 0.0f) {
-                float rt = Client.GetRunTime();
-                deathFadeTime -= rt;
-                
-                if(deathFadeTime <= 5.0f) {
-                    float scaleXZ = (1.0f - ((deathFadeTime / 5.0f) * -0.5f)) * (rt * 1.5f);
-                    float scaleY = (1.0f - ((deathFadeTime / 5.0f))) * (rt * 1.5f);
-                    
-                    self.GetScale().x += (scaleXZ * scaleXZ);
-                    self.GetScale().y += (scaleY * scaleY);
-                    self.GetScale().z += (scaleXZ * scaleXZ);
-                    
-                    self.UpdateTransform();
-                }
-            }
-            else {
-                self.bHidden = true;
-                self.Remove();
-            }
+            DeathThink();
+        }
+        else if(ai.GetAIState() == AIS_IDLE && (ai.aiFlags & AIF_SEETARGET) == 0) {
+            WanderThink();
+        }
+    }
+    
+    //
+    // TurokAI::KnifeDamage
+    //
+    
+    void KnifeDamage(kActor @inflictor, kKeyMapMem @damageDef) {
+        float an1;
+        float an2;
+        
+        an1 = RadToDeg(self.GetAngles().yaw) % 360.0f;
+        an2 = RadToDeg(inflictor.GetAngles().yaw) % 360.0f;
+        
+        if(Math::Fabs(an1 - an2) > 40.0f) {
+            self.health -= knifeDamage;
+        }
+        else {
+            self.health -= backStabDamage;
+        }
+    }
+    
+    //
+    // TurokAI::OnDamage
+    //
+    
+    void OnDamage(kActor @inflictor, int damage, kKeyMapMem @damageDef) {
+        bool bKnife = false;
+        
+        damageDef.GetBool("bKnife", bKnife, false);
+        
+        if(bKnife) {
+            KnifeDamage(inflictor, damageDef);
         }
     }
     
@@ -478,7 +674,9 @@ class TurokAI : Component {
         if(!(self.def is null)) {
             self.def.GetInt("alligenceID", alligenceID);
             self.def.GetInt("dropItemFlags", dropFlags1);
-            self.def.GetFloat("yawSpeed", baseYawSpeed);
+            self.def.GetInt("knifeDamage", knifeDamage);
+            self.def.GetInt("backStabDamage", backStabDamage);
+            self.def.GetFloat("ai.yawSpeed", baseYawSpeed);
         }
         
         self.args.GetInt("dropItemFlags", dropFlags2);

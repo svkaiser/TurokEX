@@ -115,15 +115,8 @@ class TurokAIAnimal : TurokAI {
     
     void OnLocalThink(void) {
         if(ai.sightThreshold > 0) {
-            float selfYaw = self.GetAngles().yaw;
-        
             if((ai.aiFlags & AIF_TURNING) == 0) {
-                if(!ai.CheckPosition(self.GetOrigin(), ai.checkRadius, selfYaw + 0.5236f)) {
-                    ai.SetIdealYaw(selfYaw - 0.909f, 4.096f);
-                }
-                else if(!ai.CheckPosition(self.GetOrigin(), ai.checkRadius, selfYaw - 0.5236f)) {
-                    ai.SetIdealYaw(selfYaw + 0.909f, 4.096f);
-                }
+                BumpAndTurn(0.5236f, 0.909f);
             }
         }
         else {

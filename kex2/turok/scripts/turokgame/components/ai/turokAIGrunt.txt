@@ -20,11 +20,11 @@ class TurokAIGrunt : TurokAI {
         super(actor);
     }
     
-    void footstepPuff(const float x, const float y, const float z) {
+    void footstepPuff(const float w, const float x, const float y, const float z) {
         self.SpawnFX("fx/steppuff1.kfx", x, y, z);
     }
     
-    void deathScream(const float a, const float b, const float c) {
+    void deathScream(const float a, const float b, const float c, const float d) {
         int rnd = Math::RandMax(100) % 3;
         switch(rnd) {
             case 0:
@@ -41,7 +41,7 @@ class TurokAIGrunt : TurokAI {
         }
     }
     
-    void injuryScream(const float a, const float b, const float c) {
+    void injuryScream(const float a, const float b, const float c, const float d) {
         int rnd = Math::RandMax(100) % 3;
         switch(rnd) {
             case 0:
@@ -58,7 +58,7 @@ class TurokAIGrunt : TurokAI {
         }
     }
     
-    void violentDeathScream(const float a, const float b, const float c) {
+    void violentDeathScream(const float a, const float b, const float c, const float d) {
         int rnd = Math::RandMax(100) % 3;
         switch(rnd) {
             case 0:
