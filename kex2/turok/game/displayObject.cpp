@@ -94,6 +94,14 @@ void kexDisplayObject::EmitSound(const char *name) {
 }
 
 //
+// kexDisplayObject::TransformPoint
+//
+
+kexVec3 kexDisplayObject::TransformPoint(const float x, const float y, const float z) {
+    return kexVec3(x, y, z) * matrix;
+}
+
+//
 // kexDisplayObject::UpdateTransform
 //
 

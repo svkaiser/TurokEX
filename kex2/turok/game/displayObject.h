@@ -51,6 +51,7 @@ public:
     void                        Spawn(void);
     void                        Save(kexBinFile *saveFile);
     void                        Load(kexBinFile *loadFile);
+    kexVec3                     TransformPoint(const float x, const float y, const float z);
 
     kexQuat                     &GetRotation(void) { return rotation; }
     void                        SetRotation(const kexQuat &rot) { rotation = rot; }
@@ -88,6 +89,8 @@ public:
         OBJMETHOD("void SetScale(const kVec3 &in)", SetScale, (const kexVec3 &s), void);
         OBJMETHOD("kAttachment &Attachment(void)", Attachment, (void), kexAttachment&);
         OBJMETHOD("void UpdateTransform(void)", UpdateTransform, (void), void);
+        OBJMETHOD("kVec3 TransformPoint(const float, const float, const float)",
+            TransformPoint, (const float x, const float y, const float z), kexVec3);
 
     #define OBJPROPERTY(str, p)                         \
         scriptManager.Engine()->RegisterObjectProperty( \
