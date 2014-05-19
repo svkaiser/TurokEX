@@ -152,6 +152,7 @@ public:
                   GetBestYawToTarget, (const float extendedRadius), float);
         OBJMETHOD("const int GetAIState(void) const", GetAIState, (void) const, const aiState_t);
         OBJMETHOD("void ClearTargets(void)", ClearTargets, (void), void);
+        OBJMETHOD("void TurnYaw(const float)", TurnYaw, (const float yaw), void);
     
         #define OBJPROPERTY(str, p)                         \
             scriptManager.Engine()->RegisterObjectProperty( \
@@ -167,6 +168,7 @@ public:
         OBJPROPERTY("float yawSpeed", yawSpeed);
         OBJPROPERTY("float checkRadius", checkRadius);
         OBJPROPERTY("float thinkTime", thinkTime);
+        OBJPROPERTY("float nextThinkTime", nextThinkTime);
         OBJPROPERTY("bool bCanMelee", bCanMelee);
         OBJPROPERTY("bool bCanRangeAttack", bCanRangeAttack);
         OBJPROPERTY("bool bCanTeleport", bCanTeleport);
