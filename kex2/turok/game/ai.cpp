@@ -1075,6 +1075,7 @@ bool kexAI::CanSeeTarget(kexWorldObject *object) {
     
     if(trace.fraction == 1 || trace.hitActor == object) {
         aiFlags |= AIF_SEETARGET;
+        sightThreshold = maxThreshold;
         return true;
     }
     
