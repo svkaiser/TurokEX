@@ -117,7 +117,7 @@ public:
     kexQuat                 &operator=(const kexQuat &quat);
     kexQuat                 &operator=(const kexVec4 &vec);
     kexQuat                 &operator=(const float *vecs);
-    kexVec3                 operator|(const kexVec3 &vector);
+    kexVec3                 operator*(const kexVec3 &vector);
 
     const kexVec3           &ToVec3(void) const;
     kexVec3                 &ToVec3(void);

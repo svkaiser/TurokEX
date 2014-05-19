@@ -252,7 +252,7 @@ kexQuat &kexQuat::operator*=(const float val) {
 // kexQuat::operator|
 //
 
-kexVec3 kexQuat::operator|(const kexVec3 &vector) {
+kexVec3 kexQuat::operator*(const kexVec3 &vector) {
     float xx = x * x;
     float yx = y * x;
     float zx = z * x;
@@ -342,7 +342,7 @@ kexQuat kexQuat::RotateFrom(const kexVec3 &location, const kexVec3 &target, floa
     kexQuat prot;
     float an;
 
-    dir = (*this | kexVec3::vecForward);
+    dir = (*this * kexVec3::vecForward);
     axis = (target - location).Normalize();
     cp = dir.Cross(axis).Normalize();
 

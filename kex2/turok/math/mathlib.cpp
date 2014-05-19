@@ -259,6 +259,10 @@ void kexMath::InitObject(void) {
         "void f(const kQuat &in)", asFUNCTION(kexQuat::ObjectConstructCopy), asCALL_CDECL_OBJLAST);
     scriptManager.Engine()->RegisterObjectMethod("kQuat", "kQuat &Normalize(void)",
         asMETHODPR(kexQuat, Normalize, (void), kexQuat&), asCALL_THISCALL);
+    scriptManager.Engine()->RegisterObjectMethod("kQuat",
+        "kQuat RotateFrom(const kVec3 &in, const kVec3 &in, float)",
+        asMETHODPR(kexQuat, RotateFrom, (const kexVec3 &location, const kexVec3 &target, float maxAngle), kexQuat),
+        asCALL_THISCALL);
     scriptManager.Engine()->RegisterObjectMethod("kQuat", "kQuat opAdd(const kQuat &in)",
         asMETHODPR(kexQuat, operator+, (const kexQuat &in), kexQuat), asCALL_THISCALL);
     scriptManager.Engine()->RegisterObjectMethod("kQuat", "kQuat opSub(const kQuat &in)",
@@ -271,6 +275,8 @@ void kexMath::InitObject(void) {
         asMETHODPR(kexVec3, operator*, (const kexQuat&), kexVec3), asCALL_THISCALL);
     scriptManager.Engine()->RegisterObjectMethod("kVec3", "kVec3 &opMulAssign(const kQuat &in)",
         asMETHODPR(kexVec3, operator*=, (const kexQuat&), kexVec3&), asCALL_THISCALL);
+    scriptManager.Engine()->RegisterObjectMethod("kVec3", "kQuat ToQuaternion(void)",
+        asMETHODPR(kexVec3, ToQuat, (void), kexQuat), asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectProperty("kQuat", "float x", asOFFSET(kexQuat, x));
     scriptManager.Engine()->RegisterObjectProperty("kQuat", "float y", asOFFSET(kexQuat, y));
