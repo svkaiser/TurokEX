@@ -288,6 +288,18 @@ bool kexAnimState::IsPlaying(const int animID) {
 }
 
 //
+// kexAnimState::PlayingID
+//
+
+const int kexAnimState::PlayingID(void) const {
+    if(track.anim == NULL) {
+        return -1;
+    }
+
+    return track.anim->animID;
+}
+
+//
 // kexAnimState::Blend
 //
 
@@ -952,6 +964,7 @@ void kexAnimState::InitObject(void) {
     OBJMETHOD("const float PlayTime(void)", PlayTime, (void)const, const float);
     OBJMETHOD("bool IsPlaying(const int)", IsPlaying, (const int animID), bool);
     OBJMETHOD("bool CheckAnimID(const int)", CheckAnimID, (const int id), bool);
+    OBJMETHOD("const int PlayingID(void) const", PlayingID, (void) const, const int);
 
 #define OBJPROPERTY(str, p)                         \
     scriptManager.Engine()->RegisterObjectProperty( \

@@ -104,6 +104,7 @@ public:
     void                    ExecuteFrameActions(void);
     bool                    IsPlaying(const int animID);
     bool                    CheckAnimID(const int id);
+    const int               PlayingID(void) const;
 
     static kexQuat          GetRotation(kexAnim_t *anim, int nodeNum, int frame);
     static kexVec3          GetTranslation(kexAnim_t *anim, int nodeNum, int frame);
