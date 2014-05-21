@@ -24,10 +24,27 @@
 #define __GUI_H__
 
 typedef enum {
-    GUIS_READY  = 0,
+    GUIS_DISABLED   = 0,
+    GUIS_READY,
     GUIS_FADEIN,
     GUIS_FADEOUT
 } guiStatus_t;
+
+typedef enum {
+    GBS_NONE        = 0,
+    GBS_DISABLED,
+    GBS_HOVER,
+    GBS_DOWN,
+    GBS_PRESSED,
+    GBS_RELEASED
+} guiButtonState_t;
+
+typedef struct guiButton_s {
+    kexContainer *container;
+    guiButtonState_t state;
+    kexStr name;
+    kexLinklist<struct guiButton_s> link;
+} guiButton_t;
 
 class kexGui {
     friend class kexGuiManager;
@@ -36,11 +53,14 @@ public:
                                 ~kexGui(void);
     
     void                        Draw(void);
+    void                        CheckEvents(void);
+    void                        ExecuteButtonEvent(guiButton_t *button, const guiButtonState_t btnState);
     
 private:
     kexCanvas                   canvas;
     kexGui                      *prevGui;
     kexLinklist<kexGui>         link;
+    kexLinklist<guiButton_t>    buttons;
     kexStr                      name;
     guiStatus_t                 status;
 };
@@ -52,18 +72,31 @@ public:
                                 kexGuiManager(void);
                                 ~kexGuiManager(void);
     
+    void                        Init(void);
     kexGui                      *LoadGui(const char *guiFile);
     kexGui                      *FindGuiByName(const char *name);
     void                        DrawGuis(void);
+    void                        DeleteGuis(void);
+    bool                        ProcessInput(const event_t *ev);
+    
+    void                        Toggle(const bool bToggle) { bEnabled = bToggle; }
     
     kexLinklist<kexGui>         guis;
+    float                       cursor_x;
+    float                       cursor_y;
+    kexMaterial                 *cursorMaterial;
+    
+    bool                        bDebugButtons;
     
 private:
+    void                        DrawCursor(void);
     void                        ParseNode(tinyxml2::XMLElement *element,
                                           kexGui *gui,
                                           kexContainer *container);
     void                        ParseSimpleProperties(tinyxml2::XMLNode *node,
                                                       kexCanvasObject *object);
+    
+    bool                        bEnabled;
 };
 
 extern kexGuiManager guiManager;

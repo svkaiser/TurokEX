@@ -39,6 +39,8 @@
 kexCanvasComponent::kexCanvasComponent(void) {
     this->onUpdate = NULL;
     this->onInit = NULL;
+    this->onHover = NULL;
+    this->onExit = NULL;
 }
 
 //
@@ -70,6 +72,8 @@ void kexCanvasComponent::Construct(const char *className) {
     CallConstructor((kexStr(className) + " @" + className + "(kCanvasScriptObject@)").c_str());
     onUpdate = type->GetMethodByDecl("void OnUpdate(void)");
     onInit = type->GetMethodByDecl("void OnInit(void)");
+    onHover = type->GetMethodByDecl("void OnHover(void)");
+    onExit = type->GetMethodByDecl("void OnExit(void)");
 }
 
 //-----------------------------------------------------------------------------
@@ -79,6 +83,8 @@ void kexCanvasComponent::Construct(const char *className) {
 //-----------------------------------------------------------------------------
 
 DECLARE_ABSTRACT_CLASS(kexCanvasObject, kexObject)
+
+int kexCanvasObject::objId = 0;
 
 //
 // kexCanvasObject::kexCanvasObject
@@ -94,7 +100,12 @@ kexCanvasObject::kexCanvasObject(void) {
     this->alpha     = 1;
     this->bVisible  = true;
     this->parent    = NULL;
-    this->scriptRef  = 0;
+    this->scriptRef = 0;
+    this->max[0]    = -M_INFINITY;
+    this->max[1]    = -M_INFINITY;
+    this->min[0]    =  M_INFINITY;
+    this->min[1]    =  M_INFINITY;
+    this->curId     = kexCanvasObject::objId++;
 
     this->link.SetData(this);
 }
@@ -219,6 +230,19 @@ void kexCanvasImage::Draw(void) {
             a[i] = (byte)((float)a[i] * obj->alpha);
         }
     }
+    
+    if(rx < min[0]) min[0] = rx;
+    if(ry < min[1]) min[1] = ry;
+    if(rw > max[0]) max[0] = rw;
+    if(ry > max[1]) max[1] = ry;
+    
+    if(parent) {
+        parent->min[0] = min[0];
+        parent->max[0] = max[0];
+        parent->min[1] = min[1];
+        parent->max[1] = max[1];
+
+    }
 
     renderer.AddVertex(
         rx,
@@ -289,6 +313,10 @@ kexCanvasScriptObject::kexCanvasScriptObject(void) {
 //
 
 kexCanvasScriptObject::~kexCanvasScriptObject(void) {
+    if(container) {
+        container->Empty();
+    }
+
     if(component.ScriptObject() != NULL) {
         component.Release();
     }
@@ -299,8 +327,6 @@ kexCanvasScriptObject::~kexCanvasScriptObject(void) {
 //
 
 void kexCanvasScriptObject::Draw(void) {
-    container.Draw();
-    
     if(component.onUpdate) {
         component.CallFunction(component.onUpdate);
     }
@@ -342,11 +368,17 @@ void kexCanvasScriptObject::SetProperty(const char *name, const char *value) {
         
         intVal = strtol(hex, &hex, 16);
     }
-    else if(kexStr::CompareCase(value, "false")) {
+    else if(!kexStr::CompareCase(value, "false")) {
+        decl = decl + name + "(const bool)";
         type = 3;
     }
-    else if(kexStr::CompareCase(value, "true")) {
+    else if(!kexStr::CompareCase(value, "true")) {
+        decl = decl + name + "(const bool)";
         type = 4;
+    }
+    else {
+        decl = decl + name + "(const kStr &in)";
+        type = 5;
     }
     
     if(type == -1) {
@@ -373,6 +405,9 @@ void kexCanvasScriptObject::SetProperty(const char *name, const char *value) {
             break;
         case 4:
             component.SetCallArgument(0, true);
+            break;
+        case 5:
+            component.SetCallArgument(0, new kexStr(value));
             break;
         default:
             return;
@@ -476,6 +511,26 @@ void kexCanvasText::Draw(void) {
     renderBackend.SetState(GLSTATE_BLEND, true);
     font->DrawString(text.c_str(), dx, dy, ds, bCentered, (byte*)&color[0 * 4], (byte*)&color[2 * 4]);
     renderBackend.SetState(GLSTATE_BLEND, false);
+    
+    float w = font->StringWidth(text.c_str(), ds, 0);
+    float h = font->StringHeight(text.c_str(), ds, 0);
+    
+    if(bCentered) {
+        dx -= (w * 0.5f);
+    }
+    
+    if(dx < min[0]) min[0] = dx;
+    if(dx > max[0]) max[0] = dx;
+    if(dy < min[1]) min[1] = dy;
+    if(dy > max[1]) max[1] = dy;
+    
+    w += dx;
+    h += dy;
+    
+    if(w < min[0]) min[0] = w;
+    if(w > max[0]) max[0] = w;
+    if(h < min[1]) min[1] = h;
+    if(h > max[1]) max[1] = h;
 }
 
 //-----------------------------------------------------------------------------
@@ -512,6 +567,11 @@ void kexContainer::Draw(void) {
 
     for(kexCanvasObject *obj = children.Next(); obj != NULL; obj = obj->link.Next()) {
         obj->Draw();
+        
+        if(obj->min[0] < min[0]) min[0] = obj->min[0];
+        if(obj->max[0] > max[0]) max[0] = obj->max[0];
+        if(obj->min[1] < min[1]) min[1] = obj->min[1];
+        if(obj->max[1] > max[1]) max[1] = obj->max[1];
     }
 }
 
@@ -535,6 +595,10 @@ void kexContainer::RemoveChild(kexCanvasObject *object) {
     
     if(object->InstanceOf(&kexContainer::info)) {
         static_cast<kexContainer*>(object)->Empty();
+    }
+
+    if(object->scriptRef <= 0) {
+        delete object;
     }
 }
 
@@ -703,6 +767,10 @@ void kexCanvas::AddChild(kexCanvasObject *object) {
 void kexCanvas::RemoveChild(kexCanvasObject *object) {
     object->link.Remove();
     object->DecRef();
+    
+    if(object->scriptRef <= 0) {
+        delete object;
+    }
 }
 
 //
@@ -750,7 +818,7 @@ void kexCanvas::Draw(void) {
 
 template<class type>
 static void RegisterCanvasObject(const char *name) {
-    kexScriptManager::RegisterRefObject<type>(name);
+    kexScriptManager::RegisterRefObjectNoCount<type>(name);
     scriptManager.Engine()->RegisterObjectProperty(name, "float x",
         asOFFSET(type, x));
     scriptManager.Engine()->RegisterObjectProperty(name, "float y",
@@ -863,7 +931,7 @@ void kexCanvas::InitObject(void) {
     
     scriptManager.Engine()->RegisterObjectProperty(
         "kCanvasScriptObject",
-        "kCanvasContainer container",
+        "kCanvasContainer @container",
         asOFFSET(kexCanvasScriptObject, container));
     
     scriptManager.Engine()->RegisterObjectProperty(

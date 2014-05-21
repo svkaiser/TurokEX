@@ -32,11 +32,12 @@ public:
                                     ~kexCanvasComponent(void);
     
     virtual void                    Construct(const char *className);
-    
     static void                     Init(void);
     
     asIScriptFunction               *onUpdate;
     asIScriptFunction               *onInit;
+    asIScriptFunction               *onHover;
+    asIScriptFunction               *onExit;
 };
 
 //-----------------------------------------------------------------------------
@@ -46,11 +47,15 @@ public:
 //-----------------------------------------------------------------------------
 
 BEGIN_EXTENDED_CLASS(kexCanvasObject, kexObject);
+    friend class kexCanvas;
+    friend class kexContainer;
 public:
                                     kexCanvasObject(void);
-                                    ~kexCanvasObject(void);
+    virtual                         ~kexCanvasObject(void);
 
     virtual void                    Draw(void) = 0;
+
+    static int                      objId;
 
     int                             IncRef(void);
     int                             DecRef(void);
@@ -68,9 +73,12 @@ public:
     float                           rotation;
     float                           alpha;
     bool                            bVisible;
+    float                           min[2];
+    float                           max[2];
 
-private:
+protected:
     int                             scriptRef;
+    int                             curId;
 END_CLASS();
 
 //-----------------------------------------------------------------------------
@@ -152,7 +160,7 @@ public:
     void                            SetProperty(const char *name, const char *value);
 
     kexCanvasComponent              component;
-    kexContainer                    container;
+    kexContainer                    *container;
 END_CLASS();
 
 //-----------------------------------------------------------------------------
