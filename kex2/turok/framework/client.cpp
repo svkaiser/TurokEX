@@ -31,6 +31,8 @@
 #include "system.h"
 #include "console.h"
 #include "gameManager.h"
+#include "server.h"
+#include "gui.h"
 
 kexCvar cvarClientName("cl_name", CVF_STRING|CVF_CONFIG, "Player", "Name for client player");
 kexCvar cvarClientFOV("cl_fov", CVF_FLOAT|CVF_CONFIG, "74.0", "Client's field of view");
@@ -238,6 +240,9 @@ void kexClient::ProcessEvents(void) {
         if(gameManager.ProcessInput(ev)) {
             continue;
         }
+        if(guiManager.ProcessInput(ev)) {
+            continue;
+        }
 
         // TODO - TEMP
         eventtail = (--eventtail)&(MAXEVENTS-1);
@@ -371,7 +376,7 @@ void kexClient::Init(void) {
     curtime = 0;
     fps = 0;
     id = -1;
-    bLocal = (common.CheckParam("-client") == 0);
+    bLocal = (sysMain.CheckParam("-client") == 0);
     
     SetTime(0);
     SetTicks(0);

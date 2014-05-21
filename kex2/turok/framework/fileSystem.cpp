@@ -57,47 +57,6 @@ kexFileSystem::~kexFileSystem() {
 }
 
 //
-// kexFileSystem::BasePath
-//
-
-#ifndef EDITOR
-const char *kexFileSystem::GetBaseDirectory(void) {
-    static const char dummyDirectory[] = {"."};
-    // cache multiple requests
-    if(!base) {
-        size_t len = strlen(*myargv);
-        char *p = (base = (char*)Mem_Malloc(len + 1, hb_static)) + len - 1;
-        
-        strcpy(base, *myargv);
-        while (p > base && *p!='/' && *p!='\\') {
-            *p--=0;
-        }
-        
-        if(*p=='/' || *p=='\\') {
-            *p--=0;
-        }
-
-        if(strlen(base) < 2) {
-            Mem_Free(base);
-            base = (char*)Mem_Malloc(1024, hb_static);
-            if(!getcwd(base, 1024)) {
-                strcpy(base, dummyDirectory);
-            }
-        }
-    }
-    
-    return base;
-}
-#else
-char *kexFileSystem::GetBaseDirectory(void) {
-    wxString exe_path = wxStandardPaths::Get().GetExecutablePath();
-    wxString path_separator = wxFileName::GetPathSeparator();
-    exe_path = exe_path.BeforeLast(path_separator[0]);
-    return Mem_Strdup(exe_path.c_str(), hb_static);
-}
-#endif
-
-//
 // kexFileSystem::Shutdown
 //
 
@@ -142,18 +101,13 @@ void kexFileSystem::LoadZipFile(const char *file) {
     unsigned int i;
     unsigned int entries;
     long hash;
-    char *filepath;
+    const char *filepath;
     kexStr fPath;
 
-#ifndef EDITOR
-    filepath = kva("%s\\%s", cvarBasePath.GetValue(), file);
-#else
-    char *path = kexFileSystem::GetBaseDirectory();
-    filepath = kva("%s\\%s", path, file);
-    Mem_Free(path);
-#endif
+    filepath = sysMain.GetBaseDirectory();
     
     fPath = filepath;
+    fPath = fPath + "/" + file;
     fPath.NormalizeSlashes();
     
     common.Printf("KF_LoadZipFile: Loading %s\n", fPath.c_str());
@@ -287,15 +241,7 @@ int kexFileSystem::ReadExternalTextFile(const char *name, byte **buffer) const {
     kexStr fPath;
     FILE *fp;
 
-    //errno = 0;
-
-#ifndef EDITOR
     sprintf(filepath, "%s\\%s", cvarBasePath.GetValue(), name);
-#else
-    char *path = kexFileSystem::GetBaseDirectory();
-    sprintf(filepath, "%s\\%s", path, name);
-    Mem_Free(path);
-#endif
     
     fPath = filepath;
     fPath.NormalizeSlashes();
@@ -353,8 +299,9 @@ static void FCmd_LoadFile(void) {
 void kexFileSystem::Init(void) {
     command.Add("loadfile", FCmd_LoadFile);
 
-    if(!strlen(cvarBasePath.GetValue()))
-        cvarBasePath.Set(GetBaseDirectory());
+    if(!strlen(cvarBasePath.GetValue())) {
+        cvarBasePath.Set(sysMain.GetBaseDirectory());
+    }
 
     LoadZipFile("data000.kpf");
     common.Printf("File System Initialized\n");

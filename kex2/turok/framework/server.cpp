@@ -101,7 +101,7 @@ char *kexServer::GetPeerAddress(ENetEvent *sev) {
 void kexServer::CreateHost(void) {
     ENetAddress address;
 
-    if(common.CheckParam("-client")) {
+    if(sysMain.CheckParam("-client")) {
         return;
     }
 
@@ -296,7 +296,7 @@ void kexServer::Init(void) {
         return;
     }
 
-    bLocal = (common.CheckParam("-server") == 0);
+    bLocal = (sysMain.CheckParam("-server") == 0);
     maxClients = 0;
 
     SetHost(NULL);

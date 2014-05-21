@@ -643,6 +643,9 @@ void kexAnimState::ExecuteFrameActions(void) {
                             action->argStrings[0], action->frame);
                     }
                     break;
+                    
+                default:
+                    break;
             }
         }
     }

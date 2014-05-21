@@ -149,7 +149,6 @@ public:
                                 ~kexFxManager(void);
 
     void                        Init(void);
-    void                        Shutdown(void);
     void                        UpdateWorld(kexWorld *world);
     fxfile_t                    *LoadKFX(const char *file);
 

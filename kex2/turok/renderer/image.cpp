@@ -272,20 +272,20 @@ void kexImageManager::LoadFromTGA(byte *input) {
         
     tmp[0]          = rover[0];
     tmp[1]          = rover[1];
-    tga.cmap_start  = Com_SwapLE16(*((short*)tmp));
+    tga.cmap_start  = sysMain.SwapLE16(*((short*)tmp));
     rover += 2;
     tmp[0]          = rover[0];
     tmp[1]          = rover[1];
-    tga.cmap_len    = Com_SwapLE16(*((short*)tmp));
+    tga.cmap_len    = sysMain.SwapLE16(*((short*)tmp));
     rover += 2;
     tga.cmap_bits   = *rover++;
-    tga.xorigin     = Com_SwapLE16(*((short*)rover));
+    tga.xorigin     = sysMain.SwapLE16(*((short*)rover));
     rover += 2;
-    tga.yorigin     = Com_SwapLE16(*((short*)rover));
+    tga.yorigin     = sysMain.SwapLE16(*((short*)rover));
     rover += 2;
-    tga.width       = Com_SwapLE16(*((short*)rover));
+    tga.width       = sysMain.SwapLE16(*((short*)rover));
     rover += 2;
-    tga.height      = Com_SwapLE16(*((short*)rover));
+    tga.height      = sysMain.SwapLE16(*((short*)rover));
     rover += 2;
     tga.pixel_bits  = *rover++;
     tga.flags       = *rover++;
@@ -458,20 +458,20 @@ void kexImageManager::LoadFromBMP(byte *input) {
 
     bmp.id[0]       = *rover++;
     bmp.id[1]       = *rover++;
-    bmp.fileSize    = Com_SwapLE32(*(long*)rover); rover += 4;
-    bmp.u1          = Com_SwapLE32(*(long*)rover); rover += 4;
-    bmp.dataOffset  = Com_SwapLE32(*(long*)rover); rover += 4;
-    bmp.headerSize  = Com_SwapLE32(*(long*)rover); rover += 4;
-    bmp.width       = Com_SwapLE32(*(long*)rover); rover += 4;
-    bmp.height      = Com_SwapLE32(*(long*)rover); rover += 4;
-    bmp.planes      = Com_SwapLE16(*(short*)rover); rover += 2;
-    bmp.bits        = Com_SwapLE16(*(short*)rover); rover += 2;
-    bmp.compression = Com_SwapLE32(*(long*)rover); rover += 4;
-    bmp.dataSize    = Com_SwapLE32(*(long*)rover); rover += 4;
-    bmp.hRes        = Com_SwapLE32(*(long*)rover); rover += 4;
-    bmp.vRes        = Com_SwapLE32(*(long*)rover); rover += 4;
-    bmp.colors1     = Com_SwapLE32(*(long*)rover); rover += 4;
-    bmp.colors2     = Com_SwapLE32(*(long*)rover); rover += 4;
+    bmp.fileSize    = sysMain.SwapLE32(*(long*)rover); rover += 4;
+    bmp.u1          = sysMain.SwapLE32(*(long*)rover); rover += 4;
+    bmp.dataOffset  = sysMain.SwapLE32(*(long*)rover); rover += 4;
+    bmp.headerSize  = sysMain.SwapLE32(*(long*)rover); rover += 4;
+    bmp.width       = sysMain.SwapLE32(*(long*)rover); rover += 4;
+    bmp.height      = sysMain.SwapLE32(*(long*)rover); rover += 4;
+    bmp.planes      = sysMain.SwapLE16(*(short*)rover); rover += 2;
+    bmp.bits        = sysMain.SwapLE16(*(short*)rover); rover += 2;
+    bmp.compression = sysMain.SwapLE32(*(long*)rover); rover += 4;
+    bmp.dataSize    = sysMain.SwapLE32(*(long*)rover); rover += 4;
+    bmp.hRes        = sysMain.SwapLE32(*(long*)rover); rover += 4;
+    bmp.vRes        = sysMain.SwapLE32(*(long*)rover); rover += 4;
+    bmp.colors1     = sysMain.SwapLE32(*(long*)rover); rover += 4;
+    bmp.colors2     = sysMain.SwapLE32(*(long*)rover); rover += 4;
 
     if(bmp.bits == 8) {
         memcpy(bmp.palette, rover, sizeof(palette_t) * 256);

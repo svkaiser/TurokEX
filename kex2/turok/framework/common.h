@@ -25,9 +25,63 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <assert.h>
+#include <ctype.h>
 #include <new>
-#include "SDL_endian.h"
-#include "shared.h"
+
+#define MAX_FILEPATH    256
+#define MAX_HASH        2048
+
+typedef unsigned char   byte;
+typedef unsigned short  word;
+typedef unsigned long   ulong;
+typedef int             kbool;
+typedef unsigned int    dtexture;
+typedef unsigned int    rcolor;
+typedef char            filepath_t[MAX_FILEPATH];
+
+typedef union
+{
+    int     i;
+    float   f;
+} fint_t;
+
+#define ASCII_SLASH		47
+#define ASCII_BACKSLASH 92
+
+#ifdef _WIN32
+
+#define DIR_SEPARATOR '\\'
+#define PATH_SEPARATOR ';'
+
+#else
+
+#define DIR_SEPARATOR '/'
+#define PATH_SEPARATOR ':'
+
+#endif
+
+#include <limits.h>
+#define D_MININT INT_MIN
+#define D_MAXINT INT_MAX
+
+#ifndef MAX
+#define MAX(a,b) ((a)>(b)?(a):(b))
+#endif
+
+#ifndef MIN
+#define MIN(a,b) ((a)<(b)?(a):(b))
+#endif
+
+#ifndef BETWEEN
+#define BETWEEN(l,u,x) ((l)>(x)?(l):(x)>(u)?(u):(x))
+#endif
+
+#ifndef BIT
+#define BIT(num) (1<<(num))
+#endif
 
 #ifdef _WIN32
 #include "opndir.h"
@@ -48,39 +102,8 @@
 #define COLOR_CYAN          RGBA(0, 0xFF, 0xFF, 0xFF)
 
 //
-// ENDIAN SWAPS
-//
-#define Com_SwapLE16(x)   SDL_SwapLE16(x)
-#define Com_SwapLE32(x)   SDL_SwapLE32(x)
-#define Com_SwapBE16(x)   SDL_SwapBE16(x)
-#define Com_SwapBE32(x)   SDL_SwapBE32(x)
-
-// Defines for checking the endianness of the system.
-
-#if SDL_BYTEORDER == SYS_LIL_ENDIAN
-#define SYS_LITTLE_ENDIAN
-#elif SDL_BYTEORDER == SYS_BIG_ENDIAN
-#define SYS_BIG_ENDIAN
-#endif
-
-//
-// SYSTEM
-//
-#ifdef _WIN32
-void Sys_ShowConsole(kbool show);
-void Sys_SpawnConsole(void);
-void Sys_DestroyConsole(void);
-void Sys_UpdateConsole(void);
-void Sys_Printf(const char *string);
-void Sys_Error(const char *string);
-#endif
-
-//
 // COMMON
 //
-
-extern  int	myargc;
-extern  char** myargv;
 
 char *kva(const char *str, ...);
 kbool fcmp(float f1, float f2);
@@ -94,7 +117,6 @@ public:
     void            Warning(const kexStr &str);
     void            DPrintf(const char *string, ...);
     void            Error(const char *string, ...);
-    int             CheckParam(const char *check);
     void            Shutdown(void);
     void            WriteConfigFile(void);
     void            ReadConfigFile(const char *file);
@@ -115,63 +137,5 @@ extern kexCommon common;
 #include "cvar.h"
 
 extern kexCvar cvarDeveloper;
-
-#define NETBACKUPS      64
-#define MAX_PLAYERS     8
-
-typedef struct
-{
-    int ingoing;
-    int outgoing;
-    int acks;
-} netsequence_t;
-
-typedef struct
-{
-    fint_t  angle[2];
-    fint_t  mouse[2];
-    fint_t  msec;
-    fint_t  timestamp;
-    fint_t  frametime;
-    byte    buttons[MAXACTIONS];
-    byte    heldtime[MAXACTIONS];
-} ticcmd_t;
-
-//
-// CLIENT PACKET TYPES
-//
-typedef enum
-{
-    cp_ping         = 1,
-    cp_say,
-    cp_cmd,
-    cp_msgserver,
-    cp_mapchange,
-    NUMCLIENTPACKETS
-} cl_packets_t;
-
-//
-// SERVER PACKET TYPES
-//
-typedef enum
-{
-    sp_ping         = 1,
-    sp_clientinfo,
-    sp_msg,
-    sp_pmove,
-    sp_weaponinfo,
-    sp_changemap,
-    sp_noclip,
-    NUMSERVERPACKETS
-} sv_packets_t;
-
-//
-// SERVER MESSAGES
-//
-typedef enum
-{
-    sm_full         = 1,
-    NUMSERVERMESSAGES
-} sv_messages_t;
 
 #endif

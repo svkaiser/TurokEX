@@ -34,6 +34,18 @@ typedef enum {
     PS_STATE_INGAME
 } player_state_e;
 
+#define MAX_PLAYERS 8
+
+typedef struct {
+    fint_t  angle[2];
+    fint_t  mouse[2];
+    fint_t  msec;
+    fint_t  timestamp;
+    fint_t  frametime;
+    byte    buttons[MAXACTIONS];
+    byte    heldtime[MAXACTIONS];
+} ticcmd_t;
+
 //-----------------------------------------------------------------------------
 //
 // kexPlayerMove

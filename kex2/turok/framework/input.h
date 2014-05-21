@@ -61,6 +61,8 @@ public:
     void            UpdateGrab(void);
     void            CenterMouse(void);
     void            Init(void);
+    float           AccelerateMouse(int val) const;
+    
     void            SetEnabled(bool enable) { bEnabled = enable; }
 
 private:
@@ -68,7 +70,6 @@ private:
     void            ActivateMouse(void);
     void            DeactivateMouse(void);
     bool            MouseShouldBeGrabbed(void) const;
-    float           AccelerateMouse(int val) const;
     void            GetEvent(const SDL_Event *Event);
     void            UpdateFocus(void);
     int             GetButtonState(Uint8 buttonstate) const;

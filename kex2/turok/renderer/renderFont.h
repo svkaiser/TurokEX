@@ -32,6 +32,7 @@ public:
     void            DrawString(const char *string, float x, float y, float scale,
                                bool center, byte *rgba1, byte *rgba2);
     float           StringWidth(const char* string, float scale, int fixedLen);
+    float           StringHeight(const char* string, float scale, int fixedLen);
 
     const bool      IsLoaded(void) const { return bLoaded; }
     kexMaterial     *Material(void) { return material; }

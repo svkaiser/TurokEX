@@ -193,3 +193,27 @@ float kexFont::StringWidth(const char* string, float scale, int fixedLen) {
             
     return width;
 }
+
+//
+// kexFont::StringHeight
+//
+
+float kexFont::StringHeight(const char* string, float scale, int fixedLen) {
+    float height = 0;
+    float th;
+    int len = strlen(string);
+    int i;
+    
+    if(fixedLen > 0) {
+        len = fixedLen;
+    }
+    
+    for(i = 0; i < len; i++) {
+        th = (atlas[string[i]].h * scale);
+        if(th > height) {
+            height = th;
+        }
+    }
+    
+    return height;
+}

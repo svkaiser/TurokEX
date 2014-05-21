@@ -1,7 +1,7 @@
 // Emacs style mode select   -*- C++ -*- 
 //-----------------------------------------------------------------------------
 //
-// Copyright(C) 2013 Samuel Villarreal
+// Copyright(C) 2014 Samuel Villarreal
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -20,52 +20,25 @@
 //
 //-----------------------------------------------------------------------------
 
-#ifndef __SYSTEM_H__
-#define __SYSTEM_H__
+#ifndef __SYSTEMBASE_H__
+#define __SYSTEMBASE_H__
 
-#include "SDL.h"
-#include "SDL_endian.h"
-#include "systemBase.h"
-#include "input.h"
-#include "keyinput.h"
+#include <stdio.h>
+#include "common.h"
 
-// Defines for checking the endianness of the system.
-
-#if SDL_BYTEORDER == SYS_LIL_ENDIAN
-    #define SYS_LITTLE_ENDIAN
-#elif SDL_BYTEORDER == SYS_BIG_ENDIAN
-    #define SYS_BIG_ENDIAN
-#endif
-
-#define FIXED_WIDTH     320
-#define FIXED_HEIGHT    240
-
-//
-// SYSTEM
-//
-#ifdef _WIN32
-void Sys_ShowConsole(kbool show);
-void Sys_SpawnConsole(void);
-void Sys_DestroyConsole(void);
-void Sys_UpdateConsole(void);
-void Sys_Printf(const char *string);
-void Sys_Error(const char *string);
-#endif
-
-class kexSystem : public kexSystemBase {
+class kexSystemBase {
 public:
-                            kexSystem(void);
-                            ~kexSystem(void);
+                            kexSystemBase(void);
 
-    virtual void            Main(int argc, char **argv);
-    virtual void            Init(void);
+    virtual void            Main(int argc, char **argv) = 0;
+    virtual void            Init(void) = 0;
     virtual void            Sleep(unsigned long usecs);
-    virtual void            Shutdown(void);
+    virtual void            Shutdown(void) = 0;
     virtual int             GetMS(void);
     virtual void            SpawnInternalConsole(void);
     virtual void            ShowInternalConsole(bool show);
     virtual void            DestroyInternalConsole(void);
-    virtual void            SwapBuffers(void);
+    virtual void            SwapBuffers(void) = 0;
     virtual int             GetWindowFlags(void);
     virtual const char      *GetWindowTitle(void);
     virtual void            SetWindowTitle(const char *string);
@@ -83,17 +56,27 @@ public:
     virtual void            Warning(const char *string, ...);
     virtual void            DPrintf(const char *string, ...);
     virtual void            Error(const char *string, ...);
-    
-    virtual void            *Window(void) { return window; }
 
-private:
-    void                    InitVideo(void);
-    void                    MainLoop(void);
+    int                     VideoWidth(void) { return videoWidth; }
+    int                     VideoHeight(void) { return videoHeight; }
+    float                   VideoRatio(void) { return videoRatio; }
+    bool                    IsWindowed(void) { return bWindowed; }
+    virtual void            *Window(void) { return NULL; }
+    bool                    IsShuttingDown(void) { return bShuttingDown; }
+    const int               Argc(void) const { return argc; }
+    const char              **Argv(void) { return (const char**)argv; }
 
-    SDL_Window              *window;
-    SDL_GLContext           glContext;
+protected:
+    int                     videoWidth;
+    int                     videoHeight;
+    float                   videoRatio;
+    bool                    bWindowed;
+    bool                    bShuttingDown;
+    FILE                    *f_stdout;
+    FILE                    *f_stderr;
+    int                     argc;
+    char                    **argv;
+    char                    *basePath;
 };
-
-extern kexSystem sysMain;
 
 #endif

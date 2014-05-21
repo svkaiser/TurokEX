@@ -42,6 +42,7 @@
 #include "world.h"
 #include "scriptAPI/scriptSystem.h"
 #include "gameManager.h"
+#include "gui.h"
 
 kexCvar cvarDeveloper("developer", CVF_BOOL|CVF_CONFIG, "0", "Developer mode");
 kexCvar cvarFixedTime("fixedtime", CVF_INT|CVF_CONFIG, "0", "TODO");
@@ -54,6 +55,8 @@ kexCvar cvarVidStencilSize("v_stencilsize", CVF_INT|CVF_CONFIG, "8", "TODO");
 kexCvar cvarVidBuffSize("v_buffersize", CVF_INT|CVF_CONFIG, "32", "TODO");
 
 kexSystem sysMain;
+
+static char buffer[4096];
 
 //
 // FCmd_ShowWinConsole
@@ -142,7 +145,6 @@ void kexSystem::Shutdown(void) {
     localWorld.Unload();
 
     soundSystem.Shutdown();
-    fxManager.Shutdown();
     
     Mem_Purge(kexClipMesh::hb_clipMesh);
     Mem_Purge(kexCollisionMap::hb_collisionMap);
@@ -150,7 +152,6 @@ void kexSystem::Shutdown(void) {
     renderBackend.Shutdown();
     modelManager.Shutdown();
     gameManager.Shutdown();
-    scriptManager.Shutdown();
     fileSystem.Shutdown();
     client.Shutdown();
     server.Shutdown();
@@ -191,17 +192,18 @@ int kexSystem::GetMS(void) {
     
     ticks = SDL_GetTicks();
     
-    if(basetime == 0)
+    if(basetime == 0) {
         basetime = ticks;
+    }
     
     return ticks - basetime;
 }
 
 //
-// kexSystem::InitSDL
+// kexSystem::Init
 //
 
-void kexSystem::InitSDL(void) {
+void kexSystem::Init(void) {
     uint32 f = SDL_INIT_VIDEO;
     
 #ifdef _DEBUG
@@ -265,6 +267,222 @@ int kexSystem::GetWindowFlags(void) {
 }
 
 //
+// kexSystem::GetWindowTitle
+//
+
+const char *kexSystem::GetWindowTitle(void) {
+    return SDL_GetWindowTitle(window);
+}
+
+//
+// kexSystem::SetWindowTitle
+//
+
+void kexSystem::SetWindowTitle(const char *string) {
+    SDL_SetWindowTitle(window, string);
+}
+
+//
+// kexSystem::SetWindowGrab
+//
+
+void kexSystem::SetWindowGrab(const bool bEnable) {
+    SDL_SetWindowGrab(window, (SDL_bool)bEnable);
+}
+
+//
+// kexSystem::WarpMouseToCenter
+//
+
+void kexSystem::WarpMouseToCenter(void) {
+    SDL_WarpMouseInWindow(window,
+                          (unsigned short)(sysMain.VideoWidth()/2),
+                          (unsigned short)(sysMain.VideoHeight()/2));
+}
+
+//
+// kexSystemBase::SwapLE16
+//
+
+short kexSystem::SwapLE16(const short val) {
+    return SDL_SwapLE16(val);
+}
+
+//
+// kexSystemBase::SwapBE16
+//
+
+short kexSystem::SwapBE16(const short val) {
+    return SDL_SwapBE16(val);
+}
+
+//
+// kexSystemBase::SwapLE32
+//
+
+int kexSystem::SwapLE32(const int val) {
+    return SDL_SwapLE32(val);
+}
+
+//
+// kexSystemBase::SwapBE32
+//
+
+int kexSystem::SwapBE32(const int val) {
+    return SDL_SwapBE32(val);
+}
+
+//
+// kexSystem::CheckParam
+//
+
+int kexSystem::CheckParam(const char *check) {
+    for(int i = 1; i < argc; i++) {
+        if(!kexStr::Compare(check, argv[i])) {
+            return i;
+        }
+    }
+    return 0;
+}
+
+//
+// kexSystem::Printf
+//
+
+void kexSystem::Printf(const char *string, ...) {
+    va_list	va;
+    
+    va_start(va, string);
+    vsprintf(buffer, string, va);
+    va_end(va);
+    
+    console.Print(COLOR_WHITE, buffer);
+    Log(buffer);
+}
+
+//
+// kexSystem::CPrintf
+//
+
+void kexSystem::CPrintf(rcolor color, const char *string, ...) {
+    va_list	va;
+    
+    va_start(va, string);
+    vsprintf(buffer, string, va);
+    va_end(va);
+    
+    console.Print(color, buffer);
+    Log(buffer);
+}
+
+//
+// kexSystem::Warning
+//
+
+void kexSystem::Warning(const char *string, ...) {
+    va_list	va;
+    
+    va_start(va, string);
+    vsprintf(buffer, string, va);
+    va_end(va);
+    
+    console.Print(COLOR_YELLOW, buffer);
+    Log(buffer);
+}
+
+//
+// kexSystem::DPrintf
+//
+
+void kexSystem::DPrintf(const char *string, ...) {
+    if(cvarDeveloper.GetBool()) {
+        static char buffer[1024];
+        va_list	va;
+        
+        va_start(va, string);
+        vsprintf(buffer, string, va);
+        va_end(va);
+        
+        CPrintf(RGBA(0xE0, 0xE0, 0xE0, 0xff), buffer);
+    }
+}
+
+//
+// kexSystem::Error
+//
+
+void kexSystem::Error(const char* string, ...) {
+    va_list	va;
+    
+    va_start(va, string);
+    vsprintf(buffer, string, va);
+    va_end(va);
+    
+    fprintf(stderr, "Error - %s\n", buffer);
+    fflush(stderr);
+    
+    Log(buffer);
+    
+#ifdef _WIN32
+    Sys_Error(buffer);
+#else
+    const SDL_MessageBoxButtonData buttons[1] = {
+        {
+            SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT,
+            0,
+            "OK"
+        }
+    };
+    SDL_MessageBoxData data = {
+        SDL_MESSAGEBOX_ERROR,
+        NULL,
+        "Error",
+        buffer,
+        2,
+        buttons,
+        NULL
+    };
+    
+    int button = -1;
+    SDL_ShowMessageBox(&data, &button);
+#endif
+    
+    exit(0);    // just in case...
+}
+
+//
+// kexSystem::GetBaseDirectory
+//
+
+const char *kexSystem::GetBaseDirectory(void) {
+    static const char dummyDirectory[] = {"."};
+    // cache multiple requests
+    if(!basePath) {
+        size_t len = strlen(*argv);
+        char *p = (basePath = (char*)Mem_Malloc(len + 1, hb_static)) + len - 1;
+        
+        strcpy(basePath, *argv);
+        while (p > basePath && *p!='/' && *p!='\\') {
+            *p--=0;
+        }
+        
+        if(*p=='/' || *p=='\\') {
+            *p--=0;
+        }
+        
+        if(strlen(basePath) < 2) {
+            Mem_Free(basePath);
+            basePath = (char*)Mem_Malloc(1024, hb_static);
+            if(!getcwd(basePath, 1024)) {
+                strcpy(basePath, dummyDirectory);
+            }
+        }
+    }
+    
+    return basePath;
+}
+
+//
 // kexSystem::InitVideo
 //
 
@@ -279,24 +497,24 @@ void kexSystem::InitVideo(void) {
     videoHeight = cvarVidHeight.GetInt();
     videoRatio = (float)videoWidth / (float)videoHeight;
     
-    if(common.CheckParam("-window")) {
+    if(sysMain.CheckParam("-window")) {
         bWindowed = true;
     }
 
-    if(common.CheckParam("-fullscreen")) {
+    if(sysMain.CheckParam("-fullscreen")) {
         bWindowed = false;
     }
     
     newwidth = newheight = 0;
     
-    p = common.CheckParam("-width");
-    if(p && p < myargc - 1) {
-        newwidth = atoi(myargv[p+1]);
+    p = sysMain.CheckParam("-width");
+    if(p && p < argc - 1) {
+        newwidth = atoi(argv[p+1]);
     }
 
-    p = common.CheckParam("-height");
-    if(p && p < myargc - 1) {
-        newheight = atoi(myargv[p+1]);
+    p = sysMain.CheckParam("-height");
+    if(p && p < argc - 1) {
+        newheight = atoi(argv[p+1]);
     }
     
     if(newwidth && newheight) {
@@ -400,15 +618,15 @@ void kexSystem::MainLoop(void) {
 //
 
 void kexSystem::Main(int argc, char **argv) {
-    myargc = argc;
-    myargv = argv;
+    this->argc = argc;
+    this->argv = argv;
 
     f_stdout = freopen("stdout.txt", "wt", stdout);
     f_stderr = freopen("stderr.txt", "wt", stderr);
 
     SpawnInternalConsole();
 
-    InitSDL();
+    Init();
 
     command.Init();
     kexHeap::Init();
@@ -425,8 +643,6 @@ void kexSystem::Main(int argc, char **argv) {
     command.Add("quit", FCmd_Quit);
     cvarManager.InitCustomCvars();
 
-    scriptManager.Init();
-
     gameManager.InitGame();
     inputKey.InitActions();
 
@@ -437,6 +653,7 @@ void kexSystem::Main(int argc, char **argv) {
 
     renderBackend.Init();
     fxManager.Init();
+    guiManager.Init();
 
     common.Printf("Running kernel...\n");
     gameManager.SpawnGame();

@@ -34,6 +34,7 @@
 #include "gameManager.h"
 #include "renderUtils.h"
 #include "ai.h"
+#include "gui.h"
 
 kexCvar cvarRenderBloom("r_bloom", CVF_BOOL|CVF_CONFIG, "0", "TODO");
 kexCvar cvarRenderBloomThreshold("r_bloomthreshold", CVF_FLOAT|CVF_CONFIG, "0.54", 0.01f, 1.0f, "TODO");
@@ -147,6 +148,7 @@ void kexRenderer::Draw(void) {
         postProcessMS = sysMain.GetMS() - postProcessMS;
     }
 
+    guiManager.DrawGuis();
     renderBackend.Canvas().Draw();
     gameManager.MenuCanvas().Draw();
     console.Draw();
@@ -252,26 +254,48 @@ void kexRenderer::DrawElements(const bool bClearCount) {
 //
 // kexRenderer::DrawElements
 //
-// Draws using the specified material. A temp. surface
-// is created in order to draw the material
+// Draws using the specified material
 //
 
 void kexRenderer::DrawElements(const kexMaterial *material, const bool bClearCount) {
-    static surface_t surf;
-    static drawSurface_t drawSurf;
+    kexShaderObj *shader;
     
-    surf.numVerts       = vertexCount;
-    surf.numIndices     = indiceCount;
-    surf.vertices       = reinterpret_cast<kexVec3*>(drawVertices);
-    surf.coords         = drawTexCoords;
-    surf.rgb            = drawRGB;
-    surf.normals        = drawVertices;
-    surf.indices        = drawIndices;
-    drawSurf.surf       = &surf;
-    drawSurf.material   = (kexMaterial*)material;
-    drawSurf.refObj     = NULL;
+    shader = ((kexMaterial*)material)->ShaderObj();
+    shader->Enable();
+    shader->CommitGlobalUniforms(material);
     
-    DrawSurface(&drawSurf, (kexMaterial*)material);
+    renderBackend.SetState(material->StateBits());
+    renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
+    renderBackend.SetCull(material->CullType());
+    renderBackend.SetDepthMask(material->DepthMask());
+    renderBackend.SetPolyMode(GLPOLY_FILL);
+    
+    for(unsigned int i = 0; i < material->NumUnits(); i++) {
+        matSampler_t *sampler = ((kexMaterial*)material)->Sampler(i);
+        
+        renderBackend.SetTextureUnit(sampler->unit);
+        
+        if(sampler->texture == NULL) {
+            renderBackend.defaultTexture.Bind();
+        }
+        else {
+            if(sampler->texture == renderBackend.frameBuffer) {
+                sampler->texture->BindFrameBuffer();
+            }
+            else if(sampler->texture == renderBackend.depthBuffer) {
+                sampler->texture->BindDepthBuffer();
+            }
+            else {
+                sampler->texture->Bind();
+            }
+            sampler->texture->ChangeParameters(sampler->clamp, sampler->filter);
+        }
+    }
+    
+    renderBackend.SetTextureUnit(0);
+    
+    BindDrawPointers();
+    dglDrawElements(GL_TRIANGLES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
     
     if(bClearCount) {
         indiceCount = 0;
@@ -1127,6 +1151,7 @@ void kexRenderer::DrawStats(void) {
 
 #undef DRAWSURF_SIZE
 
+    gameManager.PrintDebugStats();
     scriptManager.DrawGCStats();
     kexRenderUtils::ClearDebugLine();
 }

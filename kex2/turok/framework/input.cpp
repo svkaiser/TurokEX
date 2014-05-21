@@ -280,7 +280,7 @@ void kexInput::MoveMouse(int x, int y) {
 void kexInput::ActivateMouse(void) {
     SDL_ShowCursor(0);
     SDL_SetRelativeMouseMode(SDL_TRUE);
-    SDL_SetWindowGrab(sysMain.Window(), SDL_TRUE);
+    sysMain.SetWindowGrab(SDL_TRUE);
 }
 
 //
@@ -290,7 +290,7 @@ void kexInput::ActivateMouse(void) {
 void kexInput::DeactivateMouse(void) {
     SDL_ShowCursor(1);
     SDL_SetRelativeMouseMode(SDL_FALSE);
-    SDL_SetWindowGrab(sysMain.Window(), SDL_FALSE);
+    sysMain.SetWindowGrab(SDL_FALSE);
 }
 
 //
@@ -319,9 +319,7 @@ void kexInput::UpdateGrab(void) {
 
 void kexInput::CenterMouse(void) {
     // Warp the the screen center
-    SDL_WarpMouseInWindow(sysMain.Window(),
-        (unsigned short)(sysMain.VideoWidth()/2),
-        (unsigned short)(sysMain.VideoHeight()/2));
+    sysMain.WarpMouseToCenter();
     
     // Clear any relative movement caused by warping
     SDL_PumpEvents();

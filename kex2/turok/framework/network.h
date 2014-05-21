@@ -25,6 +25,14 @@
 
 #include "enet/enet.h"
 
+typedef struct {
+    int ingoing;
+    int outgoing;
+    int acks;
+} netsequence_t;
+
+#define NETBACKUPS 64
+
 class kexNetwork {
 public:
     virtual void        Init(void) = 0;

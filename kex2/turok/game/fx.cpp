@@ -680,7 +680,7 @@ kexFxManager::~kexFxManager(void) {
 void kexFxManager::Init(void) {
     command.Add("spawnfx", FCmd_SpawnFX);
 
-    if(common.CheckParam("-nofxcache") == 0) {
+    if(sysMain.CheckParam("-nofxcache") == 0) {
         // precache all particle textures
         kexStrList fxList;
         
@@ -690,14 +690,6 @@ void kexFxManager::Init(void) {
             LoadKFX(fxList[i].c_str());
         }
     }
-}
-
-//
-// kexFxManager::Shutdown
-//
-
-void kexFxManager::Shutdown(void) {
-    //Z_FreeTags(PU_FX, PU_FX);
 }
 
 //

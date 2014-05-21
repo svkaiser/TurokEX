@@ -37,9 +37,23 @@
 #include "world.h"
 #include "renderBackend.h"
 #include "renderMain.h"
+#include "renderUtils.h"
 #include "ai.h"
+#include "gui.h"
 
 kexGameManager gameManager;
+
+//
+// FCmd_PrintStats
+//
+
+static void FCmd_PrintStats(void) {
+    if(command.GetArgc() < 1) {
+        return;
+    }
+
+    gameManager.bPrintStats ^= 1;
+}
 
 //
 // kexGameManager:: kexGameManager
@@ -51,6 +65,8 @@ kexGameManager::kexGameManager(void) {
     this->onSpawn       = NULL;
     this->onShutdown    = NULL;
     this->gameDef       = NULL;
+    this->bPrintStats   = false;
+    this->gameTimeMS    = 0;
 }
 
 //
@@ -111,8 +127,12 @@ void kexGameManager::InitObject(void) {
 //
 
 void kexGameManager::Shutdown(void) {
+    guiManager.DeleteGuis();
+    
     Release();
     objHandle.Set(NULL, NULL);
+
+    scriptManager.Shutdown();
 }
 
 //
@@ -181,6 +201,8 @@ bool kexGameManager::CallConstructor(const char *decl) {
 void kexGameManager::InitGame(void) {
     kexStr gameClass("DefaultGame");
 
+    scriptManager.Init();
+
     // load default game info
     if((gameDef = defManager.FindDefEntry("defs/game.def@default"))) {
         gameDef->GetString("gameClass", gameClass);
@@ -189,6 +211,7 @@ void kexGameManager::InitGame(void) {
     Construct(gameClass.c_str());
 
     kexAI::Init();
+    command.Add("statgame", FCmd_PrintStats);
 }
 
 //
@@ -211,10 +234,10 @@ void kexGameManager::SetTitle(void) {
     }
 
     if(gameDef->GetString("gameName", str)) {
-        kexStr title = SDL_GetWindowTitle(sysMain.Window());
+        kexStr title = sysMain.GetWindowTitle();
         title = title + "  (" + str + ")";
 
-        SDL_SetWindowTitle(sysMain.Window(), title.c_str());
+        sysMain.SetWindowTitle(title.c_str());
     }
 }
 
@@ -271,10 +294,18 @@ void kexGameManager::OnLocalTick(void) {
     // prep and send input information to server
     localPlayer.BuildCommands();
     
+    if(bPrintStats) {
+        gameTimeMS = sysMain.GetMS();
+    }
+
     // run tick
     localPlayer.LocalTick();
     console.Tick();
     localWorld.LocalTick();
+
+    if(bPrintStats) {
+        gameTimeMS = sysMain.GetMS() - gameTimeMS;
+    }
     
     // draw
     renderer.Draw();
@@ -503,4 +534,17 @@ void kexGameManager::SetupClientInfo(const ENetPacket *packet) {
             client.SetState(CL_STATE_INGAME);
         }
     }
+}
+
+//
+// kexGameManager::PrintDebugStats
+//
+
+void kexGameManager::PrintDebugStats(void) {
+    if(!bPrintStats) {
+        return;
+    }
+
+    kexRenderUtils::PrintStatsText("game tick ms", ": %ims", gameTimeMS);
+    kexRenderUtils::AddDebugLineSpacing();
 }

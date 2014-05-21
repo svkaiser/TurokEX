@@ -47,6 +47,18 @@ typedef enum
     CL_STATE_CHANGINGLEVEL
 } client_state_e;
 
+//
+// CLIENT PACKET TYPES
+//
+typedef enum {
+    cp_ping         = 1,
+    cp_say,
+    cp_cmd,
+    cp_msgserver,
+    cp_mapchange,
+    NUMCLIENTPACKETS
+} cl_packets_t;
+
 class kexClient : public kexNetwork {
 public:
     virtual void        Init(void);

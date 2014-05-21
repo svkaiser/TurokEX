@@ -39,12 +39,6 @@ public:
     int                 ReadExternalTextFile(const char *name, byte **buffer) const;
     void                Init(void);
 
-#ifndef EDITOR
-    const char          *GetBaseDirectory(void);
-#else
-    static char         *GetBaseDirectory(void);
-#endif
-
 private:
     long                HashFileName(const char *fname, int hashSize) const;
 

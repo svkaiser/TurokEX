@@ -32,9 +32,6 @@
 #include "console.h"
 #include "scriptAPI/scriptSystem.h"
 
-int     myargc;
-char**  myargv;
-
 kexCommon common;
 
 //
@@ -156,18 +153,6 @@ void kexCommon::Error(const char* string, ...) {
 #endif
 
     exit(0);    // just in case...
-}
-
-//
-// kexCommon::CheckParam
-//
-
-int kexCommon::CheckParam(const char *check) {
-    for(int i = 1; i < myargc; i++) {
-        if(!strcmp(check, myargv[i]))
-            return i;
-    }
-    return 0;
 }
 
 //

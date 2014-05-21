@@ -283,15 +283,15 @@ void kexCvarManager::Init(void) {
 #ifndef EDITOR
     int p;
 
-    if((p = common.CheckParam("-setvar"))) {
+    if((p = sysMain.CheckParam("-setvar"))) {
         p++;
 
-        while(p != myargc && myargv[p][0] != '-') {
+        while(p != sysMain.Argc() && sysMain.Argv()[p][0] != '-') {
             char *name;
             char *value;
 
-            name = myargv[p++];
-            value = myargv[p++];
+            name = (char*)sysMain.Argv()[p++];
+            value = (char*)sysMain.Argv()[p++];
 
             cvarManager.Set(name, value);
         }

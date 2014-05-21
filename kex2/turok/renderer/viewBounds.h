@@ -23,6 +23,8 @@
 #ifndef __VIEWBOUNDS_H__
 #define __VIEWBOUNDS_H__
 
+class kexCamera;
+
 class kexViewBounds {
 public:
                         kexViewBounds(void);

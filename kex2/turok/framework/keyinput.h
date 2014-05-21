@@ -24,7 +24,6 @@
 #define __KEYINPUT_H__
 
 #include "SDL.h"
-#include "shared.h"
 
 //
 // KEYS

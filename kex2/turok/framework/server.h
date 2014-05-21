@@ -38,6 +38,28 @@ typedef enum {
     SVC_STATE_INGAME
 } svclient_state_e;
 
+//
+// SERVER PACKET TYPES
+//
+typedef enum {
+    sp_ping         = 1,
+    sp_clientinfo,
+    sp_msg,
+    sp_pmove,
+    sp_weaponinfo,
+    sp_changemap,
+    sp_noclip,
+    NUMSERVERPACKETS
+} sv_packets_t;
+
+//
+// SERVER MESSAGES
+//
+typedef enum {
+    sm_full         = 1,
+    NUMSERVERMESSAGES
+} sv_messages_t;
+
 #define SERVER_RUNTIME  100
 
 class kexServer : public kexNetwork {

@@ -59,6 +59,7 @@ public:
     bool                    ConnectPlayer(ENetEvent *sev);
     void                    NotifyMapChange(ENetEvent *sev, const int mapID);
     void                    ClientRequestMapChange(const int mapID);
+    void                    PrintDebugStats(void);
 
     kexKeyMap               *GameDef(void) { return gameDef; }
     kexCanvas               &MenuCanvas(void) { return menuCanvas; }
@@ -68,6 +69,8 @@ public:
     
     kexPlayer               players[MAX_PLAYERS];
     kexLocalPlayer          localPlayer;
+
+    bool                    bPrintStats;
 
 private:
     void                    HandleMapChangeRequest(const ENetPacket *packet);
@@ -82,6 +85,8 @@ private:
 
     kexKeyMap               *gameDef;
     kexCanvas               menuCanvas;
+
+    int                     gameTimeMS;
 };
 
 extern kexGameManager       gameManager;

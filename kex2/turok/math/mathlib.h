@@ -24,7 +24,6 @@
 #define __MATHLIB_H__
 
 #include <math.h>
-#include "shared.h"
 #include "kstring.h"
 
 #ifdef M_PI
