@@ -36,14 +36,35 @@ typedef enum {
     GBS_HOVER,
     GBS_DOWN,
     GBS_PRESSED,
-    GBS_RELEASED
+    GBS_RELEASED,
+    GBS_EXITED
 } guiButtonState_t;
 
+typedef enum {
+    GEVT_NONE       = 0,
+    GEVT_ONDOWN,
+    GEVT_ONRELEASE,
+    NUMGUIEVENTS
+} guiEventType_t;
+
+typedef enum {
+    GAT_NONE        = 0,
+    GAT_CHANGEGUI,
+    NUMGUIACTIONS
+} guiActionType_t;
+
+typedef struct {
+    guiEventType_t                      event;
+    guiActionType_t                     action;
+    kexKeyMap                           args;
+} guiEvent_t;
+
 typedef struct guiButton_s {
-    kexContainer *container;
-    guiButtonState_t state;
-    kexStr name;
-    kexLinklist<struct guiButton_s> link;
+    kexContainer                        *container;
+    guiButtonState_t                    state;
+    kexStr                              name;
+    kexArray<guiEvent_t>                events;
+    kexLinklist<struct guiButton_s>     link;
 } guiButton_t;
 
 class kexGui {
@@ -53,16 +74,18 @@ public:
                                 ~kexGui(void);
     
     void                        Draw(void);
-    void                        CheckEvents(void);
+    bool                        CheckEvents(const event_t *ev);
+    void                        FadeIn(const float speed);
+    void                        FadeOut(const float speed);
     void                        ExecuteButtonEvent(guiButton_t *button, const guiButtonState_t btnState);
     
 private:
     kexCanvas                   canvas;
-    kexGui                      *prevGui;
     kexLinklist<kexGui>         link;
     kexLinklist<guiButton_t>    buttons;
     kexStr                      name;
     guiStatus_t                 status;
+    float                       fadeSpeed;
 };
 
 #include "tinyxml2.h"
@@ -78,8 +101,14 @@ public:
     void                        DrawGuis(void);
     void                        DeleteGuis(void);
     bool                        ProcessInput(const event_t *ev);
+    void                        ChangeGuis(kexGui *gui, guiEvent_t *guiEvent);
+    void                        UpdateGuis(void);
+    void                        ClearGuis(const float fadeSpeed);
     
     void                        Toggle(const bool bToggle) { bEnabled = bToggle; }
+    const bool                  IsActive(void) const { return bEnabled; }
+    void                        SetMainGui(kexGui *gui) { mainGui = gui; }
+    kexGui                      *GetMainGui(void) { return mainGui; }
     
     kexLinklist<kexGui>         guis;
     float                       cursor_x;
@@ -95,8 +124,16 @@ private:
                                           kexContainer *container);
     void                        ParseSimpleProperties(tinyxml2::XMLNode *node,
                                                       kexCanvasObject *object);
+    void                        ParseButton(tinyxml2::XMLNode *node,
+                                            kexGui *gui,
+                                            kexContainer *container);
+    void                        ParseButtonEvent(tinyxml2::XMLNode *node,
+                                                 kexGui *gui,
+                                                 kexContainer *container,
+                                                 guiButton_t *button);
     
     bool                        bEnabled;
+    kexGui                      *mainGui;
 };
 
 extern kexGuiManager guiManager;

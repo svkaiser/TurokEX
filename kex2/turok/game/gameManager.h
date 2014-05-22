@@ -49,6 +49,10 @@ public:
     void                    Shutdown(void);
     void                    OnShutdown(void);
     void                    SetTitle(void);
+    void                    SetMainGui(const kexStr &name);
+    void                    FadeMainGui(const bool fadeIn, const float speed);
+    bool                    GuisAreActive(void);
+    void                    ClearGuis(const float fadeSpeed);
     void                    SpawnGame(void);
     bool                    ProcessInput(const event_t *ev);
     void                    OnTick(void);

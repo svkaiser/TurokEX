@@ -25,6 +25,7 @@
 //-----------------------------------------------------------------------------
 
 #include "common.h"
+#include "client.h"
 #include "memHeap.h"
 #include "fileSystem.h"
 #include "renderBackend.h"
@@ -61,6 +62,7 @@ kexGuiManager::kexGuiManager(void) {
     this->cursor_y = 0;
     this->bEnabled = false;
     this->bDebugButtons = false;
+    this->mainGui = NULL;
 }
 
 //
@@ -77,6 +79,19 @@ kexGuiManager::~kexGuiManager(void) {
 void kexGuiManager::Init(void) {
     cursorMaterial = renderBackend.CacheMaterial("gui/cursor.kmat@cursor");
     command.Add("debugguibuttons", FCmd_DebugGuiButtons);
+    
+    kexStrList list;
+    fileSystem.GetMatchingFiles(list, "gui/");
+    
+    for(unsigned int i = 0; i < list.Length(); i++) {
+        if(list[i].IndexOf(".xml") == -1) {
+            continue;
+        }
+        
+        LoadGui(kexStr("gui/") + list[i]);
+    }
+    
+    list.Empty();
 }
 
 //
@@ -106,17 +121,15 @@ kexGui *kexGuiManager::LoadGui(const char *guiFile) {
         return NULL;
     }
     
-    buffsize = fileSystem.ReadExternalTextFile(guiFile, (byte**)(&buffer));
-    if(buffsize <= 0) {
-        buffsize = fileSystem.OpenFile(guiFile, (byte**)(&buffer), hb_static);
-    }
+    buffsize = fileSystem.OpenFile(guiFile, (byte**)(&buffer), hb_static);
     
     if(buffsize <= 0) {
         common.Warning("kexGuiManager::LoadGui: %s not found\n", guiFile);
         return NULL;
     }
     
-    XMLDocument xmldoc;
+    // force namespace so msvc can shut up
+    tinyxml2::XMLDocument xmldoc;
     xmldoc.Parse((char*)buffer);
     
     Mem_Free(buffer);
@@ -139,11 +152,8 @@ kexGui *kexGuiManager::LoadGui(const char *guiFile) {
     gui->link.Add(guis);
     
     for(const XMLAttribute *attrib = root->FirstAttribute(); attrib; attrib = attrib->Next()) {
-        if(kexStr::Compare(attrib->Name(), "name")) {
+        if(!kexStr::Compare(attrib->Name(), "name")) {
             gui->name = kexStr(attrib->Value());
-        }
-        else if(kexStr::Compare(attrib->Name(), "prevGUI")) {
-            gui->prevGui = FindGuiByName(attrib->Value());
         }
     }
     
@@ -262,29 +272,81 @@ void kexGuiManager::ParseNode(XMLElement *element, kexGui *gui, kexContainer *co
             }
         }
         else if(!kexStr::Compare(node->Value(), "button")) {
-            const XMLAttribute *attrib = node->ToElement()->FirstAttribute();
+            ParseButton(node, gui, container);
+        }
+    }
+}
+
+//
+// kexGuiManager::ParseButton
+//
+
+void kexGuiManager::ParseButton(XMLNode *node, kexGui *gui, kexContainer *container) {
+    const XMLAttribute *attrib = node->ToElement()->FirstAttribute();
+    
+    if(!kexStr::Compare(attrib->Name(), "name")) {
+        guiButton_t *button = new guiButton_t;
+        
+        button->name = kexStr(attrib->Value());
+        button->state = GBS_NONE;
+        button->link.SetData(button);
+        button->container = gui->canvas.CreateContainer();
+        
+        Mem_CacheRef((void**)&button->container);
+        
+        if(container) {
+            container->AddChild(button->container);
+        }
+        else {
+            gui->canvas.AddChild(button->container);
+        }
+        
+        button->link.Add(gui->buttons);
+        
+        ParseSimpleProperties(node, button->container);
+        ParseButtonEvent(node, gui, button->container, button);
+        ParseNode(node->ToElement(), gui, button->container);
+    }
+}
+
+//
+// kexGuiManager::ParseButtonEvent
+//
+
+void kexGuiManager::ParseButtonEvent(XMLNode *node, kexGui *gui,
+                                     kexContainer *container, guiButton_t *button) {
+    for(XMLNode *child = node->ToElement()->FirstChild(); child; child = child->NextSibling()) {
+        if(!kexStr::Compare(child->Value(), "event")) {
+            guiEvent_t guiEvent;
             
-            if(!kexStr::Compare(attrib->Name(), "name")) {
-                guiButton_t *button = new guiButton_t;
-                
-                button->name = kexStr(attrib->Value());
-                button->state = GBS_NONE;
-                button->link.SetData(button);
-                button->container = gui->canvas.CreateContainer();
-                
-                Mem_CacheRef((void**)&button->container);
-                
-                if(container) {
-                    container->AddChild(button->container);
+            guiEvent.event = GEVT_NONE;
+            guiEvent.action = GAT_NONE;
+            
+            for(const XMLAttribute *attrib = child->ToElement()->FirstAttribute();
+                attrib; attrib = attrib->Next()) {
+                if(!kexStr::Compare(attrib->Name(), "type")) {
+                    if(!kexStr::Compare(attrib->Value(), "ondown")) {
+                        guiEvent.event = GEVT_ONDOWN;
+                    }
+                    else if(!kexStr::Compare(attrib->Value(), "onrelease")) {
+                        guiEvent.event = GEVT_ONRELEASE;
+                    }
                 }
-                else {
-                    gui->canvas.AddChild(button->container);
+                else if(!kexStr::Compare(attrib->Name(), "action")) {
+                    if(!kexStr::Compare(attrib->Value(), "changegui")) {
+                        guiEvent.action = GAT_CHANGEGUI;
+                    }
                 }
-                
-                button->link.Add(gui->buttons);
-                
-                ParseSimpleProperties(node, button->container);
-                ParseNode(node->ToElement(), gui, button->container);
+            }
+            
+            button->events.Push(guiEvent);
+            
+            for(XMLNode *evChild = child->ToElement()->FirstChild(); evChild;
+                evChild = evChild->NextSibling()) {
+                // need to set args from within the array rather than from the
+                // temporarily variable
+                guiEvent_t *refEvent = &button->events[button->events.Length()-1];
+                refEvent->args.Add(evChild->Value(), evChild->ToElement()->GetText());
             }
         }
     }
@@ -295,15 +357,92 @@ void kexGuiManager::ParseNode(XMLElement *element, kexGui *gui, kexContainer *co
 //
 
 kexGui *kexGuiManager::FindGuiByName(const char *name) {
-    kexStr compareName(name);
-    
     for(kexGui *obj = guis.Next(); obj; obj = obj->link.Next()) {
-        if(obj->name == compareName) {
+        if(!kexStr::Compare(obj->name.c_str(), name)) {
             return obj;
         }
     }
     
     return NULL;
+}
+
+//
+// kexGuiManager::ChangeGuis
+//
+
+void kexGuiManager::ChangeGuis(kexGui *gui, guiEvent_t *guiEvent) {
+    kexStr guiName;
+    kexGui *nextGui;
+    float speed;
+    
+    guiEvent->args.GetString("gui", guiName);
+    guiEvent->args.GetFloat("fadeSpeed", speed);
+    
+    nextGui = FindGuiByName(guiName.c_str());
+    
+    if(nextGui == NULL) {
+        return;
+    }
+    
+    gui->fadeSpeed = speed;
+    nextGui->fadeSpeed = speed;
+    
+    gui->status = GUIS_FADEOUT;
+    nextGui->status = GUIS_FADEIN;
+}
+
+//
+// kexGuiManager::ClearGuis
+//
+
+void kexGuiManager::ClearGuis(const float fadeSpeed) {
+    for(kexGui *obj = guis.Next(); obj; obj = obj->link.Next()) {
+        if(obj->status == GUIS_DISABLED) {
+            continue;
+        }
+
+        obj->FadeOut(fadeSpeed);
+    }
+}
+
+//
+// kexGuiManager::UpdateGuis
+//
+
+void kexGuiManager::UpdateGuis(void) {
+    bool bAllDisabled = true;
+
+    if(bEnabled == false) {
+        return;
+    }
+
+    for(kexGui *obj = guis.Next(); obj; obj = obj->link.Next()) {
+        if(obj->status == GUIS_DISABLED) {
+            continue;
+        }
+        else if(obj->status == GUIS_FADEIN) {
+            obj->canvas.alpha += (obj->fadeSpeed * client.GetRunTime());
+            kexMath::Clamp(obj->canvas.alpha, 0, 1);
+
+            if(obj->canvas.alpha >= 1) {
+                obj->status = GUIS_READY;
+            }
+        }
+        else if(obj->status == GUIS_FADEOUT) {
+            obj->canvas.alpha -= (obj->fadeSpeed * client.GetRunTime());
+            kexMath::Clamp(obj->canvas.alpha, 0, 1);
+
+            if(obj->canvas.alpha <= 0) {
+                obj->status = GUIS_DISABLED;
+            }
+        }
+
+        bAllDisabled = false;
+    }
+
+    if(bAllDisabled) {
+        bEnabled = false;
+    }
 }
 
 //
@@ -314,8 +453,12 @@ void kexGuiManager::DrawGuis(void) {
     if(bEnabled == false) {
         return;
     }
-    
+
     for(kexGui *obj = guis.Next(); obj; obj = obj->link.Next()) {
+        if(obj->status == GUIS_DISABLED) {
+            continue;
+        }
+
         obj->Draw();
         
         if(bDebugButtons) {
@@ -340,28 +483,33 @@ void kexGuiManager::DrawGuis(void) {
 
 extern kexCvar cvarMSensitivityX;
 extern kexCvar cvarMSensitivityY;
-
+    
 bool kexGuiManager::ProcessInput(const event_t *ev) {
+    bool ok = false;
+    
     if(bEnabled == false) {
         return false;
     }
     
     if(ev->type == ev_mouse) {
-        cursor_x += ((float)ev->data2 * cvarMSensitivityX.GetFloat()) / 32.0f;
-        cursor_y -= ((float)ev->data3 * cvarMSensitivityX.GetFloat()) / 32.0f;
+        float t = (float)sysMain.VideoWidth() / 32.0f;
+        
+        cursor_x += ((float)ev->data2 * cvarMSensitivityX.GetFloat()) / t;
+        cursor_y -= ((float)ev->data3 * cvarMSensitivityX.GetFloat()) / t;
         kexMath::Clamp(cursor_x, 0.0f, (float)sysMain.VideoWidth());
         kexMath::Clamp(cursor_y, 0.0f, (float)sysMain.VideoHeight());
         
-        for(kexGui *gui = guis.Next(); gui; gui = gui->link.Next()) {
-            if(gui->status == GUIS_DISABLED) {
-                continue;
-            }
-            gui->CheckEvents();
-        }
-        return true;
+        ok = true;
     }
     
-    return false;
+    for(kexGui *gui = guis.Next(); gui; gui = gui->link.Next()) {
+        if(gui->status != GUIS_READY) {
+            continue;
+        }
+        ok |= gui->CheckEvents(ev);
+    }
+    
+    return ok;
 }
 
 //
@@ -389,8 +537,9 @@ void kexGuiManager::DrawCursor(void) {
 //
 
 kexGui::kexGui(void) {
-    this->prevGui = NULL;
-    this->status = GUIS_READY;
+    this->status = GUIS_DISABLED;
+    this->fadeSpeed = 1.0f;
+    this->canvas.alpha = 0;
     this->name = (kexStr("gui_") + sysMain.GetMS()).c_str();
     this->link.SetData(this);
 }
@@ -408,6 +557,7 @@ kexGui::~kexGui(void) {
     for(guiButton_t *button = buttons.Next(); button;) {
         next = button->link.Next();
         button->link.Remove();
+        button->events.Empty();
         delete button;
         button = next;
     }
@@ -422,11 +572,32 @@ void kexGui::Draw(void) {
 }
 
 //
+// kexGui::FadeIn
+//
+
+void kexGui::FadeIn(const float speed) {
+    status = GUIS_FADEIN;
+    fadeSpeed = speed;
+}
+
+//
+// kexGui::FadeOut
+//
+
+void kexGui::FadeOut(const float speed) {
+    status = GUIS_FADEOUT;
+    fadeSpeed = speed;
+}
+
+//
 // kexGui::ExecuteButtonEvent
 //
 
 void kexGui::ExecuteButtonEvent(guiButton_t *button, const guiButtonState_t btnState) {
-
+    if(button->state == btnState) {
+        return;
+    }
+    
     for(kexCanvasObject *obj = canvas.children.Next(); obj; obj = obj->link.Next()) {
         if(!obj->InstanceOf(&kexCanvasScriptObject::info)) {
             continue;
@@ -443,17 +614,50 @@ void kexGui::ExecuteButtonEvent(guiButton_t *button, const guiButtonState_t btnS
                     cso->component.CallFunction(cso->component.onHover);
                 }
                 break;
+                
+            case GBS_DOWN:
+                if(cso->component.onDown) {
+                    cso->component.CallFunction(cso->component.onDown);
+                }
+                break;
+                
+            case GBS_RELEASED:
+                if(cso->component.onRelease) {
+                    cso->component.CallFunction(cso->component.onRelease);
+                }
+                break;
 
-            case GBS_NONE:
-                if(button->state == GBS_HOVER) {
-                    if(cso->component.onExit) {
-                        cso->component.CallFunction(cso->component.onExit);
+            case GBS_EXITED:
+                if(cso->component.onExit) {
+                    cso->component.CallFunction(cso->component.onExit);
+                }
+                
+                if(button->state == GBS_DOWN) {
+                    if(cso->component.onRelease) {
+                        cso->component.CallFunction(cso->component.onRelease);
                     }
                 }
                 break;
 
             default:
                 break;
+        }
+    }
+    
+    for(unsigned int i = 0; i < button->events.Length(); i++) {
+        if(btnState == GBS_DOWN) {
+            if(button->events[i].event != GEVT_ONDOWN) {
+                continue;
+            }
+            
+            switch(button->events[i].action) {
+                case GAT_CHANGEGUI:
+                    guiManager.ChangeGuis(this, &button->events[i]);
+                    break;
+                    
+                default:
+                    break;
+            }
         }
     }
 
@@ -464,10 +668,11 @@ void kexGui::ExecuteButtonEvent(guiButton_t *button, const guiButtonState_t btnS
 // kexGui::CheckEvents
 //
 
-void kexGui::CheckEvents(void) {
+bool kexGui::CheckEvents(const event_t *ev) {
     float x = guiManager.cursor_x;
     float y = guiManager.cursor_y;
     guiButton_t *button;
+    bool ok = false;
     
     for(button = buttons.Next(); button; button = button->link.Next()) {
         if(button->state == GBS_DISABLED) {
@@ -476,14 +681,25 @@ void kexGui::CheckEvents(void) {
         
         if(x > button->container->min[0] && x < button->container->max[0] &&
            y > button->container->min[1] && y < button->container->max[1]) {
-            if(button->state != GBS_HOVER) {
+            if(ev->type == ev_mousedown && button->state != GBS_DOWN) {
+                ExecuteButtonEvent(button, GBS_DOWN);
+                ok = true;
+            }
+            else if(ev->type == ev_mouseup && button->state == GBS_DOWN) {
+                ExecuteButtonEvent(button, GBS_RELEASED);
+                ok = true;
+            }
+            else if(button->state != GBS_HOVER && button->state != GBS_DOWN) {
                 ExecuteButtonEvent(button, GBS_HOVER);
+                ok = true;
             }
         }
         else {
-            if(button->state != GBS_NONE) {
-                ExecuteButtonEvent(button, GBS_NONE);
+            if(button->state != GBS_EXITED) {
+                ExecuteButtonEvent(button, GBS_EXITED);
             }
         }
     }
+    
+    return ok;
 }

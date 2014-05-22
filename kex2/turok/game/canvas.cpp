@@ -41,6 +41,8 @@ kexCanvasComponent::kexCanvasComponent(void) {
     this->onInit = NULL;
     this->onHover = NULL;
     this->onExit = NULL;
+    this->onDown = NULL;
+    this->onRelease = NULL;
 }
 
 //
@@ -74,6 +76,8 @@ void kexCanvasComponent::Construct(const char *className) {
     onInit = type->GetMethodByDecl("void OnInit(void)");
     onHover = type->GetMethodByDecl("void OnHover(void)");
     onExit = type->GetMethodByDecl("void OnExit(void)");
+    onDown = type->GetMethodByDecl("void OnDown(void)");
+    onRelease = type->GetMethodByDecl("void OnRelease(void)");
 }
 
 //-----------------------------------------------------------------------------
@@ -101,6 +105,7 @@ kexCanvasObject::kexCanvasObject(void) {
     this->bVisible  = true;
     this->parent    = NULL;
     this->scriptRef = 0;
+    this->refCanvas = NULL;
     this->max[0]    = -M_INFINITY;
     this->max[1]    = -M_INFINITY;
     this->min[0]    =  M_INFINITY;
@@ -194,6 +199,7 @@ void kexCanvasImage::Draw(void) {
     }
 
     renderBackend.SetState(GLSTATE_BLEND, true);
+    renderBackend.SetState(GLSTATE_ALPHATEST, true);
     renderBackend.SetState(GLSTATE_TEXTURE0, true);
     renderBackend.SetState(GLSTATE_CULL, false);
     renderBackend.SetState(GLSTATE_DEPTHTEST, false);
@@ -229,6 +235,10 @@ void kexCanvasImage::Draw(void) {
         for(i = 0; i < 4; i++) {
             a[i] = (byte)((float)a[i] * obj->alpha);
         }
+    }
+    
+    for(i = 0; i < 4; i++) {
+        a[i] = (byte)((float)a[i] * refCanvas->alpha);
     }
     
     if(rx < min[0]) min[0] = rx;
@@ -289,7 +299,6 @@ void kexCanvasImage::Draw(void) {
     renderer.AddTriangle(2, 1, 3);
 
     renderer.DrawElementsNoShader();
-    renderBackend.SetState(GLSTATE_BLEND, false);
 }
 
 //-----------------------------------------------------------------------------
@@ -507,6 +516,10 @@ void kexCanvasText::Draw(void) {
             color[i * 4 + 3] = (byte)((float)color[i * 4 + 3] * obj->alpha);
         }
     }
+    
+    for(int i = 0; i < 4; i++) {
+        color[i * 4 + 3] = (byte)((float)color[i * 4 + 3] * refCanvas->alpha);
+    }
 
     renderBackend.SetState(GLSTATE_BLEND, true);
     font->DrawString(text.c_str(), dx, dy, ds, bCentered, (byte*)&color[0 * 4], (byte*)&color[2 * 4]);
@@ -565,6 +578,9 @@ void kexContainer::Draw(void) {
         return;
     }
 
+    float a = alpha;
+    alpha *= refCanvas->alpha;
+
     for(kexCanvasObject *obj = children.Next(); obj != NULL; obj = obj->link.Next()) {
         obj->Draw();
         
@@ -573,6 +589,8 @@ void kexContainer::Draw(void) {
         if(obj->min[1] < min[1]) min[1] = obj->min[1];
         if(obj->max[1] > max[1]) max[1] = obj->max[1];
     }
+
+    alpha = a;
 }
 
 //
@@ -642,6 +660,7 @@ kexCanvasObject *kexContainer::operator[](int index) {
 //
 
 kexCanvas::kexCanvas(void) {
+    this->alpha = 1.0f;
 }
 
 //
@@ -674,6 +693,8 @@ kexCanvasImage *kexCanvas::CreateImage(const char *texture) {
         img->rgba[i * 4 + 2] = 0xff;
         img->rgba[i * 4 + 3] = 0xff;
     }
+    
+    img->refCanvas = this;
 
     return img;
 }
@@ -696,6 +717,8 @@ kexContainer *kexCanvas::CreateContainer(void) {
     container->link.Clear();
     container->mainLink.Clear();
     container->mainLink.Add(objects);
+    
+    container->refCanvas = this;
 
     return container;
 }
@@ -717,6 +740,8 @@ kexCanvasScriptObject *kexCanvas::CreateScriptObject(const char *className) {
         delete cso;
         return NULL;
     }
+    
+    cso->refCanvas = this;
     
     return cso;
 }
@@ -740,6 +765,8 @@ kexCanvasText *kexCanvas::CreateText(const char *font) {
         str->rgba[i * 4 + 2] = 0xff;
         str->rgba[i * 4 + 3] = 0xff;
     }
+    
+    str->refCanvas = this;
 
     return str;
 }

@@ -98,26 +98,66 @@ void kexGameManager::Init(void) {
 void kexGameManager::InitObject(void) {
     kexScriptManager::RegisterDataObject<kexCanvas>("kGame");
     
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kGame",
-        "kCanvas &MenuCanvas(void)",
-        asMETHODPR(kexGameManager, MenuCanvas, (void), kexCanvas&),
-        asCALL_THISCALL);
+    scriptManager.Engine()->RegisterObjectMethod("kGame",
+                                                 "kCanvas &MenuCanvas(void)",
+                                                 asMETHODPR(kexGameManager,
+                                                            MenuCanvas,
+                                                            (void),
+                                                            kexCanvas&),
+                                                 asCALL_THISCALL);
     
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kGame",
-        "kKeyMapMem @GameDef(void)",
-        asMETHODPR(kexGameManager, GameDef, (void), kexKeyMap*),
-        asCALL_THISCALL);
+    scriptManager.Engine()->RegisterObjectMethod("kGame",
+                                                 "kKeyMapMem @GameDef(void)",
+                                                 asMETHODPR(kexGameManager,
+                                                            GameDef,
+                                                            (void),
+                                                            kexKeyMap*),
+                                                 asCALL_THISCALL);
 
-    scriptManager.Engine()->RegisterObjectMethod(
-        "kGame",
-        "void ClientRequestMapChange(const int)",
-        asMETHODPR(kexGameManager, ClientRequestMapChange, (const int mapID), void),
-        asCALL_THISCALL);
+    scriptManager.Engine()->RegisterObjectMethod("kGame",
+                                                 "void ClientRequestMapChange(const int)",
+                                                 asMETHODPR(kexGameManager,
+                                                            ClientRequestMapChange,
+                                                            (const int mapID),
+                                                            void),
+                                                 asCALL_THISCALL);
+    
+    scriptManager.Engine()->RegisterObjectMethod("kGame",
+                                                 "void SetMainGui(const kStr &in)",
+                                                 asMETHODPR(kexGameManager,
+                                                            SetMainGui,
+                                                            (const kexStr &name),
+                                                            void),
+                                                 asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod("kGame",
+                                                 "void FadeMainGui(const bool, const float)",
+                                                 asMETHODPR(kexGameManager,
+                                                            FadeMainGui,
+                                                            (const bool fadeIn, const float speed),
+                                                            void),
+                                                 asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod("kGame",
+                                                 "bool GuisAreActive(void)",
+                                                 asMETHODPR(kexGameManager,
+                                                            GuisAreActive,
+                                                            (void),
+                                                            bool),
+                                                 asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod("kGame",
+                                                 "void ClearGuis(const float)",
+                                                 asMETHODPR(kexGameManager,
+                                                            ClearGuis,
+                                                            (const float fadeSpeed),
+                                                            void),
+                                                 asCALL_THISCALL);
     
     scriptManager.Engine()->RegisterObjectProperty("kGame",
-        "kLocalPlayer localPlayer", asOFFSET(kexGameManager, localPlayer));
+                                                   "kLocalPlayer localPlayer",
+                                                   asOFFSET(kexGameManager,
+                                                            localPlayer));
     
     scriptManager.Engine()->RegisterGlobalProperty("kGame Game", &gameManager);
 }
@@ -242,6 +282,48 @@ void kexGameManager::SetTitle(void) {
 }
 
 //
+// kexGameManager::SetMainGui
+//
+
+void kexGameManager::SetMainGui(const kexStr &name) {
+    guiManager.SetMainGui(guiManager.FindGuiByName(name.c_str()));
+}
+
+//
+// kexGameManager::FadeMainGui
+//
+
+void kexGameManager::FadeMainGui(const bool fadeIn, const float speed) {
+    if(!guiManager.GetMainGui()) {
+        return;
+    }
+
+    if(fadeIn) {
+        guiManager.Toggle(true);
+        guiManager.GetMainGui()->FadeIn(speed);
+    }
+    else {
+        guiManager.GetMainGui()->FadeOut(speed);
+    }
+}
+
+//
+// kexGameManager::GuisAreActive
+//
+
+bool kexGameManager::GuisAreActive(void) {
+    return guiManager.IsActive();
+}
+
+//
+// kexGameManager::ClearGuis
+//
+
+void kexGameManager::ClearGuis(const float fadeSpeed) {
+    guiManager.ClearGuis(fadeSpeed);
+}
+
+//
 // kexGameManager::ProcessInput
 //
 // Handles custom input events for the game script class
@@ -290,6 +372,8 @@ void kexGameManager::OnLocalTick(void) {
     if(onLocalTick) {
         CallFunction(onLocalTick);
     }
+
+    guiManager.UpdateGuis();
 
     // prep and send input information to server
     localPlayer.BuildCommands();

@@ -38,6 +38,8 @@ public:
     asIScriptFunction               *onInit;
     asIScriptFunction               *onHover;
     asIScriptFunction               *onExit;
+    asIScriptFunction               *onDown;
+    asIScriptFunction               *onRelease;
 };
 
 //-----------------------------------------------------------------------------
@@ -45,6 +47,8 @@ public:
 // kexCanvasObject
 //
 //-----------------------------------------------------------------------------
+
+class kexCanvas;
 
 BEGIN_EXTENDED_CLASS(kexCanvasObject, kexObject);
     friend class kexCanvas;
@@ -79,6 +83,7 @@ public:
 protected:
     int                             scriptRef;
     int                             curId;
+    kexCanvas                       *refCanvas;
 END_CLASS();
 
 //-----------------------------------------------------------------------------
@@ -193,6 +198,7 @@ public:
 
     kexLinklist<kexCanvasObject>    children;
     kexLinklist<kexCanvasObject>    objects;
+    float                           alpha;
 };
 
 #endif
