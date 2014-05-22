@@ -118,8 +118,9 @@ void kexFileSystem::LoadZipFile(const char *file) {
     }
 
     // get info on zip file
-    if(unzGetGlobalInfo(uf, &gi) != UNZ_OK)
+    if(unzGetGlobalInfo(uf, &gi) != UNZ_OK) {
         return;
+    }
 
     // allocate new pack file
     pack = (kpf_t*)Mem_Calloc(sizeof(kpf_t), hb_file);
@@ -134,8 +135,9 @@ void kexFileSystem::LoadZipFile(const char *file) {
 
     // setup hash entires
     for(entries = 1; entries < FILE_MAX_HASH_SIZE; entries <<= 1) {
-        if(entries > pack->numfiles)
+        if(entries > pack->numfiles) {
             break;
+        }
     }
 
     // allocate file/hash list
@@ -180,6 +182,15 @@ void kexFileSystem::LoadZipFile(const char *file) {
 
 int kexFileSystem::OpenFile(const char *filename, byte **data, kexHeapBlock &hb) const {
     long hash;
+    
+    if(cvarDeveloper.GetBool()) {
+        int len = OpenExternalFile(filename, data);
+        
+        if(len != -1) {
+            return len;
+        }
+    }
+    
     for(kpf_t *pack = root; pack; pack = pack->next) {
         hash = HashFileName(filename, pack->hashentries);
 
@@ -218,13 +229,33 @@ int kexFileSystem::OpenFile(const char *filename, byte **data, kexHeapBlock &hb)
 //
 
 void kexFileSystem::GetMatchingFiles(kexStrList &list, const char *search) {
+    if(cvarDeveloper.GetBool()) {
+        DIR *dir;
+        struct dirent *ent;
+        int idx;
+        kexStr path = kexStr(cvarBasePath.GetValue()) + "/" + search;
+        path.NormalizeSlashes();
+        
+        if((dir = opendir(path.c_str())) != NULL) {
+            while((ent = readdir(dir)) != NULL) {
+                idx = kexStr::IndexOf(ent->d_name, ".");
+                if(idx == -1 || idx == 0) {
+                    continue;
+                }
+                list.Push(kexStr(ent->d_name));
+            }
+            closedir(dir);
+        }
+    }
+    
     for(kpf_t *pack = root; pack; pack = pack->next) {
         for(unsigned int i = 0; i < pack->numfiles; i++) {
             file_t *file = &pack->files[i];
 
             if(strstr(file->name, search)) {
-                if(kexStr::IndexOf(file->name, ".") == -1)
+                if(kexStr::IndexOf(file->name, ".") == -1) {
                     continue;
+                }
 
                 list.Push(kexStr(file->name));
             }
@@ -233,10 +264,10 @@ void kexFileSystem::GetMatchingFiles(kexStrList &list, const char *search) {
 }
 
 //
-// kexFileSystem::ReadExternalTextFile
+// kexFileSystem::OpenExternalFile
 //
 
-int kexFileSystem::ReadExternalTextFile(const char *name, byte **buffer) const {
+int kexFileSystem::OpenExternalFile(const char *name, byte **buffer) const {
     static char filepath[1024];
     kexStr fPath;
     FILE *fp;
@@ -269,36 +300,10 @@ int kexFileSystem::ReadExternalTextFile(const char *name, byte **buffer) const {
 }
 
 //
-// FCmd_LoadFile
-//
-
-static void FCmd_LoadFile(void) {
-    byte *data;
-    int size;
-
-    if(command.GetArgc() < 2)
-        return;
-
-    size = fileSystem.OpenFile(command.GetArgv(1), (byte**)&data, hb_static);
-
-    if(size) {
-        common.Printf("loaded %s\nsize = %i\ndata = 0x%p\n",
-            command.GetArgv(1), size, data);
-
-        Mem_Free(data);
-    }
-    else {
-        common.Warning("couldn't open %s\n", command.GetArgv(1));
-    }
-}
-
-//
 // kexFileSystem::Init
 //
 
 void kexFileSystem::Init(void) {
-    command.Add("loadfile", FCmd_LoadFile);
-
     if(!strlen(cvarBasePath.GetValue())) {
         cvarBasePath.Set(sysMain.GetBaseDirectory());
     }

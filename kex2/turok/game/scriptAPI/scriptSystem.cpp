@@ -305,7 +305,7 @@ void kexScriptManager::CallExternalScript(const char *file, const char *function
     unsigned int size;
     char *data = NULL;
 
-    if((size = fileSystem.ReadExternalTextFile(file, (byte**)&data)) == -1) {
+    if((size = fileSystem.OpenExternalFile(file, (byte**)&data)) == -1) {
         common.Warning("No file named %s\n", file);
         return;
     }

@@ -976,10 +976,7 @@ kexLexer *kexParser::Open(const char* filename) {
     int buffsize;
     byte *buffer;
 
-    buffsize = fileSystem.ReadExternalTextFile(filename, (byte**)(&buffer));
-    if(buffsize <= 0) {
-        buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), hb_static);
-    }
+    buffsize = fileSystem.OpenFile(filename, (byte**)(&buffer), hb_static);
 
     if(buffsize <= 0) {
         common.Warning("kexParser::Open: %s not found\n", filename);

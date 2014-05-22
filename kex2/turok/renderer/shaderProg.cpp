@@ -155,18 +155,9 @@ void kexShaderObj::Compile(const char *name, rShaderType_t type) {
     byte *data;
     rhandle *handle;
     
-    if(cvarDeveloper.GetBool()) {
-        if(fileSystem.OpenFile(name, &data, hb_static) == 0 &&
-            fileSystem.ReadExternalTextFile(name, &data) <= 0) {
-                common.Warning("kexShaderObj::Compile: %s not found\n", name);
-                return;
-        }
-    }
-    else {
-        if(fileSystem.OpenFile(name, &data, hb_static) == 0) {
-            common.Warning("kexShaderObj::Compile: %s not found\n", name);
-            return;
-        }
+    if(fileSystem.OpenFile(name, &data, hb_static) == 0) {
+        common.Warning("kexShaderObj::Compile: %s not found\n", name);
+        return;
     }
     
     if(type == RST_VERTEX) {

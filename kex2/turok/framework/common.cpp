@@ -172,7 +172,7 @@ void kexCommon::ReadConfigFile(const char *file) {
     char *buffer;
     int len;
 
-    len = fileSystem.ReadExternalTextFile(file, (byte**)(&buffer));
+    len = fileSystem.OpenExternalFile(file, (byte**)(&buffer));
 
     if(len == -1) {
         Warning("Warning: %s not found\n", file);

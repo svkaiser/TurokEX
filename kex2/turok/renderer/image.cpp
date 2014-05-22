@@ -167,13 +167,7 @@ void kexImageManager::LoadFromFile(const char *file) {
     
     strcpy(filePath, file);
     
-    if(cvarDeveloper.GetBool()) {
-        if(fileSystem.OpenFile(file, &fileData, hb_static) == 0 &&
-            fileSystem.ReadExternalTextFile(file, &fileData) <= 0) {
-            return;
-        }
-    }
-    else if(fileSystem.OpenFile(file, &fileData, hb_static) == 0) {
+    if(fileSystem.OpenFile(file, &fileData, hb_static) == 0) {
         return;
     }
 

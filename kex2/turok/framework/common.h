@@ -29,6 +29,11 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+#ifdef _MSC_VER
+#include "opndir.h"
+#else
+#include <dirent.h>
+#endif
 #include <new>
 
 #define MAX_FILEPATH    256

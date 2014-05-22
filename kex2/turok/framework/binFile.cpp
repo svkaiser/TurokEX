@@ -56,11 +56,7 @@ kexBinFile::~kexBinFile(void) {
 //
 
 bool kexBinFile::Open(const char *file, kexHeapBlock &heapBlock) {
-    int buffsize = fileSystem.ReadExternalTextFile(file, (byte**)(&buffer));
-
-    if(buffsize <= 0) {
-        buffsize = fileSystem.OpenFile(file, (byte**)(&buffer), heapBlock);
-    }
+    int buffsize = fileSystem.OpenFile(file, (byte**)(&buffer), heapBlock);
 
     if(buffsize > 0) {
         bOpened = true;
