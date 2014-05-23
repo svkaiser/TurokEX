@@ -148,9 +148,9 @@ void kexRenderer::Draw(void) {
         postProcessMS = sysMain.GetMS() - postProcessMS;
     }
 
-    guiManager.DrawGuis();
     renderBackend.Canvas().Draw();
     gameManager.MenuCanvas().Draw();
+    guiManager.DrawGuis();
     console.Draw();
 
     DrawStats();
