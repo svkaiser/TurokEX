@@ -225,6 +225,29 @@ void kexGuiManager::ParseNode(XMLElement *element, kexGui *gui, kexContainer *co
                 ParseSimpleProperties(node, canvasImage);
             }
         }
+        else if(!kexStr::Compare(node->Value(), "text")) {
+            const XMLAttribute *attrib = node->ToElement()->FirstAttribute();
+            
+            if(!kexStr::Compare(attrib->Name(), "font")) {
+                kexCanvasText *canvasText = gui->canvas.CreateText(attrib->Value());
+                
+                if(container == NULL) {
+                    gui->canvas.AddChild(canvasText);
+                }
+                else {
+                    container->AddChild(canvasText);
+                }
+                
+                ParseSimpleProperties(node, canvasText);
+
+                for(XMLElement *child = node->FirstChildElement(); child;
+                    child = child->NextSiblingElement()) {
+                    if(!kexStr::Compare(child->Value(), "string")) {
+                        canvasText->text = kexStr(child->GetText());
+                    }
+                }
+            }
+        }
         else if(!kexStr::Compare(node->Value(), "object")) {
             const XMLAttribute *attrib = node->ToElement()->FirstAttribute();
             
@@ -274,6 +297,9 @@ void kexGuiManager::ParseNode(XMLElement *element, kexGui *gui, kexContainer *co
         else if(!kexStr::Compare(node->Value(), "button")) {
             ParseButton(node, gui, container);
         }
+        else if(!kexStr::Compare(node->Value(), "slider")) {
+            ParseSlider(node, gui, container);
+        }
     }
 }
 
@@ -310,6 +336,75 @@ void kexGuiManager::ParseButton(XMLNode *node, kexGui *gui, kexContainer *contai
 }
 
 //
+// kexGuiManager::ParseSlider
+//
+
+void kexGuiManager::ParseSlider(XMLNode *node, kexGui *gui, kexContainer *container) {
+    const XMLAttribute *attrib = node->ToElement()->FirstAttribute();
+    
+    if(!kexStr::Compare(attrib->Name(), "name")) {
+        guiSlider_t *slider = new guiSlider_t;
+        
+        slider->name = kexStr(attrib->Value());
+        slider->state = GBS_NONE;
+        slider->link.SetData(slider);
+        slider->container = gui->canvas.CreateContainer();
+        slider->barImage = NULL;
+        slider->sliderImage = NULL;
+        slider->barWidth = 0;
+        slider->position = 0;
+        slider->bGrabbed = false;
+        
+        Mem_CacheRef((void**)&slider->container);
+        
+        if(container) {
+            container->AddChild(slider->container);
+        }
+        else {
+            gui->canvas.AddChild(slider->container);
+        }
+        
+        slider->link.Add(gui->sliders);
+        
+        ParseSimpleProperties(node, slider->container);
+        
+        for(XMLElement *child = node->FirstChildElement(); child; child = child->NextSiblingElement()) {
+            if(!kexStr::Compare(child->Value(), "properties")) {
+                for(XMLElement *pnode = child->FirstChildElement(); pnode;
+                    pnode = pnode->NextSiblingElement()) {
+                    if(!kexStr::Compare(pnode->Value(), "barimage")) {
+                        slider->barImage = gui->canvas.CreateImage(pnode->ToElement()->GetText());
+                        
+                        if(slider->barImage) {
+                            slider->container->AddChild(slider->barImage);
+                        }
+                    }
+                    else if(!kexStr::Compare(pnode->Value(), "sliderimage")) {
+                        slider->sliderImage = gui->canvas.CreateImage(pnode->ToElement()->GetText());
+                        
+                        if(slider->sliderImage) {
+                            slider->container->AddChild(slider->sliderImage);
+                        }
+                    }
+                }
+            }
+        }
+        
+        if(slider->barImage && slider->sliderImage) {
+            slider->barImage->regX = (float)slider->barImage->texture->Width() * 0.5f;
+            slider->barImage->regY = (float)slider->barImage->texture->Height() * 0.5f;
+            slider->sliderImage->regX = (float)slider->sliderImage->texture->Width() * 0.5f;
+            slider->sliderImage->regY = (float)slider->sliderImage->texture->Height() * 0.5f;
+            
+            slider->barWidth = (float)slider->barImage->texture->Width();
+            slider->position = slider->barImage->regX;
+        }
+        
+        ParseNode(node->ToElement(), gui, slider->container);
+    }
+}
+
+//
 // kexGuiManager::ParseButtonEvent
 //
 
@@ -335,6 +430,9 @@ void kexGuiManager::ParseButtonEvent(XMLNode *node, kexGui *gui,
                 else if(!kexStr::Compare(attrib->Name(), "action")) {
                     if(!kexStr::Compare(attrib->Value(), "changegui")) {
                         guiEvent.action = GAT_CHANGEGUI;
+                    }
+                    else if(!kexStr::Compare(attrib->Value(), "callcommand")) {
+                        guiEvent.action = GAT_CALLCOMMAND;
                     }
                 }
             }
@@ -364,31 +462,6 @@ kexGui *kexGuiManager::FindGuiByName(const char *name) {
     }
     
     return NULL;
-}
-
-//
-// kexGuiManager::ChangeGuis
-//
-
-void kexGuiManager::ChangeGuis(kexGui *gui, guiEvent_t *guiEvent) {
-    kexStr guiName;
-    kexGui *nextGui;
-    float speed;
-    
-    guiEvent->args.GetString("gui", guiName);
-    guiEvent->args.GetFloat("fadeSpeed", speed);
-    
-    nextGui = FindGuiByName(guiName.c_str());
-    
-    if(nextGui == NULL) {
-        return;
-    }
-    
-    gui->fadeSpeed = speed;
-    nextGui->fadeSpeed = speed;
-    
-    gui->status = GUIS_FADEOUT;
-    nextGui->status = GUIS_FADEIN;
 }
 
 //
@@ -463,11 +536,29 @@ void kexGuiManager::DrawGuis(void) {
         
         if(bDebugButtons) {
             guiButton_t *button;
+            guiSlider_t *slider;
             kexBBox box;
+            float w, h;
+
+            w = (float)sysMain.VideoWidth() / (float)FIXED_WIDTH;
+            h = (float)sysMain.VideoHeight() / (float)FIXED_HEIGHT;
+
+            for(slider = obj->sliders.Next(); slider; slider = slider->link.Next()) {
+                box.min.Set(slider->sliderImage->min[0], slider->sliderImage->min[1], 0);
+                box.max.Set(slider->sliderImage->max[0], slider->sliderImage->max[1], 0);
+
+                box.min[0] *= w; box.min[1] *= h;
+                box.max[0] *= w; box.max[1] *= h;
+                
+                kexRenderUtils::DrawBoundingBox(box, 255, 0, 255);
+            }
             
             for(button = obj->buttons.Next(); button; button = button->link.Next()) {
                 box.min.Set(button->container->min[0], button->container->min[1], 0);
                 box.max.Set(button->container->max[0], button->container->max[1], 0);
+
+                box.min[0] *= w; box.min[1] *= h;
+                box.max[0] *= w; box.max[1] *= h;
                 
                 kexRenderUtils::DrawBoundingBox(box, 255, 0, 255);
             }
@@ -585,8 +676,71 @@ void kexGui::FadeIn(const float speed) {
 //
 
 void kexGui::FadeOut(const float speed) {
+    guiButton_t *button;
+    
     status = GUIS_FADEOUT;
     fadeSpeed = speed;
+    
+    for(button = buttons.Next(); button; button = button->link.Next()) {
+        if(button->state == GBS_DISABLED) {
+            continue;
+        }
+        
+        ExecuteButtonEvent(button, GBS_RELEASED);
+        ExecuteButtonEvent(button, GBS_EXITED);
+    }
+}
+
+//
+// kexGui::ExecuteEvent
+//
+
+void kexGui::ExecuteEvent(guiEvent_t *event) {
+    switch(event->action) {
+        case GAT_CHANGEGUI:
+            ChangeGuis(event);
+            break;
+            
+        case GAT_CALLCOMMAND:
+            CallCommand(event);
+            break;
+            
+        default:
+            break;
+    }
+}
+
+//
+// kexGui::ChangeGuis
+//
+
+void kexGui::ChangeGuis(guiEvent_t *guiEvent) {
+    kexStr guiName;
+    kexGui *nextGui;
+    float speed;
+    
+    guiEvent->args.GetString("gui", guiName);
+    guiEvent->args.GetFloat("fadeSpeed", speed);
+    
+    nextGui = guiManager.FindGuiByName(guiName.c_str());
+    
+    if(nextGui == NULL) {
+        return;
+    }
+    
+    FadeOut(speed);
+    nextGui->FadeIn(speed);
+}
+
+//
+// kexGui::CallCommand
+//
+
+void kexGui::CallCommand(guiEvent_t *event) {
+    kexStr cmd;
+    
+    event->args.GetString("command", cmd);
+    command.Execute(cmd.c_str());
 }
 
 //
@@ -650,14 +804,7 @@ void kexGui::ExecuteButtonEvent(guiButton_t *button, const guiButtonState_t btnS
                 continue;
             }
             
-            switch(button->events[i].action) {
-                case GAT_CHANGEGUI:
-                    guiManager.ChangeGuis(this, &button->events[i]);
-                    break;
-                    
-                default:
-                    break;
-            }
+            ExecuteEvent(&button->events[i]);
         }
     }
 
@@ -672,15 +819,36 @@ bool kexGui::CheckEvents(const event_t *ev) {
     float x = guiManager.cursor_x;
     float y = guiManager.cursor_y;
     guiButton_t *button;
+    guiSlider_t *slider;
+    float w;
+    float h;
     bool ok = false;
+
+    w = (float)sysMain.VideoWidth() / (float)FIXED_WIDTH;
+    h = (float)sysMain.VideoHeight() / (float)FIXED_HEIGHT;
+    
+    for(slider = sliders.Next(); slider; slider = slider->link.Next()) {
+        if(x > slider->sliderImage->min[0] * w && x < slider->sliderImage->max[0] * w &&
+           y > slider->sliderImage->min[1] * h && y < slider->sliderImage->max[1] * h) {
+            if(ev->type == ev_mousedown) {
+                slider->bGrabbed = true;
+            }
+            else if(ev->type == ev_mouseup) {
+                slider->bGrabbed = false;
+            }
+        }
+        else {
+            slider->bGrabbed = false;
+        }
+    }
     
     for(button = buttons.Next(); button; button = button->link.Next()) {
         if(button->state == GBS_DISABLED) {
             continue;
         }
         
-        if(x > button->container->min[0] && x < button->container->max[0] &&
-           y > button->container->min[1] && y < button->container->max[1]) {
+        if(x > button->container->min[0] * w && x < button->container->max[0] * w &&
+           y > button->container->min[1] * h && y < button->container->max[1] * h) {
             if(ev->type == ev_mousedown && button->state != GBS_DOWN) {
                 ExecuteButtonEvent(button, GBS_DOWN);
                 ok = true;

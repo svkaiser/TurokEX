@@ -57,7 +57,7 @@ public:
                                     kexCanvasObject(void);
     virtual                         ~kexCanvasObject(void);
 
-    virtual void                    Draw(void) = 0;
+    virtual void                    Draw(kexMatrix &curMatrix, const float &curAlpha) = 0;
 
     static int                      objId;
 
@@ -77,8 +77,9 @@ public:
     float                           rotation;
     float                           alpha;
     bool                            bVisible;
-    float                           min[2];
-    float                           max[2];
+    kexVec3                         min;
+    kexVec3                         max;
+    kexMatrix                       matrix;
 
 protected:
     int                             scriptRef;
@@ -97,7 +98,7 @@ public:
                                     kexCanvasImage(void);
                                     ~kexCanvasImage(void);
 
-    virtual void                    Draw(void);
+    virtual void                    Draw(kexMatrix &curMatrix, const float &curAlpha);
 
     void                            SetRGB(const int index, const byte r, const byte g, const byte b);
 
@@ -118,7 +119,7 @@ public:
                                     kexCanvasText(void);
                                     ~kexCanvasText(void);
 
-    virtual void                    Draw(void);
+    virtual void                    Draw(kexMatrix &curMatrix, const float &curAlpha);
 
     void                            SetRGB(const int index, const byte r, const byte g, const byte b);
 
@@ -139,7 +140,7 @@ public:
                                     kexContainer(void);
                                     ~kexContainer(void);
 
-    virtual void                    Draw(void);
+    virtual void                    Draw(kexMatrix &curMatrix, const float &curAlpha);
 
     void                            AddChild(kexCanvasObject *object);
     void                            RemoveChild(kexCanvasObject *object);
@@ -161,7 +162,7 @@ public:
                                     kexCanvasScriptObject(void);
                                     ~kexCanvasScriptObject(void);
 
-    virtual void                    Draw(void);
+    virtual void                    Draw(kexMatrix &curMatrix, const float &curAlpha);
     void                            SetProperty(const char *name, const char *value);
 
     kexCanvasComponent              component;

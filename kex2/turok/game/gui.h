@@ -50,6 +50,7 @@ typedef enum {
 typedef enum {
     GAT_NONE        = 0,
     GAT_CHANGEGUI,
+    GAT_CALLCOMMAND,
     NUMGUIACTIONS
 } guiActionType_t;
 
@@ -67,6 +68,19 @@ typedef struct guiButton_s {
     kexLinklist<struct guiButton_s>     link;
 } guiButton_t;
 
+typedef struct guiSlider_s {
+    kexContainer                        *container;
+    kexCanvasImage                      *barImage;
+    kexCanvasImage                      *sliderImage;
+    float                               barWidth;
+    float                               position;
+    bool                                bGrabbed;
+    guiButtonState_t                    state;
+    kexStr                              name;
+    kexArray<guiEvent_t>                events;
+    kexLinklist<struct guiSlider_s>     link;
+} guiSlider_t;
+
 class kexGui {
     friend class kexGuiManager;
 public:
@@ -77,12 +91,17 @@ public:
     bool                        CheckEvents(const event_t *ev);
     void                        FadeIn(const float speed);
     void                        FadeOut(const float speed);
-    void                        ExecuteButtonEvent(guiButton_t *button, const guiButtonState_t btnState);
     
 private:
+    void                        ExecuteEvent(guiEvent_t *event);
+    void                        ExecuteButtonEvent(guiButton_t *button, const guiButtonState_t btnState);
+    void                        ChangeGuis(guiEvent_t *guiEvent);
+    void                        CallCommand(guiEvent_t *event);
+    
     kexCanvas                   canvas;
     kexLinklist<kexGui>         link;
     kexLinklist<guiButton_t>    buttons;
+    kexLinklist<guiSlider_t>    sliders;
     kexStr                      name;
     guiStatus_t                 status;
     float                       fadeSpeed;
@@ -101,7 +120,6 @@ public:
     void                        DrawGuis(void);
     void                        DeleteGuis(void);
     bool                        ProcessInput(const event_t *ev);
-    void                        ChangeGuis(kexGui *gui, guiEvent_t *guiEvent);
     void                        UpdateGuis(void);
     void                        ClearGuis(const float fadeSpeed);
     
@@ -125,6 +143,9 @@ private:
     void                        ParseSimpleProperties(tinyxml2::XMLNode *node,
                                                       kexCanvasObject *object);
     void                        ParseButton(tinyxml2::XMLNode *node,
+                                            kexGui *gui,
+                                            kexContainer *container);
+    void                        ParseSlider(tinyxml2::XMLNode *node,
                                             kexGui *gui,
                                             kexContainer *container);
     void                        ParseButtonEvent(tinyxml2::XMLNode *node,

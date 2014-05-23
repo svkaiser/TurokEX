@@ -182,14 +182,8 @@ void kexCanvasImage::SetRGB(const int index, const byte r, const byte g, const b
 // kexCanvasImage::Draw
 //
 
-void kexCanvasImage::Draw(void) {
-    float ratiox;
-    float ratioy;
+void kexCanvasImage::Draw(kexMatrix &curMatrix, const float &curAlpha) {
     int i;
-    float rx;
-    float ry;
-    float rw;
-    float rh;
     float w;
     float h;
     byte a[4];
@@ -197,6 +191,8 @@ void kexCanvasImage::Draw(void) {
     if(bVisible == false) {
         return;
     }
+
+    kexMatrix mtx;
 
     renderBackend.SetState(GLSTATE_BLEND, true);
     renderBackend.SetState(GLSTATE_ALPHATEST, true);
@@ -207,56 +203,26 @@ void kexCanvasImage::Draw(void) {
     renderer.BindDrawPointers();
     texture->Bind();
 
-    w = (width <= 0) ? (float)texture->Width() : width * 2;
-    h = (height <= 0) ? (float)texture->Height() : height * 2;
-
-    ratiox = (float)FIXED_WIDTH / sysMain.VideoWidth();
-    ratioy = (float)FIXED_HEIGHT / sysMain.VideoHeight();
-    rx = x / ratiox;
-    rw = rx + (w / ratiox) * 0.5f * scaleX;
-    ry = y / ratioy;
-    rh = ry + (h / ratioy) * 0.5f * scaleY;
+    w = ((width <= 0) ? (float)texture->Width() : (width * 2.0f)) * 0.5f;
+    h = ((height <= 0) ? (float)texture->Height() : (height * 2.0f)) * 0.5f;
 
     for(i = 0; i < 4; i++) {
-        a[i] = (byte)((float)rgba[i * 4 + 3] * alpha);
+        a[i] = (byte)((float)rgba[i * 4 + 3] * alpha * curAlpha);
     }
-    
-    for(kexCanvasObject *obj = parent; obj != NULL; obj = obj->parent) {
-        rx += obj->x / ratiox;
-        rw += obj->x / ratiox;
-        ry += obj->y / ratioy;
-        rh += obj->y / ratioy;
-        
-        rx *= obj->scaleX;
-        ry *= obj->scaleY;
-        rw *= obj->scaleX;
-        rh *= obj->scaleY;
-        
-        for(i = 0; i < 4; i++) {
-            a[i] = (byte)((float)a[i] * obj->alpha);
-        }
-    }
-    
-    for(i = 0; i < 4; i++) {
-        a[i] = (byte)((float)a[i] * refCanvas->alpha);
-    }
-    
-    if(rx < min[0]) min[0] = rx;
-    if(ry < min[1]) min[1] = ry;
-    if(rw > max[0]) max[0] = rw;
-    if(ry > max[1]) max[1] = ry;
-    
-    if(parent) {
-        parent->min[0] = min[0];
-        parent->max[0] = max[0];
-        parent->min[1] = min[1];
-        parent->max[1] = max[1];
 
-    }
+    mtx.Scale(scaleX, scaleY, 1);
+    mtx.SetTranslation(x - (regX * 0.5f), y - (regY * 0.5f), 0);
+
+    matrix = mtx * curMatrix;
+    
+    min[0] = 0;
+    min[1] = 0;
+    max[0] = w;
+    max[1] = h;
 
     renderer.AddVertex(
-        rx,
-        ry,
+        0,
+        0,
         0,
         0,
         0,
@@ -265,8 +231,8 @@ void kexCanvasImage::Draw(void) {
         rgba[0 * 4 + 2],
         a[0]);
     renderer.AddVertex(
-        rw,
-        ry,
+        w,
+        0,
         0,
         1,
         0,
@@ -275,8 +241,8 @@ void kexCanvasImage::Draw(void) {
         rgba[1 * 4 + 2],
         a[1]);
     renderer.AddVertex(
-        rx,
-        rh,
+        0,
+        h,
         0,
         0,
         1,
@@ -285,8 +251,8 @@ void kexCanvasImage::Draw(void) {
         rgba[2 * 4 + 2],
         a[2]);
     renderer.AddVertex(
-        rw,
-        rh,
+        w,
+        h,
         0,
         1,
         1,
@@ -295,10 +261,17 @@ void kexCanvasImage::Draw(void) {
         rgba[3 * 4 + 2],
         a[3]);
 
+    dglPushMatrix();
+    dglMultMatrixf(matrix.ToFloatPtr());
+
     renderer.AddTriangle(0, 1, 2);
     renderer.AddTriangle(2, 1, 3);
 
     renderer.DrawElementsNoShader();
+    dglPopMatrix();
+
+    min *= matrix;
+    max *= matrix;
 }
 
 //-----------------------------------------------------------------------------
@@ -335,7 +308,7 @@ kexCanvasScriptObject::~kexCanvasScriptObject(void) {
 // kexCanvasScriptObject::Draw
 //
 
-void kexCanvasScriptObject::Draw(void) {
+void kexCanvasScriptObject::Draw(kexMatrix &curMatrix, const float &curAlpha) {
     if(component.onUpdate) {
         component.CallFunction(component.onUpdate);
     }
@@ -474,76 +447,51 @@ void kexCanvasText::SetRGB(const int index, const byte r, const byte g, const by
 // kexCanvasText::Draw
 //
 
-void kexCanvasText::Draw(void) {
+void kexCanvasText::Draw(kexMatrix &curMatrix, const float &curAlpha) {
     byte color[32];
-    float dx, dy;
-    float ds;
-    float ratiox;
-    float ratioy;
 
     if(bVisible == false) {
         return;
     }
 
+    kexMatrix mtx;
+
     for(int i = 0; i < 4; i++) {
         color[i * 4 + 0] = rgba[i * 4 + 0];
         color[i * 4 + 1] = rgba[i * 4 + 1];
         color[i * 4 + 2] = rgba[i * 4 + 2];
-        color[i * 4 + 3] = (byte)((float)rgba[i * 4 + 3] * alpha);
+        color[i * 4 + 3] = (byte)((float)rgba[i * 4 + 3] * alpha * curAlpha);
     }
 
-    dx = x;
-    dy = y;
-    ds = scaleX;
+    mtx.Scale(scaleX, scaleY, 1);
+    mtx.SetTranslation(x - (regX * 0.5f), y - (regY * 0.5f), 0);
 
-    ratiox = (float)FIXED_WIDTH / sysMain.VideoWidth();
-    ratioy = (float)FIXED_HEIGHT / sysMain.VideoHeight();
-    dx /= ratiox;
-    dy /= ratioy;
-    ds /= ratiox;
+    matrix = mtx * curMatrix;
 
-    ds *= 0.5f;
-
-    for(kexCanvasObject *obj = parent; obj != NULL; obj = obj->parent) {
-        dx += (obj->x / ratiox);
-        dy += (obj->y / ratioy);
-        ds *= obj->scaleX;
-
-        dx *= obj->scaleX;
-        dy *= obj->scaleY;
-        
-        for(int i = 0; i < 4; i++) {
-            color[i * 4 + 3] = (byte)((float)color[i * 4 + 3] * obj->alpha);
-        }
-    }
-    
-    for(int i = 0; i < 4; i++) {
-        color[i * 4 + 3] = (byte)((float)color[i * 4 + 3] * refCanvas->alpha);
-    }
+    dglPushMatrix();
+    dglMultMatrixf(matrix.ToFloatPtr());
 
     renderBackend.SetState(GLSTATE_BLEND, true);
-    font->DrawString(text.c_str(), dx, dy, ds, bCentered, (byte*)&color[0 * 4], (byte*)&color[2 * 4]);
+    font->DrawString(text.c_str(), x, y, 0.5f, bCentered, (byte*)&color[0 * 4], (byte*)&color[2 * 4]);
     renderBackend.SetState(GLSTATE_BLEND, false);
+
+    dglPopMatrix();
     
-    float w = font->StringWidth(text.c_str(), ds, 0);
-    float h = font->StringHeight(text.c_str(), ds, 0);
-    
+    float w = font->StringWidth(text.c_str(), 0.5f, 0);
+    float h = font->StringHeight(text.c_str(), 0.5f, 0);
+
+    min[0] = 0;
+    min[1] = 0;
+    max[0] = w;
+    max[1] = h;
+
     if(bCentered) {
-        dx -= (w * 0.5f);
+        min[0] -= (w * 0.5f);
+        max[0] -= (w * 0.5f);
     }
     
-    if(dx < min[0]) min[0] = dx;
-    if(dx > max[0]) max[0] = dx;
-    if(dy < min[1]) min[1] = dy;
-    if(dy > max[1]) max[1] = dy;
-    
-    w += dx;
-    h += dy;
-    
-    if(w < min[0]) min[0] = w;
-    if(w > max[0]) max[0] = w;
-    if(h < min[1]) min[1] = h;
-    if(h > max[1]) max[1] = h;
+    min *= matrix;
+    max *= matrix;
 }
 
 //-----------------------------------------------------------------------------
@@ -573,24 +521,28 @@ kexContainer::~kexContainer(void) {
 // kexContainer::Draw
 //
 
-void kexContainer::Draw(void) {
+void kexContainer::Draw(kexMatrix &curMatrix, const float &curAlpha) {
     if(bVisible == false) {
         return;
     }
 
-    float a = alpha;
-    alpha *= refCanvas->alpha;
+    kexMatrix mtx;
+
+    mtx.Scale(scaleX, scaleY, 1);
+    mtx.SetTranslation(x, y, 0);
+
+    matrix = mtx * curMatrix;
+
+    float a = alpha * curAlpha;
 
     for(kexCanvasObject *obj = children.Next(); obj != NULL; obj = obj->link.Next()) {
-        obj->Draw();
-        
+        obj->Draw(matrix, a);
+
         if(obj->min[0] < min[0]) min[0] = obj->min[0];
         if(obj->max[0] > max[0]) max[0] = obj->max[0];
         if(obj->min[1] < min[1]) min[1] = obj->min[1];
         if(obj->max[1] > max[1]) max[1] = obj->max[1];
     }
-
-    alpha = a;
 }
 
 //
@@ -834,9 +786,20 @@ kexCanvasObject *kexCanvas::operator[](int index) {
 //
 
 void kexCanvas::Draw(void) {
+    kexMatrix matrix;
+    float _alpha = this->alpha;
+
+    dglPushMatrix();
+    matrix.SetOrtho(0, (float)FIXED_WIDTH, (float)FIXED_HEIGHT, 0, -1, 1);
+    dglLoadMatrixf(matrix.ToFloatPtr());
+
+    matrix.Identity();
+
     for(kexCanvasObject *obj = children.Next(); obj != NULL; obj = obj->link.Next()) {
-        obj->Draw();
+        obj->Draw(matrix, _alpha);
     }
+
+    dglPopMatrix();
 }
 
 //
