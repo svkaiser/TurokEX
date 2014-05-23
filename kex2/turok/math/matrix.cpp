@@ -624,3 +624,17 @@ kexMatrix &kexMatrix::operator=(const kexMatrix &matrix) {
     return *this;
 }
 
+//
+// kexMatrix::operator=
+//
+
+kexMatrix &kexMatrix::operator=(const float *m) {
+    for(int i = 0; i < 4; i++) {
+        for(int j = 0; j < 4; j++) {
+            vectors[i][j] = m[i * 4 + j];
+        }
+    }
+
+    return *this;
+}
+
