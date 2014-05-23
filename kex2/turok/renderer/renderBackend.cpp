@@ -404,14 +404,14 @@ void kexRenderBackend::Shutdown(void) {
 void kexRenderBackend::SetOrtho(void) {
     kexMatrix mtx;
 
+    dglMatrixMode(GL_PROJECTION);
+    dglLoadIdentity();
+
     dglMatrixMode(GL_MODELVIEW);
     dglLoadIdentity();
 
     mtx.SetOrtho(0, (float)sysMain.VideoWidth(), (float)sysMain.VideoHeight(), 0, -1, 1);
     dglLoadMatrixf(mtx.ToFloatPtr());
-
-    dglMatrixMode(GL_PROJECTION);
-    dglLoadIdentity();
 }
 
 //
