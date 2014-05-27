@@ -127,6 +127,7 @@ public:
     void            ReadConfigFile(const char *file);
     unsigned int    HashFileName(const char *name);
     void            AddCvar(const kexStr &name, const kexStr &value, const kexStr &desc, const int flags);
+    int             GetCvarInt(const kexStr &name);
     float           GetCvarFloat(const kexStr &name);
     bool            GetCvarBool(const kexStr &name);
 

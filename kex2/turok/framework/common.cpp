@@ -229,6 +229,20 @@ void kexCommon::AddCvar(const kexStr &name, const kexStr &value, const kexStr &d
 }
 
 //
+// kexCommon::GetCvarInt
+//
+
+int kexCommon::GetCvarInt(const kexStr &name) {
+    kexCvar *cvar = cvarManager.Get(name.c_str());
+
+    if(cvar == NULL) {
+        return 0;
+    }
+
+    return cvar->GetInt();
+}
+
+//
 // kexCommon::GetCvarFloat
 //
 
@@ -283,6 +297,12 @@ void kexCommon::InitObject(void) {
         "void AddCvar(const kStr &in, const kStr &in, const kStr &in, const int)",
         asMETHODPR(kexCommon, AddCvar,
         (const kexStr &name, const kexStr &value, const kexStr &desc, const int flags), void),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kCommon",
+        "int GetCvarInt(const kStr &in)",
+        asMETHODPR(kexCommon, GetCvarInt, (const kexStr &name), int),
         asCALL_THISCALL);
 
     scriptManager.Engine()->RegisterObjectMethod(
