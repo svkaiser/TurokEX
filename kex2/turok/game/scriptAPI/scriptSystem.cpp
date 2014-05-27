@@ -121,29 +121,22 @@ void kexScriptManager::MemFree(void *ptr) {
 //
 
 void kexScriptManager::MessageCallback(const asSMessageInfo *msg, void *param) {
-    const char *type;
-    rcolor color = COLOR_WHITE;
-
     switch(msg->type) {
-    case asMSGTYPE_WARNING:
-        type = "WARN";
-        color = COLOR_YELLOW;
-        break;
     case asMSGTYPE_INFORMATION:
-        type = "INFO";
+        common.Printf("%s (%d, %d) : %s\n",
+            msg->section,
+            msg->row,
+            msg->col,
+            msg->message);
         break;
     default:
-        type = "ERR ";
-        color = COLOR_RED;
+        common.Error("%s (%d, %d) : %s\n",
+            msg->section,
+            msg->row,
+            msg->col,
+            msg->message);
         break;
     }
-
-    common.CPrintf(color, "%s (%d, %d) : %s : %s\n",
-        msg->section,
-        msg->row,
-        msg->col,
-        type,
-        msg->message);
 }
 
 //
