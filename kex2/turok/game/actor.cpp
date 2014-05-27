@@ -255,6 +255,7 @@ void kexActor::Spawn(void) {
 
 void kexActor::ParseDefault(kexLexer *lexer) {
     kexStr keyName;
+    unsigned int i;
 
     switch(lexer->GetIDForTokenList(mapactortokens, lexer->Token())) {
     case scactor_name:
@@ -292,24 +293,30 @@ void kexActor::ParseDefault(kexLexer *lexer) {
 
         // texture swap block
         lexer->ExpectNextToken(TK_LBRACK);
+        i = 0;
 
-        for(unsigned int l = 0; l < model->nodes[0].numSurfaces; l++) {
-            char *str;
+        while(lexer->TokenType() != TK_RBRACK) {
+            lexer->Find();
 
-            // parse sections
-            lexer->GetString();
-            str = lexer->StringToken();
+            if(lexer->TokenType() == TK_STRING) {
+                char *str;
 
-            if(str[0] != '-') {
-                materials[l] = renderBackend.CacheMaterial(lexer->StringToken());
-            }
-            else {
-                materials[l] = NULL;
+                if(i >= model->nodes[0].numSurfaces) {
+                    continue;
+                }
+
+                str = lexer->StringToken();
+
+                if(str[0] != '-') {
+                    materials[i] = renderBackend.CacheMaterial(lexer->StringToken());
+                }
+                else {
+                    materials[i] = NULL;
+                }
+
+                i++;
             }
         }
-
-        // end texture swap block
-        lexer->ExpectNextToken(TK_RBRACK);
         break;
     case scactor_component:
         lexer->GetString();

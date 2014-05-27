@@ -139,6 +139,8 @@ void kexWorldModel::Spawn(void) {
 //
 
 void kexWorldModel::Parse(kexLexer *lexer) {
+    unsigned int i;
+
     // read into nested block
     lexer->ExpectNextToken(TK_LBRACK);
     lexer->Find();
@@ -176,23 +178,30 @@ void kexWorldModel::Parse(kexLexer *lexer) {
                 
                 // texture swap block
                 lexer->ExpectNextToken(TK_LBRACK);
+                i = 0;
                 
-                for(unsigned int l = 0; l < model->nodes[0].numSurfaces; l++) {
-                    char *str;
-                    // parse sections
-                    lexer->GetString();
-                    str = lexer->StringToken();
+                while(lexer->TokenType() != TK_RBRACK) {
+                    lexer->Find();
 
-                    if(str[0] != '-') {
-                        materials[l] = renderBackend.CacheMaterial(lexer->StringToken());
-                    }
-                    else {
-                        materials[l] = NULL;
+                    if(lexer->TokenType() == TK_STRING) {
+                        char *str;
+
+                        if(i >= model->nodes[0].numSurfaces) {
+                            continue;
+                        }
+
+                        str = lexer->StringToken();
+
+                        if(str[0] != '-') {
+                            materials[i] = renderBackend.CacheMaterial(lexer->StringToken());
+                        }
+                        else {
+                            materials[i] = NULL;
+                        }
+
+                        i++;
                     }
                 }
-                
-                // end texture swap block
-                lexer->ExpectNextToken(TK_RBRACK);
                 break;
             case scwmdl_bCollision:
                 bCollision = (lexer->GetNumber() > 0);
