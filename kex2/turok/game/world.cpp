@@ -754,6 +754,8 @@ void kexWorld::BuildAreaNodes(void) {
 //
 
 bool kexWorld::Load(const char *mapFile) {
+    int loadtime;
+
     if(client.GetState() < CL_STATE_READY || bLoaded) {
         return false;
     }
@@ -766,12 +768,14 @@ bool kexWorld::Load(const char *mapFile) {
     worldLightOrigin.Set(0, 0, 0, 0);
     worldLightColor.Set(1, 1, 1, 1);
     worldLightAmbience.Set(1, 1, 1, 1);
-    worldLightModelAmbience.Set(1, 1, 1, 1);
     
     kexLexer *lexer;
     kexActor *actor;
     kexWorldModel *wm;
     kexStr file(mapFile);
+
+    loadtime = sysMain.GetMS();
+    common.Printf("Load map: %s\n", mapFile);
 
     renderBackend.DrawLoadingScreen("Loading Collision...");
     collisionMap.Load((file + ".kclm").c_str());
@@ -812,10 +816,6 @@ bool kexWorld::Load(const char *mapFile) {
             case scmap_glight_ambience:
                 lexer->AssignVectorFromTokenList(maptokens,
                     worldLightAmbience.ToVec3(), scmap_glight_ambience, false);
-                break;
-            case scmap_glight_modelamb:
-                lexer->AssignVectorFromTokenList(maptokens,
-                    worldLightModelAmbience.ToVec3(), scmap_glight_modelamb, false);
                 break;
             case scmap_actor:
                 lexer->GetString();
@@ -862,6 +862,9 @@ bool kexWorld::Load(const char *mapFile) {
     
     nextMapID = -1;
     bLoaded = true;
+
+    common.Printf("Load time: %f seconds\n",
+        ((float)sysMain.GetMS() - (float)loadtime) / 1000.0f);
 
     BuildAreaNodes();
     renderWorld.BuildNodes();
