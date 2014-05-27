@@ -69,6 +69,18 @@ static void FCmd_LoadShader(void) {
 }
 
 //
+// FCmd_StopSounds
+//
+
+static void FCmd_StopSounds(void) {
+    if(command.GetArgc() < 1) {
+        return;
+    }
+
+    soundSystem.StopAll();
+}
+
+//
 // kexWavFile::kexWavFile
 //
 
@@ -257,6 +269,10 @@ void kexSoundSource::Set(sfx_t *sfxRef, kexGameObject *refObj) {
 
 void kexSoundSource::Stop(void) {
     alSourceStop(handle);
+
+    if(sfx && sfx->wavFile) {
+        alSourceUnqueueBuffers(handle, 1, sfx->wavFile->GetBuffer());
+    }
 }
 
 //
@@ -466,6 +482,7 @@ void kexSoundSystem::Init(void) {
 
     command.Add("printsoundinfo", FCmd_SoundInfo);
     command.Add("playsoundshader", FCmd_LoadShader);
+    command.Add("stopsounds", FCmd_StopSounds);
 
     common.Printf("Sound System Initialized (%s)\n", GetDeviceName());
 }
