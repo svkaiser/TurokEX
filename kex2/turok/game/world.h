@@ -105,7 +105,6 @@ public:
     kexVec4                             worldLightOrigin;
     kexVec4                             worldLightColor;
     kexVec4                             worldLightAmbience;
-    kexVec4                             worldLightModelAmbience;
     //
 
     static kexHeapBlock                 hb_world;
