@@ -208,6 +208,7 @@ void kexCanvasImage::Draw(kexMatrix &curMatrix, const float &curAlpha) {
 
     for(i = 0; i < 4; i++) {
         a[i] = (byte)((float)rgba[i * 4 + 3] * alpha * curAlpha);
+        kexMath::Clamp(a[i], 0, 255);
     }
 
     mtx.Scale(scaleX, scaleY, 1);
@@ -461,6 +462,8 @@ void kexCanvasText::Draw(kexMatrix &curMatrix, const float &curAlpha) {
         color[i * 4 + 1] = rgba[i * 4 + 1];
         color[i * 4 + 2] = rgba[i * 4 + 2];
         color[i * 4 + 3] = (byte)((float)rgba[i * 4 + 3] * alpha * curAlpha);
+
+        kexMath::Clamp(color[i * 4 + 3], 0, 255);
     }
 
     mtx.Scale(scaleX, scaleY, 1);
@@ -534,6 +537,13 @@ void kexContainer::Draw(kexMatrix &curMatrix, const float &curAlpha) {
     matrix = mtx * curMatrix;
 
     float a = alpha * curAlpha;
+
+    kexMath::Clamp(a, 0.0f, 1.0f);
+    
+    this->max[0] = -M_INFINITY;
+    this->max[1] = -M_INFINITY;
+    this->min[0] =  M_INFINITY;
+    this->min[1] =  M_INFINITY;
 
     for(kexCanvasObject *obj = children.Next(); obj != NULL; obj = obj->link.Next()) {
         obj->Draw(matrix, a);
