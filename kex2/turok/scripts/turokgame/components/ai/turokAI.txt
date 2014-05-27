@@ -588,6 +588,8 @@ class TurokAI : Component {
             18, 3, 8
         };
         
+        self.Physics().GetVelocity().Clear();
+        
         PickAnimSet(anims, weights);
         ai.aiFlags |= AIF_DISABLED;
         ai.aiState = AIS_DEATH;
