@@ -56,6 +56,19 @@ static void FCmd_PrintStats(void) {
 }
 
 //
+// FCmd_StartGame
+//
+
+static void FCmd_StartGame(void) {
+    if(command.GetArgc() < 2) {
+        common.Printf("usage: startgame <map>\n");
+        return;
+    }
+
+    gameManager.StartGame(command.GetArgv(1));
+}
+
+//
 // kexGameManager:: kexGameManager
 //
 
@@ -87,6 +100,7 @@ void kexGameManager::Init(void) {
     scriptManager.Engine()->RegisterInterfaceMethod("KexGame", "void OnTick(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("KexGame", "void OnLocalTick(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("KexGame", "void OnSpawn(void)");
+    scriptManager.Engine()->RegisterInterfaceMethod("KexGame", "void OnNewGame(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("KexGame", "void OnShutdown(void)");
     scriptManager.Engine()->RegisterInterfaceMethod("KexGame", "bool OnInput(int, int, int, int)");
 }
@@ -197,6 +211,7 @@ void kexGameManager::Construct(const char *className) {
     onTick      = type->GetMethodByDecl("void OnTick(void)");
     onLocalTick = type->GetMethodByDecl("void OnLocalTick(void)");
     onSpawn     = type->GetMethodByDecl("void OnSpawn(void)");
+    onNewGame   = type->GetMethodByDecl("void OnNewGame(void)");
     onShutdown  = type->GetMethodByDecl("void OnShutdown(void)");
     onInput     = type->GetMethodByDecl("bool OnInput(int, int, int, int)");
 }
@@ -252,6 +267,7 @@ void kexGameManager::InitGame(void) {
 
     kexAI::Init();
     command.Add("statgame", FCmd_PrintStats);
+    command.Add("startgame", FCmd_StartGame);
 }
 
 //
@@ -260,6 +276,14 @@ void kexGameManager::InitGame(void) {
 
 void kexGameManager::SpawnGame(void) {
     CallFunction(onSpawn);
+}
+
+//
+// kexGameManager::StartGame
+//
+
+void kexGameManager::StartGame(const char *mapname) {
+    CallFunction(onNewGame);
 }
 
 //
@@ -553,14 +577,21 @@ void kexGameManager::PrepareMapChange(const ENetPacket *packet) {
     client.SetState(CL_STATE_CHANGINGLEVEL);
     
     packetManager.Read8((ENetPacket*)packet, &mapID);
+
+    if(sysMain.IsWindowed()) {
+        inputSystem.DeactivateMouse();
+    }
     
     localWorld.Unload();
     if(!localWorld.Load(kva("maps/map%02d/map%02d", mapID, mapID))) {
         client.SetState(CL_STATE_READY);
+        inputSystem.ActivateMouse();
         return;
     }
     
     client.SetState(CL_STATE_INGAME);
+
+    inputSystem.ActivateMouse();
 
     inputKey.Controls()->mousex = 0;
     inputKey.Controls()->mousey = 0;

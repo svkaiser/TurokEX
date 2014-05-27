@@ -54,6 +54,7 @@ public:
     bool                    GuisAreActive(void);
     void                    ClearGuis(const float fadeSpeed);
     void                    SpawnGame(void);
+    void                    StartGame(const char *mapname);
     bool                    ProcessInput(const event_t *ev);
     void                    OnTick(void);
     void                    OnLocalTick(void);
@@ -84,6 +85,7 @@ private:
     asIScriptFunction       *onTick;
     asIScriptFunction       *onLocalTick;
     asIScriptFunction       *onSpawn;
+    asIScriptFunction       *onNewGame;
     asIScriptFunction       *onShutdown;
     asIScriptFunction       *onInput;
 
