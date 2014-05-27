@@ -27,6 +27,8 @@
 #include "actor.h"
 #include "frustum.h"
 
+class kexSector;
+
 BEGIN_EXTENDED_CLASS(kexCamera, kexDisplayObject);
 public:
                         kexCamera(void);
@@ -53,6 +55,7 @@ public:
     bool                &IsFixedFOV(void) { return bFixedFOV; }
     bool                &IsLetterBox(void) { return bLetterBox; }
     bool                &IsClampZFarToFog(void) { return bClampZFarToFog; }
+    kexSector           *Sector(void) { return sector; }
 
     static void         InitObject(void);
 
@@ -68,6 +71,7 @@ private:
     bool                bFixedFOV;
     bool                bLetterBox;
     bool                bClampZFarToFog;
+    kexSector           *sector;
 END_CLASS();
 
 #endif

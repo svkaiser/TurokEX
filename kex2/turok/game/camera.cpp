@@ -43,6 +43,7 @@ kexCamera::kexCamera(void) {
     this->bFixedFOV         = false;
     this->aspect            = 4.0f/3.0f;
     this->bClampZFarToFog   = false;
+    this->sector            = NULL;
 }
 
 //
@@ -111,10 +112,21 @@ kexVec3 kexCamera::ProjectPoint(kexVec3 &point, const int offsetX, const int off
 //
 
 void kexCamera::LocalTick(void) {
+    kexDisplayObject *attachedObject;
+
     attachment.Transform();
 
     angles.Clamp180();
     rotation = angles.ToQuat();
+
+    attachedObject = attachment.GetAttachedObject();
+
+    if(attachedObject) {
+        if(attachedObject->InstanceOf(&kexWorldObject::info)) {
+            kexWorldObject *obj = static_cast<kexWorldObject*>(attachedObject);
+            sector = obj->Physics()->sector;
+        }
+    }
 }
 
 //
