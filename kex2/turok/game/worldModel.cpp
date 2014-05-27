@@ -181,8 +181,6 @@ void kexWorldModel::Parse(kexLexer *lexer) {
                 i = 0;
                 
                 while(lexer->TokenType() != TK_RBRACK) {
-                    lexer->Find();
-
                     if(lexer->TokenType() == TK_STRING) {
                         char *str;
 
@@ -190,10 +188,10 @@ void kexWorldModel::Parse(kexLexer *lexer) {
                             continue;
                         }
 
-                        str = lexer->StringToken();
+                        str = (char*)lexer->Token();
 
                         if(str[0] != '-') {
-                            materials[i] = renderBackend.CacheMaterial(lexer->StringToken());
+                            materials[i] = renderBackend.CacheMaterial(str);
                         }
                         else {
                             materials[i] = NULL;
@@ -201,6 +199,8 @@ void kexWorldModel::Parse(kexLexer *lexer) {
 
                         i++;
                     }
+
+                    lexer->Find();
                 }
                 break;
             case scwmdl_bCollision:
