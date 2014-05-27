@@ -84,7 +84,7 @@ void kexGuiManager::Init(void) {
     fileSystem.GetMatchingFiles(list, "gui/");
     
     for(unsigned int i = 0; i < list.Length(); i++) {
-        if(list[i].IndexOf(".xml") == -1) {
+        if(list[i].IndexOf(".xml\0") == -1) {
             continue;
         }
         
