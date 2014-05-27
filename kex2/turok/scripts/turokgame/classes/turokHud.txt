@@ -60,8 +60,8 @@ final class TurokHudString {
         
         @back = Canvas.CreateText("fonts/turokfont.kfont");
         back.text = "";
-        back.x = 3;
-        back.y = 3;
+        back.x = 1.0f;
+        back.y = 1.0f;
         
         container.AddChild(top);
         container.AddChild(back);
@@ -304,10 +304,10 @@ final class TurokHud {
         }
         
         if(lifeForceNum.number.text.Atoi() < 10) {
-            lifeForceNum.number.x = -8;
+            lifeForceNum.number.x = -4;
         }
         else {
-            lifeForceNum.number.x = -17;
+            lifeForceNum.number.x = -8.5f;
         }
         
         TurokPlayer @player = cast<TurokPlayer@>(localClient.obj);
@@ -441,9 +441,9 @@ final class TurokHud {
         h_underwater.SetRGB(2, 0, 18, 95);
         h_underwater.SetRGB(3, 0, 18, 95);
         
-        healthNum.Init(36, 215);
-        ammoNum.Init(102, 215);
-        livesNum.Init(40, 42);
+        healthNum.Init(18, 107.5f);
+        ammoNum.Init(51, 107.5f);
+        livesNum.Init(20, 21);
         
         h_arrow1.bVisible = false;
         h_arrow2.bVisible = false;
@@ -465,7 +465,7 @@ final class TurokHud {
         }
         
         container.AddChild(lfSlider.container);
-        lifeForceNum.Init(-8, 8);
+        lifeForceNum.Init(-4, 4);
         lfSlider.container.AddChild(lifeForceNum.number);
         lfSlider.container.AddChild(h_coin);
         lfSlider.slideInX = 286;
