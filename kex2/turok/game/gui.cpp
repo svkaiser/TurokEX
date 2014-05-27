@@ -162,6 +162,87 @@ kexGui *kexGuiManager::LoadGui(const char *guiFile) {
 }
 
 //
+// kexGuiManager::ParseColor
+//
+
+void kexGuiManager::ParseColor(const char *colorString, byte &r, byte &g, byte &b) {
+    rcolor color;
+    char *hex;
+
+    r = g = b = 0;
+
+    if(colorString[0] != '#') {
+        return;
+    }
+
+    hex = (char*)(colorString+1);
+    color = strtol(hex, &hex, 16);
+
+    r = ((color >> 16) & 0xff);
+    g = ((color >> 8) & 0xff);
+    b = (color & 0xff);
+}
+
+//
+// kexGuiManager::ParseColor
+//
+
+void kexGuiManager::ParseColor(XMLElement *element, byte *rgb) {
+    if(!kexStr::Compare(element->Value(), "topleftcolor")) {
+        ParseColor(element->GetText(),
+            rgb[0 * 4 + 0],
+            rgb[0 * 4 + 1],
+            rgb[0 * 4 + 2]);
+    }
+    else if(!kexStr::Compare(element->Value(), "toprightcolor")) {
+        ParseColor(element->GetText(),
+            rgb[1 * 4 + 0],
+            rgb[1 * 4 + 1],
+            rgb[1 * 4 + 2]);
+    }
+    else if(!kexStr::Compare(element->Value(), "bottomleftcolor")) {
+        ParseColor(element->GetText(),
+            rgb[2 * 4 + 0],
+            rgb[2 * 4 + 1],
+            rgb[2 * 4 + 2]);
+    }
+    else if(!kexStr::Compare(element->Value(), "bottomrightcolor")) {
+        ParseColor(element->GetText(),
+            rgb[3 * 4 + 0],
+            rgb[3 * 4 + 1],
+            rgb[3 * 4 + 2]);
+    }
+    else if(!kexStr::Compare(element->Value(), "topcolor")) {
+        ParseColor(element->GetText(),
+            rgb[0 * 4 + 0],
+            rgb[0 * 4 + 1],
+            rgb[0 * 4 + 2]);
+        ParseColor(element->GetText(),
+            rgb[1 * 4 + 0],
+            rgb[1 * 4 + 1],
+            rgb[1 * 4 + 2]);
+    }
+    else if(!kexStr::Compare(element->Value(), "bottomcolor")) {
+        ParseColor(element->GetText(),
+            rgb[2 * 4 + 0],
+            rgb[2 * 4 + 1],
+            rgb[2 * 4 + 2]);
+        ParseColor(element->GetText(),
+            rgb[3 * 4 + 0],
+            rgb[3 * 4 + 1],
+            rgb[3 * 4 + 2]);
+    }
+    else if(!kexStr::Compare(element->Value(), "color")) {
+        for(int i = 0; i < 4; i++) {
+            ParseColor(element->GetText(),
+                rgb[i * 4 + 0],
+                rgb[i * 4 + 1],
+                rgb[i * 4 + 2]);
+        }
+    }
+}
+
+//
 // kexGuiManager::ParseSimpleProperties
 //
 
@@ -197,108 +278,163 @@ void kexGuiManager::ParseSimpleProperties(XMLNode *node, kexCanvasObject *object
 void kexGuiManager::ParseNode(XMLElement *element, kexGui *gui, kexContainer *container) {
     for(XMLNode *node = element->FirstChild(); node; node = node->NextSibling()) {
         if(!kexStr::Compare(node->Value(), "container")) {
-            kexContainer *canvasContainer = gui->canvas.CreateContainer();
-            
-            if(container == NULL) {
-                gui->canvas.AddChild(canvasContainer);
-            }
-            else {
-                container->AddChild(canvasContainer);
-            }
-            
-            ParseSimpleProperties(node, canvasContainer);
-            ParseNode(node->ToElement(), gui, canvasContainer);
+            ParseContainer(node, gui, container);
         }
         else if(!kexStr::Compare(node->Value(), "image")) {
-            const XMLAttribute *attrib = node->ToElement()->FirstAttribute();
-            
-            if(!kexStr::Compare(attrib->Name(), "texture")) {
-                kexCanvasImage *canvasImage = gui->canvas.CreateImage(attrib->Value());
-                
-                if(container == NULL) {
-                    gui->canvas.AddChild(canvasImage);
-                }
-                else {
-                    container->AddChild(canvasImage);
-                }
-                
-                ParseSimpleProperties(node, canvasImage);
-            }
+            ParseImage(node, gui, container);
         }
         else if(!kexStr::Compare(node->Value(), "text")) {
-            const XMLAttribute *attrib = node->ToElement()->FirstAttribute();
-            
-            if(!kexStr::Compare(attrib->Name(), "font")) {
-                kexCanvasText *canvasText = gui->canvas.CreateText(attrib->Value());
-                
-                if(container == NULL) {
-                    gui->canvas.AddChild(canvasText);
-                }
-                else {
-                    container->AddChild(canvasText);
-                }
-                
-                ParseSimpleProperties(node, canvasText);
-
-                for(XMLElement *child = node->FirstChildElement(); child;
-                    child = child->NextSiblingElement()) {
-                    if(!kexStr::Compare(child->Value(), "string")) {
-                        canvasText->text = kexStr(child->GetText());
-                    }
-                }
-            }
+            ParseText(node, gui, container);
         }
         else if(!kexStr::Compare(node->Value(), "object")) {
-            const XMLAttribute *attrib = node->ToElement()->FirstAttribute();
-            
-            if(!kexStr::Compare(attrib->Name(), "class")) {
-                kexCanvasScriptObject *cso = gui->canvas.CreateScriptObject(attrib->Value());
-                
-                if(cso == NULL) {
-                    common.Warning("kexGuiManager::ParseNode: script class %s not found\n",
-                                   attrib->Value());
-                    continue;
-                }
-                
-                cso->container = gui->canvas.CreateContainer();
-                
-                // we add the scripted canvas object's container to the parent container
-                // because we want that container to easily inherit the parent's transform.
-                // the actual scripted canvas object will be added to the root instead
-                if(container) {
-                    container->AddChild(cso->container);
-                }
-                else {
-                    gui->canvas.AddChild(cso->container);
-                }
-                
-                // scripted canvas objects are always added to the root gui
-                gui->canvas.AddChild(cso);
-                
-                ParseSimpleProperties(node, cso);
-                
-                for(XMLElement *child = node->FirstChildElement(); child;
-                    child = child->NextSiblingElement()) {
-                    if(!kexStr::Compare(child->Value(), "properties")) {
-                        for(XMLElement *pnode = child->FirstChildElement(); pnode;
-                            pnode = pnode->NextSiblingElement()) {
-                            cso->SetProperty(pnode->Value(), pnode->GetText());
-                        }
-                        
-                        cso->component.CallFunction(cso->component.onInit);
-                    }
-                    else if(!kexStr::Compare(child->Value(), "container")) {
-                        ParseSimpleProperties(child, cso->container);
-                        ParseNode(child, gui, cso->container);
-                    }
-                }
-            }
+            ParseObject(node, gui, container);
         }
         else if(!kexStr::Compare(node->Value(), "button")) {
             ParseButton(node, gui, container);
         }
         else if(!kexStr::Compare(node->Value(), "slider")) {
             ParseSlider(node, gui, container);
+        }
+    }
+}
+
+//
+// kexGuiManager::ParseContainer
+//
+
+void kexGuiManager::ParseContainer(XMLNode *node, kexGui *gui, kexContainer *container) {
+    kexContainer *canvasContainer = gui->canvas.CreateContainer();
+            
+    if(container == NULL) {
+        gui->canvas.AddChild(canvasContainer);
+    }
+    else {
+        container->AddChild(canvasContainer);
+    }
+    
+    ParseSimpleProperties(node, canvasContainer);
+    ParseNode(node->ToElement(), gui, canvasContainer);
+}
+
+//
+// kexGuiManager::ParseImage
+//
+
+void kexGuiManager::ParseImage(XMLNode *node, kexGui *gui, kexContainer *container) {
+    const XMLAttribute *attrib = node->ToElement()->FirstAttribute();
+            
+    if(!kexStr::Compare(attrib->Name(), "texture")) {
+        kexCanvasImage *canvasImage = gui->canvas.CreateImage(attrib->Value());
+        
+        if(container == NULL) {
+            gui->canvas.AddChild(canvasImage);
+        }
+        else {
+            container->AddChild(canvasImage);
+        }
+        
+        ParseSimpleProperties(node, canvasImage);
+
+        for(XMLElement *child = node->FirstChildElement(); child; child = child->NextSiblingElement()) {
+            if(!kexStr::Compare(child->Value(), "properties")) {
+                for(XMLElement *pnode = child->FirstChildElement(); pnode;
+                    pnode = pnode->NextSiblingElement()) {
+                    if(!kexStr::Compare(pnode->Value(), "width")) {
+                        canvasImage->width = kexStr(pnode->ToElement()->GetText()).Atof();
+                    }
+                    else if(!kexStr::Compare(pnode->Value(), "height")) {
+                        canvasImage->height = kexStr(pnode->ToElement()->GetText()).Atof();
+                    }
+
+                    ParseColor(pnode, canvasImage->rgba);
+                }
+            }
+        }
+    }
+}
+
+//
+// kexGuiManager::ParseText
+//
+
+void kexGuiManager::ParseText(XMLNode *node, kexGui *gui, kexContainer *container) {
+    const XMLAttribute *attrib = node->ToElement()->FirstAttribute();
+            
+    if(!kexStr::Compare(attrib->Name(), "font")) {
+        kexCanvasText *canvasText = gui->canvas.CreateText(attrib->Value());
+        
+        if(container == NULL) {
+            gui->canvas.AddChild(canvasText);
+        }
+        else {
+            container->AddChild(canvasText);
+        }
+        
+        ParseSimpleProperties(node, canvasText);
+
+        for(XMLElement *child = node->FirstChildElement(); child;
+            child = child->NextSiblingElement()) {
+            if(!kexStr::Compare(child->Value(), "string")) {
+                canvasText->text = kexStr(child->GetText());
+            }
+            else if(!kexStr::Compare(child->Value(), "centered")) {
+                if(!kexStr::Compare(child->GetText(), "true")) {
+                    canvasText->bCentered = true;
+                }
+            }
+
+            ParseColor(child, canvasText->rgba);
+        }
+    }
+}
+
+//
+// kexGuiManager::ParseObject
+//
+
+void kexGuiManager::ParseObject(XMLNode *node, kexGui *gui, kexContainer *container) {
+    const XMLAttribute *attrib = node->ToElement()->FirstAttribute();
+            
+    if(!kexStr::Compare(attrib->Name(), "class")) {
+        kexCanvasScriptObject *cso = gui->canvas.CreateScriptObject(attrib->Value());
+        
+        if(cso == NULL) {
+            common.Warning("kexGuiManager::ParseNode: script class %s not found\n",
+                           attrib->Value());
+            return;
+        }
+        
+        cso->container = gui->canvas.CreateContainer();
+        
+        // we add the scripted canvas object's container to the parent container
+        // because we want that container to easily inherit the parent's transform.
+        // the actual scripted canvas object will be added to the root instead
+        if(container) {
+            container->AddChild(cso->container);
+        }
+        else {
+            gui->canvas.AddChild(cso->container);
+        }
+        
+        // scripted canvas objects are always added to the root gui
+        gui->canvas.AddChild(cso);
+        
+        ParseSimpleProperties(node, cso);
+        
+        for(XMLElement *child = node->FirstChildElement(); child;
+            child = child->NextSiblingElement()) {
+            if(!kexStr::Compare(child->Value(), "properties")) {
+                for(XMLElement *pnode = child->FirstChildElement(); pnode;
+                    pnode = pnode->NextSiblingElement()) {
+                    cso->SetProperty(pnode->Value(), pnode->GetText());
+                }
+                
+                cso->component.CallFunction(cso->component.onInit);
+            }
+            else if(!kexStr::Compare(child->Value(), "container")) {
+                ParseSimpleProperties(child, cso->container);
+                ParseNode(child, gui, cso->container);
+            }
         }
     }
 }
@@ -397,7 +533,7 @@ void kexGuiManager::ParseSlider(XMLNode *node, kexGui *gui, kexContainer *contai
             slider->sliderImage->regY = (float)slider->sliderImage->texture->Height() * 0.5f;
             
             slider->barWidth = (float)slider->barImage->texture->Width();
-            slider->position = slider->barImage->regX;
+            slider->position = 0.5f;
         }
         
         ParseNode(node->ToElement(), gui, slider->container);
@@ -430,6 +566,9 @@ void kexGuiManager::ParseButtonEvent(XMLNode *node, kexGui *gui,
                 else if(!kexStr::Compare(attrib->Name(), "action")) {
                     if(!kexStr::Compare(attrib->Value(), "changegui")) {
                         guiEvent.action = GAT_CHANGEGUI;
+                    }
+                    else if(!kexStr::Compare(attrib->Value(), "popgui")) {
+                        guiEvent.action = GAT_POPGUI;
                     }
                     else if(!kexStr::Compare(attrib->Value(), "callcommand")) {
                         guiEvent.action = GAT_CALLCOMMAND;
@@ -475,6 +614,7 @@ void kexGuiManager::ClearGuis(const float fadeSpeed) {
         }
 
         obj->FadeOut(fadeSpeed);
+        obj->childGui = NULL;
     }
 }
 
@@ -507,7 +647,14 @@ void kexGuiManager::UpdateGuis(void) {
 
             if(obj->canvas.alpha <= 0) {
                 obj->status = GUIS_DISABLED;
+                if(obj->childGui) {
+                    obj->childGui->status = GUIS_READY;
+                    obj->childGui = NULL;
+                }
             }
+        }
+        else {
+            obj->UpdateSliders();
         }
 
         bAllDisabled = false;
@@ -528,7 +675,7 @@ void kexGuiManager::DrawGuis(void) {
     }
 
     for(kexGui *obj = guis.Next(); obj; obj = obj->link.Next()) {
-        if(obj->status == GUIS_DISABLED) {
+        if(obj->status == GUIS_DISABLED || obj->status == GUIS_NOTFOCUSED) {
             continue;
         }
 
@@ -538,10 +685,9 @@ void kexGuiManager::DrawGuis(void) {
             guiButton_t *button;
             guiSlider_t *slider;
             kexBBox box;
-            float w, h;
 
-            w = (float)sysMain.VideoWidth() / (float)FIXED_WIDTH;
-            h = (float)sysMain.VideoHeight() / (float)FIXED_HEIGHT;
+            const float w = (float)sysMain.VideoWidth() / (float)FIXED_WIDTH;
+            const float h = (float)sysMain.VideoHeight() / (float)FIXED_HEIGHT;
 
             for(slider = obj->sliders.Next(); slider; slider = slider->link.Next()) {
                 box.min.Set(slider->sliderImage->min[0], slider->sliderImage->min[1], 0);
@@ -583,7 +729,7 @@ bool kexGuiManager::ProcessInput(const event_t *ev) {
     }
     
     if(ev->type == ev_mouse) {
-        float t = (float)sysMain.VideoWidth() / 32.0f;
+        const float t = (float)sysMain.VideoWidth() / 32.0f;
         
         cursor_x += ((float)ev->data2 * cvarMSensitivityX.GetFloat()) / t;
         cursor_y -= ((float)ev->data3 * cvarMSensitivityX.GetFloat()) / t;
@@ -631,6 +777,7 @@ kexGui::kexGui(void) {
     this->status = GUIS_DISABLED;
     this->fadeSpeed = 1.0f;
     this->canvas.alpha = 0;
+    this->childGui = NULL;
     this->name = (kexStr("gui_") + sysMain.GetMS()).c_str();
     this->link.SetData(this);
 }
@@ -640,17 +787,26 @@ kexGui::kexGui(void) {
 //
 
 kexGui::~kexGui(void) {
-    guiButton_t *next;
+    guiButton_t *bt_next;
+    guiSlider_t *sl_next;
     
     this->link.Remove();
     canvas.Empty();
     
     for(guiButton_t *button = buttons.Next(); button;) {
-        next = button->link.Next();
+        bt_next = button->link.Next();
         button->link.Remove();
         button->events.Empty();
         delete button;
-        button = next;
+        button = bt_next;
+    }
+
+    for(guiSlider_t *slider = sliders.Next(); slider;) {
+        sl_next = slider->link.Next();
+        slider->link.Remove();
+        slider->events.Empty();
+        delete slider;
+        slider = sl_next;
     }
 }
 
@@ -659,7 +815,47 @@ kexGui::~kexGui(void) {
 //
 
 void kexGui::Draw(void) {
+    if(childGui) {
+        childGui->Draw();
+    }
+
     canvas.Draw();
+}
+
+//
+// kexGui::UpdateSliders
+//
+
+void kexGui::UpdateSliders(void) {
+    const float screen_ratio = (float)sysMain.VideoWidth() / (float)FIXED_WIDTH;
+    float cx;
+    float sx;
+    float dx;
+    float max;
+    float scale;
+    kexMatrix mtx;
+    kexCanvasImage *cimg;
+    
+    for(guiSlider_t *slider = sliders.Next(); slider; slider = slider->link.Next()) {
+        if(slider->bGrabbed == false) {
+            continue;
+        }
+        
+        // slide the bar along with the cursor's x coordinate
+        cimg = slider->sliderImage;
+        mtx = slider->container->matrix;
+        scale = mtx.vectors[0].x;
+        dx = slider->container->x;
+        
+        // transform the slidebar's position to the cursor
+        sx = ((cimg->min[0] / scale) - cimg->x) * scale;
+        cx = (guiManager.cursor_x / screen_ratio) - dx - sx - (mtx.vectors[3].x - dx);
+        cimg->x = (cx / scale) + (sx / scale);
+        
+        max = slider->barWidth / 4.0f;
+        slider->position = (cimg->x / max) * 0.5f + 0.5f;
+        kexMath::Clamp(cimg->x, -max, max);
+    }
 }
 
 //
@@ -698,6 +894,7 @@ void kexGui::FadeOut(const float speed) {
 void kexGui::ExecuteEvent(guiEvent_t *event) {
     switch(event->action) {
         case GAT_CHANGEGUI:
+        case GAT_POPGUI:
             ChangeGuis(event);
             break;
             
@@ -728,7 +925,14 @@ void kexGui::ChangeGuis(guiEvent_t *guiEvent) {
         return;
     }
     
-    FadeOut(speed);
+    if(guiEvent->action == GAT_POPGUI) {
+        status = GUIS_NOTFOCUSED;
+        nextGui->childGui = this;
+    }
+    else {
+        FadeOut(speed);
+    }
+
     nextGui->FadeIn(speed);
 }
 
@@ -820,12 +1024,10 @@ bool kexGui::CheckEvents(const event_t *ev) {
     float y = guiManager.cursor_y;
     guiButton_t *button;
     guiSlider_t *slider;
-    float w;
-    float h;
     bool ok = false;
 
-    w = (float)sysMain.VideoWidth() / (float)FIXED_WIDTH;
-    h = (float)sysMain.VideoHeight() / (float)FIXED_HEIGHT;
+    const float w = (float)sysMain.VideoWidth() / (float)FIXED_WIDTH;
+    const float h = (float)sysMain.VideoHeight() / (float)FIXED_HEIGHT;
     
     for(slider = sliders.Next(); slider; slider = slider->link.Next()) {
         if(x > slider->sliderImage->min[0] * w && x < slider->sliderImage->max[0] * w &&
@@ -833,11 +1035,9 @@ bool kexGui::CheckEvents(const event_t *ev) {
             if(ev->type == ev_mousedown) {
                 slider->bGrabbed = true;
             }
-            else if(ev->type == ev_mouseup) {
-                slider->bGrabbed = false;
-            }
         }
-        else {
+        
+        if(ev->type == ev_mouseup) {
             slider->bGrabbed = false;
         }
     }

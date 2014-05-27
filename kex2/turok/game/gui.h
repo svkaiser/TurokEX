@@ -27,7 +27,8 @@ typedef enum {
     GUIS_DISABLED   = 0,
     GUIS_READY,
     GUIS_FADEIN,
-    GUIS_FADEOUT
+    GUIS_FADEOUT,
+    GUIS_NOTFOCUSED
 } guiStatus_t;
 
 typedef enum {
@@ -50,6 +51,7 @@ typedef enum {
 typedef enum {
     GAT_NONE        = 0,
     GAT_CHANGEGUI,
+    GAT_POPGUI,
     GAT_CALLCOMMAND,
     NUMGUIACTIONS
 } guiActionType_t;
@@ -93,6 +95,7 @@ public:
     void                        FadeOut(const float speed);
     
 private:
+    void                        UpdateSliders(void);
     void                        ExecuteEvent(guiEvent_t *event);
     void                        ExecuteButtonEvent(guiButton_t *button, const guiButtonState_t btnState);
     void                        ChangeGuis(guiEvent_t *guiEvent);
@@ -105,6 +108,7 @@ private:
     kexStr                      name;
     guiStatus_t                 status;
     float                       fadeSpeed;
+    kexGui                      *childGui;
 };
 
 #include "tinyxml2.h"
@@ -136,12 +140,26 @@ public:
     bool                        bDebugButtons;
     
 private:
+    void                        ParseColor(const char *colorString, byte &r, byte &g, byte &b);
+    void                        ParseColor(tinyxml2::XMLElement *element, byte *rgb);
     void                        DrawCursor(void);
     void                        ParseNode(tinyxml2::XMLElement *element,
                                           kexGui *gui,
                                           kexContainer *container);
     void                        ParseSimpleProperties(tinyxml2::XMLNode *node,
                                                       kexCanvasObject *object);
+    void                        ParseContainer(tinyxml2::XMLNode *node,
+                                            kexGui *gui,
+                                            kexContainer *container);
+    void                        ParseImage(tinyxml2::XMLNode *node,
+                                            kexGui *gui,
+                                            kexContainer *container);
+    void                        ParseText(tinyxml2::XMLNode *node,
+                                            kexGui *gui,
+                                            kexContainer *container);
+    void                        ParseObject(tinyxml2::XMLNode *node,
+                                            kexGui *gui,
+                                            kexContainer *container);
     void                        ParseButton(tinyxml2::XMLNode *node,
                                             kexGui *gui,
                                             kexContainer *container);
