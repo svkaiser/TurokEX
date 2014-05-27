@@ -97,6 +97,24 @@ void kexMath::Clamp(float &f, const float min, const float max) {
 }
 
 //
+// kexMath::Clamp
+//
+
+void kexMath::Clamp(int &i, const int min, const int max) {
+    if(i < min) i = min;
+    if(i > max) i = max;
+}
+
+//
+// kexMath::Clamp
+//
+
+void kexMath::Clamp(byte &b, const byte min, const byte max) {
+    if(b < min) b = min;
+    if(b > max) b = max;
+}
+
+//
 // kexMath::CubicCurve
 //
 
