@@ -47,8 +47,7 @@ typedef unsigned int    dtexture;
 typedef unsigned int    rcolor;
 typedef char            filepath_t[MAX_FILEPATH];
 
-typedef union
-{
+typedef union {
     int     i;
     float   f;
 } fint_t;
@@ -88,6 +87,12 @@ typedef union
 #define BIT(num) (1<<(num))
 #endif
 
+#if defined(__WIN32__) && !defined(__GNUC__)
+#define KDECL __cdecl
+#else
+#define KDECL
+#endif
+
 #ifdef _WIN32
 #include "opndir.h"
 #endif
@@ -105,6 +110,9 @@ typedef union
 #define COLOR_GREEN         RGBA(0, 0xFF, 0, 0xFF)
 #define COLOR_YELLOW        RGBA(0xFF, 0xFF, 0, 0xFF)
 #define COLOR_CYAN          RGBA(0, 0xFF, 0xFF, 0xFF)
+
+#define FIXED_WIDTH     320
+#define FIXED_HEIGHT    240
 
 //
 // COMMON

@@ -376,8 +376,6 @@ void kexSoundSource::Update(void) {
     }
 
     if(sfx != NULL) {
-        kexWavFile *wave = sfx->wavFile;
-
         if(!bPlaying) {
             Play();
         }
@@ -386,8 +384,7 @@ void kexSoundSource::Update(void) {
 
             alGetSourcei(handle, AL_SOURCE_STATE, &state);
             if(state != AL_PLAYING) {
-                alSourceStop(handle);
-                alSourceUnqueueBuffers(handle, 1, wave->GetBuffer());
+                Stop();
                 Free();
             }
             else {
@@ -400,8 +397,7 @@ void kexSoundSource::Update(void) {
 
                         if(volume > 1) volume = 1;
                         if(volume < 0.01f) {
-                            alSourceStop(handle);
-                            alSourceUnqueueBuffers(handle, 1, wave->GetBuffer());
+                            Stop();
                             Free();
                             return;
                         }
@@ -526,7 +522,7 @@ void kexSoundSystem::Shutdown(void) {
 //
 
 int SDLCALL kexSoundSystem::Thread(void *param) {
-    long start = SDL_GetTicks();
+    long start = sysMain.GetTicks();
     long delay = 0;
     int i;
 
@@ -539,7 +535,7 @@ int SDLCALL kexSoundSystem::Thread(void *param) {
 
         kexSoundSystem::time++;
         // try to avoid incremental time de-syncs
-        delay = kexSoundSystem::time - (SDL_GetTicks() - start);
+        delay = kexSoundSystem::time - (sysMain.GetTicks() - start);
 
         if(delay > 0) {
             sysMain.Sleep(delay);

@@ -132,7 +132,7 @@ bool GL_CheckExtension(const char *ext) {
 //
 
 void* GL_RegisterProc(const char *address) {
-    void *proc = SDL_GL_GetProcAddress(address);
+    void *proc = sysMain.GetProcAddress(address);
     
     if(!proc) {
         common.Warning("GL_RegisterProc: Failed to get proc address: %s", address);

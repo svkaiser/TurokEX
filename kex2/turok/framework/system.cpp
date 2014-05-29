@@ -183,6 +183,14 @@ void kexSystem::Shutdown(void) {
 }
 
 //
+// kexSystem::GetTicks
+//
+
+int kexSystem::GetTicks(void) {
+    return SDL_GetTicks();
+}
+
+//
 // kexSystem::GetMS
 //
 
@@ -190,7 +198,7 @@ int kexSystem::GetMS(void) {
     uint32 ticks;
     static int basetime = 0;
     
-    ticks = SDL_GetTicks();
+    ticks = GetTicks();
     
     if(basetime == 0) {
         basetime = ticks;
@@ -301,7 +309,7 @@ void kexSystem::WarpMouseToCenter(void) {
 }
 
 //
-// kexSystemBase::SwapLE16
+// kexSystem::SwapLE16
 //
 
 short kexSystem::SwapLE16(const short val) {
@@ -309,7 +317,7 @@ short kexSystem::SwapLE16(const short val) {
 }
 
 //
-// kexSystemBase::SwapBE16
+// kexSystem::SwapBE16
 //
 
 short kexSystem::SwapBE16(const short val) {
@@ -317,7 +325,7 @@ short kexSystem::SwapBE16(const short val) {
 }
 
 //
-// kexSystemBase::SwapLE32
+// kexSystem::SwapLE32
 //
 
 int kexSystem::SwapLE32(const int val) {
@@ -325,11 +333,19 @@ int kexSystem::SwapLE32(const int val) {
 }
 
 //
-// kexSystemBase::SwapBE32
+// kexSystem::SwapBE32
 //
 
 int kexSystem::SwapBE32(const int val) {
     return SDL_SwapBE32(val);
+}
+
+//
+// kexSystem::GetProcAddress
+//
+
+void *kexSystem::GetProcAddress(const char *proc) {
+    return SDL_GL_GetProcAddress(proc);
 }
 
 //
@@ -462,16 +478,17 @@ const char *kexSystem::GetBaseDirectory(void) {
         char *p = (basePath = (char*)Mem_Malloc(len + 1, hb_static)) + len - 1;
         
         strcpy(basePath, *argv);
-        while (p > basePath && *p!='/' && *p!='\\') {
-            *p--=0;
+        while (p > basePath && *p != DIR_SEPARATOR) {
+            *p-- = 0;
         }
         
-        if(*p=='/' || *p=='\\') {
-            *p--=0;
+        if(*p == DIR_SEPARATOR) {
+            *p-- = 0;
         }
         
         if(strlen(basePath) < 2) {
             Mem_Free(basePath);
+            
             basePath = (char*)Mem_Malloc(1024, hb_static);
             if(!getcwd(basePath, 1024)) {
                 strcpy(basePath, dummyDirectory);
@@ -497,22 +514,22 @@ void kexSystem::InitVideo(void) {
     videoHeight = cvarVidHeight.GetInt();
     videoRatio = (float)videoWidth / (float)videoHeight;
     
-    if(sysMain.CheckParam("-window")) {
+    if(CheckParam("-window")) {
         bWindowed = true;
     }
 
-    if(sysMain.CheckParam("-fullscreen")) {
+    if(CheckParam("-fullscreen")) {
         bWindowed = false;
     }
     
     newwidth = newheight = 0;
     
-    p = sysMain.CheckParam("-width");
+    p = CheckParam("-width");
     if(p && p < argc - 1) {
         newwidth = atoi(argv[p+1]);
     }
 
-    p = sysMain.CheckParam("-height");
+    p = CheckParam("-height");
     if(p && p < argc - 1) {
         newheight = atoi(argv[p+1]);
     }
@@ -523,8 +540,8 @@ void kexSystem::InitVideo(void) {
     }
 
     if(cvarVidDepthSize.GetInt() != 8 &&
-        cvarVidDepthSize.GetInt() != 16 &&
-        cvarVidDepthSize.GetInt() != 24) {
+       cvarVidDepthSize.GetInt() != 16 &&
+       cvarVidDepthSize.GetInt() != 24) {
         cvarVidDepthSize.Set(24);
     }
 
@@ -536,9 +553,9 @@ void kexSystem::InitVideo(void) {
     }
     
     if(cvarVidBuffSize.GetInt() != 8 &&
-        cvarVidBuffSize.GetInt() != 16 &&
-        cvarVidBuffSize.GetInt() != 24
-        && cvarVidBuffSize.GetInt() != 32) {
+       cvarVidBuffSize.GetInt() != 16 &&
+       cvarVidBuffSize.GetInt() != 24 &&
+       cvarVidBuffSize.GetInt() != 32) {
         cvarVidBuffSize.Set(32);
     }
 

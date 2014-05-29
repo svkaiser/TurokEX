@@ -35,6 +35,7 @@ public:
     virtual void            Sleep(unsigned long usecs);
     virtual void            Shutdown(void) = 0;
     virtual int             GetMS(void);
+    virtual int             GetTicks(void);
     virtual void            SpawnInternalConsole(void);
     virtual void            ShowInternalConsole(bool show);
     virtual void            DestroyInternalConsole(void);
@@ -48,6 +49,7 @@ public:
     virtual short           SwapBE16(const short val);
     virtual int             SwapLE32(const int val);
     virtual int             SwapBE32(const int val);
+    virtual void            *GetProcAddress(const char *proc);
     virtual int             CheckParam(const char *check);
     virtual const char      *GetBaseDirectory(void);
     virtual void            Log(const char *fmt, ...);

@@ -51,6 +51,14 @@ int kexSystemBase::GetMS(void) {
 }
 
 //
+// kexSystemBase::GetTicks
+//
+
+int kexSystemBase::GetTicks(void) {
+    return 0;
+}
+
+//
 // kexSystemBase::SpawnInternalConsole
 //
 
@@ -145,6 +153,14 @@ int kexSystemBase::SwapLE32(const int val) {
 
 int kexSystemBase::SwapBE32(const int val) {
     return val;
+}
+
+//
+// kexSystemBase::GetProcAddress
+//
+
+void *kexSystemBase::GetProcAddress(const char *proc) {
+    return NULL;
 }
 
 //
