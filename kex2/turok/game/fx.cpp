@@ -313,7 +313,15 @@ kexFx *kexFx::Event(fxEvent_t *fxEvent, kexWorldObject *target) {
     }
 
     if(fxEvent->snd != NULL) {
-        soundSystem.StartSound(fxEvent->snd, nfx);
+        bool ok = true;
+
+        if(fxEvent == &fxInfo->onTick) {
+            ok = !soundSystem.HasSource(this);
+        }
+
+        if(ok) {
+            soundSystem.StartSound(fxEvent->snd, nfx);
+        }
     }
 
     if(fxEvent->damageDef != NULL && owner && target) {
