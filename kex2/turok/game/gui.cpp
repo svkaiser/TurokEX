@@ -933,7 +933,9 @@ void kexGui::ChangeGuis(guiEvent_t *guiEvent) {
         FadeOut(speed);
     }
 
-    nextGui->FadeIn(speed);
+    if(nextGui->status != GUIS_NOTFOCUSED) {
+        nextGui->FadeIn(speed);
+    }
 }
 
 //
