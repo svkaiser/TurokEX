@@ -96,6 +96,7 @@ private:
     int                         numDrawnStatics;
     int                         numCulledStatics;
     int                         numDrawnSDNodes;
+    int                         numDrawnFX;
     int                         numOccludedNodes;
     int                         numOccludedStatics;
     int                         numDrawnActors;

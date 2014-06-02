@@ -214,6 +214,7 @@ kexRenderWorld::kexRenderWorld(void) {
     this->bShowClipMesh     = false;
     this->bShowCollisionMap = false;
     this->bPrintStats       = false;
+    this->numDrawnFX        = 0;
     this->showAreaNode      = -1;
     this->renderNodeStep    = -1;
 }
@@ -1131,6 +1132,8 @@ void kexRenderWorld::DrawFX(void) {
             fxinfo->lensFlares->Draw(world->fxRover->GetOrigin());
         }
     }
+
+    numDrawnFX = fxDisplayNum;
     
     if(fxDisplayNum <= 0) {
         return;
@@ -1165,6 +1168,7 @@ void kexRenderWorld::PrintStats(void) {
     kexRenderUtils::PrintStatsText("drawn statics", ": %i", numDrawnStatics);
     kexRenderUtils::PrintStatsText("nodes visited", ": %i", numDrawnSDNodes);
     kexRenderUtils::PrintStatsText("drawn actors", ": %i", numDrawnActors);
+    kexRenderUtils::PrintStatsText("drawn fx", ": %i", numDrawnFX);
     kexRenderUtils::AddDebugLineSpacing();
     kexRenderUtils::PrintStatsText("culled statics", ": %i", numCulledStatics);
     kexRenderUtils::PrintStatsText("culled actors", ": %i", numCulledActors);
