@@ -560,15 +560,10 @@ kexVec3 &kexVec3::Normalize(void) {
 // kexVec3::PointAt
 //
 
-kexVec3 kexVec3::PointAt(kexVec3 &location) const {
-    float an1 = kexMath::ATan2(location.x - x, location.z - z);
-    float an2 = kexMath::ATan2(location.Distance(*this), location.y - y);
+kexAngle kexVec3::PointAt(kexVec3 &location) const {
+    kexVec3 dir = (*this - location).Normalize();
 
-    return kexVec3(
-        kexMath::Sin(an1),
-        kexMath::Cos(an2),
-        kexMath::Cos(an1)
-    );
+    return kexAngle(dir.ToYaw(), dir.ToPitch(), 0);
 }
 
 //

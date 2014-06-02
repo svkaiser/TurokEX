@@ -25,6 +25,7 @@
 
 #include <math.h>
 #include "kstring.h"
+#include "common.h"
 
 #ifdef M_PI
 #undef M_PI
@@ -43,6 +44,7 @@
 class kexVec3;
 class kexVec4;
 class kexMatrix;
+class kexAngle;
 
 class kexMath {
 public:
@@ -207,7 +209,7 @@ public:
     float                   DistanceSq(const kexVec3 &vec) const;
     float                   Distance(const kexVec3 &vec) const;
     kexVec3                 &Normalize(void);
-    kexVec3                 PointAt(kexVec3 &location) const;
+    kexAngle                PointAt(kexVec3 &location) const;
     kexVec3                 Lerp(const kexVec3 &next, const float movement) const;
     kexVec3                 &Lerp(const kexVec3 &next, const float movement);
     kexVec3                 &Lerp(const kexVec3 &start, const kexVec3 &next, const float movement);
