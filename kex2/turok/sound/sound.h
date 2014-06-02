@@ -102,7 +102,8 @@ private:
 };
 
 class kexSoundSource {
-    public:
+    friend class kexSoundSystem;
+public:
                                         kexSoundSource(void);
                                         ~kexSoundSource(void);
 
@@ -142,6 +143,7 @@ public:
     kexWavFile                          *CacheWavFile(const char *name);
     kexSoundShader                      *CacheShaderFile(const char *name);
     kexSoundSource                      *GetAvailableSource(void);
+    bool                                HasSource(const kexGameObject *obj);
     void                                StartSound(const char *name, kexGameObject *obj);
 
     const int                           GetNumActiveSources(void) const { return activeSources; }

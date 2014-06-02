@@ -644,6 +644,22 @@ kexSoundSource *kexSoundSystem::GetAvailableSource(void) {
 }
 
 //
+// kexSoundSystem::HasSource
+//
+
+bool kexSoundSystem::HasSource(const kexGameObject *obj) {
+    for(int i = 0; i < activeSources; i++) {
+        kexSoundSource *sndSrc = &sources[i];
+
+        if(sndSrc->obj == obj) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+//
 // kexSoundSystem::CacheWavFile
 //
 
