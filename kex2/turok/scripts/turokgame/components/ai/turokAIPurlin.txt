@@ -1,0 +1,100 @@
+////////////////////////////////////////////////////
+//
+// TurokAIPurlin
+//
+////////////////////////////////////////////////////
+
+class TurokAIPurlin : TurokAI {
+    
+    //
+    // TurokAIPurlin::TurokAIPurlin
+    //
+    
+    TurokAIPurlin(kActor @actor) {
+        super(actor);
+    }
+    
+    //
+    // TurokAIPurlin::deathScream
+    //
+    
+    void deathScream(const float a, const float b, const float c, const float d) {
+        self.StartSound("sounds/shaders/hulk_death.ksnd");
+    }
+    
+    //
+    // TurokAIPurlin::violentDeathScream
+    //
+    
+    void violentDeathScream(const float a, const float b, const float c, const float d) {
+        self.StartSound("sounds/shaders/hulk_violent_death.ksnd");
+    }
+    
+    //
+    // TurokAIPurlin::injuryScream
+    //
+    
+    void injuryScream(const float a, const float b, const float c, const float d) {
+        self.StartSound("sounds/shaders/hulk_injury.ksnd");
+    }
+    
+    //
+    // TurokAIPurlin::alertScream
+    //
+    
+    void alertScream(const float a, const float b, const float c, const float d) {
+        self.StartSound("sounds/shaders/hulk_alert.ksnd");
+    }
+    
+    //
+    // TurokAIPurlin::stomp
+    //
+    
+    void stomp(const float a, const float b, const float c, const float d) {
+        self.StartSound("sounds/shaders/generic_139.ksnd");
+    }
+    
+    //
+    // TurokAIPurlin::strongKnockBack
+    //
+    
+    void strongKnockBack(const float w, const float x, const float y, const float z) {
+        kActor @target = self.GetTarget();
+        
+        if(target is null) {
+            return;
+        }
+        
+        kVec3 aorg = self.TransformPoint(x, y + self.viewHeight, -z);
+        kVec3 torg = target.GetOrigin() - aorg;
+        
+        if(torg.Unit() <= (102.4f) + self.radius) {
+            torg.Normalize();
+            torg = torg * 1075.2f;
+            
+            kVec3 origin = target.GetOrigin();
+            
+            torg.y = 537.6f;
+            
+            origin.y += 1.0f;
+            target.SetOrigin(origin);
+            target.Physics().SetForce(torg);
+        }
+    }
+    
+    //
+    // TurokAIPurlin::OnStateChange
+    //
+    
+    void OnStateChange(int state) {
+        TurokAI::OnStateChange(state);
+    }
+    
+    //
+    // TurokAIPurlin::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        TurokAI::OnSpawn();
+    }
+}

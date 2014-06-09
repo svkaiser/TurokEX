@@ -13,6 +13,21 @@ enum pickupDropFlags {
     pdf_health_medium
 }
 
+const array<int> g_MeleeAnims = {
+    anim_aiMelee1,
+    anim_aiMelee2,
+    anim_aiMelee3,
+    anim_aiMelee4,
+    anim_aiMelee5,
+    anim_aiMelee6,
+    anim_aiMelee7,
+    anim_aiMelee8
+};
+
+const array<int> g_MeleeAnimWeights = {
+    10, 10, 10, 8, 8, 8, 6, 6
+};
+
 ////////////////////////////////////////////////////
 //
 // TurokAI
@@ -64,10 +79,12 @@ class TurokAI : Component {
         uint i;
         int count = 0;
         array<int>rndArray;
+        array<int>animArray;
         
         for(i = 0; i < weights.length(); i++) {
             if(self.AnimState().CheckAnimID(anims[i])) {
                 rndArray.insertLast(randomSum);
+                animArray.insertLast(anims[i]);
                 randomSum += weights[i];
                 count++;
             }
@@ -85,7 +102,7 @@ class TurokAI : Component {
             }
         }
         
-        self.AnimState().Blend(anims[i], 4.0f, 8.0f, ANF_ROOTMOTION);
+        self.AnimState().Blend(animArray[i], 4.0f, 8.0f, ANF_ROOTMOTION);
     }
     
     //
@@ -131,6 +148,14 @@ class TurokAI : Component {
         if(CheckDropPickupFlags(pdf_health_small)) {
             DropPickup(x, y, z, "defs/actors.def@Item_Health_Small");
         }
+    }
+    
+    //
+    // TurokAI::swooshSound
+    //
+    
+    void swooshSound(const float a, const float b, const float c, const float d) {
+        self.StartSound("sounds/shaders/knife_swish_1.ksnd");
     }
     
     //
@@ -199,7 +224,7 @@ class TurokAI : Component {
                 break;
                 
             case AIS_ATTACK_MELEE:
-                self.AnimState().Blend(anim_aiMelee2, 4.0f, 8.0f, ANF_ROOTMOTION);
+                PickAnimSet(g_MeleeAnims, g_MeleeAnimWeights);
                 ai.bAnimTurning = false;
                 break;
                 

@@ -1,0 +1,72 @@
+////////////////////////////////////////////////////
+//
+// TurokFXEmitter
+//
+////////////////////////////////////////////////////
+
+class TurokFXEmitter : Component {
+    kActor @self;
+    kStr particle_fx;
+    bool bAutoStart;
+    
+    //
+    // TurokFXEmitter::TurokFXEmitter
+    //
+    
+    TurokFXEmitter(kActor @actor) {
+        @self = actor;
+        
+        self.bStatic = false;
+        self.bClientOnly = true;
+        self.bCollision = false;
+        self.bTouch = false;
+        
+        bAutoStart = false;
+    }
+    
+    //
+    // TurokFXEmitter::TurokFXEmitter
+    //
+    
+    ~TurokFXEmitter() {
+    }
+    
+    //
+    // TurokFXEmitter::OnThink
+    //
+    
+    void OnThink(void) {
+    }
+    
+    //
+    // TurokFXEmitter::OnLocalThink
+    //
+    
+    void OnLocalThink(void) {
+        self.SpawnFX(particle_fx, 0, 1.024f, 0);
+    }
+    
+    //
+    // TurokFXEmitter::OnSpawn
+    //
+    
+    void OnSpawn(void) {
+        self.args.GetString("particle_fx", particle_fx);
+        self.args.GetBool("bAutoStart", bAutoStart, false);
+    }
+    
+    //
+    // TurokFXEmitter::OnTouch
+    //
+    
+    bool OnTouch(kActor @instigator) {
+        return true;
+    }
+    
+    //
+    // TurokFXEmitter::OnTrigger
+    //
+    
+    void OnTrigger(void) {
+    }
+};

@@ -43,7 +43,7 @@ class TurokAIAnimal : TurokAI {
     // TurokAIAnimal::OnDeath
     //
     
-    void OnDeath(kActor@ killer, kKeyMapMem @damageDef) {
+    void OnDeath(kActor @killer, kKeyMapMem @damageDef) {
         if(ai.GetAIState() == AIS_DEATH) {
             return;
         }

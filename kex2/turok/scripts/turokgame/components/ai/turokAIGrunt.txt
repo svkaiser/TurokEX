@@ -24,6 +24,11 @@ class TurokAIGrunt : TurokAI {
         self.SpawnFX("fx/steppuff1.kfx", x, y, z);
     }
     
+    void fireWeapon(const float w, const float x, const float y, const float z) {
+        self.StartSound("sounds/shaders/generic_8_enemy_human_gunfire.ksnd");
+        ai.FireProjectile("fx/projectile_enemy_bullet.kfx", kVec3(x, y, z), DegToRad(45.0f), true);
+    }
+    
     void deathScream(const float a, const float b, const float c, const float d) {
         int rnd = Math::RandMax(100) % 3;
         switch(rnd) {

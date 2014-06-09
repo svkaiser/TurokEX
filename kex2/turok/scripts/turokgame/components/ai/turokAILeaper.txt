@@ -27,13 +27,6 @@ class TurokAILeaper : TurokAI {
     //
     
     void OnStateChange(int state) {
-        switch(state) {
-            case AIS_ATTACK_MELEE:
-                self.AnimState().Blend(anim_aiMelee1, 4.0f, 8.0f, ANF_ROOTMOTION);
-                ai.bAnimTurning = false;
-                return;
-        }
-        
         TurokAI::OnStateChange(state);
     }
     
