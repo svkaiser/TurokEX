@@ -212,18 +212,18 @@ void kexCanvasImage::Draw(kexMatrix &curMatrix, const float &curAlpha) {
     }
 
     mtx.Scale(scaleX, scaleY, 1);
-    mtx.SetTranslation(x - (regX * 0.5f), y - (regY * 0.5f), 0);
+    mtx.SetTranslation(x, y, 0);
 
     matrix = mtx * curMatrix;
     
-    min[0] = 0;
-    min[1] = 0;
-    max[0] = w;
-    max[1] = h;
+    min[0] = -regX * 0.5f;
+    min[1] = -regY * 0.5f;
+    max[0] = w - (regX * 0.5f);
+    max[1] = h - (regY * 0.5f);
 
     renderer.AddVertex(
-        0,
-        0,
+        min[0],
+        min[1],
         0,
         0,
         0,
@@ -232,8 +232,8 @@ void kexCanvasImage::Draw(kexMatrix &curMatrix, const float &curAlpha) {
         rgba[0 * 4 + 2],
         a[0]);
     renderer.AddVertex(
-        w,
-        0,
+        max[0],
+        min[1],
         0,
         1,
         0,
@@ -242,8 +242,8 @@ void kexCanvasImage::Draw(kexMatrix &curMatrix, const float &curAlpha) {
         rgba[1 * 4 + 2],
         a[1]);
     renderer.AddVertex(
-        0,
-        h,
+        min[0],
+        max[1],
         0,
         0,
         1,
@@ -252,8 +252,8 @@ void kexCanvasImage::Draw(kexMatrix &curMatrix, const float &curAlpha) {
         rgba[2 * 4 + 2],
         a[2]);
     renderer.AddVertex(
-        w,
-        h,
+        max[0],
+        max[1],
         0,
         1,
         1,
