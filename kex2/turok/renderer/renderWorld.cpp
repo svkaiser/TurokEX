@@ -53,10 +53,10 @@ kexRenderWorld renderWorld;
 //-----------------------------------------------------------------------------
 
 //
-// FCmd_ShowCollision
+// showclipmesh
 //
 
-static void FCmd_ShowCollision(void) {
+COMMAND(showclipmesh) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -66,10 +66,10 @@ static void FCmd_ShowCollision(void) {
 }
 
 //
-// FCmd_ShowGridBounds
+// showgridbounds
 //
 
-static void FCmd_ShowGridBounds(void) {
+COMMAND(showgridbounds) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -78,10 +78,10 @@ static void FCmd_ShowGridBounds(void) {
 }
 
 //
-// FCmd_ShowBoundingBox
+// showbbox
 //
 
-static void FCmd_ShowBoundingBox(void) {
+COMMAND(showbbox) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -90,10 +90,10 @@ static void FCmd_ShowBoundingBox(void) {
 }
 
 //
-// FCmd_ShowRadius
+// showradius
 //
 
-static void FCmd_ShowRadius(void) {
+COMMAND(showradius) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -102,10 +102,10 @@ static void FCmd_ShowRadius(void) {
 }
 
 //
-// FCmd_ShowOrigin
+// showorigin
 //
 
-static void FCmd_ShowOrigin(void) {
+COMMAND(showorigin) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -114,10 +114,10 @@ static void FCmd_ShowOrigin(void) {
 }
 
 //
-// FCmd_ShowRenderNodes
+// showrendernodes
 //
 
-static void FCmd_ShowRenderNodes(void) {
+COMMAND(showrendernodes) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -126,10 +126,10 @@ static void FCmd_ShowRenderNodes(void) {
 }
 
 //
-// FCmd_ShowCollisionMap
+// showcollision
 //
 
-static void FCmd_ShowCollisionMap(void) {
+COMMAND(showcollision) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -139,10 +139,10 @@ static void FCmd_ShowCollisionMap(void) {
 }
 
 //
-// FCmd_ShowWireframe
+// drawwireframe
 //
 
-static void FCmd_ShowWireFrame(void) {
+COMMAND(drawwireframe) {
     if(command.GetArgc() < 1)
         return;
 
@@ -152,10 +152,10 @@ static void FCmd_ShowWireFrame(void) {
 }
 
 //
-// FCmd_ShowAreaNode
+// showareanode
 //
 
-static void FCmd_ShowAreaNode(void) {
+COMMAND(showareanode) {
     if(command.GetArgc() < 2) {
         return;
     }
@@ -164,10 +164,10 @@ static void FCmd_ShowAreaNode(void) {
 }
 
 //
-// FCmd_PrintStats
+// statscene
 //
 
-static void FCmd_PrintStats(void) {
+COMMAND(statscene) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -176,10 +176,10 @@ static void FCmd_PrintStats(void) {
 }
 
 //
-// FCmd_RenderNodeStep
+// rendernodestep
 //
 
-static void FCmd_RenderNodeStep(void) {
+COMMAND(rendernodestep) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -217,24 +217,6 @@ kexRenderWorld::kexRenderWorld(void) {
     this->numDrawnFX        = 0;
     this->showAreaNode      = -1;
     this->renderNodeStep    = -1;
-}
-
-//
-// kexRenderWorld::Init
-//
-
-void kexRenderWorld::Init(void) {
-    command.Add("showclipmesh", FCmd_ShowCollision);
-    command.Add("showgridbounds", FCmd_ShowGridBounds);
-    command.Add("showbbox", FCmd_ShowBoundingBox);
-    command.Add("showradius", FCmd_ShowRadius);
-    command.Add("showorigin", FCmd_ShowOrigin);
-    command.Add("drawwireframe", FCmd_ShowWireFrame);
-    command.Add("showareanode", FCmd_ShowAreaNode);
-    command.Add("showrendernodes", FCmd_ShowRenderNodes);
-    command.Add("showcollision", FCmd_ShowCollisionMap);
-    command.Add("rendernodestep", FCmd_RenderNodeStep);
-    command.Add("statscene", FCmd_PrintStats);
 }
 
 //
@@ -388,6 +370,16 @@ void kexRenderWorld::RenderScene(void) {
 //-----------------------------------------------------------------------------
 
 //
+// kexRenderWorld::CameraRenderSky
+//
+
+const bool kexRenderWorld::CameraRenderSky(void) const {
+    kexSector *sector = world->Camera()->Sector();
+
+    return (sector && sector->area && (sector->area->Flags() & AAF_DRAWSKY));
+}
+
+//
 // kexRenderWorld::PreProcessLightScatter
 //
 
@@ -396,7 +388,13 @@ void kexRenderWorld::PreProcessLightScatter(void) {
     bool bSunOccluded;
 
     sunPosition = world->worldLightOrigin.ToVec3() * 32768.0f;
-    bSunOccluded = world->Camera()->Frustum().TestSphere(sunPosition, 8192.0f);
+
+    if(!CameraRenderSky()) {
+        bSunOccluded = false;
+    }
+    else {
+        bSunOccluded = world->Camera()->Frustum().TestSphere(sunPosition, 8192.0f);
+    }
     
     renderer.ToggleLightScatter(bSunOccluded);
 
@@ -1070,7 +1068,9 @@ void kexRenderWorld::DrawForegroundActors(void) {
 
     renderer.ClearSurfaceList(MSO_RESERVED, MSO_RESERVED+1);
 
-    DrawSun(false);
+    if(CameraRenderSky()) {
+        DrawSun(false);
+    }
 
     world->Camera()->ZFar() = zfar;
     dglClear(GL_DEPTH_BUFFER_BIT);

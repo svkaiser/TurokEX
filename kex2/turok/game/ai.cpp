@@ -34,10 +34,10 @@
 DECLARE_CLASS(kexAI, kexActor)
 
 //
-// FCmd_DebugAI
+// aidebug
 //
 
-static void FCmd_DebugAI(void) {
+COMMAND(aidebug) {
     traceInfo_t trace;
     kexSector *sector;
     kexVec3 start;
@@ -141,14 +141,6 @@ kexAI::kexAI(void) {
 //
 
 kexAI::~kexAI(void) {
-}
-
-//
-// kexAI::Init
-//
-
-void kexAI::Init(void) {
-    command.Add("aidebug", FCmd_DebugAI);
 }
 
 //

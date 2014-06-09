@@ -31,25 +31,77 @@
 #include "editorCommon.h"
 #endif
 
-static void FCmd_Stub(void);
-static void FCmd_List(void);
-static void FCmd_Exec(void);
-
 kexCommand command;
+
+//
+// kexCommandItem::kexCommandItem
+//
+
+kexCommandItem::kexCommandItem(const char *commandName, cmd_t commandFunc) {
+    Setup(commandName, commandFunc);
+}
+
+//
+// kexCommandItem::Setup
+//
+
+void kexCommandItem::Setup(const char *commandName, cmd_t commandFunc) {
+    this->name          = commandName;
+    this->function      = commandFunc;
+    this->next          = NULL;
+    this->bAllocated    = false;
+
+    command.RegisterCommand(this);
+}
+
+//
+// kexCommand::~kexCommand
+//
+
+kexCommand::~kexCommand(void) {
+    for(kexCommandItem *cmd = first; cmd;) {
+        kexCommandItem *free;
+
+        if(cmd->IsAllocated()) {
+            free = cmd;
+            cmd = free->GetNext();
+            delete free;
+        }
+        else {
+            cmd = cmd->GetNext();
+        }
+    }
+}
+
+//
+// kexCommand::RegisterCommand
+//
+
+void kexCommand::RegisterCommand(kexCommandItem *commandItem) {
+    if(first == NULL) {
+        first = commandItem;
+    }
+
+    if(next != NULL) {
+        next->SetNext(commandItem);
+    }
+
+    next = commandItem;
+}
 
 //
 // kexCommand::Run
 //
 
 bool kexCommand::Run(void) {
-    cmd_function_t *cmd;
+    kexCommandItem *cmd;
 
     if(!cmd_argc) {
         return false;
     }
 
-    for(cmd = cmd_functions; cmd; cmd = cmd->next) {
-        if(!kexStr::Compare(cmd_argv[0], cmd->name)) {
+    for(cmd = first; cmd; cmd = cmd->GetNext()) {
+        if(!kexStr::Compare(cmd_argv[0], cmd->GetName())) {
             if(cmd->function) {
                 cmd->function();
             }
@@ -213,26 +265,26 @@ bool kexCommand::AutoComplete(const char *partial) {
     bool ok = false;
     
     // check for exact match
-    for(cmd_function_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
-        if(!strcmp(partial, cmd->name)) {
+    for(kexCommandItem *cmd = first; cmd; cmd = cmd->GetNext()) {
+        if(!strcmp(partial, cmd->GetName())) {
             if(!ok) {
                 common.CPrintf(COLOR_CYAN, "\nCommands:\n");
                 ok = true;
             }
 
-            common.CPrintf(COLOR_GREEN, "%s\n", cmd->name);
+            common.CPrintf(COLOR_GREEN, "%s\n", cmd->GetName());
         }
     }
 
     // check for partial match
-    for(cmd_function_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
-        if(!strncmp(partial,cmd->name, len)) {
+    for(kexCommandItem *cmd = first; cmd; cmd = cmd->GetNext()) {
+        if(!strncmp(partial, cmd->GetName(), len)) {
             if(!ok) {
                 common.CPrintf(COLOR_CYAN, "\nCommands:\n");
                 ok = true;
             }
 
-            common.CPrintf(COLOR_GREEN, "%s\n", cmd->name);
+            common.CPrintf(COLOR_GREEN, "%s\n", cmd->GetName());
         }
     }
     
@@ -244,7 +296,7 @@ bool kexCommand::AutoComplete(const char *partial) {
 //
 
 bool kexCommand::Verify(const char *name) {
-    cmd_function_t *cmd;
+    kexCommandItem *cmd;
 
     // fail if the command is a variable name
     if(cvarManager.Get(name)) {
@@ -253,8 +305,8 @@ bool kexCommand::Verify(const char *name) {
     }
     
     // fail if the command already exists
-    for(cmd = cmd_functions; cmd; cmd = cmd->next) {
-        if(!strcmp(name, cmd->name)) {
+    for(cmd = first; cmd; cmd = cmd->GetNext()) {
+        if(!strcmp(name, cmd->GetName())) {
             common.Warning("Cmd_AddCommand: %s already defined\n", name);
             return false;
         }
@@ -268,64 +320,35 @@ bool kexCommand::Verify(const char *name) {
 //
 
 void kexCommand::Add(const char *name, cmd_t function) {
-	cmd_function_t *cmd;
+	kexCommandItem *cmd;
 	
-    if(!Verify(name))
+    if(!Verify(name)) {
         return;
+    }
 
-    cmd             = (cmd_function_t*)(Mem_Malloc(sizeof(cmd_function_t), hb_static));
-    cmd->name       = name;
-    cmd->function   = function;
-    cmd->next       = cmd_functions;
-    cmd_functions   = cmd;
+    cmd = new kexCommandItem(name, function);
+    cmd->bAllocated = true;
 }
 
 //
 // kexCommand::GetFunctions
 //
 
-cmd_function_t *kexCommand::GetFunctions(void) {
-    return cmd_functions;
+kexCommandItem *kexCommand::GetFunctions(void) {
+    return first;
 }
 
 //
-// kexCommand::Init
+// listcmds
 //
 
-void kexCommand::Init(void) {
-    cmd_functions = NULL;
-
-    Add("listcmds", FCmd_List);
-    Add("exec", FCmd_Exec);
-
-    common.Printf("Command System Initialized\n");
-}
-
-//
-// FCmd_List
-//
-
-static void FCmd_List(void) {
-    cmd_function_t *cmd;
+COMMAND(listcmds) {
+    kexCommandItem *cmd;
     int i = 0;
 
-    for(cmd = command.GetFunctions(); cmd; cmd = cmd->next, i++) {
-        common.CPrintf(COLOR_CYAN, "%s\n", cmd->name);
+    for(cmd = command.GetFunctions(); cmd; cmd = cmd->GetNext(), i++) {
+        common.CPrintf(COLOR_CYAN, "%s\n", cmd->GetName());
     }
     
     common.CPrintf(COLOR_GREEN, "%i commands\n", i);
-}
-
-//
-// FCmd_Exec
-//
-
-static void FCmd_Exec(void) {
-}
-
-//
-// FCmd_Stub
-//
-
-static void FCmd_Stub(void) {
 }

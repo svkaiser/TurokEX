@@ -50,10 +50,10 @@ kexHeapBlock hb_file("file", false, NULL, NULL);
 kexHeapBlock hb_object("object", false, NULL, NULL);
 
 //
-// FCmd_PrintHeapInfo
+// statheap
 //
 
-static void FCmd_PrintHeapInfo(void) {
+COMMAND(statheap) {
     kexHeap::bDrawHeapInfo ^= 1;
 }
 
@@ -125,15 +125,6 @@ kexHeapBlock *kexHeapBlock::operator[](int index) {
     kexHeap::currentHeapBlock = heapBlock;
 
     return heapBlock;
-}
-
-//
-// kexHeap::Init
-//
-
-void kexHeap::Init(void) {
-    command.Add("statheap", FCmd_PrintHeapInfo);
-    common.Printf("Heap Manager Initialized\n");
 }
 
 //

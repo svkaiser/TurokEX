@@ -43,10 +43,10 @@ kexCvar cvarServerOutWidth("sv_outwidth", CVF_INT|CVF_CONFIG, "0", "TODO");
 kexServer server;
 
 //
-// FCmd_LoadTestMap
+// map
 //
 
-static void FCmd_Map(void) {
+COMMAND(map) {
     int map;
 
     if(server.GetState() != SV_STATE_ACTIVE)
@@ -303,6 +303,4 @@ void kexServer::Init(void) {
     SetTime(0);
     SetRunTime(0);
     SetState(SV_STATE_UNAVAILABLE);
-
-    command.Add("map", FCmd_Map);
 }

@@ -53,10 +53,10 @@ GL_ARB_occlusion_query_Define();
 GL_EXT_texture_array_Define();
 
 //
-// FCmd_PrintStats
+// statglbackend
 //
 
-static void FCmd_PrintStats(void) {
+COMMAND(statglbackend) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -65,10 +65,10 @@ static void FCmd_PrintStats(void) {
 }
 
 //
-// FCmd_ScreenShot
+// screenshot
 //
 
-static void FCmd_ScreenShot(void) {
+COMMAND(screenshot) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -350,15 +350,9 @@ void kexRenderBackend::Init(void) {
         dglGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropic);
     }
 
-    renderer.Init();
-    kexRenderWorld::Init();
-
     bIsInit = true;
 
-    command.Add("statglbackend", FCmd_PrintStats);
-    command.Add("screenshot", FCmd_ScreenShot);
-
-    common.Printf("Renderer Initialized\n");
+    common.Printf("Backend Renderer Initialized\n");
 }
 
 //
@@ -428,6 +422,31 @@ void kexRenderBackend::SwapBuffers(void) {
 
     glState.numStateChanges = 0;
     glState.numTextureBinds = 0;
+}
+
+//
+// kexRenderBackend::ClearBuffer
+//
+
+void kexRenderBackend::ClearBuffer(const glClearBit_t bit) {
+    int clearBit = 0;
+    
+    if(bit == GLCB_ALL) {
+        clearBit = (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    }
+    else {
+        if(bit & GLCB_COLOR) {
+            clearBit |= GL_COLOR_BUFFER_BIT;
+        }
+        if(bit & GLCB_DEPTH) {
+            clearBit |= GL_DEPTH_BUFFER_BIT;
+        }
+        if(bit & GLCB_STENCIL) {
+            clearBit |= GL_STENCIL_BUFFER_BIT;
+        }
+    }
+    
+    dglClear(clearBit);
 }
 
 //
@@ -1039,7 +1058,7 @@ void kexRenderBackend::DrawLoadingScreen(const char *text) {
     rcolor c = 0xffffffff;
 
     dglClearColor(0, 0, 0, 1.0f);
-    dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    ClearBuffer();
 
     SetOrtho();
     consoleFont.DrawString(

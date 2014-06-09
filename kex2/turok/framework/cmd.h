@@ -28,22 +28,42 @@
 //
 typedef void (*cmd_t)(void);
 
-typedef struct cmd_function_s {
-	struct cmd_function_s   *next;
-	const char              *name;
-	cmd_t                   function;
-    void                    *object;
-} cmd_function_t;
+#define COMMAND(name)                                   \
+    static void FCmd_ ## name(void);                    \
+    kexCommandItem Cmd_ ## name(# name, FCmd_ ## name); \
+    static void FCmd_ ## name(void)
+
+class kexCommandItem {
+    friend class kexCommand;
+public:
+                        kexCommandItem(const char *commandName, cmd_t commandFunc);
+
+    kexCommandItem      *GetNext(void) { return next; }
+    void                SetNext(kexCommandItem *item) { next = item; }
+    const char          *GetName(void) const { return name; }
+    const bool          IsAllocated(void) const { return bAllocated; }
+
+private:
+    void                Setup(const char *commandName, cmd_t commandFunc);
+
+    const char          *name;
+    kexCommandItem      *next;
+    cmd_t               function;
+    bool                bAllocated;
+};
 
 class kexCommand {
+    friend class kexCommandItem;
 public:
+                        ~kexCommand(void);
+
     int                 GetArgc(void);
     char                *GetArgv(int argv);
     void                Execute(const char *buffer);
     bool                AutoComplete(const char *partial);
     void                Add(const char *name, cmd_t function);
-    void                Init(void);
-    cmd_function_t      *GetFunctions(void);
+    void                RegisterCommand(kexCommandItem *commandItem);
+    kexCommandItem      *GetFunctions(void);
     bool                Verify(const char *name);
 
 private:
@@ -53,9 +73,11 @@ private:
     void                ClearArgv(void);
     bool                Run(void);
 
-    cmd_function_t      *cmd_functions;
     int                 cmd_argc;
     char                cmd_argv[CMD_MAX_ARGV][CMD_BUFFER_LEN];
+
+    kexCommandItem      *first;
+    kexCommandItem      *next;
 };
 
 extern kexCommand command;

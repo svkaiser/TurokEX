@@ -319,10 +319,10 @@ void kexClient::InitObject(void) {
 }
 
 //
-// FCmd_Ping
+// ping
 //
 
-static void FCmd_Ping(void) {
+COMMAND(ping) {
     ENetPacket *packet;
 
     if(!(packet = packetManager.Create())) {
@@ -334,10 +334,10 @@ static void FCmd_Ping(void) {
 }
 
 //
-// FCmd_Say
+// say
 //
 
-static void FCmd_Say(void) {
+COMMAND(say) {
     ENetPacket *packet;
 
     if(command.GetArgc() < 2) {
@@ -354,10 +354,10 @@ static void FCmd_Say(void) {
 }
 
 //
-// FCmd_MsgServer
+// msgserver
 //
 
-static void FCmd_MsgServer(void) {
+COMMAND(msgserver) {
     if(command.GetArgc() < 2) {
         return;
     }
@@ -382,10 +382,6 @@ void kexClient::Init(void) {
     SetTicks(0);
     SetPeer(NULL);
     SetState(CL_STATE_UNINITIALIZED);
-
-    command.Add("ping", FCmd_Ping);
-    command.Add("say", FCmd_Say);
-    command.Add("msgserver", FCmd_MsgServer);
 
     common.Printf("Client Initialized\n");
 }

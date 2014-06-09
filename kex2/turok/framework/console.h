@@ -56,7 +56,6 @@ public:
     bool                ProcessInput(const event_t *ev);
     void                Tick(void);
     void                Draw(void);
-    void                Init(void);
     
     void                SetInputText(const char *string) { strcpy(typeStr, string); }
     void                ResetInputText(void) { typeStr[0] = '\0'; typeStrPos = 0; }

@@ -59,10 +59,10 @@ kexSystem sysMain;
 static char buffer[4096];
 
 //
-// FCmd_ShowWinConsole
+// showinternalconsole
 //
 
-static void FCmd_ShowWinConsole(void) {
+COMMAND(showinternalconsole) {
     if(command.GetArgc() < 1) {
         common.Printf("1 = show, 0 = hide");
         return;
@@ -72,10 +72,10 @@ static void FCmd_ShowWinConsole(void) {
 }
 
 //
-// FCmd_Quit
+// quit
 //
 
-static void FCmd_Quit(void) {
+COMMAND(quit) {
     sysMain.Shutdown();
 }
 
@@ -224,8 +224,6 @@ void kexSystem::Init(void) {
     }
     
     SDL_ShowCursor(0);
-
-    command.Add("showconsole", FCmd_ShowWinConsole);
     common.Printf("SDL Initialized\n");
 }
 
@@ -645,11 +643,8 @@ void kexSystem::Main(int argc, char **argv) {
 
     Init();
 
-    command.Init();
-    kexHeap::Init();
     cvarManager.Init();
     kexObject::Init();
-    console.Init();
     inputSystem.Init();
     inputKey.Init();
     fileSystem.Init();
@@ -657,7 +652,6 @@ void kexSystem::Main(int argc, char **argv) {
     server.Init();
     client.Init();
 
-    command.Add("quit", FCmd_Quit);
     cvarManager.InitCustomCvars();
 
     gameManager.InitGame();
@@ -669,6 +663,7 @@ void kexSystem::Main(int argc, char **argv) {
     InitVideo();
 
     renderBackend.Init();
+    renderer.Init();
     fxManager.Init();
     guiManager.Init();
 

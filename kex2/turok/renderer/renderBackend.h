@@ -82,6 +82,13 @@ typedef enum {
     GLDST_ONE_MINUS_DST_ALPHA,
 } glDstBlend_t;
 
+typedef enum {
+    GLCB_COLOR      = BIT(0),
+    GLCB_DEPTH      = BIT(1),
+    GLCB_STENCIL    = BIT(2),
+    GLCB_ALL        = (GLCB_COLOR|GLCB_DEPTH|GLCB_STENCIL)
+} glClearBit_t;
+
 #include "textureObject.h"
 #include "shaderProg.h"
 #include "material.h"
@@ -101,6 +108,7 @@ public:
     void                            SetDefaultState(void);
     void                            SetOrtho(void);
     void                            SwapBuffers(void);
+    void                            ClearBuffer(const glClearBit_t bit = GLCB_ALL);
     void                            SetState(const int bits, bool bEnable);
     void                            SetState(unsigned int flags);
     void                            SetAlphaFunc(int func, float val);

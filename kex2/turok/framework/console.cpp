@@ -40,10 +40,10 @@ kexCvar cvarStickyKeySpeed("con_stickySpeed", CVF_BOOL|CVF_CONFIG, "500", "TODO"
 kexConsole console;
 
 //
-// FCmd_ClearConsole
+// clear
 //
 
-static void FCmd_ClearConsole(void) {
+COMMAND(clear) {
     console.Clear();
 }
 
@@ -497,15 +497,6 @@ void kexConsole::Tick(void) {
 
     StickyKeyTick();
     UpdateBlink();
-}
-
-//
-// kexConsole::Init
-//
-
-void kexConsole::Init(void) {
-    command.Add("clear", FCmd_ClearConsole);
-    common.Printf("Console Initialized\n");
 }
 
 //

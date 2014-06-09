@@ -120,7 +120,6 @@ public:
     const float                 YawSpeed(void) const { return yawSpeed; }
 
     static void                 InitObject(void);
-    static void                 Init(void);
     static void                 PrintDebugInfo(void);
 
     static kexAI                *debugAI;

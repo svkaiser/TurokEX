@@ -70,7 +70,6 @@ public:
     static void             Touch(void *ptr, const char *file, int line);
     static int              Usage(const kexHeapBlock &heapBlock);
     static void             SetCacheRef(void **ptr, const char *file, int line);
-    static void             Init(void);
     static void             DrawHeapInfo(void);
 
     static int              numHeapBlocks;

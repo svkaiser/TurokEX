@@ -53,10 +53,10 @@ kexCvar cvarRenderNoSortMaterials("r_nosortmaterials", CVF_BOOL, "0", "TODO");
 kexRenderer renderer;
 
 //
-// FCmd_PrintStats
+// statrenderer
 //
 
-static void FCmd_PrintStats(void) {
+COMMAND(statrenderer) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -122,7 +122,7 @@ void kexRenderer::Init(void) {
 
     renderWorld.InitSunData();
 
-    command.Add("statrenderer", FCmd_PrintStats);
+    common.Printf("Renderer Initialized\n");
 }
 
 //
@@ -130,8 +130,7 @@ void kexRenderer::Init(void) {
 //
 
 void kexRenderer::Draw(void) {
-    dglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
+    renderBackend.ClearBuffer();
     renderWorld.RenderScene();
     renderBackend.SetOrtho();
 
@@ -151,8 +150,9 @@ void kexRenderer::Draw(void) {
     renderBackend.Canvas().Draw();
     gameManager.MenuCanvas().Draw();
     guiManager.DrawGuis();
+    
     console.Draw();
-
+    
     DrawStats();
     
     // finish frame
@@ -264,35 +264,11 @@ void kexRenderer::DrawElements(const kexMaterial *material, const bool bClearCou
     shader->Enable();
     shader->CommitGlobalUniforms(material);
     
-    renderBackend.SetState(material->StateBits());
-    renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
-    renderBackend.SetCull(material->CullType());
-    renderBackend.SetDepthMask(material->DepthMask());
+    material->SetRenderState();
+    
     renderBackend.SetPolyMode(GLPOLY_FILL);
     
-    for(unsigned int i = 0; i < material->NumUnits(); i++) {
-        matSampler_t *sampler = ((kexMaterial*)material)->Sampler(i);
-        
-        renderBackend.SetTextureUnit(sampler->unit);
-        
-        if(sampler->texture == NULL) {
-            renderBackend.defaultTexture.Bind();
-        }
-        else {
-            if(sampler->texture == renderBackend.frameBuffer) {
-                sampler->texture->BindFrameBuffer();
-            }
-            else if(sampler->texture == renderBackend.depthBuffer) {
-                sampler->texture->BindDepthBuffer();
-            }
-            else {
-                sampler->texture->Bind();
-            }
-            sampler->texture->ChangeParameters(sampler->clamp, sampler->filter);
-        }
-    }
-    
-    renderBackend.SetTextureUnit(0);
+    material->BindImages();
     
     BindDrawPointers();
     dglDrawElements(GL_TRIANGLES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
@@ -529,35 +505,10 @@ void kexRenderer::DrawSurface(const drawSurface_t *drawSurf, kexMaterial *materi
         shader->SetGlobalUniform(RSP_GENERIC_PARAM4, drawSurf->refObj->ShaderParams()[3]);
     }
     
-    renderBackend.SetState(material->StateBits());
-    renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
-    renderBackend.SetCull(material->CullType());
-    renderBackend.SetDepthMask(material->DepthMask());
+    material->SetRenderState();
     renderBackend.SetPolyMode(GLPOLY_FILL);
     
-    for(unsigned int i = 0; i < material->NumUnits(); i++) {
-        matSampler_t *sampler = material->Sampler(i);
-        
-        renderBackend.SetTextureUnit(sampler->unit);
-        
-        if(sampler->texture == NULL) {
-            renderBackend.defaultTexture.Bind();
-        }
-        else {
-            if(sampler->texture == renderBackend.frameBuffer) {
-                sampler->texture->BindFrameBuffer();
-            }
-            else if(sampler->texture == renderBackend.depthBuffer) {
-                sampler->texture->BindDepthBuffer();
-            }
-            else {
-                sampler->texture->Bind();
-            }
-            sampler->texture->ChangeParameters(sampler->clamp, sampler->filter);
-        }
-    }
-    
-    renderBackend.SetTextureUnit(0);
+    material->BindImages();
 
     if(currentSurface != surface) {
         dglNormalPointer(GL_FLOAT, sizeof(float)*3, surface->normals);
@@ -599,27 +550,10 @@ void kexRenderer::DrawWireFrameSurface(const drawSurface_t *drawSurf, kexMateria
         shader->SetGlobalUniform(RSP_GENERIC_PARAM4, drawSurf->refObj->ShaderParams()[3]);
     }
     
-    renderBackend.SetState(material->StateBits());
-    renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
-    renderBackend.SetCull(material->CullType());
-    renderBackend.SetDepthMask(material->DepthMask());
+    material->SetRenderState();
     renderBackend.SetPolyMode(GLPOLY_LINE);
     
-    for(unsigned int i = 0; i < material->NumUnits(); i++) {
-        matSampler_t *sampler = material->Sampler(i);
-        
-        renderBackend.SetTextureUnit(sampler->unit);
-        
-        if(sampler->texture == NULL) {
-            renderBackend.defaultTexture.Bind();
-        }
-        else {
-            sampler->texture->Bind();
-            sampler->texture->ChangeParameters(sampler->clamp, sampler->filter);
-        }
-    }
-    
-    renderBackend.SetTextureUnit(0);
+    material->BindImages();
 
     if(currentSurface != surface) {
         dglNormalPointer(GL_FLOAT, sizeof(float)*3, surface->normals);
@@ -667,27 +601,10 @@ void kexRenderer::DrawBlackSurface(const drawSurface_t *drawSurf, kexMaterial *m
         shader->SetGlobalUniform(RSP_GENERIC_PARAM4, drawSurf->refObj->ShaderParams()[3]);
     }
     
-    renderBackend.SetState(material->StateBits());
-    renderBackend.SetAlphaFunc(material->AlphaFunction(), material->AlphaMask());
-    renderBackend.SetCull(material->CullType());
-    renderBackend.SetDepthMask(material->DepthMask());
+    material->SetRenderState();
     renderBackend.SetPolyMode(GLPOLY_FILL);
     
-    for(unsigned int i = 0; i < material->NumUnits(); i++) {
-        matSampler_t *sampler = material->Sampler(i);
-        
-        renderBackend.SetTextureUnit(sampler->unit);
-        
-        if(sampler->texture == NULL) {
-            renderBackend.defaultTexture.Bind();
-        }
-        else {
-            sampler->texture->Bind();
-            sampler->texture->ChangeParameters(sampler->clamp, sampler->filter);
-        }
-    }
-    
-    renderBackend.SetTextureUnit(0);
+    material->BindImages();
     
     
     if(currentSurface != surface) {

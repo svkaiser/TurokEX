@@ -47,20 +47,20 @@ kexSoundSystem soundSystem;
 kexHeapBlock kexSoundSystem::hb_sound("sound", false, NULL, NULL);
 
 //
-// FCmd_SoundInfo
+// printsoundinfo
 //
 
-static void FCmd_SoundInfo(void) {
+COMMAND(printsoundinfo) {
     common.CPrintf(COLOR_CYAN, "------------- Sound Info -------------\n");
     common.CPrintf(COLOR_GREEN, "Device: %s\n", soundSystem.GetDeviceName());
     common.CPrintf(COLOR_GREEN, "Available Sources: %i\n", soundSystem.GetNumActiveSources());
 }
 
 //
-// FCmd_LoadShader
+// playsoundshader
 //
 
-static void FCmd_LoadShader(void) {
+COMMAND(playsoundshader) {
     if(command.GetArgc() < 2) {
         return;
     }
@@ -69,10 +69,10 @@ static void FCmd_LoadShader(void) {
 }
 
 //
-// FCmd_StopSounds
+// stopsounds
 //
 
-static void FCmd_StopSounds(void) {
+COMMAND(stopsounds) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -475,10 +475,6 @@ void kexSoundSystem::Init(void) {
 
     kexSoundSystem::mutex = SDL_CreateMutex();
     kexSoundSystem::thread = SDL_CreateThread(kexSoundSystem::Thread, "SoundThread", NULL);
-
-    command.Add("printsoundinfo", FCmd_SoundInfo);
-    command.Add("playsoundshader", FCmd_LoadShader);
-    command.Add("stopsounds", FCmd_StopSounds);
 
     common.Printf("Sound System Initialized (%s)\n", GetDeviceName());
 }

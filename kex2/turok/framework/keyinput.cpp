@@ -120,10 +120,10 @@ static void FCmd_KeyAction(void) {
 }
 
 //
-// FCmd_Bind
+// bind
 //
 
-static void FCmd_Bind(void) {
+COMMAND(bind) {
     int argc;
     int key;
     int i;
@@ -153,17 +153,17 @@ static void FCmd_Bind(void) {
 }
 
 //
-// FCmd_UnBind
+// unbind
 //
 
-static void FCmd_UnBind(void) {
+COMMAND(unbind) {
 }
 
 //
-// FCmd_ListBinds
+// listbinds
 //
 
-static void FCmd_ListBinds(void) {
+COMMAND(listbinds) {
     inputKey.ListBindings();
 }
 
@@ -599,10 +599,6 @@ void kexInputKey::Init(void) {
     for(int c = 'a'; c <= 'z'; c++) {
         keycode[1][c] = toupper(c);
     }
-
-    command.Add("bind", FCmd_Bind);
-    command.Add("unbind", FCmd_UnBind);
-    command.Add("listbinds", FCmd_ListBinds);
 
     common.Printf("Key System Initialized\n");
 }

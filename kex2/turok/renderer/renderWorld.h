@@ -41,7 +41,6 @@ public:
     void                        PrintStats(void);
     void                        InitSunData(void);
 
-    static void                 Init(void);
     static int                  SortSprites(const void *a, const void *b);
 
     bool                        bShowBBox;
@@ -64,6 +63,7 @@ public:
     kexVec3                     &ProjectedSunCoords(void) { return projectedSunCoords; }
 
 private:
+    const bool                  CameraRenderSky(void) const;
     void                        PreProcessLightScatter(void);
     void                        PreProcessOcclusionQueries(void);
     void                        DrawSun(const bool bForceInfiniteProjection);

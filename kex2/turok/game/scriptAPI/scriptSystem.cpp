@@ -41,10 +41,10 @@ kexScriptManager scriptManager;
 static kexHeapBlock hb_script("script", false, NULL, NULL);
 
 //
-// FCmd_Call
+// call
 //
 
-static void FCmd_Call(void) {
+COMMAND(call) {
     if(command.GetArgc() < 2) {
         common.Printf("Usage: call <\"function name\">\n");
         return;
@@ -53,10 +53,10 @@ static void FCmd_Call(void) {
 }
 
 //
-// FCmd_CallFile
+// callfile
 //
 
-static void FCmd_CallFile(void) {
+COMMAND(callfile) {
     if(command.GetArgc() < 3) {
         common.Printf("Usage: callfile <\"file name\"> <\"function name\">\n");
         return;
@@ -66,19 +66,19 @@ static void FCmd_CallFile(void) {
 }
 
 //
-// FCmd_MemUsage
+// scriptmem
 //
 
-static void FCmd_MemUsage(void) {
+COMMAND(scriptmem) {
     common.CPrintf(RGBA(0, 255, 255, 255), "Script Memory Usage:\n");
     common.CPrintf(COLOR_YELLOW, "%ikb\n", kexHeap::Usage(hb_script) >> 10);
 }
 
 //
-// FCmd_DrawGCStats
+// statscripts
 //
 
-static void FCmd_DrawGCStats(void) {
+COMMAND(statscripts) {
     scriptManager.bDrawGCStats ^= 1;
 }
 
@@ -199,10 +199,6 @@ void kexScriptManager::Init(void) {
         }
     }
 
-    command.Add("call", FCmd_Call);
-    command.Add("callfile", FCmd_CallFile);
-    command.Add("statscripts", FCmd_DrawGCStats);
-    command.Add("scriptMem", FCmd_MemUsage);
     common.Printf("Script System Initialized\n");
 }
 

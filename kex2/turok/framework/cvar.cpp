@@ -34,10 +34,10 @@
 kexCvarManager cvarManager;
 
 //
-// FCmd_ListVars
+// listvars
 //
 
-static void FCmd_ListVars(void) {
+COMMAND(listvars) {
     kexCvar *var;
 
     common.CPrintf(COLOR_GREEN, "Available cvars:\n");
@@ -48,10 +48,10 @@ static void FCmd_ListVars(void) {
 }
 
 //
-// FCmd_Seta
+// seta
 //
 
-static void FCmd_Seta(void) {
+COMMAND(seta) {
     if(command.GetArgc() < 2) {
         return;
     }
@@ -277,9 +277,6 @@ void kexCvarManager::InitCustomCvars(void) {
 //
 
 void kexCvarManager::Init(void) {
-    command.Add("listvars", FCmd_ListVars);
-    command.Add("seta", FCmd_Seta);
-
 #ifndef EDITOR
     int p;
 

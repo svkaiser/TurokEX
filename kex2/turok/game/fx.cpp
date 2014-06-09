@@ -36,10 +36,10 @@
 #include "defs.h"
 
 //
-// FCmd_SpawnFX
+// spawnfx
 //
 
-static void FCmd_SpawnFX(void) {
+COMMAND(spawnfx) {
     kexCamera *camera = localWorld.Camera();
     kexVec3 forward = camera->GetAngles().ToForwardAxis();
     kexVec3 org = camera->GetOrigin() + (forward * 16.384f);
@@ -686,8 +686,6 @@ kexFxManager::~kexFxManager(void) {
 //
 
 void kexFxManager::Init(void) {
-    command.Add("spawnfx", FCmd_SpawnFX);
-
     if(sysMain.CheckParam("-nofxcache") == 0) {
         // precache all particle textures
         kexStrList fxList;
