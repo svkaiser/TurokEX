@@ -122,6 +122,7 @@ DECLARE_CLASS(kexPlayerPuppet, kexActor)
 kexPlayerPuppet::kexPlayerPuppet(void) {
     this->bCollision = true;
     this->id = 0;
+    this->impactType = IT_FLESH_HUMAN; // TODO: TEMP
 }
 
 //
