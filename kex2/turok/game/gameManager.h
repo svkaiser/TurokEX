@@ -65,9 +65,24 @@ public:
     void                    NotifyMapChange(ENetEvent *sev, const int mapID);
     void                    ClientRequestMapChange(const int mapID);
     void                    PrintDebugStats(void);
+    
+    // screen wipe functions
+    typedef void            wipecallback_t(void*);
+    void                    SetWipeMaterial(const char *material);
+    void                    StartWipe(wipecallback_t *callback, void *callbackData);
+    void                    DrawWipe(void);
 
     kexKeyMap               *GameDef(void) { return gameDef; }
     kexCanvas               &MenuCanvas(void) { return menuCanvas; }
+    
+    // screen wipe getters
+    const float             WipeTime(void) const { return wipeTime; }
+    const float             CurrentWipeTime(void) const { return curWipeTime; }
+    const bool              InWipe(void) const { return bInWipe; }
+    kexMaterial             *WipeMaterial(void) { return wipeMaterial; }
+
+    const bool              IsPaused(void) const { return bPaused; }
+    void                    TogglePause(const bool bToggle) { bPaused = bToggle; }
 
     static void             Init(void);
     static void             InitObject(void);
@@ -91,8 +106,18 @@ private:
 
     kexKeyMap               *gameDef;
     kexCanvas               menuCanvas;
+    
+    // screen wipe variables
+    float                   wipeTime;
+    float                   curWipeTime;
+    kexMaterial             *wipeMaterial;
+    bool                    bInWipe;
+    wipecallback_t          *wipeCallback;
+    void                    *wipeCallbackData;
 
     int                     gameTimeMS;
+
+    bool                    bPaused;
 };
 
 extern kexGameManager       gameManager;

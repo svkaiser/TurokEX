@@ -28,6 +28,7 @@
 #include "client.h"
 #include "memHeap.h"
 #include "fileSystem.h"
+#include "gameManager.h"
 #include "renderBackend.h"
 #include "renderMain.h"
 #include "renderUtils.h"
@@ -41,10 +42,10 @@ using namespace tinyxml2;
 kexGuiManager guiManager;
 
 //
-// FCmd_DebugGuiButtons
+// debugguibuttons
 //
 
-static void FCmd_DebugGuiButtons(void) {
+COMMAND(debugguibuttons) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -78,7 +79,6 @@ kexGuiManager::~kexGuiManager(void) {
 
 void kexGuiManager::Init(void) {
     cursorMaterial = renderBackend.CacheMaterial("gui/cursor.kmat@cursor");
-    command.Add("debugguibuttons", FCmd_DebugGuiButtons);
     
     kexStrList list;
     fileSystem.GetMatchingFiles(list, "gui/");
@@ -345,6 +345,12 @@ void kexGuiManager::ParseImage(XMLNode *node, kexGui *gui, kexContainer *contain
                     else if(!kexStr::Compare(pnode->Value(), "height")) {
                         canvasImage->height = kexStr(pnode->ToElement()->GetText()).Atof();
                     }
+                    else if(!kexStr::Compare(pnode->Value(), "center")) {
+                        if(!kexStr::CompareCase(pnode->ToElement()->GetText(), "true")) {
+                            canvasImage->regX = canvasImage->texture->OriginalWidth() * 0.5f;
+                            canvasImage->regY = canvasImage->texture->OriginalHeight() * 0.5f;
+                        }
+                    }
 
                     ParseColor(pnode, canvasImage->rgba);
                 }
@@ -527,12 +533,12 @@ void kexGuiManager::ParseSlider(XMLNode *node, kexGui *gui, kexContainer *contai
         }
         
         if(slider->barImage && slider->sliderImage) {
-            slider->barImage->regX = (float)slider->barImage->texture->Width() * 0.5f;
-            slider->barImage->regY = (float)slider->barImage->texture->Height() * 0.5f;
-            slider->sliderImage->regX = (float)slider->sliderImage->texture->Width() * 0.5f;
-            slider->sliderImage->regY = (float)slider->sliderImage->texture->Height() * 0.5f;
+            slider->barImage->regX = (float)slider->barImage->texture->OriginalWidth() * 0.5f;
+            slider->barImage->regY = (float)slider->barImage->texture->OriginalHeight() * 0.5f;
+            slider->sliderImage->regX = (float)slider->sliderImage->texture->OriginalWidth() * 0.5f;
+            slider->sliderImage->regY = (float)slider->sliderImage->texture->OriginalHeight() * 0.5f;
             
-            slider->barWidth = (float)slider->barImage->texture->Width();
+            slider->barWidth = (float)slider->barImage->texture->OriginalWidth();
             slider->position = 0.5f;
         }
         
@@ -572,6 +578,9 @@ void kexGuiManager::ParseButtonEvent(XMLNode *node, kexGui *gui,
                     }
                     else if(!kexStr::Compare(attrib->Value(), "callcommand")) {
                         guiEvent.action = GAT_CALLCOMMAND;
+                    }
+                    else if(!kexStr::Compare(attrib->Value(), "callfunction")) {
+                        guiEvent.action = GAT_CALLFUNCTION;
                     }
                 }
             }
@@ -615,6 +624,7 @@ void kexGuiManager::ClearGuis(const float fadeSpeed) {
 
         obj->FadeOut(fadeSpeed);
         obj->childGui = NULL;
+        obj->parentGui = NULL;
     }
 }
 
@@ -650,6 +660,7 @@ void kexGuiManager::UpdateGuis(void) {
                 if(obj->childGui) {
                     obj->childGui->status = GUIS_READY;
                     obj->childGui = NULL;
+                    obj->parentGui = NULL;
                 }
             }
         }
@@ -777,6 +788,7 @@ kexGui::kexGui(void) {
     this->status = GUIS_DISABLED;
     this->fadeSpeed = 1.0f;
     this->canvas.alpha = 0;
+    this->parentGui = NULL;
     this->childGui = NULL;
     this->name = (kexStr("gui_") + sysMain.GetMS()).c_str();
     this->link.SetData(this);
@@ -901,6 +913,10 @@ void kexGui::ExecuteEvent(guiEvent_t *event) {
         case GAT_CALLCOMMAND:
             CallCommand(event);
             break;
+
+        case GAT_CALLFUNCTION:
+            CallFunction(event);
+            break;
             
         default:
             break;
@@ -918,8 +934,25 @@ void kexGui::ChangeGuis(guiEvent_t *guiEvent) {
     
     guiEvent->args.GetString("gui", guiName);
     guiEvent->args.GetFloat("fadeSpeed", speed);
+
+    nextGui = NULL;
     
-    nextGui = guiManager.FindGuiByName(guiName.c_str());
+    if(!kexStr::Compare(guiName.c_str(), "*previous")) {
+        nextGui = guiManager.previousGui;
+    }
+    else if(!kexStr::Compare(guiName.c_str(), "*child")) {
+        nextGui = childGui;
+    }
+    else if(!kexStr::Compare(guiName.c_str(), "*parent")) {
+        nextGui = parentGui;
+    }
+    else if(!kexStr::Compare(guiName.c_str(), "*none")) {
+        guiManager.ClearGuis(speed);
+        return;
+    }
+    else {
+        nextGui = guiManager.FindGuiByName(guiName.c_str());
+    }
     
     if(nextGui == NULL) {
         return;
@@ -927,10 +960,12 @@ void kexGui::ChangeGuis(guiEvent_t *guiEvent) {
     
     if(guiEvent->action == GAT_POPGUI) {
         status = GUIS_NOTFOCUSED;
+        parentGui = nextGui;
         nextGui->childGui = this;
     }
     else {
         FadeOut(speed);
+        guiManager.previousGui = this;
     }
 
     if(nextGui->status != GUIS_NOTFOCUSED) {
@@ -947,6 +982,29 @@ void kexGui::CallCommand(guiEvent_t *event) {
     
     event->args.GetString("command", cmd);
     command.Execute(cmd.c_str());
+}
+
+//
+// kexGui::CallFunction
+//
+
+void kexGui::CallFunction(guiEvent_t *event) {
+    kexStr function;
+    int state;
+
+    event->args.GetString("function", function);
+
+    state = gameManager.PrepareFunction(function.c_str());
+
+    if(state == -1) {
+        return;
+    }
+
+    if(!gameManager.ExecuteFunction(state)) {
+        return;
+    }
+
+    gameManager.FinishFunction(state);
 }
 
 //

@@ -44,10 +44,10 @@
 kexGameManager gameManager;
 
 //
-// FCmd_PrintStats
+// statgame
 //
 
-static void FCmd_PrintStats(void) {
+COMMAND(statgame) {
     if(command.GetArgc() < 1) {
         return;
     }
@@ -56,16 +56,28 @@ static void FCmd_PrintStats(void) {
 }
 
 //
-// FCmd_StartGame
+// startgame
 //
 
-static void FCmd_StartGame(void) {
+COMMAND(startgame) {
     if(command.GetArgc() < 2) {
         common.Printf("usage: startgame <map>\n");
         return;
     }
 
     gameManager.StartGame(command.GetArgv(1));
+}
+
+//
+// pausegame
+//
+
+COMMAND(pausegame) {
+    if(command.GetArgc() < 1) {
+        return;
+    }
+
+    gameManager.TogglePause(gameManager.IsPaused() ^ 1);
 }
 
 //
@@ -80,6 +92,10 @@ kexGameManager::kexGameManager(void) {
     this->gameDef       = NULL;
     this->bPrintStats   = false;
     this->gameTimeMS    = 0;
+    this->wipeTime      = 0.35f;
+    this->wipeMaterial  = NULL;
+    this->bInWipe       = false;
+    this->wipeCallback  = NULL;
 }
 
 //
@@ -165,6 +181,22 @@ void kexGameManager::InitObject(void) {
                                                  asMETHODPR(kexGameManager,
                                                             ClearGuis,
                                                             (const float fadeSpeed),
+                                                            void),
+                                                 asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod("kGame",
+                                                 "const bool IsPaused(void) const",
+                                                 asMETHODPR(kexGameManager,
+                                                            IsPaused,
+                                                            (void) const,
+                                                            const bool),
+                                                 asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod("kGame",
+                                                 "void TogglePause(const bool)",
+                                                 asMETHODPR(kexGameManager,
+                                                            TogglePause,
+                                                            (const bool bToggle),
                                                             void),
                                                  asCALL_THISCALL);
     
@@ -264,10 +296,6 @@ void kexGameManager::InitGame(void) {
     }
 
     Construct(gameClass.c_str());
-
-    kexAI::Init();
-    command.Add("statgame", FCmd_PrintStats);
-    command.Add("startgame", FCmd_StartGame);
 }
 
 //
@@ -398,19 +426,22 @@ void kexGameManager::OnLocalTick(void) {
     }
 
     guiManager.UpdateGuis();
-
-    // prep and send input information to server
-    localPlayer.BuildCommands();
     
     if(bPrintStats) {
         gameTimeMS = sysMain.GetMS();
     }
 
-    // run tick
-    localPlayer.LocalTick();
-    console.Tick();
-    localWorld.LocalTick();
+    if(!bPaused) {
+        // prep and send input information to server
+        localPlayer.BuildCommands();
 
+        // run tick
+        localPlayer.LocalTick();
+        localWorld.LocalTick();
+    }
+
+    console.Tick();
+    
     if(bPrintStats) {
         gameTimeMS = sysMain.GetMS() - gameTimeMS;
     }
@@ -422,6 +453,71 @@ void kexGameManager::OnLocalTick(void) {
     
     // update all sound sources
     soundSystem.UpdateListener();
+}
+
+//
+// kexGameManager::SetWipeMaterial
+//
+
+void kexGameManager::SetWipeMaterial(const char *material) {
+    wipeMaterial = renderBackend.CacheMaterial(material);
+}
+
+//
+// kexGameManager::StartWipe
+//
+
+void kexGameManager::StartWipe(wipecallback_t *callback, void *callbackData) {
+    bInWipe = true;
+    curWipeTime = sysMain.GetMS() + (wipeTime * 1000.0f);
+    wipeCallback = callback;
+    wipeCallbackData = callbackData;
+}
+
+//
+// kexGameManager::DrawWipe
+//
+
+void kexGameManager::DrawWipe(void) {
+    kexMaterial *material = wipeMaterial;
+    
+    if(!bInWipe || !material || wipeTime <= 0) {
+        return;
+    }
+    
+    kexShaderObj *wipeShader = material->ShaderObj();
+    
+    if(!wipeShader) {
+        return;
+    }
+    
+    wipeShader->Enable();
+    wipeShader->CommitGlobalUniforms(material);
+    wipeShader->SetUniform("uWipeTime", wipeTime);
+    
+    material->SetRenderState();
+    material->BindImages();
+    
+    renderBackend.SetOrtho();
+    
+    float clampedTime = 1.0f;
+    
+    while(clampedTime > 0) {
+        renderBackend.ClearBuffer();
+        
+        clampedTime = (curWipeTime - (float)sysMain.GetMS()) / (wipeTime * 1000.0f);
+        kexMath::Clamp(clampedTime, 0.0f, 1.0f);
+        
+        wipeShader->SetUniform("uCurrentWipeTime", clampedTime);
+        renderer.DrawScreenQuad();
+        
+        renderBackend.SwapBuffers();
+    }
+    
+    bInWipe = false;
+    if(wipeCallback) {
+        wipeCallback(wipeCallbackData);
+    }
 }
 
 //
@@ -582,6 +678,10 @@ void kexGameManager::PrepareMapChange(const ENetPacket *packet) {
         inputSystem.DeactivateMouse();
     }
     
+    SetWipeMaterial("materials/screenwipe.kmat@fadeout");
+    StartWipe(NULL, NULL);
+    DrawWipe();
+    
     localWorld.Unload();
     if(!localWorld.Load(kva("maps/map%02d/map%02d", mapID, mapID))) {
         client.SetState(CL_STATE_READY);
@@ -607,6 +707,10 @@ void kexGameManager::PrepareMapChange(const ENetPacket *packet) {
 
 void kexGameManager::ClientRequestMapChange(const int mapID) {
     ENetPacket *packet;
+    
+    if(bInWipe) {
+        return;
+    }
     
     if(!(packet = packetManager.Create())) {
         return;

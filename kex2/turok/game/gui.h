@@ -53,6 +53,7 @@ typedef enum {
     GAT_CHANGEGUI,
     GAT_POPGUI,
     GAT_CALLCOMMAND,
+    GAT_CALLFUNCTION,
     NUMGUIACTIONS
 } guiActionType_t;
 
@@ -100,6 +101,7 @@ private:
     void                        ExecuteButtonEvent(guiButton_t *button, const guiButtonState_t btnState);
     void                        ChangeGuis(guiEvent_t *guiEvent);
     void                        CallCommand(guiEvent_t *event);
+    void                        CallFunction(guiEvent_t *event);
     
     kexCanvas                   canvas;
     kexLinklist<kexGui>         link;
@@ -108,6 +110,7 @@ private:
     kexStr                      name;
     guiStatus_t                 status;
     float                       fadeSpeed;
+    kexGui                      *parentGui;
     kexGui                      *childGui;
 };
 
@@ -133,6 +136,7 @@ public:
     kexGui                      *GetMainGui(void) { return mainGui; }
     
     kexLinklist<kexGui>         guis;
+    kexGui                      *previousGui;
     float                       cursor_x;
     float                       cursor_y;
     kexMaterial                 *cursorMaterial;
