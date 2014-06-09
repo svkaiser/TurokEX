@@ -116,57 +116,45 @@ void kexMaterial::SetDiffuseColor(const rcolor color) {
     diffuseColor.Set(r, g, b, a);
 }
 
+//
+// kexMaterial::SetRenderState
+//
+
+void kexMaterial::SetRenderState(void) const {
+    renderBackend.SetState(StateBits());
+    renderBackend.SetAlphaFunc(AlphaFunction(), AlphaMask());
+    renderBackend.SetCull(CullType());
+    renderBackend.SetDepthMask(DepthMask());
+}
 
 //
-// kexMaterial::ParseParam
+// kexMaterial::BindImages
 //
 
-void kexMaterial::ParseParam(kexLexer *lexer) {
-    kexStr paramName;
+void kexMaterial::BindImages(void) const {
+    for(unsigned int i = 0; i < units; i++) {
+        const matSampler_t *sampler = &samplers[i];
+        
+        renderBackend.SetTextureUnit(sampler->unit);
+        
+        if(sampler->texture == NULL) {
+            renderBackend.defaultTexture.Bind();
+        }
+        else {
+            if(sampler->texture == renderBackend.frameBuffer) {
+                sampler->texture->BindFrameBuffer();
+            }
+            else if(sampler->texture == renderBackend.depthBuffer) {
+                sampler->texture->BindDepthBuffer();
+            }
+            else {
+                sampler->texture->Bind();
+            }
+            sampler->texture->ChangeParameters(sampler->clamp, sampler->filter);
+        }
+    }
     
-    lexer->GetString();
-    paramName = lexer->StringToken();
-
-    lexer->Find();
-    if(lexer->Matches("int")) {
-        int param;
-
-        param = lexer->GetNumber();
-
-        if(shaderObj || !bShaderErrors) {
-            shaderObj->SetUniform(paramName.c_str(), param);
-        }
-    }
-    else if(lexer->Matches("vec2")) {
-        kexVec2 param;
-
-        lexer->GetString();
-
-        if(shaderObj || !bShaderErrors) {
-            param = lexer->GetVectorString2();
-            shaderObj->SetUniform(paramName.c_str(), param);
-        }
-    }
-    else if(lexer->Matches("vec3")) {
-        kexVec3 param;
-
-        lexer->GetString();
-
-        if(shaderObj || !bShaderErrors) {
-            param = lexer->GetVectorString3();
-            shaderObj->SetUniform(paramName.c_str(), param);
-        }
-    }
-    else if(lexer->Matches("vec4")) {
-        kexVec4 param;
-
-        lexer->GetString();
-
-        if(shaderObj || !bShaderErrors) {
-            param = lexer->GetVectorString4();
-            shaderObj->SetUniform(paramName.c_str(), param);
-        }
-    }
+    renderBackend.SetTextureUnit(0);
 }
 
 //
@@ -360,9 +348,6 @@ void kexMaterial::Parse(kexLexer *lexer) {
                 }
                 else if(lexer->Matches("alphamask")) {
                     alphaMask = (float)lexer->GetFloat();
-                }
-                else if(lexer->Matches("param")) {
-                    ParseParam(lexer);
                 }
                 else if(lexer->Matches("sampler")) {
                     ParseSampler(lexer);

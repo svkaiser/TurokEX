@@ -68,6 +68,8 @@ public:
     void                                Parse(kexLexer *lexer);
     void                                Delete(void);
     void                                SetDiffuseColor(const rcolor color);
+    void                                SetRenderState(void) const;
+    void                                BindImages(void) const;
     
     const glCullType_t                  CullType(void) const { return cullType; }
     const glFunctions_t                 AlphaFunction(void) const { return alphaFunction; }
@@ -85,7 +87,6 @@ public:
     kexMaterial                         *next;
 
 private:
-    void                                ParseParam(kexLexer *lexer);
     void                                ParseSampler(kexLexer *lexer);
     glFunctions_t                       ParseFunction(kexLexer *lexer);
     void                                ParseShader(kexLexer *lexer);
