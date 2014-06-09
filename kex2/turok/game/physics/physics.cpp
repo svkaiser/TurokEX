@@ -319,6 +319,13 @@ void kexPhysics::ApplyFriction(void) {
         if(bInWater && waterLevel == WLT_UNDER) {
             velocity.y = velocity.y * clipspeed;
         }
+
+        if(bOnGround) {
+            force *= clipspeed;
+        }
+        else {
+            force.y *= clipspeed;
+        }
     }
 
     if(!bInWater) {
@@ -472,8 +479,11 @@ void kexPhysics::Think(const float timeDelta) {
         return;
     }
 
+    velocity += force;
+
     if(velocity.UnitSq() <= 1 && OnGround()) {
         velocity.Clear();
+        force.Clear();
         CorrectSectorPosition();
         return;
     }
@@ -593,6 +603,8 @@ void kexPhysics::InitObject(void) {
     OBJMETHOD("void SetOwner(kActor@)", SetOwner, (kexWorldObject *o), void);
     OBJMETHOD("kVec3 &GetVelocity(void)", GetVelocity, (void), kexVec3&);
     OBJMETHOD("void SetVelocity(const kVec3 &in)", SetVelocity, (const kexVec3 &vel), void);
+    OBJMETHOD("kVec3 &GetForce(void)", GetForce, (void), kexVec3&);
+    OBJMETHOD("void SetForce(const kVec3 &in)", SetForce, (const kexVec3 &f), void);
     OBJMETHOD("bool OnGround(void)", OnGround, (void), bool);
     OBJMETHOD("bool OnSteepSlope(void)", OnSteepSlope, (void), bool);
     OBJMETHOD("float GroundDistance(void)", GroundDistance, (void), float);

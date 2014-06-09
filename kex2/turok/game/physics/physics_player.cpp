@@ -90,8 +90,11 @@ void kexPlayerPhysics::Think(const float timeDelta) {
         return;
     }
 
+    velocity += force;
+
     if(velocity.UnitSq() <= 1 && OnGround()) {
         velocity.Clear();
+        force.Clear();
         CorrectSectorPosition();
         return;
     }

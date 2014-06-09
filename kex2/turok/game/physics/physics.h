@@ -89,12 +89,15 @@ public:
 
     kexVec3                 &GetVelocity(void) { return velocity; }
     void                    SetVelocity(const kexVec3 &vel) { velocity = vel; }
+    kexVec3                 &GetForce(void) { return force; }
+    void                    SetForce(const kexVec3 &f) { force = f; }
     kexWorldObject          *GetOwner(void) { return owner; }
     void                    SetOwner(kexWorldObject *actor) { owner = actor; }
 
     static void             InitObject(void);
 
     kexVec3                 velocity;
+    kexVec3                 force;
     bool                    bRotor;
     bool                    bOrientOnSlope;
     float                   friction;
