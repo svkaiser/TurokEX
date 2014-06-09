@@ -118,6 +118,7 @@ void kexCamera::LocalTick(void) {
 
     angles.Clamp180();
     rotation = angles.ToQuat();
+    sector = NULL;
 
     attachedObject = attachment.GetAttachedObject();
 
