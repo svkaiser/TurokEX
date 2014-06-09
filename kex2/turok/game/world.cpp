@@ -422,6 +422,9 @@ kexFx *kexWorld::SpawnFX(const char *name, kexGameObject *source, kexVec3 &veloc
                 if(!fxRover->GetOwner()) {
                     continue;
                 }
+                if(fxRover->IsStale() || fxRover->Removing()) {
+                    continue;
+                }
 
                 if(fxRover->GetOwner() == source && fxRover->fxInfo == fxfile->info) {
                     fxRover->bForcedRestart = true;
