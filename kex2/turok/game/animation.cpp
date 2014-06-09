@@ -350,6 +350,9 @@ void kexAnimState::Blend(const kexStr &animName, float animTime, float animBlend
     if((anim = kexAnimState::GetAnim(owner->Model(), animName.c_str()))) {
         Blend(anim, animTime, animBlendTime, animFlags);
     }
+    else {
+        common.Warning("kexAnimState::Blend: %s not found for %s\n", animName.c_str(), owner->Model()->filePath);
+    }
 }
 
 //
@@ -365,6 +368,9 @@ void kexAnimState::Blend(const int id, float animTime, float animBlendTime, int 
 
     if((anim = kexAnimState::GetAnim(owner->Model(), id))) {
         Blend(anim, animTime, animBlendTime, animFlags);
+    }
+    else {
+        common.Warning("kexAnimState::Blend: ID %i not found for %s\n", id, owner->Model()->filePath);
     }
 }
 
