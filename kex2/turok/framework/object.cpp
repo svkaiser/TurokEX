@@ -271,11 +271,14 @@ void kexObject::operator delete(void *ptr) {
 //
 
 kexRTTI *kexObject::Get(const char *classname) {
-    if(classname == NULL)
+    if(classname == NULL) {
         return NULL;
-    for(kexRTTI *oi= kexObject::root; oi != NULL; oi = oi->next) {
-        if(!strcmp(oi->classname, classname))
+    }
+
+    for(kexRTTI *oi = kexObject::root; oi != NULL; oi = oi->next) {
+        if(!strcmp(oi->classname, classname)) {
             return oi;
+        }
     }
     return NULL;
 }
@@ -285,7 +288,13 @@ kexRTTI *kexObject::Get(const char *classname) {
 //
 
 bool kexObject::InstanceOf(const kexRTTI *objInfo) const {
-    return GetInfo()->type_id == objInfo->type_id;
+    for(const kexRTTI *oi = GetInfo(); oi; oi = oi->super) {
+        if(oi->type_id == objInfo->type_id) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 //
