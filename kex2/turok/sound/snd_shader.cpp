@@ -220,17 +220,12 @@ void kexSoundShader::Load(kexLexer *lexer) {
 void kexSoundShader::Play(kexGameObject *obj) {
     kexSoundSource *src;
 
-    kexSoundSystem::EnterCriticalSection();
-
     for(int i = 0; i < numsfx; i++) {
 
         if(!(src = soundSystem.GetAvailableSource())) {
-            kexSoundSystem::ExitCriticalSection();
             return;
         }
 
         src->Set(&sfxList[i], obj);
     }
-
-    kexSoundSystem::ExitCriticalSection();
 }
