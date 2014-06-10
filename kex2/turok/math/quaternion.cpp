@@ -121,11 +121,7 @@ float kexQuat::Unit(void) const {
 //
 
 kexQuat &kexQuat::Normalize(void) {
-    float d = Unit();
-    if(d != 0.0f) {
-        d = 1.0f / d;
-        *this *= d;
-    }
+    *this *= kexMath::InvSqrt(UnitSq());
     return *this;
 }
 
@@ -300,29 +296,18 @@ kexQuat kexQuat::Slerp(const kexQuat &quat, float movement) const {
     }
 
     if(d1 <= 0.7071067811865001f) {
-        float halfcos = kexMath::ACos(d1);
-        float halfsin = kexMath::Sin(halfcos);
+        float sinsqr = 1.0f - d1 * d1;
+        float d = kexMath::InvSqrt(sinsqr);
+        float scale = kexMath::ATanPositive(sinsqr * d, d1);
+        
+        float ms1 = kexMath::SinZeroHalfPI((1.0f - movement) * scale) * d;
+        float ms2 = kexMath::SinZeroHalfPI(movement * scale) * d;
 
-        if(halfsin == 0) {
-            kexQuat out;
-            out.Set(x, y, z, w);
-            return out;
+        if(ms2 < 0) {
+            rdest = quat.Inverse();
         }
-        else {
-            float d;
-            float ms1;
-            float ms2;
 
-            d = 1.0f / halfsin;
-            ms1 = kexMath::Sin((1.0f - movement) * halfcos) * d;
-            ms2 = kexMath::Sin(halfcos * movement) * d;
-
-            if(ms2 < 0) {
-                rdest = quat.Inverse();
-            }
-
-            return *this * ms1 + rdest * ms2;
-        }
+        return *this * ms1 + rdest * ms2;
     }
     else {
         kexQuat out = (rdest - *this) * movement + *this;

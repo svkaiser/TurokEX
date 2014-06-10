@@ -65,6 +65,8 @@ public:
     static float            Fabs(float x);
     static int              RoundPowerOfTwo(int x);
     static float            InvSqrt(float x);
+    static float            SinZeroHalfPI(float a);
+    static float            ATanPositive(float y, float x);
     static void             Clamp(float &f, const float min, const float max);
     static void             Clamp(int &i, const int min, const int max);
     static void             Clamp(byte &b, const byte min, const byte max);

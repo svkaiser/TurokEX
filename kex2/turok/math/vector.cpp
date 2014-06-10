@@ -184,11 +184,7 @@ float kexVec2::Distance(const kexVec2 &vec) const {
 //
 
 kexVec2 &kexVec2::Normalize(void) {
-    float d = Unit();
-    if(d != 0.0f) {
-        d = 1.0f / d;
-        *this *= d;
-    }
+    *this *= kexMath::InvSqrt(UnitSq());
     return *this;
 }
 
@@ -548,11 +544,7 @@ float kexVec3::Distance(const kexVec3 &vec) const {
 //
 
 kexVec3 &kexVec3::Normalize(void) {
-    float d = Unit();
-    if(d != 0.0f) {
-        d = 1.0f / d;
-        *this *= d;
-    }
+    *this *= kexMath::InvSqrt(UnitSq());
     return *this;
 }
 
@@ -597,12 +589,7 @@ kexVec3 &kexVec3::Lerp(const kexVec3 &start, const kexVec3 &next, const float mo
 //
 
 kexQuat kexVec3::ToQuat(void) {
-    float d = Unit();
-
-    if(d == 0.0f)
-        return kexQuat();
-
-    kexVec3 scv = *this * (1.0f / d);
+    kexVec3 scv = *this * kexMath::InvSqrt(UnitSq());
     float angle = kexMath::ACos(scv.z);
 
     return kexQuat(angle, vecForward.Cross(scv).Normalize());
@@ -615,10 +602,11 @@ kexQuat kexVec3::ToQuat(void) {
 float kexVec3::ToYaw(void) const {
     float d = x * x + z * z;
 
-    if(d == 0.0f)
+    if(d == 0.0f) {
         return 0.0f;
+    }
 
-    float an = -(z / kexMath::Sqrt(d));
+    float an = -(z * kexMath::InvSqrt(d));
 
     if(an >  1.0f) an =  1.0f;
     if(an < -1.0f) an = -1.0f;
@@ -637,10 +625,11 @@ float kexVec3::ToYaw(void) const {
 float kexVec3::ToPitch(void) const {
     float d = UnitSq();
     
-    if(d == 0.0f)
+    if(d == 0.0f) {
         return 0.0f;
+    }
         
-    return kexMath::ACos(y / kexMath::Sqrt(d));
+    return kexMath::ACos(y * kexMath::InvSqrt(d));
 }
 
 //

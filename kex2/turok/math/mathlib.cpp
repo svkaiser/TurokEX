@@ -88,6 +88,71 @@ float kexMath::InvSqrt(float x) {
 }
 
 //
+// kexMath::SinZeroHalfPI
+// Apapted from http://mrelusive.com/publications/papers/SIMD-Slerping-Clock-Cycles.pdf
+//
+
+float kexMath::SinZeroHalfPI(float a) {
+    float s, t;
+    
+    s = a * a;
+    t = -2.39e-08f;
+    t *= s;
+    t += 2.7526e-06f;
+    t *= s;
+    t += -1.98409e-04f;
+    t *= s;
+    t += 8.3333315e-03f;
+    t *= s;
+    t += -1.666666664e-01f;
+    t *= s;
+    t += 1.0f;
+    t *= a;
+    
+    return t;
+}
+
+//
+// kexMath::ATanPositive
+// Apapted from http://mrelusive.com/publications/papers/SIMD-Slerping-Clock-Cycles.pdf
+//
+
+float kexMath::ATanPositive(float y, float x) {
+    float a, d, s, t;
+    
+    if(y > x) {
+        a = -x / y;
+        d = M_PI / 2;
+    }
+    else {
+        a = y / x;
+        d = 0.0f;
+    }
+    s = a * a;
+    t = 0.0028662257f;
+    t *= s;
+    t += -0.0161657367f;
+    t *= s;
+    t += 0.0429096138f;
+    t *= s;
+    t += -0.0752896400f;
+    t *= s;
+    t += 0.1065626393f;
+    t *= s;
+    t += -0.1420889944f;
+    t *= s;
+    t += 0.1999355085f;
+    t *= s;
+    t += -0.3333314528f;
+    t *= s;
+    t += 1.0f;
+    t *= a;
+    t += d;
+    
+    return t;
+}
+
+//
 // kexMath::Clamp
 //
 
