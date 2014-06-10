@@ -604,8 +604,12 @@ void kexRenderer::DrawBlackSurface(const drawSurface_t *drawSurf, kexMaterial *m
     material->SetRenderState();
     renderBackend.SetPolyMode(GLPOLY_FILL);
     
-    material->BindImages();
-    
+    if(material->SortOrder() == MSO_MASKED) {
+        material->BindImages();
+    }
+    else {
+        renderBackend.blackTexture.Bind();
+    }
     
     if(currentSurface != surface) {
         dglNormalPointer(GL_FLOAT, sizeof(float)*3, surface->normals);
