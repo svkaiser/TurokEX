@@ -59,6 +59,7 @@ public:
     virtual void            Sleep(unsigned long usecs);
     virtual void            Shutdown(void);
     virtual int             GetMS(void);
+    virtual uint64_t        GetPerformanceCounter(void);
     virtual int             GetTicks(void);
     virtual void            SpawnInternalConsole(void);
     virtual void            ShowInternalConsole(bool show);

@@ -208,6 +208,14 @@ int kexSystem::GetMS(void) {
 }
 
 //
+// kexSystem::GetPerformanceCounter
+//
+
+uint64_t kexSystem::GetPerformanceCounter(void) {
+    return SDL_GetPerformanceCounter();
+}
+
+//
 // kexSystem::Init
 //
 

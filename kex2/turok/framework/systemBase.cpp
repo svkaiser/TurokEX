@@ -51,6 +51,14 @@ int kexSystemBase::GetMS(void) {
 }
 
 //
+// kexSystemBase::GetPerformanceCounter
+//
+
+uint64_t kexSystemBase::GetPerformanceCounter(void) {
+    return 0;
+}
+
+//
 // kexSystemBase::GetTicks
 //
 
