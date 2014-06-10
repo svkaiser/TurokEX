@@ -428,7 +428,7 @@ void kexGameManager::OnLocalTick(void) {
     guiManager.UpdateGuis();
     
     if(bPrintStats) {
-        gameTimeMS = sysMain.GetMS();
+        gameTimeMS = sysMain.GetPerformanceCounter();
     }
 
     if(!bPaused) {
@@ -443,7 +443,7 @@ void kexGameManager::OnLocalTick(void) {
     console.Tick();
     
     if(bPrintStats) {
-        gameTimeMS = sysMain.GetMS() - gameTimeMS;
+        gameTimeMS = sysMain.GetPerformanceCounter() - gameTimeMS;
     }
     
     // draw
@@ -764,6 +764,6 @@ void kexGameManager::PrintDebugStats(void) {
         return;
     }
 
-    kexRenderUtils::PrintStatsText("game tick ms", ": %ims", gameTimeMS);
+    kexRenderUtils::PrintStatsText("game counter", ": %u", gameTimeMS);
     kexRenderUtils::AddDebugLineSpacing();
 }
