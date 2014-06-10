@@ -970,6 +970,12 @@ void kexWorld::InitObject(void) {
 
     scriptManager.Engine()->RegisterObjectMethod(
         "kWorld",
+        "kVec3 &GetGravity(void)",
+        asMETHODPR(kexWorld, GetGravity, (void), kexVec3&),
+        asCALL_THISCALL);
+
+    scriptManager.Engine()->RegisterObjectMethod(
+        "kWorld",
         "void SetFogRGB(float, float, float)",
         asMETHODPR(kexWorld, SetFogRGB, (float, float, float), void),
         asCALL_THISCALL);
