@@ -203,21 +203,17 @@ void kexFxPhysics::Think(const float timeDelta) {
         }
         trace.owner = owner;
         trace.sector = &sector;
-        trace.bUseBBox = false;
         trace.start = start;
         trace.end = start + move;
         trace.dir = (trace.end - start).Normalize();
-
-        if(fxinfo->bLinkArea) {
-            trace.bUseBBox = true;
-            trace.localBBox.min.Set(-2, -2, -2);
-            trace.localBBox.max.Set(2, 2, 2);
-            trace.bbox = trace.localBBox;
-            trace.bbox.min += start;
-            trace.bbox.max += start;
-            // resize box to account for movement
-            trace.bbox *= (velocity * timeDelta);
-        }
+        trace.bUseBBox = true;
+        trace.localBBox.min.Set(-2, -2, -2);
+        trace.localBBox.max.Set(2, 2, 2);
+        trace.bbox = trace.localBBox;
+        trace.bbox.min += start;
+        trace.bbox.max += start;
+        // resize box to account for movement
+        trace.bbox *= (velocity * timeDelta);
 
         localWorld.Trace(&trace);
 

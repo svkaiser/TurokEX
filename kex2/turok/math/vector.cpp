@@ -607,9 +607,7 @@ float kexVec3::ToYaw(void) const {
     }
 
     float an = -(z * kexMath::InvSqrt(d));
-
-    if(an >  1.0f) an =  1.0f;
-    if(an < -1.0f) an = -1.0f;
+    kexMath::Clamp(an, -1.0f, 1.0f);
 
     if(-x <= 0.0f) {
         return -kexMath::ACos(an);

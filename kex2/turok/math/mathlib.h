@@ -53,7 +53,7 @@ public:
     static float            Tan(float x) { return tanf(x); }
     static float            ATan2(float x, float y) { return atan2f(x, y); }
     static float            ACos(float x) { return acosf(x); }
-    static float            Sqrt(float x) { return sqrtf(x); }
+    static float            Sqrt(float x) { return x * InvSqrt(x); }
     static float            Pow(float x, float y) { return powf(x, y); }
     static float            Log(float x) { return logf(x); }
     static float            Floor(float x) { return floorf(x); }

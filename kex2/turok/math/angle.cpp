@@ -103,8 +103,8 @@ void kexAngle::Clamp(float *angle) {
 float kexAngle::ClampInvert(float angle) {
     float an = angle;
     
-    for(; an < -M_PI; an = an + FULLCIRCLE);
-    for(; an >  M_PI; an = an - FULLCIRCLE);
+    if(an < -M_PI) for(; an < -M_PI; an = an + FULLCIRCLE);
+    if(an >  M_PI) for(; an >  M_PI; an = an - FULLCIRCLE);
 
     return -an;
 }
