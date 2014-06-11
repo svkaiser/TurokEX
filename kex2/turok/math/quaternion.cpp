@@ -121,7 +121,13 @@ float kexQuat::Unit(void) const {
 //
 
 kexQuat &kexQuat::Normalize(void) {
-    *this *= kexMath::InvSqrt(UnitSq());
+    // TODO: for some reason, using kexMath::Sqrt produces inaccurate results
+    float d = sqrtf(UnitSq());
+
+    if(d != 0.0f) {
+        d = 1.0f / d;
+        *this *= d;
+    }
     return *this;
 }
 
