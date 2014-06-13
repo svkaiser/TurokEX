@@ -252,6 +252,12 @@ void kexAI::Spawn(void) {
     }
 
     physicsRef->sector = localWorld.CollisionMap().PointInSector(origin);
+    
+    onStateChange   = scriptComponent.ScriptType()->GetMethodByDecl("void OnStateChange(int)");
+    onDormant       = scriptComponent.ScriptType()->GetMethodByDecl("void OnDormant(void)");
+    onWake          = scriptComponent.ScriptType()->GetMethodByDecl("void OnWake(void)");
+    onTargetFound   = scriptComponent.ScriptType()->GetMethodByDecl("void OnTargetFound(void)");
+    onTurn          = scriptComponent.ScriptType()->GetMethodByDecl("bool OnTurn(const float)");
 
     UpdateTransform();
     ChangeState(AIS_IDLE);
@@ -282,7 +288,7 @@ void kexAI::ChangeState(const aiState_t aiState) {
     int state;
     
     this->aiState = aiState;
-    state = scriptComponent.PrepareFunction("void OnStateChange(int)");
+    state = scriptComponent.PrepareFunction(onStateChange);
 
     if(state == -1) {
         return;
@@ -309,7 +315,7 @@ void kexAI::GoDormant(void) {
     }
     
     aiFlags |= AIF_DORMANT;
-    state = scriptComponent.PrepareFunction("void OnDormant(void)");
+    state = scriptComponent.PrepareFunction(onDormant);
 
     if(state == -1) {
         return;
@@ -333,7 +339,7 @@ void kexAI::WakeUp(void) {
     }
     
     aiFlags &= ~AIF_DORMANT;
-    state = scriptComponent.PrepareFunction("void OnWake(void)");
+    state = scriptComponent.PrepareFunction(onWake);
 
     if(state == -1) {
         return;
@@ -352,7 +358,7 @@ void kexAI::WakeUp(void) {
 void kexAI::FoundTarget(void) {
     int state;
     
-    state = scriptComponent.PrepareFunction("void OnTargetFound(void)");
+    state = scriptComponent.PrepareFunction(onTargetFound);
 
     if(state == -1) {
         return;
@@ -596,7 +602,7 @@ void kexAI::TurnYaw(const float yaw) {
     bool ok = false;
     
     this->aiState = aiState;
-    state = scriptComponent.PrepareFunction("bool OnTurn(const float)");
+    state = scriptComponent.PrepareFunction(onTurn);
 
     an = yaw;
     kexAngle::Clamp(&an);
@@ -804,14 +810,14 @@ float kexAI::GetYawToTarget(void) {
     vec1 = origin;
     vec2 = target->GetOrigin();
     diff = (vec1 - vec2);
-    tan2 = kexMath::ATan2(diff[0], diff[1]);
+    tan2 = kexMath::ATan2(diff[1], diff[0]);
     
     sincos.Set(
         kexMath::Sin(tan2),
         0,
         kexMath::Cos(tan2));
 
-    an = kexAngle::ClampInvertSums(angles.yaw, sincos.ToYaw());
+    an = kexAngle::ClampInvertSums(angles.yaw, sincos.ToYaw() + M_PI);
     kexAngle::Clamp(&an);
 
     return an;

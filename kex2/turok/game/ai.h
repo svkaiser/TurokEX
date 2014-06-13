@@ -221,6 +221,11 @@ private:
     float                       idealYaw;
     float                       turningYaw;
     float                       turnSpeed;
+    asIScriptFunction           *onStateChange;
+    asIScriptFunction           *onDormant;
+    asIScriptFunction           *onWake;
+    asIScriptFunction           *onTargetFound;
+    asIScriptFunction           *onTurn;
 
 END_CLASS();
 
