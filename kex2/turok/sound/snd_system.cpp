@@ -173,18 +173,14 @@ void kexWavFile::Allocate(const char *name, byte *data) {
     waveSize    = *(int*)(data + 40);
     data        = data + 44;
 
-    kexSoundSystem::EnterCriticalSection();
-
     alGetError();
     alGenBuffers(1, &buffer);
 
     if(alGetError() != AL_NO_ERROR) {
-        kexSoundSystem::ExitCriticalSection();
         common.Error("kexWavFile::Allocate: failed to create buffer for %s", name);
     }
 
     alBufferData(buffer, GetFormat(), data, waveSize, samples);
-    kexSoundSystem::ExitCriticalSection();
 }
 
 //
@@ -333,7 +329,7 @@ void kexSoundSource::Play(void) {
     kexWavFile *wave = sfx->wavFile;
 
     if(sfx->random != 1.0f &&
-        (rand()%100) >= (sfx->random * 100.0f)) {
+        (kexRand::Max(100) >= (sfx->random * 100.0f))) {
         return;
     }
 
@@ -421,10 +417,7 @@ void kexSoundSource::Update(void) {
     }
 }
 
-bool kexSoundSystem::bKillSoundThread = false;
-unsigned long kexSoundSystem::time = 0;
-SDL_mutex *kexSoundSystem::mutex = NULL;
-SDL_Thread *kexSoundSystem::thread = NULL;
+int kexSoundSystem::time = 0;
 
 //
 // kexSoundSystem::kexSoundSystem
@@ -473,9 +466,6 @@ void kexSoundSystem::Init(void) {
 
     alListener3f(AL_POSITION, 0, 0, 0);
 
-    kexSoundSystem::mutex = SDL_CreateMutex();
-    kexSoundSystem::thread = SDL_CreateThread(kexSoundSystem::Thread, "SoundThread", NULL);
-
     common.Printf("Sound System Initialized (%s)\n", GetDeviceName());
 }
 
@@ -488,13 +478,6 @@ void kexSoundSystem::Shutdown(void) {
     kexWavFile *wavFile;
 
     common.Printf("Shutting down audio\n");
-
-    kexSoundSystem::EnterCriticalSection();
-    bKillSoundThread = true;
-    kexSoundSystem::ExitCriticalSection();
-
-    SDL_WaitThread(kexSoundSystem::thread, NULL);
-    SDL_DestroyMutex(kexSoundSystem::mutex);
 
     for(i = 0; i < activeSources; i++) {
         sources[i].Delete();
@@ -514,38 +497,6 @@ void kexSoundSystem::Shutdown(void) {
 }
 
 //
-// kexSoundSystem::Thread
-//
-
-int SDLCALL kexSoundSystem::Thread(void *param) {
-    long start = sysMain.GetTicks();
-    long delay = 0;
-    int i;
-
-    while(1) {
-        kexSoundSystem::EnterCriticalSection();
-        for(i = 0; i < soundSystem.GetNumActiveSources(); i++) {
-            soundSystem.GetSources()[i].Update();
-        }
-        kexSoundSystem::ExitCriticalSection();
-
-        kexSoundSystem::time++;
-        // try to avoid incremental time de-syncs
-        delay = kexSoundSystem::time - (sysMain.GetTicks() - start);
-
-        if(delay > 0) {
-            sysMain.Sleep(delay);
-        }
-
-        if(kexSoundSystem::bKillSoundThread) {
-            break;
-        }
-    }
-
-    return 0;
-}
-
-//
 // kexSoundSystem::GetDeviceName
 //
 
@@ -554,34 +505,14 @@ char *kexSoundSystem::GetDeviceName(void) {
 }
 
 //
-// kexSoundSystem::EnterCriticalSection
-//
-
-void kexSoundSystem::EnterCriticalSection(void) {
-    SDL_LockMutex(kexSoundSystem::mutex);
-}
-
-//
-// kexSoundSystem::ExitCriticalSection
-//
-
-void kexSoundSystem::ExitCriticalSection(void) {
-    SDL_UnlockMutex(kexSoundSystem::mutex);
-}
-
-//
 // kexSoundSystem::StopAll
 //
 
 void kexSoundSystem::StopAll(void) {
-    int i;
-
-    kexSoundSystem::EnterCriticalSection();
-    for(i = 0; i < activeSources; i++) {
+    for(int i = 0; i < activeSources; i++) {
         sources[i].Stop();
         sources[i].Free();
     }
-    kexSoundSystem::ExitCriticalSection();
 }
 
 //
@@ -608,12 +539,14 @@ void kexSoundSystem::UpdateListener(void) {
 
     org = camera->GetOrigin();
 
-    kexSoundSystem::EnterCriticalSection();
-
     alListenerfv(AL_ORIENTATION, orientation);
     alListener3f(AL_POSITION, SND_VECTOR2METRICS(org));
 
-    kexSoundSystem::ExitCriticalSection();
+    for(int i = 0; i < soundSystem.GetNumActiveSources(); i++) {
+        soundSystem.GetSources()[i].Update();
+    }
+
+    kexSoundSystem::time = client.GetTime();
 }
 
 //

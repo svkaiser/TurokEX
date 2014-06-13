@@ -149,15 +149,7 @@ public:
     const int                           GetNumActiveSources(void) const { return activeSources; }
     kexSoundSource                      *GetSources(void) { return sources; }
 
-    static void                         EnterCriticalSection(void);
-    static void                         ExitCriticalSection(void);
-    static int SDLCALL                  Thread(void *param);
-
-    static SDL_mutex                    *mutex;
-    static SDL_Thread                   *thread;
-    static unsigned long                time;
-    static bool                         bKillSoundThread;
-
+    static int                          time;
     static kexHeapBlock                 hb_sound;
 
 private:
