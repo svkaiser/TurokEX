@@ -199,18 +199,13 @@ kexPlane &kexPlane::operator=(const kexPlane &p) {
 //
 
 float kexPlane::ToYaw(void) {
-    float d = Normal().Unit();
+    float dd = a * a + c * c;
     
-    if(d != 0) {
-        float phi;
-        phi = kexMath::ACos(c / d);
-        if(a <= 0)
-            phi = -phi;
-
-        return phi;
+    if(dd == 0.0f) {
+        return 0.0f;
     }
-
-    return 0;
+    
+    return kexMath::ATan2(c, a);
 }
 
 //
@@ -218,7 +213,18 @@ float kexPlane::ToYaw(void) {
 //
 
 float kexPlane::ToPitch(void) {
-    return kexMath::ACos(kexVec3::vecUp.Dot(Normal()));
+    float dd = a * a + c * c;
+    
+    if(dd == 0.0f) {
+        if(b > 0.0f) {
+            return DEG2RAD(90);
+        }
+        else {
+            return DEG2RAD(-90);
+        }
+    }
+    
+    return kexMath::ATan2(b, dd);
 }
 
 //

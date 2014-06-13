@@ -590,9 +590,7 @@ kexVec3 &kexVec3::Lerp(const kexVec3 &start, const kexVec3 &next, const float mo
 
 kexQuat kexVec3::ToQuat(void) {
     kexVec3 scv = *this * kexMath::InvSqrt(UnitSq());
-    float angle = kexMath::ACos(scv.z);
-
-    return kexQuat(angle, vecForward.Cross(scv).Normalize());
+    return kexQuat(scv.ToYaw(), vecForward.Cross(scv).Normalize());
 }
 
 //
@@ -606,14 +604,7 @@ float kexVec3::ToYaw(void) const {
         return 0.0f;
     }
 
-    float an = -(z * kexMath::InvSqrt(d));
-    kexMath::Clamp(an, -1.0f, 1.0f);
-
-    if(-x <= 0.0f) {
-        return -kexMath::ACos(an);
-    }
-
-    return kexMath::ACos(an);
+    return kexMath::ATan2(z, x);
 }
 
 //
@@ -621,13 +612,18 @@ float kexVec3::ToYaw(void) const {
 //
 
 float kexVec3::ToPitch(void) const {
-    float d = UnitSq();
+    float d = x * x + z * z;
     
     if(d == 0.0f) {
-        return 0.0f;
+        if(y > 0.0f) {
+            return DEG2RAD(90);
+        }
+        else {
+            return DEG2RAD(-90);
+        }
     }
-        
-    return kexMath::ACos(y * kexMath::InvSqrt(d));
+    
+    return kexMath::ATan2(y, d);
 }
 
 //
