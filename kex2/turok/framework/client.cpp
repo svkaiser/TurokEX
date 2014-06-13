@@ -154,7 +154,7 @@ void kexClient::Run(const int msec) {
     CheckMessages();
 
     // check for new inputs
-    inputSystem.PollInput();
+    inputSystem->PollInput();
 
     // handle input events
     ProcessEvents();

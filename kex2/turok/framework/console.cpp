@@ -251,7 +251,7 @@ void kexConsole::DeleteChar(void) {
 //
 
 bool kexConsole::ShiftHeld(int c) const {
-    return (c == SDLK_RSHIFT || c == SDLK_LSHIFT);
+    return (c == KKEY_RSHIFT || c == KKEY_LSHIFT);
 }
 
 //
@@ -300,8 +300,8 @@ void kexConsole::CheckShift(const event_t *ev) {
 //
 
 void kexConsole::CheckStickyKeys(const event_t *ev) {
-    if(ShiftHeld(ev->data1) || ev->data1 == SDLK_RETURN ||
-        ev->data1 == SDLK_TAB) {
+    if(ShiftHeld(ev->data1) || ev->data1 == KKEY_RETURN ||
+        ev->data1 == KKEY_TAB) {
             return;
     }
 
@@ -330,27 +330,27 @@ void kexConsole::CheckStickyKeys(const event_t *ev) {
 
 void kexConsole::ParseKey(int c) {
     switch(c) {
-        case SDLK_BACKSPACE:
+        case KKEY_BACKSPACE:
             BackSpace();
             return;
-        case SDLK_DELETE:
+        case KKEY_DELETE:
             DeleteChar();
             return;
-        case SDLK_LEFT:
+        case KKEY_LEFT:
             MoveTypePos(0);
             return;
-        case SDLK_RIGHT:
+        case KKEY_RIGHT:
             MoveTypePos(1);
             return;
-        case SDLK_PAGEUP:
+        case KKEY_PAGEUP:
             LineScroll(1);
             return;
-        case SDLK_PAGEDOWN:
+        case KKEY_PAGEDOWN:
             LineScroll(0);
             return;
     }
 
-    if(c >= 8 && c < 256) {
+    if(c >= KKEY_SPACE && c < KKEY_z) {
         if(typeStrPos >= CON_INPUT_LENGTH) {
             return;
         }
@@ -421,10 +421,10 @@ bool kexConsole::ProcessInput(const event_t *ev) {
 
     if(ev->type == ev_mousewheel && state == CON_STATE_DOWN) {
         switch(ev->data1) {
-            case SDL_BUTTON_WHEELUP:
+            case KM_BUTTON_SCROLL_UP:
                 LineScroll(1);
                 break;
-            case SDL_BUTTON_WHEELDOWN:
+            case KM_BUTTON_SCROLL_DOWN:
                 LineScroll(0);
                 break;
         }
@@ -441,20 +441,20 @@ bool kexConsole::ProcessInput(const event_t *ev) {
         case CON_STATE_DOWN:
             if(ev->type == ev_keydown) {
                 switch(c) {
-                    case SDLK_BACKQUOTE:
+                    case KKEY_BACKQUOTE:
                         state = CON_STATE_UP;
-                        inputSystem.CenterMouse();
+                        inputSystem->MouseCenter();
                         return true;
-                    case SDLK_RETURN:
+                    case KKEY_RETURN:
                         ParseInput();
                         return true;
-                    case SDLK_UP:
+                    case KKEY_UP:
                         GetHistory(false);
                         return true;
-                    case SDLK_DOWN:
+                    case KKEY_DOWN:
                         GetHistory(true);
                         return true;
-                    case SDLK_TAB:
+                    case KKEY_TAB:
                         cvarManager.AutoComplete(typeStr);
                         command.AutoComplete(typeStr);
                         return true;
@@ -469,7 +469,7 @@ bool kexConsole::ProcessInput(const event_t *ev) {
         case CON_STATE_UP:
             if(ev->type == ev_keydown) {
                 switch(c) {
-                    case SDLK_BACKQUOTE:
+                    case KKEY_BACKQUOTE:
                         state = CON_STATE_DOWN;
                         return true;
                     default:

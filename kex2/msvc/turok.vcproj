@@ -276,6 +276,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\renderer\renderImgui.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\renderMain.cpp"
 					>
 				</File>
@@ -341,6 +345,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\fileSystem.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\imgui.cpp"
 					>
 				</File>
 				<File
@@ -661,6 +669,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\renderer\renderImgui.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\renderMain.h"
 					>
 				</File>
@@ -737,7 +749,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\framework\imgui.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\input.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\inputSystem.h"
 					>
 				</File>
 				<File

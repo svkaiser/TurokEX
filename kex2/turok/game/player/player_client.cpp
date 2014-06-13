@@ -67,7 +67,7 @@ bool kexLocalPlayer::ProcessInput(event_t *ev) {
 
     switch(ev->type) {
     case ev_mouse:
-        inputSystem.MoveMouse(ev->data2, ev->data3);
+        inputSystem->MouseMove(ev->data2, ev->data3);
         return true;
 
     case ev_keydown:

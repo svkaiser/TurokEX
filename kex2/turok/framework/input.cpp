@@ -33,42 +33,84 @@
 #include "input.h"
 #include "console.h"
 
-kexInput inputSystem;
+class kexInputSystemLocal : public kexInputSystem {
+public:
+                            kexInputSystemLocal(void);
+
+    virtual void            Init(void);
+    virtual void            PumpInputEvents(void);
+    virtual void            PollInput(void);
+
+    virtual unsigned int    MouseGetState(int *x, int *y);
+    virtual unsigned int    MouseGetRelativeState(int *x, int *y);
+    virtual void            MouseCenter(void);
+    virtual void            MouseRead(void);
+    virtual void            MouseMove(const int x, const int y);
+    virtual void            MouseActivate(const bool bToggle);
+    virtual void            MouseUpdateGrab(void);
+    virtual void            MouseUpdateFocus(void);
+
+private:
+    void                    GetEvent(const SDL_Event *Event);
+    bool                    MouseShouldBeGrabbed(void) const;
+    float                   AccelerateMouse(int val) const;
+
+    bool                    bWindowFocused;
+    Uint8                   lastmbtn;
+};
+
+kexInputSystemLocal inputSystemLocal;
+kexInputSystem *inputSystem = &inputSystemLocal;
 
 //
-// kexInput::kexInput
+// kexInputSystemLocal::kexInputSystemLocal
 //
 
-kexInput::kexInput() {
+kexInputSystemLocal::kexInputSystemLocal() {
     lastmbtn        = 0;
-    bGrabbed        = false;
     bWindowFocused  = false;
-    bEnabled        = true;
 }
 
 //
-// kexInput::~kexInput
+// kexInputSystemLocal::PumpInputEvents
 //
 
-kexInput::~kexInput() {
-}
-
-//
-// kexInput::Init
-//
-
-void kexInput::Init(void) {
+void kexInputSystemLocal::PumpInputEvents(void) {
     SDL_PumpEvents();
-    CenterMouse();
+}
+
+//
+// kexInputSystemLocal::Init
+//
+
+void kexInputSystemLocal::Init(void) {
+    PumpInputEvents();
+    MouseCenter();
     
     common.Printf("Input Initialized\n");
 }
 
 //
-// kexInput::ReadMouse
+// kexInputSystemLocal::MouseGetState
 //
 
-void kexInput::ReadMouse(void) {
+unsigned int kexInputSystemLocal::MouseGetState(int *x, int *y) {
+    return SDL_GetMouseState(x, y);
+}
+
+//
+// kexInputSystemLocal::MouseGetRelativeState
+//
+
+unsigned int kexInputSystemLocal::MouseGetRelativeState(int *x, int *y) {
+    return SDL_GetRelativeMouseState(x, y);
+}
+
+//
+// kexInputSystemLocal::MouseRead
+//
+
+void kexInputSystemLocal::MouseRead(void) {
     int x, y;
     Uint8 btn;
     event_t ev;
@@ -77,12 +119,12 @@ void kexInput::ReadMouse(void) {
         return;
     }
     
-    SDL_GetRelativeMouseState(&x, &y);
-    btn = SDL_GetMouseState(&mouse_x, &mouse_y);
+    MouseGetRelativeState(&x, &y);
+    btn = MouseGetState(&mouse_x, &mouse_y);
     
     if(x != 0 || y != 0 || btn || (lastmbtn != btn)) {
         ev.type = ev_mouse;
-        ev.data1 = GetButtonState(btn);
+        ev.data1 = btn;
         ev.data2 = x << 5;
         ev.data3 = (-y) << 5;
         ev.data4 = 0;
@@ -92,26 +134,15 @@ void kexInput::ReadMouse(void) {
     lastmbtn = btn;
     
     if(MouseShouldBeGrabbed()) {
-        CenterMouse();
+        MouseCenter();
     }
 }
 
 //
-// kexInput::GetButtonState
+// kexInputSystemLocal::MouseUpdateFocus
 //
 
-int kexInput::GetButtonState(Uint8 buttonstate) const {
-    return 0
-        | (buttonstate & SDL_BUTTON(SDL_BUTTON_LEFT)      ? 1 : 0)
-        | (buttonstate & SDL_BUTTON(SDL_BUTTON_MIDDLE)    ? 2 : 0)
-        | (buttonstate & SDL_BUTTON(SDL_BUTTON_RIGHT)     ? 4 : 0);
-}
-
-//
-// kexInput::UpdateFocus
-//
-
-void kexInput::UpdateFocus(void) {
+void kexInputSystemLocal::MouseUpdateFocus(void) {
     Uint32 flags;
     flags = sysMain.GetWindowFlags();
     
@@ -121,34 +152,10 @@ void kexInput::UpdateFocus(void) {
 }
 
 //
-// kexInput::IsShiftDown
+// kexInputSystemLocal::GetEvent
 //
 
-bool kexInput::IsShiftDown(int c) const {
-    return(c == SDLK_RSHIFT || c == SDLK_LSHIFT);
-}
-
-//
-// kexInput::IsCtrlDown
-//
-
-bool kexInput::IsCtrlDown(int c) const {
-    return(c == SDLK_RCTRL || c == SDLK_LCTRL);
-}
-
-//
-// kexInput::IsAltDown
-//
-
-bool kexInput::IsAltDown(int c) const {
-    return(c == SDLK_RALT || c == SDLK_LALT);
-}
-
-//
-// kexInput::GetEvent
-//
-
-void kexInput::GetEvent(const SDL_Event *Event) {
+void kexInputSystemLocal::GetEvent(const SDL_Event *Event) {
     event_t event;
     
     switch(Event->type) {
@@ -184,7 +191,7 @@ void kexInput::GetEvent(const SDL_Event *Event) {
                 break;
             }
             event.type = ev_mousewheel;
-            event.data1 = Event->wheel.y > 0 ? SDL_BUTTON_WHEELUP : SDL_BUTTON_WHEELDOWN;
+            event.data1 = Event->wheel.y > 0 ? KM_BUTTON_SCROLL_UP : KM_BUTTON_SCROLL_DOWN;
             event.data2 = event.data3 = 0;
             client.PostEvent(&event);
             break;
@@ -193,11 +200,11 @@ void kexInput::GetEvent(const SDL_Event *Event) {
             switch(Event->window.event) {
                 case SDL_WINDOWEVENT_FOCUS_GAINED:
                 case SDL_WINDOWEVENT_ENTER:
-                    UpdateFocus();
+                    MouseUpdateFocus();
                     break;
                 case SDL_WINDOWEVENT_FOCUS_LOST:
                     bWindowFocused = false;
-                    bGrabbed = false;
+                    bMouseGrabbed = false;
                     break;
             }
             break;
@@ -212,24 +219,24 @@ void kexInput::GetEvent(const SDL_Event *Event) {
 }
 
 //
-// kexInput::PollInput
+// kexInputSystemLocal::PollInput
 //
 
-void kexInput::PollInput(void) {
+void kexInputSystemLocal::PollInput(void) {
     SDL_Event Event;
     
     while(SDL_PollEvent(&Event)) {
         GetEvent(&Event);
     }
 
-    ReadMouse();
+    MouseRead();
 }
 
 //
-// kexInput::MouseShouldBeGrabbed
+// kexInputSystemLocal::MouseShouldBeGrabbed
 //
 
-bool kexInput::MouseShouldBeGrabbed(void) const {
+bool kexInputSystemLocal::MouseShouldBeGrabbed(void) const {
     // if the window doesnt have focus, never grab it
     if(!bWindowFocused) {
         return false;
@@ -245,10 +252,10 @@ bool kexInput::MouseShouldBeGrabbed(void) const {
 }
 
 //
-// kexInput::AccelerateMouse
+// kexInputSystemLocal::AccelerateMouse
 //
 
-float kexInput::AccelerateMouse(int val) const {
+float kexInputSystemLocal::AccelerateMouse(int val) const {
     if(!cvarMAcceleration.GetFloat()) {
         return (float)val;
     }
@@ -261,10 +268,10 @@ float kexInput::AccelerateMouse(int val) const {
 }
 
 //
-// kexInput::MoveMouse
+// kexInputSystemLocal::MouseMove
 //
 
-void kexInput::MoveMouse(int x, int y) {
+void kexInputSystemLocal::MouseMove(const int x, const int y) {
     control_t *ctrl;
     
     ctrl = inputKey.Controls();
@@ -274,54 +281,51 @@ void kexInput::MoveMouse(int x, int y) {
 }
 
 //
-// kexInput::ActivateMouse
+// kexInputSystemLocal::ActivateMouse
 //
 
-void kexInput::ActivateMouse(void) {
-    SDL_ShowCursor(0);
-    SDL_SetRelativeMouseMode(SDL_TRUE);
-    sysMain.SetWindowGrab(SDL_TRUE);
+void kexInputSystemLocal::MouseActivate(const bool bToggle) {
+    if(bToggle) {
+        SDL_ShowCursor(0);
+        SDL_SetRelativeMouseMode(SDL_TRUE);
+        sysMain.SetWindowGrab(SDL_TRUE);
+    }
+    else {
+        SDL_ShowCursor(1);
+        SDL_SetRelativeMouseMode(SDL_FALSE);
+        sysMain.SetWindowGrab(SDL_FALSE);
+    }
 }
 
 //
-// kexInput::DeactivateMouse
+// kexInputSystemLocal::MouseUpdateGrab
 //
 
-void kexInput::DeactivateMouse(void) {
-    SDL_ShowCursor(1);
-    SDL_SetRelativeMouseMode(SDL_FALSE);
-    sysMain.SetWindowGrab(SDL_FALSE);
-}
-
-//
-// kexInput::UpdateGrab
-//
-
-void kexInput::UpdateGrab(void) {
+void kexInputSystemLocal::MouseUpdateGrab(void) {
     bool grab;
     
     grab = MouseShouldBeGrabbed();
-    if(grab && !bGrabbed) {
-        ActivateMouse();
+    if(grab && !bMouseGrabbed) {
+        MouseActivate(true);
     }
     
-    if (!grab && bGrabbed) {
-        DeactivateMouse();
+    if (!grab && bMouseGrabbed) {
+        MouseActivate(false);
     }
     
-    bGrabbed = grab;
+    bMouseGrabbed = grab;
 }
 
 //
-// kexInput::CenterMouse
+// kexInputSystemLocal::MouseCenter
 // Warp the mouse back to the middle of the screen
 //
 
-void kexInput::CenterMouse(void) {
+void kexInputSystemLocal::MouseCenter(void) {
     // Warp the the screen center
     sysMain.WarpMouseToCenter();
     
     // Clear any relative movement caused by warping
-    SDL_PumpEvents();
-    SDL_GetRelativeMouseState(NULL, NULL);
+    PumpInputEvents();
+    MouseGetRelativeState(NULL, NULL);
 }

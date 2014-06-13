@@ -653,7 +653,7 @@ void kexSystem::Main(int argc, char **argv) {
 
     cvarManager.Init();
     kexObject::Init();
-    inputSystem.Init();
+    inputSystem->Init();
     inputKey.Init();
     fileSystem.Init();
     soundSystem.Init();

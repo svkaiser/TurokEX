@@ -449,7 +449,7 @@ void kexGameManager::OnLocalTick(void) {
     // draw
     renderer.Draw();
     
-    inputSystem.UpdateGrab();
+    inputSystem->MouseUpdateGrab();
     
     // update all sound sources
     soundSystem.UpdateListener();
@@ -675,7 +675,7 @@ void kexGameManager::PrepareMapChange(const ENetPacket *packet) {
     packetManager.Read8((ENetPacket*)packet, &mapID);
 
     if(sysMain.IsWindowed()) {
-        inputSystem.DeactivateMouse();
+        inputSystem->MouseActivate(false);
     }
     
     SetWipeMaterial("materials/screenwipe.kmat@fadeout");
@@ -685,13 +685,13 @@ void kexGameManager::PrepareMapChange(const ENetPacket *packet) {
     localWorld.Unload();
     if(!localWorld.Load(kva("maps/map%02d/map%02d", mapID, mapID))) {
         client.SetState(CL_STATE_READY);
-        inputSystem.ActivateMouse();
+        inputSystem->MouseActivate(true);
         return;
     }
     
     client.SetState(CL_STATE_INGAME);
 
-    inputSystem.ActivateMouse();
+    inputSystem->MouseActivate(true);
 
     inputKey.Controls()->mousex = 0;
     inputKey.Controls()->mousey = 0;

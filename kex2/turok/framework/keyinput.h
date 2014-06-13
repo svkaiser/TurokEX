@@ -23,12 +23,10 @@
 #ifndef __KEYINPUT_H__
 #define __KEYINPUT_H__
 
-#include "SDL.h"
-
 //
 // KEYS
 //
-#define MAX_KEYS 512
+#define MAX_KEYS        512
 
 #define CKF_GAMEPAD     0x1
 #define CKF_UP          0x4000
@@ -74,7 +72,8 @@ public:
     void            AddAction(byte id, const char *name);
     void            AddAction(byte id, const kexStr &str);
     void            WriteBindings(FILE *file);
-    void            ExecuteCommand(char key, bool up);
+    void            ExecuteCommand(int key, bool up);
+    void            ExecuteMouseCommand(int button, bool up);
     int             GetKeyCode(char *key);
     bool            GetName(char *buff, int key);
     void            BindCommand(char key, const char *string);
