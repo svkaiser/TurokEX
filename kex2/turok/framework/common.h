@@ -105,15 +105,11 @@ typedef union {
 // custom macro definition
 
 #if defined(__GNUC__)
-  #define d_inline __inline__
+#define d_inline __inline__
 #elif defined(_MSC_VER) || defined(WIN32)
-  #define d_inline __forceinline
+#define d_inline __forceinline
 #else
-  #define d_inline
-#endif
-
-#ifdef _WIN32
-#include "opndir.h"
+#define d_inline
 #endif
 
 #include "mathlib.h"
