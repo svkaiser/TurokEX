@@ -3,7 +3,6 @@
 #else
 #include "editorCommon.h"
 #endif
-#include "keywds.h"
 #include "unzip.h"
 
 /* unzip.h -- IO for uncompress .zip files using zlib 
