@@ -330,7 +330,7 @@ bool imguiBeginScrollArea(const char* name, int x, int y, int w, int h, int* scr
         g_scrollId = (g_state.areaId<<16) | g_state.widgetId;
 
         g_state.widgetX = x + SCROLL_AREA_PADDING;
-        g_state.widgetY = y+AREA_HEADER + (*scroll);
+        g_state.widgetY = y+AREA_HEADER - (*scroll);
         g_state.widgetW = w - SCROLL_AREA_PADDING*4;
         g_scrollTop = y-AREA_HEADER+h;
         g_scrollBottom = y+SCROLL_AREA_PADDING;
@@ -349,7 +349,7 @@ bool imguiBeginScrollArea(const char* name, int x, int y, int w, int h, int* scr
 
         addGfxCmdText(x+AREA_HEADER/2, y+AREA_HEADER/2-TEXT_HEIGHT/2, IMGUI_ALIGN_LEFT, name, imguiRGBA(255,255,255,128));
 
-        addGfxCmdScissor(x+SCROLL_AREA_PADDING, y+SCROLL_AREA_PADDING, w-SCROLL_AREA_PADDING*4, h-AREA_HEADER-SCROLL_AREA_PADDING);
+        addGfxCmdScissor(x+SCROLL_AREA_PADDING, y+SCROLL_AREA_PADDING, w-SCROLL_AREA_PADDING*4, h+AREA_HEADER+SCROLL_AREA_PADDING);
 
         return g_insideScrollArea;
 }
