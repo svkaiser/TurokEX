@@ -205,7 +205,7 @@ float kexPlane::ToYaw(void) {
         return 0.0f;
     }
     
-    return kexMath::ATan2(c, a);
+    return kexMath::ATan2(a, c);
 }
 
 //

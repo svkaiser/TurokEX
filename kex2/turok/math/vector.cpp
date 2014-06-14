@@ -590,7 +590,7 @@ kexVec3 &kexVec3::Lerp(const kexVec3 &start, const kexVec3 &next, const float mo
 
 kexQuat kexVec3::ToQuat(void) {
     kexVec3 scv = *this * kexMath::InvSqrt(UnitSq());
-    return kexQuat(scv.ToYaw(), vecForward.Cross(scv).Normalize());
+    return kexQuat(kexMath::ACos(scv.z), vecForward.Cross(scv).Normalize());
 }
 
 //
@@ -604,7 +604,7 @@ float kexVec3::ToYaw(void) const {
         return 0.0f;
     }
 
-    return kexMath::ATan2(z, x);
+    return kexMath::ATan2(x, z);
 }
 
 //
