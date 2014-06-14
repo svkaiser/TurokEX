@@ -797,27 +797,16 @@ float kexAI::GetTargetDistance(void) {
 //
 
 float kexAI::GetYawToTarget(void) {
-    kexVec2 vec1, vec2;
-    kexVec2 diff;
-    kexVec3 sincos;
     float tan2;
     float an;
     
     if(!target) {
         return angles.yaw;
     }
-    
-    vec1 = origin;
-    vec2 = target->GetOrigin();
-    diff = (vec1 - vec2);
-    tan2 = kexMath::ATan2(diff[1], diff[0]);
-    
-    sincos.Set(
-        kexMath::Sin(tan2),
-        0,
-        kexMath::Cos(tan2));
 
-    an = kexAngle::ClampInvertSums(angles.yaw, sincos.ToYaw() + M_PI);
+    tan2 = (origin - target->GetOrigin()).ToYaw();
+
+    an = kexAngle::ClampInvertSums(angles.yaw, tan2 + M_PI);
     kexAngle::Clamp(&an);
 
     return an;
