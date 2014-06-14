@@ -26,7 +26,6 @@
 
 #include <ctype.h>
 #include <string.h>
-#include "SDL.h"
 
 #include "common.h"
 #include "keyinput.h"
@@ -207,16 +206,12 @@ bool kexInputKey::GetName(char *buff, int key) {
 
         return true;
     }
+    
     for(pkey = Keys; pkey->name; pkey++) {
-        // F1 - F12 keys
-        if(key >= SDL_SCANCODE_F1 && key <= SDL_SCANCODE_F12) {
-            if(pkey->code == SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_F1 + (key-SDL_SCANCODE_F1))) {
-                strcpy(buff, pkey->name);
-                return true;
-            }
-        }
-
-        if(pkey->code == key) {
+        int keycode = pkey->code;
+        keycode &= ~KKEY_SCANCODE_MASK;
+        
+        if(keycode == key) {
             strcpy(buff, pkey->name);
             return true;
         }
@@ -320,6 +315,8 @@ int kexInputKey::FindAction(const char *name) {
 void kexInputKey::ExecuteCommand(int key, bool keyup) {
     keycmd_t *keycmd;
     cmdlist_t *cmd;
+    
+    key &= ~KKEY_SCANCODE_MASK;
 
     if(key >= MAX_KEYS) {
         return;
@@ -356,8 +353,9 @@ void kexInputKey::AddAction(byte id, const char *name) {
     if(strlen(name) >= MAX_FILEPATH)
         common.Error("Key_AddAction: \"%s\" is too long", name);
 
-    if(!command.Verify(name))
+    if(!command.Verify(name)) {
         return;
+    }
 
     keyaction = (keyaction_t*)Mem_Malloc(sizeof(keyaction_t), hb_static);
     keyaction->keyid = id;
@@ -548,11 +546,11 @@ void kexInputKey::InitObject(void) {
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_LCTRL", KKEY_LCTRL);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_RALT", KKEY_RALT);
     scriptManager.Engine()->RegisterEnumValue("EnumInputKey","K_LALT", KKEY_LALT);
-    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","BUTTON_LEFT",KM_BUTTON_LEFT);
-    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","BUTTON_MIDDLE",KM_BUTTON_MIDDLE);
-    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","BUTTON_RIGHT",KM_BUTTON_RIGHT);
-    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","BUTTON_WHEELUP",KM_BUTTON_SCROLL_UP);
-    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","BUTTON_WHEELDOWN",KM_BUTTON_SCROLL_DOWN);
+    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","BUTTON_LEFT", KM_BUTTON_LEFT);
+    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","BUTTON_MIDDLE", KM_BUTTON_MIDDLE);
+    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","BUTTON_RIGHT", KM_BUTTON_RIGHT);
+    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","BUTTON_WHEELUP", KM_BUTTON_SCROLL_UP);
+    scriptManager.Engine()->RegisterEnumValue("EnumInputKey","BUTTON_WHEELDOWN", KM_BUTTON_SCROLL_DOWN);
 }
 
 //

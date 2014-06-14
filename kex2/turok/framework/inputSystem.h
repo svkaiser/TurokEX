@@ -317,6 +317,8 @@ public:
     virtual void            MouseUpdateFocus(void) = 0;
     
     void                    SetEnabled(bool enable) { bEnabled = enable; }
+    const int               Mouse_X(void) const { return mouse_x; }
+    const int               Mouse_Y(void) const { return mouse_y; }
 
 protected:
     bool                    bEnabled;
