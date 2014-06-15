@@ -636,6 +636,10 @@
 					RelativePath="..\turok\opengl\dgl.h"
 					>
 				</File>
+				<File
+					RelativePath="..\turok\opengl\glcommon.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="renderer"
