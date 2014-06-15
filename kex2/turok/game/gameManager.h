@@ -115,7 +115,7 @@ private:
     wipecallback_t          *wipeCallback;
     void                    *wipeCallbackData;
 
-    int                     gameTimeMS;
+    uint64_t                gameTimeMS;
 
     bool                    bPaused;
 };
