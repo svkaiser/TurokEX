@@ -813,6 +813,14 @@ float kexAI::GetYawToTarget(void) {
 }
 
 //
+// kexAI::FaceTarget
+//
+
+void kexAI::FaceTarget(const float speed) {
+    SetIdealYaw(angles.yaw + GetYawToTarget(), speed);
+}
+
+//
 // kexAI::TracePosition
 //
 
@@ -930,13 +938,13 @@ float kexAI::GetBestYawToTarget(const float extendedRadius) {
 
 void kexAI::FireProjectile(const char *fxName, const kexVec3 &org,
                            const float maxAngle, bool bLocalToActor) {
-    kexVec3 tOrg;
-    kexVec3 aOrg;
-    kexQuat frot;
-    
     if(!target) {
         return;
     }
+
+    kexVec3 tOrg;
+    kexVec3 aOrg;
+    kexQuat frot;
     
     if(bLocalToActor) {
         aOrg = ToLocalOrigin(org);

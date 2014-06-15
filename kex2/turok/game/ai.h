@@ -87,6 +87,7 @@ public:
     void                        WakeUp(void);
     void                        FoundTarget(void);
     void                        TurnYaw(const float yaw);
+    void                        FaceTarget(const float speed);
     bool                        TryMelee(void);
     bool                        TryRange(void);
     bool                        TryTeleport(void);
@@ -152,7 +153,8 @@ public:
         OBJMETHOD("const int GetAIState(void) const", GetAIState, (void) const, const aiState_t);
         OBJMETHOD("void ClearTargets(void)", ClearTargets, (void), void);
         OBJMETHOD("void TurnYaw(const float)", TurnYaw, (const float yaw), void);
-    
+        OBJMETHOD("void FaceTarget(const float)", FaceTarget, (const float speed), void);
+
         #define OBJPROPERTY(str, p)                         \
             scriptManager.Engine()->RegisterObjectProperty( \
                 scriptClass,                                \
