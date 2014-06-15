@@ -38,6 +38,7 @@ typedef enum {
     GLSTATE_DEPTHTEST,
     GLSTATE_FOG,
     GLSTATE_STENCILTEST,
+    GLSTATE_SCISSOR,
     NUMGLSTATES
 } glState_t;
 
@@ -121,6 +122,7 @@ public:
     void                            SetColorMask(int enable);
     void                            SetTextureUnit(int unit);
     void                            SetViewDimensions(void);
+    void                            SetScissorRect(const int x, const int y, const int w, const int h);
     void                            DisableShaders(void);
     const int                       GetDepthSizeComponent(void);
     void                            RestoreFrameBuffer(void);

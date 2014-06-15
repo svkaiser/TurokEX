@@ -450,6 +450,18 @@ void kexRenderBackend::ClearBuffer(const glClearBit_t bit) {
 }
 
 //
+// kexRenderBackend::SetScissorRect
+//
+
+void kexRenderBackend::SetScissorRect(const int x, const int y, const int w, const int h) {
+    if(!(glState.glStateBits & GLSTATE_SCISSOR)) {
+        return;
+    }
+
+    dglScissor(x, y, w, h);
+}
+
+//
 // kexRenderBackend::SetState
 //
 
@@ -496,6 +508,9 @@ void kexRenderBackend::SetState(const int bits, bool bEnable) {
             break;
         case GLSTATE_STENCILTEST:
             stateFlag = GL_STENCIL_TEST;
+            break;
+        case GLSTATE_SCISSOR:
+            stateFlag = GL_SCISSOR_TEST;
             break;
         default:
             common.Warning("kexRenderBackend::SetState: unknown bit flag: %i\n", bits);

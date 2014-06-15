@@ -266,6 +266,7 @@ void kexRenderImgui::Draw(const int width, const int height) {
     int nq = imguiGetRenderQueueSize();
     
     renderBackend.SetState(GLSTATE_BLEND, true);
+    renderBackend.SetState(GLSTATE_SCISSOR, false);
     renderBackend.SetAlphaFunc(GLFUNC_GEQUAL, 0.01f);
     renderBackend.SetBlend(GLSRC_SRC_ALPHA, GLDST_ONE_MINUS_SRC_ALPHA);
     
@@ -317,7 +318,7 @@ void kexRenderImgui::Draw(const int width, const int height) {
                     const float verts[3*2] = {
                         (float)cmd.rect.x*s+0.5f,
                         (float)cmd.rect.y*s+0.5f+(float)cmd.rect.h*s-1,
-                        (float)cmd.rect.y*s+0.5f+(float)cmd.rect.h*s/2-0.5f,
+                        (float)cmd.rect.x*s+0.5f+(float)cmd.rect.w*s/2-0.5f,
                         (float)cmd.rect.y*s+0.5f,
                         (float)cmd.rect.x*s+0.5f+(float)cmd.rect.w*s-1,
                         (float)cmd.rect.y*s+0.5f+(float)cmd.rect.h*s-1
@@ -330,9 +331,18 @@ void kexRenderImgui::Draw(const int width, const int height) {
                 DrawText(cmd.text.x, cmd.text.y, cmd.text.text, cmd.text.align, cmd.col);
                 break;
             case IMGUI_GFXCMD_SCISSOR:
+                if(cmd.flags) {
+                    renderBackend.SetState(GLSTATE_SCISSOR, true);
+                    renderBackend.SetScissorRect(cmd.rect.x, cmd.rect.y, cmd.rect.w, cmd.rect.h);
+                }
+                else {
+                    renderBackend.SetState(GLSTATE_SCISSOR, false);
+                }
                 break;
             default:
                 break;
         }
     }
+    
+    renderBackend.SetState(GLSTATE_SCISSOR, false);
 }
