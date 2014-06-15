@@ -308,7 +308,7 @@ kexFx *kexFx::Event(fxEvent_t *fxEvent, kexWorldObject *target) {
         }
     }
 
-    if(!nfx) {
+    if(!nfx || fxEvent == &fxInfo->onTick) {
         nfx = this;
     }
 
@@ -316,7 +316,7 @@ kexFx *kexFx::Event(fxEvent_t *fxEvent, kexWorldObject *target) {
         bool ok = true;
 
         if(fxEvent == &fxInfo->onTick) {
-            ok = !soundSystem.HasSource(this);
+            ok = !soundSystem.HasSource(nfx);
         }
 
         if(ok) {
@@ -363,17 +363,6 @@ void kexFx::Spawn(void) {
         matrix.Identity();
     }
     else {
-        if(fxInfo->bProjectile && owner) {
-            kexWorldObject *targ;
-
-            if((targ = static_cast<kexWorldObject*>(owner->GetTarget()))) {
-                kexVec3 torg(targ->GetOrigin());
-                torg.y += targ->GetCenterHeight();
-
-                rotation = targ->GetRotation().RotateFrom(origin, torg, 0);
-            }
-        }
-        
         matrix = kexMatrix(rotation);
     }
 
