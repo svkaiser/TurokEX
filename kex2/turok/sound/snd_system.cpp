@@ -328,11 +328,6 @@ void kexSoundSource::Play(void) {
     float time;
     kexWavFile *wave = sfx->wavFile;
 
-    if(sfx->random != 1.0f &&
-        (kexRand::Max(100) >= (sfx->random * 100.0f))) {
-        return;
-    }
-
     time = (float)startTime + SND_INT2TIME(sfx->delay);
 
     if(time > kexSoundSystem::time) {
@@ -388,7 +383,7 @@ void kexSoundSource::Update(void) {
                     float time = (float)startTime + SND_INT2TIME(sfx->gainLerpDelay);
 
                     if(time <= kexSoundSystem::time) {
-                        float volLerp = (1.0f / (float)sfx->gainLerpTime);
+                        float volLerp = (float)sfx->gainLerpTime / 60.0f;
                         volume = (sfx->gainLerpEnd - volume) * volLerp + volume;
 
                         if(volume > 1) volume = 1;
@@ -406,7 +401,7 @@ void kexSoundSource::Update(void) {
                     float time = (float)startTime + SND_INT2TIME(sfx->freqLerpDelay);
 
                     if(time <= kexSoundSystem::time) {
-                        float freqLerp = (1.0f / (float)sfx->freqLerpTime);
+                        float freqLerp = (float)sfx->freqLerpTime / 60.0f;
                         pitch = (sfx->freqLerpEnd - pitch) * freqLerp + pitch;
 
                         alSourcef(handle, AL_PITCH, pitch);

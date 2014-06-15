@@ -222,6 +222,11 @@ void kexSoundShader::Play(kexGameObject *obj) {
 
     for(int i = 0; i < numsfx; i++) {
 
+        if(sfxList[i].random != 1.0f &&
+            (kexRand::Max(100) >= (sfxList[i].random * 100.0f))) {
+            continue;
+        }
+
         if(!(src = soundSystem.GetAvailableSource())) {
             return;
         }
