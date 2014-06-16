@@ -23,30 +23,39 @@
 #ifndef __LENSFLARES_H__
 #define __LENSFLARES_H__
 
+class kexLensFlaresManager;
+
 class kexLensFlares {
 public:
-                        kexLensFlares(void);
-                        ~kexLensFlares(void);
+                                kexLensFlares(void);
+                                ~kexLensFlares(void);
 
-    void                LoadKLF(const char *file);
-    void                Draw(const kexVec3 &origin);
-    void                Delete(void);
+    void                        LoadKLF(const char *file);
+    void                        Draw(const kexVec3 &origin);
+    void                        Delete(void);
 
-    const bool          IsLoaded(void) const { return bLoaded; }
+    const bool                  IsLoaded(void) const { return bLoaded; }
 
-    filepath_t          filePath;
-    kexLensFlares       *next;
+    static kexLensFlaresManager manager;
+
+    filepath_t                  filePath;
+    kexLensFlares               *next;
 
 private:
     typedef struct {
-        kexMaterial     *material;
-        float           scale;
-        float           offset;
+        kexMaterial             *material;
+        float                   scale;
+        float                   offset;
     } lfData_t;
 
-    lfData_t            *lens;
-    int                 numlens;
-    bool                bLoaded;
+    lfData_t                    *lens;
+    int                         numlens;
+    bool                        bLoaded;
+};
+
+class kexLensFlaresManager : public kexResourceManager<kexLensFlares> {
+public:
+    kexLensFlares               *OnLoad(const char *file);
 };
 
 #endif

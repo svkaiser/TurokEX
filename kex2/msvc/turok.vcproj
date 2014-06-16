@@ -805,6 +805,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\turok\framework\resourceManager.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\framework\script.h"
 					>
 				</File>

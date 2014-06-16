@@ -255,7 +255,7 @@ void kexModelManager::ParseKMesh(kexModel_t *model, kexLexer *lexer) {
                                 case scmdl_material:
                                     lexer->ExpectNextToken(TK_EQUAL);
                                     lexer->GetString();
-                                    surface->material = renderBackend.CacheMaterial(lexer->StringToken());
+                                    surface->material = kexMaterial::manager.Load(lexer->StringToken());
                                     break;
                                 case scmdl_numtriangles:
                                     lexer->AssignFromTokenList(mdltokens, &surface->numIndices,
@@ -577,7 +577,7 @@ void kexModelManager::ParseWavefrontObj(kexModel_t *model, kexLexer *lexer) {
                 surface->rgb[v * 4 + 3] = 0xff;
             }
 
-            surface->material = renderBackend.CacheMaterial("materials/default.kmat@default");
+            surface->material = kexMaterial::manager.Load("materials/default.kmat@default");
         }
     }
 }

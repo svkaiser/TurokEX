@@ -34,6 +34,8 @@
 #include "gameManager.h"
 #include "renderWorld.h"
 
+kexShaderManager kexShaderObj::manager;
+
 static const char *shaderParamNames[RSP_TOTAL+1] = {
     "uDiffuseColor" ,
     "uMVMatrix" ,
@@ -431,4 +433,30 @@ bool kexShaderObj::Link(void) {
     dglUseProgramObjectARB(0);
     bLoaded = true;
     return (linked > 0);
+}
+
+//
+// kexShaderManager::OnLoad
+//
+
+kexShaderObj *kexShaderManager::OnLoad(const char *file) {
+    kexShaderObj *sobj = NULL;
+    kexKeyMap *def;
+        
+    if((def = defManager.FindDefEntry(file))) {
+        sobj = dataList.Add(file);
+        strncpy(sobj->fileName, file, MAX_FILEPATH);
+
+        sobj->InitFromDefinition(def);
+
+        if(sobj->HasErrors()) {
+            common.Warning("There were some errors when compiling %s\n", file);
+        }
+        
+    }
+    else {
+        return NULL;
+    }
+
+    return sobj;
 }

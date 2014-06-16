@@ -1006,12 +1006,12 @@ fxfile_t *kexFxManager::LoadKFX(const char *file) {
                 case scvfx_shader:
                     lexer->ExpectNextToken(TK_EQUAL);
                     lexer->GetString();
-                    info->shaderObj = renderBackend.CacheShader(lexer->StringToken());
+                    info->shaderObj = kexShaderObj::manager.Load(lexer->StringToken());
                     break;
                 case scvfx_lensflares:
                     lexer->ExpectNextToken(TK_EQUAL);
                     lexer->GetString();
-                    info->lensFlares = renderBackend.CacheLensFlares(lexer->StringToken());
+                    info->lensFlares = kexLensFlares::manager.Load(lexer->StringToken());
                     break;
                 case scvfx_onImpact:
                     ParseEvent(info->onImpact, lexer);

@@ -224,8 +224,8 @@ kexRenderWorld::kexRenderWorld(void) {
 //
 
 void kexRenderWorld::InitSunData(void) {
-    blackMat        = renderBackend.CacheMaterial("materials/default.kmat@black");
-    sunSpotShader   = renderBackend.CacheShader("defs/shaders.def@sunSpot");
+    blackMat        = kexMaterial::manager.Load("materials/default.kmat@black");
+    sunSpotShader   = kexShaderObj::manager.Load("defs/shaders.def@sunSpot");
 
 }
 

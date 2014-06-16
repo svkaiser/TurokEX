@@ -460,7 +460,7 @@ void kexGameManager::OnLocalTick(void) {
 //
 
 void kexGameManager::SetWipeMaterial(const char *material) {
-    wipeMaterial = renderBackend.CacheMaterial(material);
+    wipeMaterial = kexMaterial::manager.Load(material);
 }
 
 //

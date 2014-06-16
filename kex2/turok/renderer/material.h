@@ -58,6 +58,8 @@ typedef enum {
     NUMSORTORDERS
 } matSortOrder_t;
 
+class kexMaterialManager;
+
 class kexMaterial {
 public:
                                         kexMaterial(void);
@@ -86,6 +88,8 @@ public:
     filepath_t                          fileName;
     kexMaterial                         *next;
 
+    static kexMaterialManager           manager;
+
 private:
     void                                ParseSampler(kexLexer *lexer);
     glFunctions_t                       ParseFunction(kexLexer *lexer);
@@ -104,6 +108,11 @@ private:
     unsigned int                        units;
     unsigned int                        genID;
     bool                                bShaderErrors;
+};
+
+class kexMaterialManager : public kexResourceManager<kexMaterial> {
+public:
+    kexMaterial     *OnLoad(const char *file);
 };
 
 #endif

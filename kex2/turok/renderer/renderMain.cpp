@@ -103,13 +103,13 @@ kexRenderer::~kexRenderer(void) {
 //
 
 void kexRenderer::Init(void) {
-    motionBlurMaterial  = renderBackend.CacheMaterial("materials/motionBlur.kmat@motionBlur");
-    wireframeMaterial   = renderBackend.CacheMaterial("materials/default.kmat@wireframe");
-    shaderLightScatter  = renderBackend.CacheShader("defs/shaders.def@lightScatter");
-    blackShader         = renderBackend.CacheShader("defs/shaders.def@black");
-    fxaaShader          = renderBackend.CacheShader("defs/shaders.def@fxaa");
-    blurShader          = renderBackend.CacheShader("defs/shaders.def@blur");
-    bloomShader         = renderBackend.CacheShader("defs/shaders.def@bloomTest");
+    motionBlurMaterial  = kexMaterial::manager.Load("materials/motionBlur.kmat@motionBlur");
+    wireframeMaterial   = kexMaterial::manager.Load("materials/default.kmat@wireframe");
+    shaderLightScatter  = kexShaderObj::manager.Load("defs/shaders.def@lightScatter");
+    blackShader         = kexShaderObj::manager.Load("defs/shaders.def@black");
+    fxaaShader          = kexShaderObj::manager.Load("defs/shaders.def@fxaa");
+    blurShader          = kexShaderObj::manager.Load("defs/shaders.def@blur");
+    bloomShader         = kexShaderObj::manager.Load("defs/shaders.def@bloomTest");
 
     int width   = kexMath::RoundPowerOfTwo(sysMain.VideoWidth());
     int height  = kexMath::RoundPowerOfTwo(sysMain.VideoHeight());

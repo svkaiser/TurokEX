@@ -129,12 +129,8 @@ public:
     void                            ScreenShot(void);
     void                            DrawLoadingScreen(const char *text);
     void                            PrintStats(void);
-    kexFont                         *CacheFont(const char *name);
     kexTexture                      *CacheTexture(const char *name, texClampMode_t clampMode,
                                                   texFilterMode_t filterMode = TF_LINEAR);
-    kexMaterial                     *CacheMaterial(const char *file);
-    kexShaderObj                    *CacheShader(const char *file);
-    kexLensFlares                   *CacheLensFlares(const char *file);
 
     const int                       ViewWidth(void) const { return viewWidth; }
     const int                       ViewHeight(void) const { return viewHeight; }
@@ -208,9 +204,6 @@ private:
     bool                            bIsInit;
 
     kexHashList<kexTexture>         textureList;
-    kexHashList<kexFont>            fontList;
-    kexHashList<kexMaterial>        materials;
-    kexHashList<kexShaderObj>       shaders;
     kexHashList<kexLensFlares>      lensFlaresList;
 
     const char                      *gl_vendor;

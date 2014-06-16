@@ -31,6 +31,8 @@
 #include "renderBackend.h"
 #include "material.h"
 
+kexMaterialManager kexMaterial::manager;
+
 //
 // kexMaterial::kexMaterial
 //
@@ -264,7 +266,7 @@ glFunctions_t kexMaterial::ParseFunction(kexLexer *lexer) {
 void kexMaterial::ParseShader(kexLexer *lexer) {
     lexer->GetString();
 
-    shaderObj = renderBackend.CacheShader(lexer->StringToken());
+    shaderObj = kexShaderObj::manager.Load(lexer->StringToken());
     
     if(!shaderObj || shaderObj->HasErrors()) {
         bShaderErrors = true;
@@ -373,4 +375,60 @@ void kexMaterial::Parse(kexLexer *lexer) {
     }
     
     renderBackend.DisableShaders();
+}
+
+//
+// kexMaterialManager::OnLoad
+//
+
+kexMaterial *kexMaterialManager::OnLoad(const char *file) {
+    kexLexer *lexer;
+    kexMaterial *material;
+    filepath_t tStr;
+    int pos;
+    int len;
+    bool bFoundMaterial = false;
+    
+    pos = kexStr::IndexOf(file, "@");
+    
+    if(pos == -1) {
+        return NULL;
+    }
+    
+    len = strlen(file);
+    strncpy(tStr, file, pos);
+    tStr[pos] = 0;
+    
+    if(!(lexer = parser.Open(tStr))) {
+        common.Warning("kexMaterialManager::Load: %s not found\n", tStr);
+        return NULL;
+    }
+
+    strncpy(tStr, file + pos + 1, len - pos);
+    tStr[len - pos] = 0;
+
+    while(lexer->CheckState()) {
+        lexer->Find();
+
+        if(lexer->Matches(tStr)) {
+            bFoundMaterial = true;
+            material = dataList.Add(file);
+            strncpy(material->fileName, file, MAX_FILEPATH);
+
+            material->Init();
+            material->Parse(lexer);
+            break;
+        }
+    }
+
+    if(bFoundMaterial == false) {
+        common.Warning("kexMaterialManager::Load: %s not found\n", tStr);
+        parser.Close();
+        return NULL;
+    }
+    
+    // we're done with the file
+    parser.Close();
+
+    return material;
 }

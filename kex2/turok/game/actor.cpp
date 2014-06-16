@@ -306,7 +306,7 @@ void kexActor::ParseDefault(kexLexer *lexer) {
                 str = (char*)lexer->Token();
 
                 if(str[0] != '-') {
-                    materials[i] = renderBackend.CacheMaterial(str);
+                    materials[i] = kexMaterial::manager.Load(str);
                 }
                 else {
                     materials[i] = NULL;

@@ -78,7 +78,7 @@ kexGuiManager::~kexGuiManager(void) {
 //
 
 void kexGuiManager::Init(void) {
-    cursorMaterial = renderBackend.CacheMaterial("gui/cursor.kmat@cursor");
+    cursorMaterial = kexMaterial::manager.Load("gui/cursor.kmat@cursor");
     
     kexStrList list;
     fileSystem.GetMatchingFiles(list, "gui/");

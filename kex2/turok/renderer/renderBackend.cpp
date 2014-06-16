@@ -334,7 +334,7 @@ void kexRenderBackend::Init(void) {
     whiteTexture.LoadFromFile("textures/default.tga", TC_CLAMP, TF_LINEAR);
     blackTexture.LoadFromFile("textures/default.tga", TC_CLAMP, TF_LINEAR);
 
-    defaultMaterial = CacheMaterial("materials/default.kmat@default");
+    defaultMaterial = kexMaterial::manager.Load("materials/default.kmat@default");
     
     // create framebuffer texture
     frameBuffer = textureList.Add("framebuffer", kexTexture::hb_texture);
@@ -361,9 +361,6 @@ void kexRenderBackend::Init(void) {
 
 void kexRenderBackend::Shutdown(void) {
     kexTexture *texture;
-    kexMaterial *material;
-    kexShaderObj *shader;
-    kexLensFlares *lens;
 
     common.Printf("Shutting down render system\n");
 
@@ -372,18 +369,14 @@ void kexRenderBackend::Shutdown(void) {
     blackTexture.Delete();
     consoleFont.Material()->Delete();
 
+    kexMaterial::manager.Shutdown();
+    kexShaderObj::manager.Shutdown();
+    kexFont::manager.Shutdown();
+    kexLensFlares::manager.Shutdown();
+
     for(int i = 0; i < MAX_HASH; i++) {
-        for(material = materials.GetData(i); material; material = materials.Next()) {
-            material->Delete();
-        }
         for(texture = textureList.GetData(i); texture; texture = textureList.Next()) {
             texture->Delete();
-        }
-        for(shader = shaders.GetData(i); shader; shader = shaders.Next()) {
-            shader->Delete();
-        }
-        for(lens = lensFlaresList.GetData(i); lens; lens = lensFlaresList.Next()) {
-            lens->Delete();
         }
     }
 
@@ -848,138 +841,6 @@ kexTexture *kexRenderBackend::CacheTexture(const char *name, texClampMode_t clam
     }
 
     return texture;
-}
-
-//
-// kexRenderBackend::LoadShader
-//
-
-kexShaderObj *kexRenderBackend::CacheShader(const char *file) {
-    kexShaderObj *sobj;
-    
-    if(file == NULL) {
-        return NULL;
-    }
-    else if(file[0] == 0) {
-        return NULL;
-    }
-    
-    if(!(sobj = shaders.Find(file))) {
-        kexKeyMap *def;
-        
-        if((def = defManager.FindDefEntry(file))) {
-            sobj = shaders.Add(file);
-            strncpy(sobj->fileName, file, MAX_FILEPATH);
-
-            sobj->InitFromDefinition(def);
-
-            if(sobj->HasErrors()) {
-                common.Warning("There were some errors when compiling %s\n", file);
-            }
-            
-        }
-        else {
-            return NULL;
-        }
-    }
-    
-    return sobj;
-}
-
-//
-// kexRenderBackend::CacheFont
-//
-
-kexFont *kexRenderBackend::CacheFont(const char *name) {
-    kexFont *font = NULL;
-
-    if(!(font = fontList.Find(name))) {
-        font = fontList.Add(name);
-        font->LoadKFont(name);
-    }
-
-    return font;
-}
-
-//
-// kexRenderBackend::CacheMaterial
-//
-
-kexMaterial *kexRenderBackend::CacheMaterial(const char *file) {
-    kexMaterial *material;
-    
-    if(file == NULL) {
-        return NULL;
-    }
-    else if(file[0] == 0) {
-        return NULL;
-    }
-    
-    if(!(material = materials.Find(file))) {
-        kexLexer *lexer;
-        filepath_t tStr;
-        int pos;
-        int len;
-        bool bFoundMaterial = false;
-        
-        pos = kexStr::IndexOf(file, "@");
-        
-        if(pos == -1) {
-            return NULL;
-        }
-        
-        len = strlen(file);
-        strncpy(tStr, file, pos);
-        tStr[pos] = 0;
-        
-        if(!(lexer = parser.Open(tStr))) {
-            common.Warning("kexMaterialManager::LoadMaterial: %s not found\n", tStr);
-            return NULL;
-        }
-
-        strncpy(tStr, file + pos + 1, len - pos);
-        tStr[len - pos] = 0;
-
-        while(lexer->CheckState()) {
-            lexer->Find();
-
-            if(lexer->Matches(tStr)) {
-                bFoundMaterial = true;
-                material = materials.Add(file);
-                strncpy(material->fileName, file, MAX_FILEPATH);
-
-                material->Init();
-                material->Parse(lexer);
-                break;
-            }
-        }
-
-        if(bFoundMaterial == false) {
-            common.Warning("kexMaterialManager::LoadMaterial: %s not found\n", tStr);
-            parser.Close();
-            return NULL;
-        }
-        
-        // we're done with the file
-        parser.Close();
-    }
-    
-    return material;
-}
-
-//
-// kexRenderBackend::CacheLensFlares
-//
-
-kexLensFlares *kexRenderBackend::CacheLensFlares(const char *name) {
-    kexLensFlares *lens = NULL;
-
-    if(!(lens = lensFlaresList.Find(name))) {
-        lens = lensFlaresList.Add(name);
-        lens->LoadKLF(name);
-    }
-
-    return lens;
 }
 
 //

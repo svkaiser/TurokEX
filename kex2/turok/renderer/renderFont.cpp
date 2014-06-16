@@ -30,6 +30,8 @@
 #include "renderMain.h"
 #include "renderFont.h"
 
+kexFontManager kexFont::manager;
+
 //
 // kexFont::kexFont
 //
@@ -44,6 +46,13 @@ kexFont::kexFont(void) {
 //
 
 kexFont::~kexFont(void) {
+}
+
+//
+// kexFont::Delete
+//
+
+void kexFont::Delete(void) {
 }
 
 //
@@ -70,7 +79,7 @@ void kexFont::LoadKFont(const char *file) {
 
         if(lexer->Matches("material")) {
             lexer->GetString();
-            material = renderBackend.CacheMaterial(lexer->StringToken());
+            material = kexMaterial::manager.Load(lexer->StringToken());
         }
 
         if(lexer->Matches("mapchar")) {
@@ -216,4 +225,15 @@ float kexFont::StringHeight(const char* string, float scale, int fixedLen) {
     }
     
     return height;
+}
+
+//
+// kexFontManager::OnLoad
+//
+
+kexFont *kexFontManager::OnLoad(const char *file) {
+    kexFont *font = dataList.Add(file);
+    font->LoadKFont(file);
+
+    return font;
 }

@@ -715,7 +715,7 @@ kexCanvasScriptObject *kexCanvas::CreateScriptObject(const char *className) {
 kexCanvasText *kexCanvas::CreateText(const char *font) {
     kexCanvasText *str = static_cast<kexCanvasText*>(kexObject::Create("kexCanvasText"));
 
-    str->font = renderBackend.CacheFont(font);
+    str->font = kexFont::manager.Load(font);
 
     str->link.Clear();
     str->mainLink.Clear();

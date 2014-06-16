@@ -73,6 +73,7 @@ typedef struct {
 typedef GLhandleARB	rhandle;
 
 class kexMaterial;
+class kexShaderManager;
 
 class kexShaderObj {
 public:
@@ -109,6 +110,8 @@ public:
     const bool                  IsLoaded(void) const { return bLoaded; }
     
     void                        ResetValidCount(void) { validCount = 0; }
+
+    static kexShaderManager     manager;
     
     filepath_t                  fileName;
 
@@ -122,6 +125,11 @@ private:
     bool                        bLoaded;
     int                         globalParams[RSP_TOTAL];
     int                         validCount;
+};
+
+class kexShaderManager : public kexResourceManager<kexShaderObj> {
+public:
+    kexShaderObj                *OnLoad(const char *file);
 };
 
 #endif

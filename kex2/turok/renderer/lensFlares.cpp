@@ -30,6 +30,8 @@
 #include "lensFlares.h"
 #include "world.h"
 
+kexLensFlaresManager kexLensFlares::manager;
+
 //
 // kexLensFlares::kexLensFlares
 //
@@ -111,7 +113,7 @@ void kexLensFlares::LoadKLF(const char *file) {
                     }
                     else if(lexer->Matches("material")) {
                         lexer->GetString();
-                        lens[i].material = renderBackend.CacheMaterial(lexer->StringToken());
+                        lens[i].material = kexMaterial::manager.Load(lexer->StringToken());
                     }
                     lexer->Find();
                 }
@@ -214,4 +216,15 @@ void kexLensFlares::Draw(const kexVec3 &origin) {
         proj_x += (len * div_x);
         proj_y += (len * div_y);
     }
+}
+
+//
+// kexLensFlaresManager::OnLoad
+//
+
+kexLensFlares *kexLensFlaresManager::OnLoad(const char *file) {
+    kexLensFlares *lens = dataList.Add(file);
+    lens->LoadKLF(file);
+
+    return lens;
 }
