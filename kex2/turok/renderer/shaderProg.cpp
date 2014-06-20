@@ -35,24 +35,12 @@
 #include "renderWorld.h"
 
 kexShaderManager kexShaderObj::manager;
+kexArray<kexGetterBase*> kexShaderObj::customParameters;
 
 static const char *shaderParamNames[RSP_TOTAL+1] = {
-    "uDiffuseColor" ,
-    "uMVMatrix" ,
-    "uPVMatrix",
+    "uDiffuseColor",
     "uViewWidth",
     "uViewHeight",
-    "uTime",
-    "uRunTime",
-    "uLightDirection",
-    "uLightDirectionColor",
-    "uLightAmbience",
-    "uFogNear",
-    "uFogFar",
-    "uFogColor",
-    "uCameraAngle",
-    "uCameraTransform",
-    "uCameraPosition",
     "uParam1",
     "uParam2",
     "uParam3",
@@ -80,12 +68,13 @@ kexShaderObj::~kexShaderObj(void) {
 //
 
 void kexShaderObj::Init(void) {
-    this->programObj        = 0;
-    this->vertexProgram     = 0;
-    this->fragmentProgram   = 0;
-    this->validCount        = 0;
-    this->bHasErrors        = false;
-    this->bLoaded           = false;
+    this->programObj            = 0;
+    this->vertexProgram         = 0;
+    this->fragmentProgram       = 0;
+    this->validCount            = 0;
+    this->bHasErrors            = false;
+    this->bLoaded               = false;
+    this->customParametersLocal = NULL;
 }
 
 //
@@ -147,6 +136,10 @@ void kexShaderObj::Delete(void) {
     dglDeleteObjectARB(vertexProgram);
     dglDeleteObjectARB(programObj);
     bLoaded = false;
+    
+    if(customParametersLocal) {
+        delete[] customParametersLocal;
+    }
 }
 
 //
@@ -301,16 +294,58 @@ void kexShaderObj::CommitGlobalUniforms(const kexMaterial *material) {
     
     validCount = renderBackend.ValidFrameNum();
     
-    SetGlobalUniform(RSP_FOG_COLOR, localWorld.GetCurrentFogRGB());
-    SetGlobalUniform(RSP_FOG_NEAR, localWorld.GetFogNear());
-    SetGlobalUniform(RSP_FOG_FAR, localWorld.GetFogFar());
-    SetGlobalUniform(RSP_LIGHT_DIRECTION, renderWorld.WorldLightTransform());
-    SetGlobalUniform(RSP_LIGHT_DIRECTION_COLOR, localWorld.worldLightColor);
-    SetGlobalUniform(RSP_LIGHT_AMBIENCE, localWorld.worldLightAmbience);
-    SetGlobalUniform(RSP_TIME, client.GetTime());
-    SetGlobalUniform(RSP_RUNTIME, client.GetRunTime());
     SetGlobalUniform(RSP_VIEW_WIDTH, sysMain.VideoWidth());
     SetGlobalUniform(RSP_VIEW_HEIGHT, sysMain.VideoHeight());
+    
+    kexGetterBase *getter;
+    unsigned int len = kexShaderObj::customParameters.Length();
+    
+    if(len <= 0) {
+        return;
+    }
+    
+    // allocate local custom parameter list if it hasn't already
+    if(!customParametersLocal) {
+        customParametersLocal = new int[len];
+        
+        for(unsigned int i = 0; i < len; i++) {
+            customParametersLocal[i] = -1;
+            
+            kexGetterBase *getter = kexShaderObj::customParameters[i];
+            customParametersLocal[i] = dglGetUniformLocationARB(programObj, getter->Name());
+        }
+    }
+    
+    for(unsigned int i = 0; i < len; i++) {
+        if(customParametersLocal[i] <= -1) {
+            continue;
+        }
+        
+        getter = kexShaderObj::customParameters[i];
+        
+        switch(getter->ReturnType()) {
+            case GRT_FLOAT:
+                dglUniform1fARB(customParametersLocal[i], getter->GetFloatValue());
+                break;
+            case GRT_INT:
+                dglUniform1iARB(customParametersLocal[i], getter->GetIntValue());
+                break;
+            case GRT_BOOL:
+                dglUniform1iARB(customParametersLocal[i], getter->GetBoolValue());
+                break;
+            case GRT_VEC2:
+                dglUniform2fvARB(customParametersLocal[i], 1, getter->GetVec2Value().ToFloatPtr());
+                break;
+            case GRT_VEC3:
+                dglUniform3fvARB(customParametersLocal[i], 1, getter->GetVec3Value().ToFloatPtr());
+                break;
+            case GRT_VEC4:
+                dglUniform4fvARB(customParametersLocal[i], 1, getter->GetVec4Value().ToFloatPtr());
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 //

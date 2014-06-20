@@ -24,6 +24,7 @@
 #define __SHADERPROG_H__
 
 #include "keymap.h"
+#include "getter.h"
 
 typedef enum {
     RST_VERTEX          = 0,
@@ -33,21 +34,8 @@ typedef enum {
 
 typedef enum {
     RSP_DIFFUSE_COLOR   = 0,
-    RSP_MVMATRIX,
-    RSP_PVMATRIX,
     RSP_VIEW_WIDTH,
     RSP_VIEW_HEIGHT,
-    RSP_TIME,
-    RSP_RUNTIME,
-    RSP_LIGHT_DIRECTION,
-    RSP_LIGHT_DIRECTION_COLOR,
-    RSP_LIGHT_AMBIENCE,
-    RSP_FOG_NEAR,
-    RSP_FOG_FAR,
-    RSP_FOG_COLOR,
-    RSP_CAMERA_ANGLE,
-    RSP_CAMERA_TRANSFORM,
-    RSP_CAMERA_POSITION,
     RSP_GENERIC_PARAM1,
     RSP_GENERIC_PARAM2,
     RSP_GENERIC_PARAM3,
@@ -55,25 +43,18 @@ typedef enum {
     RSP_TOTAL
 } rShaderGlobalParams_t;
 
-typedef enum {
-    RPT_FLOAT           = 0,
-    RPT_INT,
-    RPT_BOOL,
-    RPT_VEC2,
-    RPT_VEC3,
-    RPT_VEC4
-} rShaderParamType_t;
-
-typedef struct {
-    int                 parmLocation;
-    rShaderParamType_t  type;
-    float               value[4];
-} rShaderUserParam_t;
-
 typedef GLhandleARB	rhandle;
 
 class kexMaterial;
 class kexShaderManager;
+
+#define REGISTER_PARAM(g)                                       \
+template<typename type>                                         \
+static void RegisterParam(const char *name, type *obj, g cb) {  \
+    kexGetterBase *getter = new kexGetter<type>(name, obj, cb); \
+                                                                \
+    customParameters.Push(getter);                              \
+}
 
 class kexShaderObj {
 public:
@@ -103,6 +84,13 @@ public:
     void                        SetGlobalUniform(const rShaderGlobalParams_t param, kexVec4 &val);
     void                        SetGlobalUniform(const rShaderGlobalParams_t param, kexMatrix &val);
     
+                                REGISTER_PARAM(GETTER_FLOAT(type));
+                                REGISTER_PARAM(GETTER_INT(type));
+                                REGISTER_PARAM(GETTER_BOOL(type));
+                                REGISTER_PARAM(GETTER_VEC2(type));
+                                REGISTER_PARAM(GETTER_VEC3(type));
+                                REGISTER_PARAM(GETTER_VEC4(type));
+    
     rhandle                     &Program(void) { return programObj; }
     rhandle                     &VertexProgram(void) { return vertexProgram; }
     rhandle                     &FragmentProgram(void) { return fragmentProgram; }
@@ -118,14 +106,19 @@ public:
 private:
     void                        DumpErrorLog(const rhandle handle);
     
+    static kexArray<kexGetterBase*> customParameters;
+    
     rhandle                     programObj;
     rhandle                     vertexProgram;
     rhandle                     fragmentProgram;
     bool                        bHasErrors;
     bool                        bLoaded;
     int                         globalParams[RSP_TOTAL];
+    int                         *customParametersLocal;
     int                         validCount;
 };
+
+#undef REGISTER_PARAM
 
 class kexShaderManager : public kexResourceManager<kexShaderObj> {
 public:
