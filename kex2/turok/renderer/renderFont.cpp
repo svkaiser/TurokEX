@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright(C) 2013 Samuel Villarreal
@@ -62,33 +62,33 @@ void kexFont::Delete(void) {
 void kexFont::LoadKFont(const char *file) {
     kexLexer *lexer;
     filepath_t fileName;
-
+    
     if(!(lexer = parser.Open(file))) {
         common.Warning("kexFont::LoadKFont: %s not found\n", file);
         return;
     }
-
+    
     memset(fileName, 0, sizeof(filepath_t));
-
+    
     while(lexer->CheckState()) {
         lexer->Find();
-
+        
         if(lexer->TokenType() != TK_IDENIFIER) {
             continue;
         }
-
+        
         if(lexer->Matches("material")) {
             lexer->GetString();
             material = kexMaterial::manager.Load(lexer->StringToken());
         }
-
+        
         if(lexer->Matches("mapchar")) {
             lexer->ExpectNextToken(TK_LBRACK);
             lexer->Find();
-
+            
             while(lexer->TokenType() != TK_RBRACK) {
                 int ch;
-
+                
                 if(lexer->TokenType() == TK_NUMBER) {
                     ch = atoi(lexer->Token());
                 }
@@ -97,17 +97,17 @@ void kexFont::LoadKFont(const char *file) {
                     parser.Close();
                     return;
                 }
-
+                
                 atlas[ch].x = lexer->GetNumber();
                 atlas[ch].y = lexer->GetNumber();
                 atlas[ch].w = lexer->GetNumber();
                 atlas[ch].h = lexer->GetNumber();
-
+                
                 lexer->Find();
             }
         }
     }
-
+    
     // we're done with the file
     parser.Close();
     bLoaded = true;
@@ -136,25 +136,27 @@ void kexFont::DrawString(const char *string, float x, float y, float scale,
     float ty2;
     char *check;
     kexTexture *texture;
-
+    
     if(scale <= 0.01f) {
         scale = 1;
     }
-
+    
     if(center) {
         x -= StringWidth(string, scale, 0) * 0.5f;
     }
-
+    
     if(!(texture = material->Sampler(0)->texture)) {
         texture = &renderBackend.defaultTexture;
     }
-
+    
     w = (float)texture->OriginalWidth();
     h = (float)texture->OriginalHeight();
-
+    
     tri = 0;
     len = strlen(string);
-
+    
+    cpuVertList.BindDrawPointers();
+    
     for(i = 0; i < len; i++) {
         ch      = string[i];
         at      = &atlas[ch];
@@ -167,20 +169,20 @@ void kexFont::DrawString(const char *string, float x, float y, float scale,
         ty1     = (at->y / h);
         ty2     = (ty1 + at->h / h);
         check   = (char*)string+i;
-
-        renderer.AddVertex(vx1, vy1, 0, tx1, ty1, rgba1[0], rgba1[1], rgba1[2], rgba1[3]);
-        renderer.AddVertex(vx2, vy1, 0, tx2, ty1, rgba1[0], rgba1[1], rgba1[2], rgba1[3]);
-        renderer.AddVertex(vx1, vy2, 0, tx1, ty2, rgba2[0], rgba2[1], rgba2[2], rgba2[3]);
-        renderer.AddVertex(vx2, vy2, 0, tx2, ty2, rgba2[0], rgba2[1], rgba2[2], rgba2[3]);
-
-        renderer.AddTriangle(0+tri, 1+tri, 2+tri);
-        renderer.AddTriangle(2+tri, 1+tri, 3+tri);
-
+        
+        cpuVertList.AddVertex(vx1, vy1, 0, tx1, ty1, rgba1);
+        cpuVertList.AddVertex(vx2, vy1, 0, tx2, ty1, rgba1);
+        cpuVertList.AddVertex(vx1, vy2, 0, tx1, ty2, rgba2);
+        cpuVertList.AddVertex(vx2, vy2, 0, tx2, ty2, rgba2);
+        
+        cpuVertList.AddTriangle(0+tri, 1+tri, 2+tri);
+        cpuVertList.AddTriangle(2+tri, 1+tri, 3+tri);
+        
         x += at->w * scale;
         tri += 4;
     }
     
-    renderer.DrawElements(material);
+    cpuVertList.DrawElements(material);
 }
 
 //
@@ -191,15 +193,15 @@ float kexFont::StringWidth(const char* string, float scale, int fixedLen) {
     float width = 0;
     int len = strlen(string);
     int i;
-
+    
     if(fixedLen > 0) {
         len = fixedLen;
     }
-        
+    
     for(i = 0; i < len; i++) {
         width += (atlas[string[i]].w * scale);
     }
-            
+    
     return width;
 }
 
@@ -234,6 +236,6 @@ float kexFont::StringHeight(const char* string, float scale, int fixedLen) {
 kexFont *kexFontManager::OnLoad(const char *file) {
     kexFont *font = dataList.Add(file);
     font->LoadKFont(file);
-
+    
     return font;
 }

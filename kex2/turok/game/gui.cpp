@@ -729,9 +729,6 @@ void kexGuiManager::DrawGuis(void) {
 // kexGuiManager::ProcessInput
 //
 
-extern kexCvar cvarMSensitivityX;
-extern kexCvar cvarMSensitivityY;
-    
 bool kexGuiManager::ProcessInput(const event_t *ev) {
     bool ok = false;
     
@@ -740,10 +737,9 @@ bool kexGuiManager::ProcessInput(const event_t *ev) {
     }
     
     if(ev->type == ev_mouse) {
-        const float t = (float)sysMain.VideoWidth() / 32.0f;
+        cursor_x = inputSystem->Mouse_X();
+        cursor_y = inputSystem->Mouse_Y();
         
-        cursor_x += ((float)ev->data2 * cvarMSensitivityX.GetFloat()) / t;
-        cursor_y -= ((float)ev->data3 * cvarMSensitivityX.GetFloat()) / t;
         kexMath::Clamp(cursor_x, 0.0f, (float)sysMain.VideoWidth());
         kexMath::Clamp(cursor_y, 0.0f, (float)sysMain.VideoHeight());
         
@@ -769,13 +765,14 @@ void kexGuiManager::DrawCursor(void) {
         return;
     }
     
-    renderer.AddVertex(cursor_x, cursor_y, 0, 0, 0, 255, 255, 255, 255);
-    renderer.AddVertex(32+ cursor_x, cursor_y, 0, 1, 0, 255, 255, 255, 255);
-    renderer.AddVertex(cursor_x, 32 + cursor_y, 0, 0, 1, 255, 255, 255, 255);
-    renderer.AddVertex(32 + cursor_x, 32 + cursor_y, 0, 1, 1, 255, 255, 255, 255);
-    renderer.AddTriangle(0, 1, 2);
-    renderer.AddTriangle(2, 1, 3);
-    renderer.DrawElements(cursorMaterial);
+    cpuVertList.BindDrawPointers();
+    cpuVertList.AddVertex(cursor_x, cursor_y, 0, 0, 0, 255, 255, 255, 255);
+    cpuVertList.AddVertex(32+ cursor_x, cursor_y, 0, 1, 0, 255, 255, 255, 255);
+    cpuVertList.AddVertex(cursor_x, 32 + cursor_y, 0, 0, 1, 255, 255, 255, 255);
+    cpuVertList.AddVertex(32 + cursor_x, 32 + cursor_y, 0, 1, 1, 255, 255, 255, 255);
+    cpuVertList.AddTriangle(0, 1, 2);
+    cpuVertList.AddTriangle(2, 1, 3);
+    cpuVertList.DrawElements(cursorMaterial);
     
     renderBackend.DisableShaders();
 }

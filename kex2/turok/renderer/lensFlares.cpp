@@ -194,6 +194,8 @@ void kexLensFlares::Draw(const kexVec3 &origin) {
 
     proj_x = pos.x;
     proj_y = pos.y;
+    
+    cpuVertList.BindDrawPointers();
 
     for(int i = 0; i < numlens; i++) {
         scale = lens[i].scale * 2.0f;
@@ -205,13 +207,13 @@ void kexLensFlares::Draw(const kexVec3 &origin) {
 
         alpha = (byte)(kexMath::Pow(d, 3.0f) * 255.0f);
 
-        renderer.AddVertex(proj_x - scale, proj_y - scale, 0, 0, 0, 255, 255, 255, alpha);
-        renderer.AddVertex(proj_x + scale, proj_y - scale, 0, 1, 0, 255, 255, 255, alpha);
-        renderer.AddVertex(proj_x - scale, proj_y + scale, 0, 0, 1, 255, 255, 255, alpha);
-        renderer.AddVertex(proj_x + scale, proj_y + scale, 0, 1, 1, 255, 255, 255, alpha);
-        renderer.AddTriangle(0, 1, 2);
-        renderer.AddTriangle(2, 1, 3);
-        renderer.DrawElements(lens[i].material);
+        cpuVertList.AddVertex(proj_x - scale, proj_y - scale, 0, 0, 0, 255, 255, 255, alpha);
+        cpuVertList.AddVertex(proj_x + scale, proj_y - scale, 0, 1, 0, 255, 255, 255, alpha);
+        cpuVertList.AddVertex(proj_x - scale, proj_y + scale, 0, 0, 1, 255, 255, 255, alpha);
+        cpuVertList.AddVertex(proj_x + scale, proj_y + scale, 0, 1, 1, 255, 255, 255, alpha);
+        cpuVertList.AddTriangle(0, 1, 2);
+        cpuVertList.AddTriangle(2, 1, 3);
+        cpuVertList.DrawElements(lens[i].material);
 
         proj_x += (len * div_x);
         proj_y += (len * div_y);

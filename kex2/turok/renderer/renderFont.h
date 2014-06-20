@@ -1,4 +1,4 @@
-// Emacs style mode select   -*- C++ -*- 
+// Emacs style mode select   -*- C++ -*-
 //-----------------------------------------------------------------------------
 //
 // Copyright(C) 2013 Samuel Villarreal
@@ -27,24 +27,24 @@ class kexFontManager;
 
 class kexFont {
 public:
-                            kexFont(void);
-                            ~kexFont(void);
-
+    kexFont(void);
+    ~kexFont(void);
+    
     void                    LoadKFont(const char *file);
     void                    Delete(void);
     void                    DrawString(const char *string, float x, float y, float scale,
-                               bool center, byte *rgba1, byte *rgba2);
+                                       bool center, byte *rgba1, byte *rgba2);
     float                   StringWidth(const char* string, float scale, int fixedLen);
     float                   StringHeight(const char* string, float scale, int fixedLen);
-
+    
     const bool              IsLoaded(void) const { return bLoaded; }
     kexMaterial             *Material(void) { return material; }
-
+    
     static kexFontManager   manager;
-
+    
     filepath_t              filePath;
     kexFont                 *next;
-
+    
 private:
     kexMaterial             *material;
     atlas_t                 atlas[256];

@@ -1305,18 +1305,18 @@ void kexRenderWorld::DrawRenderNode(void) {
 void kexRenderWorld::DrawTriangle(const kexTri &tri, const word index,
                                byte r, byte g, byte b, byte a) {
     for(int j = 0; j < 3; j++) {
-        renderer.AddVertex(tri.point[j]->x,
-                                tri.point[j]->y,
-                                tri.point[j]->z,
-                                0,
-                                0,
-                                r,
-                                g,
-                                b,
-                                a);
+        cpuVertList.AddVertex(tri.point[j]->x,
+                              tri.point[j]->y,
+                              tri.point[j]->z,
+                              0,
+                              0,
+                              r,
+                              g,
+                              b,
+                              a);
     }
     
-    renderer.AddTriangle(index + 0, index + 1, index + 2);
+    cpuVertList.AddTriangle(index + 0, index + 1, index + 2);
 }
 
 //
@@ -1372,17 +1372,17 @@ void kexRenderWorld::DrawSectors(kexSector *sectors, const int count) {
         
         if(sector->area && sector->area->Flags() & AAF_WATER) {
             for(int j = 0; j < 3; j++) {
-                renderer.AddVertex(tri->point[j]->x,
-                                        sector->area->WaterPlane(),
-                                        tri->point[j]->z,
-                                        0,
-                                        0,
-                                        32,
-                                        0,
-                                        255,
-                                        192);
+                cpuVertList.AddVertex(tri->point[j]->x,
+                                      sector->area->WaterPlane(),
+                                      tri->point[j]->z,
+                                      0,
+                                      0,
+                                      32,
+                                      0,
+                                      255,
+                                      192);
             }
-            renderer.AddTriangle(idx + 0, idx + 1, idx + 2);
+            cpuVertList.AddTriangle(idx + 0, idx + 1, idx + 2);
             
             idx += 3;
             num++;
@@ -1395,8 +1395,8 @@ void kexRenderWorld::DrawSectors(kexSector *sectors, const int count) {
         renderBackend.SetState(GLSTATE_BLEND, true);
         renderBackend.SetState(GLSTATE_ALPHATEST, true);
         
-        renderer.BindDrawPointers();
-        renderer.DrawElementsNoShader(false);
+        cpuVertList.BindDrawPointers();
+        cpuVertList.DrawElementsNoShader(false);
         
         // draw wireframe outline
         renderBackend.SetPolyMode(GLPOLY_LINE);
@@ -1404,7 +1404,7 @@ void kexRenderWorld::DrawSectors(kexSector *sectors, const int count) {
         dglDisableClientState(GL_COLOR_ARRAY);
         dglColor4ub(0xFF, 0xFF, 0xFF, 0xFF);
         
-        renderer.DrawElementsNoShader();
+        cpuVertList.DrawElementsNoShader();
         renderBackend.SetPolyMode(GLPOLY_FILL);
         
         dglEnableClientState(GL_COLOR_ARRAY);
@@ -1421,20 +1421,20 @@ void kexRenderWorld::DrawSectors(kexSector *sectors, const int count) {
                 n = tri->plane.Normal();
                 pt = tri->GetCenterPoint();
                 
-                renderer.AddLine(pt.x,
-                                      pt.y,
-                                      pt.z,
-                                      pt.x + (16 * n[0]),
-                                      pt.y + (16 * n[1]),
-                                      pt.z + (16 * n[2]),
-                                      0,
-                                      32,
-                                      255,
-                                      255,
-                                      0,
-                                      255,
-                                      0,
-                                      255);
+                cpuVertList.AddLine(pt.x,
+                                    pt.y,
+                                    pt.z,
+                                    pt.x + (16 * n[0]),
+                                    pt.y + (16 * n[1]),
+                                    pt.z + (16 * n[2]),
+                                    0,
+                                    32,
+                                    255,
+                                    255,
+                                    0,
+                                    255,
+                                    0,
+                                    255);
             }
             
             if(sector->flags & CLF_CHECKHEIGHT) {
@@ -1444,25 +1444,25 @@ void kexRenderWorld::DrawSectors(kexSector *sectors, const int count) {
                     n = tri->plane.Normal();
                     pt = tri->GetCenterPoint();
                     
-                    renderer.AddLine(pt.x,
-                                          pt.y,
-                                          pt.z,
-                                          pt.x + (16 * n[0]),
-                                          pt.y + (16 * n[1]),
-                                          pt.z + (16 * n[2]),
-                                          255,
-                                          0,
-                                          0,
-                                          255,
-                                          255,
-                                          255,
-                                          32,
-                                          255);
+                    cpuVertList.AddLine(pt.x,
+                                        pt.y,
+                                        pt.z,
+                                        pt.x + (16 * n[0]),
+                                        pt.y + (16 * n[1]),
+                                        pt.z + (16 * n[2]),
+                                        255,
+                                        0,
+                                        0,
+                                        255,
+                                        255,
+                                        255,
+                                        32,
+                                        255);
                 }
             }
         }
         
-        renderer.DrawLineElements();
+        cpuVertList.DrawLineElements();
         dglLineWidth(1.0f);
         
         renderBackend.SetState(GLSTATE_TEXTURE0, true);

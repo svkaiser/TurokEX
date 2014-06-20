@@ -200,7 +200,7 @@ void kexCanvasImage::Draw(kexMatrix &curMatrix, const float &curAlpha) {
     renderBackend.SetState(GLSTATE_CULL, false);
     renderBackend.SetState(GLSTATE_DEPTHTEST, false);
 
-    renderer.BindDrawPointers();
+    cpuVertList.BindDrawPointers();
     texture->Bind();
 
     w = ((width <= 0) ? (float)texture->Width() : (width * 2.0f)) * 0.5f;
@@ -221,7 +221,7 @@ void kexCanvasImage::Draw(kexMatrix &curMatrix, const float &curAlpha) {
     max[0] = w - (regX * 0.5f);
     max[1] = h - (regY * 0.5f);
 
-    renderer.AddVertex(
+    cpuVertList.AddVertex(
         min[0],
         min[1],
         0,
@@ -231,7 +231,7 @@ void kexCanvasImage::Draw(kexMatrix &curMatrix, const float &curAlpha) {
         rgba[0 * 4 + 1],
         rgba[0 * 4 + 2],
         a[0]);
-    renderer.AddVertex(
+    cpuVertList.AddVertex(
         max[0],
         min[1],
         0,
@@ -241,7 +241,7 @@ void kexCanvasImage::Draw(kexMatrix &curMatrix, const float &curAlpha) {
         rgba[1 * 4 + 1],
         rgba[1 * 4 + 2],
         a[1]);
-    renderer.AddVertex(
+    cpuVertList.AddVertex(
         min[0],
         max[1],
         0,
@@ -251,7 +251,7 @@ void kexCanvasImage::Draw(kexMatrix &curMatrix, const float &curAlpha) {
         rgba[2 * 4 + 1],
         rgba[2 * 4 + 2],
         a[2]);
-    renderer.AddVertex(
+    cpuVertList.AddVertex(
         max[0],
         max[1],
         0,
@@ -265,10 +265,10 @@ void kexCanvasImage::Draw(kexMatrix &curMatrix, const float &curAlpha) {
     dglPushMatrix();
     dglMultMatrixf(matrix.ToFloatPtr());
 
-    renderer.AddTriangle(0, 1, 2);
-    renderer.AddTriangle(2, 1, 3);
+    cpuVertList.AddTriangle(0, 1, 2);
+    cpuVertList.AddTriangle(2, 1, 3);
 
-    renderer.DrawElementsNoShader();
+    cpuVertList.DrawElementsNoShader();
     dglPopMatrix();
 
     min *= matrix;

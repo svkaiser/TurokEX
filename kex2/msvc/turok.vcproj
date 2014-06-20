@@ -248,6 +248,10 @@
 				Name="renderer"
 				>
 				<File
+					RelativePath="..\turok\renderer\cpuVertexList.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\fbo.cpp"
 					>
 				</File>
@@ -645,6 +649,10 @@
 				Name="renderer"
 				>
 				<File
+					RelativePath="..\turok\renderer\cpuVertexList.h"
+					>
+				</File>
+				<File
 					RelativePath="..\turok\renderer\fbo.h"
 					>
 				</File>
@@ -750,6 +758,10 @@
 				</File>
 				<File
 					RelativePath="..\turok\framework\filesystem.h"
+					>
+				</File>
+				<File
+					RelativePath="..\turok\framework\getter.h"
 					>
 				</File>
 				<File

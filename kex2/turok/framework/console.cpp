@@ -527,32 +527,32 @@ void kexConsole::Draw(void) {
     renderBackend.SetState(GLSTATE_BLEND, true);
 
     if(!bOverlay) {
-        renderer.BindDrawPointers();
+        cpuVertList.BindDrawPointers();
         renderBackend.whiteTexture.Bind();
 
         // draw tint overlay
-        renderer.AddVertex(0, 0, 0, 0, 0, 4, 8, 16, 192);
-        renderer.AddVertex(w, 0, 0, 0, 0, 4, 8, 16, 192);
-        renderer.AddVertex(0, h, 0, 0, 0, 4, 8, 16, 192);
-        renderer.AddVertex(w, h, 0, 0, 0, 4, 8, 16, 192);
-        renderer.AddTriangle(0, 1, 2);
-        renderer.AddTriangle(2, 1, 3);
-        renderer.DrawElementsNoShader();
+        cpuVertList.AddVertex(0, 0, 0, 0, 0, 4, 8, 16, 192);
+        cpuVertList.AddVertex(w, 0, 0, 0, 0, 4, 8, 16, 192);
+        cpuVertList.AddVertex(0, h, 0, 0, 0, 4, 8, 16, 192);
+        cpuVertList.AddVertex(w, h, 0, 0, 0, 4, 8, 16, 192);
+        cpuVertList.AddTriangle(0, 1, 2);
+        cpuVertList.AddTriangle(2, 1, 3);
+        cpuVertList.DrawElementsNoShader();
 
         // draw borders
-        renderer.AddVertex(0, h-17, 0, 0, 0, 0, 128, 255, 255);
-        renderer.AddVertex(w, h-17, 0, 0, 0, 0, 128, 255, 255);
-        renderer.AddVertex(0, h-16, 0, 0, 0, 0, 128, 255, 255);
-        renderer.AddVertex(w, h-16, 0, 0, 0, 0, 128, 255, 255);
-        renderer.AddVertex(0, h, 0, 0, 0, 0, 128, 255, 255);
-        renderer.AddVertex(w, h, 0, 0, 0, 0, 128, 255, 255);
-        renderer.AddVertex(0, h+1, 0, 0, 0, 0, 128, 255, 255);
-        renderer.AddVertex(w, h+1, 0, 0, 0, 0, 128, 255, 255);
-        renderer.AddTriangle(0, 1, 2);
-        renderer.AddTriangle(2, 1, 3);
-        renderer.AddTriangle(4, 5, 6);
-        renderer.AddTriangle(6, 5, 7);
-        renderer.DrawElementsNoShader();
+        cpuVertList.AddVertex(0, h-17, 0, 0, 0, 0, 128, 255, 255);
+        cpuVertList.AddVertex(w, h-17, 0, 0, 0, 0, 128, 255, 255);
+        cpuVertList.AddVertex(0, h-16, 0, 0, 0, 0, 128, 255, 255);
+        cpuVertList.AddVertex(w, h-16, 0, 0, 0, 0, 128, 255, 255);
+        cpuVertList.AddVertex(0, h, 0, 0, 0, 0, 128, 255, 255);
+        cpuVertList.AddVertex(w, h, 0, 0, 0, 0, 128, 255, 255);
+        cpuVertList.AddVertex(0, h+1, 0, 0, 0, 0, 128, 255, 255);
+        cpuVertList.AddVertex(w, h+1, 0, 0, 0, 0, 128, 255, 255);
+        cpuVertList.AddTriangle(0, 1, 2);
+        cpuVertList.AddTriangle(2, 1, 3);
+        cpuVertList.AddTriangle(4, 5, 6);
+        cpuVertList.AddTriangle(6, 5, 7);
+        cpuVertList.DrawElementsNoShader();
 
         color = RGBA(255, 255, 255, 255);
         renderBackend.consoleFont.DrawString("> ", 0, h-15, 1, false, (byte*)&color, (byte*)&color);

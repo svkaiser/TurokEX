@@ -101,41 +101,41 @@ void kexRenderImgui::DrawPolygon(const float *coords, unsigned int numCoords, fl
     byte b1 = (byte)((col>>16)&0xff);
     byte a1 = (byte)((col>>24)&0xff);
     
-    renderer.BindDrawPointers();
+    cpuVertList.BindDrawPointers();
     renderBackend.SetState(GLSTATE_TEXTURE0, false);
     
     int tri = 0;
     
     for(unsigned int i = 0, j = numCoords-1; i < numCoords; j = i++) {
-        renderer.AddVertex(coords[i*2+0], coords[i*2+1], 0, 0, 0, r1, g1, b1, a1);
-        renderer.AddVertex(coords[j*2+0], coords[j*2+1], 0, 0, 0, r1, g1, b1, a1);
-        renderer.AddVertex(tempCoords[j*2+0], tempCoords[j*2+1], 0, 0, 0, r1, g1, b1, 0);
+        cpuVertList.AddVertex(coords[i*2+0], coords[i*2+1], 0, 0, 0, r1, g1, b1, a1);
+        cpuVertList.AddVertex(coords[j*2+0], coords[j*2+1], 0, 0, 0, r1, g1, b1, a1);
+        cpuVertList.AddVertex(tempCoords[j*2+0], tempCoords[j*2+1], 0, 0, 0, r1, g1, b1, 0);
         
-        renderer.AddTriangle(tri+0, tri+1, tri+2);
+        cpuVertList.AddTriangle(tri+0, tri+1, tri+2);
         tri += 3;
         
-        renderer.AddVertex(tempCoords[j*2+0], tempCoords[j*2+1], 0, 0, 0, r1, g1, b1, 0);
-        renderer.AddVertex(tempCoords[i*2+0], tempCoords[i*2+1], 0, 0, 0, r1, g1, b1, 0);
-        renderer.AddVertex(coords[i*2+0], coords[i*2+1], 0, 0, 0, r1, g1, b1, a1);
+        cpuVertList.AddVertex(tempCoords[j*2+0], tempCoords[j*2+1], 0, 0, 0, r1, g1, b1, 0);
+        cpuVertList.AddVertex(tempCoords[i*2+0], tempCoords[i*2+1], 0, 0, 0, r1, g1, b1, 0);
+        cpuVertList.AddVertex(coords[i*2+0], coords[i*2+1], 0, 0, 0, r1, g1, b1, a1);
         
-        renderer.AddTriangle(tri+0, tri+1, tri+2);
+        cpuVertList.AddTriangle(tri+0, tri+1, tri+2);
         tri += 3;
     }
     
     const float *tcoords;
     
     for(unsigned int i = 2; i < numCoords; ++i) {
-        renderer.AddVertex(coords[0], coords[1], 0, 0, 0, r1, g1, b1, a1);
+        cpuVertList.AddVertex(coords[0], coords[1], 0, 0, 0, r1, g1, b1, a1);
         tcoords = &coords[(i-1)*2];
-        renderer.AddVertex(tcoords[0], tcoords[1], 0, 0, 0, r1, g1, b1, a1);
+        cpuVertList.AddVertex(tcoords[0], tcoords[1], 0, 0, 0, r1, g1, b1, a1);
         tcoords = &coords[i*2];
-        renderer.AddVertex(tcoords[0], tcoords[1], 0, 0, 0, r1, g1, b1, a1);
+        cpuVertList.AddVertex(tcoords[0], tcoords[1], 0, 0, 0, r1, g1, b1, a1);
         
-        renderer.AddTriangle(tri+0, tri+1, tri+2);
+        cpuVertList.AddTriangle(tri+0, tri+1, tri+2);
         tri += 3;
     }
     
-    renderer.DrawElementsNoShader();
+    cpuVertList.DrawElementsNoShader();
 }
 
 //

@@ -103,8 +103,11 @@ kexRenderer::~kexRenderer(void) {
 //
 
 void kexRenderer::Init(void) {
+    // setup materials
     motionBlurMaterial  = kexMaterial::manager.Load("materials/motionBlur.kmat@motionBlur");
     wireframeMaterial   = kexMaterial::manager.Load("materials/default.kmat@wireframe");
+    
+    // setup shaders
     shaderLightScatter  = kexShaderObj::manager.Load("defs/shaders.def@lightScatter");
     blackShader         = kexShaderObj::manager.Load("defs/shaders.def@black");
     fxaaShader          = kexShaderObj::manager.Load("defs/shaders.def@fxaa");
@@ -113,7 +116,8 @@ void kexRenderer::Init(void) {
 
     int width   = kexMath::RoundPowerOfTwo(sysMain.VideoWidth());
     int height  = kexMath::RoundPowerOfTwo(sysMain.VideoHeight());
-    
+
+    // setup framebuffer objects
     fboLightScatter.InitColorAttachment(0, width >> 1, height >> 1);
     fboFXAA.InitColorAttachment(0, width, height);
     fboBloom.InitColorAttachment(0, width, height);
@@ -121,6 +125,16 @@ void kexRenderer::Init(void) {
     fboBlur[1].InitColorAttachment(0, width >> 3, height >> 3);
 
     renderWorld.InitSunData();
+    
+    // setup custom shader uniforms
+    kexShaderObj::RegisterParam<kexClient>("uTime", &client, &kexClient::GetTime);
+    kexShaderObj::RegisterParam<kexClient>("uRunTime", &client, &kexClient::GetRunTime);
+    kexShaderObj::RegisterParam<kexRenderWorld>("uLightDirection", &renderWorld, &kexRenderWorld::WorldLightTransform);
+    kexShaderObj::RegisterParam<kexWorld>("uLightDirectionColor", &localWorld, &kexWorld::GetLightColor);
+    kexShaderObj::RegisterParam<kexWorld>("uLightAmbience", &localWorld, &kexWorld::GetLightAmbience);
+    kexShaderObj::RegisterParam<kexWorld>("uFogNear", &localWorld, &kexWorld::GetFogNear);
+    kexShaderObj::RegisterParam<kexWorld>("uFogFar", &localWorld, &kexWorld::GetFogFar);
+    kexShaderObj::RegisterParam<kexWorld>("uFogColor", &localWorld, &kexWorld::GetCurrentFogRGB);
 
     common.Printf("Renderer Initialized\n");
 }
@@ -157,152 +171,6 @@ void kexRenderer::Draw(void) {
     
     // finish frame
     renderBackend.SwapBuffers();
-}
-
-//
-// kexRenderer::BindDrawPointers
-//
-
-void kexRenderer::BindDrawPointers(void) {
-    dglNormalPointer(GL_FLOAT, sizeof(float)*3, drawVertices);
-    dglTexCoordPointer(2, GL_FLOAT, sizeof(float)*2, drawTexCoords);
-    dglVertexPointer(3, GL_FLOAT, sizeof(float)*3, drawVertices);
-    dglColorPointer(4, GL_UNSIGNED_BYTE, sizeof(byte)*4, drawRGB);
-}
-
-//
-// kexRenderer::AddTriangle
-//
-
-void kexRenderer::AddTriangle(int v0, int v1, int v2) {
-    if(indiceCount + 3 >= GL_MAX_INDICES) {
-        common.Warning("Static triangle indice overflow");
-        return;
-    }
-
-    drawIndices[indiceCount++] = v0;
-    drawIndices[indiceCount++] = v1;
-    drawIndices[indiceCount++] = v2;
-}
-
-//
-// kexRenderer::AddVertex
-//
-
-void kexRenderer::AddVertex(float x, float y, float z, float s, float t,
-                                byte r, byte g, byte b, byte a) {
-    if((vertexCount * 4 + 3) >= GL_MAX_VERTICES) {
-        common.Warning("Static vertex draw overflow");
-        return;
-    }
-
-    drawVertices[vertexCount * 3 + 0]   = x;
-    drawVertices[vertexCount * 3 + 1]   = y;
-    drawVertices[vertexCount * 3 + 2]   = z;
-    drawTexCoords[vertexCount * 2 + 0]  = s;
-    drawTexCoords[vertexCount * 2 + 1]  = t;
-    drawRGB[vertexCount * 4 + 0]        = r;
-    drawRGB[vertexCount * 4 + 1]        = g;
-    drawRGB[vertexCount * 4 + 2]        = b;
-    drawRGB[vertexCount * 4 + 3]        = a;
-
-    vertexCount++;
-}
-
-//
-// kexRenderer::AddLine
-//
-
-void kexRenderer::AddLine(float x1, float y1, float z1,
-                          float x2, float y2, float z2,
-                          byte r, byte g, byte b, byte a) {
-    
-    drawIndices[indiceCount++] = vertexCount;
-    AddVertex(x1, y1, z1, 0, 0, r, g, b, a);
-    drawIndices[indiceCount++] = vertexCount;
-    AddVertex(x2, y2, z2, 0, 0, r, g, b, a);
-}
-
-//
-// kexRenderer::AddLine
-//
-
-void kexRenderer::AddLine(float x1, float y1, float z1,
-                          float x2, float y2, float z2,
-                          byte r1, byte g1, byte b1, byte a1,
-                          byte r2, byte g2, byte b2, byte a2) {
-    
-    drawIndices[indiceCount++] = vertexCount;
-    AddVertex(x1, y1, z1, 0, 0, r1, g1, b1, a1);
-    drawIndices[indiceCount++] = vertexCount;
-    AddVertex(x2, y2, z2, 0, 0, r2, g2, b2, a2);
-}
-
-//
-// kexRenderer::DrawElements
-//
-
-void kexRenderer::DrawElements(const bool bClearCount) {
-    dglDrawElements(GL_TRIANGLES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
-
-    if(bClearCount) {
-        indiceCount = 0;
-        vertexCount = 0;
-    }
-}
-
-//
-// kexRenderer::DrawElements
-//
-// Draws using the specified material
-//
-
-void kexRenderer::DrawElements(const kexMaterial *material, const bool bClearCount) {
-    kexShaderObj *shader;
-    
-    shader = ((kexMaterial*)material)->ShaderObj();
-    shader->Enable();
-    shader->CommitGlobalUniforms(material);
-    
-    material->SetRenderState();
-    
-    renderBackend.SetPolyMode(GLPOLY_FILL);
-    
-    material->BindImages();
-    
-    BindDrawPointers();
-    dglDrawElements(GL_TRIANGLES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
-    
-    if(bClearCount) {
-        indiceCount = 0;
-        vertexCount = 0;
-    }
-}
-
-//
-// kexRenderer::DrawElementsNoShader
-//
-
-void kexRenderer::DrawElementsNoShader(const bool bClearCount) {
-    renderBackend.DisableShaders();
-    dglDrawElements(GL_TRIANGLES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
-
-    if(bClearCount) {
-        indiceCount = 0;
-        vertexCount = 0;
-    }
-}
-
-//
-// kexRenderer::DrawLineElements
-//
-
-void kexRenderer::DrawLineElements(void) {
-    renderBackend.DisableShaders();
-    dglDrawElements(GL_LINES, indiceCount, GL_UNSIGNED_SHORT, drawIndices);
-    
-    indiceCount = 0;
-    vertexCount = 0;
 }
 
 //
@@ -903,13 +771,14 @@ void kexRenderer::ProcessMotionBlur(void) {
 
     dglGetIntegerv(GL_VIEWPORT, vp);
 
-    AddVertex((float)vp[0], (float)vp[1], 0, 0, 0, 255, 255, 255, 255);
-    AddVertex((float)vp[2], (float)vp[1], 0, 1, 0, 255, 255, 255, 255);
-    AddVertex((float)vp[0], (float)vp[3], 0, 0, 1, 255, 255, 255, 255);
-    AddVertex((float)vp[2], (float)vp[3], 0, 1, 1, 255, 255, 255, 255);
-    AddTriangle(0, 1, 2);
-    AddTriangle(2, 1, 3);
-    DrawElements(motionBlurMaterial);
+    cpuVertList.BindDrawPointers();
+    cpuVertList.AddVertex((float)vp[0], (float)vp[1], 0, 0, 0, 255, 255, 255, 255);
+    cpuVertList.AddVertex((float)vp[2], (float)vp[1], 0, 1, 0, 255, 255, 255, 255);
+    cpuVertList.AddVertex((float)vp[0], (float)vp[3], 0, 0, 1, 255, 255, 255, 255);
+    cpuVertList.AddVertex((float)vp[2], (float)vp[3], 0, 1, 1, 255, 255, 255, 255);
+    cpuVertList.AddTriangle(0, 1, 2);
+    cpuVertList.AddTriangle(2, 1, 3);
+    cpuVertList.DrawElements(motionBlurMaterial);
 }
 
 //
@@ -1028,19 +897,19 @@ void kexRenderer::ProcessBloom(void) {
     dglPushAttrib(GL_VIEWPORT_BIT);
     dglViewport(0, 0, fboBloom.Width(), fboBloom.Height());
     
-    BindDrawPointers();
+    cpuVertList.BindDrawPointers();
     fboBloom.BindImage();
     
     renderBackend.SetBlend(GLSRC_ONE, GLDST_ONE);
 
-    AddVertex((float)vp[0], (float)vp[1], 0, 0, 1, 255, 255, 255, 255);
-    AddVertex((float)vp[2], (float)vp[1], 0, 1, 1, 255, 255, 255, 255);
-    AddVertex((float)vp[0], (float)vp[3], 0, 0, 0, 255, 255, 255, 255);
-    AddVertex((float)vp[2], (float)vp[3], 0, 1, 0, 255, 255, 255, 255);
-    AddTriangle(0, 1, 2);
-    AddTriangle(2, 1, 3);
+    cpuVertList.AddVertex((float)vp[0], (float)vp[1], 0, 0, 1, 255, 255, 255, 255);
+    cpuVertList.AddVertex((float)vp[2], (float)vp[1], 0, 1, 1, 255, 255, 255, 255);
+    cpuVertList.AddVertex((float)vp[0], (float)vp[3], 0, 0, 0, 255, 255, 255, 255);
+    cpuVertList.AddVertex((float)vp[2], (float)vp[3], 0, 1, 0, 255, 255, 255, 255);
+    cpuVertList.AddTriangle(0, 1, 2);
+    cpuVertList.AddTriangle(2, 1, 3);
 
-    DrawElementsNoShader();
+    cpuVertList.DrawElementsNoShader();
 
     renderBackend.SetBlend(GLSRC_SRC_ALPHA, GLDST_ONE_MINUS_SRC_ALPHA);
     dglPopAttrib();

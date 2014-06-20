@@ -90,6 +90,7 @@ typedef enum {
     GLCB_ALL        = (GLCB_COLOR|GLCB_DEPTH|GLCB_STENCIL)
 } glClearBit_t;
 
+#include "cpuVertexList.h"
 #include "textureObject.h"
 #include "shaderProg.h"
 #include "material.h"
@@ -204,7 +205,6 @@ private:
     bool                            bIsInit;
 
     kexHashList<kexTexture>         textureList;
-    kexHashList<kexLensFlares>      lensFlaresList;
 
     const char                      *gl_vendor;
     const char                      *gl_renderer;

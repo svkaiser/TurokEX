@@ -87,6 +87,8 @@ public:
     float                               GetFogFar(void) { return currentFogFar; }
     void                                SetFogFar(float f) { fogFar = f; }
     kexVec4                             &GetCurrentFogRGB(void) { return currentFogRGB; }
+    kexVec4                             &GetLightAmbience(void) { return worldLightAmbience; }
+    kexVec4                             &GetLightColor(void) { return worldLightColor; }
     bool                                FogEnabled(void) { return bEnableFog; }
     void                                ToggleFog(bool toggle) { bEnableFog = toggle; }
     bool                                &ReadyUnLoad(void) { return bReadyUnload; }
