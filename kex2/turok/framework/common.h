@@ -93,10 +93,16 @@ typedef union {
 #define KDECL
 #endif
 
-// attribute hints are available only under GNU C
+#ifdef ALIGNED
+#undef ALIGNED
+#endif
 
-#ifndef __GNUC__
-#define __attribute__(x)
+#if defined(_MSC_VER)
+#define ALIGNED(x) __declspec(align(x))
+#elif defined(__GNUC__)
+#define ALIGNED(x) __attribute__ ((aligned(x)))
+#else
+#define ALIGNED(x)
 #endif
 
 // function inlining is available on most platforms, however,
